@@ -3,7 +3,6 @@ package br.com.wdc.shopping.view.react
 import br.com.wdc.framework.commons.codec.Base62
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.shopping.view.react.skeleton.spi.WebSocketConnection
 import br.com.wdc.shopping.view.react.skeleton.util.AppSecurity
 import br.com.wdc.shopping.view.react.skeleton.viewimpl.ApplicationReactImpl
@@ -21,7 +20,7 @@ import java.util.concurrent.TimeUnit
 class DispatcherHandler private constructor(private val appId: String) {
 
     companion object {
-        private val LOG = Log.getLogger(DispatcherHandler::class.java)
+        private val LOG = Log.getLogger("DispatcherHandler")
         private const val CLOSE_SESSION_INVALID = 4001
 
         private val GSON: Gson = GsonBuilder()

@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.persistence.security
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
 import java.time.Duration
@@ -12,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 class AccessContextCache(val jwtSecret: String) {
 
     companion object {
-        private val LOG = Log.getLogger(AccessContextCache::class.java)
+        private val LOG = Log.getLogger("AccessContextCache")
         private const val RSA_KEY_SIZE = 2048
         private val ACCESS_TOKEN_TTL = Duration.ofMinutes(30)
         private val REFRESH_TOKEN_TTL = Duration.ofDays(7)

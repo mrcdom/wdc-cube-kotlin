@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.view.react
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.log.Slf4jLogFactory
 import br.com.wdc.shopping.domain.config.AppConfig
 import br.com.wdc.shopping.view.react.controller.DispatcherController
@@ -37,7 +36,7 @@ class JavalinApplication(private val port: Int = DEFAULT_PORT) {
 
         init {
             Log.setFactory(Slf4jLogFactory())
-            LOG = Log.getLogger(JavalinApplication::class.java)
+            LOG = Log.getLogger("JavalinApplication")
         }
 
         private fun isStaticResource(path: String): Boolean {

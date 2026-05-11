@@ -3,7 +3,6 @@ package br.com.wdc.shopping.view.react.skeleton.viewimpl
 import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
@@ -58,7 +57,7 @@ class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID
         try {
             app.safeGo(path)
         } catch (e: Exception) {
-            val logger = Log.getLogger(this::class.java)
+            val logger = Log.getLogger("this")
             logger.warn("onHistoryChanged", e)
         }
     }
@@ -90,7 +89,7 @@ class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID
                     val path = CoerceUtils.asString(formData["p.path"])
                     onStart(path)
                 } catch (e: Exception) {
-                    val logger = Log.getLogger(this::class.java)
+                    val logger = Log.getLogger("this")
                     logger.warn("onStart", e)
                 }
             }

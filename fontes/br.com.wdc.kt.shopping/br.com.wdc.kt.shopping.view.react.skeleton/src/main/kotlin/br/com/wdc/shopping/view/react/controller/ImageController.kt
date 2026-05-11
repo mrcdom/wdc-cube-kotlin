@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.view.react.controller
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
@@ -9,7 +8,7 @@ import io.javalin.http.Context
 class ImageController {
 
     companion object {
-        private val LOG = Log.getLogger(ImageController::class.java)
+        private val LOG = Log.getLogger("ImageController")
 
         fun configure(config: JavalinConfig) {
             val controller = ImageController()

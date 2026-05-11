@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.persistence.rest
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.shopping.domain.exception.AccessDeniedException
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
@@ -17,7 +16,7 @@ import io.javalin.http.Context
 class SecurityFilter(private val authService: AuthenticationService) {
 
     companion object {
-        private val LOG = Log.getLogger(SecurityFilter::class.java)
+        private val LOG = Log.getLogger("SecurityFilter")
         private const val BEARER_PREFIX = "Bearer "
     }
 

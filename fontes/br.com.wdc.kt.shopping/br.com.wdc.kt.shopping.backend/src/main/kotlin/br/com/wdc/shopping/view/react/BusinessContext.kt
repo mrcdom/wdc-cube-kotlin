@@ -2,7 +2,6 @@ package br.com.wdc.shopping.view.react
 
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.sql.SqlDataSource
 import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
@@ -20,7 +19,7 @@ import java.util.concurrent.ScheduledExecutorService
 class BusinessContext {
 
     companion object {
-        private val LOG = Log.getLogger(BusinessContext::class.java)
+        private val LOG = Log.getLogger("BusinessContext")
         private const val DEFAULT_DB_NAME = "wedocode-shopping"
     }
 

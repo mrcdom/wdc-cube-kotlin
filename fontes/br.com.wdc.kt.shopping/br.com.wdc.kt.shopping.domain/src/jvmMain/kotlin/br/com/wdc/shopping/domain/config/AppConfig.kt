@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.domain.config
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -35,7 +34,7 @@ class AppConfig private constructor(
     }
 
     companion object {
-        private val LOG = Log.getLogger(AppConfig::class.java)
+        private val LOG = Log.getLogger("AppConfig")
 
         private const val CONFIG_FILE_PROPERTY = "shopping.config.file"
         private const val DEFAULT_CONFIG_PATH = "work/config/application.toml"

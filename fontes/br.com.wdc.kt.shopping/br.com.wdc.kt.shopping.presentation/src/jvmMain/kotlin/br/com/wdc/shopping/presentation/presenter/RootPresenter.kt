@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
@@ -16,7 +15,7 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     // :: Public Class Fields
 
     companion object {
-        private val LOG = Log.getLogger(RootPresenter::class.java)
+        private val LOG = Log.getLogger("RootPresenter")
 
         @JvmField
         var createView: ((RootPresenter) -> CubeView)? = null

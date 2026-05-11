@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.view.react.controller
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.shopping.view.react.DispatcherHandler
 import io.javalin.config.JavalinConfig
 import io.javalin.websocket.WsCloseContext
@@ -12,7 +11,7 @@ import io.javalin.websocket.WsMessageContext
 class DispatcherController {
 
     companion object {
-        private val LOG = Log.getLogger(DispatcherController::class.java)
+        private val LOG = Log.getLogger("DispatcherController")
 
         fun configure(config: JavalinConfig) {
             val controller = DispatcherController()

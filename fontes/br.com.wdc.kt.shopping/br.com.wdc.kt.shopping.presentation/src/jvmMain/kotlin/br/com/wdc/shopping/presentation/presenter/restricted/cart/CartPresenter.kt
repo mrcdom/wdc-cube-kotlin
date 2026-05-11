@@ -3,7 +3,6 @@ package br.com.wdc.shopping.presentation.presenter.restricted.cart
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
@@ -19,7 +18,7 @@ import kotlin.time.Duration.Companion.seconds
 class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
     companion object {
-        private val LOG = Log.getLogger(CartPresenter::class.java)
+        private val LOG = Log.getLogger("CartPresenter")
 
         @JvmField
         var createView: ((CartPresenter) -> CubeView)? = null

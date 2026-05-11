@@ -6,7 +6,6 @@ import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.gson.JsonExtensibleObjectOutput
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
@@ -43,7 +42,7 @@ import kotlin.time.Duration.Companion.minutes
 class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
 
     companion object {
-        private val LOG = Log.getLogger(ApplicationReactImpl::class.java)
+        private val LOG = Log.getLogger("ApplicationReactImpl")
 
         val DEFAULT_TIME_SPAN: Duration = 3.minutes
         private val PUSH_DELAY: Duration = 200.milliseconds

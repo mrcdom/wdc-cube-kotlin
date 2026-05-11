@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.persistence.rest
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.shopping.domain.criteria.ProductCriteria
 import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.repositories.ProductRepository
@@ -13,7 +12,7 @@ import io.javalin.http.Context
 class ProductApiController {
 
     companion object {
-        private val LOG = Log.getLogger(ProductApiController::class.java)
+        private val LOG = Log.getLogger("ProductApiController")
 
         fun configure(config: JavalinConfig) {
             val ctrl = ProductApiController()

@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.view.react.skeleton.util
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -48,7 +47,7 @@ class DataSecurity {
             val secretKey = keyFactory.generateSecret(spec)
             this.secret = SecretKeySpec(secretKey.encoded, "AES")
         } catch (e: Exception) {
-            val logger = Log.getLogger(this::class.java)
+            val logger = Log.getLogger("this")
             logger.error("updateSecret", e)
         }
     }

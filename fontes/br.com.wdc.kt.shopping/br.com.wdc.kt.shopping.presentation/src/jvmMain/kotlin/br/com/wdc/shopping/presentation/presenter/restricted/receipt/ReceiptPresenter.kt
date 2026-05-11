@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.receipt
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
@@ -16,7 +15,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.Rec
 class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
     companion object {
-        private val LOG = Log.getLogger(ReceiptPresenter::class.java)
+        private val LOG = Log.getLogger("ReceiptPresenter")
 
         @JvmField
         var createView: ((ReceiptPresenter) -> CubeView)? = null

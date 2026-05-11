@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.persistence.rest
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.shopping.domain.criteria.UserCriteria
 import br.com.wdc.shopping.domain.model.User
 import br.com.wdc.shopping.domain.repositories.UserRepository
@@ -17,7 +16,7 @@ import javax.crypto.Cipher
 class UserApiController {
 
     companion object {
-        private val LOG = Log.getLogger(UserApiController::class.java)
+        private val LOG = Log.getLogger("UserApiController")
 
         fun configure(config: JavalinConfig) {
             val ctrl = UserApiController()

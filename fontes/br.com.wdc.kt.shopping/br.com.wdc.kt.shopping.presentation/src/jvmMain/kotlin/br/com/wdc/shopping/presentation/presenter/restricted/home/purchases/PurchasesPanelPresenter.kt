@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.purchases
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.cube.AbstractChildPresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.ShoppingApplication
@@ -15,7 +14,7 @@ class PurchasesPanelPresenter(
 ) : AbstractChildPresenter<ShoppingApplication>(app) {
 
     companion object {
-        private val LOG = Log.getLogger(PurchasesPanelPresenter::class.java)
+        private val LOG = Log.getLogger("PurchasesPanelPresenter")
 
         @JvmField
         var createView: ((PurchasesPanelPresenter) -> CubeView)? = null
