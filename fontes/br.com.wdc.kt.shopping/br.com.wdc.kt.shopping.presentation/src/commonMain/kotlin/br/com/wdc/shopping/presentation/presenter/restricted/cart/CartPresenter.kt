@@ -20,7 +20,6 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     companion object {
         private val LOG = Log.getLogger("CartPresenter")
 
-        @JvmField
         var createView: ((CartPresenter) -> CubeView)? = null
     }
 

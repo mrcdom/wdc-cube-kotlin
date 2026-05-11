@@ -14,7 +14,6 @@ import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
-import java.util.concurrent.ConcurrentHashMap
 
 abstract class ShoppingApplication : CubeApplication() {
 
@@ -101,7 +100,7 @@ abstract class ShoppingApplication : CubeApplication() {
 
     object Internals {
 
-        private val goActionMap: MutableMap<String, GoAction> = ConcurrentHashMap()
+        private val goActionMap: MutableMap<String, GoAction> = HashMap()
 
         fun registerPlace(tag: String, goAction: GoAction) {
             goActionMap[tag] = goAction

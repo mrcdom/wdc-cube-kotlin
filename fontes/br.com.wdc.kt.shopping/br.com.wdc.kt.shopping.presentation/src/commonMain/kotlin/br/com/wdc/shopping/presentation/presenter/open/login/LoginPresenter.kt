@@ -15,7 +15,6 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
     companion object {
         private val LOG = Log.getLogger("LoginPresenter")
 
-        @JvmField
         var createView: ((LoginPresenter) -> CubeView)? = null
     }
 

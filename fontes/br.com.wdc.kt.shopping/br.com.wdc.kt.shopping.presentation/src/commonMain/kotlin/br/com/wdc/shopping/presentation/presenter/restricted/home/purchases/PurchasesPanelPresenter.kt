@@ -16,7 +16,6 @@ class PurchasesPanelPresenter(
     companion object {
         private val LOG = Log.getLogger("PurchasesPanelPresenter")
 
-        @JvmField
         var createView: ((PurchasesPanelPresenter) -> CubeView)? = null
     }
 

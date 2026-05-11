@@ -20,7 +20,6 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         private val LOG = Log.getLogger("HomePresenter")
         private val NOOP: () -> Unit = {}
 
-        @JvmField
         var createView: ((HomePresenter) -> CubeView)? = null
     }
 
