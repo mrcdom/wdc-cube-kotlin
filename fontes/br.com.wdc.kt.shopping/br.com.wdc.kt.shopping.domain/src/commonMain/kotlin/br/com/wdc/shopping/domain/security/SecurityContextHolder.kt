@@ -1,7 +1,14 @@
 package br.com.wdc.shopping.domain.security
 
-expect object SecurityContextHolder {
-    fun get(): SecurityContext?
-    fun set(ctx: SecurityContext)
-    fun clear()
+import br.com.wdc.framework.commons.concurrent.ThreadLocalRef
+
+object SecurityContextHolder {
+
+    private val HOLDER = ThreadLocalRef<SecurityContext>()
+
+    fun get(): SecurityContext? = HOLDER.get()
+
+    fun set(ctx: SecurityContext) = HOLDER.set(ctx)
+
+    fun clear() = HOLDER.remove()
 }
