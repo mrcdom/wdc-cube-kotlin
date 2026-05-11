@@ -51,7 +51,7 @@ abstract class ShoppingApplication : CubeApplication() {
     fun getUserRepository(): UserRepository {
         var repo = userRepository
         if (repo == null) {
-            repo = createDelegate(UserRepository::class.java, UserRepository.BEAN.get())
+            repo = createUserDelegate(UserRepository.BEAN.get())
             userRepository = repo
         }
         return repo
@@ -60,7 +60,7 @@ abstract class ShoppingApplication : CubeApplication() {
     fun getProductRepository(): ProductRepository {
         var repo = productRepository
         if (repo == null) {
-            repo = createDelegate(ProductRepository::class.java, ProductRepository.BEAN.get())
+            repo = createProductDelegate(ProductRepository.BEAN.get())
             productRepository = repo
         }
         return repo
@@ -69,7 +69,7 @@ abstract class ShoppingApplication : CubeApplication() {
     fun getPurchaseRepository(): PurchaseRepository {
         var repo = purchaseRepository
         if (repo == null) {
-            repo = createDelegate(PurchaseRepository::class.java, PurchaseRepository.BEAN.get())
+            repo = createPurchaseDelegate(PurchaseRepository.BEAN.get())
             purchaseRepository = repo
         }
         return repo
@@ -78,7 +78,7 @@ abstract class ShoppingApplication : CubeApplication() {
     fun getPurchaseItemRepository(): PurchaseItemRepository {
         var repo = purchaseItemRepository
         if (repo == null) {
-            repo = createDelegate(PurchaseItemRepository::class.java, PurchaseItemRepository.BEAN.get())
+            repo = createPurchaseItemDelegate(PurchaseItemRepository.BEAN.get())
             purchaseItemRepository = repo
         }
         return repo
@@ -116,7 +116,13 @@ abstract class ShoppingApplication : CubeApplication() {
         }
     }
 
-    // :: Repository delegate factory
+    // :: Repository delegate factories
 
-    protected open fun <T> createDelegate(repoInterface: Class<T>, delegate: T): T = delegate
+    protected open fun createUserDelegate(delegate: UserRepository): UserRepository = delegate
+
+    protected open fun createProductDelegate(delegate: ProductRepository): ProductRepository = delegate
+
+    protected open fun createPurchaseDelegate(delegate: PurchaseRepository): PurchaseRepository = delegate
+
+    protected open fun createPurchaseItemDelegate(delegate: PurchaseItemRepository): PurchaseItemRepository = delegate
 }

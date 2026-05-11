@@ -1,7 +1,14 @@
 package br.com.wdc.shopping.test.mock
 
 import br.com.wdc.framework.cube.CubePresenter
-import br.com.wdc.shopping.presentation.ProxyRepositoryWrapper
+import br.com.wdc.shopping.domain.repositories.ProductRepository
+import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
+import br.com.wdc.shopping.domain.repositories.PurchaseRepository
+import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.presentation.SecuredProductRepository
+import br.com.wdc.shopping.presentation.SecuredPurchaseItemRepository
+import br.com.wdc.shopping.presentation.SecuredPurchaseRepository
+import br.com.wdc.shopping.presentation.SecuredUserRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
@@ -38,9 +45,17 @@ class ShoppingApplicationMock : ShoppingApplication() {
 
     override fun createPresenterMap(): MutableMap<Int, CubePresenter> = ConcurrentHashMap()
 
-    override fun <T> createDelegate(repoInterface: Class<T>, delegate: T): T {
-        return ProxyRepositoryWrapper.wrap(repoInterface, delegate, ::getSecurityContext)!!
-    }
+    override fun createUserDelegate(delegate: UserRepository) =
+        SecuredUserRepository(delegate, ::getSecurityContext)
+
+    override fun createProductDelegate(delegate: ProductRepository) =
+        SecuredProductRepository(delegate, ::getSecurityContext)
+
+    override fun createPurchaseDelegate(delegate: PurchaseRepository) =
+        SecuredPurchaseRepository(delegate, ::getSecurityContext)
+
+    override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
+        SecuredPurchaseItemRepository(delegate, ::getSecurityContext)
 
     fun getRootView(): RootViewMock? {
         val rootPresenter = getRootPresenter()
