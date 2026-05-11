@@ -1,8 +1,8 @@
 package br.com.wdc.shopping.test.util
 
 import br.com.wdc.framework.commons.function.Registration
-import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration
 
 class ScheduledExecutorForTestSyncDelayed : ScheduledExecutorForTest {
 

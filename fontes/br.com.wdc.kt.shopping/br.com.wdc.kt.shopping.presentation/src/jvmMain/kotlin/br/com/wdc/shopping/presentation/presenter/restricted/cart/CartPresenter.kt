@@ -14,7 +14,7 @@ import br.com.wdc.shopping.presentation.PlaceAttributes
 import br.com.wdc.shopping.presentation.PlaceParameters
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.Routes
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
@@ -158,7 +158,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             state.errorCode = 0
             state.errorMessage = null
             update()
-        }, Duration.ofSeconds(3))
+        }, 3.seconds)
     }
 
     private fun alertThereIsItemWhichValueIsLessThanOne() {

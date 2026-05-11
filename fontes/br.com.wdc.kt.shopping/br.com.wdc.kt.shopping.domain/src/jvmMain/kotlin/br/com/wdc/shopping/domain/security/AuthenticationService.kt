@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.domain.security
 
-import java.util.concurrent.atomic.AtomicReference
+import br.com.wdc.framework.commons.util.AtomicRef
 
 interface AuthenticationService {
 
@@ -15,6 +15,6 @@ interface AuthenticationService {
     fun resolveToken(jwtToken: String): SecurityContext?
 
     companion object {
-        val BEAN = AtomicReference<AuthenticationService>()
+        val BEAN = AtomicRef<AuthenticationService>()
     }
 }

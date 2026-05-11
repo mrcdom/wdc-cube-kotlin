@@ -124,7 +124,73 @@ class CubeIntent {
         return "$placeName?$qs"
     }
 
-    companion object
+    companion object {
+        fun parse(placeStr: String?): CubeIntent {
+            val intent = CubeIntent()
+            if (!placeStr.isNullOrBlank()) {
+                val parts = placeStr.split("?", limit = 2)
+                intent.place = GenericPlace(-1, parts[0])
+                if (parts.size > 1) {
+                    parseQueryString(intent, parts[1])
+                }
+            } else {
+                intent.place = GenericPlace(-1, "unknown")
+            }
+            return intent
+        }
+    }
+}
+
+private class GenericPlace(
+    override val id: Int,
+    override val placeName: String,
+) : CubePlace {
+    override fun <A : CubeApplication> presenterFactory(): (A) -> CubePresenter =
+        throw AssertionError("Must not be invoked")
+}
+
+private fun parseQueryString(intent: CubeIntent, query: String) {
+    if (query.isBlank()) return
+    for (pair in query.split("&")) {
+        val eq = pair.indexOf('=')
+        if (eq >= 0) {
+            val key = decodeComponent(pair.substring(0, eq))
+            val value = decodeComponent(pair.substring(eq + 1))
+            intent.setParameter(key, value)
+        } else {
+            intent.setParameter(decodeComponent(pair), "")
+        }
+    }
+}
+
+private fun decodeComponent(s: String): String {
+    val sb = StringBuilder(s.length)
+    var i = 0
+    while (i < s.length) {
+        val c = s[i]
+        when {
+            c == '+' -> { sb.append(' '); i++ }
+            c == '%' && i + 2 < s.length -> {
+                val hi = hexDigit(s[i + 1])
+                val lo = hexDigit(s[i + 2])
+                if (hi >= 0 && lo >= 0) {
+                    sb.append(((hi shl 4) or lo).toChar())
+                    i += 3
+                } else {
+                    sb.append(c); i++
+                }
+            }
+            else -> { sb.append(c); i++ }
+        }
+    }
+    return sb.toString()
+}
+
+private fun hexDigit(c: Char): Int = when (c) {
+    in '0'..'9' -> c - '0'
+    in 'a'..'f' -> c - 'a' + 10
+    in 'A'..'F' -> c - 'A' + 10
+    else -> -1
 }
 
 private fun encodeComponent(s: String): String {

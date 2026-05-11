@@ -2,7 +2,7 @@ package br.com.wdc.shopping.domain.repositories
 
 import br.com.wdc.shopping.domain.criteria.ProductCriteria
 import br.com.wdc.shopping.domain.model.Product
-import java.util.concurrent.atomic.AtomicReference
+import br.com.wdc.framework.commons.util.AtomicRef
 
 interface ProductRepository {
 
@@ -25,6 +25,6 @@ interface ProductRepository {
     fun updateImage(productId: Long, image: ByteArray): Boolean
 
     companion object {
-        val BEAN = AtomicReference<ProductRepository>()
+        val BEAN = AtomicRef<ProductRepository>()
     }
 }

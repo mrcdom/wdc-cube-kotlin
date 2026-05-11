@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.test.util
 
 import br.com.wdc.framework.commons.function.Registration
-import java.time.Duration
 import java.util.Collections
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -9,6 +8,7 @@ import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration
 
 class ScheduledExecutorForTestAsync : ScheduledExecutorForTest {
 
@@ -57,7 +57,7 @@ class ScheduledExecutorForTestAsync : ScheduledExecutorForTest {
         val allowed = AtomicBoolean(true)
         val future = vtExecutor.submit<Void?> {
             if (allowed.get() && running) {
-                Thread.sleep(delay)
+                Thread.sleep(delay.inWholeMilliseconds)
                 command()
             }
             null
@@ -84,8 +84,8 @@ class ScheduledExecutorForTestAsync : ScheduledExecutorForTest {
                     }
                 }
             },
-            initialDelay.toMillis(),
-            period.toMillis(),
+            initialDelay.inWholeMilliseconds,
+            period.inWholeMilliseconds,
             TimeUnit.MILLISECONDS
         )
 
@@ -113,8 +113,8 @@ class ScheduledExecutorForTestAsync : ScheduledExecutorForTest {
                     }
                 }
             },
-            initialDelay.toMillis(),
-            delay.toMillis(),
+            initialDelay.inWholeMilliseconds,
+            delay.inWholeMilliseconds,
             TimeUnit.MILLISECONDS
         )
 

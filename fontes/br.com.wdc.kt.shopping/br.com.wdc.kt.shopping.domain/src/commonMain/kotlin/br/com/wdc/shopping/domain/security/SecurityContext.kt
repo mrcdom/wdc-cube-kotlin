@@ -1,7 +1,5 @@
 package br.com.wdc.shopping.domain.security
 
-import java.security.PrivateKey
-
 interface SecurityContext {
 
     val userId: Long?
@@ -14,7 +12,7 @@ interface SecurityContext {
 
     fun hasDataAll(): Boolean
 
-    val privateKey: PrivateKey?
+    val privateKey: PlatformPrivateKey?
 
     val publicKeyBase64: String?
 }

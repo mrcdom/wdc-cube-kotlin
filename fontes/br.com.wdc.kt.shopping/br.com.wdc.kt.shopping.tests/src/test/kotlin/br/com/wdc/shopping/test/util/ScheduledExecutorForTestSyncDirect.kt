@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.test.util
 
 import br.com.wdc.framework.commons.function.Registration
-import java.time.Duration
+import kotlin.time.Duration
 
 class ScheduledExecutorForTestSyncDirect : ScheduledExecutorForTest {
 

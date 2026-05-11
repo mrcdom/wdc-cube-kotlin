@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.domain.security
 
-import java.util.concurrent.atomic.AtomicReference
+import br.com.wdc.framework.commons.util.AtomicRef
 
 interface CryptoProvider {
 
@@ -9,6 +9,6 @@ interface CryptoProvider {
     fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray
 
     companion object {
-        val BEAN = AtomicReference<CryptoProvider>()
+        val BEAN = AtomicRef<CryptoProvider>()
     }
 }

@@ -9,7 +9,6 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.parse
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
@@ -36,16 +35,18 @@ import com.google.gson.stream.JsonWriter
 import java.io.IOException
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
-import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
 
     companion object {
         private val LOG = Log.getLogger(ApplicationReactImpl::class.java)
 
-        val DEFAULT_TIME_SPAN: Duration = Duration.ofMinutes(3)
-        private val PUSH_DELAY: Duration = Duration.ofMillis(200)
+        val DEFAULT_TIME_SPAN: Duration = 3.minutes
+        private val PUSH_DELAY: Duration = 200.milliseconds
 
         private val instanceMap = ConcurrentHashMap<String, ApplicationReactImpl>()
 
@@ -167,7 +168,7 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
         this.browserView = BrowserReactViewImpl(this)
         this.viewMap[browserView.instanceId()] = browserView
         this.dirtyViewMap[browserView.instanceId()] = browserView
-        this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.toMillis()
+        this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.inWholeMilliseconds
     }
 
     override fun release() {
@@ -189,7 +190,7 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
     }
 
     fun extendLife() {
-        this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.toMillis()
+        this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.inWholeMilliseconds
     }
 
     fun nextInstanceId(): Int = instanceIdGen++
@@ -335,7 +336,7 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
         if (pushRegistration !== Registration.noop()) {
             return
         }
-        val scheduler = ScheduledExecutor.BEAN.get() ?: return
+        val scheduler = ScheduledExecutor.BEAN.getOrNull() ?: return
         this.pushRegistration = scheduler.schedule(::executePush, PUSH_DELAY)
     }
 

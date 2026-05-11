@@ -1,8 +1,8 @@
 package br.com.wdc.framework.commons.concurrent
 
 import br.com.wdc.framework.commons.function.Registration
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicReference
+import br.com.wdc.framework.commons.util.AtomicRef
+import kotlin.time.Duration
 
 interface ScheduledExecutor {
 
@@ -15,7 +15,6 @@ interface ScheduledExecutor {
     fun scheduleWithFixedDelay(command: () -> Unit, initialDelay: Duration, delay: Duration): Registration
 
     companion object {
-        @JvmField
-        val BEAN = AtomicReference<ScheduledExecutor>()
+        val BEAN = AtomicRef<ScheduledExecutor>()
     }
 }

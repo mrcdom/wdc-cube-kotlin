@@ -11,7 +11,7 @@ import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 class LoginService(private val app: ShoppingApplication?) {
 
     fun fetchSubject(userName: String, password: String): Subject? {
-        val authService = AuthenticationService.BEAN.get()
+        val authService = AuthenticationService.BEAN.getOrNull()
         if (authService != null) {
             return authenticateViaAuthService(authService, userName, password)
         }

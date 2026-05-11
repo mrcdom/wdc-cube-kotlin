@@ -2,7 +2,7 @@ package br.com.wdc.shopping.domain.repositories
 
 import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
 import br.com.wdc.shopping.domain.model.Purchase
-import java.util.concurrent.atomic.AtomicReference
+import br.com.wdc.framework.commons.util.AtomicRef
 
 interface PurchaseRepository {
 
@@ -21,6 +21,6 @@ interface PurchaseRepository {
     fun fetchById(purchaseId: Long, projection: Purchase?): Purchase?
 
     companion object {
-        val BEAN = AtomicReference<PurchaseRepository>()
+        val BEAN = AtomicRef<PurchaseRepository>()
     }
 }
