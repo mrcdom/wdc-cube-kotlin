@@ -2,6 +2,8 @@ package br.com.wdc.shopping.view.react
 
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.log.Slf4jLogFactory
+import br.com.wdc.framework.commons.serialization.JsonOutputFactory
+import br.com.wdc.framework.commons.serialization.installGson
 import br.com.wdc.shopping.domain.config.AppConfig
 import br.com.wdc.shopping.view.react.controller.DispatcherController
 import br.com.wdc.shopping.view.react.controller.ImageController
@@ -84,6 +86,7 @@ class JavalinApplication(private val port: Int = DEFAULT_PORT) {
 
         fun doMain(args: Array<String>) {
             Log.setFactory(Slf4jLogFactory())
+            JsonOutputFactory.installGson()
             val config = AppConfig.load()
             var port = config.getInt("server.port", DEFAULT_PORT)
 
