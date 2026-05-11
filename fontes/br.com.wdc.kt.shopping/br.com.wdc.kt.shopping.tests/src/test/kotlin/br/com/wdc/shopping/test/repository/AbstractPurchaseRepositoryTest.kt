@@ -10,7 +10,7 @@ import br.com.wdc.shopping.domain.utils.ProjectionValues
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import java.time.OffsetDateTime
+import kotlinx.datetime.Clock
 
 abstract class AbstractPurchaseRepositoryTest {
 
@@ -145,7 +145,7 @@ abstract class AbstractPurchaseRepositoryTest {
     @Test
     fun insert_newPurchase() {
         val purchase = Purchase()
-        purchase.buyDate = OffsetDateTime.now()
+        purchase.buyDate = Clock.System.now()
         purchase.user = User()
         purchase.user!!.id = DBReset.FULANO_ID
 
@@ -168,7 +168,7 @@ abstract class AbstractPurchaseRepositoryTest {
 
         val updated = Purchase()
         updated.id = original!!.id
-        updated.buyDate = OffsetDateTime.now()
+        updated.buyDate = Clock.System.now()
         updated.user = User()
         updated.user!!.id = DBReset.BEOTRANO_ID
 
@@ -184,7 +184,7 @@ abstract class AbstractPurchaseRepositoryTest {
     @Test
     fun insertOrUpdate_insertsWhenNew() {
         val purchase = Purchase()
-        purchase.buyDate = OffsetDateTime.now()
+        purchase.buyDate = Clock.System.now()
         purchase.user = User()
         purchase.user!!.id = DBReset.BEOTRANO_ID
 
@@ -201,7 +201,7 @@ abstract class AbstractPurchaseRepositoryTest {
     fun insertOrUpdate_updatesWhenExisting() {
         val purchase = Purchase()
         purchase.id = DBReset.ADMIN_FIRST_PURCHASE_ID
-        purchase.buyDate = OffsetDateTime.now()
+        purchase.buyDate = Clock.System.now()
         purchase.user = User()
         purchase.user!!.id = DBReset.FULANO_ID
 

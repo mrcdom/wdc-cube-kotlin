@@ -1,8 +1,8 @@
 package br.com.wdc.shopping.domain.utils
 
-import br.com.wdc.shopping.domain.model.PlatformDateTime
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 
 object ProjectionValues {
@@ -22,10 +22,8 @@ object ProjectionValues {
     val bDec: BigDecimal = BigDecimal.ONE
     val localDate: LocalDate = LocalDate(1970, 1, 1)
 
-    val offsetDateTime: PlatformDateTime = platformDateTimeProjectionValue()
+    val offsetDateTime: Instant = Instant.fromEpochMilliseconds(0L)
 
     fun <T> singletonList(bean: T, criteria: Any?): ProjectionList<T> =
         ProjectionList(bean, criteria)
 }
-
-internal expect fun platformDateTimeProjectionValue(): PlatformDateTime

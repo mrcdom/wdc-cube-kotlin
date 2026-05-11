@@ -5,8 +5,11 @@ import br.com.wdc.shopping.persistence.repository.BaseCommand
 import br.com.wdc.shopping.persistence.schema.EnPurchase
 import br.com.wdc.shopping.persistence.sql.SqlList
 import br.com.wdc.shopping.persistence.sql.SqlUtils
+import kotlinx.datetime.toJavaInstant
 import org.jdbi.v3.core.Jdbi
 import java.sql.Connection
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 class UpdateRowPurchaseCmd : BaseCommand() {
 
@@ -32,8 +35,9 @@ class UpdateRowPurchaseCmd : BaseCommand() {
                 hasChanges = true
             }
 
-            if (row.buyDate != newBean.buyDate) {
-                row.buyDate(newBean.buyDate)
+            val newBuyDate = newBean.buyDate?.let { OffsetDateTime.ofInstant(it.toJavaInstant(), ZoneOffset.UTC) }
+            if (row.buyDate != newBuyDate) {
+                row.buyDate(newBuyDate)
                 hasChanges = true
             }
 
@@ -44,7 +48,7 @@ class UpdateRowPurchaseCmd : BaseCommand() {
             val row = EnPurchase.Row()
             row.id(bean.id)
             bean.user?.let { row.userId(it.id) }
-            row.buyDate(bean.buyDate)
+            row.buyDate(bean.buyDate?.let { OffsetDateTime.ofInstant(it.toJavaInstant(), ZoneOffset.UTC) })
             return row
         }
     }

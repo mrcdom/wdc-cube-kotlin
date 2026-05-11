@@ -5,8 +5,11 @@ import br.com.wdc.shopping.persistence.repository.BaseCommand
 import br.com.wdc.shopping.persistence.repository.purchaseitem.InsertRowPurchaseItemCmd
 import br.com.wdc.shopping.persistence.schema.EnPurchase
 import br.com.wdc.shopping.persistence.sql.SqlList
+import kotlinx.datetime.toJavaInstant
 import org.jdbi.v3.core.Jdbi
 import java.sql.Connection
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 class InsertRowPurchaseCmd : BaseCommand() {
 
@@ -19,7 +22,7 @@ class InsertRowPurchaseCmd : BaseCommand() {
                 row.userId(bean.user!!.id)
             }
 
-            bean.buyDate?.let { row.buyDate(it) }
+            bean.buyDate?.let { row.buyDate(OffsetDateTime.ofInstant(it.toJavaInstant(), ZoneOffset.UTC)) }
 
             val inserted = InsertRowPurchaseCmd().execute(connection, row) > 0
             bean.id = row.id

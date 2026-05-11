@@ -18,6 +18,7 @@ import br.com.wdc.shopping.persistence.schema.EnPurchaseItem
 import br.com.wdc.shopping.persistence.schema.EnUser
 import br.com.wdc.shopping.persistence.schema.support.DbField
 import br.com.wdc.shopping.persistence.sql.SqlList
+import kotlinx.datetime.toKotlinInstant
 import br.com.wdc.shopping.persistence.sql.SqlUtils
 import com.google.gson.stream.JsonReader
 import org.jdbi.v3.core.Jdbi
@@ -61,7 +62,7 @@ class FetchPurchaseCmd : BaseCommand() {
                     Purchase().also { it.id = row.id }
                 }
 
-                if (purchase.buyDate == null) purchase.buyDate = row.buyDate
+                if (purchase.buyDate == null) purchase.buyDate = row.buyDate?.toInstant()?.toKotlinInstant()
 
                 if (row.userId != null && purchase.user == null) {
                     purchase.user = userMap.getOrPut(row.userId!!) {

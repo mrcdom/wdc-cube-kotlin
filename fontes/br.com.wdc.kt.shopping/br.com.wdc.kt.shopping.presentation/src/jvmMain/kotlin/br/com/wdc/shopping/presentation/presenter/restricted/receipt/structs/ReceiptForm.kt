@@ -25,7 +25,7 @@ class ReceiptForm {
 
             val tgt = ReceiptForm()
 
-            tgt.date = src.buyDate?.toInstant()?.toEpochMilli()
+            tgt.date = src.buyDate?.toEpochMilliseconds()
             tgt.items = mutableListOf()
 
             var total = 0.0

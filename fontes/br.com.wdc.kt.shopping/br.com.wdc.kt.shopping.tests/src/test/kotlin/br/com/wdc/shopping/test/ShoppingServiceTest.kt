@@ -20,10 +20,10 @@ import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptServ
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.TestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
+import kotlinx.datetime.Clock
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.OffsetDateTime
 
 class ShoppingServiceTest {
 
@@ -123,7 +123,7 @@ class ShoppingServiceTest {
         val purchase = Purchase()
         purchase.user = User()
         purchase.user!!.id = userId
-        purchase.buyDate = OffsetDateTime.now()
+        purchase.buyDate = Clock.System.now()
         purchase.items = mutableListOf()
         purchase.items!!.add(PurchaseItem().also { item ->
             item.product = Product()
