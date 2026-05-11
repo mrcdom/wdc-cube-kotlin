@@ -8,6 +8,10 @@ kotlin {
     jvm()
 
     sourceSets {
+        commonMain.dependencies {
+            api(libs.kotlinx.datetime)
+            api(libs.bignum)
+        }
         jvmMain.dependencies {
             api(libs.gson)
             compileOnly(libs.slf4j.api)

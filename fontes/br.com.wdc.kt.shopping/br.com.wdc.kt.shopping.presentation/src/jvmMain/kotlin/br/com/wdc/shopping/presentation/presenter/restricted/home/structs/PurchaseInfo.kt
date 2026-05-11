@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.structs
 
-import br.com.wdc.framework.commons.lang.CoerceUtils
+import br.com.wdc.framework.commons.lang.CoerceUtilsJvm
 import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
@@ -41,7 +41,7 @@ class PurchaseInfo {
             val tgt = PurchaseInfo()
             tgt.id = src.id ?: -1L
 
-            val buyDate = CoerceUtils.asDate(src.buyDate)
+            val buyDate = CoerceUtilsJvm.asDate(src.buyDate)
             tgt.date = (buyDate ?: pv.date).time
             val itemsList = mutableListOf<String>()
 

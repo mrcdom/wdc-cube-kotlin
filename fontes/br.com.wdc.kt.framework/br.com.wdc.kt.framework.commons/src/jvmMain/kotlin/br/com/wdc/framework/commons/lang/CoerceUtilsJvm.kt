@@ -1,3 +1,5 @@
+@file:JvmName("CoerceUtilsJvm")
+
 package br.com.wdc.framework.commons.lang
 
 import br.com.wdc.framework.commons.convert.DateUtil
@@ -10,132 +12,13 @@ import java.time.temporal.TemporalAccessor
 import java.util.Base64
 import java.util.HexFormat
 
-object CoerceUtils {
+/**
+ * JVM-only coercion extensions for types not available in commonMain:
+ * java.math.BigDecimal/BigInteger, java.util.Date, java.sql.*, OffsetDateTime, ZonedDateTime, HexFormat.
+ */
+object CoerceUtilsJvm {
 
-    // :: String
-
-    @JvmStatic
-    @JvmOverloads
-    fun asString(v: Any?, defaultValue: String? = null): String? = when (v) {
-        null -> defaultValue
-        is String -> v
-        else -> v.toString()
-    }
-
-    @JvmStatic
-    @JvmOverloads
-    fun asTrimmedString(v: Any?, defaultValue: String? = null): String? = when (v) {
-        null -> defaultValue?.trim()
-        else -> v.toString().trim()
-    }
-
-    @JvmStatic
-    @JvmOverloads
-    fun asLowerCaseString(v: Any?, defaultValue: String? = null): String? = when (v) {
-        null -> defaultValue
-        else -> v.toString().lowercase()
-    }
-
-    @JvmStatic
-    @JvmOverloads
-    fun asUpperCaseString(v: Any?, defaultValue: String? = null): String? = when (v) {
-        null -> defaultValue?.uppercase()
-        else -> v.toString().uppercase()
-    }
-
-    // :: Boolean
-
-    @JvmStatic
-    @JvmOverloads
-    fun asBoolean(v: Any?, defaultValue: Boolean? = null): Boolean? = when (v) {
-        null -> defaultValue
-        is Boolean -> v
-        is Number -> v.toInt() != 0
-        is Char -> when (v) {
-            's', 'S', 't', 'T' -> true
-            'n', 'N', 'f', 'F' -> false
-            else -> defaultValue
-        }
-        is String -> when {
-            v.isEmpty() -> defaultValue
-            v.length == 1 -> when (v[0]) {
-                's', 'S', 't', 'T' -> true
-                'n', 'N', 'f', 'F' -> false
-                else -> defaultValue
-            }
-            v.equals("true", ignoreCase = true) || v.equals("sim", ignoreCase = true) -> true
-            v.equals("false", ignoreCase = true) || v.equals("nao", ignoreCase = true) -> false
-            else -> throw IllegalArgumentException(errorMessage(v))
-        }
-        else -> throw IllegalArgumentException(errorMessage(v))
-    }
-
-    // :: Byte
-
-    @JvmStatic
-    @JvmOverloads
-    fun asByte(v: Any?, defaultValue: Byte? = null): Byte? = when (v) {
-        null -> defaultValue
-        is Byte -> v
-        is Number -> v.toByte()
-        is String -> if (v.isEmpty()) defaultValue else v.toByte()
-        is Boolean -> if (v) 1 else 0
-        else -> throw NumberFormatException(errorMessage(v))
-    }
-
-    // :: Short
-
-    @JvmStatic
-    @JvmOverloads
-    fun asShort(v: Any?, defaultValue: Short? = null): Short? = when (v) {
-        null -> defaultValue
-        is Short -> v
-        is Number -> v.toShort()
-        is String -> if (v.isEmpty()) defaultValue else v.toShort()
-        is Boolean -> if (v) 1 else 0
-        else -> throw NumberFormatException(errorMessage(v))
-    }
-
-    // :: Integer
-
-    @JvmStatic
-    @JvmOverloads
-    fun asInteger(v: Any?, defaultValue: Int? = null): Int? = when (v) {
-        null -> defaultValue
-        is Int -> v
-        is Number -> v.toInt()
-        is String -> if (v.isEmpty()) defaultValue else v.toInt()
-        is Boolean -> if (v) 1 else 0
-        else -> throw NumberFormatException(errorMessage(v))
-    }
-
-    // :: Character
-
-    @JvmStatic
-    @JvmOverloads
-    fun asCharacter(v: Any?, defaultValue: Char? = null): Char? = when (v) {
-        null -> defaultValue
-        is Char -> v
-        is Number -> v.toInt().toChar()
-        is String -> if (v.isEmpty()) defaultValue else v[0]
-        is Boolean -> if (v) 'T' else 'F'
-        else -> throw NumberFormatException(errorMessage(v))
-    }
-
-    // :: Long
-
-    @JvmStatic
-    @JvmOverloads
-    fun asLong(v: Any?, defaultValue: Long? = null): Long? = when (v) {
-        null -> defaultValue
-        is Long -> v
-        is Number -> v.toLong()
-        is String -> if (v.isEmpty()) defaultValue else v.toLong()
-        is Boolean -> if (v) 1L else 0L
-        else -> throw NumberFormatException(errorMessage(v))
-    }
-
-    // :: BigInteger
+    // :: BigInteger (java.math)
 
     @JvmStatic
     @JvmOverloads
@@ -149,33 +32,7 @@ object CoerceUtils {
         else -> throw NumberFormatException(errorMessage(v))
     }
 
-    // :: Float
-
-    @JvmStatic
-    @JvmOverloads
-    fun asFloat(v: Any?, defaultValue: Float? = null): Float? = when (v) {
-        null -> defaultValue
-        is Float -> v
-        is Number -> v.toFloat()
-        is String -> if (v.isEmpty()) defaultValue else v.toFloat()
-        is Boolean -> if (v) 1.0f else 0.0f
-        else -> throw NumberFormatException(errorMessage(v))
-    }
-
-    // :: Double
-
-    @JvmStatic
-    @JvmOverloads
-    fun asDouble(v: Any?, defaultValue: Double? = null): Double? = when (v) {
-        null -> defaultValue
-        is Double -> v
-        is Number -> v.toDouble()
-        is String -> if (v.isEmpty()) defaultValue else v.toDouble()
-        is Boolean -> if (v) 1.0 else 0.0
-        else -> throw NumberFormatException(errorMessage(v))
-    }
-
-    // :: BigDecimal
+    // :: BigDecimal (java.math)
 
     @JvmStatic
     @JvmOverloads
@@ -200,18 +57,18 @@ object CoerceUtils {
         v == null -> defaultValue
         v is Number -> v
         defaultValue == null -> asBigDecimal(v)
-        defaultValue is Int -> asInteger(v, defaultValue)
-        defaultValue is Long -> asLong(v, defaultValue)
-        defaultValue is Short -> asShort(v, defaultValue)
-        defaultValue is Byte -> asByte(v, defaultValue)
-        defaultValue is Double -> asDouble(v, defaultValue)
-        defaultValue is Float -> asFloat(v, defaultValue)
+        defaultValue is Int -> CoerceUtils.asInteger(v, defaultValue)
+        defaultValue is Long -> CoerceUtils.asLong(v, defaultValue)
+        defaultValue is Short -> CoerceUtils.asShort(v, defaultValue)
+        defaultValue is Byte -> CoerceUtils.asByte(v, defaultValue)
+        defaultValue is Double -> CoerceUtils.asDouble(v, defaultValue)
+        defaultValue is Float -> CoerceUtils.asFloat(v, defaultValue)
         defaultValue is BigInteger -> asBigInteger(v, defaultValue)
         defaultValue is BigDecimal -> asBigDecimal(v, defaultValue)
         else -> throw NumberFormatException(errorMessage(v))
     }
 
-    // :: Date
+    // :: java.util.Date
 
     @JvmStatic
     @JvmOverloads
@@ -236,7 +93,7 @@ object CoerceUtils {
         else -> throw IllegalArgumentException(errorMessage(v))
     }
 
-    // :: Timestamp
+    // :: java.sql.Timestamp
 
     @JvmStatic
     @JvmOverloads
@@ -256,7 +113,7 @@ object CoerceUtils {
         else -> throw IllegalArgumentException(errorMessage(v))
     }
 
-    // :: SqlDate
+    // :: java.sql.Date
 
     @JvmStatic
     @JvmOverloads
@@ -276,11 +133,11 @@ object CoerceUtils {
         else -> throw IllegalArgumentException(errorMessage(v))
     }
 
-    // :: LocalDate
+    // :: java.time.LocalDate
 
     @JvmStatic
     @JvmOverloads
-    fun asLocalDate(v: Any?, defaultValue: LocalDate? = null): LocalDate? = when (v) {
+    fun asJavaLocalDate(v: Any?, defaultValue: LocalDate? = null): LocalDate? = when (v) {
         null -> defaultValue
         is LocalDate -> v
         is java.sql.Timestamp -> v.toLocalDateTime().toLocalDate()
@@ -297,11 +154,11 @@ object CoerceUtils {
         else -> throw IllegalArgumentException(errorMessage(v))
     }
 
-    // :: LocalDateTime
+    // :: java.time.LocalDateTime
 
     @JvmStatic
     @JvmOverloads
-    fun asLocalDateTime(v: Any?, defaultValue: LocalDateTime? = null): LocalDateTime? = when (v) {
+    fun asJavaLocalDateTime(v: Any?, defaultValue: LocalDateTime? = null): LocalDateTime? = when (v) {
         null -> defaultValue
         is LocalDateTime -> v
         is java.sql.Timestamp -> v.toLocalDateTime()
@@ -318,7 +175,7 @@ object CoerceUtils {
         else -> throw IllegalArgumentException(errorMessage(v))
     }
 
-    // :: LocalTime
+    // :: java.time.LocalTime
 
     @JvmStatic
     @JvmOverloads
@@ -379,17 +236,7 @@ object CoerceUtils {
         else -> throw IllegalArgumentException(errorMessage(v))
     }
 
-    // :: ByteArray
-
-    @JvmStatic
-    @JvmOverloads
-    fun asByteArray(v: Any?, defaultValue: ByteArray? = null): ByteArray? = when (v) {
-        null -> defaultValue
-        is ByteArray -> v
-        is Byte -> byteArrayOf(v)
-        is String -> if (v.isEmpty()) defaultValue else Base64.getDecoder().decode(v)
-        else -> throw IllegalArgumentException(errorMessage(v))
-    }
+    // :: ByteArray from Hex
 
     @JvmStatic
     @JvmOverloads
@@ -398,6 +245,18 @@ object CoerceUtils {
         is ByteArray -> v
         is Byte -> byteArrayOf(v)
         is String -> if (v.isEmpty()) defaultValue else HexFormat.of().parseHex(v)
+        else -> throw IllegalArgumentException(errorMessage(v))
+    }
+
+    // :: ByteArray (Base64 - java.util)
+
+    @JvmStatic
+    @JvmOverloads
+    fun asByteArray(v: Any?, defaultValue: ByteArray? = null): ByteArray? = when (v) {
+        null -> defaultValue
+        is ByteArray -> v
+        is Byte -> byteArrayOf(v)
+        is String -> if (v.isEmpty()) defaultValue else Base64.getDecoder().decode(v)
         else -> throw IllegalArgumentException(errorMessage(v))
     }
 

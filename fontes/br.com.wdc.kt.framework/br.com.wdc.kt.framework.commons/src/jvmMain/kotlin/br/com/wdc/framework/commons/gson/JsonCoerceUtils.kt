@@ -1,6 +1,7 @@
 package br.com.wdc.framework.commons.gson
 
 import br.com.wdc.framework.commons.lang.CoerceUtils
+import br.com.wdc.framework.commons.lang.CoerceUtilsJvm
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import java.io.IOException
@@ -126,9 +127,9 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asBigInteger(jr: JsonReader, defaultValue: BigInteger? = null): BigInteger? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.NUMBER -> CoerceUtils.asBigInteger(jr.nextLong())
-        JsonToken.BOOLEAN -> CoerceUtils.asBigInteger(jr.nextBoolean())
-        JsonToken.STRING -> CoerceUtils.asBigInteger(jr.nextString())
+        JsonToken.NUMBER -> CoerceUtilsJvm.asBigInteger(jr.nextLong())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asBigInteger(jr.nextBoolean())
+        JsonToken.STRING -> CoerceUtilsJvm.asBigInteger(jr.nextString())
         else -> throw newInvalidValueFound(jr)
     }
 
@@ -162,9 +163,9 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asBigDecimal(jr: JsonReader, defaultValue: BigDecimal? = null): BigDecimal? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.NUMBER -> CoerceUtils.asBigDecimal(jr.nextDouble())
-        JsonToken.BOOLEAN -> CoerceUtils.asBigDecimal(jr.nextBoolean())
-        JsonToken.STRING -> CoerceUtils.asBigDecimal(jr.nextString())
+        JsonToken.NUMBER -> CoerceUtilsJvm.asBigDecimal(jr.nextDouble())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asBigDecimal(jr.nextBoolean())
+        JsonToken.STRING -> CoerceUtilsJvm.asBigDecimal(jr.nextString())
         else -> throw newInvalidValueFound(jr)
     }
 
@@ -174,9 +175,9 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asDate(jr: JsonReader, defaultValue: java.util.Date? = null): java.util.Date? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.NUMBER -> CoerceUtils.asDate(jr.nextDouble())
-        JsonToken.BOOLEAN -> CoerceUtils.asDate(jr.nextBoolean())
-        JsonToken.STRING -> CoerceUtils.asDate(jr.nextString())
+        JsonToken.NUMBER -> CoerceUtilsJvm.asDate(jr.nextDouble())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asDate(jr.nextBoolean())
+        JsonToken.STRING -> CoerceUtilsJvm.asDate(jr.nextString())
         else -> throw newInvalidValueFound(jr)
     }
 
@@ -186,9 +187,9 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asTimestamp(jr: JsonReader, defaultValue: java.sql.Timestamp? = null): java.sql.Timestamp? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.NUMBER -> CoerceUtils.asTimestamp(jr.nextDouble())
-        JsonToken.BOOLEAN -> CoerceUtils.asTimestamp(jr.nextBoolean())
-        JsonToken.STRING -> CoerceUtils.asTimestamp(jr.nextString())
+        JsonToken.NUMBER -> CoerceUtilsJvm.asTimestamp(jr.nextDouble())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asTimestamp(jr.nextBoolean())
+        JsonToken.STRING -> CoerceUtilsJvm.asTimestamp(jr.nextString())
         else -> throw newInvalidValueFound(jr)
     }
 
@@ -198,9 +199,9 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asSqlDate(jr: JsonReader, defaultValue: java.sql.Date? = null): java.sql.Date? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.NUMBER -> CoerceUtils.asSqlDate(jr.nextDouble())
-        JsonToken.BOOLEAN -> CoerceUtils.asSqlDate(jr.nextBoolean())
-        JsonToken.STRING -> CoerceUtils.asSqlDate(jr.nextString())
+        JsonToken.NUMBER -> CoerceUtilsJvm.asSqlDate(jr.nextDouble())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asSqlDate(jr.nextBoolean())
+        JsonToken.STRING -> CoerceUtilsJvm.asSqlDate(jr.nextString())
         else -> throw newInvalidValueFound(jr)
     }
 
@@ -210,9 +211,9 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asLocalDate(jr: JsonReader, defaultValue: LocalDate? = null): LocalDate? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.NUMBER -> CoerceUtils.asLocalDate(jr.nextDouble())
-        JsonToken.BOOLEAN -> CoerceUtils.asLocalDate(jr.nextBoolean())
-        JsonToken.STRING -> CoerceUtils.asLocalDate(jr.nextString())
+        JsonToken.NUMBER -> CoerceUtilsJvm.asJavaLocalDate(jr.nextDouble())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asJavaLocalDate(jr.nextBoolean())
+        JsonToken.STRING -> CoerceUtilsJvm.asJavaLocalDate(jr.nextString())
         else -> throw newInvalidValueFound(jr)
     }
 
@@ -222,9 +223,9 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asLocalDateTime(jr: JsonReader, defaultValue: LocalDateTime? = null): LocalDateTime? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.NUMBER -> CoerceUtils.asLocalDateTime(jr.nextDouble())
-        JsonToken.BOOLEAN -> CoerceUtils.asLocalDateTime(jr.nextBoolean())
-        JsonToken.STRING -> CoerceUtils.asLocalDateTime(jr.nextString())
+        JsonToken.NUMBER -> CoerceUtilsJvm.asJavaLocalDateTime(jr.nextDouble())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asJavaLocalDateTime(jr.nextBoolean())
+        JsonToken.STRING -> CoerceUtilsJvm.asJavaLocalDateTime(jr.nextString())
         else -> throw newInvalidValueFound(jr)
     }
 
@@ -234,9 +235,9 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asOffsetDateTime(jr: JsonReader, defaultValue: OffsetDateTime? = null): OffsetDateTime? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.NUMBER -> CoerceUtils.asOffsetDateTime(jr.nextDouble())
-        JsonToken.BOOLEAN -> CoerceUtils.asOffsetDateTime(jr.nextBoolean())
-        JsonToken.STRING -> CoerceUtils.asOffsetDateTime(jr.nextString())
+        JsonToken.NUMBER -> CoerceUtilsJvm.asOffsetDateTime(jr.nextDouble())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asOffsetDateTime(jr.nextBoolean())
+        JsonToken.STRING -> CoerceUtilsJvm.asOffsetDateTime(jr.nextString())
         else -> throw newInvalidValueFound(jr)
     }
 
@@ -246,9 +247,9 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asZonedDateTime(jr: JsonReader, defaultValue: ZonedDateTime? = null): ZonedDateTime? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.NUMBER -> CoerceUtils.asZonedDateTime(jr.nextDouble())
-        JsonToken.BOOLEAN -> CoerceUtils.asZonedDateTime(jr.nextBoolean())
-        JsonToken.STRING -> CoerceUtils.asZonedDateTime(jr.nextString())
+        JsonToken.NUMBER -> CoerceUtilsJvm.asZonedDateTime(jr.nextDouble())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asZonedDateTime(jr.nextBoolean())
+        JsonToken.STRING -> CoerceUtilsJvm.asZonedDateTime(jr.nextString())
         else -> throw newInvalidValueFound(jr)
     }
 
@@ -258,12 +259,12 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asByteArray(jr: JsonReader, defaultValue: ByteArray? = null): ByteArray? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.STRING -> CoerceUtils.asByteArray(jr.nextString())
-        JsonToken.BOOLEAN -> CoerceUtils.asByteArray(jr.nextBoolean(), defaultValue)
+        JsonToken.STRING -> CoerceUtilsJvm.asByteArray(jr.nextString())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asByteArray(jr.nextBoolean(), defaultValue)
         JsonToken.NUMBER -> {
             val numStr = jr.nextString()
-            if (isIntegerFormat(numStr)) CoerceUtils.asByteArray(numStr.toLong(), defaultValue)
-            else CoerceUtils.asByteArray(numStr.toDouble(), defaultValue)
+            if (isIntegerFormat(numStr)) CoerceUtilsJvm.asByteArray(numStr.toLong(), defaultValue)
+            else CoerceUtilsJvm.asByteArray(numStr.toDouble(), defaultValue)
         }
         else -> throw newInvalidValueFound(jr)
     }
@@ -272,12 +273,12 @@ object JsonCoerceUtils {
     @JvmOverloads
     fun asByteArrayFromHex(jr: JsonReader, defaultValue: ByteArray? = null): ByteArray? = when (jr.peek()) {
         JsonToken.NULL -> { jr.nextNull(); defaultValue }
-        JsonToken.STRING -> CoerceUtils.asByteArrayFromHex(jr.nextString())
-        JsonToken.BOOLEAN -> CoerceUtils.asByteArrayFromHex(jr.nextBoolean(), defaultValue)
+        JsonToken.STRING -> CoerceUtilsJvm.asByteArrayFromHex(jr.nextString())
+        JsonToken.BOOLEAN -> CoerceUtilsJvm.asByteArrayFromHex(jr.nextBoolean(), defaultValue)
         JsonToken.NUMBER -> {
             val numStr = jr.nextString()
-            if (isIntegerFormat(numStr)) CoerceUtils.asByteArrayFromHex(numStr.toLong(), defaultValue)
-            else CoerceUtils.asByteArrayFromHex(numStr.toDouble(), defaultValue)
+            if (isIntegerFormat(numStr)) CoerceUtilsJvm.asByteArrayFromHex(numStr.toLong(), defaultValue)
+            else CoerceUtilsJvm.asByteArrayFromHex(numStr.toDouble(), defaultValue)
         }
         else -> throw newInvalidValueFound(jr)
     }

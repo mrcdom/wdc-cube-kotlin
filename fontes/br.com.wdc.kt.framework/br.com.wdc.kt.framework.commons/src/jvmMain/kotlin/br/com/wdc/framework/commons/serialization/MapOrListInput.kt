@@ -1,6 +1,7 @@
 package br.com.wdc.framework.commons.serialization
 
 import br.com.wdc.framework.commons.lang.CoerceUtils
+import br.com.wdc.framework.commons.lang.CoerceUtilsJvm
 import java.io.IOException
 
 class MapOrListInput : ExtensibleObjectInput {
@@ -135,7 +136,7 @@ class MapOrListInput : ExtensibleObjectInput {
     }
 
     override fun nextNumber(): Number? {
-        val result = CoerceUtils.asNumber(current.value)
+        val result = CoerceUtilsJvm.asNumber(current.value)
         fetchNext()
         return result
     }

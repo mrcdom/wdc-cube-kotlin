@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.persistence.repository.product
 
-import br.com.wdc.framework.commons.lang.CoerceUtils
+import br.com.wdc.framework.commons.lang.CoerceUtilsJvm
 import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.persistence.repository.BaseCommand
 import br.com.wdc.shopping.persistence.schema.EnProduct
@@ -32,7 +32,7 @@ class UpdateProductRowCmd : BaseCommand() {
                 hasChanges = true
             }
 
-            val newPrice = CoerceUtils.asBigDecimal(newBean.price)
+            val newPrice = CoerceUtilsJvm.asBigDecimal(newBean.price)
             if (row.price != newPrice) {
                 row.price(newPrice)
                 hasChanges = true
