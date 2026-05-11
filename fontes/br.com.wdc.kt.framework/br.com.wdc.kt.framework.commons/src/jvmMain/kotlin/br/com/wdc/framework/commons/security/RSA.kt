@@ -1,45 +1,23 @@
 package br.com.wdc.framework.commons.security
 
-import java.math.BigInteger
+import com.ionspin.kotlin.bignum.integer.BigInteger
 import java.util.Random
 
-class RSA {
+/**
+ * Factory to generate RSA keys using probable primes (JVM only).
+ */
+fun RSA.Companion.generate(n: Int, random: Random): RSA {
+    val p = java.math.BigInteger.probablePrime(n / 2, random)
+    val q = java.math.BigInteger.probablePrime(n / 2, random)
+    val phi = (p - java.math.BigInteger.ONE) * (q - java.math.BigInteger.ONE)
 
-    var privateKey: BigInteger
-        private set
-    var publicExponent: BigInteger
-        private set
-    var publicKey: BigInteger
-        private set
+    val jPublicKey = p * q
+    val jPublicExponent = java.math.BigInteger.valueOf(65537)
+    val jPrivateKey = jPublicExponent.modInverse(phi)
 
-    constructor(n: Int, random: Random) {
-        val p = BigInteger.probablePrime(n / 2, random)
-        val q = BigInteger.probablePrime(n / 2, random)
-        val phi = (p - BigInteger.ONE) * (q - BigInteger.ONE)
-
-        publicKey = p * q
-        publicExponent = N65537
-        privateKey = publicExponent.modInverse(phi)
-    }
-
-    constructor(publicExponent: BigInteger, privateKey: BigInteger, publicKey: BigInteger) {
-        this.publicExponent = publicExponent
-        this.privateKey = privateKey
-        this.publicKey = publicKey
-    }
-
-    fun encrypt(message: BigInteger): BigInteger = message.modPow(publicExponent, publicKey)
-
-    fun decrypt(encrypted: BigInteger): BigInteger = encrypted.modPow(privateKey, publicKey)
-
-    override fun toString(): String = buildString(256) {
-        append("publicExponent  = ").append(publicExponent.toString(16)).append('\n')
-        append("publicKey  = ").append(publicKey.toString(16)).append('\n')
-        append("privateKey  = ").append(privateKey.toString(16)).append('\n')
-    }
-
-    companion object {
-        @JvmField
-        val N65537: BigInteger = BigInteger.valueOf(65537)
-    }
+    return RSA(
+        publicExponent = BigInteger.parseString(jPublicExponent.toString(16), 16),
+        privateKey = BigInteger.parseString(jPrivateKey.toString(16), 16),
+        publicKey = BigInteger.parseString(jPublicKey.toString(16), 16)
+    )
 }

@@ -2,7 +2,8 @@ package br.com.wdc.shopping.view.react.skeleton.util
 
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.security.RSA
-import java.math.BigInteger
+import br.com.wdc.framework.commons.security.generate
+import com.ionspin.kotlin.bignum.integer.BigInteger
 import java.security.*
 import java.security.spec.InvalidKeySpecException
 import java.security.spec.PKCS8EncodedKeySpec
@@ -43,9 +44,9 @@ object AppSecurity {
                 sPublicKey = parts[1]
             }
 
-            val publicExponent = BigInteger(sPublicExponent, 36)
-            val publicKey = BigInteger(sPublicKey, 36)
-            val privateKey = BigInteger(wdcPrivateKey, 36)
+            val publicExponent = BigInteger.parseString(sPublicExponent, 36)
+            val publicKey = BigInteger.parseString(sPublicKey, 36)
+            val privateKey = BigInteger.parseString(wdcPrivateKey, 36)
             this.rsa = RSA(publicExponent, privateKey, publicKey)
             this.webKey = wdcPublicKey
         }
@@ -124,7 +125,7 @@ object AppSecurity {
 
         // :: Exemplo de como gerar chaves para a cifragem
         run {
-            val rsa = RSA(256, SecureRandom())
+            val rsa = RSA.generate(256, SecureRandom())
             val pk = rsa.publicExponent.toString(36) + ":" + rsa.publicKey.toString(36)
             val pv = rsa.publicKey.toString(36)
             out.println("<property name=\"wdc.web.public_key\" value=\"$pk\"/>")

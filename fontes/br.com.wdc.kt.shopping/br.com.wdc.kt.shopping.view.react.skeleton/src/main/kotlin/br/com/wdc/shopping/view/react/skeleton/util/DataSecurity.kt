@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.view.react.skeleton.util
 
 import br.com.wdc.framework.commons.log.Log
-import java.math.BigInteger
+import com.ionspin.kotlin.bignum.integer.BigInteger
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import javax.crypto.Cipher
@@ -33,7 +33,7 @@ class DataSecurity {
 
             val password: String
             run {
-                val messageEncryptedAsBigInt = BigInteger(signatureParts[0], 36)
+                val messageEncryptedAsBigInt = BigInteger.parseString(signatureParts[0], 36)
                 val messageAsBigint = security.rsa.decrypt(messageEncryptedAsBigInt)
                 val messageAsSafeBytes = messageAsBigint.toByteArray()
                 val message = Base64.getDecoder().decode(messageAsSafeBytes)
