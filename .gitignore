@@ -16,5 +16,15 @@ fontes/.gradle/
 fontes/build/
 fontes/local.properties
 
+# Node
+node_modules/
+
+# Runtime data
+fontes/work/
+**/work/data/
+**/work/log/
+**/work/temp/
+*.mv.db
+
 # Maven (legacy)
 target/

@@ -33,7 +33,7 @@ abstract class ShoppingApplication : CubeApplication() {
 
     fun getRootPlace(): CubePlace = Routes.Place.ROOT
 
-    fun getRootPresenter(): RootPresenter? =
+    open fun getRootPresenter(): RootPresenter? =
         getPresenter(Routes.Place.ROOT.id) as? RootPresenter
 
     fun getSecurityContext(): SecurityContext? = securityContext
@@ -85,7 +85,7 @@ abstract class ShoppingApplication : CubeApplication() {
 
     // :: API
 
-    fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
+    open fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
         getRootPresenter()?.alertUnexpectedError(logger, message, e)
     }
 

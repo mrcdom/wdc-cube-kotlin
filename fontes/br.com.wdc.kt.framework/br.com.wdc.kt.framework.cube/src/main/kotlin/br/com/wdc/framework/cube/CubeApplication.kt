@@ -15,7 +15,7 @@ abstract class CubeApplication {
 
     fun getPresenter(placeId: Int): CubePresenter? = presenterMap[placeId]
 
-    fun release() {
+    open fun release() {
         val presenterIds = presenterMap.keys.sortedDescending().toList()
 
         for (presenterId in presenterIds) {
@@ -87,6 +87,12 @@ abstract class CubeApplication {
     abstract fun updateHistory()
 
     protected abstract fun createPresenterMap(): MutableMap<Int, CubePresenter>
+
+    fun forEachPresenter(action: (CubePresenter) -> Unit) {
+        presenterMap.values.forEach(action)
+    }
+
+    protected fun getLastPlace(): CubePlace? = lastPlace
 
     private companion object {
         val LOG = Log.getLogger(CubeApplication::class.java.simpleName)

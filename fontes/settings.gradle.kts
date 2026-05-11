@@ -13,6 +13,8 @@ include(":shopping-persistence")
 include(":shopping-scripts")
 include(":shopping-presentation")
 include(":shopping-tests")
+include(":view-react-skeleton")
+include(":view-react-javalin")
 
 // Map module names to actual directory paths
 project(":framework-commons").projectDir      = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.commons")
@@ -22,3 +24,5 @@ project(":shopping-persistence").projectDir   = file("br.com.wdc.kt.shopping/br.
 project(":shopping-scripts").projectDir       = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.scripts")
 project(":shopping-presentation").projectDir  = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.presentation")
 project(":shopping-tests").projectDir         = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.tests")
+project(":view-react-skeleton").projectDir    = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.react.skeleton")
+project(":view-react-javalin").projectDir     = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.react.javalin")
