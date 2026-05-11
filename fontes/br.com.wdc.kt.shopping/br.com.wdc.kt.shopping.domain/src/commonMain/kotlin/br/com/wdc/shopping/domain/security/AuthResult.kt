@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.domain.security
 
-import java.time.Instant
+import kotlinx.datetime.Instant
 
 data class AuthResult(
     val userId: Long,

@@ -1,12 +1,12 @@
 package br.com.wdc.shopping.domain.security
 
-object SecurityContextHolder {
+actual object SecurityContextHolder {
 
     private val HOLDER = ThreadLocal<SecurityContext>()
 
-    fun get(): SecurityContext? = HOLDER.get()
+    actual fun get(): SecurityContext? = HOLDER.get()
 
-    fun set(ctx: SecurityContext) = HOLDER.set(ctx)
+    actual fun set(ctx: SecurityContext) = HOLDER.set(ctx)
 
-    fun clear() = HOLDER.remove()
+    actual fun clear() = HOLDER.remove()
 }

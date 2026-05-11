@@ -42,7 +42,7 @@ class PurchaseInfo {
             tgt.id = src.id ?: -1L
 
             val buyDate = CoerceUtilsJvm.asDate(src.buyDate)
-            tgt.date = (buyDate ?: pv.date).time
+            tgt.date = buyDate?.time ?: 115754400000L
             val itemsList = mutableListOf<String>()
 
             var total = 0.0

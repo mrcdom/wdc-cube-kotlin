@@ -10,6 +10,7 @@ import br.com.wdc.shopping.domain.security.ChallengeResult
 import br.com.wdc.shopping.domain.security.Role
 import br.com.wdc.shopping.domain.security.SecurityContext
 import br.com.wdc.shopping.domain.utils.ProjectionValues
+import kotlinx.datetime.toKotlinInstant
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import javax.crypto.Mac
@@ -46,7 +47,7 @@ class AuthenticationServiceImpl(
     override fun challenge(): ChallengeResult {
         val nonce = nonceStore.generate()
         val expiresAt = nonceStore.expiresAt(nonce)!!
-        return ChallengeResult(nonce, expiresAt)
+        return ChallengeResult(nonce, expiresAt.toKotlinInstant())
     }
 
     override fun login(userName: String, digest: String, nonce: String): AuthResult? {
@@ -75,7 +76,7 @@ class AuthenticationServiceImpl(
         val session = cache.createSession(user.id!!, user.userName!!, permissions)
         val accessToken = JwtUtil.create(user.id!!, user.userName!!, cache.accessTokenTtl, cache.jwtSecret)
 
-        return AuthResult(user.id!!, accessToken, session.refreshToken, session.expiresAt, session.publicKeyBase64)
+        return AuthResult(user.id!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64)
     }
 
     override fun refresh(refreshToken: String): AuthResult? {
@@ -84,7 +85,7 @@ class AuthenticationServiceImpl(
         val accessToken = JwtUtil.create(session.userId!!, session.userName!!,
             cache.accessTokenTtl, cache.jwtSecret)
 
-        return AuthResult(session.userId!!, accessToken, session.refreshToken, session.expiresAt, session.publicKeyBase64)
+        return AuthResult(session.userId!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64)
     }
 
     override fun logout(refreshToken: String) {
