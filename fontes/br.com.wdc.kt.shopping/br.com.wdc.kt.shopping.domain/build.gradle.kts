@@ -1,6 +1,19 @@
-dependencies {
-    api(project(":framework-commons"))
+plugins {
+    alias(libs.plugins.kotlin.multiplatform)
+}
 
-    testImplementation(libs.kotlin.test.junit5)
-    testImplementation(libs.junit.jupiter)
+kotlin {
+    jvmToolchain(21)
+
+    jvm()
+
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":framework-commons"))
+        }
+        jvmTest.dependencies {
+            implementation(libs.kotlin.test.junit5)
+            implementation(libs.junit.jupiter)
+        }
+    }
 }
