@@ -1,5 +1,10 @@
 package br.com.wdc.shopping.persistence.client
 
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
+import br.com.wdc.framework.commons.serialization.JsonOutputFactory
+
 class RestConfig(val transport: HttpTransport) {
 
     var authClient: RestAuthClient? = null
@@ -14,24 +19,37 @@ class RestConfig(val transport: HttpTransport) {
         }
     }
 
-    fun postJson(path: String, body: Map<String, Any?>) =
-        transport.postJson(path, body)
+    /** Create a JSON writer; call [block] to write, then the resulting JSON string is returned. */
+    inline fun toJson(block: (ExtensibleObjectOutput) -> Unit): String {
+        val jso = JsonOutputFactory.createStringOutput()
+        block(jso.output)
+        return jso.resultString()
+    }
 
-    fun postJsonNullable(path: String, body: Map<String, Any?>) =
-        transport.postJsonNullable(path, body)
+    /** Parse a JSON string into an [ExtensibleObjectInput]. */
+    fun fromJson(json: String): ExtensibleObjectInput =
+        JsonInputFactory.createStringInput(json).input
 
-    fun postJsonPublic(path: String, body: Map<String, Any?>) =
-        transport.postJsonPublic(path, body)
+    fun postJson(path: String, body: String): ExtensibleObjectInput =
+        fromJson(transport.postJson(path, body))
 
-    fun postJsonWithAuth(path: String, body: Map<String, Any?>, token: String) =
-        transport.postJsonWithAuth(path, body, token)
+    fun postJsonNullable(path: String, body: String): ExtensibleObjectInput? {
+        val json = transport.postJsonNullable(path, body) ?: return null
+        return fromJson(json)
+    }
 
-    fun getJson(path: String) =
-        transport.getJson(path)
+    fun postJsonPublic(path: String, body: String): ExtensibleObjectInput =
+        fromJson(transport.postJsonPublic(path, body))
 
-    fun getBytes(path: String) =
+    fun postJsonWithAuth(path: String, body: String, token: String): ExtensibleObjectInput =
+        fromJson(transport.postJsonWithAuth(path, body, token))
+
+    fun getJson(path: String): ExtensibleObjectInput =
+        fromJson(transport.getJson(path))
+
+    fun getBytes(path: String): ByteArray? =
         transport.getBytes(path)
 
-    fun putBytes(path: String, data: ByteArray) =
+    fun putBytes(path: String, data: ByteArray): Boolean =
         transport.putBytes(path, data)
 }

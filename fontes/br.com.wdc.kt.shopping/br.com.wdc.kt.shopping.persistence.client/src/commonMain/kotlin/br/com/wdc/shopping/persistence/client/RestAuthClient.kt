@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.persistence.client
 
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
 import br.com.wdc.shopping.domain.exception.BusinessException
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import kotlinx.datetime.Instant
@@ -22,43 +23,41 @@ class RestAuthClient(private val config: RestConfig) {
 
     fun login(userName: String, passwordHash: String) {
         // 1. Get challenge (nonce)
-        val challengeResponse = config.getJson("/api/auth/challenge")
-        val nonce = challengeResponse.string("nonce")
+        val challengeInput = config.getJson("/api/auth/challenge")
+        val nonce = readStringField(challengeInput, "nonce")
 
         // 2. Compute HMAC: key=passwordHash, data=userName+nonce
         val digest = computeHmac(passwordHash, userName + nonce)
 
         // 3. Send login
-        val loginBody = mapOf(
-            "userName" to userName,
-            "digest" to digest,
-            "nonce" to nonce
-        )
+        val loginBody = config.toJson { out ->
+            out.beginObject()
+            out.name("userName").value(userName)
+            out.name("digest").value(digest)
+            out.name("nonce").value(nonce)
+            out.endObject()
+        }
 
-        val loginResponse = config.postJsonPublic("/api/auth/login", loginBody)
-
-        this.accessToken = loginResponse.string("accessToken")
-        this.refreshToken = loginResponse.string("refreshToken")
-        this.publicKeyBase64 = loginResponse.string("publicKey")
-        this.expiresAtEpochSecond = Instant.parse(loginResponse.string("expiresAt")).epochSeconds
+        val loginInput = config.postJsonPublic("/api/auth/login", loginBody)
+        readAuthTokens(loginInput)
     }
 
     fun refresh() {
         val rt = refreshToken ?: throw BusinessException("No refresh token available — login first")
 
-        val body = mapOf("refreshToken" to rt)
-        val response = config.postJsonPublic("/api/auth/refresh", body)
-
-        this.accessToken = response.string("accessToken")
-        this.refreshToken = response.string("refreshToken")
-        this.publicKeyBase64 = response.string("publicKey")
-        this.expiresAtEpochSecond = Instant.parse(response.string("expiresAt")).epochSeconds
+        val body = config.toJson { out ->
+            out.beginObject()
+            out.name("refreshToken").value(rt)
+            out.endObject()
+        }
+        val input = config.postJsonPublic("/api/auth/refresh", body)
+        readAuthTokens(input)
     }
 
     fun logout() {
         if (accessToken != null) {
             try {
-                config.postJsonWithAuth("/api/auth/logout", emptyMap(), accessToken!!)
+                config.postJsonWithAuth("/api/auth/logout", "{}", accessToken!!)
             } catch (_: Exception) {
                 // Ignore network errors on logout
             }
@@ -93,6 +92,20 @@ class RestAuthClient(private val config: RestConfig) {
         this.expiresAtEpochSecond = 0
     }
 
+    private fun readAuthTokens(input: ExtensibleObjectInput) {
+        input.beginObject()
+        while (input.hasNext()) {
+            when (input.nextName()) {
+                "accessToken" -> this.accessToken = input.nextString()
+                "refreshToken" -> this.refreshToken = input.nextString()
+                "publicKey" -> this.publicKeyBase64 = input.nextString()
+                "expiresAt" -> this.expiresAtEpochSecond = Instant.parse(input.nextString()).epochSeconds
+                else -> input.skipValue()
+            }
+        }
+        input.endObject()
+    }
+
     private fun computeHmac(key: String, data: String): String {
         val crypto = CryptoProvider.BEAN.get()
         val hash = crypto.hmacSha256(
@@ -101,4 +114,17 @@ class RestAuthClient(private val config: RestConfig) {
         )
         return bytesToHex(hash)
     }
+}
+
+private fun readStringField(input: ExtensibleObjectInput, fieldName: String): String {
+    var result = ""
+    input.beginObject()
+    while (input.hasNext()) {
+        when (input.nextName()) {
+            fieldName -> result = input.nextString()
+            else -> input.skipValue()
+        }
+    }
+    input.endObject()
+    return result
 }

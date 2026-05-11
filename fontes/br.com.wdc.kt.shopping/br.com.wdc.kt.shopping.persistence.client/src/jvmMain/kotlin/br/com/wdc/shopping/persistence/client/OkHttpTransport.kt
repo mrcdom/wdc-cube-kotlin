@@ -1,10 +1,6 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package br.com.wdc.shopping.persistence.client
 
 import br.com.wdc.shopping.domain.exception.BusinessException
-import com.google.gson.Gson
-import com.google.gson.JsonParser
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -16,7 +12,6 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     private val octetMediaType = "application/octet-stream".toMediaType()
-    private val gson = Gson()
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -26,31 +21,18 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
 
     override var accessTokenSupplier: (() -> String?)? = null
 
-    override fun postJson(path: String, body: Map<String, Any?>): Map<String, Any?> {
+    override fun postJson(path: String, body: String): String {
         val requestBuilder = Request.Builder()
             .url(baseUrl + path)
-            .post(gson.toJson(body).toRequestBody(jsonMediaType))
+            .post(body.toRequestBody(jsonMediaType))
         addAuthHeader(requestBuilder)
-
-        try {
-            client.newCall(requestBuilder.build()).execute().use { response ->
-                val responseBody = response.body?.string()
-                if (!response.isSuccessful) {
-                    throw BusinessException("HTTP ${response.code}: $responseBody")
-                }
-                return gson.fromJson(responseBody, Map::class.java) as Map<String, Any?>
-            }
-        } catch (e: BusinessException) {
-            throw e
-        } catch (e: IOException) {
-            throw BusinessException.wrap("POST $path", e)
-        }
+        return executeForString(requestBuilder.build(), "POST $path")
     }
 
-    override fun postJsonNullable(path: String, body: Map<String, Any?>): Map<String, Any?>? {
+    override fun postJsonNullable(path: String, body: String): String? {
         val requestBuilder = Request.Builder()
             .url(baseUrl + path)
-            .post(gson.toJson(body).toRequestBody(jsonMediaType))
+            .post(body.toRequestBody(jsonMediaType))
         addAuthHeader(requestBuilder)
 
         try {
@@ -60,7 +42,7 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
                 if (!response.isSuccessful) {
                     throw BusinessException("HTTP ${response.code}: $responseBody")
                 }
-                return gson.fromJson(responseBody, Map::class.java) as Map<String, Any?>
+                return responseBody ?: ""
             }
         } catch (e: BusinessException) {
             throw e
@@ -69,68 +51,29 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         }
     }
 
-    override fun postJsonPublic(path: String, body: Map<String, Any?>): Map<String, Any?> {
+    override fun postJsonPublic(path: String, body: String): String {
         val request = Request.Builder()
             .url(baseUrl + path)
-            .post(gson.toJson(body).toRequestBody(jsonMediaType))
+            .post(body.toRequestBody(jsonMediaType))
             .build()
-
-        try {
-            client.newCall(request).execute().use { response ->
-                val responseBody = response.body?.string()
-                if (!response.isSuccessful) {
-                    throw BusinessException("HTTP ${response.code}: $responseBody")
-                }
-                return gson.fromJson(responseBody, Map::class.java) as Map<String, Any?>
-            }
-        } catch (e: BusinessException) {
-            throw e
-        } catch (e: IOException) {
-            throw BusinessException.wrap("POST $path", e)
-        }
+        return executeForString(request, "POST $path")
     }
 
-    override fun postJsonWithAuth(path: String, body: Map<String, Any?>, token: String): Map<String, Any?> {
+    override fun postJsonWithAuth(path: String, body: String, token: String): String {
         val request = Request.Builder()
             .url(baseUrl + path)
-            .post(gson.toJson(body).toRequestBody(jsonMediaType))
+            .post(body.toRequestBody(jsonMediaType))
             .header("Authorization", "Bearer $token")
             .build()
-
-        try {
-            client.newCall(request).execute().use { response ->
-                val responseBody = response.body?.string()
-                if (!response.isSuccessful) {
-                    throw BusinessException("HTTP ${response.code}: $responseBody")
-                }
-                return gson.fromJson(responseBody, Map::class.java) as Map<String, Any?>
-            }
-        } catch (e: BusinessException) {
-            throw e
-        } catch (e: IOException) {
-            throw BusinessException.wrap("POST $path", e)
-        }
+        return executeForString(request, "POST $path")
     }
 
-    override fun getJson(path: String): Map<String, Any?> {
+    override fun getJson(path: String): String {
         val request = Request.Builder()
             .url(baseUrl + path)
             .get()
             .build()
-
-        try {
-            client.newCall(request).execute().use { response ->
-                val responseBody = response.body?.string()
-                if (!response.isSuccessful) {
-                    throw BusinessException("HTTP ${response.code}: $responseBody")
-                }
-                return gson.fromJson(responseBody, Map::class.java) as Map<String, Any?>
-            }
-        } catch (e: BusinessException) {
-            throw e
-        } catch (e: IOException) {
-            throw BusinessException.wrap("GET $path", e)
-        }
+        return executeForString(request, "GET $path")
     }
 
     override fun getBytes(path: String): ByteArray? {
@@ -165,14 +108,30 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
                 if (!response.isSuccessful) {
                     throw BusinessException("HTTP ${response.code}")
                 }
-                val responseBody = response.body?.string()
-                val json = JsonParser.parseString(responseBody).asJsonObject
-                return json.get("success").asBoolean
+                val responseBody = response.body?.string() ?: return false
+                return responseBody.contains("\"success\":true") ||
+                       responseBody.contains("\"success\": true")
             }
         } catch (e: BusinessException) {
             throw e
         } catch (e: IOException) {
             throw BusinessException.wrap("PUT $path", e)
+        }
+    }
+
+    private fun executeForString(request: Request, label: String): String {
+        try {
+            client.newCall(request).execute().use { response ->
+                val responseBody = response.body?.string()
+                if (!response.isSuccessful) {
+                    throw BusinessException("HTTP ${response.code}: $responseBody")
+                }
+                return responseBody ?: ""
+            }
+        } catch (e: BusinessException) {
+            throw e
+        } catch (e: IOException) {
+            throw BusinessException.wrap(label, e)
         }
     }
 

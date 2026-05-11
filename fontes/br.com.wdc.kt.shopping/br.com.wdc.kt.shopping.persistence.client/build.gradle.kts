@@ -12,7 +12,6 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(libs.okhttp)
-            implementation(libs.gson)
         }
     }
 }
