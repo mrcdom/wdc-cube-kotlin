@@ -7,6 +7,7 @@ import br.com.wdc.shopping.view.react.controller.DispatcherController
 import br.com.wdc.shopping.view.react.controller.ImageController
 import br.com.wdc.shopping.view.react.controller.IndexHtmlController
 import br.com.wdc.shopping.view.react.controller.StatusController
+import br.com.wdc.shopping.persistence.rest.RepositoryApiRoutes
 import io.javalin.Javalin
 import io.javalin.config.JavalinConfig
 import io.javalin.http.staticfiles.Location
@@ -203,6 +204,9 @@ class JavalinApplication(private val port: Int = DEFAULT_PORT) {
 
         StatusController.configure(config)
         ImageController.configure(config)
+
+        // Repository REST API
+        RepositoryApiRoutes.configure(config)
 
         config.routes.get("/") { ctx -> ctx.redirect("/index.html") }
 
