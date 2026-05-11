@@ -1,0 +1,19 @@
+# IDE
+.idea/
+.ecp-*/
+.project
+.settings/
+*.iml
+
+# macOS
+.DS_Store
+
+# Gradle
+.gradle/
+build/
+fontes/.gradle/
+fontes/build/
+fontes/local.properties
+
+# Maven (legacy)
+target/

@@ -1,0 +1,23 @@
+[versions]
+kotlin = "2.1.20"
+gson = "2.13.2"
+slf4j = "2.0.16"
+logback = "1.5.32"
+junit-jupiter = "5.11.4"
+h2 = "2.4.240"
+jdbi = "3.52.1"
+tomcat-dbcp = "6.0.53"
+
+[libraries]
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+tomcat-dbcp = { module = "org.apache.tomcat:dbcp", version.ref = "tomcat-dbcp" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
