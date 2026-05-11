@@ -1,4 +1,4 @@
-package br.com.wdc.shopping.api.client
+package br.com.wdc.shopping.persistence.client
 
 interface HttpTransport {
 

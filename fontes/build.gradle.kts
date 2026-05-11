@@ -13,7 +13,7 @@ allprojects {
 }
 
 // KMP modules handle their own plugin configuration
-val kmpModules = setOf("framework-commons", "framework-cube", "shopping-domain", "shopping-presentation", "shopping-api-client")
+val kmpModules = setOf("framework-commons", "framework-cube", "shopping-domain", "shopping-presentation", "shopping-persistence-client")
 
 subprojects {
     if (name !in kmpModules) {

@@ -1,6 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package br.com.wdc.shopping.api.client
+package br.com.wdc.shopping.persistence.client
 
 internal fun Map<String, Any?>.string(key: String): String =
     this[key] as String

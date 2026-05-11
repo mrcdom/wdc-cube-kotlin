@@ -1,4 +1,4 @@
-package br.com.wdc.shopping.api.client
+package br.com.wdc.shopping.persistence.client
 
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
