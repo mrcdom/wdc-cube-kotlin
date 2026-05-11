@@ -1,21 +1,20 @@
 package br.com.wdc.framework.cube.util
 
+import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeIntent
-import java.math.BigDecimal
-import java.math.BigInteger
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import com.ionspin.kotlin.bignum.integer.BigInteger
 import java.nio.charset.Charset
-import java.util.logging.Level
-import java.util.logging.Logger
 
 object QueryStringParser {
 
-    private val logger = Logger.getLogger(QueryStringParser::class.java.name)
+    private val logger = Log.getLogger("QueryStringParser")
 
     private val NUMERIC_PARSERS: Map<Class<*>, (String) -> Any?> = mapOf(
-        BigDecimal::class.java to { s -> BigDecimal(s) },
+        BigDecimal::class.java to { s -> BigDecimal.parseString(s) },
         Double::class.javaObjectType to { s -> s.toDouble() },
         Float::class.javaObjectType to { s -> s.toFloat() },
-        BigInteger::class.java to { s -> BigInteger(s) },
+        BigInteger::class.java to { s -> BigInteger.parseString(s) },
         Long::class.javaObjectType to { s -> s.toLong() },
         Int::class.javaObjectType to { s -> s.toInt() },
         Short::class.javaObjectType to { s -> s.toShort() },
@@ -28,7 +27,7 @@ object QueryStringParser {
                 val bytes = data.toByteArray(encoding)
                 parseParameters(url, bytes, encoding)
             } catch (exn: Exception) {
-                logger.log(Level.WARNING, "Parsing URL", exn)
+                logger.warn("Parsing URL: {}", exn.message)
             }
         }
     }
