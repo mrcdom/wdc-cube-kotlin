@@ -8,6 +8,8 @@ interface CryptoProvider {
 
     fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray
 
+    fun rsaEncryptOaep(publicKeyBase64: String, data: ByteArray): ByteArray
+
     companion object {
         val BEAN = AtomicRef<CryptoProvider>()
     }
