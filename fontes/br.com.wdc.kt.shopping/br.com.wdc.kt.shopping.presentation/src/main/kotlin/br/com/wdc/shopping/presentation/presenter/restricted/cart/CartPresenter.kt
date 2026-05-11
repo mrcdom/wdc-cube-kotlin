@@ -3,6 +3,7 @@ package br.com.wdc.shopping.presentation.presenter.restricted.cart
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView

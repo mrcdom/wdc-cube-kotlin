@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.scripts.sgbd
 
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.shopping.persistence.sql.SqlKeywords
 import br.com.wdc.shopping.persistence.sql.SqlList
 import br.com.wdc.shopping.persistence.sql.SqlUtils

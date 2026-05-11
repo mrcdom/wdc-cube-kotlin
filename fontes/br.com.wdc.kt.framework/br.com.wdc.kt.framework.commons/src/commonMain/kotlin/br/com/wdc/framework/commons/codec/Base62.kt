@@ -1,6 +1,5 @@
 package br.com.wdc.framework.commons.codec
 
-import java.io.ByteArrayOutputStream
 import kotlin.math.ceil
 import kotlin.math.ln
 
@@ -66,30 +65,30 @@ object Base62 {
 
     private fun convert(message: ByteArray, sourceBase: Int, targetBase: Int): ByteArray {
         val estimatedLength = estimateOutputLength(message.size, sourceBase, targetBase)
-        val out = ByteArrayOutputStream(estimatedLength)
+        val out = ArrayList<Byte>(estimatedLength)
         var source = message
 
         while (source.isNotEmpty()) {
-            val quotient = ByteArrayOutputStream(source.size)
+            val quotient = ArrayList<Byte>(source.size)
             var remainder = 0
 
             for (i in source.indices) {
                 val accumulator = (source[i].toInt() and 0xFF) + remainder * sourceBase
                 val digit = (accumulator - (accumulator % targetBase)) / targetBase
                 remainder = accumulator % targetBase
-                if (quotient.size() > 0 || digit > 0) {
-                    quotient.write(digit)
+                if (quotient.size > 0 || digit > 0) {
+                    quotient.add(digit.toByte())
                 }
             }
 
-            out.write(remainder)
+            out.add(remainder.toByte())
             source = quotient.toByteArray()
         }
 
         // pad output with zeroes corresponding to the number of leading zeroes in the message
         for (i in 0 until message.size - 1) {
             if (message[i] != 0.toByte()) break
-            out.write(0)
+            out.add(0)
         }
 
         return out.toByteArray().reversedArray()

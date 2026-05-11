@@ -1,12 +1,10 @@
 package br.com.wdc.framework.commons.serialization
 
-import java.io.IOException
-
 interface Externalizable {
 
-    @Throws(IOException::class)
+    @Throws(Exception::class)
     fun writeExternal(out: ExtensibleObjectOutput)
 
-    @Throws(IOException::class)
+    @Throws(Exception::class)
     fun readExternal(input: ExtensibleObjectInput)
 }

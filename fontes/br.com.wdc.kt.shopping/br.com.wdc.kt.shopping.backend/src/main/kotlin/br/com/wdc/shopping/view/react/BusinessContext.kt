@@ -2,6 +2,7 @@ package br.com.wdc.shopping.view.react
 
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.sql.SqlDataSource
 import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig

@@ -3,6 +3,7 @@ package br.com.wdc.shopping.view.react.skeleton.viewimpl
 import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 

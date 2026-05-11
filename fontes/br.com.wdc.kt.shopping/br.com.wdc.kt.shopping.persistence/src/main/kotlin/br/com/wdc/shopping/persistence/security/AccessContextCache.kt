@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.persistence.security
 
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
 import java.time.Duration

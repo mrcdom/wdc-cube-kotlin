@@ -1,15 +1,13 @@
 package br.com.wdc.framework.commons.log
 
-import java.util.concurrent.atomic.AtomicReference
-
 /**
- * Lightweight logging facade compatible with all runtimes (desktop, Android, iOS, TeaVM).
+ * Lightweight logging facade compatible with all runtimes (desktop, Android, iOS, Wasm).
  *
- * No reflection, no service-loading, no java.util.concurrent blocking structures.
+ * No reflection, no service-loading, no platform-specific blocking structures.
  *
  * Usage:
  * ```
- * private val LOG = Log.getLogger(MyClass::class.java)
+ * private val LOG = Log.getLogger("MyClass")
  * LOG.warn("something happened: {}", detail)
  * ```
  */
@@ -95,13 +93,8 @@ class Log(val name: String) {
 
     private fun defaultOutput(level: Level, formatted: String, t: Throwable?) {
         val line = "${level.name} [${shortName()}] $formatted"
-        if (level.ordinal <= Level.WARN.ordinal) {
-            System.err.println(line)
-            t?.printStackTrace(System.err)
-        } else {
-            println(line)
-            t?.printStackTrace(System.out)
-        }
+        println(line)
+        t?.printStackTrace()
     }
 
     private fun shortName(): String {
@@ -110,21 +103,17 @@ class Log(val name: String) {
     }
 
     companion object {
-        private val FACTORY = AtomicReference<Factory>(Factory { name -> Log(name) })
+        @Volatile
+        private var factoryRef: Factory = Factory { name -> Log(name) }
 
         @Volatile
         var globalLevel: Level = Level.DEBUG
 
-        @JvmStatic
         fun setFactory(factory: Factory?) {
-            FACTORY.set(factory ?: Factory { name -> Log(name) })
+            factoryRef = factory ?: Factory { name -> Log(name) }
         }
 
-        @JvmStatic
-        fun getLogger(clazz: Class<*>): Log = FACTORY.get().create(clazz.name)
-
-        @JvmStatic
-        fun getLogger(name: String): Log = FACTORY.get().create(name)
+        fun getLogger(name: String): Log = factoryRef.create(name)
 
         private fun format(msg: String?, args: Array<out Any?>?): String {
             if (msg == null) return ""

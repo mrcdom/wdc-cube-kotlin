@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.view.react.skeleton.util
 
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.security.RSA
 import java.math.BigInteger
 import java.security.*

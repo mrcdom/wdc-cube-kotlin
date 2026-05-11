@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.domain.config
 
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import java.nio.file.Files
 import java.nio.file.Paths
 

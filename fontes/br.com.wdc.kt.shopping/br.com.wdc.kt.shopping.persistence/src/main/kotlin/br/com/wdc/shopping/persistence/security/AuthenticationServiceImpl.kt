@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.persistence.security
 
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.shopping.domain.criteria.UserCriteria
 import br.com.wdc.shopping.domain.model.User
 import br.com.wdc.shopping.domain.repositories.UserRepository

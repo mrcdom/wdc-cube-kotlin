@@ -6,6 +6,7 @@ import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.gson.JsonExtensibleObjectOutput
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter

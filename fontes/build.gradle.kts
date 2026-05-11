@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
 }
 
 allprojects {
@@ -11,11 +12,16 @@ allprojects {
     }
 }
 
-subprojects {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
+// KMP modules handle their own plugin configuration
+val kmpModules = setOf("framework-commons")
 
-    configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
-        jvmToolchain(21)
+subprojects {
+    if (name !in kmpModules) {
+        apply(plugin = "org.jetbrains.kotlin.jvm")
+
+        configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+            jvmToolchain(21)
+        }
     }
 
     tasks.withType<Test> {

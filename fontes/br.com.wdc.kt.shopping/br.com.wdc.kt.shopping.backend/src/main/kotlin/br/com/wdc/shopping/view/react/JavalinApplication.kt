@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.view.react
 
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.log.Slf4jLogFactory
 import br.com.wdc.shopping.domain.config.AppConfig
 import br.com.wdc.shopping.view.react.controller.DispatcherController

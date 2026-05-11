@@ -1,7 +1,20 @@
-dependencies {
-    api(libs.gson)
-    compileOnly(libs.slf4j.api)
+plugins {
+    alias(libs.plugins.kotlin.multiplatform)
+}
 
-    testImplementation(libs.kotlin.test.junit5)
-    testImplementation(libs.junit.jupiter)
+kotlin {
+    jvmToolchain(21)
+
+    jvm()
+
+    sourceSets {
+        jvmMain.dependencies {
+            api(libs.gson)
+            compileOnly(libs.slf4j.api)
+        }
+        jvmTest.dependencies {
+            implementation(libs.kotlin.test.junit5)
+            implementation(libs.junit.jupiter)
+        }
+    }
 }
