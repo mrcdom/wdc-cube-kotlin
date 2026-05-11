@@ -4,6 +4,7 @@
 .project
 .settings/
 *.iml
+bin/
 
 # macOS
 .DS_Store
