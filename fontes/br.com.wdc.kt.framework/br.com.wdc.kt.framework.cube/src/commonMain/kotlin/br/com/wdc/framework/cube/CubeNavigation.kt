@@ -129,7 +129,7 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
     }
 
     companion object {
-        private val LOG = Log.getLogger(CubeNavigation::class.java.simpleName)
+        private val LOG = Log.getLogger("CubeNavigation")
 
         private fun releasePresenters(presenterMap: MutableMap<Int, CubePresenter>) {
             val presenterIds = presenterMap.keys.sortedDescending().toList()

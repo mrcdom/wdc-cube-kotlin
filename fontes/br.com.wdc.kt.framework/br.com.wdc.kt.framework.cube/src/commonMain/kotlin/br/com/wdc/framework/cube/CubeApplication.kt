@@ -24,7 +24,7 @@ abstract class CubeApplication {
                 try {
                     presenter.release()
                 } catch (caught: Exception) {
-                    LOG.error("releasing ${presenter.javaClass}: ${caught.message}")
+                    LOG.error("releasing ${presenter::class.simpleName}: ${caught.message}")
                 }
             }
         }
@@ -43,7 +43,7 @@ abstract class CubeApplication {
             try {
                 presenter.commitComputedState()
             } catch (caught: Exception) {
-                LOG.error("Processing ${presenter.javaClass.simpleName}: ${caught.message}")
+                LOG.error("Processing ${presenter::class.simpleName}: ${caught.message}")
             }
         }
     }
@@ -95,6 +95,6 @@ abstract class CubeApplication {
     protected fun getLastPlace(): CubePlace? = lastPlace
 
     private companion object {
-        val LOG = Log.getLogger(CubeApplication::class.java.simpleName)
+        val LOG = Log.getLogger("CubeApplication")
     }
 }

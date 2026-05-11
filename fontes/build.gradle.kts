@@ -13,7 +13,7 @@ allprojects {
 }
 
 // KMP modules handle their own plugin configuration
-val kmpModules = setOf("framework-commons")
+val kmpModules = setOf("framework-commons", "framework-cube")
 
 subprojects {
     if (name !in kmpModules) {

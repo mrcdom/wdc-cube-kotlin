@@ -9,6 +9,7 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.log.getLogger
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.cube.CubeIntent
+import br.com.wdc.framework.cube.parse
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.shopping.presentation.ProxyRepositoryWrapper
 import br.com.wdc.shopping.presentation.ShoppingApplication

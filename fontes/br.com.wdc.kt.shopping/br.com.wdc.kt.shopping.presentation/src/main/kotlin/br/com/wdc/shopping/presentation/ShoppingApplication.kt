@@ -3,6 +3,7 @@ package br.com.wdc.shopping.presentation
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeApplication
 import br.com.wdc.framework.cube.CubeIntent
+import br.com.wdc.framework.cube.parse
 import br.com.wdc.framework.cube.CubePlace
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository

@@ -16,7 +16,7 @@ object ReflectArrayCompat {
         is ShortArray -> array.size
         is CharArray -> array.size
         is BooleanArray -> array.size
-        else -> throw IllegalArgumentException("Not an array: ${array.javaClass.name}")
+        else -> throw IllegalArgumentException("Not an array: ${array::class.simpleName}")
     }
 
     fun get(array: Any, index: Int): Any? = when (array) {
@@ -29,7 +29,7 @@ object ReflectArrayCompat {
         is ShortArray -> array[index]
         is CharArray -> array[index]
         is BooleanArray -> array[index]
-        else -> throw IllegalArgumentException("Not an array: ${array.javaClass.name}")
+        else -> throw IllegalArgumentException("Not an array: ${array::class.simpleName}")
     }
 
     fun set(array: Any, index: Int, value: Any?) {
@@ -46,7 +46,7 @@ object ReflectArrayCompat {
             is ShortArray -> array[index] = value as Short
             is CharArray -> array[index] = value as Char
             is BooleanArray -> array[index] = value as Boolean
-            else -> throw IllegalArgumentException("Not an array: ${array.javaClass.name}")
+            else -> throw IllegalArgumentException("Not an array: ${array::class.simpleName}")
         }
     }
 }
