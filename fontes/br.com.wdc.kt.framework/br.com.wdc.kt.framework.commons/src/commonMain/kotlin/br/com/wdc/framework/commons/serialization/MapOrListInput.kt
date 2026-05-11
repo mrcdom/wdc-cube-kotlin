@@ -136,8 +136,18 @@ class MapOrListInput : ExtensibleObjectInput {
     override fun nextNumber(): Number? {
         val result = when (val v = current.value) {
             null -> null
+            is Int, is Long, is Short, is Byte -> v as Number
+            is Float, is Double -> v as Number
             is Number -> v
-            else -> CoerceUtils.asDouble(v, 0.0)
+            else -> {
+                val str = v.toString()
+                if ('.' in str || 'e' in str || 'E' in str) {
+                    str.toDouble()
+                } else {
+                    val longVal = str.toLong()
+                    if (longVal in Int.MIN_VALUE..Int.MAX_VALUE) longVal.toInt() else longVal
+                }
+            }
         }
         fetchNext()
         return result

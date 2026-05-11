@@ -51,7 +51,12 @@ class JsonExtensibleObjectInput(private val impl: JsonReader) : ExtensibleObject
             impl.nextNull()
             return null
         }
-        return impl.nextDouble()
+        val str = impl.nextString()
+        if ('.' in str || 'e' in str || 'E' in str) {
+            return str.toDouble()
+        }
+        val longVal = str.toLong()
+        return if (longVal in Int.MIN_VALUE..Int.MAX_VALUE) longVal.toInt() else longVal
     }
 
     override fun nextLong(): Long = impl.nextLong()
