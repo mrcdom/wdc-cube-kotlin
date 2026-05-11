@@ -22,7 +22,7 @@ object RepositoryApiRoutes {
      * registra apenas os controllers de entidade (modo teste/local).
      */
     fun configure(config: JavalinConfig) {
-        val authService = AuthenticationService.BEAN.get()
+        val authService = AuthenticationService.BEAN.getOrNull()
 
         if (authService != null) {
             // Endpoints públicos de autenticação
