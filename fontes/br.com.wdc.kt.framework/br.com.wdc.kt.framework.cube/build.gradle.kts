@@ -14,6 +14,9 @@ kotlin {
         jvmMain.dependencies {
             api(libs.gson)
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
         jvmTest.dependencies {
             implementation(libs.kotlin.test.junit5)
             implementation(libs.junit.jupiter)
