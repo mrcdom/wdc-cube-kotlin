@@ -1,8 +1,6 @@
 package br.com.wdc.framework.commons.serialization
 
 import br.com.wdc.framework.commons.lang.CoerceUtils
-import br.com.wdc.framework.commons.lang.CoerceUtilsJvm
-import java.io.IOException
 
 class MapOrListInput : ExtensibleObjectInput {
 
@@ -26,12 +24,12 @@ class MapOrListInput : ExtensibleObjectInput {
 
     override fun beginObject() {
         if (current.token != SerializationToken.BEGIN_OBJECT) {
-            throw IOException("Expected BEGIN_OBJECT but found ${current.token.name}")
+            throw IllegalStateException("Expected BEGIN_OBJECT but found ${current.token.name}")
         }
         current.token = SerializationToken.END_OBJECT
 
         val valueMap = current.value as? Map<*, *>
-            ?: throw IOException("Expected value as a Map object")
+            ?: throw IllegalStateException("Expected value as a Map object")
 
         current = StackItem().apply {
             previous = this@MapOrListInput.current
@@ -43,10 +41,10 @@ class MapOrListInput : ExtensibleObjectInput {
 
     override fun endObject() {
         val previousStackItem = current.previous
-            ?: throw IOException("Expected an element but no one was found")
+            ?: throw IllegalStateException("Expected an element but no one was found")
 
         if (previousStackItem.token != SerializationToken.END_OBJECT) {
-            throw IOException("Expected END_OBJECT but found ${current.token.name}")
+            throw IllegalStateException("Expected END_OBJECT but found ${current.token.name}")
         }
 
         current = previousStackItem
@@ -57,12 +55,12 @@ class MapOrListInput : ExtensibleObjectInput {
 
     override fun beginArray() {
         if (current.token != SerializationToken.BEGIN_ARRAY) {
-            throw IOException("Expected BEGIN_ARRAY but found ${current.token.name}")
+            throw IllegalStateException("Expected BEGIN_ARRAY but found ${current.token.name}")
         }
         current.token = SerializationToken.END_ARRAY
 
         val valueList = current.value as? List<*>
-            ?: throw IOException("Expected value as a List object")
+            ?: throw IllegalStateException("Expected value as a List object")
 
         current = StackItem().apply {
             previous = this@MapOrListInput.current
@@ -74,10 +72,10 @@ class MapOrListInput : ExtensibleObjectInput {
 
     override fun endArray() {
         val previousStackItem = current.previous
-            ?: throw IOException("Expected an element but no one was found")
+            ?: throw IllegalStateException("Expected an element but no one was found")
 
         if (previousStackItem.token != SerializationToken.END_ARRAY) {
-            throw IOException("Expected END_ARRAY but found ${current.token.name}")
+            throw IllegalStateException("Expected END_ARRAY but found ${current.token.name}")
         }
 
         current = previousStackItem
@@ -88,7 +86,7 @@ class MapOrListInput : ExtensibleObjectInput {
 
     private fun fetchNext() {
         val iterator = current.it
-            ?: throw IOException("Expected an iterator but found ${current.value}")
+            ?: throw IllegalStateException("Expected an iterator but found ${current.value}")
 
         if (!iterator.hasNext()) {
             current.name = null
@@ -117,7 +115,7 @@ class MapOrListInput : ExtensibleObjectInput {
 
     override fun <T> nextNull(): T? {
         if (current.value != null) {
-            throw IOException("Expected null value but found ${current.value}")
+            throw IllegalStateException("Expected null value but found ${current.value}")
         }
         fetchNext()
         return null
@@ -136,7 +134,11 @@ class MapOrListInput : ExtensibleObjectInput {
     }
 
     override fun nextNumber(): Number? {
-        val result = CoerceUtilsJvm.asNumber(current.value)
+        val result = when (val v = current.value) {
+            null -> null
+            is Number -> v
+            else -> CoerceUtils.asDouble(v, 0.0)
+        }
         fetchNext()
         return result
     }
@@ -181,7 +183,7 @@ class MapOrListInput : ExtensibleObjectInput {
             is String, is Char -> SerializationToken.STRING
             is Number -> SerializationToken.NUMBER
             is Boolean -> SerializationToken.BOOLEAN
-            else -> throw IOException("Non supported value: $value")
+            else -> throw IllegalStateException("Non supported value: $value")
         }
     }
 }
