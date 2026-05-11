@@ -1,18 +1,17 @@
 package br.com.wdc.framework.cube
 
-import java.math.BigDecimal
-import java.math.BigInteger
-import java.util.logging.Level
-import java.util.logging.Logger
+import br.com.wdc.framework.commons.log.Log
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import com.ionspin.kotlin.bignum.integer.BigInteger
 
-private val logger = Logger.getLogger(CubeIntent::class.java.name)
+private val logger = Log.getLogger("CubeIntent")
 
 fun CubeIntent.getParameterAsBigDecimal(name: String, defaultValue: BigDecimal? = null): BigDecimal? {
     val value = getParameterValue(name)
     if (value is BigDecimal) return value
     if (value != null) {
-        try { return BigDecimal(value.toString()) }
-        catch (e: NumberFormatException) { logger.log(Level.WARNING, "NumberFormatException", e) }
+        try { return BigDecimal.parseString(value.toString()) }
+        catch (e: Exception) { logger.warn("NumberFormatException: {}", e.message) }
     }
     return defaultValue
 }
@@ -21,8 +20,8 @@ fun CubeIntent.getParameterAsBigInteger(name: String, defaultValue: BigInteger? 
     val value = getParameterValue(name)
     if (value is BigInteger) return value
     if (value != null) {
-        try { return BigInteger(value.toString()) }
-        catch (e: NumberFormatException) { logger.log(Level.WARNING, "NumberFormatException", e) }
+        try { return BigInteger.parseString(value.toString()) }
+        catch (e: Exception) { logger.warn("NumberFormatException: {}", e.message) }
     }
     return defaultValue
 }
