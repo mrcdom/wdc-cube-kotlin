@@ -8,6 +8,8 @@ kotlin {
     wasmJs {
         browser()
     }
+    iosArm64()
+    iosSimulatorArm64()
 
     sourceSets.all {
         languageSettings.optIn("kotlin.time.ExperimentalTime")

@@ -5,13 +5,24 @@ plugins {
 }
 
 kotlin {
-    wasmJs {
-        browser()
-        binaries.executable()
+    jvmToolchain(21)
+
+    listOf(
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ShoppingApp"
+            isStatic = true
+        }
+    }
+
+    sourceSets.all {
+        languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
     }
 
     sourceSets {
-        val wasmJsMain by getting {
+        val iosMain by creating {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.ui)
@@ -22,5 +33,7 @@ kotlin {
                 implementation(project(":shopping-persistence-client"))
             }
         }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
     }
 }

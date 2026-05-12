@@ -1,26 +1,29 @@
-package br.com.wdc.shopping.view.compose.web
+package br.com.wdc.shopping.view.compose.ios
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.ComposeViewport
+import androidx.compose.ui.window.ComposeUIViewController
+import br.com.wdc.framework.commons.concurrent.IosScheduledExecutor
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
-import br.com.wdc.framework.commons.concurrent.WasmScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
-import br.com.wdc.framework.commons.serialization.installWasm
+import br.com.wdc.framework.commons.serialization.installIos
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.repositories.UserRepository
-import br.com.wdc.shopping.domain.security.WasmCryptoProvider
+import br.com.wdc.shopping.domain.security.IosCryptoProvider
+import br.com.wdc.shopping.persistence.client.IosHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
-import br.com.wdc.shopping.persistence.client.WasmHttpTransport
 import br.com.wdc.shopping.presentation.SecuredProductRepository
 import br.com.wdc.shopping.presentation.SecuredPurchaseItemRepository
 import br.com.wdc.shopping.presentation.SecuredPurchaseRepository
@@ -35,11 +38,12 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.Purc
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
-import br.com.wdc.shopping.view.compose.views.*
 import br.com.wdc.shopping.view.compose.theme.ShoppingTheme
-import kotlinx.browser.document
+import br.com.wdc.shopping.view.compose.util.PlatformConfig
+import br.com.wdc.shopping.view.compose.views.*
+import platform.UIKit.UIViewController
 
-private class ComposeShoppingApplication : ShoppingApplication() {
+private class IosShoppingApplication : ShoppingApplication() {
 
     private val attributes = mutableMapOf<String, Any?>()
 
@@ -50,7 +54,7 @@ private class ComposeShoppingApplication : ShoppingApplication() {
     override fun removeAttribute(name: String): Any? = attributes.remove(name)
 
     override fun updateHistory() {
-        // Could integrate with browser history API
+        // No browser history on iOS
     }
 
     override fun createPresenterMap(): MutableMap<Int, CubePresenter> = LinkedHashMap()
@@ -68,20 +72,21 @@ private class ComposeShoppingApplication : ShoppingApplication() {
         SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
 }
 
-private fun createView(view: ComposeCubeView): CubeView {
-    return view
-}
+private fun createView(view: ComposeCubeView): CubeView = view
 
 private fun initializePlatform(baseUrl: String) {
+    // Configure platform base URL for image loading
+    PlatformConfig.baseUrl = baseUrl
+
     // Install platform services
-    JsonInputFactory.installWasm()
-    JsonOutputFactory.installWasm()
-    ScheduledExecutor.BEAN.set(WasmScheduledExecutor())
+    JsonInputFactory.installIos()
+    JsonOutputFactory.installIos()
+    ScheduledExecutor.BEAN.set(IosScheduledExecutor())
 
     // Initialize REST repositories
-    val transport = WasmHttpTransport(baseUrl)
+    val transport = IosHttpTransport(baseUrl)
     val config = RestConfig(transport)
-    RestRepositoryBootstrap.initialize(config, WasmCryptoProvider())
+    RestRepositoryBootstrap.initialize(config, IosCryptoProvider())
 
     // Wire view factories
     RootPresenter.createView = { p -> createView(RootView(p)) }
@@ -94,20 +99,20 @@ private fun initializePlatform(baseUrl: String) {
     PurchasesPanelPresenter.createView = { p -> createView(PurchasesPanelView(p)) }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
-fun main() {
-    val baseUrl = getBaseUrl()
+/**
+ * Creates the main UIViewController for the Shopping app.
+ * Call from Swift: MainViewControllerKt.MainViewController(baseUrl: "http://...")
+ */
+fun MainViewController(baseUrl: String): UIViewController {
     initializePlatform(baseUrl)
 
-    val app = ComposeShoppingApplication()
-    app.go("public") // Navigate to root/login
+    val app = IosShoppingApplication()
+    app.go("public")
 
-    val target = document.getElementById("ComposeTarget") ?: return
-
-    ComposeViewport(target) {
+    return ComposeUIViewController {
         ShoppingTheme {
             Surface(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing),
                 color = MaterialTheme.colorScheme.background
             ) {
                 val rootPresenter = app.getRootPresenter()
@@ -118,11 +123,4 @@ fun main() {
             }
         }
     }
-}
-
-@JsFun("() => window.location.origin")
-private external fun jsLocationOrigin(): JsString
-
-private fun getBaseUrl(): String {
-    return jsLocationOrigin().toString()
 }

@@ -16,7 +16,9 @@ include(":shopping-presentation")
 include(":shopping-persistence-client")
 include(":shopping-tests")
 include(":view-react-skeleton")
+include(":view-compose")
 include(":view-compose-web")
+include(":view-compose-ios")
 include(":backend")
 
 // Map module names to actual directory paths
@@ -30,5 +32,7 @@ project(":shopping-presentation").projectDir  = file("br.com.wdc.kt.shopping/br.
 project(":shopping-persistence-client").projectDir = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence.client")
 project(":shopping-tests").projectDir         = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.tests")
 project(":view-react-skeleton").projectDir    = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.react/br.com.wdc.kt.shopping.view.react.skeleton")
+project(":view-compose").projectDir             = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose")
 project(":view-compose-web").projectDir        = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.web")
+project(":view-compose-ios").projectDir        = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.ios")
 project(":backend").projectDir                = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.backend")
