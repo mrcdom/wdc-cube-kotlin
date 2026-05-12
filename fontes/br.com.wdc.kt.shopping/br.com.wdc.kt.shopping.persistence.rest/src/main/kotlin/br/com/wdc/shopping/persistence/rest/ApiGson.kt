@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.persistence.rest
 
+import br.com.wdc.shopping.domain.model.PlatformDateTime
 import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
@@ -37,6 +38,8 @@ object ApiGson {
         return GsonBuilder()
             .registerTypeAdapter(OffsetDateTime::class.java, OffsetDateTimeSerializer())
             .registerTypeAdapter(OffsetDateTime::class.java, OffsetDateTimeDeserializer())
+            .registerTypeAdapter(PlatformDateTime::class.java, PlatformDateTimeSerializer())
+            .registerTypeAdapter(PlatformDateTime::class.java, PlatformDateTimeDeserializer())
             .addSerializationExclusionStrategy(ApiExclusionStrategy())
             .create()
     }
@@ -62,6 +65,18 @@ object ApiGson {
     private class OffsetDateTimeDeserializer : JsonDeserializer<OffsetDateTime> {
         override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): OffsetDateTime {
             return OffsetDateTime.parse(json.asString, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+        }
+    }
+
+    private class PlatformDateTimeSerializer : JsonSerializer<PlatformDateTime> {
+        override fun serialize(src: PlatformDateTime, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
+            return JsonPrimitive(src.toString())
+        }
+    }
+
+    private class PlatformDateTimeDeserializer : JsonDeserializer<PlatformDateTime> {
+        override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): PlatformDateTime {
+            return PlatformDateTime.parse(json.asString)
         }
     }
 
