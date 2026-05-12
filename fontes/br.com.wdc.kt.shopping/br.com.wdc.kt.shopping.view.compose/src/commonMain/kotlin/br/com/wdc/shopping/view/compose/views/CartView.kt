@@ -145,10 +145,12 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                             ) {
                                                 FilledTonalIconButton(
                                                     onClick = {
-                                                        presenter.onModifyQuantity(
-                                                            item.id,
-                                                            (item.quantity - 1).coerceAtLeast(1)
-                                                        )
+                                                        safeCall(presenter.app) {
+                                                            presenter.onModifyQuantity(
+                                                                item.id,
+                                                                (item.quantity - 1).coerceAtLeast(1)
+                                                            )
+                                                        }
                                                     },
                                                     modifier = Modifier.size(32.dp)
                                                 ) {
@@ -164,7 +166,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
 
                                                 FilledTonalIconButton(
                                                     onClick = {
-                                                        presenter.onModifyQuantity(item.id, item.quantity + 1)
+                                                        safeCall(presenter.app) { presenter.onModifyQuantity(item.id, item.quantity + 1) }
                                                     },
                                                     modifier = Modifier.size(32.dp)
                                                 ) {
@@ -177,7 +179,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
 
                                         // Remove button
                                         TextButton(
-                                            onClick = { presenter.onRemoveProduct(item.id) },
+                                            onClick = { safeCall(presenter.app) { presenter.onRemoveProduct(item.id) } },
                                             colors = ButtonDefaults.textButtonColors(
                                                 contentColor = MaterialTheme.colorScheme.error
                                             )
@@ -228,7 +230,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                     ) {
                         OutlinedButton(
-                            onClick = { presenter.onOpenProducts() },
+                            onClick = { safeCall(presenter.app) { presenter.onOpenProducts() } },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.height(48.dp)
                         ) {
@@ -239,7 +241,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                         }
                         if (state.items.isNotEmpty()) {
                             Button(
-                                onClick = { presenter.onBuy() },
+                                onClick = { safeCall(presenter.app) { presenter.onBuy() } },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.height(48.dp),
                                 colors = ButtonDefaults.buttonColors(

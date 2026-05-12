@@ -37,8 +37,8 @@ class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-vie
                 HeaderBar(
                     nickName = state.nickName ?: "",
                     cartItemCount = state.cartItemCount,
-                    onOpenCart = { presenter.onOpenCart() },
-                    onExit = { presenter.onExit() },
+                    onOpenCart = { safeCall(presenter.app) { presenter.onOpenCart() } },
+                    onExit = { safeCall(presenter.app) { presenter.onExit() } },
                     compact = isCompact
                 )
             }

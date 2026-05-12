@@ -111,7 +111,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { presenter.onOpenProduct(product.id) },
+                                .clickable { safeCall(presenter.app) { presenter.onOpenProduct(product.id) } },
                             shape = RoundedCornerShape(8.dp),
                             elevation = CardDefaults.cardElevation(
                                 defaultElevation = 0.dp,

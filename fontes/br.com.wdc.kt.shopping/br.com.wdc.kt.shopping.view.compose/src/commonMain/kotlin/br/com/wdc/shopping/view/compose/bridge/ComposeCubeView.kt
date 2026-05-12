@@ -3,7 +3,9 @@ package br.com.wdc.shopping.view.compose.bridge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
+import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
+import br.com.wdc.shopping.presentation.ShoppingApplication
 
 /**
  * Base class for Compose-backed CubeView implementations.
@@ -31,6 +33,24 @@ abstract class ComposeCubeView(
 
     override fun release() {
         // No-op by default; Compose manages its own lifecycle
+    }
+
+    /**
+     * Wraps a presenter call with error protection.
+     * If the action throws, the error is reported via ShoppingApplication.alertUnexpectedError
+     * and displayed in the RootView snackbar.
+     */
+    protected fun safeCall(app: ShoppingApplication, action: () -> Unit) {
+        try {
+            action()
+        } catch (e: Exception) {
+            app.alertUnexpectedError(LOG, "Erro inesperado em $id", e)
+        }
+    }
+
+    companion object {
+        @PublishedApi
+        internal val LOG = Log.getLogger("ComposeCubeView")
     }
 }
 

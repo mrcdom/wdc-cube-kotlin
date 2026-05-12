@@ -198,7 +198,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                             horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                         ) {
                             OutlinedButton(
-                                onClick = { presenter.onOpenProducts() },
+                                onClick = { safeCall(presenter.app) { presenter.onOpenProducts() } },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.height(48.dp)
                             ) {
@@ -208,7 +208,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                             }
                             }
                             Button(
-                                onClick = { presenter.onAddToCart(quantity) },
+                                onClick = { safeCall(presenter.app) { presenter.onAddToCart(quantity) } },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.height(48.dp),
                                 colors = ButtonDefaults.buttonColors(

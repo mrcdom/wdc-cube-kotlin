@@ -93,7 +93,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                         shape = RoundedCornerShape(12.dp),
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { presenter.onEnter() })
+                        keyboardActions = KeyboardActions(onDone = { safeCall(presenter.app) { presenter.onEnter() } })
                     )
 
                     val errorMessage = state.errorMessage
@@ -115,7 +115,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                     Spacer(Modifier.height(4.dp))
 
                     Button(
-                        onClick = { presenter.onEnter() },
+                        onClick = { safeCall(presenter.app) { presenter.onEnter() } },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
