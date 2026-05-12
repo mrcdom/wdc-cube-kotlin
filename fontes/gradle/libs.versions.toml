@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.1.20"
+kotlin = "2.2.20"
 kotlinx-datetime = "0.6.2"
 bignum = "0.3.10"
 gson = "2.13.2"
@@ -11,6 +11,7 @@ jdbi = "3.52.1"
 tomcat-dbcp = "6.0.53"
 javalin = "7.2.0"
 okhttp = "4.12.0"
+compose-multiplatform = "1.10.3"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -31,3 +32,5 @@ okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

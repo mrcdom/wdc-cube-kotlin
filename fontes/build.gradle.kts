@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.compose.multiplatform) apply false
+    alias(libs.plugins.compose.compiler) apply false
 }
 
 allprojects {
@@ -8,12 +10,13 @@ allprojects {
     version = "1.0.0"
 
     repositories {
+        google()
         mavenCentral()
     }
 }
 
 // KMP modules handle their own plugin configuration
-val kmpModules = setOf("framework-commons", "framework-cube", "shopping-domain", "shopping-presentation", "shopping-persistence-client")
+val kmpModules = setOf("framework-commons", "framework-cube", "shopping-domain", "shopping-presentation", "shopping-persistence-client", "view-compose-web")
 
 subprojects {
     if (name !in kmpModules) {
