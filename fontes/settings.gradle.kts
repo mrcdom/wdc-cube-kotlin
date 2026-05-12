@@ -28,5 +28,5 @@ project(":shopping-scripts").projectDir       = file("br.com.wdc.kt.shopping/br.
 project(":shopping-presentation").projectDir  = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.presentation")
 project(":shopping-persistence-client").projectDir = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence.client")
 project(":shopping-tests").projectDir         = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.tests")
-project(":view-react-skeleton").projectDir    = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.react.skeleton")
+project(":view-react-skeleton").projectDir    = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.react/br.com.wdc.kt.shopping.view.react.skeleton")
 project(":backend").projectDir                = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.backend")
