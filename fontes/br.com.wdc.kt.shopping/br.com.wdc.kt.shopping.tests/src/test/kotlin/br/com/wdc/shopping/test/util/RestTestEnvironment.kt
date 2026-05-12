@@ -41,21 +41,21 @@ import java.nio.file.Paths
  * Valida o round-trip completo: REST client → HTTP → Javalin →
  * repos de persistência → H2, sem segurança/auth.
  */
-class RestTestEnvironment(private val dbName: String = "wedocode-shopping-rest-test") {
+class RestTestEnvironment(private val dbName: String = "wedocode-shopping-rest-test") : ShoppingTestEnvironment {
 
     private lateinit var datasource: BasicDataSource
     private lateinit var executor: ScheduledExecutorForTest
     private lateinit var javalin: Javalin
 
-    lateinit var userRepo: UserRepository; private set
-    lateinit var productRepo: ProductRepository; private set
-    lateinit var purchaseRepo: PurchaseRepository; private set
-    lateinit var purchaseItemRepo: PurchaseItemRepository; private set
+    override lateinit var userRepo: UserRepository; private set
+    override lateinit var productRepo: ProductRepository; private set
+    override lateinit var purchaseRepo: PurchaseRepository; private set
+    override lateinit var purchaseItemRepo: PurchaseItemRepository; private set
 
     var port: Int = 0
         private set
 
-    fun start() {
+    override fun start() {
         Log.setFactory(Slf4jLogFactory())
         JsonOutputFactory.installGson()
         JsonInputFactory.installGson()
@@ -123,14 +123,14 @@ class RestTestEnvironment(private val dbName: String = "wedocode-shopping-rest-t
         purchaseItemRepo = RestPurchaseItemRepository(restConfig)
     }
 
-    fun stop() {
+    override fun stop() {
         javalin.stop()
         RepositoryBootstrap.release()
         datasource.close()
         executor.shutdown()
     }
 
-    fun resetDatabase() {
+    override fun resetDatabase() {
         datasource.connection.use { connection ->
             DBCreate().withConnection(connection).withReset().run()
         }

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 
 class TestEnvironmentExtension(
-    private val env: TestEnvironment
+    private val env: ShoppingTestEnvironment
 ) : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
 
     override fun beforeAll(context: ExtensionContext) {

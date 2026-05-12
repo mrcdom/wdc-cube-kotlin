@@ -13,17 +13,17 @@ import br.com.wdc.shopping.scripts.sgbd.DBCreate
 import org.apache.tomcat.dbcp.dbcp.BasicDataSource
 import java.nio.file.Paths
 
-class TestEnvironment(private val dbName: String = "wedocode-shopping") {
+class TestEnvironment(private val dbName: String = "wedocode-shopping") : ShoppingTestEnvironment {
 
     private lateinit var datasource: BasicDataSource
     private lateinit var executor: ScheduledExecutorForTest
 
-    lateinit var userRepo: UserRepository; private set
-    lateinit var productRepo: ProductRepository; private set
-    lateinit var purchaseRepo: PurchaseRepository; private set
-    lateinit var purchaseItemRepo: PurchaseItemRepository; private set
+    override lateinit var userRepo: UserRepository; private set
+    override lateinit var productRepo: ProductRepository; private set
+    override lateinit var purchaseRepo: PurchaseRepository; private set
+    override lateinit var purchaseItemRepo: PurchaseItemRepository; private set
 
-    fun start() {
+    override fun start() {
         executor = ScheduledExecutorForTestAsync()
 
         val ds = BasicDataSource()
@@ -55,13 +55,13 @@ class TestEnvironment(private val dbName: String = "wedocode-shopping") {
         purchaseItemRepo = PurchaseItemRepository.BEAN.get()
     }
 
-    fun stop() {
+    override fun stop() {
         RepositoryBootstrap.release()
         datasource.close()
         executor.shutdown()
     }
 
-    fun resetDatabase() {
+    override fun resetDatabase() {
         datasource.connection.use { connection ->
             DBCreate().withConnection(connection).withReset().run()
         }
