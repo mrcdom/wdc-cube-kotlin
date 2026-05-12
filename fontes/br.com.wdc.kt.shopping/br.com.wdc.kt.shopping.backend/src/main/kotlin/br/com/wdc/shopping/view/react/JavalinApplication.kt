@@ -198,13 +198,6 @@ class JavalinApplication(
                 staticFileConfig.precompressMaxSize = 0
             }
 
-            config.staticFiles.add { staticFileConfig ->
-                staticFileConfig.directory = "META-INF/resources/teavm"
-                staticFileConfig.location = Location.CLASSPATH
-                staticFileConfig.hostedPath = "/teavm"
-                staticFileConfig.precompressMaxSize = 0
-            }
-
             config.http.defaultContentType = "application/json"
 
             configureRoutes(config)
@@ -236,7 +229,6 @@ class JavalinApplication(
                 && !path.startsWith("/ws/")
                 && !path.startsWith("/health")
                 && !path.startsWith("/dispatcher")
-                && !path.startsWith("/teavm")
                 && path != "/index.html"
                 && !isStaticResource(path)
             ) {
