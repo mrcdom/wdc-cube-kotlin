@@ -24,7 +24,7 @@ targets:
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         FRAMEWORK_SEARCH_PATHS:
-          - "$(SRCROOT)/../fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.ios/build/bin/iosSimulatorArm64/debugFramework"
+          - "$(SRCROOT)/../fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/compose.ios/build/bin/iosSimulatorArm64/debugFramework"
         OTHER_LINKER_FLAGS:
           - "-lc++"
           - "-framework"
