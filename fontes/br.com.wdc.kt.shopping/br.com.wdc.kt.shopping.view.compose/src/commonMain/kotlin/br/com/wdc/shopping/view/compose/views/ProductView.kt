@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.components.AsyncImage
+import br.com.wdc.shopping.view.compose.components.verticalScrollbar
 import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.util.formatPrice
 import br.com.wdc.shopping.view.compose.util.productImageUrl
@@ -44,9 +45,11 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
             contentAlignment = Alignment.TopCenter
         ) {
             if (product != null) {
+                val scrollState = rememberScrollState()
                 Column(
                     modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
+                        .verticalScrollbar(scrollState)
+                        .verticalScroll(scrollState),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                         val errorMessage = state.errorMessage

@@ -28,6 +28,7 @@ include(":view-compose")
 include(":view-compose-web")
 include(":view-compose-ios")
 include(":view-compose-android")
+include(":view-compose-desktop")
 include(":backend")
 
 // Map module names to actual directory paths
@@ -45,4 +46,5 @@ project(":view-compose").projectDir             = file("br.com.wdc.kt.shopping/b
 project(":view-compose-web").projectDir        = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.web")
 project(":view-compose-ios").projectDir        = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.ios")
 project(":view-compose-android").projectDir    = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.android")
+project(":view-compose-desktop").projectDir    = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.desktop")
 project(":backend").projectDir                = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.backend")

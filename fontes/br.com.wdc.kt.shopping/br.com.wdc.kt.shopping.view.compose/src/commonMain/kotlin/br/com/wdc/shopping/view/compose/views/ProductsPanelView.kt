@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ShoppingBag
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.components.AsyncImage
+import br.com.wdc.shopping.view.compose.components.verticalScrollbar
 import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.util.formatPrice
 import br.com.wdc.shopping.view.compose.util.productImageUrl
@@ -96,8 +98,11 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
                     )
                 }
             } else {
+                val gridState = rememberLazyGridState()
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 200.dp),
+                    state = gridState,
+                    modifier = Modifier.verticalScrollbar(gridState),
                     contentPadding = PaddingValues(4.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)

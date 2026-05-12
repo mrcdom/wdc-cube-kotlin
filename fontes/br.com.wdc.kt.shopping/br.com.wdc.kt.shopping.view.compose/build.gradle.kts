@@ -14,6 +14,7 @@ android {
 kotlin {
     jvmToolchain(21)
 
+    jvm()
     androidTarget()
     wasmJs {
         browser()
