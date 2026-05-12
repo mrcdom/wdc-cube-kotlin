@@ -38,7 +38,10 @@ class UserApiController {
             if (hasValue(body, "userName")) criteria.withUserName(body.get("userName").asString)
             if (hasValue(body, "password")) criteria.withPassword(body.get("password").asString)
             if (hasValue(body, "offset")) criteria.withOffset(body.get("offset").asInt)
-            if (hasValue(body, "limit")) criteria.withLimit(body.get("limit").asInt)
+            if (hasValue(body, "limit")) {
+                val limit = body.get("limit").asInt
+                if (limit >= 0) criteria.withLimit(limit)
+            }
             if (hasValue(body, "orderBy")) criteria.withOrderBy(UserCriteria.OrderBy.valueOf(body.get("orderBy").asString))
             return criteria
         }

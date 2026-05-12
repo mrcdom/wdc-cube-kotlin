@@ -103,10 +103,8 @@ class Log(val name: String) {
     }
 
     companion object {
-        @Volatile
         private var factoryRef: Factory = Factory { name -> Log(name) }
 
-        @Volatile
         var globalLevel: Level = Level.DEBUG
 
         fun setFactory(factory: Factory?) {

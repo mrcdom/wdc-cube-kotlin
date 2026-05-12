@@ -6,6 +6,10 @@ application {
     mainClass.set("br.com.wdc.shopping.view.react.JavalinApplication")
 }
 
+tasks.named<JavaExec>("run") {
+    workingDir = rootProject.projectDir
+}
+
 dependencies {
     api(project(":view-react-skeleton"))
     api(project(":persistence-rest"))

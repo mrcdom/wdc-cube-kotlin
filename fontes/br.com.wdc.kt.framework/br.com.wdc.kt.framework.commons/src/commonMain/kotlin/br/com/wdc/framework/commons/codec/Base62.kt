@@ -38,7 +38,7 @@ object Base62 {
         return translate(indices, ALPHABET)
     }
 
-    fun encodeToString(message: ByteArray): String = String(encode(message))
+    fun encodeToString(message: ByteArray): String = encode(message).decodeToString()
 
     fun decode(encoded: ByteArray): ByteArray {
         require(isBase62Encoding(encoded)) { "Input is not encoded correctly" }
@@ -47,7 +47,7 @@ object Base62 {
     }
 
     fun decodeFromString(encoded: String?): ByteArray? {
-        return encoded?.let { decode(it.toByteArray()) }
+        return encoded?.let { decode(it.encodeToByteArray()) }
     }
 
     fun isBase62Encoding(bytes: ByteArray?): Boolean {

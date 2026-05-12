@@ -25,6 +25,12 @@ subprojects {
         configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
             jvmToolchain(21)
         }
+
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+            compilerOptions {
+                freeCompilerArgs.add("-opt-in=kotlin.time.ExperimentalTime")
+            }
+        }
     }
 
     tasks.withType<Test> {

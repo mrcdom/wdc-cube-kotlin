@@ -24,7 +24,10 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
 
-class JavalinApplication(private val port: Int = DEFAULT_PORT) {
+class JavalinApplication(
+    private val port: Int = DEFAULT_PORT,
+    private val corsAllowAll: Boolean = false,
+) {
 
     companion object {
         private val LOG: Log
@@ -111,7 +114,12 @@ class JavalinApplication(private val port: Int = DEFAULT_PORT) {
 
             LOG.info("Starting WeDoCode Shopping React Server on port {}", port)
 
-            val server = JavalinApplication(port)
+            val corsAllowAll = config.getBoolean("server.cors.allowAll", false)
+            if (corsAllowAll) {
+                LOG.info("CORS: allowing any origin (development mode)")
+            }
+
+            val server = JavalinApplication(port, corsAllowAll)
 
             Runtime.getRuntime().addShutdownHook(Thread {
                 LOG.info("Shutdown signal received")
@@ -164,12 +172,16 @@ class JavalinApplication(private val port: Int = DEFAULT_PORT) {
 
             config.bundledPlugins.enableCors { cors ->
                 cors.addRule { rule ->
-                    rule.allowHost(
-                        "tauri://localhost", "https://tauri.localhost",
-                        "http://tauri.localhost",
-                        "http://localhost:8080", "http://shopping-wdc.localhost:8080"
-                    )
-                    rule.allowCredentials = true
+                    if (corsAllowAll) {
+                        rule.anyHost()
+                    } else {
+                        rule.allowHost(
+                            "tauri://localhost", "https://tauri.localhost",
+                            "http://tauri.localhost",
+                            "http://localhost:8080", "http://shopping-wdc.localhost:8080"
+                        )
+                        rule.allowCredentials = true
+                    }
                 }
             }
 

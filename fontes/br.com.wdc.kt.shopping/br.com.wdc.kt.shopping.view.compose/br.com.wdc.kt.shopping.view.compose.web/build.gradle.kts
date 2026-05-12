@@ -17,6 +17,9 @@ kotlin {
                 implementation(compose.ui)
                 implementation(compose.foundation)
                 implementation(compose.material3)
+                implementation(compose.materialIconsExtended)
+                implementation(project(":shopping-presentation"))
+                implementation(project(":shopping-persistence-client"))
             }
         }
     }

@@ -5,7 +5,7 @@ import br.com.wdc.shopping.persistence.repository.BaseCommand
 import br.com.wdc.shopping.persistence.repository.purchaseitem.InsertRowPurchaseItemCmd
 import br.com.wdc.shopping.persistence.schema.EnPurchase
 import br.com.wdc.shopping.persistence.sql.SqlList
-import kotlinx.datetime.toJavaInstant
+import kotlin.time.toJavaInstant
 import org.jdbi.v3.core.Jdbi
 import java.sql.Connection
 import java.time.OffsetDateTime

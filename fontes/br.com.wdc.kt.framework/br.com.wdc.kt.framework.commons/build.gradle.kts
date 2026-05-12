@@ -6,6 +6,13 @@ kotlin {
     jvmToolchain(21)
 
     jvm()
+    wasmJs {
+        browser()
+    }
+
+    sourceSets.all {
+        languageSettings.optIn("kotlin.time.ExperimentalTime")
+    }
 
     sourceSets {
         commonMain.dependencies {

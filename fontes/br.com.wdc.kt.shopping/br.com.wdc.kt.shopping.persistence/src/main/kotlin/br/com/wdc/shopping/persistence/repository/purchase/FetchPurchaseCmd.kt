@@ -18,7 +18,7 @@ import br.com.wdc.shopping.persistence.schema.EnPurchaseItem
 import br.com.wdc.shopping.persistence.schema.EnUser
 import br.com.wdc.shopping.persistence.schema.support.DbField
 import br.com.wdc.shopping.persistence.sql.SqlList
-import kotlinx.datetime.toKotlinInstant
+import kotlin.time.toKotlinInstant
 import br.com.wdc.shopping.persistence.sql.SqlUtils
 import com.google.gson.stream.JsonReader
 import org.jdbi.v3.core.Jdbi

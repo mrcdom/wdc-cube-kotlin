@@ -10,7 +10,7 @@ import br.com.wdc.shopping.domain.utils.ProjectionValues
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 abstract class AbstractPurchaseRepositoryTest {
 

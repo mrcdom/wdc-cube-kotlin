@@ -2,7 +2,6 @@ package br.com.wdc.framework.commons.util
 
 class Defer : AutoCloseable {
 
-    @Volatile
     private var actionStack: () -> Unit = {}
 
     fun push(action: () -> Unit) {

@@ -49,7 +49,10 @@ class ProductApiController {
             val criteria = ProductCriteria()
             if (hasValue(body, "productId")) criteria.withProductId(body.get("productId").asLong)
             if (hasValue(body, "offset")) criteria.withOffset(body.get("offset").asInt)
-            if (hasValue(body, "limit")) criteria.withLimit(body.get("limit").asInt)
+            if (hasValue(body, "limit")) {
+                val limit = body.get("limit").asInt
+                if (limit >= 0) criteria.withLimit(limit)
+            }
             if (hasValue(body, "orderBy")) criteria.withOrderBy(ProductCriteria.OrderBy.valueOf(body.get("orderBy").asString))
             return criteria
         }

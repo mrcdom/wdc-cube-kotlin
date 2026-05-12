@@ -10,7 +10,7 @@ import br.com.wdc.shopping.domain.security.ChallengeResult
 import br.com.wdc.shopping.domain.security.Role
 import br.com.wdc.shopping.domain.security.SecurityContext
 import br.com.wdc.shopping.domain.utils.ProjectionValues
-import kotlinx.datetime.toKotlinInstant
+import kotlin.time.toKotlinInstant
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import javax.crypto.Mac

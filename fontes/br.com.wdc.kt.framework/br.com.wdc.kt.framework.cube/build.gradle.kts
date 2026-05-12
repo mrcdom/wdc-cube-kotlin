@@ -6,6 +6,9 @@ kotlin {
     jvmToolchain(21)
 
     jvm()
+    wasmJs {
+        browser()
+    }
 
     sourceSets {
         commonMain.dependencies {

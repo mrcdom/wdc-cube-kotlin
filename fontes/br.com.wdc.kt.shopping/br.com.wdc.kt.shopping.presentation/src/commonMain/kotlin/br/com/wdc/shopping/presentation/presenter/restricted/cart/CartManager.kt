@@ -9,7 +9,7 @@ import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 class CartManager(private val app: ShoppingApplication) {
 

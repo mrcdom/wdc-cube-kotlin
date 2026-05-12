@@ -17,7 +17,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.Pr
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptService
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.ShoppingTestEnvironment
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import org.junit.jupiter.api.Assertions.*
 
 /**
