@@ -42,8 +42,22 @@ import br.com.wdc.shopping.view.compose.util.PlatformConfig
 import br.com.wdc.shopping.view.compose.views.*
 
 fun main() {
+    // Set macOS app name before any AWT initialization
+    System.setProperty("apple.awt.application.name", "Shopping")
+
     val baseUrl = "http://localhost:8080"
     initializePlatform(baseUrl)
+
+    // Set macOS Dock icon
+    try {
+        val iconUrl = Thread.currentThread().contextClassLoader.getResource("icon.png")
+        if (iconUrl != null) {
+            val image = javax.imageio.ImageIO.read(iconUrl)
+            if (java.awt.Taskbar.isTaskbarSupported()) {
+                java.awt.Taskbar.getTaskbar().iconImage = image
+            }
+        }
+    } catch (_: Exception) { }
 
     val app = DesktopShoppingApplication()
     app.go("public")
