@@ -45,7 +45,7 @@ fun main() {
     // Set macOS app name before any AWT initialization
     System.setProperty("apple.awt.application.name", "Shopping")
 
-    val baseUrl = "http://localhost:8080"
+    val baseUrl = System.getProperty("baseUrl", "http://localhost:8080")
     initializePlatform(baseUrl)
 
     // Set macOS Dock icon

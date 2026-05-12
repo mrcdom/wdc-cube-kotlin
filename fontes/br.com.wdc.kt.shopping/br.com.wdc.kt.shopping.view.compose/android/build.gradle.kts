@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val baseUrl = project.findProperty("baseUrl")?.toString() ?: "http://10.0.2.2:8080"
+
 android {
     namespace = "br.com.wdc.shopping.android"
     compileSdk = 35
@@ -15,6 +17,11 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

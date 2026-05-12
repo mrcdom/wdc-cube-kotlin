@@ -20,8 +20,11 @@ dependencies {
     implementation(libs.gson)
 }
 
+val baseUrl = project.findProperty("baseUrl")?.toString() ?: "http://localhost:8080"
+
 compose.desktop {
     application {
         mainClass = "br.com.wdc.shopping.desktop.MainKt"
+        jvmArgs("-DbaseUrl=$baseUrl")
     }
 }

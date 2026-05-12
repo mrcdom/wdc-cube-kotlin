@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
             StrictMode.ThreadPolicy.Builder().permitNetwork().build()
         )
 
-        val baseUrl = "http://10.0.2.2:8080"
+        val baseUrl = BuildConfig.BASE_URL
         initializePlatform(baseUrl)
 
         app = AndroidShoppingApplication()
