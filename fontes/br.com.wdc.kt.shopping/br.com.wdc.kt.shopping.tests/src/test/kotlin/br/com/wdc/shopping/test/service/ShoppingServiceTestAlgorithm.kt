@@ -1,4 +1,4 @@
-package br.com.wdc.shopping.test.util
+package br.com.wdc.shopping.test.service
 
 import br.com.wdc.shopping.domain.criteria.ProductCriteria
 import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
@@ -16,6 +16,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductSer
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptService
 import br.com.wdc.shopping.scripts.sgbd.DBReset
+import br.com.wdc.shopping.test.util.ShoppingTestEnvironment
 import kotlinx.datetime.Clock
 import org.junit.jupiter.api.Assertions.*
 
