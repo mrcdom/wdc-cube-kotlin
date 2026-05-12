@@ -40,6 +40,12 @@ kotlin {
             dependsOn(jvmCommonMain)
         }
 
+        val iosMain by creating {
+            dependsOn(commonMain.get())
+        }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
+
         jvmTest.dependencies {
             implementation(libs.kotlin.test.junit5)
             implementation(libs.junit.jupiter)

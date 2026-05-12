@@ -41,5 +41,11 @@ kotlin {
         val androidMain by getting {
             dependsOn(jvmCommonMain)
         }
+
+        val iosMain by creating {
+            dependsOn(commonMain.get())
+        }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
     }
 }
