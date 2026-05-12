@@ -826,18 +826,18 @@ sequenceDiagram
     participant HP as HomePresenter
     participant HV as HomeView
 
-    User->>LV: Clica "Entrar"
-    LV->>SC: safeCall { presenter.onEnter() }
+    User->>LV: Clica Entrar
+    LV->>SC: safeCall - presenter.onEnter()
     Note over LV: UI thread liberada
 
-    SC->>LP: onEnter() [background thread]
-    LP->>LP: state.loading = true; update()
-    Note over LV: Recompõe: spinner + campos desabilitados
+    SC->>LP: onEnter() em background thread
+    LP->>LP: state.loading = true, update()
+    Note over LV: Recompoe: spinner + campos desabilitados
 
-    LP->>LS: fetchSubject("admin", "***")
-    LS->>API: POST /auth/login (challenge-response)
-    API-->>LS: { subject: { id: 1, nick: "Admin" } }
-    LS-->>LP: Subject(id=1, nick="Admin")
+    LP->>LS: fetchSubject(admin, ***)
+    LS->>API: POST /auth/login
+    API-->>LS: Subject id=1, nick=Admin
+    LS-->>LP: Subject(id=1, nick=Admin)
 
     LP->>LP: state.loading = false
     LP->>LP: app.subject = subject
@@ -846,14 +846,14 @@ sequenceDiagram
     Routes->>Nav: navigate().step(ROOT).step(HOME).execute()
 
     Nav->>HP: applyParameters(init=true, deepest=true)
-    Note over HP: Cria CartManager, ProductsPanel, PurchasesPanel
+    Note over HP: Cria CartManager,<br/>ProductsPanel, PurchasesPanel
     HP->>HP: Injeta view no slot do Root
 
     Nav->>Nav: release LoginPresenter
     Nav->>Nav: commitComputedState()
     Nav->>Nav: updateHistory()
 
-    Note over HV: Compose recompõe: renderiza Home com produtos
+    Note over HV: Compose recompoe:<br/>renderiza Home com produtos
     HV->>User: Exibe tela principal
 ```
 
