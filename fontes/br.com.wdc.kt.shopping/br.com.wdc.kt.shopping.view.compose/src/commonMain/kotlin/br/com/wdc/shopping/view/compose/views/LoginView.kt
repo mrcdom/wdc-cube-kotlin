@@ -31,6 +31,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
         val rev = revision.value
 
         val state = presenter.state
+        val loading = state.loading
         var userName by remember { mutableStateOf(state.userName ?: "") }
         var password by remember { mutableStateOf(state.password ?: "") }
 
@@ -78,6 +79,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
+                        enabled = !loading,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                     )
 
@@ -91,6 +93,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
+                        enabled = !loading,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { safeCall(presenter.app) { presenter.onEnter() } })
@@ -118,15 +121,24 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                         onClick = { safeCall(presenter.app) { presenter.onEnter() } },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(12.dp),
+                        enabled = !loading,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
-                        Text(
-                            "Entrar",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        if (loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                "Entrar",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }

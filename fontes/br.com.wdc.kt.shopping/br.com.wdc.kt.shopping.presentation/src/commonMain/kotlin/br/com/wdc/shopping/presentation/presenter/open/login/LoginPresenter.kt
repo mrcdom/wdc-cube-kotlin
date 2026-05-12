@@ -63,8 +63,15 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
     // :: User Actions
 
     fun onEnter() {
+        state.loading = true
+        state.errorCode = 0
+        state.errorMessage = null
+        update()
+
         try {
             val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")
+
+            state.loading = false
 
             if (subject == null || subject.id == null) {
                 app.subject = null
@@ -74,6 +81,8 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
                 Routes.home(app)
             }
         } catch (caught: Exception) {
+            state.loading = false
+
             if (caught is OfflineException) {
                 alertDatabaseIsOffline()
                 return

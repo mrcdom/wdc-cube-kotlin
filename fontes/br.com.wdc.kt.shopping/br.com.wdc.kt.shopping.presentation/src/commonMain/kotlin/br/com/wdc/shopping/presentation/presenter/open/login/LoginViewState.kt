@@ -9,6 +9,7 @@ class LoginViewState : ViewState {
     var password: String? = null
     var errorCode: Int = 0
     var errorMessage: String? = null
+    var loading: Boolean = false
 
     override fun write(instanceId: String, json: ExtensibleObjectOutput) {
         json.beginObject()
