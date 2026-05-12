@@ -1,3 +1,11 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
 }
@@ -19,6 +27,7 @@ include(":view-react-skeleton")
 include(":view-compose")
 include(":view-compose-web")
 include(":view-compose-ios")
+include(":view-compose-android")
 include(":backend")
 
 // Map module names to actual directory paths
@@ -35,4 +44,5 @@ project(":view-react-skeleton").projectDir    = file("br.com.wdc.kt.shopping/br.
 project(":view-compose").projectDir             = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose")
 project(":view-compose-web").projectDir        = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.web")
 project(":view-compose-ios").projectDir        = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.ios")
+project(":view-compose-android").projectDir    = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/br.com.wdc.kt.shopping.view.compose.android")
 project(":backend").projectDir                = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.backend")

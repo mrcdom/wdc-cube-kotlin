@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.compose.multiplatform) apply false
     alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.agp) apply false
+    alias(libs.plugins.agp.library) apply false
 }
 
 allprojects {
@@ -16,7 +18,7 @@ allprojects {
 }
 
 // KMP modules handle their own plugin configuration
-val kmpModules = setOf("framework-commons", "framework-cube", "shopping-domain", "shopping-presentation", "shopping-persistence-client", "view-compose", "view-compose-web", "view-compose-ios")
+val kmpModules = setOf("framework-commons", "framework-cube", "shopping-domain", "shopping-presentation", "shopping-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android")
 
 subprojects {
     if (name !in kmpModules) {
