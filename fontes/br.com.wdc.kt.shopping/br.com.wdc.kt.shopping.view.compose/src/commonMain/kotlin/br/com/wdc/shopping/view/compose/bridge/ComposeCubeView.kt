@@ -6,6 +6,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.ShoppingApplication
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Base class for Compose-backed CubeView implementations.
@@ -36,21 +39,35 @@ abstract class ComposeCubeView(
     }
 
     /**
-     * Wraps a presenter call with error protection.
-     * If the action throws, the error is reported via ShoppingApplication.alertUnexpectedError
-     * and displayed in the RootView snackbar.
+     * Wraps a presenter call with error protection and dispatches it off the UI thread.
+     *
+     * Uses a single-threaded dispatcher to ensure serial execution of presenter actions,
+     * preserving the synchronous semantics of the Cube MVP pattern while keeping the
+     * UI thread free. The presenter's call to view.update() triggers Compose recomposition
+     * back on the UI thread via MutableState.
      */
     protected fun safeCall(app: ShoppingApplication, action: () -> Unit) {
-        try {
-            action()
-        } catch (e: Exception) {
-            app.alertUnexpectedError(LOG, "Erro inesperado em $id", e)
+        presenterScope.launch {
+            try {
+                action()
+            } catch (e: Exception) {
+                app.alertUnexpectedError(LOG, "Erro inesperado em $id", e)
+            }
         }
     }
 
     companion object {
         @PublishedApi
         internal val LOG = Log.getLogger("ComposeCubeView")
+
+        /**
+         * Single-threaded coroutine scope for presenter actions.
+         * limitedParallelism(1) guarantees serial execution, avoiding
+         * concurrency issues in presenter state.
+         */
+        private val presenterScope = CoroutineScope(
+            Dispatchers.Default.limitedParallelism(1)
+        )
     }
 }
 
