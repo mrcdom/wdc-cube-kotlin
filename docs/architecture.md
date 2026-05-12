@@ -420,15 +420,15 @@ sequenceDiagram
     participant RootView as RootView
 
     Note over Root: applyParameters(deepest=false)
-    Root->>Intent: setViewSlot("SLOT_OWNER", contentSlot)
-    Note over Root: contentSlot = { view -> state.contentView = view; update() }
+    Root->>Intent: setViewSlot(SLOT_OWNER, contentSlot)
+    Note over Root: contentSlot atribui a view<br/>recebida ao state.contentView<br/>e chama update()
 
     Note over Home: applyParameters(deepest=true)
-    Home->>Intent: getViewSlot("SLOT_OWNER")
+    Home->>Intent: getViewSlot(SLOT_OWNER)
     Intent-->>Home: contentSlot
     Home->>Root: contentSlot.setView(homeView)
     Note over RootView: state.contentView = homeView
-    Note over RootView: Recompõe e renderiza HomeView
+    Note over RootView: Recompoe e renderiza HomeView
 ```
 
 ---
