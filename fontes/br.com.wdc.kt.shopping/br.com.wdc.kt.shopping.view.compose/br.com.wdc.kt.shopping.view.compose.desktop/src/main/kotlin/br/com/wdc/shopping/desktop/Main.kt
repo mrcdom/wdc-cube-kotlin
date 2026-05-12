@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -51,6 +52,7 @@ fun main() {
         Window(
             onCloseRequest = ::exitApplication,
             title = "Shopping",
+            icon = painterResource("icon.png"),
             state = rememberWindowState(width = 400.dp, height = 800.dp)
         ) {
             ShoppingTheme {
