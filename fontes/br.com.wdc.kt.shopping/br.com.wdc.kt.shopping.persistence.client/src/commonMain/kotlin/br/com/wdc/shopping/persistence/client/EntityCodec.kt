@@ -95,6 +95,8 @@ internal fun ExtensibleObjectInput.readPurchase(): Purchase = Purchase().also { 
         }
     }
     endObject()
+    // Restaura referência circular: PurchaseItem.purchase → Purchase
+    p.items?.forEach { it.purchase = p }
 }
 
 // ── PurchaseItem ──

@@ -9,6 +9,11 @@ import com.google.gson.ExclusionStrategy
 import com.google.gson.FieldAttributes
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.TypeAdapter
+import com.google.gson.TypeAdapterFactory
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
@@ -41,6 +46,7 @@ object ApiGson {
             .registerTypeAdapter(PlatformDateTime::class.java, PlatformDateTimeSerializer())
             .registerTypeAdapter(PlatformDateTime::class.java, PlatformDateTimeDeserializer())
             .addSerializationExclusionStrategy(ApiExclusionStrategy())
+            .registerTypeAdapterFactory(PurchaseBackRefAdapterFactory())
             .create()
     }
 
@@ -104,5 +110,28 @@ object ApiGson {
         }
 
         override fun shouldSkipClass(clazz: Class<*>): Boolean = false
+    }
+
+    /**
+     * Restaura referência circular PurchaseItem.purchase → Purchase
+     * após desserialização Gson.
+     */
+    private class PurchaseBackRefAdapterFactory : TypeAdapterFactory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T> create(gson: Gson, type: TypeToken<T>): TypeAdapter<T>? {
+            if (type.rawType != Purchase::class.java) return null
+            val delegate = gson.getDelegateAdapter(this, type)
+            return object : TypeAdapter<T>() {
+                override fun write(out: JsonWriter, value: T) {
+                    delegate.write(out, value)
+                }
+
+                override fun read(reader: JsonReader): T {
+                    val purchase = delegate.read(reader) as Purchase
+                    purchase.items?.forEach { it.purchase = purchase }
+                    return purchase as T
+                }
+            }
+        }
     }
 }
