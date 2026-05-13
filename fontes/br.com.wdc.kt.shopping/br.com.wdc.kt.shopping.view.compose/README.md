@@ -30,3 +30,17 @@ cd fontes
 # iOS (via Xcode)
 ./gradlew :view-compose-ios:linkDebugFrameworkIosSimulatorArm64
 ```
+
+## Telas
+
+| Login | Produtos |
+|:---:|:---:|
+| ![Login](screenshots/01-login.png) | ![Produtos](screenshots/02-produtos.png) |
+
+| Detalhes do Produto | Compras |
+|:---:|:---:|
+| ![Detalhes do Produto](screenshots/03-detalhes-produto.png) | ![Compras](screenshots/04-compras.png) |
+
+| Carrinho | Recibo |
+|:---:|:---:|
+| ![Carrinho](screenshots/05-carrinho.png) | ![Recibo](screenshots/06-recibo.png) |
