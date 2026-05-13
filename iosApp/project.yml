@@ -1,0 +1,40 @@
+name: ShoppingiOS
+options:
+  bundleIdPrefix: br.com.wdc.shopping
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "16.2"
+
+settings:
+  ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+
+targets:
+  ShoppingiOS:
+    type: application
+    platform: iOS
+    sources:
+      - ShoppingApp
+    settings:
+      base:
+        INFOPLIST_FILE: ShoppingApp/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: br.com.wdc.shopping.ios
+        PRODUCT_MODULE_NAME: ShoppingiOS
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        FRAMEWORK_SEARCH_PATHS:
+          - "$(SRCROOT)/../fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/compose.ios/build/bin/iosSimulatorArm64/debugFramework"
+        OTHER_LINKER_FLAGS:
+          - "-lc++"
+          - "-framework"
+          - "ShoppingApp"
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+    dependencies: []
+    preBuildScripts:
+      - name: "Build Kotlin Framework"
+        script: |
+          cd "$SRCROOT/../fontes"
+          export JAVA_HOME=$(/usr/libexec/java_home -v 21 2>/dev/null || echo "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home")
+          ./gradlew :view-compose-ios:linkDebugFrameworkIosSimulatorArm64 --no-daemon
+        basedOnDependencyAnalysis: false

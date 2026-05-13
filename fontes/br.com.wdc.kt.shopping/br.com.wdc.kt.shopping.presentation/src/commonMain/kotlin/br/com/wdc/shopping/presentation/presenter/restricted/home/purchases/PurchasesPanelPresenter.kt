@@ -1,0 +1,79 @@
+package br.com.wdc.shopping.presentation.presenter.restricted.home.purchases
+
+import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.cube.AbstractChildPresenter
+import br.com.wdc.framework.cube.CubeView
+import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
+import kotlin.math.ceil
+import kotlin.math.max
+
+class PurchasesPanelPresenter(
+    app: ShoppingApplication,
+    val owner: HomePresenter,
+) : AbstractChildPresenter<ShoppingApplication>(app) {
+
+    companion object {
+        private val LOG = Log.getLogger("PurchasesPanelPresenter")
+
+        var createView: ((PurchasesPanelPresenter) -> CubeView)? = null
+    }
+
+    // :: Public Instance Fields
+
+    val state = PurchasesPanelViewState()
+
+    // :: Internal Instance Fields
+
+    private val purchasesPanelService = PurchasesPanelService(app)
+
+    // :: Life cycle
+
+    override fun onCreateView(): CubeView = createView!!.invoke(this)
+
+    override fun onInitialize() {
+        update()
+    }
+
+    // :: User Actions
+
+    fun onPageChange(page: Int) {
+        state.page = max(0, page)
+        loadPurchases()
+    }
+
+    fun onItemSizeCapacityChanged(capacity: Int) {
+        val newPageSize = max(1, capacity)
+        if (newPageSize != state.pageSize) {
+            state.pageSize = newPageSize
+            state.page = 0
+            loadPurchases()
+        }
+    }
+
+    fun onOpenReceipt(purchaseId: Long?) {
+        owner.onOpenReceipt(purchaseId)
+    }
+
+    // :: Data load
+
+    fun loadPurchases() {
+        try {
+            val subject = app.subject
+            if (subject != null) {
+                state.totalCount = purchasesPanelService.countPurchasesOfUser(subject.id!!)
+
+                val totalPages = max(1, ceil(state.totalCount.toDouble() / state.pageSize).toInt())
+                if (state.page >= totalPages) {
+                    state.page = totalPages - 1
+                }
+
+                val offset = state.page * state.pageSize
+                state.purchases = purchasesPanelService.loadPurchasesOfUser(subject.id!!, offset, state.pageSize)
+                update()
+            }
+        } catch (caught: Exception) {
+            LOG.error("Failed to load purchases", caught)
+        }
+    }
+}
