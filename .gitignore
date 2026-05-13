@@ -25,6 +25,7 @@ node_modules/
 
 # Runtime data
 fontes/work/
+**/work/config/
 **/work/data/
 **/work/log/
 **/work/temp/
