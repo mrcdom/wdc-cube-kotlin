@@ -2,6 +2,8 @@
 
 Frontend SPA do sistema Shopping, construído com **React 19**, **TypeScript** e **MUI 9**. Comunica-se com o backend Java via **WebSocket bidirecional**, recebendo estados serializados dos presenters e enviando eventos de volta.
 
+Veja a [documentação de arquitetura](../../../../docs/architecture-react.md) para detalhes do protocolo e do ciclo de comunicação.
+
 ## Stack
 
 | Tecnologia | Versão | Finalidade |
