@@ -22,18 +22,14 @@ kotlin {
     }
 
     sourceSets {
-        val iosMain by creating {
-            dependencies {
-                implementation(compose.runtime)
-                implementation(compose.ui)
-                implementation(compose.foundation)
-                implementation(compose.material3)
-                implementation(project(":view-compose"))
-                implementation(project(":shopping-presentation"))
-                implementation(project(":shopping-persistence-client"))
-            }
+        iosMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.ui)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(project(":view-compose"))
+            implementation(project(":shopping-presentation"))
+            implementation(project(":shopping-persistence-client"))
         }
-        val iosArm64Main by getting { dependsOn(iosMain) }
-        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
     }
 }

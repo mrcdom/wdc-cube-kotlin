@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.agp.library)
@@ -19,6 +21,16 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    applyDefaultHierarchyTemplate {
+        common {
+            group("jvmCommon") {
+                withJvm()
+                withAndroidTarget()
+            }
+        }
+    }
+
     sourceSets.all {
         languageSettings.optIn("kotlin.time.ExperimentalTime")
         languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
@@ -29,23 +41,10 @@ kotlin {
             api(project(":shopping-domain"))
         }
 
-        val jvmCommonMain by creating {
-            dependsOn(commonMain.get())
+        val jvmCommonMain by getting {
             dependencies {
                 implementation(libs.okhttp)
             }
         }
-        val jvmMain by getting {
-            dependsOn(jvmCommonMain)
-        }
-        val androidMain by getting {
-            dependsOn(jvmCommonMain)
-        }
-
-        val iosMain by creating {
-            dependsOn(commonMain.get())
-        }
-        val iosArm64Main by getting { dependsOn(iosMain) }
-        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
     }
 }
