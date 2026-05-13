@@ -7,7 +7,7 @@ application {
 }
 
 tasks.named<JavaExec>("run") {
-    workingDir = rootProject.projectDir
+    workingDir = projectDir
 }
 
 dependencies {
