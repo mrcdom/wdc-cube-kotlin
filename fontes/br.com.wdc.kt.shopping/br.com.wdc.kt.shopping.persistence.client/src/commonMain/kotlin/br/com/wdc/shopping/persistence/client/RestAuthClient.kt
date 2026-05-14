@@ -3,7 +3,7 @@ package br.com.wdc.shopping.persistence.client
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
 import br.com.wdc.shopping.domain.exception.BusinessException
 import br.com.wdc.shopping.domain.security.CryptoProvider
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 

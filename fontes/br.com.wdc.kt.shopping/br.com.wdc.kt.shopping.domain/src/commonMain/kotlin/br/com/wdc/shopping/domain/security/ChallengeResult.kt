@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.domain.security
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 data class ChallengeResult(
     val nonce: String,

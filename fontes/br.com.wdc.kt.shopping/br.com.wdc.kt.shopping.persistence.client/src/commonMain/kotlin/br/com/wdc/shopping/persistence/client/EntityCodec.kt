@@ -7,7 +7,7 @@ import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.model.User
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 // ── Product ──
 

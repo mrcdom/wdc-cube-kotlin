@@ -6,7 +6,7 @@ import br.com.wdc.shopping.domain.security.AuthResult
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.ChallengeResult
 import br.com.wdc.shopping.domain.security.SecurityContext
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class RestAuthenticationService(private val config: RestConfig) : AuthenticationService {
 
