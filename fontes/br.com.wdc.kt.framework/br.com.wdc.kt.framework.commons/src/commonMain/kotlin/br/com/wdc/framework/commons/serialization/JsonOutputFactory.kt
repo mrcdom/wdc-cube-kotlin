@@ -25,3 +25,13 @@ object JsonOutputFactory {
         return (factory ?: throw IllegalStateException("JsonOutputFactory not installed"))()
     }
 }
+
+/**
+ * Instala a implementação streaming em Kotlin puro — funciona em todas as plataformas.
+ */
+fun JsonOutputFactory.installCommon() {
+    install {
+        val writer = JsonStreamWriter()
+        JsonStringOutput(writer) { writer.result() }
+    }
+}

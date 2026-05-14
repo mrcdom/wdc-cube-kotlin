@@ -10,7 +10,7 @@ import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.concurrent.WasmScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
-import br.com.wdc.framework.commons.serialization.installWasm
+import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.repositories.ProductRepository
@@ -74,8 +74,8 @@ private fun createView(view: ComposeCubeView): CubeView {
 
 private fun initializePlatform(baseUrl: String) {
     // Install platform services
-    JsonInputFactory.installWasm()
-    JsonOutputFactory.installWasm()
+    JsonInputFactory.installCommon()
+    JsonOutputFactory.installCommon()
     ScheduledExecutor.BEAN.set(WasmScheduledExecutor())
 
     // Initialize REST repositories

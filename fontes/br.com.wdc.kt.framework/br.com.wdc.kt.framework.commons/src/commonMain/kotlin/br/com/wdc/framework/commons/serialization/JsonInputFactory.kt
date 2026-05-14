@@ -25,3 +25,10 @@ object JsonInputFactory {
             .invoke(json)
     }
 }
+
+/**
+ * Instala a implementação streaming em Kotlin puro — funciona em todas as plataformas.
+ */
+fun JsonInputFactory.installCommon() {
+    install { json -> JsonStringInput(JsonStreamReader(json)) }
+}

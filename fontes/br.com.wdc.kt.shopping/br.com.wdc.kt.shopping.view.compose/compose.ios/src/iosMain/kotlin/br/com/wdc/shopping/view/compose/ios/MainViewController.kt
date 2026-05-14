@@ -13,7 +13,7 @@ import br.com.wdc.framework.commons.concurrent.IosScheduledExecutor
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
-import br.com.wdc.framework.commons.serialization.installIos
+import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.repositories.ProductRepository
@@ -79,8 +79,8 @@ private fun initializePlatform(baseUrl: String) {
     PlatformConfig.baseUrl = baseUrl
 
     // Install platform services
-    JsonInputFactory.installIos()
-    JsonOutputFactory.installIos()
+    JsonInputFactory.installCommon()
+    JsonOutputFactory.installCommon()
     ScheduledExecutor.BEAN.set(IosScheduledExecutor())
 
     // Initialize REST repositories

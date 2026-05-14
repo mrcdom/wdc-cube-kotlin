@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
-import br.com.wdc.framework.commons.serialization.installGson
+import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.repositories.ProductRepository
@@ -112,8 +112,8 @@ private fun createView(view: ComposeCubeView): CubeView = view
 
 private fun initializePlatform(baseUrl: String) {
     PlatformConfig.baseUrl = baseUrl
-    JsonInputFactory.installGson()
-    JsonOutputFactory.installGson()
+    JsonInputFactory.installCommon()
+    JsonOutputFactory.installCommon()
     ScheduledExecutor.BEAN.set(AndroidScheduledExecutor())
 
     val transport = OkHttpTransport(baseUrl)

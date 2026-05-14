@@ -59,7 +59,7 @@ class BusinessContext {
 
             val jwtSecret = ShoppingConfig.jwtSecret
             if (!jwtSecret.isNullOrBlank()) {
-                RepositoryBootstrap.initializeSecurity(jwtSecret!!)
+                RepositoryBootstrap.initializeSecurity(jwtSecret)
             }
 
             LOG.info("Shopping backend context initialized with database {}", dataSource.getURL())

@@ -5,7 +5,7 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.log.Slf4jLogFactory
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
-import br.com.wdc.framework.commons.serialization.installGson
+import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.sql.SqlDataSource
 import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
@@ -57,8 +57,8 @@ class RestTestEnvironment(private val dbName: String = "wedocode-shopping-rest-t
 
     override fun start() {
         Log.setFactory(Slf4jLogFactory())
-        JsonOutputFactory.installGson()
-        JsonInputFactory.installGson()
+        JsonOutputFactory.installCommon()
+        JsonInputFactory.installCommon()
 
         executor = ScheduledExecutorForTestAsync()
 
