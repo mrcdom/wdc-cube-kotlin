@@ -1,7 +1,9 @@
 package br.com.wdc.shopping.persistence.schema
 
-import br.com.wdc.framework.commons.gson.JsonCoerceUtils
+import br.com.wdc.framework.commons.gson.JsonExtensibleObjectInput
 import br.com.wdc.framework.commons.gson.JsonReaderHelper
+import br.com.wdc.framework.commons.serialization.InputCoerceUtils
+import br.com.wdc.framework.commons.serialization.asJavaBigDecimal
 import br.com.wdc.shopping.persistence.schema.support.BaseRow
 import br.com.wdc.shopping.persistence.schema.support.DbField
 import br.com.wdc.shopping.persistence.schema.support.DbTable
@@ -76,14 +78,15 @@ class EnPurchaseItem(alias: String) : DbTable(alias) {
 
         companion object {
             fun parseJson(reader: JsonReader): Row {
+                val input = JsonExtensibleObjectInput(reader)
                 val row = Row()
                 val en = INSTANCE
                 JsonReaderHelper(reader).`object` { obj0 ->
-                    obj0[en.id.name] = { row.id(JsonCoerceUtils.asLong(reader)) }
-                    obj0[en.amount.name] = { row.amount(JsonCoerceUtils.asInteger(reader)) }
-                    obj0[en.price.name] = { row.price(JsonCoerceUtils.asBigDecimal(reader)) }
-                    obj0[en.purchaseId.name] = { row.purchaseId(JsonCoerceUtils.asLong(reader)) }
-                    obj0[en.productId.name] = { row.productId(JsonCoerceUtils.asLong(reader)) }
+                    obj0[en.id.name] = { row.id(InputCoerceUtils.asLong(input)) }
+                    obj0[en.amount.name] = { row.amount(InputCoerceUtils.asInteger(input)) }
+                    obj0[en.price.name] = { row.price(InputCoerceUtils.asJavaBigDecimal(input)) }
+                    obj0[en.purchaseId.name] = { row.purchaseId(InputCoerceUtils.asLong(input)) }
+                    obj0[en.productId.name] = { row.productId(InputCoerceUtils.asLong(input)) }
                 }
                 return row
             }

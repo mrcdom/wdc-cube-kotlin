@@ -1,7 +1,10 @@
 package br.com.wdc.shopping.persistence.schema
 
-import br.com.wdc.framework.commons.gson.JsonCoerceUtils
+import br.com.wdc.framework.commons.gson.JsonExtensibleObjectInput
 import br.com.wdc.framework.commons.gson.JsonReaderHelper
+import br.com.wdc.framework.commons.serialization.InputCoerceUtils
+import br.com.wdc.framework.commons.serialization.asByteArrayFromHex
+import br.com.wdc.framework.commons.serialization.asJavaBigDecimal
 import br.com.wdc.shopping.persistence.schema.support.BaseRow
 import br.com.wdc.shopping.persistence.schema.support.DbField
 import br.com.wdc.shopping.persistence.schema.support.DbTable
@@ -68,14 +71,15 @@ class EnProduct(alias: String) : DbTable(alias) {
 
         companion object {
             fun parseJson(reader: JsonReader): Row {
+                val input = JsonExtensibleObjectInput(reader)
                 val row = Row()
                 val en = INSTANCE
                 JsonReaderHelper(reader).`object` { obj0 ->
-                    obj0[en.id.name] = { row.id(JsonCoerceUtils.asLong(reader)) }
-                    obj0[en.name.name] = { row.name(JsonCoerceUtils.asString(reader)) }
-                    obj0[en.price.name] = { row.price(JsonCoerceUtils.asBigDecimal(reader)) }
-                    obj0[en.description.name] = { row.description(JsonCoerceUtils.asString(reader)) }
-                    obj0[en.image.name] = { row.image(JsonCoerceUtils.asByteArrayFromHex(reader)) }
+                    obj0[en.id.name] = { row.id(InputCoerceUtils.asLong(input)) }
+                    obj0[en.name.name] = { row.name(InputCoerceUtils.asString(input)) }
+                    obj0[en.price.name] = { row.price(InputCoerceUtils.asJavaBigDecimal(input)) }
+                    obj0[en.description.name] = { row.description(InputCoerceUtils.asString(input)) }
+                    obj0[en.image.name] = { row.image(InputCoerceUtils.asByteArrayFromHex(input)) }
                 }
                 return row
             }

@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.scripts.sgbd
 
-import br.com.wdc.framework.commons.lang.CoerceUtilsJvm
+import br.com.wdc.framework.commons.lang.CoerceUtils
+import br.com.wdc.framework.commons.lang.asJavaOffsetDateTime
 import br.com.wdc.shopping.persistence.repository.product.InsertProductRowCmd
 import br.com.wdc.shopping.persistence.repository.purchase.InsertRowPurchaseCmd
 import br.com.wdc.shopping.persistence.repository.purchaseitem.InsertRowPurchaseItemCmd
@@ -166,7 +167,7 @@ object DBReset {
             }
             cal.set(Calendar.SECOND, 0)
             cal.set(Calendar.MILLISECOND, 0)
-            row.buyDate(CoerceUtilsJvm.asOffsetDateTime(cal.time)!!)
+            row.buyDate(CoerceUtils.asJavaOffsetDateTime(cal.time)!!)
         }
         InsertRowPurchaseCmd().execute(c, row)
     }

@@ -2,6 +2,7 @@ package br.com.wdc.framework.commons.lang
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -172,7 +173,7 @@ object CoerceUtils {
         is LocalDateTime -> v.date
         is Instant -> v.toLocalDateTime(TimeZone.currentSystemDefault()).date
         is String -> if (v.isEmpty()) defaultValue else LocalDate.parse(v)
-        else -> throw IllegalArgumentException(errorMessage(v))
+        else -> platformCoerceToLocalDate(v) ?: throw IllegalArgumentException(errorMessage(v))
     }
 
     // :: LocalDateTime (kotlinx-datetime)
@@ -183,7 +184,7 @@ object CoerceUtils {
         is LocalDate -> LocalDateTime(v, LocalTime(0, 0))
         is Instant -> v.toLocalDateTime(TimeZone.currentSystemDefault())
         is String -> if (v.isEmpty()) defaultValue else LocalDateTime.parse(v)
-        else -> throw IllegalArgumentException(errorMessage(v))
+        else -> platformCoerceToLocalDateTime(v) ?: throw IllegalArgumentException(errorMessage(v))
     }
 
     // :: Instant (kotlinx-datetime)
@@ -194,39 +195,21 @@ object CoerceUtils {
         is LocalDateTime -> v.toInstant(TimeZone.currentSystemDefault())
         is LocalDate -> LocalDateTime(v, LocalTime(0, 0)).toInstant(TimeZone.currentSystemDefault())
         is String -> if (v.isEmpty()) defaultValue else Instant.parse(v)
-        else -> throw IllegalArgumentException(errorMessage(v))
+        else -> platformCoerceToInstant(v) ?: throw IllegalArgumentException(errorMessage(v))
     }
 
     // :: ByteArray (Base64 - pure Kotlin)
 
+    @OptIn(ExperimentalEncodingApi::class)
     fun asByteArray(v: Any?, defaultValue: ByteArray? = null): ByteArray? = when (v) {
         null -> defaultValue
         is ByteArray -> v
         is Byte -> byteArrayOf(v)
-        is String -> if (v.isEmpty()) defaultValue else decodeBase64(v)
+        is String -> if (v.isEmpty()) defaultValue else kotlin.io.encoding.Base64.decode(v)
         else -> throw IllegalArgumentException(errorMessage(v))
     }
 
     // :: Internal helpers
 
     private fun errorMessage(v: Any): String = "The value cannot be parsed to: '${v::class.simpleName}'"
-
-    private fun decodeBase64(s: String): ByteArray {
-        val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-        val clean = s.filter { it != '=' && it != '\n' && it != '\r' }
-        val bytes = ByteArray(clean.length * 3 / 4)
-        var idx = 0
-        var i = 0
-        while (i < clean.length) {
-            val b0 = alphabet.indexOf(clean[i++])
-            val b1 = if (i < clean.length) alphabet.indexOf(clean[i++]) else 0
-            val b2 = if (i < clean.length) alphabet.indexOf(clean[i++]) else 0
-            val b3 = if (i < clean.length) alphabet.indexOf(clean[i++]) else 0
-            val triple = (b0 shl 18) or (b1 shl 12) or (b2 shl 8) or b3
-            if (idx < bytes.size) bytes[idx++] = (triple shr 16 and 0xFF).toByte()
-            if (idx < bytes.size) bytes[idx++] = (triple shr 8 and 0xFF).toByte()
-            if (idx < bytes.size) bytes[idx++] = (triple and 0xFF).toByte()
-        }
-        return bytes.copyOf(idx)
-    }
 }

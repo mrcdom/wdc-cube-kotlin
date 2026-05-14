@@ -1,7 +1,8 @@
 package br.com.wdc.shopping.persistence.schema
 
-import br.com.wdc.framework.commons.gson.JsonCoerceUtils
+import br.com.wdc.framework.commons.gson.JsonExtensibleObjectInput
 import br.com.wdc.framework.commons.gson.JsonReaderHelper
+import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.shopping.persistence.schema.support.BaseRow
 import br.com.wdc.shopping.persistence.schema.support.DbField
 import br.com.wdc.shopping.persistence.schema.support.DbTable
@@ -68,14 +69,15 @@ class EnUser(alias: String) : DbTable(alias) {
 
         companion object {
             fun parseJson(reader: JsonReader): Row {
+                val input = JsonExtensibleObjectInput(reader)
                 val row = Row()
                 val en = INSTANCE
                 JsonReaderHelper(reader).`object` { obj0 ->
-                    obj0[en.id.name] = { row.id(JsonCoerceUtils.asLong(reader)) }
-                    obj0[en.userName.name] = { row.userName(JsonCoerceUtils.asString(reader)) }
-                    obj0[en.password.name] = { row.password(JsonCoerceUtils.asString(reader)) }
-                    obj0[en.name.name] = { row.name(JsonCoerceUtils.asString(reader)) }
-                    obj0[en.roles.name] = { row.roles(JsonCoerceUtils.asString(reader)) }
+                    obj0[en.id.name] = { row.id(InputCoerceUtils.asLong(input)) }
+                    obj0[en.userName.name] = { row.userName(InputCoerceUtils.asString(input)) }
+                    obj0[en.password.name] = { row.password(InputCoerceUtils.asString(input)) }
+                    obj0[en.name.name] = { row.name(InputCoerceUtils.asString(input)) }
+                    obj0[en.roles.name] = { row.roles(InputCoerceUtils.asString(input)) }
                 }
                 return row
             }

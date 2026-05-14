@@ -1,7 +1,9 @@
 package br.com.wdc.shopping.persistence.schema
 
-import br.com.wdc.framework.commons.gson.JsonCoerceUtils
+import br.com.wdc.framework.commons.gson.JsonExtensibleObjectInput
 import br.com.wdc.framework.commons.gson.JsonReaderHelper
+import br.com.wdc.framework.commons.serialization.InputCoerceUtils
+import br.com.wdc.framework.commons.serialization.asJavaOffsetDateTime
 import br.com.wdc.shopping.persistence.schema.support.BaseRow
 import br.com.wdc.shopping.persistence.schema.support.DbField
 import br.com.wdc.shopping.persistence.schema.support.DbTable
@@ -58,12 +60,13 @@ class EnPurchase(alias: String) : DbTable(alias) {
 
         companion object {
             fun parseJson(reader: JsonReader): Row {
+                val input = JsonExtensibleObjectInput(reader)
                 val row = Row()
                 val en = INSTANCE
                 JsonReaderHelper(reader).`object` { obj0 ->
-                    obj0[en.id.name] = { row.id(JsonCoerceUtils.asLong(reader)) }
-                    obj0[en.buyDate.name] = { row.buyDate(JsonCoerceUtils.asOffsetDateTime(reader)) }
-                    obj0[en.userId.name] = { row.userId(JsonCoerceUtils.asLong(reader)) }
+                    obj0[en.id.name] = { row.id(InputCoerceUtils.asLong(input)) }
+                    obj0[en.buyDate.name] = { row.buyDate(InputCoerceUtils.asJavaOffsetDateTime(input)) }
+                    obj0[en.userId.name] = { row.userId(InputCoerceUtils.asLong(input)) }
                 }
                 return row
             }
