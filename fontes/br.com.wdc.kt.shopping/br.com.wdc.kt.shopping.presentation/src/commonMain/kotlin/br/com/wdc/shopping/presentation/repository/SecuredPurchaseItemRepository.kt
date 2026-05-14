@@ -1,9 +1,10 @@
-package br.com.wdc.shopping.presentation
+package br.com.wdc.shopping.presentation.repository
 
 import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
+import br.com.wdc.shopping.presentation.util.withSecurityContext
 
 class SecuredPurchaseItemRepository(
     private val delegate: PurchaseItemRepository,

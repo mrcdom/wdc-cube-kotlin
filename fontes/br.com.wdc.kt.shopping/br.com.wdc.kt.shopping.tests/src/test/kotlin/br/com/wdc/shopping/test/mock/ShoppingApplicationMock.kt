@@ -5,10 +5,10 @@ import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.repositories.UserRepository
-import br.com.wdc.shopping.presentation.SecuredProductRepository
-import br.com.wdc.shopping.presentation.SecuredPurchaseItemRepository
-import br.com.wdc.shopping.presentation.SecuredPurchaseRepository
-import br.com.wdc.shopping.presentation.SecuredUserRepository
+import br.com.wdc.shopping.presentation.repository.SecuredProductRepository
+import br.com.wdc.shopping.presentation.repository.SecuredPurchaseItemRepository
+import br.com.wdc.shopping.presentation.repository.SecuredPurchaseRepository
+import br.com.wdc.shopping.presentation.repository.SecuredUserRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter

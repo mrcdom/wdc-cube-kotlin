@@ -1,4 +1,4 @@
-package br.com.wdc.shopping.presentation
+package br.com.wdc.shopping.presentation.util
 
 import br.com.wdc.shopping.domain.security.SecurityContext
 import br.com.wdc.shopping.domain.security.SecurityContextHolder

@@ -1,9 +1,10 @@
-package br.com.wdc.shopping.presentation
+package br.com.wdc.shopping.presentation.repository
 
 import br.com.wdc.shopping.domain.criteria.UserCriteria
 import br.com.wdc.shopping.domain.model.User
 import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
+import br.com.wdc.shopping.presentation.util.withSecurityContext
 
 class SecuredUserRepository(
     private val delegate: UserRepository,
