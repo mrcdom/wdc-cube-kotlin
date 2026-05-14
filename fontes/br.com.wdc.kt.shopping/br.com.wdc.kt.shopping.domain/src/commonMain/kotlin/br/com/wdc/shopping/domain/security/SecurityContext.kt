@@ -1,6 +1,8 @@
 package br.com.wdc.shopping.domain.security
 
-interface SecurityContext {
+import br.com.wdc.framework.commons.serialization.Externalizable
+
+interface SecurityContext : Externalizable {
 
     val userId: Long?
 

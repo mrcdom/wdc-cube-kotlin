@@ -1,6 +1,9 @@
 package br.com.wdc.shopping.test.util
 
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
+import br.com.wdc.framework.commons.serialization.JsonOutputFactory
+import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.sql.SqlDataSource
 import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
@@ -25,6 +28,9 @@ class TestEnvironment(private val dbName: String = "wedocode-shopping") : Shoppi
 
     override fun start() {
         executor = ScheduledExecutorForTestAsync()
+
+        JsonInputFactory.installCommon()
+        JsonOutputFactory.installCommon()
 
         val ds = BasicDataSource()
         ds.driverClassName = "org.h2.jdbcx.JdbcDataSource"

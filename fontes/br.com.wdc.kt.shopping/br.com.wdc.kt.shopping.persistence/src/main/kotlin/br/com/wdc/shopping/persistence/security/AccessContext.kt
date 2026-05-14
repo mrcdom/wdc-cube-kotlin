@@ -1,5 +1,7 @@
 package br.com.wdc.shopping.persistence.security
 
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.domain.security.SecurityContext
 import java.security.KeyPair
 import java.security.PrivateKey
@@ -29,4 +31,21 @@ class AccessContext(
         permissions.contains("$entity:$operation") || permissions.contains("$entity:*")
 
     override fun hasDataAll(): Boolean = permissions.contains("data:all")
+
+    override fun writeExternal(out: ExtensibleObjectOutput) {
+        out.beginObject()
+        userId?.let { out.name("userId").value(it) }
+        userName?.let { out.name("userName").value(it) }
+        out.name("publicKeyBase64").value(publicKeyBase64)
+        if (permissions.isNotEmpty()) {
+            out.name("permissions").beginArray()
+            permissions.forEach { out.value(it) }
+            out.endArray()
+        }
+        out.endObject()
+    }
+
+    override fun readExternal(input: ExtensibleObjectInput) {
+        throw UnsupportedOperationException("AccessContext cannot be deserialized; use SimpleSecurityContext instead")
+    }
 }

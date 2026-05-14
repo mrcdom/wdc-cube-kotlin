@@ -4,6 +4,7 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeApplication
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePlace
+import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
@@ -16,6 +17,8 @@ import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 
 abstract class ShoppingApplication : CubeApplication() {
+
+    val sessionStorage: SessionStorage by lazy { createSessionStorage() }
 
     var subject: Subject? = null
 
@@ -123,4 +126,6 @@ abstract class ShoppingApplication : CubeApplication() {
     protected open fun createPurchaseDelegate(delegate: PurchaseRepository): PurchaseRepository = delegate
 
     protected open fun createPurchaseItemDelegate(delegate: PurchaseItemRepository): PurchaseItemRepository = delegate
+
+    protected abstract fun createSessionStorage(): SessionStorage
 }

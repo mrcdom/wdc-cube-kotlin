@@ -43,7 +43,7 @@ object Routes {
     fun root(app: ShoppingApplication): Boolean = root(app, app.newIntent())
 
     fun root(app: ShoppingApplication, intent: CubeIntent): Boolean {
-        return if (app.subject == null) login(app, intent) else home(app, intent)
+        return home(app, intent)
     }
 
     // :: Login

@@ -11,6 +11,8 @@ import br.com.wdc.framework.commons.concurrent.WasmScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
+import br.com.wdc.framework.commons.storage.SessionStorage
+import br.com.wdc.framework.commons.storage.WasmSessionStorage
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.repositories.ProductRepository
@@ -66,6 +68,8 @@ private class ComposeShoppingApplication : ShoppingApplication() {
 
     override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
         SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
+
+    override fun createSessionStorage(): SessionStorage = WasmSessionStorage()
 }
 
 private fun createView(view: ComposeCubeView): CubeView {

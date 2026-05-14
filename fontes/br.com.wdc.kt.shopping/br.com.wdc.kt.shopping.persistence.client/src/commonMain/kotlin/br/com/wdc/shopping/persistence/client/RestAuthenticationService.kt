@@ -1,6 +1,8 @@
 package br.com.wdc.shopping.persistence.client
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
+import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.shopping.domain.exception.BusinessException
 import br.com.wdc.shopping.domain.security.AuthResult
 import br.com.wdc.shopping.domain.security.AuthenticationService
@@ -126,5 +128,39 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
         input.endObject()
 
         return AuthResult(userId, accessToken, refreshToken, expiresAt, publicKey)
+    }
+
+    override fun writeAuthState(out: ExtensibleObjectOutput) {
+        out.beginObject()
+        authClient.accessToken?.let { out.name("accessToken").value(it) }
+        authClient.refreshToken?.let { out.name("refreshToken").value(it) }
+        authClient.publicKeyBase64?.let { out.name("publicKeyBase64").value(it) }
+        if (authClient.expiresAtEpochSecond > 0) {
+            out.name("expiresAt").value(authClient.expiresAtEpochSecond)
+        }
+        out.endObject()
+    }
+
+    override fun readAuthState(input: ExtensibleObjectInput) {
+        var accessToken: String? = null
+        var refreshToken: String? = null
+        var publicKeyBase64: String? = null
+        var expiresAt = 0L
+
+        input.beginObject()
+        while (input.hasNext()) {
+            when (input.nextName()) {
+                "accessToken" -> accessToken = InputCoerceUtils.asString(input)
+                "refreshToken" -> refreshToken = InputCoerceUtils.asString(input)
+                "publicKeyBase64" -> publicKeyBase64 = InputCoerceUtils.asString(input)
+                "expiresAt" -> expiresAt = InputCoerceUtils.asLong(input) ?: 0L
+                else -> input.skipValue()
+            }
+        }
+        input.endObject()
+
+        if (accessToken != null && refreshToken != null && publicKeyBase64 != null) {
+            authClient.setTokens(accessToken, refreshToken, publicKeyBase64, expiresAt)
+        }
     }
 }

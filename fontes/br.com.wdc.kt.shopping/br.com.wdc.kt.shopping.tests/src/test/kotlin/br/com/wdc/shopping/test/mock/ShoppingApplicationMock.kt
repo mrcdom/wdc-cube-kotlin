@@ -1,6 +1,8 @@
 package br.com.wdc.shopping.test.mock
 
 import br.com.wdc.framework.cube.CubePresenter
+import br.com.wdc.framework.commons.storage.JvmSessionStorage
+import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
@@ -56,6 +58,8 @@ class ShoppingApplicationMock : ShoppingApplication() {
 
     override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
         SecuredPurchaseItemRepository(delegate, ::getSecurityContext)
+
+    override fun createSessionStorage(): SessionStorage = JvmSessionStorage()
 
     fun getRootView(): RootViewMock? {
         val rootPresenter = getRootPresenter()

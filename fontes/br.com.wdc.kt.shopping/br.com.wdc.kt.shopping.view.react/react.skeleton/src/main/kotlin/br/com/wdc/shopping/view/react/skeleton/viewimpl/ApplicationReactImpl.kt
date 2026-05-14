@@ -6,6 +6,8 @@ import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.gson.JsonExtensibleObjectOutput
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.storage.JvmSessionStorage
+import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
@@ -133,6 +135,8 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
 
     override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
         SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
+
+    override fun createSessionStorage(): SessionStorage = JvmSessionStorage()
 
     // :: Instance
 

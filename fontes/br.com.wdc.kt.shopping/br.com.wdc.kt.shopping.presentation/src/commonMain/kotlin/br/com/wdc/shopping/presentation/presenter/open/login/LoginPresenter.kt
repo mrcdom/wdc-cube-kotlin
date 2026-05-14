@@ -1,11 +1,13 @@
 package br.com.wdc.shopping.presentation.presenter.open.login
 
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
+import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.presentation.PlaceAttributes
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.Routes
@@ -78,6 +80,28 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
                 alertUserOrPasswordNotRecognize()
             } else {
                 app.subject = subject
+
+                // Serialize subject to sessionStorage
+                val out = JsonOutputFactory.createStringOutput()
+                subject.writeExternal(out.output)
+                app.sessionStorage.set("subject", out.resultString())
+
+                // Serialize securityContext to sessionStorage
+                val secCtx = app.getSecurityContext()
+                if (secCtx != null) {
+                    val ctxOut = JsonOutputFactory.createStringOutput()
+                    secCtx.writeExternal(ctxOut.output)
+                    app.sessionStorage.set("securityContext", ctxOut.resultString())
+                }
+
+                // Serialize auth tokens to sessionStorage
+                val authService = AuthenticationService.BEAN.getOrNull()
+                if (authService != null) {
+                    val authOut = JsonOutputFactory.createStringOutput()
+                    authService.writeAuthState(authOut.output)
+                    app.sessionStorage.set("authState", authOut.resultString())
+                }
+
                 Routes.home(app)
             }
         } catch (caught: Exception) {

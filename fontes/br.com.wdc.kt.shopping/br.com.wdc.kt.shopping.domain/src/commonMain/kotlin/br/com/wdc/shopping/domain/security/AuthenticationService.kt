@@ -1,5 +1,7 @@
 package br.com.wdc.shopping.domain.security
 
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.util.AtomicRef
 
 interface AuthenticationService {
@@ -13,6 +15,10 @@ interface AuthenticationService {
     fun logout(refreshToken: String)
 
     fun resolveToken(jwtToken: String): SecurityContext?
+
+    fun writeAuthState(out: ExtensibleObjectOutput) {}
+
+    fun readAuthState(input: ExtensibleObjectInput) {}
 
     companion object {
         val BEAN = AtomicRef<AuthenticationService>()
