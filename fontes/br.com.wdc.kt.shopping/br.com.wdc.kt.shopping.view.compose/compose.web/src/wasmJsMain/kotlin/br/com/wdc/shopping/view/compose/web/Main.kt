@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeViewport
+import br.com.wdc.framework.commons.codec.Base62
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.concurrent.WasmScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
@@ -20,6 +21,7 @@ import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.WasmCryptoProvider
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
@@ -57,10 +59,55 @@ private class ComposeShoppingApplication : ShoppingApplication() {
         val intent = CubeIntent()
         intent.place = getLastPlace() ?: getRootPlace()
         publishParameters(intent)
+
+        val signature = signIntent(intent.toString())
+        intent.setParameter("sign", signature)
+
         val newFragment = intent.toString()
-        if (newFragment == getLocationHash()) return
         fragment = newFragment
+        if (newFragment == getLocationHash()) return
         jsSetLocationHash(newFragment.toJsString())
+    }
+
+    fun safeGo(path: String?) {
+        val intent = CubeIntent.parse(path ?: "")
+        if (intent.place == null) {
+            intent.place = getRootPlace()
+        }
+
+        val actualSignature = intent.removeParameter("sign") ?: ""
+        val expectedSignature = signIntent(intent.toString())
+
+        if (actualSignature != expectedSignature) {
+            // Invalid signature: navigate to current state or root
+            updateHistory()
+            val newIntent = newIntent()
+            if (newIntent.place == null) {
+                newIntent.place = getRootPlace()
+            }
+            go(newIntent)
+        } else {
+            go(intent)
+        }
+    }
+
+    private fun getSigningKey(): ByteArray {
+        val publicKey = getSecurityContext()?.publicKeyBase64
+        return if (!publicKey.isNullOrBlank()) {
+            publicKey.encodeToByteArray()
+        } else {
+            ANONYMOUS_SIGN_KEY
+        }
+    }
+
+    private fun signIntent(intentStr: String): String {
+        val crypto = CryptoProvider.BEAN.get()!!
+        val hmac = crypto.hmacSha256(getSigningKey(), intentStr.encodeToByteArray())
+        return Base62.encodeToString(hmac)
+    }
+
+    companion object {
+        private val ANONYMOUS_SIGN_KEY = "wdc-compose-web-anon-sign-key".encodeToByteArray()
     }
 
     override fun createPresenterMap(): MutableMap<Int, CubePresenter> = LinkedHashMap()
@@ -116,10 +163,25 @@ fun main() {
     // Ensure route registrations are initialized before navigation
     Routes.Place.entries
 
-    // Read initial path from URL hash or default to "public"
+    // Read initial path from URL hash, verify signature, or default to "public"
     val hash = getLocationHash()
-    val initialPath = if (hash.isNotBlank()) hash else "public"
-    app.go(initialPath)
+    if (hash.isNotBlank()) {
+        app.safeGo(hash)
+    } else {
+        app.go("public")
+    }
+
+    // Listen for browser back/forward and manual URL hash changes
+    jsOnHashChange {
+        val newHash = getLocationHash()
+        if (newHash != app.fragment) {
+            if (newHash.isNotBlank()) {
+                app.safeGo(newHash)
+            } else {
+                app.go("public")
+            }
+        }
+    }
 
     val target = document.getElementById("ComposeTarget") ?: return
 
@@ -155,3 +217,6 @@ private fun getLocationHash(): String {
 
 @JsFun("(hash) => { window.location.hash = '#' + hash; }")
 private external fun jsSetLocationHash(hash: JsString)
+
+@JsFun("(callback) => { window.addEventListener('hashchange', () => callback()); }")
+private external fun jsOnHashChange(callback: () -> Unit)
