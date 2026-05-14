@@ -93,7 +93,7 @@ abstract class AbstractPurchaseRepositoryTest {
     fun fetchWithOffsetAndLimit() {
         val purchases = repo().fetch(
             PurchaseCriteria()
-                .withOrderBy(PurchaseCriteria.OrderBy.ACENDING)
+                .withOrderBy(PurchaseCriteria.OrderBy.ASCENDING)
                 .withOffset(0)
                 .withLimit(1)
         )
@@ -104,7 +104,7 @@ abstract class AbstractPurchaseRepositoryTest {
     fun fetchWithOrderAscending() {
         val purchases = repo().fetch(
             PurchaseCriteria()
-                .withOrderBy(PurchaseCriteria.OrderBy.ACENDING)
+                .withOrderBy(PurchaseCriteria.OrderBy.ASCENDING)
         )
         assertEquals(2, purchases.size)
         assertTrue(purchases[0].id!! <= purchases[1].id!!)

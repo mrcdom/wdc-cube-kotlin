@@ -111,7 +111,7 @@ class FetchUsersCmd : BaseCommand() {
 
         criteria.orderBy?.let {
             when (it) {
-                UserCriteria.OrderBy.ACENDING -> sql.ln(ORDER_BY(u.id.asc()))
+                UserCriteria.OrderBy.ASCENDING -> sql.ln(ORDER_BY(u.id.asc()))
                 UserCriteria.OrderBy.DESCENDING -> sql.ln(ORDER_BY(u.id.desc()))
             }
         }

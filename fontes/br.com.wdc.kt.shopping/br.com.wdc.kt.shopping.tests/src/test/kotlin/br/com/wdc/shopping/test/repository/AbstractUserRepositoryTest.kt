@@ -79,7 +79,7 @@ abstract class AbstractUserRepositoryTest {
     fun fetchWithOffsetAndLimit() {
         val users = repo().fetch(
             UserCriteria()
-                .withOrderBy(UserCriteria.OrderBy.ACENDING)
+                .withOrderBy(UserCriteria.OrderBy.ASCENDING)
                 .withOffset(1)
                 .withLimit(1)
         )

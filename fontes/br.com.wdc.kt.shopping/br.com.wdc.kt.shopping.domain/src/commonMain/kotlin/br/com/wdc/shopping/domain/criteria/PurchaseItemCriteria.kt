@@ -22,7 +22,7 @@ class PurchaseItemCriteria {
     fun withOrderBy(orderBy: OrderBy?) = apply { this.orderBy = orderBy }
 
     enum class OrderBy {
-        ACENDING,
+        ASCENDING,
         DESCENDING
     }
 }

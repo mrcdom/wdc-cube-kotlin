@@ -105,7 +105,7 @@ object ShoppingServiceTestAlgorithm {
         val homeService = PurchasesPanelService(env.purchaseRepo)
 
         var compras: List<PurchaseInfo> = homeService.loadPurchases(
-            PurchaseCriteria().withOrderBy(PurchaseCriteria.OrderBy.ACENDING)
+            PurchaseCriteria().withOrderBy(PurchaseCriteria.OrderBy.ASCENDING)
         )
 
         assertNotNull(compras)

@@ -59,7 +59,7 @@ abstract class AbstractProductRepositoryTest {
     fun fetchWithOffsetAndLimit() {
         val products = repo().fetch(
             ProductCriteria()
-                .withOrderBy(ProductCriteria.OrderBy.ACENDING)
+                .withOrderBy(ProductCriteria.OrderBy.ASCENDING)
                 .withOffset(0)
                 .withLimit(2)
         )
@@ -70,7 +70,7 @@ abstract class AbstractProductRepositoryTest {
     fun fetchWithOrderAscending() {
         val products = repo().fetch(
             ProductCriteria()
-                .withOrderBy(ProductCriteria.OrderBy.ACENDING)
+                .withOrderBy(ProductCriteria.OrderBy.ASCENDING)
         )
         assertEquals(4, products.size)
         for (i in 1 until products.size) {

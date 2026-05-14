@@ -239,7 +239,7 @@ class FetchPurchaseCmd : BaseCommand() {
 
         criteria.orderBy?.let {
             when (it) {
-                PurchaseCriteria.OrderBy.ACENDING -> sql.ln(ORDER_BY(b.id.asc()))
+                PurchaseCriteria.OrderBy.ASCENDING -> sql.ln(ORDER_BY(b.id.asc()))
                 PurchaseCriteria.OrderBy.DESCENDING -> sql.ln(ORDER_BY(b.id.desc()))
             }
         }

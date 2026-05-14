@@ -112,7 +112,7 @@ class FetchProductsCmd : BaseCommand() {
 
         criteria.orderBy?.let {
             when (it) {
-                ProductCriteria.OrderBy.ACENDING -> sql.ln(ORDER_BY(p.id.asc()))
+                ProductCriteria.OrderBy.ASCENDING -> sql.ln(ORDER_BY(p.id.asc()))
                 ProductCriteria.OrderBy.DESCENDING -> sql.ln(ORDER_BY(p.id.desc()))
             }
         }
