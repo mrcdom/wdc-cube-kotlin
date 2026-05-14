@@ -122,10 +122,11 @@ object CoerceUtils {
         null -> defaultValue
         is BigInteger -> v
         is BigDecimal -> v.toBigInteger()
-        is Number -> BigInteger.fromLong(v.toLong())
         is String -> if (v.isEmpty()) defaultValue else BigInteger.parseString(v)
         is Boolean -> if (v) BigInteger.ONE else BigInteger.ZERO
-        else -> throw NumberFormatException(errorMessage(v))
+        else -> platformCoerceToBigInteger(v)
+            ?: if (v is Number) BigInteger.fromLong(v.toLong())
+            else throw NumberFormatException(errorMessage(v))
     }
 
     // :: Float
@@ -159,10 +160,11 @@ object CoerceUtils {
         is Long -> BigDecimal.fromLong(v)
         is Short -> BigDecimal.fromLong(v.toLong())
         is Byte -> BigDecimal.fromLong(v.toLong())
-        is Number -> BigDecimal.fromDouble(v.toDouble())
         is String -> if (v.isEmpty()) defaultValue else BigDecimal.parseString(v)
         is Boolean -> if (v) BigDecimal.ONE else BigDecimal.ZERO
-        else -> throw NumberFormatException(errorMessage(v))
+        else -> platformCoerceToBigDecimal(v)
+            ?: if (v is Number) BigDecimal.fromDouble(v.toDouble())
+            else throw NumberFormatException(errorMessage(v))
     }
 
     // :: LocalDate (kotlinx-datetime)

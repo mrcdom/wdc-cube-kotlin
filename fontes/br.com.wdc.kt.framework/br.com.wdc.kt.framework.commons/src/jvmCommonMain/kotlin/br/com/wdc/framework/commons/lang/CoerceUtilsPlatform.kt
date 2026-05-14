@@ -1,5 +1,7 @@
 package br.com.wdc.framework.commons.lang
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import com.ionspin.kotlin.bignum.integer.BigInteger
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlin.time.Instant
@@ -12,6 +14,18 @@ private fun java.time.LocalDateTime.toKtxLocalDateTime(): LocalDateTime =
 
 private fun java.time.Instant.toKtInstant(): Instant =
     Instant.fromEpochSeconds(epochSecond, nano.toLong())
+
+internal actual fun platformCoerceToBigInteger(v: Any): BigInteger? = when (v) {
+    is java.math.BigInteger -> BigInteger.parseString(v.toString())
+    is java.math.BigDecimal -> BigInteger.parseString(v.toBigInteger().toString())
+    else -> null
+}
+
+internal actual fun platformCoerceToBigDecimal(v: Any): BigDecimal? = when (v) {
+    is java.math.BigDecimal -> BigDecimal.parseString(v.toPlainString())
+    is java.math.BigInteger -> BigDecimal.parseString(v.toString())
+    else -> null
+}
 
 internal actual fun platformCoerceToLocalDate(v: Any): LocalDate? = when (v) {
     is java.time.LocalDate -> v.toKtxLocalDate()
