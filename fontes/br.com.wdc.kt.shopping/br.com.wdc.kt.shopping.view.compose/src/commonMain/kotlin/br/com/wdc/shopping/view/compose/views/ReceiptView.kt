@@ -24,7 +24,7 @@ import br.com.wdc.shopping.view.compose.theme.SuccessColor
 import br.com.wdc.shopping.view.compose.theme.SuccessContainer
 import br.com.wdc.shopping.view.compose.util.formatPrice
 
-class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("receipt-view") {
+class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("receipt-view", presenter.app) {
 
     @Composable
     override fun Render() {
@@ -204,7 +204,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                         horizontalArrangement = Arrangement.End
                     ) {
                         Button(
-                            onClick = { safeCall(presenter.app) { presenter.onOpenProducts() } },
+                            onClick = { safeCall { presenter.onOpenProducts() } },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.height(48.dp)
                         ) {

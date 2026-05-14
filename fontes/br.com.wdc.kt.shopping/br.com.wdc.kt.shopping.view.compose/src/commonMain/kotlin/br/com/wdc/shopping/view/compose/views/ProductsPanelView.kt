@@ -29,7 +29,7 @@ import br.com.wdc.shopping.view.compose.util.formatPrice
 import br.com.wdc.shopping.view.compose.util.productImageUrl
 import br.com.wdc.shopping.view.compose.util.stripHtml
 
-class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ComposeCubeView("products-panel-view") {
+class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ComposeCubeView("products-panel-view", presenter.app) {
 
     @Composable
     override fun Render() {
@@ -111,7 +111,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { safeCall(presenter.app) { presenter.onOpenProduct(product.id) } },
+                                .clickable { safeCall { presenter.onOpenProduct(product.id) } },
                             shape = RoundedCornerShape(8.dp),
                             elevation = CardDefaults.cardElevation(
                                 defaultElevation = 0.dp,

@@ -24,7 +24,7 @@ import br.com.wdc.shopping.view.compose.util.formatPrice
 // Altura estimada de cada card de compra
 private val ITEM_HEIGHT_DP = 76.dp
 
-class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ComposeCubeView("purchases-panel-view") {
+class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ComposeCubeView("purchases-panel-view", presenter.app) {
 
     @Composable
     override fun Render() {
@@ -40,7 +40,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
             val capacity = (heightDp / ITEM_HEIGHT_DP).toInt().coerceAtLeast(1)
             if (capacity != lastReportedCapacity) {
                 lastReportedCapacity = capacity
-                safeCall(presenter.app) { presenter.onItemSizeCapacityChanged(capacity) }
+                safeCall { presenter.onItemSizeCapacityChanged(capacity) }
             }
         }
 
@@ -115,7 +115,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { safeCall(presenter.app) { presenter.onOpenReceipt(purchase.id) } },
+                                    .clickable { safeCall { presenter.onOpenReceipt(purchase.id) } },
                                 shape = RoundedCornerShape(8.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                 colors = CardDefaults.cardColors(
@@ -172,7 +172,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilledTonalIconButton(
-                        onClick = { safeCall(presenter.app) { presenter.onPageChange(state.page - 1) } },
+                        onClick = { safeCall { presenter.onPageChange(state.page - 1) } },
                         enabled = state.page > 0,
                         modifier = Modifier.size(36.dp)
                     ) { Text("‹", fontWeight = FontWeight.Bold) }
@@ -186,7 +186,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                     Spacer(Modifier.width(16.dp))
 
                     FilledTonalIconButton(
-                        onClick = { safeCall(presenter.app) { presenter.onPageChange(state.page + 1) } },
+                        onClick = { safeCall { presenter.onPageChange(state.page + 1) } },
                         enabled = state.page < totalPages - 1,
                         modifier = Modifier.size(36.dp)
                     ) { Text("›", fontWeight = FontWeight.Bold) }

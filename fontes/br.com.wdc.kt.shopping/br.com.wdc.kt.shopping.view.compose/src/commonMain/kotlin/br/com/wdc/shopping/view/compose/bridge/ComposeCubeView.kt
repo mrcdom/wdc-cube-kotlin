@@ -19,7 +19,8 @@ import kotlinx.coroutines.launch
  * between frames result in a single recomposition.
  */
 abstract class ComposeCubeView(
-    private val id: String
+    private val id: String,
+    protected val app: ShoppingApplication
 ) : CubeView {
 
     /** Revision counter — read this in @Composable functions to trigger recomposition. */
@@ -46,7 +47,7 @@ abstract class ComposeCubeView(
      * UI thread free. The presenter's call to view.update() triggers Compose recomposition
      * back on the UI thread via MutableState.
      */
-    protected fun safeCall(app: ShoppingApplication, action: () -> Unit) {
+    protected fun safeCall(action: () -> Unit) {
         presenterScope.launch {
             try {
                 action()

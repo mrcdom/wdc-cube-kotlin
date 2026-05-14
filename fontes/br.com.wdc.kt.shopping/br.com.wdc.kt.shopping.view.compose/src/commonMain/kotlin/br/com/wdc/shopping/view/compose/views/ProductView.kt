@@ -29,7 +29,7 @@ import br.com.wdc.shopping.view.compose.util.formatPrice
 import br.com.wdc.shopping.view.compose.util.productImageUrl
 import br.com.wdc.shopping.view.compose.util.stripHtml
 
-class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("product-view") {
+class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("product-view", presenter.app) {
 
     @Composable
     override fun Render() {
@@ -198,7 +198,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                             horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                         ) {
                             OutlinedButton(
-                                onClick = { safeCall(presenter.app) { presenter.onOpenProducts() } },
+                                onClick = { safeCall { presenter.onOpenProducts() } },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.height(48.dp)
                             ) {
@@ -208,7 +208,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                             }
                             }
                             Button(
-                                onClick = { safeCall(presenter.app) { presenter.onAddToCart(quantity) } },
+                                onClick = { safeCall { presenter.onAddToCart(quantity) } },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.height(48.dp),
                                 colors = ButtonDefaults.buttonColors(

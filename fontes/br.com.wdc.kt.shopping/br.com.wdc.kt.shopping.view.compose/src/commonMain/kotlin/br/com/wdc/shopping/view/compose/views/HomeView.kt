@@ -21,7 +21,7 @@ import br.com.wdc.shopping.view.compose.components.ShoppingLogoHeader
 
 private val COMPACT_BREAKPOINT = 700.dp
 
-class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-view") {
+class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-view", presenter.app) {
 
     @Composable
     override fun Render() {
@@ -37,8 +37,8 @@ class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-vie
                 HeaderBar(
                     nickName = state.nickName ?: "",
                     cartItemCount = state.cartItemCount,
-                    onOpenCart = { safeCall(presenter.app) { presenter.onOpenCart() } },
-                    onExit = { safeCall(presenter.app) { presenter.onExit() } },
+                    onOpenCart = { safeCall { presenter.onOpenCart() } },
+                    onExit = { safeCall { presenter.onExit() } },
                     compact = isCompact
                 )
             }

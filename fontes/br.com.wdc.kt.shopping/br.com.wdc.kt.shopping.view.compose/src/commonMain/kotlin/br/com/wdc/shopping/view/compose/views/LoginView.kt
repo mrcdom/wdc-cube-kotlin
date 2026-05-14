@@ -23,7 +23,7 @@ import br.com.wdc.shopping.view.compose.components.ShoppingLogoLarge
 import br.com.wdc.shopping.view.compose.theme.Primary
 import br.com.wdc.shopping.view.compose.theme.PrimaryContainer
 
-class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-view") {
+class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-view", presenter.app) {
 
     @Composable
     override fun Render() {
@@ -96,7 +96,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                         enabled = !loading,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { safeCall(presenter.app) { presenter.onEnter() } })
+                        keyboardActions = KeyboardActions(onDone = { safeCall { presenter.onEnter() } })
                     )
 
                     val errorMessage = state.errorMessage
@@ -118,7 +118,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                     Spacer(Modifier.height(4.dp))
 
                     Button(
-                        onClick = { safeCall(presenter.app) { presenter.onEnter() } },
+                        onClick = { safeCall { presenter.onEnter() } },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         enabled = !loading,
