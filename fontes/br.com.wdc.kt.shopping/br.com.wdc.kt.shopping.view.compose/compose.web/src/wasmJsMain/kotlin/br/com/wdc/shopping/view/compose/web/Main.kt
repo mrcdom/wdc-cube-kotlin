@@ -13,6 +13,7 @@ import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.commons.storage.WasmSessionStorage
+import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.repositories.ProductRepository
@@ -28,6 +29,7 @@ import br.com.wdc.shopping.presentation.repository.SecuredPurchaseItemRepository
 import br.com.wdc.shopping.presentation.repository.SecuredPurchaseRepository
 import br.com.wdc.shopping.presentation.repository.SecuredUserRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
@@ -52,7 +54,13 @@ private class ComposeShoppingApplication : ShoppingApplication() {
     override fun removeAttribute(name: String): Any? = attributes.remove(name)
 
     override fun updateHistory() {
-        // Could integrate with browser history API
+        val intent = CubeIntent()
+        intent.place = getLastPlace() ?: getRootPlace()
+        publishParameters(intent)
+        val newFragment = intent.toString()
+        if (newFragment == getLocationHash()) return
+        fragment = newFragment
+        jsSetLocationHash(newFragment.toJsString())
     }
 
     override fun createPresenterMap(): MutableMap<Int, CubePresenter> = LinkedHashMap()
@@ -104,7 +112,14 @@ fun main() {
     initializePlatform(baseUrl)
 
     val app = ComposeShoppingApplication()
-    app.go("public") // Navigate to root/login
+
+    // Ensure route registrations are initialized before navigation
+    Routes.Place.entries
+
+    // Read initial path from URL hash or default to "public"
+    val hash = getLocationHash()
+    val initialPath = if (hash.isNotBlank()) hash else "public"
+    app.go(initialPath)
 
     val target = document.getElementById("ComposeTarget") ?: return
 
@@ -130,3 +145,13 @@ private external fun jsLocationOrigin(): JsString
 private fun getBaseUrl(): String {
     return jsLocationOrigin().toString()
 }
+
+@JsFun("() => { const h = window.location.hash; return h.startsWith('#') ? h.substring(1) : h; }")
+private external fun jsGetLocationHash(): JsString
+
+private fun getLocationHash(): String {
+    return jsGetLocationHash().toString()
+}
+
+@JsFun("(hash) => { window.location.hash = '#' + hash; }")
+private external fun jsSetLocationHash(hash: JsString)
