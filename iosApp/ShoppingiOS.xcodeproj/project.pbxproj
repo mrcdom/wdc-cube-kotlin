@@ -9,14 +9,14 @@
 /* Begin PBXBuildFile section */
 		018453B2DD33D1D96123FC7A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD611806246A248B9BCAD4D /* ContentView.swift */; };
 		1BC7521BA35FE272889EA7BD /* ShoppingAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F04FF5F054D702FBFCCDFB9 /* ShoppingAppApp.swift */; };
-		A1B2C3D4E5F60718192A3B4C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D4E5F6071819A1B2C3D42A3B /* Assets.xcassets */; };
+		7106B195E72BC8C17D5C8301 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2AFD75935E95E08D09DB68BE /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0FDA8E64A3D37F906B715578 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2AFD75935E95E08D09DB68BE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2F04FF5F054D702FBFCCDFB9 /* ShoppingAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingAppApp.swift; sourceTree = "<group>"; };
 		5BD611806246A248B9BCAD4D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		D4E5F6071819A1B2C3D42A3B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7EA84495DE0129BBC81D3F29 /* ShoppingiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ShoppingiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -32,7 +32,7 @@
 		63772C1E590E366F35D5889F /* ShoppingApp */ = {
 			isa = PBXGroup;
 			children = (
-				D4E5F6071819A1B2C3D42A3B /* Assets.xcassets */,
+				2AFD75935E95E08D09DB68BE /* Assets.xcassets */,
 				5BD611806246A248B9BCAD4D /* ContentView.swift */,
 				0FDA8E64A3D37F906B715578 /* Info.plist */,
 				2F04FF5F054D702FBFCCDFB9 /* ShoppingAppApp.swift */,
@@ -57,7 +57,7 @@
 			buildPhases = (
 				5520BDDB19E9B4386FB3BF59 /* Build Kotlin Framework */,
 				114BBD87C69365FC6D447A64 /* Sources */,
-				F1E2D3C4B5A6978800112233 /* Resources */,
+				322D91AA4823D8B5947DF2D7 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -77,7 +77,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 				};
 			};
@@ -99,6 +99,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		322D91AA4823D8B5947DF2D7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7106B195E72BC8C17D5C8301 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		5520BDDB19E9B4386FB3BF59 /* Build Kotlin Framework */ = {
@@ -133,17 +144,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXResourcesBuildPhase section */
-		F1E2D3C4B5A6978800112233 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A1B2C3D4E5F60718192A3B4C /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		11BF37F0509F87AF908BFCEC /* Debug */ = {
@@ -198,7 +198,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -285,7 +285,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

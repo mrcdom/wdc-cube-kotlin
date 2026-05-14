@@ -2,8 +2,8 @@ name: ShoppingiOS
 options:
   bundleIdPrefix: br.com.wdc.shopping
   deploymentTarget:
-    iOS: "16.0"
-  xcodeVersion: "16.2"
+    iOS: "18.0"
+  xcodeVersion: "26.0"
 
 settings:
   ENABLE_USER_SCRIPT_SANDBOXING: "NO"
