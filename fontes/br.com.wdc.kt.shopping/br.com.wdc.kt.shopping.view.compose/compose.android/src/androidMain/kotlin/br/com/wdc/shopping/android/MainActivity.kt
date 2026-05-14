@@ -16,7 +16,7 @@ import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
-import br.com.wdc.framework.commons.storage.JvmSessionStorage
+import br.com.wdc.framework.commons.storage.AndroidPersistentSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
@@ -63,7 +63,8 @@ class MainActivity : ComponentActivity() {
         val baseUrl = BuildConfig.BASE_URL
         initializePlatform(baseUrl)
 
-        app = AndroidShoppingApplication()
+        val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
+        app = AndroidShoppingApplication(AndroidPersistentSessionStorage(prefs))
         app.go("public")
 
         setContent {
@@ -83,7 +84,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private class AndroidShoppingApplication : ShoppingApplication() {
+private class AndroidShoppingApplication(
+    private val persistentStorage: AndroidPersistentSessionStorage
+) : ShoppingApplication() {
 
     private val attributes = mutableMapOf<String, Any?>()
 
@@ -109,7 +112,7 @@ private class AndroidShoppingApplication : ShoppingApplication() {
     override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
         SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
 
-    override fun createSessionStorage(): SessionStorage = JvmSessionStorage()
+    override fun createSessionStorage(): SessionStorage = persistentStorage
 }
 
 private fun createView(view: ComposeCubeView): CubeView = view

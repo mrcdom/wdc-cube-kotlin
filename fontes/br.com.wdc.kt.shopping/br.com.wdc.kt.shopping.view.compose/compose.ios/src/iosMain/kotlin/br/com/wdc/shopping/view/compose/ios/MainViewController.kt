@@ -14,7 +14,7 @@ import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
-import br.com.wdc.framework.commons.storage.IosSessionStorage
+import br.com.wdc.framework.commons.storage.IosPersistentSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
@@ -73,7 +73,7 @@ private class IosShoppingApplication : ShoppingApplication() {
     override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
         SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
 
-    override fun createSessionStorage(): SessionStorage = IosSessionStorage()
+    override fun createSessionStorage(): SessionStorage = IosPersistentSessionStorage()
 }
 
 private fun createView(view: ComposeCubeView): CubeView = view

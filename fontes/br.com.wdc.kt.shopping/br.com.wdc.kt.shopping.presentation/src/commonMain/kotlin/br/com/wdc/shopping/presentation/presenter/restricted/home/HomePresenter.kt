@@ -195,6 +195,8 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         try {
             cart!!.clear()
             app.subject = null
+            app.setSecurityContext(null)
+            app.sessionStorage.clear()
             setContentView(null)
 
             Routes.login(app)
