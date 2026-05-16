@@ -345,20 +345,20 @@ sequenceDiagram
     participant Intent as CubeIntent
     participant Home as HomePresenter
     participant RootState as RootViewState
-    participant RootView as RootView (Compose)
+    participant RootView as RootView Compose
 
-    Note over Root: applyParameters(deepest=false)
+    Note over Root: applyParameters deepest=false
     Root->>Intent: setViewSlot(SLOT_OWNER, contentSlot)
-    Note over Root: contentSlot é um callback:<br/>{ view → state.contentView = view; update() }
+    Note over Root: contentSlot callback:<br/>view -> state.contentView = view then update()
 
-    Note over Home: applyParameters(deepest=true, init=true)
-    Home->>Home: view = createView(this) → HomeView
+    Note over Home: applyParameters deepest=true, init=true
+    Home->>Home: view = createView(this) HomeView
     Home->>Intent: getViewSlot(SLOT_OWNER)
     Intent-->>Home: contentSlot
     Home->>Root: contentSlot.setView(homeView)
     Root->>RootState: state.contentView = homeView
-    Root->>RootView: update() → revision++
-    Note over RootView: Recompõe e renderiza:<br/>RenderSlot(state.contentView)
+    Root->>RootView: update() revision++
+    Note over RootView: Recompoe e renderiza:<br/>RenderSlot(state.contentView)
 ```
 
 **No código do RootPresenter:**
