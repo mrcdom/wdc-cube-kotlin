@@ -500,7 +500,7 @@ sequenceDiagram
 ```kotlin
 abstract class ComposeCubeView(private val id: String) : CubeView {
 
-    protected fun safeCall(app: ShoppingApplication, action: () -> Unit) {
+    protected fun safeCall(action: () -> Unit) {
         presenterScope.launch {
             try {
                 action()
@@ -594,7 +594,7 @@ override fun Render() {
     )
 
     Button(
-        onClick = { safeCall(presenter.app) { presenter.onEnter() } },
+        onClick = { safeCall { presenter.onEnter() } },
         enabled = !loading,  // Impede duplo-clique
     ) {
         if (loading) {
@@ -682,7 +682,7 @@ fun onBuy() {
 }
 
 // Nível 2: safeCall captura qualquer exceção não tratada
-protected fun safeCall(app: ShoppingApplication, action: () -> Unit) {
+protected fun safeCall(action: () -> Unit) {
     presenterScope.launch {
         try {
             action()
