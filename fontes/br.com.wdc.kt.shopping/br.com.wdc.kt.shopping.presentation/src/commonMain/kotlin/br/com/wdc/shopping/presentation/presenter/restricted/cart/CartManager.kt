@@ -5,13 +5,14 @@ import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 import kotlin.time.Clock
 
-class CartManager(private val app: ShoppingApplication) {
+class CartManager(private val repo: PurchaseRepository) {
 
     private val cart: MutableList<CartItem> = ArrayList()
 
@@ -128,7 +129,7 @@ class CartManager(private val app: ShoppingApplication) {
             purchase.items!!.add(purchaseItem)
         }
 
-        check(app.getPurchaseRepository().insert(purchase)) { "Record not inserted" }
+        check(repo.insert(purchase)) { "Record not inserted" }
 
         return purchase.id
     }

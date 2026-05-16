@@ -25,7 +25,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     // :: Internal Instance Fields
 
-    private val productService = ProductService(app)
+    private val productService = ProductService(app.getProductRepository())
     private var ownerSlot: CubeViewSlot? = null
 
     // :: Cube API

@@ -25,7 +25,7 @@ class PurchasesPanelPresenter(
 
     // :: Internal Instance Fields
 
-    private val purchasesPanelService = PurchasesPanelService(app)
+    private val purchasesPanelService = PurchasesPanelService(app.getPurchaseRepository())
 
     // :: Life cycle
 

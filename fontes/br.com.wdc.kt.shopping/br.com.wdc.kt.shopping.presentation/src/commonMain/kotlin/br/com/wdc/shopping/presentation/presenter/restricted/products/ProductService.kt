@@ -7,17 +7,7 @@ import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
 import br.com.wdc.shopping.presentation.exception.WrongParametersException
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 
-class ProductService {
-
-    private val repo: ProductRepository
-
-    constructor(app: ShoppingApplication) {
-        this.repo = app.getProductRepository()
-    }
-
-    constructor(repo: ProductRepository) {
-        this.repo = repo
-    }
+class ProductService(private val repo: ProductRepository) {
 
     fun loadProductById(productId: Long?): ProductInfo {
         if (productId == null) throw WrongParametersException()

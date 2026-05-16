@@ -85,7 +85,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             purchasesPanel = PurchasesPanelPresenter(app, this)
             state.purchasesPanelView = purchasesPanel!!.initialize()
 
-            cart = CartManager(app)
+            cart = CartManager(app.getPurchaseRepository())
             onCartCommitListenerRemover = cart!!.addCommitListener(::onCartCommited)
             onCartChangeListenerRemover = cart!!.addChangeListener(::onCartChanged)
             app.cart = cart

@@ -5,17 +5,7 @@ import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 
-class PurchasesPanelService {
-
-    private val repo: PurchaseRepository
-
-    constructor(app: ShoppingApplication) {
-        this.repo = app.getPurchaseRepository()
-    }
-
-    constructor(repo: PurchaseRepository) {
-        this.repo = repo
-    }
+class PurchasesPanelService(private val repo: PurchaseRepository) {
 
     fun loadPurchases(criteria: PurchaseCriteria): List<PurchaseInfo> {
         return repo.fetch(criteria.withProjection(PurchaseInfo.projectionWithItens()))
