@@ -27,6 +27,9 @@ object ShoppingConfig {
     var jwtSecret: String? = null
         private set
 
+    var refreshTokenTtlDays: Int = 7
+        private set
+
     object Internals {
 
         fun setBaseDir(path: Path) { ShoppingConfig.baseDir = path }
@@ -35,6 +38,7 @@ object ShoppingConfig {
         fun setLogDir(path: Path) { ShoppingConfig.logDir = path }
         fun setTempDir(path: Path) { ShoppingConfig.tempDir = path }
         fun setJwtSecret(secret: String?) { ShoppingConfig.jwtSecret = secret }
+        fun setRefreshTokenTtlDays(days: Int) { ShoppingConfig.refreshTokenTtlDays = days }
 
         fun configure(config: AppConfig) {
             try {
@@ -50,6 +54,7 @@ object ShoppingConfig {
                 setLogDir(log)
                 setTempDir(temp)
                 setJwtSecret(config.get("security.jwt.secret"))
+                setRefreshTokenTtlDays(config.getInt("security.refresh.token.ttl.days", 7))
             } catch (e: IOException) {
                 throw UncheckedIOException(e)
             }

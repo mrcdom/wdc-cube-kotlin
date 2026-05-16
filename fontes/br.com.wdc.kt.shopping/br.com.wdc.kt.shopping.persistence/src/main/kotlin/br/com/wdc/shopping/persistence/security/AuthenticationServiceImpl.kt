@@ -19,6 +19,7 @@ import javax.crypto.spec.SecretKeySpec
 class AuthenticationServiceImpl(
     private val rawUserRepo: UserRepository,
     jwtSecret: String,
+    refreshTokenTtlDays: Int = 7,
 ) : AuthenticationService {
 
     companion object {
@@ -41,7 +42,7 @@ class AuthenticationServiceImpl(
         }
     }
 
-    private val cache = AccessContextCache(jwtSecret, IntentSecretStore())
+    private val cache = AccessContextCache(jwtSecret, IntentSecretStore(), refreshTokenTtlDays)
     private val nonceStore = NonceStore()
 
     override fun challenge(): ChallengeResult {

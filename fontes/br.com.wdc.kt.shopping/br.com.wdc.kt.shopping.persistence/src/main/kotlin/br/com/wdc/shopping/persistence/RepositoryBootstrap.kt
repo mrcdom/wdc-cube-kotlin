@@ -24,7 +24,7 @@ object RepositoryBootstrap {
         PurchaseItemRepository.BEAN.set(PurchaseItemRepositoryImpl())
     }
 
-    fun initializeSecurity(jwtSecret: String) {
+    fun initializeSecurity(jwtSecret: String, refreshTokenTtlDays: Int = 7) {
         val rawUserRepo = UserRepository.BEAN.get()
 
         UserRepository.BEAN.set(SecuredUserRepository(rawUserRepo))
@@ -32,7 +32,7 @@ object RepositoryBootstrap {
         PurchaseRepository.BEAN.set(SecuredPurchaseRepository(PurchaseRepository.BEAN.get()))
         PurchaseItemRepository.BEAN.set(SecuredPurchaseItemRepository(PurchaseItemRepository.BEAN.get()))
 
-        AuthenticationService.BEAN.set(AuthenticationServiceImpl(rawUserRepo, jwtSecret))
+        AuthenticationService.BEAN.set(AuthenticationServiceImpl(rawUserRepo, jwtSecret, refreshTokenTtlDays))
     }
 
     fun release() {
