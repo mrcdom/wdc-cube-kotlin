@@ -4,6 +4,12 @@ interface HttpTransport {
 
     var accessTokenSupplier: (() -> String?)?
 
+    /** Attempts to refresh the auth tokens. Returns true if successful. */
+    var refreshHandler: (() -> Boolean)?
+
+    /** Called when authentication fails irrecoverably (refresh also failed). */
+    var onAuthFailure: (() -> Unit)?
+
     fun postJson(path: String, body: String): String
 
     fun postJsonNullable(path: String, body: String): String?

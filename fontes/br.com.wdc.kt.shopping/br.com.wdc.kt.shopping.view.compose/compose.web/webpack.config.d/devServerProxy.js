@@ -4,6 +4,10 @@ const backendUrl = (typeof process !== 'undefined' && process.env.BASE_URL) || '
 
 config.devServer = config.devServer || {};
 
+// Disable live-reload and HMR to avoid full page reload when backend restarts
+config.devServer.hot = false;
+config.devServer.liveReload = false;
+
 // Always set the full proxy config with proper options
 config.devServer.proxy = [
     {

@@ -10,10 +10,11 @@ import java.time.Instant
 import java.util.Base64
 
 class AccessContext(
+    val sessionId: String,
     override val userId: Long?,
     override val userName: String?,
     override val permissions: Set<String>,
-    private val rsaKeyPair: KeyPair,
+    val rsaKeyPair: KeyPair,
     val expiresAt: Instant,
     val refreshToken: String,
     val intentSignSecret: String,

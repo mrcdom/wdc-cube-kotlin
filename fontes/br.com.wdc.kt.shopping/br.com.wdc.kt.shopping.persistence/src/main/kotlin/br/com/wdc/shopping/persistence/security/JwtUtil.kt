@@ -19,11 +19,12 @@ object JwtUtil {
     private const val HEADER_JSON = """{"alg":"HS256","typ":"JWT"}"""
     private val ENCODED_HEADER = B64_ENC.encodeToString(HEADER_JSON.toByteArray(StandardCharsets.UTF_8))
 
-    fun create(userId: Long, userName: String, ttl: Duration, secret: String): String {
+    fun create(sessionId: String, userId: Long, userName: String, ttl: Duration, secret: String): String {
         val now = Instant.now()
         val exp = now.plus(ttl)
 
         val payload = JsonObject()
+        payload.addProperty("sid", sessionId)
         payload.addProperty("sub", userId)
         payload.addProperty("usr", userName)
         payload.addProperty("iat", now.epochSecond)
@@ -59,6 +60,7 @@ object JwtUtil {
             if (Instant.now().epochSecond > exp) return null
 
             Claims(
+                sessionId = if (payload.has("sid")) payload.get("sid").asString else null,
                 userId = payload.get("sub").asLong,
                 userName = if (payload.has("usr")) payload.get("usr").asString else null,
                 expiresAt = Instant.ofEpochSecond(exp),
@@ -74,5 +76,5 @@ object JwtUtil {
         return B64_ENC.encodeToString(mac.doFinal(data.toByteArray(StandardCharsets.UTF_8)))
     }
 
-    data class Claims(val userId: Long, val userName: String?, val expiresAt: Instant)
+    data class Claims(val sessionId: String?, val userId: Long, val userName: String?, val expiresAt: Instant)
 }

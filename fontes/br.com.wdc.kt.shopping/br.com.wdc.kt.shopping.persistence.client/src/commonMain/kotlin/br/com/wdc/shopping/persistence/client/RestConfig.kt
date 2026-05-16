@@ -12,10 +12,20 @@ class RestConfig(val transport: HttpTransport) {
 
     fun setAuthClientInstance(authClient: RestAuthClient?) {
         this.authClient = authClient
-        transport.accessTokenSupplier = if (authClient != null) {
-            { authClient.accessToken }
+        if (authClient != null) {
+            transport.accessTokenSupplier = { authClient.accessToken }
+            transport.refreshHandler = {
+                try {
+                    authClient.refresh()
+                    true
+                } catch (_: Exception) {
+                    false
+                }
+            }
         } else {
-            null
+            transport.accessTokenSupplier = null
+            transport.refreshHandler = null
+            transport.onAuthFailure = null
         }
     }
 

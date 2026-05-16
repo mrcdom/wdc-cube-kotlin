@@ -41,7 +41,7 @@ class AuthenticationServiceImpl(
         }
     }
 
-    private val cache = AccessContextCache(jwtSecret)
+    private val cache = AccessContextCache(jwtSecret, IntentSecretStore())
     private val nonceStore = NonceStore()
 
     override fun challenge(): ChallengeResult {
@@ -74,7 +74,7 @@ class AuthenticationServiceImpl(
         val roles = Role.parse(user.roles)
         val permissions = Role.effectivePermissions(roles)
         val session = cache.createSession(user.id!!, user.userName!!, permissions)
-        val accessToken = JwtUtil.create(user.id!!, user.userName!!, cache.accessTokenTtl, cache.jwtSecret)
+        val accessToken = JwtUtil.create(session.sessionId, user.id!!, user.userName!!, cache.accessTokenTtl, cache.jwtSecret)
 
         return AuthResult(user.id!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64, session.intentSignSecret)
     }
@@ -82,7 +82,7 @@ class AuthenticationServiceImpl(
     override fun refresh(refreshToken: String): AuthResult? {
         val session = cache.refresh(refreshToken) ?: return null
 
-        val accessToken = JwtUtil.create(session.userId!!, session.userName!!,
+        val accessToken = JwtUtil.create(session.sessionId, session.userId!!, session.userName!!,
             cache.accessTokenTtl, cache.jwtSecret)
 
         return AuthResult(session.userId!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64, session.intentSignSecret)
@@ -94,7 +94,8 @@ class AuthenticationServiceImpl(
 
     override fun resolveToken(jwtToken: String): SecurityContext? {
         val claims = JwtUtil.validate(jwtToken, cache.jwtSecret) ?: return null
-        return cache.get(claims.userId)
+        val sessionId = claims.sessionId ?: return null
+        return cache.getBySessionId(sessionId)
     }
 
     private fun fetchUserForAuth(userName: String): User? {

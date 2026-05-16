@@ -44,8 +44,10 @@ sequenceDiagram
     C->>C: fallback: tenta chave anônima
 ```
 
-1. **No login/refresh**, o backend gera um segredo aleatório de 32 bytes
-   (`AccessContextCache`) e o retorna no campo `intentSignKey` da resposta JSON.
+1. **No login/refresh**, o backend carrega (ou gera e persiste) o segredo do
+   usuário na tabela `EN_USER_INTENT_SECRET` via `IntentSecretStore`. O segredo
+   é permanente por usuário — uma vez criado, nunca muda. É retornado no campo
+   `intentSignKey` da resposta JSON.
 2. **O client** armazena o segredo em `RestAuthClient.intentSignSecret` e o
    persiste no session storage (via `writeAuthState`/`readAuthState`).
 3. **Ao navegar**, `Main.kt` calcula `HMAC-SHA256(key, intentString)` e codifica
@@ -72,7 +74,7 @@ verificadas corretamente, sem cair no fallback anônimo.
 
 | Etapa | Arquivo | Função/Campo |
 |---|---|---|
-| Geração do segredo | `AccessContextCache.kt` | `generateIntentSignSecret()` |
+| Geração do segredo | `IntentSecretStore.kt` | `getOrCreate(userId)` — persiste em `EN_USER_INTENT_SECRET` |
 | Transporte no auth | `AuthResult.intentSignKey` | campo no JSON de login/refresh |
 | Armazenamento client | `RestAuthClient.kt` | `intentSignSecret` |
 | Persistência F5 | `RestAuthenticationService.kt` | `writeAuthState()` / `readAuthState()` |
@@ -87,5 +89,18 @@ verificadas corretamente, sem cair no fallback anônimo.
   profundidade na UI.
 - **A chave anônima é fixa e conhecida.** Telas públicas não têm proteção real
   contra manipulação de URL — o que é aceitável, pois são públicas.
-- **Se o servidor reiniciar**, as sessões em memória são perdidas. O próximo
-  request do client falha com 401, forçando re-autenticação e novo segredo.
+
+### Persistência de Sessões
+
+As sessões de autenticação (RSA key pairs, refresh tokens, permissões) são
+persistidas na tabela `EN_USER_SESSION` do H2. Isso significa que **reiniciar o
+servidor não invalida as sessões existentes** — o client continua navegando
+normalmente sem precisar re-autenticar.
+
+Cada login cria uma sessão independente identificada por um UUID (`sessionId`),
+que é incluído como claim `sid` no JWT. Isso permite **múltiplas sessões
+simultâneas por usuário** (ex: abas diferentes, dispositivos diferentes).
+
+O segredo HMAC de intents também é permanente por usuário (persistido em
+`EN_USER_INTENT_SECRET`), então URLs assinadas permanecem válidas mesmo após
+restart do servidor.

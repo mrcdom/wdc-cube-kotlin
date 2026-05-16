@@ -91,7 +91,7 @@ class RestAuthClient(private val config: RestConfig) {
         }
     }
 
-    internal fun clearTokens() {
+    fun clearTokens() {
         this.accessToken = null
         this.refreshToken = null
         this.publicKeyBase64 = null

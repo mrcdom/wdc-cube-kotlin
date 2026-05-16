@@ -64,6 +64,7 @@ class DBCreate {
         MigrationRunner(conn)
             .run(Migration_0001_AddUserRoles(conn))
             .run(Migration_0002_PurchaseBuyDateToTimestamp(conn))
+            .run(Migration_0003_CreateSecurityTables(conn))
 
         return this
     }
@@ -90,7 +91,11 @@ class DBCreate {
     private fun createTable(conn: Connection, table: br.com.wdc.shopping.persistence.schema.support.DbTable) {
         conn.createStatement().use { stmt ->
             stmt.execute(table.createTableSql())
-            stmt.execute(table.createSequenceSql())
+            try {
+                stmt.execute(table.createSequenceSql())
+            } catch (_: UnsupportedOperationException) {
+                // Table has no sequence (e.g. EN_USER_INTENT_SECRET)
+            }
         }
     }
 }

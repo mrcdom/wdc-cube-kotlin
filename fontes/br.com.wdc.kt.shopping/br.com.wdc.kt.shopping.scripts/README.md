@@ -70,7 +70,7 @@ Isso garante **idempotência** — rodar `DBCreate` múltiplas vezes é seguro. 
 1. Crie uma classe `Migration_NNNN_NomeDescritivo` no pacote `sgbd`:
 
 ```kotlin
-class Migration_0003_AddProductCategory(private val connection: Connection) {
+class Migration_0004_AddProductCategory(private val connection: Connection) {
 
     fun step01_addCategoryColumn() {
         Jdbi.create(connection).open().use { handle ->
@@ -92,7 +92,8 @@ class Migration_0003_AddProductCategory(private val connection: Connection) {
 MigrationRunner(conn)
     .run(Migration_0001_AddUserRoles(conn))
     .run(Migration_0002_PurchaseBuyDateToTimestamp(conn))
-    .run(Migration_0003_AddProductCategory(conn))  // nova
+    .run(Migration_0003_CreateSecurityTables(conn))
+    .run(Migration_0004_AddProductCategory(conn))  // nova
 ```
 
 Regras para steps:
@@ -107,6 +108,7 @@ Regras para steps:
 |----------|-------|-----------|
 | `Migration_0001_AddUserRoles` | 2 | Adiciona coluna `ROLES` à tabela `EN_USER` e define role ADMIN para o usuário admin |
 | `Migration_0002_PurchaseBuyDateToTimestamp` | 1 | Altera coluna `BUYDATE` de DATE para TIMESTAMP |
+| `Migration_0003_CreateSecurityTables` | 2 | Cria tabelas `EN_USER_INTENT_SECRET` (segredos HMAC por usuário) e `EN_USER_SESSION` (sessões persistentes com RSA key pairs) |
 
 ## Uso nos Módulos
 

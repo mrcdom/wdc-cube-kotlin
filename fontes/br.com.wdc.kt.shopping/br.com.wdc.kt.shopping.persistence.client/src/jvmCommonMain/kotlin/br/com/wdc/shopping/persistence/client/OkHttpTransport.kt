@@ -20,6 +20,8 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         .build()
 
     override var accessTokenSupplier: (() -> String?)? = null
+    override var refreshHandler: (() -> Boolean)? = null
+    override var onAuthFailure: (() -> Unit)? = null
 
     override fun postJson(path: String, body: String): String {
         val requestBuilder = Request.Builder()

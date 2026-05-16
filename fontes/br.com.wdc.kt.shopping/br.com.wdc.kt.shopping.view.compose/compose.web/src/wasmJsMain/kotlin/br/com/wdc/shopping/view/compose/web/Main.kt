@@ -153,6 +153,15 @@ fun main() {
 
     val app = ComposeShoppingApplication()
 
+    // On irrecoverable auth failure (401 + refresh failed), clear session and go to login
+    platformConfig.transport.onAuthFailure = {
+        platformConfig.authClient?.clearTokens()
+        app.sessionStorage.remove("authState")
+        app.sessionStorage.remove("securityContext")
+        app.setSecurityContext(null)
+        app.go("public")
+    }
+
     // Restore auth state (including intentSignSecret) BEFORE first navigation,
     // so that safeGo() can verify URL signatures made with the session key.
     restoreAuthState(app)
