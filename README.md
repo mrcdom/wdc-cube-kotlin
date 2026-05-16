@@ -2,8 +2,10 @@
 
 Aplicação de demonstração do framework **Cube MVP** em Kotlin Multiplatform, com duas modalidades de view:
 
-- **Compose Multiplatform** — presenters no cliente (Desktop, Android, iOS, Web/WASM) — [arquitetura](docs/architecture.md)
-- **React (View Remota)** — presenters no servidor via WebSocket — [arquitetura](docs/architecture-react.md)
+- **Compose Multiplatform** — presenters no cliente (Desktop, Android, iOS, Web/WASM)
+- **React (View Remota)** — presenters no servidor via WebSocket
+
+**Documentação:** [Visão geral](docs/architecture.md) · [Framework Cube](docs/architecture-cube.md) · [View React](docs/architecture-react.md) · [Persistência](docs/architecture-persistence.md)
 
 ## Estrutura
 

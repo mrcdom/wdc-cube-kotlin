@@ -1,36 +1,62 @@
-# Arquitetura Cube MVP
+# Arquitetura do Projeto — Visão Geral
 
 ## Sumário
 
-- [Visão Geral](#visão-geral)
-- [Conceitos Fundamentais](#conceitos-fundamentais)
+- [Introdução](#introdução)
+- [Princípios Arquiteturais](#princípios-arquiteturais)
 - [Camadas da Arquitetura](#camadas-da-arquitetura)
-- [Ciclo de Vida e Navegação](#ciclo-de-vida-e-navegação)
-- [Mecanismo de Atualização da View](#mecanismo-de-atualização-da-view)
+- [Diagrama de Módulos](#diagrama-de-módulos)
+- [Estratégia Multiplataforma](#estratégia-multiplataforma)
+- [Duas Modalidades de View](#duas-modalidades-de-view)
+  - [View Local — Compose Multiplatform](#view-local--compose-multiplatform)
+  - [View Remota — React + WebSocket](#view-remota--react--websocket)
+- [Camada de Apresentação](#camada-de-apresentação)
+- [Camada de Domínio](#camada-de-domínio)
+- [Camada de Persistência](#camada-de-persistência)
+- [Backend](#backend)
+- [Mecanismo de Atualização da View (Compose)](#mecanismo-de-atualização-da-view-compose)
 - [Execução Assíncrona com safeCall](#execução-assíncrona-com-safecall)
 - [Padrão de Loading](#padrão-de-loading)
 - [Tratamento de Erros](#tratamento-de-erros)
-- [Estrutura Multiplataforma](#estrutura-multiplataforma)
+- [Inicialização por Plataforma](#inicialização-por-plataforma)
 - [Exemplo Completo: Fluxo de Login](#exemplo-completo-fluxo-de-login)
+- [Documentação Detalhada](#documentação-detalhada)
+- [Glossário](#glossário)
 
 ---
 
-## Visão Geral
+## Introdução
 
-Cube MVP é um framework arquitetural para aplicações Kotlin Multiplatform que implementa o padrão **Model-View-Presenter** com um sistema de navegação hierárquica baseado em **Places** (lugares). A arquitetura foi projetada para:
+Este projeto é uma aplicação de demonstração (**Shopping Demo**) construída sobre o framework **Cube MVP** em **Kotlin Multiplatform**. O objetivo é demonstrar como uma única base de código de apresentação pode ser compartilhada entre múltiplas plataformas e tecnologias de visualização distintas.
 
-- **Separação total** entre lógica de apresentação e tecnologia de UI
-- **Navegação declarativa** com suporte a deep-linking e histórico
-- **Execução multiplataforma** — o mesmo código de apresentação roda em JVM, Android, iOS e WebAssembly
-- **Serialização de estado** — cada tela pode persistir e restaurar seu estado via URL/parâmetros
+A arquitetura é centrada em três decisões fundamentais:
+
+1. **Gerenciamento de estado com objetos mutáveis** — o framework Cube adota `ViewState` mutáveis, eliminando a cerimônia de cópias imutáveis e reducers
+2. **Desacoplamento total entre apresentação e tecnologia de UI** — os presenters são classes Kotlin puras, sem dependência de framework de UI; a tecnologia de renderização é uma escolha do projeto
+3. **Navegação transacional** — o `CubeNavigation` trata cada transição de tela como uma transação atômica com commit/rollback
+
+---
+
+## Princípios Arquiteturais
+
+| Princípio | Descrição |
+|-----------|-----------|
+| **Separação de responsabilidades** | View renderiza, Presenter controla, Domain modela, Persistence acessa dados |
+| **Apresentação agnóstica** | Presenters não conhecem Compose, React ou qualquer outra tecnologia de UI |
+| **Estado mutável simples** | ViewState é um POJO com propriedades mutáveis — sem reducers, sem eventos, sem fluxo unidirecional |
+| **Navegação como transação** | Cada navegação cria/reutiliza/descarta presenters atomicamente |
+| **Multiplataforma real** | O mesmo código de apresentação roda em JVM, Android, iOS e WebAssembly |
+| **Serialização de estado** | Cada tela persiste e restaura seu estado via URL/parâmetros (deep-linking) |
+
+---
+
+## Camadas da Arquitetura
 
 ```mermaid
 graph TB
-    subgraph "Camada de View (Compose Multiplatform)"
-        CV[ComposeCubeView]
-        LV[LoginView]
-        HV[HomeView]
-        PV[ProductView]
+    subgraph "Camada de View"
+        CV["Compose Multiplatform<br/>(view local)"]
+        RV["React + MUI<br/>(view remota)"]
     end
 
     subgraph "Camada de Apresentação (Kotlin Puro)"
@@ -52,11 +78,15 @@ graph TB
         HTTP[HTTP Transport]
         JSON[JSON Serialization]
         CRYPTO[Crypto Provider]
+        DB[H2 Database]
     end
 
-    LV --> LP
-    HV --> HP
-    PV --> PP
+    CV --> LP
+    CV --> HP
+    CV --> PP
+    RV -.->|WebSocket| LP
+    RV -.->|WebSocket| HP
+    RV -.->|WebSocket| PP
     LP --> LS
     HP --> HS
     PP --> PS
@@ -67,97 +97,12 @@ graph TB
     REPO --> HTTP
     HTTP --> JSON
     HTTP --> CRYPTO
+    REPO --> DB
 ```
 
 ---
 
-## Conceitos Fundamentais
-
-### Place (Lugar)
-
-Um **Place** representa um destino de navegação na aplicação. Cada Place possui:
-
-- Um **id numérico** único para cache de presenters
-- Um **nome simbólico** para deep-linking (ex: `"public/login"`, `"home"`, `"cart"`)
-- Uma **factory de presenter** para criar ou reutilizar a instância associada
-
-```mermaid
-graph LR
-    subgraph Places
-        ROOT["ROOT (id=0)<br/>public"]
-        LOGIN["LOGIN (id=1)<br/>public/login"]
-        HOME["HOME (id=2)<br/>home"]
-        CART["CART (id=3)<br/>cart"]
-        PRODUCT["PRODUCT (id=4)<br/>product"]
-        RECEIPT["RECEIPT (id=5)<br/>receipt"]
-    end
-```
-
-### Hierarquia de Navegação
-
-A navegação no Cube MVP é **hierárquica** — cada rota é composta por uma sequência de **steps** (passos). O sistema cria/reutiliza presenters na ordem definida:
-
-```mermaid
-graph TD
-    ROOT --> LOGIN
-    ROOT --> HOME
-    HOME --> CART
-    HOME --> PRODUCT
-    HOME --> RECEIPT
-
-    style ROOT fill:#4a90d9,color:#fff
-    style LOGIN fill:#7cb342,color:#fff
-    style HOME fill:#7cb342,color:#fff
-    style CART fill:#f9a825,color:#000
-    style PRODUCT fill:#f9a825,color:#000
-    style RECEIPT fill:#f9a825,color:#000
-```
-
-| Rota                      | Steps                            |
-|---------------------------|----------------------------------|
-| Login                     | `ROOT → LOGIN`                   |
-| Home (lista de produtos)  | `ROOT → HOME`                    |
-| Detalhe do produto        | `ROOT → HOME → PRODUCT`          |
-| Carrinho                  | `ROOT → HOME → CART`             |
-| Recibo da compra          | `ROOT → HOME → RECEIPT`          |
-
-### CubeIntent (Intenção)
-
-O **CubeIntent** é o container de dados que trafega pela hierarquia de navegação. Possui dois tipos de dados:
-
-- **Parameters** — dados de rota serializáveis (ex: `productId`, `purchaseId`), usados para deep-linking e histórico
-- **Attributes** — dados efêmeros da transação de navegação (ex: slots de view, flags temporárias)
-
-```mermaid
-classDiagram
-    class CubeIntent {
-        -parameters: MutableMap~String, Any?~
-        -attributes: MutableMap~String, Any?~
-        +setParameter(name, value)
-        +getParameterAsString(name): String?
-        +getParameterAsLong(name): Long?
-        +setViewSlot(name, slot)
-        +getViewSlot(name): CubeViewSlot?
-    }
-```
-
-### ViewSlot (Encaixe de View)
-
-O **CubeViewSlot** é o mecanismo pelo qual um presenter pai injeta a view de um presenter filho na posição correta da interface. É uma interface funcional simples:
-
-```kotlin
-fun interface CubeViewSlot {
-    fun setView(view: CubeView)
-}
-```
-
-O pai cria o slot e o passa via CubeIntent. O filho recebe o slot e insere sua view nele.
-
----
-
-## Camadas da Arquitetura
-
-### Diagrama de Módulos
+## Diagrama de Módulos
 
 ```mermaid
 graph TB
@@ -216,71 +161,122 @@ graph TB
     style BACK fill:#78909c,color:#fff
 ```
 
-### Interfaces do Framework Core
+| Módulo | Responsabilidade |
+|--------|-----------------|
+| `:framework-cube` | Motor MVP — navegação transacional, ciclo de vida de presenters, Places, Intent |
+| `:framework-commons` | Utilitários compartilhados — logging, JSON, HTTP, crypto, schedulers |
+| `:shopping-presentation` | Presenters e ViewStates — lógica de apresentação pura (sem UI) |
+| `:shopping-domain` | Modelos de domínio, interfaces de repositório, serviços |
+| `:shopping-persistence-client` | Implementação REST dos repositórios (cliente HTTP) |
+| `:shopping-persistence` | Implementação JDBC dos repositórios (acesso direto ao banco) |
+| `:view-compose` | Views Compose Multiplatform compartilhadas |
+| `:view-compose-desktop` | Entry point JVM Desktop |
+| `:view-compose-android` | Entry point Android |
+| `:view-compose-web` | Entry point wasmJs (WebAssembly) |
+| `:view-compose-ios` | Entry point iOS (via Xcode) |
+| `:shopping-backend` | Servidor Javalin — REST API, WebSocket, H2 |
+| `:shopping-scripts` | Migrations e scripts de banco |
+
+---
+
+## Estratégia Multiplataforma
+
+### Plataformas Suportadas
 
 ```mermaid
-classDiagram
-    class CubeView {
-        <<interface>>
-        +instanceId(): String
-        +update()
-        +release()
-    }
+graph TB
+    subgraph "Código Compartilhado (commonMain)"
+        FW[Framework Cube + Commons]
+        PRES[Presenters + ViewStates]
+        DOM[Domain Models + Services]
+        VIEW[Compose Views]
+    end
 
-    class CubePresenter {
-        <<interface>>
-        +applyParameters(intent, init, deepest): Boolean
-        +publishParameters(intent)
-        +commitComputedState()
-        +release()
-    }
+    subgraph "Plataformas"
+        JVM["Desktop (JVM)<br/>Gson, OkHttp, JCE"]
+        AND["Android<br/>Gson, OkHttp, JCE"]
+        WASM["Web (wasmJs)<br/>Kotlinx-serialization<br/>Fetch API, Web Crypto"]
+        IOSN["iOS (Native)<br/>NSJSONSerialization<br/>URLSession, CommonCrypto"]
+    end
 
-    class ViewState {
-        <<interface>>
-        +write(instanceId, json)
-    }
+    FW --> JVM
+    FW --> AND
+    FW --> WASM
+    FW --> IOSN
+    PRES --> JVM
+    PRES --> AND
+    PRES --> WASM
+    PRES --> IOSN
+    DOM --> JVM
+    DOM --> AND
+    DOM --> WASM
+    DOM --> IOSN
+    VIEW --> JVM
+    VIEW --> AND
+    VIEW --> WASM
+    VIEW --> IOSN
 
-    class CubeViewSlot {
-        <<interface>>
-        +setView(view: CubeView)
-    }
-
-    class AbstractCubePresenter~A~ {
-        #view: CubeView?
-        #app: A
-        +update()
-    }
-
-    class AbstractChildPresenter~A~ {
-        #view: CubeView?
-        #app: A
-        +initialize()
-        #onCreateView()*
-        #onInitialize()*
-        +update()
-        +release()
-    }
-
-    class CubeApplication {
-        <<abstract>>
-        -presenterMap: MutableMap
-        -lastPlace: CubePlace?
-        +navigate(): CubeNavigation
-        +getPresenter(placeId): CubePresenter?
-        +newIntent(): CubeIntent
-        +go(placeName)
-        +release()
-    }
-
-    CubePresenter <|.. AbstractCubePresenter
-    AbstractCubePresenter --> CubeView : view
-    AbstractCubePresenter --> ViewState : state
-    AbstractChildPresenter --> CubeView : view
-    CubeApplication --> CubePresenter : gerencia
-    CubeApplication --> CubeNavigation : cria
+    style FW fill:#ab47bc,color:#fff
+    style PRES fill:#f9a825,color:#000
+    style DOM fill:#ef6c00,color:#fff
+    style VIEW fill:#7cb342,color:#fff
+    style JVM fill:#4a90d9,color:#fff
+    style AND fill:#4a90d9,color:#fff
+    style WASM fill:#4a90d9,color:#fff
+    style IOSN fill:#4a90d9,color:#fff
 ```
 
-### Camada de Apresentação
+### Implementações por Plataforma
+
+| Componente         | JVM / Android         | wasmJs                  | iOS                     |
+|--------------------|-----------------------|-------------------------|-------------------------|
+| JSON               | Gson                  | Kotlinx-serialization   | NSJSONSerialization     |
+| HTTP               | OkHttp                | Fetch API               | URLSession              |
+| Crypto             | JCE                   | Web Crypto API          | CommonCrypto            |
+| Scheduler          | ScheduledThreadPool   | setTimeout/setInterval  | dispatch_queue          |
+| ThreadLocal        | java.lang.ThreadLocal | Variável global         | pthread_key             |
+
+---
+
+## Duas Modalidades de View
+
+O projeto demonstra duas formas distintas de implementar a camada de visualização, ambas compartilhando a **mesma camada de apresentação**.
+
+### View Local — Compose Multiplatform
+
+Os presenters executam no **cliente**. A view Compose renderiza diretamente o `ViewState` do presenter local. A comunicação com o backend é feita via REST.
+
+```mermaid
+graph LR
+    subgraph "Cliente (todas as plataformas)"
+        VIEW["Compose View"] --> PRES["Presenter"]
+        PRES --> STATE["ViewState"]
+        PRES --> SVC["Service"]
+    end
+    SVC -->|HTTP/REST| BACK["Backend"]
+```
+
+### View Remota — React + WebSocket
+
+Os presenters executam no **servidor**. O cliente React é responsável apenas pela renderização. Toda interação do usuário é transmitida ao servidor via WebSocket, e o servidor responde com o novo estado serializado em JSON.
+
+```mermaid
+graph LR
+    subgraph "Navegador"
+        REACT["React + MUI<br/>(renderização pura)"]
+    end
+    subgraph "Servidor"
+        SKEL["Skeleton"] --> PRES["Presenter"]
+        PRES --> STATE["ViewState"]
+    end
+    REACT <-->|WebSocket| SKEL
+```
+
+Veja [architecture-react.md](architecture-react.md) para detalhes completos desta modalidade.
+
+---
+
+## Camada de Apresentação
 
 Os **Presenters** encapsulam toda a lógica de negócio da tela. São classes Kotlin puras, sem dependência de framework de UI:
 
@@ -288,7 +284,6 @@ Os **Presenters** encapsulam toda a lógica de negócio da tela. São classes Ko
 class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
     val state = LoginViewState()
-
     private val loginService = LoginService(app)
 
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
@@ -318,7 +313,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 }
 ```
 
-O **ViewState** é um objeto simples que contém os dados que a view precisa para renderizar:
+O **ViewState** é um objeto mutável simples que contém os dados que a view precisa para renderizar:
 
 ```kotlin
 class LoginViewState : ViewState {
@@ -330,87 +325,33 @@ class LoginViewState : ViewState {
 }
 ```
 
-### Camada de View (Compose)
+A navegação hierárquica é feita via **Places** e **CubeNavigation**. Cada rota é uma sequência de steps:
 
-A **ComposeCubeView** é a ponte entre o framework Cube MVP e o Jetpack Compose. Cada view estende essa classe e implementa o método `Render()`:
-
-```kotlin
-class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-view") {
-
-    @Composable
-    override fun Render() {
-        val rev = revision.value  // Subscreve para recomposição
-
-        val state = presenter.state
-
-        // ... renderiza UI usando state.userName, state.loading, etc.
-
-        Button(onClick = { safeCall(presenter.app) { presenter.onEnter() } }) {
-            if (state.loading) {
-                CircularProgressIndicator()
-            } else {
-                Text("Entrar")
-            }
-        }
-    }
-}
-```
-
----
-
-## Ciclo de Vida e Navegação
-
-### Transação de Navegação
-
-Toda navegação é uma **transação atômica** gerenciada pelo `CubeNavigation`. Se qualquer passo falhar, o estado anterior é restaurado (rollback).
+| Rota                      | Steps                            |
+|---------------------------|----------------------------------|
+| Login                     | `ROOT → LOGIN`                   |
+| Home (lista de produtos)  | `ROOT → HOME`                    |
+| Detalhe do produto        | `ROOT → HOME → PRODUCT`          |
+| Carrinho                  | `ROOT → HOME → CART`             |
+| Recibo da compra          | `ROOT → HOME → RECEIPT`          |
 
 ```mermaid
-sequenceDiagram
-    participant UI as View (UI)
-    participant Nav as CubeNavigation
-    participant Root as RootPresenter
-    participant Home as HomePresenter
-    participant Prod as ProductPresenter
+graph TD
+    ROOT --> LOGIN
+    ROOT --> HOME
+    HOME --> CART
+    HOME --> PRODUCT
+    HOME --> RECEIPT
 
-    UI->>Nav: navigate().step(ROOT).step(HOME).step(PRODUCT).execute(intent)
-
-    Nav->>Root: applyParameters(intent, init=false, deepest=false)
-    Root-->>Nav: true (continua)
-
-    Nav->>Home: applyParameters(intent, init=false, deepest=false)
-    Home-->>Nav: true (continua)
-
-    Nav->>Prod: applyParameters(intent, init=true, deepest=true)
-    Note over Prod: Cria view, carrega produto
-    Prod-->>Nav: true (sucesso)
-
-    Nav->>Nav: Commit — libera presenters antigos
-    Nav->>Nav: commitComputedState() em todos
-    Nav->>Nav: updateHistory()
+    style ROOT fill:#4a90d9,color:#fff
+    style LOGIN fill:#7cb342,color:#fff
+    style HOME fill:#7cb342,color:#fff
+    style CART fill:#f9a825,color:#000
+    style PRODUCT fill:#f9a825,color:#000
+    style RECEIPT fill:#f9a825,color:#000
 ```
 
-### Ciclo de Vida do Presenter
-
-```mermaid
-stateDiagram-v2
-    [*] --> Criado: Factory cria instância
-    Criado --> Ativo: applyParameters(init=true)
-    Ativo --> Ativo: applyParameters(init=false)
-    Ativo --> Ativo: publishParameters()
-    Ativo --> Ativo: commitComputedState()
-    Ativo --> Liberado: release()
-    Liberado --> [*]
-
-    note right of Ativo
-        Presenter permanece ativo
-        enquanto estiver na pilha
-        de navegação atual
-    end note
-```
-
-### Mecanismo de Slots
-
-O slot é o mecanismo que conecta views pai e filho sem acoplamento direto:
+O mecanismo de conexão entre views pai e filho usa **ViewSlots** — callbacks funcionais que desacoplam completamente o pai do filho:
 
 ```mermaid
 sequenceDiagram
@@ -421,21 +362,57 @@ sequenceDiagram
 
     Note over Root: applyParameters(deepest=false)
     Root->>Intent: setViewSlot(SLOT_OWNER, contentSlot)
-    Note over Root: contentSlot atribui a view<br/>recebida ao state.contentView<br/>e chama update()
 
     Note over Home: applyParameters(deepest=true)
     Home->>Intent: getViewSlot(SLOT_OWNER)
     Intent-->>Home: contentSlot
     Home->>Root: contentSlot.setView(homeView)
-    Note over RootView: state.contentView = homeView
-    Note over RootView: Recompoe e renderiza HomeView
+    Note over RootView: Recompõe e renderiza HomeView
 ```
+
+Para detalhes completos do mecanismo de navegação transacional (commit, rollback, interrupção, migração de presenters), veja [architecture-cube.md](architecture-cube.md).
 
 ---
 
-## Mecanismo de Atualização da View
+## Camada de Domínio
 
-O Cube MVP utiliza um mecanismo elegante de **revision counter** para integrar com o sistema de recomposição do Jetpack Compose:
+A camada de domínio contém:
+
+- **Modelos** — entidades do negócio (`Product`, `Purchase`, `Subject`, etc.)
+- **Interfaces de repositório** — contratos com critérios de busca (Query Object Pattern)
+- **Serviços** — operações de negócio que coordenam repositórios
+
+Os modelos e interfaces são compartilhados entre todas as plataformas (`commonMain`). As implementações de repositório variam: REST client para views locais, JDBC para o backend.
+
+Veja [architecture-persistence.md](architecture-persistence.md) para detalhes do padrão de repositórios com critérios.
+
+---
+
+## Camada de Persistência
+
+| Implementação | Módulo | Uso |
+|---------------|--------|-----|
+| **REST Client** | `:shopping-persistence-client` | Views locais (Compose) — chama o backend via HTTP |
+| **JDBC/H2** | `:shopping-persistence` | Backend — acesso direto ao banco H2 |
+
+A implementação REST converte critérios de domínio em query parameters HTTP. A implementação JDBC converte critérios em cláusulas SQL com bind parameters.
+
+---
+
+## Backend
+
+Servidor HTTP baseado em **Javalin** (Java 21) com:
+
+- **REST API** — endpoints para produtos, carrinho, compras, autenticação
+- **WebSocket** — suporte para a modalidade de view remota (React)
+- **H2 Database** — banco embarcado com migrations versionadas
+- **JWT** — autenticação com access token + refresh token, sessões persistidas em banco
+
+---
+
+## Mecanismo de Atualização da View (Compose)
+
+O Cube utiliza um mecanismo de **revision counter** para integrar com o sistema de recomposição do Jetpack Compose:
 
 ```mermaid
 sequenceDiagram
@@ -718,54 +695,7 @@ protected fun safeCall(app: ShoppingApplication, action: () -> Unit) {
 
 ---
 
-## Estrutura Multiplataforma
-
-### Plataformas Suportadas
-
-```mermaid
-graph TB
-    subgraph "Código Compartilhado (commonMain)"
-        FW[Framework Cube + Commons]
-        PRES[Presenters + ViewStates]
-        DOM[Domain Models + Services]
-        VIEW[Compose Views]
-    end
-
-    subgraph "Plataformas"
-        JVM["Desktop (JVM)<br/>Gson, OkHttp, JCE"]
-        AND["Android<br/>Gson, OkHttp, JCE"]
-        WASM["Web (wasmJs)<br/>Kotlinx-serialization<br/>Fetch API, Web Crypto"]
-        IOSN["iOS (Native)<br/>NSJSONSerialization<br/>URLSession, CommonCrypto"]
-    end
-
-    FW --> JVM
-    FW --> AND
-    FW --> WASM
-    FW --> IOSN
-    PRES --> JVM
-    PRES --> AND
-    PRES --> WASM
-    PRES --> IOSN
-    DOM --> JVM
-    DOM --> AND
-    DOM --> WASM
-    DOM --> IOSN
-    VIEW --> JVM
-    VIEW --> AND
-    VIEW --> WASM
-    VIEW --> IOSN
-
-    style FW fill:#ab47bc,color:#fff
-    style PRES fill:#f9a825,color:#000
-    style DOM fill:#ef6c00,color:#fff
-    style VIEW fill:#7cb342,color:#fff
-    style JVM fill:#4a90d9,color:#fff
-    style AND fill:#4a90d9,color:#fff
-    style WASM fill:#4a90d9,color:#fff
-    style IOSN fill:#4a90d9,color:#fff
-```
-
-### Inicialização por Plataforma
+## Inicialização por Plataforma
 
 Cada plataforma possui um entry point que:
 
@@ -797,16 +727,6 @@ sequenceDiagram
     Compose->>Root: rootView.Render()
 ```
 
-### Tabela de Implementações por Plataforma
-
-| Componente         | JVM / Android         | wasmJs                  | iOS                     |
-|--------------------|-----------------------|-------------------------|-------------------------|
-| JSON               | Gson                  | Kotlinx-serialization   | NSJSONSerialization     |
-| HTTP               | OkHttp                | Fetch API               | URLSession              |
-| Crypto             | JCE                   | Web Crypto API          | CommonCrypto            |
-| Scheduler          | ScheduledThreadPool   | setTimeout/setInterval  | dispatch_queue          |
-| ThreadLocal        | java.lang.ThreadLocal | Variável global         | pthread_key             |
-
 ---
 
 ## Exemplo Completo: Fluxo de Login
@@ -832,7 +752,7 @@ sequenceDiagram
 
     SC->>LP: onEnter() em background thread
     LP->>LP: state.loading = true, update()
-    Note over LV: Recompoe: spinner + campos desabilitados
+    Note over LV: Recompõe: spinner + campos desabilitados
 
     LP->>LS: fetchSubject(admin, ***)
     LS->>API: POST /auth/login
@@ -853,9 +773,19 @@ sequenceDiagram
     Nav->>Nav: commitComputedState()
     Nav->>Nav: updateHistory()
 
-    Note over HV: Compose recompoe:<br/>renderiza Home com produtos
+    Note over HV: Compose recompõe:<br/>renderiza Home com produtos
     HV->>User: Exibe tela principal
 ```
+
+---
+
+## Documentação Detalhada
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [architecture-cube.md](architecture-cube.md) | Framework Cube — mecanismo de navegação transacional, ciclo de vida de presenters, interrupção e migração, commit/rollback, garantias |
+| [architecture-react.md](architecture-react.md) | Modalidade de view remota — React + WebSocket, Skeletons, sincronização de estado, segurança |
+| [architecture-persistence.md](architecture-persistence.md) | Camada de persistência — repositórios com critérios, DbTable, Row com change tracking, SQL builder, transações |
 
 ---
 
@@ -864,12 +794,13 @@ sequenceDiagram
 | Termo                | Definição |
 |----------------------|-----------|
 | **Place**            | Destino de navegação com id, nome e factory de presenter |
-| **CubeIntent**       | Container de parâmetros e atributos para uma transação de navegação |
+| **CubeIntent**       | Container de parâmetros (serializáveis) e atributos (efêmeros) para uma transação de navegação |
 | **CubeViewSlot**     | Callback funcional para injeção de view filho em view pai |
-| **Presenter**        | Controlador que encapsula a lógica de apresentação de uma tela |
-| **ViewState**        | Objeto com os dados que a view precisa para renderizar |
-| **ComposeCubeView**  | Ponte entre CubeView e Jetpack Compose, com mecanismo de revision |
-| **safeCall**         | Despacho assíncrono serializado para ações do presenter |
-| **CubeNavigation**   | Transação atômica de navegação com suporte a rollback |
-| **CubeApplication**  | Container global de presenters e estado da aplicação |
+| **Presenter**        | Controlador que encapsula a lógica de apresentação de uma tela (Kotlin puro, sem dependência de UI) |
+| **ViewState**        | Objeto mutável com os dados que a view precisa para renderizar |
+| **ComposeCubeView**  | Ponte entre CubeView e Jetpack Compose, com mecanismo de revision counter |
+| **safeCall**         | Despacho assíncrono serializado (limitedParallelism=1) para ações do presenter |
+| **CubeNavigation**   | Transação atômica de navegação com commit, rollback e suporte a interrupções |
+| **CubeApplication**  | Container global de presenters ativos e ponto de entrada para navegação |
+| **Skeleton**         | Ponte servidor-cliente na modalidade React — serializa ViewState para WebSocket |
 | **revision**         | Contador MutableState que dispara recomposição do Compose |
