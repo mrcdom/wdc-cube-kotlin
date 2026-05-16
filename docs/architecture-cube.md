@@ -34,7 +34,11 @@
 
 ## Visão Geral
 
-O `CubeNavigation` é o motor de navegação do framework Cube MVP. Ele orquestra o **ciclo de vida dos presenters** durante transições de tela, tratando a navegação como uma **transação atômica**: ou todos os steps são aplicados com sucesso (commit), ou o estado anterior é restaurado (rollback).
+O Cube é uma solução de **gerenciamento de estado de aplicação** baseada no padrão MVP (Model-View-Presenter). Diferente de abordagens que exigem estado imutável e unidirecional, o Cube adota **estados de view mutáveis** — os presenters manipulam diretamente objetos de estado (`ViewState`) e notificam a view para re-renderizar. Essa decisão simplifica o código de apresentação, eliminando a cerimônia de cópias imutáveis e reducers.
+
+Um princípio central da arquitetura é o **desacoplamento total entre a lógica de apresentação e a tecnologia de visualização**. Os presenters são classes Kotlin puras, sem nenhuma dependência de framework de UI. A tecnologia de renderização — seja Compose Multiplatform, React, SwiftUI ou qualquer outra — é uma **escolha do projeto**, não uma imposição do framework. Isso permite que o mesmo código de apresentação seja compartilhado entre plataformas distintas, com cada uma implementando apenas a camada de view.
+
+O `CubeNavigation` é o motor de navegação do framework. Ele orquestra o **ciclo de vida dos presenters** durante transições de tela, tratando a navegação como uma **transação atômica**: ou todos os steps são aplicados com sucesso (commit), ou o estado anterior é restaurado (rollback).
 
 O mecanismo foi projetado para lidar com um cenário crítico: **redirects durante a navegação**. Um presenter pode, dentro de `applyParameters()`, iniciar uma nova navegação (por exemplo, redirecionar um usuário não autenticado para a tela de login). Isso **interrompe** a navegação corrente e inicia outra, e o framework garante que nenhum presenter criado seja perdido sem ter `release()` chamado.
 
