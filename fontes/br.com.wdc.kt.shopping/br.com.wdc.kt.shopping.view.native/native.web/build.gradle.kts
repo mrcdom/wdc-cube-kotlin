@@ -7,7 +7,7 @@ plugins {
 kotlin {
     jvmToolchain(21)
 
-    wasmJs {
+    js(IR) {
         browser {
             commonWebpackConfig {
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
@@ -19,19 +19,17 @@ kotlin {
                         )
                     )
                 }
+                cssSupport {
+                    enabled = true
+                }
             }
         }
         binaries.executable()
     }
 
-    sourceSets.all {
-        languageSettings.optIn("kotlin.js.ExperimentalWasmJsInterop")
-    }
-
     sourceSets {
-        val wasmJsMain by getting {
+        val jsMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-browser:0.3")
                 implementation(project(":shopping-presentation"))
                 implementation(project(":shopping-persistence-client"))
             }
