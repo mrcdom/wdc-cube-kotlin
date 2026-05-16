@@ -21,6 +21,12 @@ class AccessContextCache(val jwtSecret: String) {
             gen.initialize(RSA_KEY_SIZE, SecureRandom())
             return gen.generateKeyPair()
         }
+
+        private fun generateIntentSignSecret(): String {
+            val bytes = ByteArray(32)
+            SecureRandom().nextBytes(bytes)
+            return java.util.Base64.getEncoder().encodeToString(bytes)
+        }
     }
 
     private val byUserId = ConcurrentHashMap<Long, AccessContext>()
@@ -32,8 +38,9 @@ class AccessContextCache(val jwtSecret: String) {
         val keyPair = generateRsaKeyPair()
         val refreshToken = UUID.randomUUID().toString()
         val expiresAt = Instant.now().plus(ACCESS_TOKEN_TTL)
+        val intentSignSecret = generateIntentSignSecret()
 
-        val ctx = AccessContext(userId, userName, permissions, keyPair, expiresAt, refreshToken)
+        val ctx = AccessContext(userId, userName, permissions, keyPair, expiresAt, refreshToken, intentSignSecret)
 
         val previous = byUserId.put(userId, ctx)
         if (previous != null) {
@@ -56,8 +63,9 @@ class AccessContextCache(val jwtSecret: String) {
         val newRefreshToken = UUID.randomUUID().toString()
         val expiresAt = Instant.now().plus(ACCESS_TOKEN_TTL)
 
+        val intentSignSecret = generateIntentSignSecret()
         val ctx = AccessContext(userId, existing.userName, existing.permissions,
-            generateRsaKeyPair(), expiresAt, newRefreshToken)
+            generateRsaKeyPair(), expiresAt, newRefreshToken, intentSignSecret)
 
         byUserId[userId] = ctx
         refreshTokenIndex.remove(refreshToken)

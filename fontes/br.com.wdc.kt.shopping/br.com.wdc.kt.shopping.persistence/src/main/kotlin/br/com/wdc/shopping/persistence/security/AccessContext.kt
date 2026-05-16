@@ -16,6 +16,7 @@ class AccessContext(
     private val rsaKeyPair: KeyPair,
     val expiresAt: Instant,
     val refreshToken: String,
+    val intentSignSecret: String,
 ) : SecurityContext {
 
     override val privateKey: PrivateKey get() = rsaKeyPair.private

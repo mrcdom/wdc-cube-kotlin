@@ -21,6 +21,7 @@ import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.WasmCryptoProvider
 import br.com.wdc.shopping.persistence.client.RestConfig
@@ -45,6 +46,15 @@ import br.com.wdc.shopping.view.compose.views.*
 import br.com.wdc.shopping.view.compose.theme.ShoppingTheme
 import kotlinx.browser.document
 
+/**
+ * Fixed HMAC key used for signing intents when no user is authenticated.
+ * After login, the per-session secret from the server is used instead.
+ */
+private const val ANONYMOUS_SIGN_KEY = "wdc-shopping-anonymous-intent-key"
+
+/** REST configuration holding the auth client with per-session intent signing secret. */
+private lateinit var platformConfig: RestConfig
+
 private class ComposeShoppingApplication : ShoppingApplication() {
 
     private val attributes = mutableMapOf<String, Any?>()
@@ -60,7 +70,8 @@ private class ComposeShoppingApplication : ShoppingApplication() {
         intent.place = getLastPlace() ?: getRootPlace()
         publishParameters(intent)
 
-        val signature = signIntent(intent.toString())
+        val intentStr = intent.toString()
+        val signature = signIntent(intentStr)
         intent.setParameter("sign", signature)
 
         val newFragment = intent.toString()
@@ -75,10 +86,12 @@ private class ComposeShoppingApplication : ShoppingApplication() {
             intent.place = getRootPlace()
         }
 
-        val actualSignature = intent.removeParameter("sign") ?: ""
-        val expectedSignature = signIntent(intent.toString())
+        val actualSignature = (intent.removeParameter("sign") as? String) ?: ""
+        val intentStr = intent.toString()
 
-        if (actualSignature != expectedSignature) {
+        if (verifyIntent(intentStr, actualSignature)) {
+            go(intent)
+        } else {
             // Invalid signature: navigate to current state or root
             updateHistory()
             val newIntent = newIntent()
@@ -86,28 +99,7 @@ private class ComposeShoppingApplication : ShoppingApplication() {
                 newIntent.place = getRootPlace()
             }
             go(newIntent)
-        } else {
-            go(intent)
         }
-    }
-
-    private fun getSigningKey(): ByteArray {
-        val publicKey = getSecurityContext()?.publicKeyBase64
-        return if (!publicKey.isNullOrBlank()) {
-            publicKey.encodeToByteArray()
-        } else {
-            ANONYMOUS_SIGN_KEY
-        }
-    }
-
-    private fun signIntent(intentStr: String): String {
-        val crypto = CryptoProvider.BEAN.get()!!
-        val hmac = crypto.hmacSha256(getSigningKey(), intentStr.encodeToByteArray())
-        return Base62.encodeToString(hmac)
-    }
-
-    companion object {
-        private val ANONYMOUS_SIGN_KEY = "wdc-compose-web-anon-sign-key".encodeToByteArray()
     }
 
     override fun createPresenterMap(): MutableMap<Int, CubePresenter> = LinkedHashMap()
@@ -140,6 +132,7 @@ private fun initializePlatform(baseUrl: String) {
     // Initialize REST repositories
     val transport = WasmHttpTransport(baseUrl)
     val config = RestConfig(transport)
+    platformConfig = config
     RestRepositoryBootstrap.initialize(config, WasmCryptoProvider())
 
     // Wire view factories
@@ -159,6 +152,10 @@ fun main() {
     initializePlatform(baseUrl)
 
     val app = ComposeShoppingApplication()
+
+    // Restore auth state (including intentSignSecret) BEFORE first navigation,
+    // so that safeGo() can verify URL signatures made with the session key.
+    restoreAuthState(app)
 
     // Ensure route registrations are initialized before navigation
     Routes.Place.entries
@@ -204,6 +201,21 @@ fun main() {
 @JsFun("() => window.location.origin")
 private external fun jsLocationOrigin(): JsString
 
+/**
+ * Eagerly restores auth state from session storage so that the per-session
+ * intentSignSecret is available before the first [safeGo] call.
+ */
+private fun restoreAuthState(app: ComposeShoppingApplication) {
+    val authService = AuthenticationService.BEAN.getOrNull() ?: return
+    val json = app.sessionStorage.getString("authState") ?: return
+    try {
+        val inp = JsonInputFactory.createStringInput(json).input
+        authService.readAuthState(inp)
+    } catch (_: Exception) {
+        app.sessionStorage.remove("authState")
+    }
+}
+
 private fun getBaseUrl(): String {
     return jsLocationOrigin().toString()
 }
@@ -220,3 +232,47 @@ private external fun jsSetLocationHash(hash: JsString)
 
 @JsFun("(callback) => { window.addEventListener('hashchange', () => callback()); }")
 private external fun jsOnHashChange(callback: () -> Unit)
+
+// --- Local HMAC intent signing ---
+
+/**
+ * Returns the HMAC signing key: per-session secret if authenticated,
+ * or the fixed anonymous key otherwise.
+ */
+private fun getSigningKey(): String {
+    return platformConfig.authClient?.intentSignSecret ?: ANONYMOUS_SIGN_KEY
+}
+
+/**
+ * Signs an intent string using HMAC-SHA256 with the current signing key.
+ * Returns the signature encoded as Base62 (URL-safe).
+ */
+private fun signIntent(intentStr: String): String {
+    val crypto = CryptoProvider.BEAN.get()
+    val key = getSigningKey()
+    val hash = crypto.hmacSha256(key.encodeToByteArray(), intentStr.encodeToByteArray())
+    return Base62.encodeToString(hash)
+}
+
+/**
+ * Verifies that the given signature matches the expected HMAC for [intentStr].
+ * Tries both the current signing key and the anonymous key (in case the user
+ * just logged in and the URL was signed with the anonymous key, or vice versa).
+ */
+private fun verifyIntent(intentStr: String, signature: String): Boolean {
+    if (signature.isBlank()) return false
+    val crypto = CryptoProvider.BEAN.get()
+
+    // Try current key (per-session or anonymous)
+    val currentKey = getSigningKey()
+    val currentHash = crypto.hmacSha256(currentKey.encodeToByteArray(), intentStr.encodeToByteArray())
+    if (Base62.encodeToString(currentHash) == signature) return true
+
+    // Try anonymous key as fallback (transition from anonymous to authenticated)
+    if (currentKey != ANONYMOUS_SIGN_KEY) {
+        val anonHash = crypto.hmacSha256(ANONYMOUS_SIGN_KEY.encodeToByteArray(), intentStr.encodeToByteArray())
+        if (Base62.encodeToString(anonHash) == signature) return true
+    }
+
+    return false
+}

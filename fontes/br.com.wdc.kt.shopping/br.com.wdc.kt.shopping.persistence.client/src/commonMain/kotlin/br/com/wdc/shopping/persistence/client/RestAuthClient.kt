@@ -15,6 +15,8 @@ class RestAuthClient(private val config: RestConfig) {
         private set
     var publicKeyBase64: String? = null
         private set
+    var intentSignSecret: String? = null
+        private set
     var expiresAtEpochSecond: Long = 0
         private set
 
@@ -77,18 +79,23 @@ class RestAuthClient(private val config: RestConfig) {
         accessToken: String,
         refreshToken: String,
         publicKeyBase64: String,
-        expiresAtEpochSecond: Long
+        expiresAtEpochSecond: Long,
+        intentSignSecret: String? = null
     ) {
         this.accessToken = accessToken
         this.refreshToken = refreshToken
         this.publicKeyBase64 = publicKeyBase64
         this.expiresAtEpochSecond = expiresAtEpochSecond
+        if (intentSignSecret != null) {
+            this.intentSignSecret = intentSignSecret
+        }
     }
 
     internal fun clearTokens() {
         this.accessToken = null
         this.refreshToken = null
         this.publicKeyBase64 = null
+        this.intentSignSecret = null
         this.expiresAtEpochSecond = 0
     }
 
@@ -99,6 +106,7 @@ class RestAuthClient(private val config: RestConfig) {
                 "accessToken" -> this.accessToken = input.nextString()
                 "refreshToken" -> this.refreshToken = input.nextString()
                 "publicKey" -> this.publicKeyBase64 = input.nextString()
+                "intentSignKey" -> this.intentSignSecret = input.nextString()
                 "expiresAt" -> this.expiresAtEpochSecond = Instant.parse(input.nextString()).epochSeconds
                 else -> input.skipValue()
             }

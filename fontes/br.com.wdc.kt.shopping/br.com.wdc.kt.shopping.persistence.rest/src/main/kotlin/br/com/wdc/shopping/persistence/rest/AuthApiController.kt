@@ -53,7 +53,8 @@ class AuthApiController(private val authService: AuthenticationService) {
             "accessToken" to result.accessToken,
             "refreshToken" to result.refreshToken,
             "expiresAt" to result.expiresAt.toString(),
-            "publicKey" to result.publicKey
+            "publicKey" to result.publicKey,
+            "intentSignKey" to result.intentSignKey
         ))
     }
 
@@ -77,7 +78,8 @@ class AuthApiController(private val authService: AuthenticationService) {
             "accessToken" to result.accessToken,
             "refreshToken" to result.refreshToken,
             "expiresAt" to result.expiresAt.toString(),
-            "publicKey" to result.publicKey
+            "publicKey" to result.publicKey,
+            "intentSignKey" to result.intentSignKey
         ))
     }
 

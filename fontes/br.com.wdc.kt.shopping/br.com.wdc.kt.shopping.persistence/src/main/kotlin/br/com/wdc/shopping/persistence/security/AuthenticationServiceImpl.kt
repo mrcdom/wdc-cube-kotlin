@@ -76,7 +76,7 @@ class AuthenticationServiceImpl(
         val session = cache.createSession(user.id!!, user.userName!!, permissions)
         val accessToken = JwtUtil.create(user.id!!, user.userName!!, cache.accessTokenTtl, cache.jwtSecret)
 
-        return AuthResult(user.id!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64)
+        return AuthResult(user.id!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64, session.intentSignSecret)
     }
 
     override fun refresh(refreshToken: String): AuthResult? {
@@ -85,7 +85,7 @@ class AuthenticationServiceImpl(
         val accessToken = JwtUtil.create(session.userId!!, session.userName!!,
             cache.accessTokenTtl, cache.jwtSecret)
 
-        return AuthResult(session.userId!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64)
+        return AuthResult(session.userId!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64, session.intentSignSecret)
     }
 
     override fun logout(refreshToken: String) {

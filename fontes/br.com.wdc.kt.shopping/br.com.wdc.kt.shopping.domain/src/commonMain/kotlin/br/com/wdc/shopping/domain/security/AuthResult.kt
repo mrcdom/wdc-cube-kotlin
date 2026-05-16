@@ -8,4 +8,5 @@ data class AuthResult(
     val refreshToken: String,
     val expiresAt: Instant,
     val publicKey: String,
+    val intentSignKey: String,
 )

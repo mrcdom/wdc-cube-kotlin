@@ -56,7 +56,8 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
             result.accessToken,
             result.refreshToken,
             result.publicKey,
-            result.expiresAt.epochSeconds
+            result.expiresAt.epochSeconds,
+            result.intentSignKey
         )
 
         return result
@@ -82,7 +83,8 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
             result.accessToken,
             result.refreshToken,
             result.publicKey,
-            result.expiresAt.epochSeconds
+            result.expiresAt.epochSeconds,
+            result.intentSignKey
         )
 
         return result
@@ -113,6 +115,7 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
         var refreshToken = ""
         var expiresAt = Instant.DISTANT_PAST
         var publicKey = ""
+        var intentSignKey = ""
 
         input.beginObject()
         while (input.hasNext()) {
@@ -122,12 +125,13 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
                 "refreshToken" -> refreshToken = input.nextString()
                 "expiresAt" -> expiresAt = Instant.parse(input.nextString())
                 "publicKey" -> publicKey = input.nextString()
+                "intentSignKey" -> intentSignKey = input.nextString()
                 else -> input.skipValue()
             }
         }
         input.endObject()
 
-        return AuthResult(userId, accessToken, refreshToken, expiresAt, publicKey)
+        return AuthResult(userId, accessToken, refreshToken, expiresAt, publicKey, intentSignKey)
     }
 
     override fun writeAuthState(out: ExtensibleObjectOutput) {
@@ -135,6 +139,7 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
         authClient.accessToken?.let { out.name("accessToken").value(it) }
         authClient.refreshToken?.let { out.name("refreshToken").value(it) }
         authClient.publicKeyBase64?.let { out.name("publicKeyBase64").value(it) }
+        authClient.intentSignSecret?.let { out.name("intentSignSecret").value(it) }
         if (authClient.expiresAtEpochSecond > 0) {
             out.name("expiresAt").value(authClient.expiresAtEpochSecond)
         }
@@ -145,6 +150,7 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
         var accessToken: String? = null
         var refreshToken: String? = null
         var publicKeyBase64: String? = null
+        var intentSignSecret: String? = null
         var expiresAt = 0L
 
         input.beginObject()
@@ -153,6 +159,7 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
                 "accessToken" -> accessToken = InputCoerceUtils.asString(input)
                 "refreshToken" -> refreshToken = InputCoerceUtils.asString(input)
                 "publicKeyBase64" -> publicKeyBase64 = InputCoerceUtils.asString(input)
+                "intentSignSecret" -> intentSignSecret = InputCoerceUtils.asString(input)
                 "expiresAt" -> expiresAt = InputCoerceUtils.asLong(input) ?: 0L
                 else -> input.skipValue()
             }
@@ -160,7 +167,7 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
         input.endObject()
 
         if (accessToken != null && refreshToken != null && publicKeyBase64 != null) {
-            authClient.setTokens(accessToken, refreshToken, publicKeyBase64, expiresAt)
+            authClient.setTokens(accessToken, refreshToken, publicKeyBase64, expiresAt, intentSignSecret)
         }
     }
 }
