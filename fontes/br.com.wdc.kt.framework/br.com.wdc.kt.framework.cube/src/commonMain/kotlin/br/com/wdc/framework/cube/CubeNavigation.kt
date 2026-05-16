@@ -39,7 +39,7 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
                 holder.id = place.id
                 holder.deepest = deepest
 
-                val presenter = curPresenterMap[place.id]
+                val presenter = curPresenterMap[place.id] ?: newPresenterMap[place.id]
                 if (presenter == null) {
                     val factory = place.presenterFactory<T>()
                     val newPresenter = factory(app)
@@ -47,7 +47,6 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
                     holder.presenter = newPresenter
                     holder.initialize = true
                 } else {
-                    newPresenterMap[place.id] = presenter
                     holder.presenter = presenter
                     holder.initialize = false
                 }
@@ -61,27 +60,29 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
                 }
             }
 
-            commit(nextPresenters)
+            if (notInterrupted) {
+                commit(nextPresenters)
+            }
             return result
         } catch (caught: Exception) {
-            rollback(caught)
+            if (notInterrupted) {
+                rollback(caught)
+            }
             throw caught
         }
     }
 
     fun interrupt() {
         notInterrupted = false
-        newPresenterMap.forEach { (key, value) -> curPresenterMap[key] = value }
     }
 
     private fun rollback(caught: Exception) {
         try {
+            // Restore original presenters
             val presenterIds = curPresenterMap.keys.sorted().toList()
-
             for (i in presenterIds.indices) {
                 val presenterId = presenterIds[i]
                 try {
-                    newPresenterMap.remove(presenterId)
                     val presenter = curPresenterMap[presenterId]
                     if (presenter != null) {
                         presenter.applyParameters(sourceIntent, false, i == presenterIds.size - 1)
@@ -94,9 +95,9 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
                 }
             }
 
+            // Release all created presenters (leaf-first)
             if (newPresenterMap.isNotEmpty()) {
                 releasePresenters(newPresenterMap)
-                newPresenterMap.clear()
             }
         } finally {
             app.updateHistory()
@@ -106,15 +107,22 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
 
     private fun commit(nextPresenters: List<PresenterHolder>) {
         try {
+            // Build the final presenter map from accepted presenters
+            val finalMap = HashMap<Int, CubePresenter>()
             for (holder in nextPresenters) {
+                finalMap[holder.id] = holder.presenter!!
+                newPresenterMap.remove(holder.id)
                 curPresenterMap.remove(holder.id)
             }
 
+            // Release non-accepted created and replaced presenters (leaf-first)
+            curPresenterMap.putAll(newPresenterMap)
             if (curPresenterMap.isNotEmpty()) {
                 releasePresenters(curPresenterMap)
             }
+
+            app.presenterMap = finalMap
         } finally {
-            app.presenterMap = newPresenterMap
             app.lastPlace = targetPlace
             app.navigation = null
             app.updateHistory()

@@ -24,7 +24,7 @@ class ProductsPanelPresenter(
 
     // :: Internal Instance Fields
 
-    private val productService = ProductService(app)
+    private val productService = ProductService(app.getProductRepository())
 
     // :: Life cycle
 

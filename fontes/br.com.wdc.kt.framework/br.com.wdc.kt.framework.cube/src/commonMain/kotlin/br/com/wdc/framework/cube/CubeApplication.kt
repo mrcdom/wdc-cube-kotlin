@@ -67,6 +67,10 @@ abstract class CubeApplication {
 
             val newContext = CubeNavigation<T>(this)
             newContext.reflowCount = current.reflowCount + 1
+
+            // Migrate created presenters from interrupted navigation
+            newContext.newPresenterMap.putAll(current.newPresenterMap)
+
             navigation = newContext
             return newContext
         } else {

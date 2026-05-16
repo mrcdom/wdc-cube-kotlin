@@ -4,6 +4,19 @@ Engine do padrão **Cube MVP** — gerenciamento de estado, navegação hierárq
 
 **Plataformas:** JVM, Android, iOS, wasmJs
 
-**Conceitos principais:** `CubeView`, `CubePresenter`, `CubeNavigation`, `Place`, `Intent`, `ViewSlot`
+## Componentes
 
-Veja a [documentação de arquitetura](../../../docs/architecture.md) para detalhes completos.
+| Componente | Responsabilidade |
+|------------|-----------------|
+| `CubePlace` | Destino de navegação com ID, nome e factory de presenter |
+| `CubePresenter` | Ciclo de vida: `applyParameters` → `publishParameters` → `commitComputedState` → `release` |
+| `CubeIntent` | Container de parâmetros (serializáveis) e atributos (efêmeros, como `ViewSlot`) |
+| `CubeViewSlot` | Mecanismo de composição pai-filho entre views |
+| `CubeView` | Interface de renderização (Compose, React, etc.) |
+| `CubeApplication` | Estado global — mapa de presenters ativos e ponto de entrada `navigate()` |
+| `CubeNavigation` | Motor transacional — orquestra execute → commit/rollback com suporte a interrupções |
+
+## Documentação
+
+- [Arquitetura Cube — Mecanismo de Navegação](../../../docs/architecture-cube.md) — explicação detalhada do ciclo de navegação, interrupções, migração de presenters, commit, rollback e garantias do framework
+- [Arquitetura Geral — Cube MVP](../../../docs/architecture.md) — visão geral da arquitetura, camadas, slots, safeCall e exemplos completos
