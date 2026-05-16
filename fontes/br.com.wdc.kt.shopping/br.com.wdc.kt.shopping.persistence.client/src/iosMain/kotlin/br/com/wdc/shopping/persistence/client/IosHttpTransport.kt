@@ -11,6 +11,8 @@ import platform.posix.memcpy
 class IosHttpTransport(private val baseUrl: String) : HttpTransport {
 
     override var accessTokenSupplier: (() -> String?)? = null
+    override var refreshHandler: (() -> Boolean)? = null
+    override var onAuthFailure: (() -> Unit)? = null
 
     override fun postJson(path: String, body: String): String {
         return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader())
