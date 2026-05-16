@@ -69,7 +69,7 @@ fun main() {
             onCloseRequest = ::exitApplication,
             title = "Shopping",
             icon = painterResource("icon.png"),
-            state = rememberWindowState(width = 400.dp, height = 800.dp)
+            state = rememberWindowState(width = 1024.dp, height = 768.dp)
         ) {
             ShoppingTheme {
                 Surface(
