@@ -14,9 +14,7 @@
 - [Camada de Domínio](#camada-de-domínio)
 - [Camada de Persistência](#camada-de-persistência)
 - [Backend](#backend)
-- [Mecanismo de Atualização da View (Compose)](#mecanismo-de-atualização-da-view-compose)
-- [Execução Assíncrona com safeCall](#execução-assíncrona-com-safecall)
-- [Padrão de Loading](#padrão-de-loading)
+- [Integração com Compose Multiplatform](#integração-com-compose-multiplatform)
 - [Tratamento de Erros](#tratamento-de-erros)
 - [Inicialização por Plataforma](#inicialização-por-plataforma)
 - [Exemplo Completo: Fluxo de Login](#exemplo-completo-fluxo-de-login)
@@ -410,228 +408,17 @@ Servidor HTTP baseado em **Javalin** (Java 21) com:
 
 ---
 
-## Mecanismo de Atualização da View (Compose)
+## Integração com Compose Multiplatform
 
-O Cube utiliza um mecanismo de **revision counter** para integrar com o sistema de recomposição do Jetpack Compose:
+A integração do Cube com Compose é feita pela classe `ComposeCubeView`, que resolve três problemas fundamentais:
 
-```mermaid
-sequenceDiagram
-    participant BG as Background Thread
-    participant Presenter as Presenter
-    participant View as ComposeCubeView
-    participant State as MutableState<Int>
-    participant Compose as Compose Runtime
-    participant UI as UI Thread
+- **Recomposição** — um `revision` counter (`MutableState<Int>`) é incrementado quando o presenter chama `update()`, disparando recomposição automática do Compose
+- **Threading** — `safeCall` despacha ações de presenter para uma coroutine com `limitedParallelism(1)`, mantendo a UI thread livre e garantindo execução serial
+- **Composição hierárquica** — `RenderSlot(view)` renderiza uma `CubeView` filha dentro de uma view pai, sem acoplamento de tipos
 
-    BG->>Presenter: action() via safeCall
-    Presenter->>Presenter: state.campo = novoValor
-    Presenter->>View: update()
-    View->>State: revision.value++
-    State->>Compose: Snapshot change detected
-    Compose->>UI: Schedule recomposition
-    UI->>View: Render()
-    View->>State: val rev = revision.value
-    Note over UI: Lê state atualizado e renderiza
-```
+O padrão de **view factories** permite que cada plataforma registre suas views Compose no entry point, mantendo os presenters sem dependência de UI.
 
-### Por que funciona?
-
-1. O `MutableState` do Compose é **thread-safe** — mudanças em qualquer thread são detectadas pelo snapshot system
-2. A leitura de `revision.value` no `@Composable` cria uma **subscrição** automática
-3. Quando o valor muda, o Compose agenda uma **recomposição** na UI thread
-4. Múltiplas chamadas a `update()` no mesmo frame são **coalescidas** em uma única recomposição
-
-```kotlin
-abstract class ComposeCubeView(private val id: String) : CubeView {
-    val revision: MutableState<Int> = mutableIntStateOf(0)
-
-    override fun update() {
-        revision.value++  // Thread-safe, dispara recomposição
-    }
-}
-```
-
----
-
-## Execução Assíncrona com safeCall
-
-### O Problema
-
-No padrão MVP clássico, os presenters executam chamadas síncronas (HTTP, banco de dados). Se essas chamadas ocorressem na UI thread:
-
-- A interface ficaria **congelada** durante a espera
-- No Android, o **StrictMode** proíbe operações de rede na main thread
-- A experiência do usuário seria degradada
-
-### A Solução: Dispatcher Serial
-
-O `safeCall` despacha a ação do presenter para uma **coroutine com paralelismo limitado a 1**, garantindo:
-
-- **Execução serial** — as mutações de estado nunca concorrem entre si
-- **UI thread livre** — a interface permanece responsiva durante chamadas lentas
-- **Código síncrono** — o presenter continua escrevendo código simples e linear
-
-```mermaid
-sequenceDiagram
-    participant UI as UI Thread
-    participant SC as safeCall
-    participant BG as Background Thread<br/>(limitedParallelism=1)
-    participant API as API REST
-
-    UI->>SC: onClick → safeCall { presenter.onEnter() }
-    Note over UI: UI thread liberada imediatamente
-
-    SC->>BG: launch(Dispatchers.Default.limitedParallelism(1))
-    BG->>BG: state.loading = true
-    BG->>BG: update() → revision++
-    Note over UI: Compose recompõe: mostra spinner
-
-    BG->>API: loginService.fetchSubject()
-    Note over BG: Bloqueio apenas da<br/>background thread
-    API-->>BG: subject
-
-    BG->>BG: state.loading = false
-    BG->>BG: update() → revision++
-    Note over UI: Compose recompõe: esconde spinner
-```
-
-### Implementação
-
-```kotlin
-abstract class ComposeCubeView(private val id: String) : CubeView {
-
-    protected fun safeCall(action: () -> Unit) {
-        presenterScope.launch {
-            try {
-                action()
-            } catch (e: Exception) {
-                app.alertUnexpectedError(LOG, "Erro inesperado em $id", e)
-            }
-        }
-    }
-
-    companion object {
-        private val presenterScope = CoroutineScope(
-            Dispatchers.Default.limitedParallelism(1)
-        )
-    }
-}
-```
-
-### Serialização Garantida
-
-O `limitedParallelism(1)` garante que, mesmo que múltiplas ações sejam disparadas rapidamente, elas executarão **uma de cada vez**, na ordem em que foram enfileiradas:
-
-```mermaid
-sequenceDiagram
-    participant UI as UI Thread
-    participant Queue as Fila (limitedParallelism=1)
-    participant BG as Background Thread
-
-    UI->>Queue: safeCall { onAddToCart() }
-    UI->>Queue: safeCall { onBuy() }
-    Note over UI: UI livre, ambas enfileiradas
-
-    Queue->>BG: onAddToCart()
-    Note over BG: Executa até completar
-    BG-->>Queue: done
-
-    Queue->>BG: onBuy()
-    Note over BG: Executa sequencialmente
-    BG-->>Queue: done
-```
-
----
-
-## Padrão de Loading
-
-Com o `safeCall` executando fora da UI thread, é possível mostrar indicadores de carregamento de forma natural:
-
-### No Presenter
-
-```kotlin
-fun onEnter() {
-    // 1. Liga o loading e limpa erros anteriores
-    state.loading = true
-    state.errorCode = 0
-    state.errorMessage = null
-    update()  // → UI mostra spinner (UI thread livre para recompor)
-
-    try {
-        // 2. Chamada HTTP lenta (roda na background thread)
-        val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")
-
-        // 3. Desliga o loading
-        state.loading = false
-
-        if (subject?.id != null) {
-            app.subject = subject
-            Routes.home(app)
-        } else {
-            state.errorMessage = "Usuário ou senha não reconhecido!"
-            update()
-        }
-    } catch (caught: Exception) {
-        state.loading = false
-        state.errorMessage = "Falha de comunicação com o servidor."
-        update()
-    }
-}
-```
-
-### Na View
-
-```kotlin
-@Composable
-override fun Render() {
-    val rev = revision.value
-    val loading = presenter.state.loading
-
-    OutlinedTextField(
-        value = userName,
-        enabled = !loading,  // Desabilita durante loading
-        // ...
-    )
-
-    Button(
-        onClick = { safeCall { presenter.onEnter() } },
-        enabled = !loading,  // Impede duplo-clique
-    ) {
-        if (loading) {
-            CircularProgressIndicator(modifier = Modifier.size(24.dp))
-        } else {
-            Text("Entrar")
-        }
-    }
-}
-```
-
-### Diagrama do Fluxo Visual
-
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: Tela renderizada
-    Idle --> Loading: Usuário clica "Entrar"
-    Loading --> Idle: Resposta HTTP recebida
-    Loading --> Error: Exceção capturada
-
-    state Idle {
-        [*] --> CamposHabilitados
-        CamposHabilitados --> BotaoEntrar
-    }
-
-    state Loading {
-        [*] --> CamposDesabilitados
-        CamposDesabilitados --> SpinnerNoBotao
-    }
-
-    state Error {
-        [*] --> MensagemDeErro
-        MensagemDeErro --> CamposHabilitadosNovamente
-    }
-
-    Error --> Idle: Usuário corrige e tenta novamente
-```
+Veja [architecture-cube-compose.md](architecture-cube-compose.md) para detalhes completos: ponte ComposeCubeView, revision counter, safeCall, RenderSlot, registro de factories, inicialização por plataforma, deep-linking e padrão de loading.
 
 ---
 
@@ -784,6 +571,7 @@ sequenceDiagram
 | Documento | Conteúdo |
 |-----------|----------|
 | [architecture-cube.md](architecture-cube.md) | Framework Cube — mecanismo de navegação transacional, ciclo de vida de presenters, interrupção e migração, commit/rollback, garantias |
+| [architecture-cube-compose.md](architecture-cube-compose.md) | Integração Cube + Compose — ComposeCubeView, revision counter, safeCall, RenderSlot, view factories, inicialização por plataforma |
 | [architecture-react.md](architecture-react.md) | Modalidade de view remota — React + WebSocket, Skeletons, sincronização de estado, segurança |
 | [architecture-persistence.md](architecture-persistence.md) | Camada de persistência — repositórios com critérios, DbTable, Row com change tracking, SQL builder, transações |
 

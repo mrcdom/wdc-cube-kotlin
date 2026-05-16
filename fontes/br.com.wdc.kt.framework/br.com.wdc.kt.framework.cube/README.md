@@ -19,4 +19,5 @@ Engine do padrão **Cube MVP** — gerenciamento de estado, navegação hierárq
 ## Documentação
 
 - [Arquitetura Cube — Mecanismo de Navegação](../../../docs/architecture-cube.md) — explicação detalhada do ciclo de navegação, interrupções, migração de presenters, commit, rollback e garantias do framework
-- [Arquitetura Geral — Cube MVP](../../../docs/architecture.md) — visão geral da arquitetura, camadas, slots, safeCall e exemplos completos
+- [Arquitetura Cube + Compose](../../../docs/architecture-cube-compose.md) — integração com Compose Multiplatform: ComposeCubeView, revision counter, safeCall, slots, view factories
+- [Arquitetura Geral do Projeto](../../../docs/architecture.md) — visão geral da arquitetura, camadas, módulos e padrões

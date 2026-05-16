@@ -4,7 +4,7 @@ UI compartilhada em **Compose Multiplatform** com Material 3. Contém todas as t
 
 **Plataformas:** JVM, Android, iOS, wasmJs
 
-Veja a [documentação de arquitetura](../../../docs/architecture.md) para detalhes sobre o padrão Cube MVP com Compose.
+Veja a [arquitetura Cube + Compose](../../../docs/architecture-cube-compose.md) para detalhes sobre a integração (ComposeCubeView, revision counter, safeCall, slots, view factories, inicialização por plataforma) e a [visão geral da arquitetura](../../../docs/architecture.md) para o contexto do projeto.
 
 ## Subprojetos por Plataforma
 
