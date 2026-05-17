@@ -170,6 +170,14 @@ class JavalinApplication(
                 wsFactory.idleTimeout = Duration.ofMinutes(2)
             }
 
+            config.jetty.modifyServer { server ->
+                server.connectors.forEach { connector ->
+                    if (connector is org.eclipse.jetty.server.ServerConnector) {
+                        connector.idleTimeout = Duration.ofMinutes(5).toMillis()
+                    }
+                }
+            }
+
             config.bundledPlugins.enableCors { cors ->
                 cors.addRule { rule ->
                     if (corsAllowAll) {

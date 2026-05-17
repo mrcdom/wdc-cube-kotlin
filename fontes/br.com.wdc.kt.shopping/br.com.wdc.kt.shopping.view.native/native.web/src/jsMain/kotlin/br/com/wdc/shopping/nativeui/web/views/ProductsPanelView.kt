@@ -1,0 +1,192 @@
+package br.com.wdc.shopping.nativeui.web.views
+
+import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
+import br.com.wdc.shopping.nativeui.web.util.formatPrice
+import br.com.wdc.shopping.nativeui.web.util.productImageUrl
+import br.com.wdc.shopping.nativeui.web.util.stripHtml
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
+import mui.icons.material.ShoppingBag
+import mui.material.Box
+import mui.material.Card
+import mui.material.CardActionArea
+import mui.material.CardContent
+import mui.material.CardMedia
+import mui.material.Chip
+import mui.material.ChipColor
+import mui.material.CircularProgress
+import mui.material.Divider
+import mui.material.Grid
+import mui.material.Stack
+import mui.material.StackDirection
+import mui.material.Typography
+import mui.material.styles.TypographyVariant
+import mui.system.responsive
+import mui.system.sx
+import react.FC
+import react.Props
+import react.ReactNode
+import react.dom.html.ReactHTML.img
+import react.useEffect
+import react.useState
+import web.cssom.*
+
+class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCubeView("products-panel-view", presenter.app) {
+
+    override val component = FC<Props> {
+        var rev by useState(revision)
+        useEffect(this@ProductsPanelView) {
+            onUpdate = { rev = revision }
+        }
+
+        @Suppress("UNUSED_VARIABLE")
+        val unused = rev
+
+        val state = presenter.state
+        val products = state.products
+
+        Box {
+            sx { padding = Padding(12.px, 6.px, 12.px, 12.px) }
+
+            // Section header
+            Stack {
+                direction = responsive(StackDirection.row)
+                sx {
+                    justifyContent = JustifyContent.spaceBetween
+                    alignItems = AlignItems.center
+                    marginBottom = 12.px
+                }
+
+                Typography {
+                    variant = TypographyVariant.h6
+                    sx { fontWeight = FontWeight.bold }
+                    +"Produtos"
+                }
+
+                if (products != null) {
+                    Box {
+                        sx {
+                            backgroundColor = ShoppingColors.PrimaryContainer.unsafeCast<BackgroundColor>()
+                            borderRadius = 12.px
+                            padding = Padding(4.px, 12.px)
+                        }
+                        Typography {
+                            variant = TypographyVariant.caption
+                            sx {
+                                color = ShoppingColors.OnPrimaryContainer.unsafeCast<Color>()
+                                fontWeight = integer(500)
+                            }
+                            +"${products.size} itens"
+                        }
+                    }
+                }
+            }
+
+            Divider { sx { marginBottom = 12.px } }
+
+            if (products == null) {
+                // Loading
+                Box {
+                    sx {
+                        display = Display.flex
+                        flexDirection = FlexDirection.column
+                        alignItems = AlignItems.center
+                        justifyContent = JustifyContent.center
+                        padding = 48.px
+                    }
+                    CircularProgress {}
+                    Typography {
+                        variant = TypographyVariant.body2
+                        sx { marginTop = 12.px; color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>() }
+                        +"Carregando produtos..."
+                    }
+                }
+            } else if (products.isEmpty()) {
+                Box {
+                    sx {
+                        display = Display.flex
+                        justifyContent = JustifyContent.center
+                        padding = 48.px
+                    }
+                    Typography {
+                        variant = TypographyVariant.body1
+                        sx { color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>() }
+                        +"Nenhum produto disponível"
+                    }
+                }
+            } else {
+                // Product grid
+                Grid {
+                    container = true
+                    spacing = responsive(2)
+
+                    for (product in products) {
+                        Grid {
+                            key = "${product.id}"
+                            item = true
+                            asDynamic().xs = 12
+                            asDynamic().sm = 6
+                            asDynamic().md = 4
+
+                            Card {
+                                elevation = 0
+                                sx {
+                                    height = 100.pct
+                                    borderRadius = 8.px
+                                    asDynamic()["&:hover"] = js("({'boxShadow': '0 2px 8px rgba(0,0,0,0.12)'})")
+                                }
+
+                                CardActionArea {
+                                    onClick = { safeCall { presenter.onOpenProduct(product.id) } }
+
+                                    // Product image
+                                    img {
+                                        src = productImageUrl(product.id)
+                                        alt = product.name ?: ""
+                                        style = js("({width: '100%', height: '140px', objectFit: 'cover', backgroundColor: '${ShoppingColors.SurfaceVariant}'})").unsafeCast<react.CSSProperties>()
+                                    }
+
+                                    CardContent {
+                                        Typography {
+                                            variant = TypographyVariant.subtitle1
+                                            sx { fontWeight = FontWeight.bold }
+                                            +(product.name ?: "")
+                                        }
+
+                                        val desc = product.description
+                                        if (!desc.isNullOrBlank() && desc != "unknown") {
+                                            Typography {
+                                                variant = TypographyVariant.body2
+                                                sx {
+                                                    color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>()
+                                                    overflow = Overflow.hidden
+                                                    display = Display.block
+                                                    asDynamic().WebkitLineClamp = 2
+                                                    asDynamic().WebkitBoxOrient = "vertical"
+                                                    asDynamic().display = "-webkit-box"
+                                                }
+                                                +stripHtml(desc)
+                                            }
+                                        }
+
+                                        Chip {
+                                            label = ReactNode("R$ ${formatPrice(product.price)}")
+                                            sx {
+                                                marginTop = 12.px
+                                                backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
+                                                color = ShoppingColors.PriceColor.unsafeCast<Color>()
+                                                fontWeight = FontWeight.bold
+                                                borderRadius = 8.px
+                                            }
+                                            size = mui.material.Size.small
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -9,6 +9,18 @@ pluginManagement {
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
 }
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+    versionCatalogs {
+        create("kotlinWrappers") {
+            from("org.jetbrains.kotlin-wrappers:kotlin-wrappers-catalog:2025.12.5")
+        }
+    }
+}
+
 rootProject.name = "wdc-cube-kotlin"
 
 // Framework modules

@@ -32,6 +32,21 @@ kotlin {
             dependencies {
                 implementation(project(":shopping-presentation"))
                 implementation(project(":shopping-persistence-client"))
+
+                implementation(kotlinWrappers.react)
+                implementation(kotlinWrappers.reactDom)
+                implementation(kotlinWrappers.emotion.react)
+                implementation(kotlinWrappers.emotion.styled)
+                implementation(kotlinWrappers.mui.material)
+                implementation(kotlinWrappers.mui.iconsMaterial)
+
+                implementation(npm("react", "19.2.0"))
+                implementation(npm("react-dom", "19.2.0"))
+                implementation(npm("@emotion/react", "11.14.0"))
+                implementation(npm("@emotion/styled", "11.14.0"))
+                implementation(npm("@emotion/css", "11.13.5"))
+                implementation(npm("@mui/material", "5.18.0"))
+                implementation(npm("@mui/icons-material", "5.18.0"))
             }
         }
     }
