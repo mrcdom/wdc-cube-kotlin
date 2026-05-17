@@ -252,8 +252,15 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
             // Content area
             val contentView = state.contentView
             if (contentView != null) {
-                RenderSlot {
-                    view = contentView
+                Box {
+                    sx {
+                        flex = Flex(number(1.0), number(1.0), 0.px)
+                        overflowY = Overflow.scroll
+                        overflowX = Overflow.hidden
+                    }
+                    RenderSlot {
+                        view = contentView
+                    }
                 }
             } else if (isCompact) {
                 // COMPACT: Tabs for Products / Purchases
@@ -269,17 +276,32 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                     Tabs {
                         value = selectedTab
                         onChange = { _, newValue -> selectedTab = newValue as Int }
-                        sx { marginBottom = 8.px }
+                        sx {
+                            marginBottom = 4.px
+                            minHeight = 36.px
+                        }
 
                         Tab {
                             label = ReactNode("Produtos")
                             asDynamic().icon = ShoppingBag.create()
                             iconPosition = mui.material.IconPosition.start
+                            sx {
+                                minHeight = 36.px
+                                paddingTop = 4.px
+                                paddingBottom = 4.px
+                                fontSize = 13.px
+                            }
                         }
                         Tab {
                             label = ReactNode("Compras")
                             asDynamic().icon = Inventory2.create()
                             iconPosition = mui.material.IconPosition.start
+                            sx {
+                                minHeight = 36.px
+                                paddingTop = 4.px
+                                paddingBottom = 4.px
+                                fontSize = 13.px
+                            }
                         }
                     }
 

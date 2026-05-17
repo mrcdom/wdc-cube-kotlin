@@ -1,0 +1,5 @@
+# Ignore deployed frontend builds (generated files)
+# Only .keep is tracked to preserve the directory in Git
+*
+!.gitignore
+!.keep

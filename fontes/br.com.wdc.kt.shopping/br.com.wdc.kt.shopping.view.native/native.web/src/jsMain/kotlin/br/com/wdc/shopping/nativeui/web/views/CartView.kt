@@ -60,7 +60,6 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                     width = 100.pct
                     display = Display.flex
                     flexDirection = FlexDirection.column
-                    minHeight = "calc(100vh - 100px)".unsafeCast<MinHeight>()
                 }
 
                 // Title

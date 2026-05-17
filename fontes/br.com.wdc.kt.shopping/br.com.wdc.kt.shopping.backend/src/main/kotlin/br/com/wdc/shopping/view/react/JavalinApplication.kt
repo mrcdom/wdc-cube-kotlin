@@ -18,6 +18,7 @@ import io.javalin.json.JsonMapper
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import java.io.ByteArrayInputStream
+import java.io.File
 import java.io.InputStream
 import java.lang.reflect.Type
 import java.nio.file.Files
@@ -37,6 +38,7 @@ class JavalinApplication(
         private const val STATIC_FILES_EXTERNAL_DIR_ENV = "SHOPPING_STATIC_FILES_DIR"
         private const val STATIC_FILES_EXTERNAL_DIR_PROPERTY = "shopping.staticFilesDir"
         private const val STATIC_HOSTED_IMAGE_PATH = "/images"
+        private const val DEPLOY_DIR = "work/deploy"
 
         private const val DEFAULT_PORT = 8080
 
@@ -141,11 +143,28 @@ class JavalinApplication(
 
     private val businessContext = BusinessContext()
     private val staticFilesSettings = resolveStaticFilesSettings()
+    private val deployedContexts: List<String>
     private val app: Javalin
 
     init {
         businessContext.start()
+        deployedContexts = detectDeployedContexts()
         app = createJavalinApp()
+    }
+
+    /**
+     * Scans work/deploy/ for subdirectories, each representing a deployed frontend
+     * context (e.g. "native" for React/JS, "compose" for Wasm/Compose).
+     */
+    private fun detectDeployedContexts(): List<String> {
+        val deployDir = File(DEPLOY_DIR)
+        if (!deployDir.isDirectory) return emptyList()
+
+        return deployDir.listFiles()
+            ?.filter { it.isDirectory && File(it, "index.html").exists() }
+            ?.map { it.name }
+            ?.sorted()
+            ?: emptyList()
     }
 
     private fun createJavalinApp(): Javalin {
@@ -206,6 +225,12 @@ class JavalinApplication(
                 staticFileConfig.precompressMaxSize = 0
             }
 
+            // Deployed frontends: registered as explicit routes in configureRoutes()
+            for (context in deployedContexts) {
+                val contextDir = File(DEPLOY_DIR, context).absolutePath
+                LOG.info("Deployed frontend registered: /{} -> {}", context, contextDir)
+            }
+
             config.http.defaultContentType = "application/json"
 
             configureRoutes(config)
@@ -220,6 +245,53 @@ class JavalinApplication(
 
         config.routes.before { ctx -> LOG.debug("HTTP {} {}", ctx.method(), ctx.path()) }
 
+        // Serve deployed frontend files with correct MIME types and optional gzip pre-compression
+        for (context in deployedContexts) {
+            val contextBaseDir = File(DEPLOY_DIR, context).canonicalFile
+            config.routes.get("/$context/<path>") { ctx ->
+                val requestedPath = ctx.pathParam("path")
+                val file = File(contextBaseDir, requestedPath).canonicalFile
+                if (!file.path.startsWith(contextBaseDir.path) || !file.isFile) {
+                    ctx.status(404)
+                    return@get
+                }
+                val contentType = when {
+                    requestedPath.endsWith(".js") || requestedPath.endsWith(".mjs") -> "application/javascript"
+                    requestedPath.endsWith(".css") -> "text/css"
+                    requestedPath.endsWith(".wasm") -> "application/wasm"
+                    requestedPath.endsWith(".html") -> "text/html; charset=utf-8"
+                    requestedPath.endsWith(".json") -> "application/json"
+                    requestedPath.endsWith(".png") -> "image/png"
+                    requestedPath.endsWith(".jpg") || requestedPath.endsWith(".jpeg") -> "image/jpeg"
+                    requestedPath.endsWith(".gif") -> "image/gif"
+                    requestedPath.endsWith(".svg") -> "image/svg+xml"
+                    requestedPath.endsWith(".ico") -> "image/x-icon"
+                    requestedPath.endsWith(".map") -> "application/json"
+                    requestedPath.endsWith(".txt") -> "text/plain"
+                    requestedPath.endsWith(".woff") -> "font/woff"
+                    requestedPath.endsWith(".woff2") -> "font/woff2"
+                    requestedPath.endsWith(".ttf") -> "font/ttf"
+                    else -> "application/octet-stream"
+                }
+                // Use servlet API directly to prevent Javalin/Jetty from appending ;charset=utf-8
+                // (WebAssembly.compileStreaming requires exactly "application/wasm" without parameters)
+                ctx.res().setContentType(contentType)
+                ctx.res().characterEncoding = null
+                val acceptEncoding = ctx.header("Accept-Encoding") ?: ""
+                if (acceptEncoding.contains("gzip")) {
+                    val gzFile = File(contextBaseDir, "$requestedPath.gz")
+                    if (gzFile.isFile) {
+                        ctx.header("Content-Encoding", "gzip")
+                        ctx.header("Vary", "Accept-Encoding")
+                        ctx.result(gzFile.inputStream())
+                        LOG.debug("Serving pre-compressed: /{}/{}", context, requestedPath)
+                        return@get
+                    }
+                }
+                ctx.result(file.inputStream())
+            }
+        }
+
         StatusController.configure(config)
         ImageController.configure(config)
 
@@ -227,6 +299,12 @@ class JavalinApplication(
         RepositoryApiRoutes.configure(config)
 
         config.routes.get("/") { ctx -> ctx.redirect("/index.html") }
+
+        // Deployed frontend context routes: /{context} and /{context}/ → /{context}/index.html
+        for (context in deployedContexts) {
+            config.routes.get("/$context") { ctx -> ctx.redirect("/$context/index.html") }
+            config.routes.get("/$context/") { ctx -> ctx.redirect("/$context/index.html") }
+        }
 
         DispatcherController.configure(config)
         IndexHtmlController.configure(config)
@@ -239,6 +317,7 @@ class JavalinApplication(
                 && !path.startsWith("/dispatcher")
                 && path != "/index.html"
                 && !isStaticResource(path)
+                && deployedContexts.none { path.startsWith("/$it/") || path == "/$it" }
             ) {
                 LOG.debug("SPA fallback for path: {}", path)
                 ctx.redirect("/index.html")
@@ -251,6 +330,9 @@ class JavalinApplication(
             app.start(port)
             LOG.info("Javalin server started on port {}", port)
             LOG.info("Static files served from {}: {}", staticFilesSettings.location, staticFilesSettings.directory)
+            if (deployedContexts.isNotEmpty()) {
+                LOG.info("Deployed frontends: {}", deployedContexts.joinToString(", ") { "/$it/" })
+            }
         } catch (e: Exception) {
             LOG.error("Failed to start Javalin server", e)
             throw AssertionError("Server startup failed", e)
