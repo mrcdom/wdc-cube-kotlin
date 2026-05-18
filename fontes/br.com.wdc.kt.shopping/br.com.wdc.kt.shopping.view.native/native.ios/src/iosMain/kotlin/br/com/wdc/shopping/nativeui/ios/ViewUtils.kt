@@ -1,7 +1,8 @@
 package br.com.wdc.shopping.nativeui.ios
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.CoreGraphics.CGFloat
+import kotlinx.cinterop.useContents
+import platform.CoreGraphics.*
 import platform.Foundation.NSMutableAttributedString
 import platform.Foundation.NSString
 import platform.Foundation.NSURL
@@ -145,5 +146,46 @@ object ViewUtils {
         }
         btn.heightAnchor.constraintEqualToConstant(48.0).active = true
         return btn
+    }
+
+    /**
+     * Creates a vertical gradient UIImage (top color → bottom color).
+     * Uses Core Graphics for reliable rendering in Kotlin/Native.
+     */
+    fun createGradientImage(topColor: UIColor, bottomColor: UIColor): UIImage {
+        val screenBounds = UIScreen.mainScreen.bounds
+        val width: Double
+        val height: Double
+        screenBounds.useContents {
+            width = size.width
+            height = size.height
+        }
+
+        // Extract color components using colorWithAlphaComponent trick
+        val r1: Double; val g1: Double; val b1: Double
+        val r2: Double; val g2: Double; val b2: Double
+        // Primary = #1B5E7B (0.106, 0.369, 0.482)
+        // PrimaryContainer = #D0E8F2 (0.816, 0.910, 0.949)
+        // We know our theme colors, extract via known values
+        r1 = 0.106; g1 = 0.369; b1 = 0.482
+        r2 = 0.816; g2 = 0.910; b2 = 0.949
+
+        UIGraphicsBeginImageContextWithOptions(CGSizeMake(width, height), true, 1.0)
+        val ctx = UIGraphicsGetCurrentContext() ?: run {
+            UIGraphicsEndImageContext()
+            return UIImage()
+        }
+
+        // Draw gradient by filling horizontal lines
+        val steps = height.toInt().coerceAtLeast(1)
+        for (i in 0 until steps) {
+            val t = i.toDouble() / steps.toDouble()
+            CGContextSetRGBFillColor(ctx, r1 + (r2 - r1) * t, g1 + (g2 - g1) * t, b1 + (b2 - b1) * t, 1.0)
+            CGContextFillRect(ctx, CGRectMake(0.0, i.toDouble(), width, 1.0))
+        }
+
+        val image = UIGraphicsGetImageFromCurrentImageContext() ?: UIImage()
+        UIGraphicsEndImageContext()
+        return image
     }
 }

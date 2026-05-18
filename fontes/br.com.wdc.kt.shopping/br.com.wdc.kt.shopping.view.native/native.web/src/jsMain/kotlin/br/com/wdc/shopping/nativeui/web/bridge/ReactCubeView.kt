@@ -3,6 +3,7 @@ package br.com.wdc.shopping.nativeui.web.bridge
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.ShoppingApplication
+import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,11 +29,20 @@ abstract class ReactCubeView(
     /** Callback set by the React root to trigger re-render on update(). */
     var onUpdate: (() -> Unit)? = null
 
+    /** Whether a requestAnimationFrame is already scheduled. */
+    private var frameScheduled: Boolean = false
+
     override fun instanceId(): String = id
 
     override fun update() {
         revision++
-        onUpdate?.invoke()
+        if (onUpdate != null && !frameScheduled) {
+            frameScheduled = true
+            window.requestAnimationFrame {
+                frameScheduled = false
+                onUpdate?.invoke()
+            }
+        }
     }
 
     /** The React functional component that renders this view. */

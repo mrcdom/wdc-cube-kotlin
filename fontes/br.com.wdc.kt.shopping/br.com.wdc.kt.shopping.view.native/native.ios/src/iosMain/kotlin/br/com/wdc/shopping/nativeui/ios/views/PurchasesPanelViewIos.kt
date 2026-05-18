@@ -30,6 +30,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
     private lateinit var pageLabel: UILabel
     private lateinit var prevButton: UIButton
     private lateinit var nextButton: UIButton
+    private lateinit var headerBadge: UILabel
     private lateinit var purchasesSlot: ListSlot<PurchaseInfo, PurchaseCardView>
 
     private val actions = PurchasesPanelActions(this).also { retainForGC(it) }
@@ -44,7 +45,52 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
         val root = parent()
         root.backgroundColor = ShoppingColors.Background
 
-        // Pagination at bottom (declared first so scrollView can reference it)
+        // Section header
+        val headerContainer = view(configure = {
+            NSLayoutConstraint.activateConstraints(listOf(
+                topAnchor.constraintEqualToAnchor(root.topAnchor, 12.0),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                heightAnchor.constraintEqualToConstant(28.0)
+            ))
+        }) {
+            label {
+                text = "Compras"
+                font = UIFont.boldSystemFontOfSize(17.0)
+                textColor = ShoppingColors.OnSurface
+                NSLayoutConstraint.activateConstraints(listOf(
+                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
+                    centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
+                ))
+            }
+            headerBadge = label {
+                font = UIFont.systemFontOfSize(12.0, UIFontWeightMedium)
+                textColor = ShoppingColors.OnPrimaryContainer
+                backgroundColor = ShoppingColors.SecondaryContainer
+                textAlignment = UIK.TextAlignCenter
+                layer.cornerRadius = 10.0
+                clipsToBounds = true
+                NSLayoutConstraint.activateConstraints(listOf(
+                    trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
+                    centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                    heightAnchor.constraintEqualToConstant(20.0),
+                    widthAnchor.constraintGreaterThanOrEqualToConstant(60.0)
+                ))
+            }
+        }
+
+        // Separator
+        val headerSeparator = view(configure = {
+            backgroundColor = ShoppingColors.SurfaceVariant
+            NSLayoutConstraint.activateConstraints(listOf(
+                topAnchor.constraintEqualToAnchor(headerContainer.bottomAnchor, 8.0),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                heightAnchor.constraintEqualToConstant(1.0)
+            ))
+        })
+
+        // Pagination at bottom (declared before scrollView so scrollView can reference it)
         paginationContainer = view(configure = {
             backgroundColor = ShoppingColors.Background
             NSLayoutConstraint.activateConstraints(listOf(
@@ -89,7 +135,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
         scrollView = scrollView(configure = {
             showsVerticalScrollIndicator = true
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(root.topAnchor, 8.0),
+                topAnchor.constraintEqualToAnchor(headerSeparator.bottomAnchor, 8.0),
                 leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
                 trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
                 bottomAnchor.constraintEqualToAnchor(paginationContainer.topAnchor)
@@ -170,6 +216,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
             pageLabel.text = "${page + 1} / $totalPages"
             prevButton.enabled = page > 0
             nextButton.enabled = page < totalPages - 1
+            headerBadge.text = "  $totalCount compras  "
         }
     }
 

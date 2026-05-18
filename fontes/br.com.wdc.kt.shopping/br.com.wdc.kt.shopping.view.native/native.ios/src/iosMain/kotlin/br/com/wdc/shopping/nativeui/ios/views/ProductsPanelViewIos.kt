@@ -25,18 +25,66 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: UIStackView
     private lateinit var emptyLabel: UILabel
+    private lateinit var headerTitle: UILabel
+    private lateinit var headerBadge: UILabel
     private lateinit var productsSlot: ListSlot<ProductInfo, ProductCardView>
 
     private var lastProducts: List<ProductInfo>? = null
+    private var lastCount: Int = -1
 
     override fun createView(): UIView = UIKitDom.build {
         val root = parent()
         root.backgroundColor = ShoppingColors.Background
 
+        // Section header
+        val headerContainer = view(configure = {
+            NSLayoutConstraint.activateConstraints(listOf(
+                topAnchor.constraintEqualToAnchor(root.topAnchor, 12.0),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                heightAnchor.constraintEqualToConstant(28.0)
+            ))
+        }) {
+            headerTitle = label {
+                text = "Produtos"
+                font = UIFont.boldSystemFontOfSize(17.0)
+                textColor = ShoppingColors.OnSurface
+                NSLayoutConstraint.activateConstraints(listOf(
+                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
+                    centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
+                ))
+            }
+            headerBadge = label {
+                font = UIFont.systemFontOfSize(12.0, UIFontWeightMedium)
+                textColor = ShoppingColors.OnPrimaryContainer
+                backgroundColor = ShoppingColors.PrimaryContainer
+                textAlignment = UIK.TextAlignCenter
+                layer.cornerRadius = 10.0
+                clipsToBounds = true
+                NSLayoutConstraint.activateConstraints(listOf(
+                    trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
+                    centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                    heightAnchor.constraintEqualToConstant(20.0),
+                    widthAnchor.constraintGreaterThanOrEqualToConstant(50.0)
+                ))
+            }
+        }
+
+        // Separator
+        view(configure = {
+            backgroundColor = ShoppingColors.SurfaceVariant
+            NSLayoutConstraint.activateConstraints(listOf(
+                topAnchor.constraintEqualToAnchor(headerContainer.bottomAnchor, 8.0),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                heightAnchor.constraintEqualToConstant(1.0)
+            ))
+        })
+
         scrollView = scrollView(configure = {
             showsVerticalScrollIndicator = true
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(root.topAnchor, 8.0),
+                topAnchor.constraintEqualToAnchor(headerContainer.bottomAnchor, 20.0),
                 leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
                 trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
                 bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
@@ -45,10 +93,10 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
             stackView = vStack(spacing = 12.0) {}
             NSLayoutConstraint.activateConstraints(listOf(
                 stackView.topAnchor.constraintEqualToAnchor(parent().topAnchor, 8.0),
-                stackView.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                stackView.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
+                stackView.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 12.0),
+                stackView.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -12.0),
                 stackView.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -8.0),
-                stackView.widthAnchor.constraintEqualToAnchor(parent().widthAnchor, constant = -32.0)
+                stackView.widthAnchor.constraintEqualToAnchor(parent().widthAnchor, constant = -24.0)
             ))
         }
 
@@ -77,10 +125,19 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
             emptyLabel.hidden = false
             scrollView.hidden = true
             productsSlot.sync(emptyList())
+            if (lastCount != 0) {
+                lastCount = 0
+                headerBadge.text = "  0 itens  "
+            }
         } else {
             emptyLabel.hidden = true
             scrollView.hidden = false
             productsSlot.sync(products)
+            val count = products.size
+            if (count != lastCount) {
+                lastCount = count
+                headerBadge.text = "  $count itens  "
+            }
         }
     }
 }
@@ -116,33 +173,45 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewI
         card.clipsToBounds = true
         card.userInteractionEnabled = true
 
-        hStack(spacing = 12.0, configure = {
-            alignment = UIK.StackAlignCenter
-            layoutMarginsRelativeArrangement = true
-            layoutMargins = UIEdgeInsetsMake(12.0, 12.0, 12.0, 12.0)
-        }) {
+        vStack(spacing = 0.0, configure = { alignment = UIK.StackAlignFill }) {
+            // Product image — full width, fixed height
             imageView = imageView {
                 contentMode = UIK.ContentModeScaleAspectFill
                 backgroundColor = ShoppingColors.SurfaceVariant
-                layer.cornerRadius = 6.0
+                clipsToBounds = true
+                heightAnchor.constraintEqualToConstant(140.0).active = true
             }
-            vStack(spacing = 4.0) {
+            // Content area below image
+            vStack(spacing = 6.0, configure = {
+                layoutMarginsRelativeArrangement = true
+                layoutMargins = UIEdgeInsetsMake(12.0, 12.0, 12.0, 12.0)
+            }) {
                 nameLabel = label {
                     font = UIFont.boldSystemFontOfSize(15.0)
                     textColor = ShoppingColors.OnSurface
-                    numberOfLines = 1
+                    numberOfLines = 2
                 }
-                priceLabel = label {
-                    font = UIFont.boldSystemFontOfSize(14.0)
-                    textColor = ShoppingColors.PriceColor
+                // Price badge
+                view(configure = {
+                    backgroundColor = ShoppingColors.PriceBackground
+                    layer.cornerRadius = 8.0
+                    NSLayoutConstraint.activateConstraints(listOf(
+                        heightAnchor.constraintEqualToConstant(28.0)
+                    ))
+                }) {
+                    priceLabel = label {
+                        font = UIFont.boldSystemFontOfSize(14.0)
+                        textColor = ShoppingColors.PriceColor
+                        NSLayoutConstraint.activateConstraints(listOf(
+                            centerXAnchor.constraintEqualToAnchor(parent().centerXAnchor),
+                            centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                            leadingAnchor.constraintGreaterThanOrEqualToAnchor(parent().leadingAnchor, 12.0),
+                            trailingAnchor.constraintLessThanOrEqualToAnchor(parent().trailingAnchor, -12.0)
+                        ))
+                    }
                 }
             }
         }.also { pin(it) }
-
-        NSLayoutConstraint.activateConstraints(listOf(
-            imageView.widthAnchor.constraintEqualToConstant(64.0),
-            imageView.heightAnchor.constraintEqualToConstant(64.0)
-        ))
 
         // Tap gesture
         tapAction = ProductCardTapAction(this@ProductCardView).also { retainForGC(it) }

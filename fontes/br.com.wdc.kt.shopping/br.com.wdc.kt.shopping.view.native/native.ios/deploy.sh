@@ -9,6 +9,7 @@
 #   Options:
 #     --release                   Build in Release mode (default: Debug)
 #     --simulator-name <name>     Simulator name (default: "iPhone 16")
+#     --ipad                      Shortcut for --simulator-name "iPad Pro 13-inch (M4)"
 #     --backend-url <url>         Backend URL (default: http://localhost:8080)
 #     --skip-framework            Skip rebuilding the Kotlin framework
 #     --clean                     Clean build before compiling
@@ -181,7 +182,7 @@ for runtime, devices in sorted(data.get('devices', {}).items()):
         parts = runtime.rsplit('.iOS-', 1)
         os_ver = parts[-1].replace('-', '.') if len(parts) > 1 else runtime
         for d in devices:
-            if d.get('isAvailable', False) and 'iPhone' in d['name']:
+            if d.get('isAvailable', False) and ('iPhone' in d['name'] or 'iPad' in d['name']):
                 state = '(Booted)' if d['state'] == 'Booted' else ''
                 print(f\"{d['name']}|{os_ver}|{d['udid']}|{state}\")
 ")
@@ -323,6 +324,8 @@ while [[ $# -gt 0 ]]; do
             SIMULATOR_NAME="$2"; shift 2 ;;
         --backend-url)
             BACKEND_URL="$2"; shift 2 ;;
+        --ipad)
+            SIMULATOR_NAME="iPad Pro 13-inch (M4)"; shift ;;
         --skip-framework)
             SKIP_FRAMEWORK=true; shift ;;
         --clean)

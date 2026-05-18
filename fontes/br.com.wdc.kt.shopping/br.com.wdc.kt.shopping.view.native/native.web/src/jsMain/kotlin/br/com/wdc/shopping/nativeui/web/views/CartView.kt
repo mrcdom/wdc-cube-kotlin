@@ -115,9 +115,6 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                     // Cart items
                     Box {
                         sx {
-                            flex = Flex(number(1.0), number(1.0), 0.px)
-                            overflowY = Overflow.scroll
-                            overflowX = Overflow.hidden
                             marginTop = 12.px
                             marginRight = (-6).px
                         }

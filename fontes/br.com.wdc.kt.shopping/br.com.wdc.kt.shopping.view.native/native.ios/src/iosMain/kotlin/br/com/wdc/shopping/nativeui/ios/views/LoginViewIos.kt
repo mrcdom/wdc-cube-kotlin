@@ -33,25 +33,19 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
         val root = parent()
         root.backgroundColor = ShoppingColors.Primary
 
-        // Gradient simulation: top and bottom halves
-        val gradientTop = view(configure = {
-            backgroundColor = ShoppingColors.Primary
+        // Gradient background (Primary → PrimaryContainer, top to bottom)
+        val gradientBg = imageView {
+            image = ViewUtils.createGradientImage(
+                ShoppingColors.Primary, ShoppingColors.PrimaryContainer
+            )
+            contentMode = UIK.ContentModeScaleToFill
             NSLayoutConstraint.activateConstraints(listOf(
                 topAnchor.constraintEqualToAnchor(root.topAnchor),
                 leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
                 trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
-                heightAnchor.constraintEqualToAnchor(root.heightAnchor, 0.5)
+                bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
             ))
-        })
-        val gradientBottom = view(configure = {
-            backgroundColor = ShoppingColors.PrimaryContainer
-            NSLayoutConstraint.activateConstraints(listOf(
-                bottomAnchor.constraintEqualToAnchor(root.bottomAnchor),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
-                heightAnchor.constraintEqualToAnchor(root.heightAnchor, 0.5)
-            ))
-        })
+        }
 
         // White card
         val card = view(configure = {
@@ -62,29 +56,34 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
             layer.shadowOffset = CGSizeMake(0.0, 2.0)
             layer.shadowRadius = 8.0
             clipsToBounds = false
+            val preferredWidth = widthAnchor.constraintEqualToConstant(560.0)
+            preferredWidth.priority = 750.0f
             NSLayoutConstraint.activateConstraints(listOf(
                 centerXAnchor.constraintEqualToAnchor(root.centerXAnchor),
                 centerYAnchor.constraintEqualToAnchor(root.centerYAnchor),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 24.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -24.0)
+                leadingAnchor.constraintGreaterThanOrEqualToAnchor(root.leadingAnchor, 24.0),
+                trailingAnchor.constraintLessThanOrEqualToAnchor(root.trailingAnchor, -24.0),
+                widthAnchor.constraintLessThanOrEqualToConstant(560.0),
+                preferredWidth
             ))
         }) {
             val stack = vStack(spacing = 20.0, configure = {
                 layoutMarginsRelativeArrangement = true
                 layoutMargins = UIEdgeInsetsMake(32.0, 24.0, 32.0, 24.0)
             }) {
-                // Logo: centered rounded square with emoji
+                // Logo: centered rounded square with LocalMall SVG icon
                 view {
                     val logo = view(configure = {
                         backgroundColor = ShoppingColors.Primary
                         layer.cornerRadius = 18.0
                         clipsToBounds = true
                     }) {
-                        label {
-                            text = "\uD83D\uDC5C"
-                            font = UIFont.systemFontOfSize(32.0)
-                            textAlignment = UIK.TextAlignCenter
-                        }.also { center(it, inside = parent()) }
+                        val iconIv = imageView {
+                            image = ShoppingIcons.localMall(40.0, UIColor.whiteColor)
+                            contentMode = UIK.ContentModeScaleAspectFit
+                        }
+                        center(iconIv, inside = parent())
+                        size(iconIv, width = 40.0, height = 40.0)
                     }
                     size(logo, width = 72.0, height = 72.0)
                     center(logo)
@@ -94,7 +93,7 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
                 // Title
                 label {
                     text = "Shopping"
-                    font = UIFont.boldSystemFontOfSize(24.0)
+                    font = UIFont.boldSystemFontOfSize(28.0)
                     textColor = ShoppingColors.OnSurface
                     textAlignment = UIK.TextAlignCenter
                 }

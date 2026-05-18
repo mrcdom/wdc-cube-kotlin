@@ -45,8 +45,6 @@ import react.FC
 import react.Props
 import react.create
 import react.dom.client.createRoot
-import react.useEffect
-import react.useState
 import web.dom.ElementId
 import web.dom.document
 
@@ -211,20 +209,8 @@ fun main() {
 
             CssBaseline()
 
-            // Subscribe to root presenter updates
-            var rev by useState(0)
-
             val rootPresenter = app.getRootPresenter()
             val rootView = rootPresenter?.view() as? RootView
-
-            useEffect(rootView) {
-                if (rootView != null) {
-                    rootView.onUpdate = { rev++ }
-                }
-            }
-
-            @Suppress("UNUSED_VARIABLE")
-            val unused = rev
 
             rootView?.component {}
         }

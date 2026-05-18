@@ -4,6 +4,7 @@ import br.com.wdc.shopping.nativeui.ios.AbstractViewIos
 import br.com.wdc.shopping.nativeui.ios.UIK
 import br.com.wdc.shopping.nativeui.ios.UIKitDom
 import br.com.wdc.shopping.nativeui.ios.ShoppingColors
+import br.com.wdc.shopping.nativeui.ios.ShoppingIcons
 import br.com.wdc.shopping.nativeui.ios.ViewUtils
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
@@ -22,7 +23,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
 
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: UIStackView
-    private lateinit var emptyLabel: UILabel
+    private lateinit var emptyContainer: UIView
     private lateinit var totalLabel: UILabel
     private lateinit var buyButton: UIButton
     private lateinit var backButton: UIButton
@@ -42,93 +43,223 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
         val root = parent()
         root.backgroundColor = ShoppingColors.Background
 
-        // Back button
-        backButton = button("← Produtos") {
-            setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
-            titleLabel?.font = UIFont.systemFontOfSize(16.0)
-            addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onBack")))
-            NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(root.topAnchor, 8.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 12.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -12.0),
-                heightAnchor.constraintEqualToConstant(36.0)
-            ))
-        }
-
-        // Title
+        // Title header
         titleLabel = label {
-            text = "🛒 Carrinho"
-            font = UIFont.boldSystemFontOfSize(20.0)
+            text = "Carrinho de Compras"
+            font = UIFont.systemFontOfSize(24.0, UIFontWeightMedium)
             textColor = ShoppingColors.OnSurface
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(backButton.bottomAnchor, 8.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0)
+                topAnchor.constraintEqualToAnchor(root.topAnchor, 16.0),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0)
             ))
         }
 
-        // Footer: total + buy (declared before scrollView so scrollView can reference it)
-        footerContainer = view(configure = {
+        // Separator
+        val separator = view(configure = {
+            backgroundColor = ShoppingColors.SurfaceVariant
             NSLayoutConstraint.activateConstraints(listOf(
+                topAnchor.constraintEqualToAnchor(titleLabel.bottomAnchor, 12.0),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                heightAnchor.constraintEqualToConstant(1.0)
+            ))
+        })
+
+        // Back button (visible in empty state, aligned right below empty message)
+        backButton = button("Continuar Comprando") {
+            setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
+            titleLabel?.font = UIFont.systemFontOfSize(14.0)
+            setImage(ShoppingIcons.arrowBack(18.0, ShoppingColors.Primary), forState = UIControlStateNormal)
+            imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
+            contentEdgeInsets = UIEdgeInsetsMake(8.0, 20.0, 8.0, 20.0)
+            layer.borderWidth = 1.0
+            layer.borderColor = ShoppingColors.Primary.CGColor
+            layer.cornerRadius = 12.0
+            addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onBack")))
+            NSLayoutConstraint.activateConstraints(listOf(
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                heightAnchor.constraintEqualToConstant(48.0)
+            ))
+        }
+
+        // Scroll area (items + footer flow together)
+        scrollView = scrollView(configure = {
+            delaysContentTouches = false
+            NSLayoutConstraint.activateConstraints(listOf(
+                topAnchor.constraintEqualToAnchor(separator.bottomAnchor, 8.0),
                 leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
                 trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
                 bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
             ))
         }) {
-            totalLabel = label {
-                font = UIFont.boldSystemFontOfSize(22.0)
-                textColor = ShoppingColors.PriceColor
+            val contentView = view(configure = {
+                NSLayoutConstraint.activateConstraints(listOf(
+                    topAnchor.constraintEqualToAnchor(parent().topAnchor),
+                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
+                    trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
+                    bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor),
+                    widthAnchor.constraintEqualToAnchor(parent().widthAnchor)
+                ))
+            }) {
+                // Items stack
+                stackView = vStack(spacing = 10.0, configure = {
+                    NSLayoutConstraint.activateConstraints(listOf(
+                        topAnchor.constraintEqualToAnchor(parent().topAnchor, 8.0),
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0)
+                    ))
+                }) {}
+
+                // Footer (separator + total + buy button)
+                footerContainer = view(configure = {
+                    NSLayoutConstraint.activateConstraints(listOf(
+                        topAnchor.constraintEqualToAnchor(stackView.bottomAnchor, 16.0),
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
+                        bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -8.0)
+                    ))
+                }) {
+                    // Separator line
+                    val footerSep = view(configure = {
+                        backgroundColor = ShoppingColors.SurfaceVariant
+                        NSLayoutConstraint.activateConstraints(listOf(
+                            topAnchor.constraintEqualToAnchor(parent().topAnchor),
+                            leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
+                            trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
+                            heightAnchor.constraintEqualToConstant(1.0)
+                        ))
+                    })
+
+                    // Total (right-aligned)
+                    val totalRow = view(configure = {
+                        NSLayoutConstraint.activateConstraints(listOf(
+                            topAnchor.constraintEqualToAnchor(footerSep.bottomAnchor, 16.0),
+                            leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
+                            trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
+                            heightAnchor.constraintEqualToConstant(36.0)
+                        ))
+                    }) {
+                        label {
+                            text = "Total:"
+                            font = UIFont.systemFontOfSize(16.0)
+                            textColor = ShoppingColors.OnSurfaceVariant
+                            NSLayoutConstraint.activateConstraints(listOf(
+                                centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                                trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -100.0)
+                            ))
+                        }
+                        val totalBadge = view(configure = {
+                            backgroundColor = ShoppingColors.PriceBackground
+                            layer.cornerRadius = 10.0
+                            NSLayoutConstraint.activateConstraints(listOf(
+                                trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
+                                centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                                heightAnchor.constraintEqualToConstant(36.0)
+                            ))
+                        }) {
+                            totalLabel = label {
+                                font = UIFont.boldSystemFontOfSize(18.0)
+                                textColor = ShoppingColors.PriceColor
+                                textAlignment = UIK.TextAlignCenter
+                                NSLayoutConstraint.activateConstraints(listOf(
+                                    centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 12.0),
+                                    trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -12.0)
+                                ))
+                            }
+                        }
+                    }
+
+                    // Buttons row: both right-aligned (matching web)
+                    val buttonsRow = view(configure = {
+                        NSLayoutConstraint.activateConstraints(listOf(
+                            topAnchor.constraintEqualToAnchor(totalRow.bottomAnchor, 16.0),
+                            leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
+                            trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
+                            bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor),
+                            heightAnchor.constraintEqualToConstant(48.0)
+                        ))
+                    }) {
+                        buyButton = button("Comprar") {
+                            setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
+                            backgroundColor = ShoppingColors.PriceColor
+                            layer.cornerRadius = 12.0
+                            titleLabel?.font = UIFont.boldSystemFontOfSize(16.0)
+                            contentEdgeInsets = UIEdgeInsetsMake(8.0, 32.0, 8.0, 32.0)
+                            addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onBuy")))
+                            NSLayoutConstraint.activateConstraints(listOf(
+                                trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
+                                centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                                heightAnchor.constraintEqualToConstant(48.0)
+                            ))
+                        }
+                        button("Continuar Comprando") {
+                            setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
+                            titleLabel?.font = UIFont.systemFontOfSize(14.0)
+                            setImage(ShoppingIcons.arrowBack(18.0, ShoppingColors.Primary), forState = UIControlStateNormal)
+                            imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
+                            contentEdgeInsets = UIEdgeInsetsMake(8.0, 20.0, 8.0, 20.0)
+                            layer.borderWidth = 1.0
+                            layer.borderColor = ShoppingColors.Primary.CGColor
+                            layer.cornerRadius = 12.0
+                            addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onBack")))
+                            NSLayoutConstraint.activateConstraints(listOf(
+                                trailingAnchor.constraintEqualToAnchor(buyButton.leadingAnchor, -16.0),
+                                centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                                heightAnchor.constraintEqualToConstant(48.0)
+                            ))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Empty state (icon + heading + subtitle, below separator)
+        emptyContainer = view(configure = {
+            hidden = true
+            NSLayoutConstraint.activateConstraints(listOf(
+                topAnchor.constraintEqualToAnchor(separator.bottomAnchor, 48.0),
+                centerXAnchor.constraintEqualToAnchor(root.centerXAnchor)
+            ))
+        }) {
+            val iconIv = imageView {
+                image = ShoppingIcons.shoppingCart(48.0, ShoppingColors.OnSurfaceVariant)
+                contentMode = UIK.ContentModeScaleAspectFit
+                NSLayoutConstraint.activateConstraints(listOf(
+                    topAnchor.constraintEqualToAnchor(parent().topAnchor),
+                    centerXAnchor.constraintEqualToAnchor(parent().centerXAnchor),
+                    widthAnchor.constraintEqualToConstant(48.0),
+                    heightAnchor.constraintEqualToConstant(48.0)
+                ))
+            }
+            label {
+                text = "Seu carrinho está vazio"
+                font = UIFont.boldSystemFontOfSize(18.0)
+                textColor = ShoppingColors.OnSurface
                 textAlignment = UIK.TextAlignCenter
                 NSLayoutConstraint.activateConstraints(listOf(
-                    topAnchor.constraintEqualToAnchor(parent().topAnchor, 12.0),
+                    topAnchor.constraintEqualToAnchor(iconIv.bottomAnchor, 16.0),
                     centerXAnchor.constraintEqualToAnchor(parent().centerXAnchor)
                 ))
             }
-
-            buyButton = button("Comprar") {
-                setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
-                backgroundColor = ShoppingColors.PriceColor
-                layer.cornerRadius = 12.0
-                titleLabel?.font = UIFont.boldSystemFontOfSize(16.0)
-                addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onBuy")))
+            val subtitle = label {
+                text = "Adicione produtos para começar suas compras"
+                font = UIFont.systemFontOfSize(14.0)
+                textColor = ShoppingColors.OnSurfaceVariant
+                textAlignment = UIK.TextAlignCenter
                 NSLayoutConstraint.activateConstraints(listOf(
-                    topAnchor.constraintEqualToAnchor(totalLabel.bottomAnchor, 12.0),
-                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                    trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
-                    heightAnchor.constraintEqualToConstant(48.0),
-                    bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -16.0)
+                    topAnchor.constraintEqualToAnchor(iconIv.bottomAnchor, 40.0),
+                    centerXAnchor.constraintEqualToAnchor(parent().centerXAnchor),
+                    bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor)
                 ))
             }
         }
 
-        // Scroll area
-        scrollView = scrollView(configure = {
-            delaysContentTouches = false
-            NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(titleLabel.bottomAnchor, 12.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
-                bottomAnchor.constraintEqualToAnchor(footerContainer.topAnchor)
-            ))
-        }) {
-            stackView = vStack(spacing = 10.0) {}
-            NSLayoutConstraint.activateConstraints(listOf(
-                stackView.topAnchor.constraintEqualToAnchor(parent().topAnchor, 8.0),
-                stackView.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                stackView.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
-                stackView.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -8.0),
-                stackView.widthAnchor.constraintEqualToAnchor(parent().widthAnchor, constant = -32.0)
-            ))
-        }
-
-        // Empty state
-        emptyLabel = label {
-            text = "🛒 Carrinho vazio"
-            font = UIFont.systemFontOfSize(16.0)
-            textColor = ShoppingColors.OnSurfaceVariant
-            textAlignment = UIK.TextAlignCenter
-            hidden = true
-        }
-        center(emptyLabel)
+        // Link backButton below emptyContainer
+        NSLayoutConstraint.activateConstraints(listOf(
+            backButton.topAnchor.constraintEqualToAnchor(emptyContainer.bottomAnchor, 32.0)
+        ))
 
         // Error
         errorLabel = label {
@@ -138,7 +269,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
             textAlignment = UIK.TextAlignCenter
             hidden = true
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(titleLabel.bottomAnchor, 8.0),
+                topAnchor.constraintEqualToAnchor(separator.bottomAnchor, 8.0),
                 leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
                 trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0)
             ))
@@ -160,21 +291,21 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
             lastItems = items
 
             if (items.isEmpty()) {
-                emptyLabel.hidden = false
+                emptyContainer.hidden = false
                 scrollView.hidden = true
-                footerContainer.hidden = true
+                backButton.hidden = false
                 itemsSlot.sync(emptyList())
             } else {
-                emptyLabel.hidden = true
+                emptyContainer.hidden = true
                 scrollView.hidden = false
-                footerContainer.hidden = false
+                backButton.hidden = true
                 itemsSlot.sync(items)
 
                 var total = 0.0
                 for (item in items) {
                     total += item.price * item.quantity
                 }
-                totalLabel.text = "Total: R$ ${ViewUtils.formatPrice(total)}"
+                totalLabel.text = "R$ ${ViewUtils.formatPrice(total)}"
             }
         }
 

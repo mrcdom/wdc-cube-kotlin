@@ -4,6 +4,7 @@ import br.com.wdc.shopping.nativeui.ios.AbstractViewIos
 import br.com.wdc.shopping.nativeui.ios.UIK
 import br.com.wdc.shopping.nativeui.ios.UIKitDom
 import br.com.wdc.shopping.nativeui.ios.ShoppingColors
+import br.com.wdc.shopping.nativeui.ios.ShoppingIcons
 import br.com.wdc.shopping.nativeui.ios.ViewUtils
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptItem
@@ -34,19 +35,9 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
         val root = parent()
         root.backgroundColor = ShoppingColors.Background
 
-        backButton = button("← Produtos") {
-            setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
-            titleLabel?.font = UIFont.systemFontOfSize(16.0)
-            addTarget(actions, action = sel_registerName("onBack"), forControlEvents = UIControlEventTouchUpInside)
-            NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(root.topAnchor, 8.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 12.0)
-            ))
-        }
-
         scrollView = scrollView(configure = {
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(backButton.bottomAnchor, 8.0),
+                topAnchor.constraintEqualToAnchor(root.topAnchor),
                 leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
                 trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
                 bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
@@ -56,7 +47,7 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
                 // Success banner (hidden by default)
                 successBanner = view(configure = {
                     backgroundColor = ShoppingColors.SuccessContainer
-                    layer.cornerRadius = 8.0
+                    layer.cornerRadius = 12.0
                     hidden = true
                 }) {
                     val successLabel = label {
@@ -65,36 +56,109 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
                         textColor = ShoppingColors.SuccessColor
                         textAlignment = UIK.TextAlignCenter
                     }
-                    pin(successLabel, insets = 12.0)
+                    pin(successLabel, insets = 16.0)
                 }
 
-                // Header
-                label {
-                    text = "🧾 Comprovante"
-                    font = UIFont.boldSystemFontOfSize(20.0)
-                    textColor = ShoppingColors.OnSurface
+                // Header row: title + date badge
+                hStack(spacing = 8.0, configure = { alignment = UIK.StackAlignCenter }) {
+                    imageView {
+                        image = ShoppingIcons.receipt(22.0, ShoppingColors.OnSurface)
+                        contentMode = UIK.ContentModeScaleAspectFit
+                        NSLayoutConstraint.activateConstraints(listOf(
+                            widthAnchor.constraintEqualToConstant(22.0),
+                            heightAnchor.constraintEqualToConstant(22.0)
+                        ))
+                    }
+                    label {
+                        text = "Recibo"
+                        font = UIFont.systemFontOfSize(24.0, UIFontWeightMedium)
+                        textColor = ShoppingColors.OnSurface
+                    }
+                    flexSpacer()
+                    dateLabel = label {
+                        font = UIFont.systemFontOfSize(13.0)
+                        textColor = ShoppingColors.OnSurfaceVariant
+                        backgroundColor = ShoppingColors.SurfaceVariant
+                        textAlignment = UIK.TextAlignCenter
+                        layer.cornerRadius = 8.0
+                        clipsToBounds = true
+                    }
                 }
 
-                // Date
-                dateLabel = label {
-                    font = UIFont.systemFontOfSize(14.0)
-                    textColor = ShoppingColors.OnSurfaceVariant
+                // Separator
+                view(configure = {
+                    backgroundColor = ShoppingColors.SurfaceVariant
+                    heightAnchor.constraintEqualToConstant(1.0).active = true
+                })
+
+                // Column headers
+                hStack(spacing = 0.0) {
+                    label {
+                        text = "Item"
+                        font = UIFont.systemFontOfSize(12.0)
+                        textColor = ShoppingColors.OnSurfaceVariant
+                        setContentHuggingPriority(249.0f, UIK.AxisHorizontal)
+                    }
+                    label {
+                        text = "Qtd"
+                        font = UIFont.systemFontOfSize(12.0)
+                        textColor = ShoppingColors.OnSurfaceVariant
+                        textAlignment = UIK.TextAlignCenter
+                        widthAnchor.constraintEqualToConstant(50.0).active = true
+                    }
+                    label {
+                        text = "Valor"
+                        font = UIFont.systemFontOfSize(12.0)
+                        textColor = ShoppingColors.OnSurfaceVariant
+                        textAlignment = UIK.TextAlignRight
+                        widthAnchor.constraintEqualToConstant(90.0).active = true
+                    }
                 }
 
                 // Items list
                 itemsStack = vStack(spacing = 8.0) {}
 
-                // Total
-                vStack(configure = {
-                    layoutMarginsRelativeArrangement = true
-                    layoutMargins = UIEdgeInsetsMake(10.0, 16.0, 10.0, 16.0)
-                    backgroundColor = ShoppingColors.PriceBackground
-                    layer.cornerRadius = 10.0
-                }) {
-                    totalLabel = label {
-                        font = UIFont.boldSystemFontOfSize(22.0)
-                        textColor = ShoppingColors.PriceColor
-                        textAlignment = UIK.TextAlignCenter
+                // Separator before total
+                view(configure = {
+                    backgroundColor = ShoppingColors.SurfaceVariant
+                    heightAnchor.constraintEqualToConstant(1.0).active = true
+                })
+
+                // Total in badge
+                hStack(spacing = 8.0, configure = { alignment = UIK.StackAlignCenter }) {
+                    label {
+                        text = "Total:"
+                        font = UIFont.systemFontOfSize(15.0)
+                        textColor = ShoppingColors.OnSurfaceVariant
+                    }
+                    view(configure = {
+                        backgroundColor = ShoppingColors.PriceBackground
+                        layer.cornerRadius = 10.0
+                    }) {
+                        totalLabel = label {
+                            font = UIFont.boldSystemFontOfSize(20.0)
+                            textColor = ShoppingColors.PriceColor
+                            textAlignment = UIK.TextAlignCenter
+                        }
+                        pin(totalLabel, insets = 8.0)
+                    }
+                }
+
+                // Back button
+                hStack(spacing = 0.0) {
+                    flexSpacer()
+                    backButton = button("Continuar Comprando") {
+                        setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
+                        backgroundColor = ShoppingColors.Primary
+                        layer.cornerRadius = 12.0
+                        titleLabel?.font = UIFont.systemFontOfSize(15.0, UIFontWeightMedium)
+                        setImage(ShoppingIcons.arrowBack(18.0, UIColor.whiteColor), forState = UIControlStateNormal)
+                        imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
+                        contentEdgeInsets = UIEdgeInsetsMake(8.0, 20.0, 8.0, 20.0)
+                        addTarget(actions, action = sel_registerName("onBack"), forControlEvents = UIControlEventTouchUpInside)
+                        NSLayoutConstraint.activateConstraints(listOf(
+                            heightAnchor.constraintEqualToConstant(48.0)
+                        ))
                     }
                 }
             }
@@ -119,9 +183,9 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
         }
 
         if (receipt != null) {
-            // Date
+            // Date in badge format
             val date = receipt.date
-            dateLabel.text = if (date != null) "Data: ${ViewUtils.formatDate(date)}" else ""
+            dateLabel.text = if (date != null) "  ${ViewUtils.formatDate(date)}  " else ""
 
             // Items
             itemsStack.arrangedSubviews.forEach { (it as? UIView)?.removeFromSuperview() }
@@ -132,33 +196,47 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
 
             // Total
             val total = receipt.total
-            totalLabel.text = if (total != null) "Total: R$ ${ViewUtils.formatPrice(total)}" else ""
+            totalLabel.text = if (total != null) "R$ ${ViewUtils.formatPrice(total)}" else ""
         }
     }
 
     private fun createReceiptItemRow(item: ReceiptItem): UIView = UIKitDom.build {
         val row = parent()
-        size(row, height = 32.0)
+        row.backgroundColor = ShoppingColors.SurfaceVariant40
+        row.layer.cornerRadius = 8.0
 
         val descLabel = label {
-            text = "${item.description ?: ""} (×${item.quantity})"
-            font = UIFont.systemFontOfSize(14.0)
+            text = item.description ?: ""
+            font = UIFont.systemFontOfSize(14.0, UIFontWeightMedium)
             textColor = ShoppingColors.OnSurface
+            setContentHuggingPriority(249.0f, UIK.AxisHorizontal)
+        }
+
+        val qtyLabel = label {
+            text = "${item.quantity}x"
+            font = UIFont.systemFontOfSize(14.0)
+            textColor = ShoppingColors.OnSurfaceVariant
+            textAlignment = UIK.TextAlignCenter
+            widthAnchor.constraintEqualToConstant(50.0).active = true
         }
 
         val valueLabel = label {
-            text = "R$ ${ViewUtils.formatPrice(item.value * item.quantity)}"
-            font = UIFont.boldSystemFontOfSize(14.0)
+            text = "R$ ${ViewUtils.formatPrice(item.value)}"
+            font = UIFont.systemFontOfSize(14.0, UIFontWeightMedium)
             textColor = ShoppingColors.PriceColor
             textAlignment = UIK.TextAlignRight
+            widthAnchor.constraintEqualToConstant(90.0).active = true
         }
 
         NSLayoutConstraint.activateConstraints(listOf(
-            descLabel.leadingAnchor.constraintEqualToAnchor(row.leadingAnchor),
+            descLabel.leadingAnchor.constraintEqualToAnchor(row.leadingAnchor, 12.0),
             descLabel.centerYAnchor.constraintEqualToAnchor(row.centerYAnchor),
-            descLabel.trailingAnchor.constraintLessThanOrEqualToAnchor(valueLabel.leadingAnchor, -8.0),
-            valueLabel.trailingAnchor.constraintEqualToAnchor(row.trailingAnchor),
-            valueLabel.centerYAnchor.constraintEqualToAnchor(row.centerYAnchor)
+            descLabel.trailingAnchor.constraintEqualToAnchor(qtyLabel.leadingAnchor, -4.0),
+            qtyLabel.centerYAnchor.constraintEqualToAnchor(row.centerYAnchor),
+            qtyLabel.trailingAnchor.constraintEqualToAnchor(valueLabel.leadingAnchor, -4.0),
+            valueLabel.trailingAnchor.constraintEqualToAnchor(row.trailingAnchor, -12.0),
+            valueLabel.centerYAnchor.constraintEqualToAnchor(row.centerYAnchor),
+            row.heightAnchor.constraintEqualToConstant(40.0)
         ))
     }
 

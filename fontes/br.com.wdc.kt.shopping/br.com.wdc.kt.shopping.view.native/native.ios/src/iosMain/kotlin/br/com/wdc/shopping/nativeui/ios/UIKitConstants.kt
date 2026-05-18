@@ -38,8 +38,10 @@ object UIK {
     val ReturnKeyDone: UIReturnKeyType = UIReturnKeyType.UIReturnKeyDone
 
     // UIStackViewAlignment (Long typealias)
-    val StackAlignFill: UIStackViewAlignment = 0L   // UIStackViewAlignmentFill
-    val StackAlignCenter: UIStackViewAlignment = 3L // UIStackViewAlignmentCenter
+    val StackAlignFill: UIStackViewAlignment = 0L     // UIStackViewAlignmentFill
+    val StackAlignLeading: UIStackViewAlignment = 1L  // UIStackViewAlignmentLeading
+    val StackAlignCenter: UIStackViewAlignment = 3L   // UIStackViewAlignmentCenter
+    val StackAlignTrailing: UIStackViewAlignment = 4L // UIStackViewAlignmentTrailing
 
     // UILayoutConstraintAxis (Long typealias)
     val AxisHorizontal: UILayoutConstraintAxis = 0L // UILayoutConstraintAxisHorizontal
