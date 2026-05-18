@@ -123,7 +123,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             asDynamic().autoComplete = "off"
                             asDynamic().InputProps = js("""({
                                 inputProps: {
-                                    style: { '-webkit-text-security': 'disc', 'text-security': 'disc' }
+                                    style: { 'WebkitTextSecurity': 'disc', 'textSecurity': 'disc' }
                                 }
                             })""")
                             disabled = loading
@@ -154,6 +154,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             fullWidth = true
                             variant = ButtonVariant.contained
                             disabled = loading
+                            asDynamic().type = "button"
                             onClick = { safeCall { presenter.onEnter() } }
                             sx {
                                 height = 48.px
