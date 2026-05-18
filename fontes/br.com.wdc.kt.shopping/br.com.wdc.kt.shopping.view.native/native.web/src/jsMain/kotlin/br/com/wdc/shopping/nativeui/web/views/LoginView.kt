@@ -24,6 +24,7 @@ import react.FC
 import react.Props
 import react.ReactNode
 import react.dom.events.KeyboardEvent
+import react.dom.html.ReactHTML.form
 import react.dom.onChange
 import react.useEffect
 import react.useState
@@ -66,6 +67,11 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                 CardContent {
                     sx { padding = 24.px }
 
+                    // Use a form with autocomplete off to prevent all password managers
+                    form {
+                        asDynamic().autoComplete = "off"
+                        asDynamic().onSubmit = { e: dynamic -> e.preventDefault() }
+
                     Stack {
                         direction = responsive(StackDirection.column)
                         spacing = responsive(2)
@@ -100,6 +106,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             label = ReactNode("Usuário")
                             value = userName
                             disabled = loading
+                            asDynamic().autoComplete = "off"
                             onChange = { e ->
                                 val v = (e.target as HTMLInputElement).value
                                 userName = v
@@ -112,7 +119,13 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             fullWidth = true
                             label = ReactNode("Senha")
                             value = password
-                            asDynamic().type = "password"
+                            asDynamic().type = "text"
+                            asDynamic().autoComplete = "off"
+                            asDynamic().InputProps = js("""({
+                                inputProps: {
+                                    style: { '-webkit-text-security': 'disc', 'text-security': 'disc' }
+                                }
+                            })""")
                             disabled = loading
                             onChange = { e ->
                                 val v = (e.target as HTMLInputElement).value
@@ -160,6 +173,8 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             }
                         }
                     }
+
+                    } // form
                 }
             }
         }
