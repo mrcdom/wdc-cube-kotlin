@@ -1,7 +1,6 @@
-package br.com.wdc.shopping.nativeui.ios
+package br.com.wdc.shopping.nativeui.ios.theme
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.useContents
 import platform.CoreGraphics.*
 import platform.UIKit.*
 
@@ -49,40 +48,17 @@ object ShoppingIcons {
     private const val PATH_CHEVRON_RIGHT =
         "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
 
-    /** Logo icon (LocalMall - shopping bag) */
     fun localMall(size: Double, color: UIColor): UIImage = renderIcon(PATH_LOCAL_MALL, size, color)
-
-    /** Cart icon (ShoppingCart) */
     fun shoppingCart(size: Double, color: UIColor): UIImage = renderIcon(PATH_SHOPPING_CART, size, color)
-
-    /** Products tab icon (ShoppingBag) */
     fun shoppingBag(size: Double, color: UIColor): UIImage = renderIcon(PATH_SHOPPING_BAG, size, color)
-
-    /** Purchases tab icon (Inventory2) */
     fun inventory(size: Double, color: UIColor): UIImage = renderIcon(PATH_INVENTORY2, size, color)
-
-    /** Back arrow */
     fun arrowBack(size: Double, color: UIColor): UIImage = renderIcon(PATH_ARROW_BACK, size, color)
-
-    /** Plus icon */
     fun add(size: Double, color: UIColor): UIImage = renderIcon(PATH_ADD, size, color)
-
-    /** Minus icon */
     fun remove(size: Double, color: UIColor): UIImage = renderIcon(PATH_REMOVE, size, color)
-
-    /** Receipt icon */
     fun receipt(size: Double, color: UIColor): UIImage = renderIcon(PATH_RECEIPT, size, color)
-
-    /** Add to cart icon */
     fun addShoppingCart(size: Double, color: UIColor): UIImage = renderIcon(PATH_ADD_SHOPPING_CART, size, color)
-
-    /** Check circle icon */
     fun checkCircle(size: Double, color: UIColor): UIImage = renderIcon(PATH_CHECK_CIRCLE, size, color)
-
-    /** Chevron left */
     fun chevronLeft(size: Double, color: UIColor): UIImage = renderIcon(PATH_CHEVRON_LEFT, size, color)
-
-    /** Chevron right */
     fun chevronRight(size: Double, color: UIColor): UIImage = renderIcon(PATH_CHEVRON_RIGHT, size, color)
 
     // --- Rendering ---
@@ -128,7 +104,6 @@ object ShoppingIcons {
                 i++
                 token[0]
             } else {
-                // Implicit repeat of last command
                 if (lastCmd == 'M') 'L'
                 else if (lastCmd == 'm') 'l'
                 else lastCmd
@@ -250,7 +225,6 @@ object ShoppingIcons {
                     i++
                 }
                 else -> {
-                    // Number (may start with - or .)
                     val start = i
                     if (ch == '-' || ch == '+') i++
                     var hasDot = false
@@ -265,7 +239,7 @@ object ShoppingIcons {
                         else break
                     }
                     if (i > start) tokens.add(d.substring(start, i))
-                    else i++ // skip unexpected char
+                    else i++
                 }
             }
         }

@@ -1,9 +1,9 @@
-package br.com.wdc.shopping.nativeui.ios
+package br.com.wdc.shopping.nativeui.ios.theme
 
 import platform.UIKit.UIColor
 
 /**
- * Design tokens — color palette matching the UI spec.
+ * Design tokens — color palette matching the Shopping app UI spec.
  */
 object ShoppingColors {
     val Primary = UIColor(red = 0.106, green = 0.369, blue = 0.482, alpha = 1.0)           // #1B5E7B

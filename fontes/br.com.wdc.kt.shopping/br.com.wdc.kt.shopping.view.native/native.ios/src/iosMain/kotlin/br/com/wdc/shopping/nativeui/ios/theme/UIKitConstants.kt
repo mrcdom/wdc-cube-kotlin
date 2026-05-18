@@ -1,13 +1,11 @@
-package br.com.wdc.shopping.nativeui.ios
+package br.com.wdc.shopping.nativeui.ios.theme
 
 import platform.UIKit.*
 
 /**
  * UIKit enum constants for Kotlin/Native 2.x interop.
  *
- * Types fall into two categories:
- * - Value classes: use Type.TypeConstantName (e.g. UIViewContentMode.UIViewContentModeScaleAspectFit)
- * - Long typealiases: use Long literal directly (e.g. 1L for UILayoutConstraintAxisVertical)
+ * Provides concise aliases for verbose UIKit enum values used across views.
  */
 object UIK {
     // UIViewContentMode (value class)

@@ -1,10 +1,10 @@
 package br.com.wdc.shopping.nativeui.ios.views
 
-import br.com.wdc.shopping.nativeui.ios.AbstractViewIos
-import br.com.wdc.shopping.nativeui.ios.UIK
-import br.com.wdc.shopping.nativeui.ios.UIKitDom
-import br.com.wdc.shopping.nativeui.ios.ShoppingColors
-import br.com.wdc.shopping.nativeui.ios.ViewUtils
+import br.com.wdc.shopping.nativeui.ios.toolkit.AbstractViewIos
+import br.com.wdc.shopping.nativeui.ios.toolkit.UIKitDom
+import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
+import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
+import br.com.wdc.shopping.nativeui.ios.theme.UIK
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 import kotlinx.cinterop.ExperimentalForeignApi

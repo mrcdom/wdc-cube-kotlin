@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.nativeui.ios.views
 
-import br.com.wdc.shopping.nativeui.ios.*
+import br.com.wdc.shopping.nativeui.ios.toolkit.*
+import br.com.wdc.shopping.nativeui.ios.theme.*
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -35,7 +36,7 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
 
         // Gradient background (Primary → PrimaryContainer, top to bottom)
         val gradientBg = imageView {
-            image = ViewUtils.createGradientImage(
+            image = ShoppingStyles.createGradientImage(
                 ShoppingColors.Primary, ShoppingColors.PrimaryContainer
             )
             contentMode = UIK.ContentModeScaleToFill

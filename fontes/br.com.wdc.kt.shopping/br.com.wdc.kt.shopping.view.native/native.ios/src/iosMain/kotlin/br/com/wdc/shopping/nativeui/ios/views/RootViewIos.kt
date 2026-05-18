@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.nativeui.ios.views
 
-import br.com.wdc.shopping.nativeui.ios.*
+import br.com.wdc.shopping.nativeui.ios.toolkit.*
+import br.com.wdc.shopping.nativeui.ios.theme.*
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.*

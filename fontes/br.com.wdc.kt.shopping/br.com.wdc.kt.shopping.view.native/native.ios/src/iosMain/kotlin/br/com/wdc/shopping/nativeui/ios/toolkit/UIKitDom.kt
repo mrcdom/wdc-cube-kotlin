@@ -1,5 +1,6 @@
-package br.com.wdc.shopping.nativeui.ios
+package br.com.wdc.shopping.nativeui.ios.toolkit
 
+import br.com.wdc.shopping.nativeui.ios.theme.UIK
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.CoreGraphics.CGRectMake
 import platform.UIKit.*

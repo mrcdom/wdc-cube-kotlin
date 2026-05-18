@@ -1,4 +1,4 @@
-package br.com.wdc.shopping.nativeui.ios
+package br.com.wdc.shopping.nativeui.ios.toolkit
 
 import br.com.wdc.framework.cube.CubeView
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -156,10 +156,8 @@ abstract class AbstractViewIos<P>(
          */
         fun sync(newView: CubeView?): Boolean {
             if (current === newView) return false
-            // Remove old (copy list to avoid mutation during iteration)
             val oldSubviews = container.subviews.toList()
             oldSubviews.forEach { (it as? UIView)?.removeFromSuperview() }
-            // Add new
             if (newView is AbstractViewIos<*>) {
                 val childView = newView.rootView
                 childView.translatesAutoresizingMaskIntoConstraints = false
@@ -179,10 +177,6 @@ abstract class AbstractViewIos<P>(
     /**
      * Creates a list slot that efficiently syncs items to views.
      * Uses grow/shrink at edges + update-in-place (same algorithm as Gluon).
-     *
-     * @param container UIStackView that holds the item views
-     * @param factory Creates a new item view (must return initialized view with rootView set)
-     * @param updater Updates an existing view with new item data
      */
     protected fun <T, V : AbstractViewIos<*>> newListSlot(
         container: UIStackView,
@@ -210,7 +204,6 @@ abstract class AbstractViewIos<P>(
             val newSize = items?.size ?: 0
             val oldSize = viewList.size
 
-            // Shrink: remove excess from end
             if (oldSize > newSize) {
                 for (i in oldSize - 1 downTo newSize) {
                     val view = viewList.removeAt(i)
@@ -219,14 +212,12 @@ abstract class AbstractViewIos<P>(
                 }
             }
 
-            // Grow: create missing at end
             while (viewList.size < newSize) {
                 val view = factory()
                 viewList.add(view)
                 container.addArrangedSubview(view.rootView)
             }
 
-            // Update all in place
             if (items != null) {
                 for (i in 0 until newSize) {
                     updater(viewList[i], items[i])

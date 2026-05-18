@@ -13,7 +13,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let window = UIWindow(frame: UIScreen.main.bounds)
 
         let baseUrl = ProcessInfo.processInfo.environment["BACKEND_URL"] ?? "http://localhost:8080"
-        let viewController = MainViewControllerKt.MainViewController(baseUrl: baseUrl)
+        let viewController = AppBootstrapKt.createRootViewController(baseUrl: baseUrl)
 
         window.rootViewController = viewController
         window.makeKeyAndVisible()

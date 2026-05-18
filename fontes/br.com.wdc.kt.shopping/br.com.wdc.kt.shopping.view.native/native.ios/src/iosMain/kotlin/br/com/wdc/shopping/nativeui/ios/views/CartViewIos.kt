@@ -1,11 +1,11 @@
 package br.com.wdc.shopping.nativeui.ios.views
 
-import br.com.wdc.shopping.nativeui.ios.AbstractViewIos
-import br.com.wdc.shopping.nativeui.ios.UIK
-import br.com.wdc.shopping.nativeui.ios.UIKitDom
-import br.com.wdc.shopping.nativeui.ios.ShoppingColors
-import br.com.wdc.shopping.nativeui.ios.ShoppingIcons
-import br.com.wdc.shopping.nativeui.ios.ViewUtils
+import br.com.wdc.shopping.nativeui.ios.toolkit.AbstractViewIos
+import br.com.wdc.shopping.nativeui.ios.toolkit.UIKitDom
+import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
+import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
+import br.com.wdc.shopping.nativeui.ios.theme.ShoppingIcons
+import br.com.wdc.shopping.nativeui.ios.theme.UIK
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
 import kotlinx.cinterop.ExperimentalForeignApi
