@@ -51,7 +51,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
             sx {
                 display = Display.flex
                 justifyContent = JustifyContent.center
-                padding = 16.px
+                padding = Padding(16.px, 10.px, 16.px, 16.px)
             }
 
             Box {
