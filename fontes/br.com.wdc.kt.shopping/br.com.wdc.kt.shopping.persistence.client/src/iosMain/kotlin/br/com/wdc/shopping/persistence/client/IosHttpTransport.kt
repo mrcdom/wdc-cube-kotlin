@@ -94,6 +94,14 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
         if (statusCode in 200..299) {
             return responseText
         }
+
+        if (statusCode == 401 && authorization != null) {
+            if (refreshHandler?.invoke() == true) {
+                return doRequest(method, url, body, contentType, authHeader())
+            }
+            onAuthFailure?.invoke()
+        }
+
         throw BusinessException("HTTP $statusCode: $responseText")
     }
 
@@ -118,6 +126,14 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
         if (statusCode in 200..299) {
             return responseText
         }
+
+        if (statusCode == 401 && authorization != null) {
+            if (refreshHandler?.invoke() == true) {
+                return doRequestNullable(method, url, body, contentType, authHeader())
+            }
+            onAuthFailure?.invoke()
+        }
+
         throw BusinessException("HTTP $statusCode: $responseText")
     }
 
@@ -131,6 +147,14 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
         if (statusCode in 200..299) {
             return responseData?.toKotlinByteArray()
         }
+
+        if (statusCode == 401 && authorization != null) {
+            if (refreshHandler?.invoke() == true) {
+                return doRequestBytes(method, url, authHeader())
+            }
+            onAuthFailure?.invoke()
+        }
+
         throw BusinessException("HTTP $statusCode")
     }
 
