@@ -15,6 +15,7 @@ class LoginViewState : ViewState {
         json.beginObject()
 
         json.name("id").value(instanceId)
+        json.name("loading").value(loading)
 
         if (!userName.isNullOrBlank()) {
             json.name("userName").value(userName)
