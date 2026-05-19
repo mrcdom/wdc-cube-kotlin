@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.nativeui.android.views
 
+import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
@@ -29,7 +30,47 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
     private var lastCapacity = -1
 
     companion object {
-        private const val ITEM_HEIGHT_DP = 76
+        private const val CARD_PADDING_DP = 12
+        private const val CARD_VSTACK_SPACING_DP = 4
+        private const val CARD_DATE_SP = 12f
+        private const val CARD_ITEMS_SP = 13f
+        private const val CARD_PRICE_SP = 14f
+        private const val CARD_PRICE_PADDING_V_DP = 6
+        private const val LIST_SPACING_DP = 12
+
+        /**
+         * Computes the card height in pixels deterministically based on device font metrics.
+         * All text labels are single-line with ellipsis, so height is always predictable.
+         */
+        fun computeCardHeightPx(density: Float, scaledDensity: Float): Int {
+            // Card vertical padding
+            val cardPaddingPx = (CARD_PADDING_DP * 2 * density).toInt()
+
+            // Left side: dateLabel (1 line) + spacing + itemsLabel (1 line)
+            val datePaint = Paint().apply { textSize = CARD_DATE_SP * scaledDensity }
+            val dateFm = datePaint.fontMetricsInt
+            val dateHeight = dateFm.bottom - dateFm.top
+
+            val itemsPaint = Paint().apply { textSize = CARD_ITEMS_SP * scaledDensity }
+            val itemsFm = itemsPaint.fontMetricsInt
+            val itemsHeight = itemsFm.bottom - itemsFm.top
+
+            val leftHeight = dateHeight + (CARD_VSTACK_SPACING_DP * density).toInt() + itemsHeight
+
+            // Right side: price badge padding + totalLabel (bold, 1 line)
+            val pricePaint = Paint().apply {
+                textSize = CARD_PRICE_SP * scaledDensity
+                typeface = Typeface.DEFAULT_BOLD
+            }
+            val priceFm = pricePaint.fontMetricsInt
+            val priceHeight = priceFm.bottom - priceFm.top
+            val rightHeight = (CARD_PRICE_PADDING_V_DP * 2 * density).toInt() + priceHeight
+
+            // hStack with CENTER_VERTICAL: height = max of sides
+            val contentHeight = maxOf(leftHeight, rightHeight)
+
+            return cardPaddingPx + contentHeight
+        }
     }
 
     override fun createView(): View {
@@ -103,7 +144,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                 paginationContainer = hStack(configure = {
                     gravity = Gravity.CENTER
                     setPadding((16 * density).toInt(), (8 * density).toInt(), (16 * density).toInt(), (8 * density).toInt())
-                    visibility = View.GONE
+                    visibility = View.INVISIBLE
                 }) {
                     prevButton = button("◀") {
                         textSize = 16f
@@ -167,28 +208,21 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
     }
 
     override fun doUpdate() {
-        if (lastCapacity < 0) {
+        if (lastCapacity < 0 && stackView.height > 0) {
             val ctx = RootViewAndroid.appContext
-            val density = ctx.resources.displayMetrics.density
-            val screenHeightPx = ctx.resources.displayMetrics.heightPixels
+            val metrics = ctx.resources.displayMetrics
 
-            // Determine actual system bars height
-            val statusBarId = ctx.resources.getIdentifier("status_bar_height", "dimen", "android")
-            val statusBarPx = if (statusBarId > 0) ctx.resources.getDimensionPixelSize(statusBarId) else (24 * density).toInt()
-            val navBarId = ctx.resources.getIdentifier("navigation_bar_height", "dimen", "android")
-            val navBarPx = if (navBarId > 0) ctx.resources.getDimensionPixelSize(navBarId) else (48 * density).toInt()
-
-            // Fixed layout elements (in dp): compact header + tabs + section header + separator + pagination
-            val fixedDp = Dimens.headerHeightCompact + Dimens.tabsHeight + 40 + 9 + 48
-            val fixedPx = (fixedDp * density).toInt()
-
-            // Available pixel height for items
-            val availablePx = screenHeightPx - statusBarPx - navBarPx - fixedPx
-            val itemHeightPx = (ITEM_HEIGHT_DP * density).toInt()
-            val capacity = (availablePx / itemHeightPx).coerceAtLeast(1)
+            val availablePx = stackView.height - stackView.paddingTop - stackView.paddingBottom
+            val cardHeightPx = computeCardHeightPx(metrics.density, metrics.scaledDensity)
+            val spacing = (LIST_SPACING_DP * metrics.density).toInt()
+            val capacity = ((availablePx + spacing) / (cardHeightPx + spacing)).coerceAtLeast(1)
 
             lastCapacity = capacity
             presenter.onItemSizeCapacityChanged(capacity)
+        } else if (lastCapacity < 0) {
+            // stackView not yet laid out, schedule recalculation
+            stackView.post { forceUpdate() }
+            return
         }
 
         val state = presenter.state
@@ -286,11 +320,14 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
                     dateLabel = textView {
                         textSize = 12f
                         setTextColor(ShoppingColors.OnSurfaceVariant)
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
                     }
                     itemsLabel = textView {
                         textSize = 13f
                         setTextColor(ShoppingColors.OnSurfaceVariant)
-                        maxLines = 2
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
                     }
                 }
                 // Right side: price badge

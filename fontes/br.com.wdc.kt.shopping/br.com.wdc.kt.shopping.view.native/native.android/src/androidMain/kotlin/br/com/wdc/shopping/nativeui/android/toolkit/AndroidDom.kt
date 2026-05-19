@@ -92,6 +92,24 @@ class AndroidDom private constructor(
         return sv
     }
 
+    fun flowLayout(
+        minChildWidth: Int = 180,
+        horizontalSpacing: Int = 0,
+        verticalSpacing: Int = 0,
+        configure: (FlowLayout.() -> Unit)? = null,
+        builder: AndroidDom.() -> Unit
+    ): FlowLayout {
+        val fl = FlowLayout(context).apply {
+            this.minChildWidth = minChildWidth
+            this.horizontalSpacing = horizontalSpacing
+            this.verticalSpacing = verticalSpacing
+        }
+        addToParent(fl)
+        configure?.invoke(fl)
+        AndroidDom(context, fl).builder()
+        return fl
+    }
+
     // MARK: - Leaf Components
 
     fun textView(configure: TextView.() -> Unit): TextView {

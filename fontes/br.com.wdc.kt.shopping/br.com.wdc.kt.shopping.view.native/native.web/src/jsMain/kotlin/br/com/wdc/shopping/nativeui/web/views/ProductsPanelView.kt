@@ -16,7 +16,6 @@ import mui.material.Chip
 import mui.material.ChipColor
 import mui.material.CircularProgress
 import mui.material.Divider
-import mui.material.Grid
 import mui.material.Stack
 import mui.material.StackDirection
 import mui.material.Typography
@@ -115,71 +114,66 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                     }
                 }
             } else {
-                // Product grid
-                Grid {
-                    container = true
-                    spacing = responsive(2)
+                // Product grid (auto-fill flow)
+                Box {
+                    sx {
+                        display = Display.grid
+                        asDynamic().gridTemplateColumns = "repeat(auto-fill, minmax(160px, 1fr))"
+                        gap = 12.px
+                    }
 
                     for (product in products) {
-                        Grid {
+                        Card {
                             key = "${product.id}"
-                            item = true
-                            asDynamic().xs = 12
-                            asDynamic().sm = 6
-                            asDynamic().md = 4
+                            elevation = 0
+                            sx {
+                                borderRadius = 8.px
+                                asDynamic()["&:hover"] = js("({'boxShadow': '0 2px 8px rgba(0,0,0,0.12)'})")
+                            }
 
-                            Card {
-                                elevation = 0
-                                sx {
-                                    height = 100.pct
-                                    borderRadius = 8.px
-                                    asDynamic()["&:hover"] = js("({'boxShadow': '0 2px 8px rgba(0,0,0,0.12)'})")
+                            CardActionArea {
+                                onClick = { safeCall { presenter.onOpenProduct(product.id) } }
+
+                                // Product image
+                                img {
+                                    src = productImageUrl(product.id)
+                                    alt = product.name ?: ""
+                                    style = js("({width: '100%', height: '140px', objectFit: 'cover', backgroundColor: '${ShoppingColors.SurfaceVariant}'})").unsafeCast<react.CSSProperties>()
                                 }
 
-                                CardActionArea {
-                                    onClick = { safeCall { presenter.onOpenProduct(product.id) } }
-
-                                    // Product image
-                                    img {
-                                        src = productImageUrl(product.id)
-                                        alt = product.name ?: ""
-                                        style = js("({width: '100%', height: '140px', objectFit: 'cover', backgroundColor: '${ShoppingColors.SurfaceVariant}'})").unsafeCast<react.CSSProperties>()
+                                CardContent {
+                                    Typography {
+                                        variant = TypographyVariant.subtitle1
+                                        sx { fontWeight = FontWeight.bold }
+                                        +(product.name ?: "")
                                     }
 
-                                    CardContent {
+                                    val desc = product.description
+                                    if (!desc.isNullOrBlank() && desc != "unknown") {
                                         Typography {
-                                            variant = TypographyVariant.subtitle1
-                                            sx { fontWeight = FontWeight.bold }
-                                            +(product.name ?: "")
-                                        }
-
-                                        val desc = product.description
-                                        if (!desc.isNullOrBlank() && desc != "unknown") {
-                                            Typography {
-                                                variant = TypographyVariant.body2
-                                                sx {
-                                                    color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>()
-                                                    overflow = Overflow.hidden
-                                                    display = Display.block
-                                                    asDynamic().WebkitLineClamp = 2
-                                                    asDynamic().WebkitBoxOrient = "vertical"
-                                                    asDynamic().display = "-webkit-box"
-                                                }
-                                                +stripHtml(desc)
-                                            }
-                                        }
-
-                                        Chip {
-                                            label = ReactNode("R$ ${formatPrice(product.price)}")
+                                            variant = TypographyVariant.body2
                                             sx {
-                                                marginTop = 12.px
-                                                backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
-                                                color = ShoppingColors.PriceColor.unsafeCast<Color>()
-                                                fontWeight = FontWeight.bold
-                                                borderRadius = 8.px
+                                                color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>()
+                                                overflow = Overflow.hidden
+                                                display = Display.block
+                                                asDynamic().WebkitLineClamp = 2
+                                                asDynamic().WebkitBoxOrient = "vertical"
+                                                asDynamic().display = "-webkit-box"
                                             }
-                                            size = mui.material.Size.small
+                                            +stripHtml(desc)
                                         }
+                                    }
+
+                                    Chip {
+                                        label = ReactNode("R$ ${formatPrice(product.price)}")
+                                        sx {
+                                            marginTop = 12.px
+                                            backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
+                                            color = ShoppingColors.PriceColor.unsafeCast<Color>()
+                                            fontWeight = FontWeight.bold
+                                            borderRadius = 8.px
+                                        }
+                                        size = mui.material.Size.small
                                     }
                                 }
                             }

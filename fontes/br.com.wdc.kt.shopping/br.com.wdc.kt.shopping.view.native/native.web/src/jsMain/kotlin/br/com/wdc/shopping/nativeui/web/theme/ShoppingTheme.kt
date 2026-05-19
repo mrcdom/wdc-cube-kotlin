@@ -37,6 +37,7 @@ object ShoppingColors {
     const val PriceBackground = "${PriceColor}1A"        // 10% opacity
 
     // Semi-transparent white overlays (for dark backgrounds)
+    const val WhiteOverlay10 = "rgba(255,255,255,0.10)"
     const val WhiteOverlay15 = "rgba(255,255,255,0.15)"
     const val WhiteOverlay20 = "rgba(255,255,255,0.2)"
     const val WhiteOverlay50 = "rgba(255,255,255,0.5)"

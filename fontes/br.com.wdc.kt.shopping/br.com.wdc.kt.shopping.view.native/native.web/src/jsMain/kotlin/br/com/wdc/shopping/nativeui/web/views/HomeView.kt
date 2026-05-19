@@ -6,6 +6,7 @@ import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
 import mui.icons.material.Inventory2
 import mui.icons.material.LocalMall
+import mui.icons.material.Logout
 import mui.icons.material.ShoppingBag
 import mui.icons.material.ShoppingCart
 import mui.material.Alert
@@ -18,8 +19,7 @@ import mui.material.Box
 import mui.material.Button
 import mui.material.ButtonVariant
 import mui.material.Card
-import mui.material.Chip
-import mui.material.ChipVariant
+import mui.material.IconButton
 import mui.material.Tab
 import mui.material.Tabs
 import mui.material.Toolbar
@@ -34,7 +34,7 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-private const val COMPACT_BREAKPOINT = 700
+private const val COMPACT_BREAKPOINT = 480
 
 class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view", presenter.app) {
 
@@ -75,50 +75,43 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                 if (isCompact) {
                     // Compact header: two rows
                     Box {
-                        sx { padding = Padding(8.px, 12.px) }
+                        sx { padding = Padding(10.px, 12.px) }
 
-                        // Top row: logo + exit
+                        // Top row: logo + "Shopping" + logout icon (all left)
                         Box {
                             sx {
                                 display = Display.flex
                                 alignItems = AlignItems.center
-                                justifyContent = JustifyContent.spaceBetween
                                 width = 100.pct
                             }
 
                             // Logo
-                            Box {
-                                sx { display = Display.flex; alignItems = AlignItems.center }
-                                Avatar {
-                                    sx {
-                                        width = 32.px
-                                        height = 32.px
-                                        backgroundColor = ShoppingColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
-                                        borderRadius = 8.px
-                                        marginRight = 8.px
-                                    }
-                                    LocalMall { sx { fontSize = 20.px; color = NamedColor.white.unsafeCast<Color>() } }
+                            Avatar {
+                                sx {
+                                    width = 32.px
+                                    height = 32.px
+                                    backgroundColor = ShoppingColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
+                                    borderRadius = 8.px
+                                    marginRight = 8.px
                                 }
-                                Typography {
-                                    variant = TypographyVariant.h6
-                                    sx { fontWeight = FontWeight.bold; color = NamedColor.white.unsafeCast<Color>() }
-                                    +"Shopping"
-                                }
+                                LocalMall { sx { fontSize = 20.px; color = NamedColor.white.unsafeCast<Color>() } }
+                            }
+                            Typography {
+                                variant = TypographyVariant.h6
+                                sx { fontWeight = FontWeight.bold; color = NamedColor.white.unsafeCast<Color>() }
+                                +"Shopping"
                             }
 
-                            // Exit button
-                            Button {
-                                variant = ButtonVariant.outlined
+                            // Logout icon (subtle, near brand)
+                            IconButton {
                                 onClick = { safeCall { presenter.onExit() } }
                                 sx {
-                                    color = NamedColor.white.unsafeCast<Color>()
-                                    borderColor = ShoppingColors.WhiteOverlay50.unsafeCast<BorderColor>()
-                                    borderRadius = 10.px
-                                    textTransform = None.none
-                                    padding = Padding(4.px, 12.px)
-                                    fontSize = 13.px
+                                    width = 28.px
+                                    height = 28.px
+                                    marginLeft = 12.px
+                                    backgroundColor = ShoppingColors.WhiteOverlay10.unsafeCast<BackgroundColor>()
                                 }
-                                +"Sair"
+                                Logout { sx { fontSize = 16.px; color = NamedColor.white.unsafeCast<Color>(); opacity = number(0.7) } }
                             }
                         }
 
@@ -183,11 +176,26 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                         Typography {
                             variant = TypographyVariant.h6
-                            sx { fontWeight = FontWeight.bold; flexGrow = number(1.0) }
+                            sx { fontWeight = FontWeight.bold }
                             +"Shopping"
                         }
 
-                        // Greeting (filled pill like compose.web)
+                        // Logout icon (subtle, near brand)
+                        IconButton {
+                            onClick = { safeCall { presenter.onExit() } }
+                            sx {
+                                width = 32.px
+                                height = 32.px
+                                marginLeft = 16.px
+                                backgroundColor = ShoppingColors.WhiteOverlay10.unsafeCast<BackgroundColor>()
+                            }
+                            Logout { sx { fontSize = 18.px; color = NamedColor.white.unsafeCast<Color>(); opacity = number(0.7) } }
+                        }
+
+                        // Spacer
+                        Box { sx { flexGrow = number(1.0) } }
+
+                        // Greeting (filled pill)
                         Box {
                             sx {
                                 backgroundColor = ShoppingColors.WhiteOverlay15.unsafeCast<BackgroundColor>()
@@ -216,24 +224,10 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                                     backgroundColor = ShoppingColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
                                     borderRadius = 12.px
                                     textTransform = None.none
-                                    marginRight = 8.px
                                 }
                                 ShoppingCart { sx { marginRight = 6.px; fontSize = 18.px } }
                                 +"Carrinho"
                             }
-                        }
-
-                        // Exit button
-                        Button {
-                            variant = ButtonVariant.outlined
-                            onClick = { safeCall { presenter.onExit() } }
-                            sx {
-                                color = NamedColor.white.unsafeCast<Color>()
-                                borderColor = ShoppingColors.WhiteOverlay50.unsafeCast<BorderColor>()
-                                borderRadius = 12.px
-                                textTransform = None.none
-                            }
-                            +"Sair"
                         }
                     }
                 }
@@ -258,8 +252,15 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                         overflowY = Overflow.scroll
                         overflowX = Overflow.hidden
                     }
-                    RenderSlot {
-                        view = contentView
+                    Box {
+                        sx {
+                            maxWidth = 560.px
+                            marginLeft = Auto.auto
+                            marginRight = Auto.auto
+                        }
+                        RenderSlot {
+                            view = contentView
+                        }
                     }
                 }
             } else if (isCompact) {
@@ -344,6 +345,10 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                         padding = 16.px
                         gap = 16.px
                         overflow = Overflow.hidden
+                        maxWidth = 1200.px
+                        marginLeft = Auto.auto
+                        marginRight = Auto.auto
+                        width = 100.pct
                     }
 
                     // Products panel (flex: 3)

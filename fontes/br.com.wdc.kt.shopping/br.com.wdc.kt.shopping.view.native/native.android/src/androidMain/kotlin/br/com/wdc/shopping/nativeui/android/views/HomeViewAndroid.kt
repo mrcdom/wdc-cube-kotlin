@@ -517,12 +517,16 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                 }
                 // Apply max content width in wide mode
                 if (nowWide) {
-                    val maxPx = (Dimens.maxContentWidthDp * density).toInt()
                     val availablePx = right - left
-                    val cappedWidth = if (availablePx > maxPx) maxPx else ViewGroup.LayoutParams.MATCH_PARENT
-                    (widePanelsContainer.layoutParams as FrameLayout.LayoutParams).width = cappedWidth
+
+                    val maxHomePx = (Dimens.maxContentWidthDp * density).toInt()
+                    val cappedHome = if (availablePx > maxHomePx) maxHomePx else ViewGroup.LayoutParams.MATCH_PARENT
+                    (widePanelsContainer.layoutParams as FrameLayout.LayoutParams).width = cappedHome
                     widePanelsContainer.requestLayout()
-                    (detailContainer.layoutParams as FrameLayout.LayoutParams).width = cappedWidth
+
+                    val maxDetailPx = (Dimens.maxDetailWidthDp * density).toInt()
+                    val cappedDetail = if (availablePx > maxDetailPx) maxDetailPx else ViewGroup.LayoutParams.MATCH_PARENT
+                    (detailContainer.layoutParams as FrameLayout.LayoutParams).width = cappedDetail
                     detailContainer.requestLayout()
                 }
             }
@@ -653,7 +657,13 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
         // Detail overlay
         val contentView = state.contentView
         detailSlot.sync(contentView)
-        detailContainer.visibility = if (contentView == null) View.GONE else View.VISIBLE
+        if (contentView != null) {
+            detailContainer.visibility = View.VISIBLE
+            if (isWide) widePanelsContainer.visibility = View.GONE
+        } else {
+            detailContainer.visibility = View.GONE
+            if (isWide) widePanelsContainer.visibility = View.VISIBLE
+        }
 
         // Error
         val errorMessage = state.errorMessage

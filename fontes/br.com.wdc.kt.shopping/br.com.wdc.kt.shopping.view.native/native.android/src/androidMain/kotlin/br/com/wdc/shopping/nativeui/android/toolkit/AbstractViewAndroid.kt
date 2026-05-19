@@ -4,7 +4,6 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import br.com.wdc.framework.cube.CubeView
 
 /**
@@ -101,7 +100,7 @@ abstract class AbstractViewAndroid<P>(
     fun newViewSlot(container: FrameLayout): ViewSlot = ViewSlot(container)
 
     protected fun <T, V : AbstractViewAndroid<*>> newListSlot(
-        container: LinearLayout,
+        container: ViewGroup,
         factory: () -> V,
         updater: (V, T) -> Unit
     ): ListSlot<T, V> {
@@ -132,7 +131,7 @@ abstract class AbstractViewAndroid<P>(
     }
 
     class ListSlot<T, V : AbstractViewAndroid<*>>(
-        private val container: LinearLayout,
+        private val container: ViewGroup,
         private val factory: () -> V,
         private val updater: (V, T) -> Unit
     ) {
@@ -157,7 +156,7 @@ abstract class AbstractViewAndroid<P>(
             while (viewList.size < newSize) {
                 val view = factory()
                 viewList.add(view)
-                container.addView(view.rootView, LinearLayout.LayoutParams(
+                container.addView(view.rootView, ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 ))

@@ -5,6 +5,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import br.com.wdc.shopping.nativeui.android.toolkit.FlowLayout
 import coil.imageLoader
 import coil.request.ImageRequest
 import br.com.wdc.shopping.nativeui.android.theme.*
@@ -17,7 +18,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.Pr
 class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) : AbstractViewAndroid<ProductsPanelPresenter>("products-panel-view", presenter) {
 
     private lateinit var scrollView: ScrollView
-    private lateinit var stackView: LinearLayout
+    private lateinit var stackView: FlowLayout
     private lateinit var emptyLabel: TextView
     private lateinit var headerBadge: TextView
     private lateinit var productsSlot: ListSlot<ProductInfo, ProductCardView>
@@ -85,9 +86,14 @@ class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) : AbstractView
                         weight = 1f
                     }
                 }) {
-                    stackView = vStack(spacing = (12 * density).toInt(), configure = {
-                        setPadding((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (8 * density).toInt())
-                    }) {}
+                    stackView = flowLayout(
+                        minChildWidth = (160 * density).toInt(),
+                        horizontalSpacing = (12 * density).toInt(),
+                        verticalSpacing = (12 * density).toInt(),
+                        configure = {
+                            setPadding((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (8 * density).toInt())
+                        }
+                    ) {}
                 }
             }
 

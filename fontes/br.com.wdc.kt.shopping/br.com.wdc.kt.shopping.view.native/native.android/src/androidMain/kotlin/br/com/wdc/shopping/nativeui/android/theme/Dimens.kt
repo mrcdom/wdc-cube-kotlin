@@ -28,8 +28,9 @@ object Dimens {
     const val logoCornerRadius = 18
 
     // Breakpoint
-    const val wideBreakpointDp = 700
-    const val maxContentWidthDp = 900
+    const val wideBreakpointDp = 480
+    const val maxContentWidthDp = 1200
+    const val maxDetailWidthDp = 560
 
     // Card
     const val cardMaxWidth = 560
