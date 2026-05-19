@@ -102,7 +102,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                                 color = ShoppingColors.OnPrimaryContainer.unsafeCast<Color>()
                                 fontWeight = integer(500)
                             }
-                            +"${state.totalCount} compras"
+                            +"${state.totalCount} itens"
                         }
                     }
                 }

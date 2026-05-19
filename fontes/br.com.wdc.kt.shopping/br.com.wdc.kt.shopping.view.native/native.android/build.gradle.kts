@@ -20,7 +20,6 @@ android {
 
     buildFeatures {
         buildConfig = true
-        viewBinding = true
     }
 
     buildTypes {
@@ -47,7 +46,7 @@ kotlin {
                 implementation(libs.gson)
                 implementation("com.google.android.material:material:1.12.0")
                 implementation("androidx.appcompat:appcompat:1.7.0")
-                implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+                implementation("io.coil-kt:coil:2.7.0")
             }
         }
     }
