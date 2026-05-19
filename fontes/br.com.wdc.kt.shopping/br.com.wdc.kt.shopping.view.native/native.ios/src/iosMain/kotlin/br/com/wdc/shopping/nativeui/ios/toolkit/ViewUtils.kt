@@ -13,8 +13,11 @@ object ViewUtils {
     /** Base URL for the backend API (set during app initialization). */
     var baseUrl: String = ""
 
-    fun productImageUrl(productId: Long): String =
-        "$baseUrl/api/repo/product/$productId/image"
+    fun productImageUrl(productId: Long): String {
+        val scale = UIScreen.mainScreen.scale.toInt()
+        val size = 160 * scale // ~160pt in pixels
+        return "$baseUrl/api/repo/product/$productId/image?size=$size"
+    }
 
     /**
      * Formats a double as Brazilian price: "123,45"

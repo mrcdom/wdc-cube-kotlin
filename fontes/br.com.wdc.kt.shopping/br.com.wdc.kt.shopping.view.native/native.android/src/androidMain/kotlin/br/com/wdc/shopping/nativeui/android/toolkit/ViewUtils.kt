@@ -5,13 +5,17 @@ import coil.load
 import coil.request.CachePolicy
 import android.graphics.drawable.ColorDrawable
 import br.com.wdc.shopping.nativeui.android.theme.ShoppingColors
+import br.com.wdc.shopping.nativeui.android.views.RootViewAndroid
 
 object ViewUtils {
 
     var baseUrl: String = ""
 
-    fun productImageUrl(productId: Long): String =
-        "$baseUrl/api/repo/product/$productId/image"
+    fun productImageUrl(productId: Long): String {
+        val density = RootViewAndroid.appContext.resources.displayMetrics.density
+        val size = (160 * density).toInt() // ~160dp in pixels
+        return "$baseUrl/api/repo/product/$productId/image?size=$size"
+    }
 
     fun formatPrice(value: Double): String {
         val intPart = value.toLong()

@@ -8,11 +8,20 @@ import br.com.wdc.shopping.domain.utils.ProjectionValues
 import com.google.gson.JsonObject
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
+import java.awt.RenderingHints
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.util.concurrent.ConcurrentHashMap
+import javax.imageio.ImageIO
 
 class ProductApiController {
 
     companion object {
         private val LOG = Log.getLogger("ProductApiController")
+        private const val IMAGE_CACHE_MAX_SIZE = 200
+        // Key: "id" for original, "id_size" for resized
+        private val imageCache = ConcurrentHashMap<String, ByteArray>()
 
         fun configure(config: JavalinConfig) {
             val ctrl = ProductApiController()
@@ -135,21 +144,57 @@ class ProductApiController {
             return
         }
 
-        val imageBytes: ByteArray?
-        try {
-            imageBytes = repo().fetchImage(id)
+        val size = ctx.queryParam("size")?.toIntOrNull()?.coerceIn(16, 1024)
+        val cacheKey = if (size != null) "${id}_$size" else "$id"
+
+        val resultBytes: ByteArray? = imageCache[cacheKey] ?: try {
+            val originalBytes = imageCache["$id"] ?: repo().fetchImage(id)?.also { bytes ->
+                if (imageCache.size < IMAGE_CACHE_MAX_SIZE) {
+                    imageCache["$id"] = bytes
+                }
+            }
+            if (originalBytes != null && size != null) {
+                val resized = resizeImage(originalBytes, size)
+                if (imageCache.size < IMAGE_CACHE_MAX_SIZE) {
+                    imageCache[cacheKey] = resized
+                }
+                resized
+            } else {
+                originalBytes
+            }
         } catch (e: Exception) {
             LOG.error("Fetching product image", e)
             ctx.status(500).json(mapOf("error" to "Failed to fetch image"))
             return
         }
 
-        if (imageBytes == null) {
+        if (resultBytes == null) {
             ctx.status(204)
             return
         }
+        ctx.header("Cache-Control", "public, max-age=86400, immutable")
         ctx.contentType("image/png")
-        ctx.result(imageBytes)
+        ctx.result(resultBytes)
+    }
+
+    private fun resizeImage(originalBytes: ByteArray, targetSize: Int): ByteArray {
+        val original = ImageIO.read(ByteArrayInputStream(originalBytes))
+            ?: return originalBytes
+        val w = original.width
+        val h = original.height
+        val scale = targetSize.toDouble() / maxOf(w, h)
+        if (scale >= 1.0) return originalBytes
+        val newW = (w * scale).toInt().coerceAtLeast(1)
+        val newH = (h * scale).toInt().coerceAtLeast(1)
+        val resized = BufferedImage(newW, newH, BufferedImage.TYPE_INT_ARGB)
+        val g = resized.createGraphics()
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+        g.drawImage(original, 0, 0, newW, newH, null)
+        g.dispose()
+        val out = ByteArrayOutputStream()
+        ImageIO.write(resized, "PNG", out)
+        return out.toByteArray()
     }
 
     private fun updateImage(ctx: Context) {
@@ -165,6 +210,7 @@ class ProductApiController {
         try {
             val imageBytes = ctx.bodyAsBytes()
             val success = repo().updateImage(id, imageBytes)
+            imageCache.keys.filter { it == "$id" || it.startsWith("${id}_") }.forEach { imageCache.remove(it) }
             ctx.json(mapOf("success" to success))
         } catch (e: Exception) {
             LOG.error("Updating product image", e)
