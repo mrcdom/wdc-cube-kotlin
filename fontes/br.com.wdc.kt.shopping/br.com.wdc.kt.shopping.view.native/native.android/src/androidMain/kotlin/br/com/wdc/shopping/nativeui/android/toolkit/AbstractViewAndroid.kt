@@ -21,7 +21,6 @@ abstract class AbstractViewAndroid<P>(
     lateinit var rootView: View
         protected set
 
-    private var dirty = false
     private var released = false
     private var firstRender = true
     private val myListSlots = mutableListOf<ListSlot<*, *>>()
@@ -30,25 +29,13 @@ abstract class AbstractViewAndroid<P>(
 
     override fun update() {
         if (released) return
-        if (!dirty) {
-            dirty = true
-            rootView.postOnAnimation {
-                if (dirty && !released) {
-                    dirty = false
-                    try {
-                        doUpdate()
-                    } catch (e: Exception) {
-                        Log.e("View[$viewId]", "doUpdate error", e)
-                    }
-                }
-            }
-        }
+        ViewUpdateScheduler.markDirty(this)
     }
 
     override fun release() {
         if (released) return
         released = true
-        dirty = false
+        ViewUpdateScheduler.removeDirty(this)
         myListSlots.forEach { it.releaseAll() }
         myListSlots.clear()
     }
@@ -73,7 +60,6 @@ abstract class AbstractViewAndroid<P>(
 
     fun forceUpdate() {
         if (released) return
-        dirty = false
         try {
             doUpdate()
         } catch (e: Exception) {

@@ -15,6 +15,7 @@ import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.storage.AndroidPersistentSessionStorage
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
+import br.com.wdc.shopping.nativeui.android.toolkit.ViewUpdateScheduler
 import br.com.wdc.shopping.nativeui.android.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.android.views.*
 import br.com.wdc.shopping.persistence.client.OkHttpTransport
@@ -57,6 +58,7 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
         val app = AndroidNativeShoppingApplication(AndroidPersistentSessionStorage(prefs))
+        ViewUpdateScheduler.initialize { app }
         app.go(app.getRootPlace().placeName)
 
         val rootPresenter = app.getRootPresenter()

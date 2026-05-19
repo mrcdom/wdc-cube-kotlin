@@ -48,7 +48,6 @@ abstract class AbstractViewIos<P>(
     lateinit var rootView: UIView
         protected set
 
-    private var dirty = false
     private var released = false
     private var firstRender = true
 
@@ -56,16 +55,13 @@ abstract class AbstractViewIos<P>(
 
     override fun update() {
         if (released) return
-        if (!dirty) {
-            dirty = true
-            scheduleUpdate()
-        }
+        ViewUpdateScheduler.markDirty(this)
     }
 
     override fun release() {
         if (released) return
         released = true
-        dirty = false
+        ViewUpdateScheduler.removeDirty(this)
         myListSlots.forEach { it.releaseAll() }
         myListSlots.clear()
         myGcRetained.forEach { gcRoots.remove(it) }
@@ -109,11 +105,10 @@ abstract class AbstractViewIos<P>(
     }
 
     /**
-     * Force immediate update (bypasses dirty flag check).
+     * Force immediate update (bypasses scheduler).
      */
     fun forceUpdate() {
         if (released) return
-        dirty = false
         try {
             doUpdate()
         } catch (e: Exception) {
@@ -228,21 +223,6 @@ abstract class AbstractViewIos<P>(
         fun releaseAll() {
             viewList.forEach { it.release() }
             viewList.clear()
-        }
-    }
-
-    // MARK: - Private
-
-    private fun scheduleUpdate() {
-        platform.darwin.dispatch_async(platform.darwin.dispatch_get_main_queue()) {
-            if (dirty && !released) {
-                dirty = false
-                try {
-                    doUpdate()
-                } catch (e: Exception) {
-                    NSLog("AbstractViewIos[$viewId] doUpdate error: ${e.message}")
-                }
-            }
         }
     }
 }

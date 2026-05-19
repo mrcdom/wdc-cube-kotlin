@@ -19,6 +19,7 @@ import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JsCryptoProvider
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.bridge.ViewUpdateScheduler
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingTheme
 import br.com.wdc.shopping.nativeui.web.views.*
 import br.com.wdc.shopping.persistence.client.JsHttpTransport
@@ -165,6 +166,7 @@ fun main() {
     initializePlatform(baseUrl)
 
     val app = JsShoppingApplication()
+    ViewUpdateScheduler.initialize { app }
 
     // On irrecoverable auth failure (401 + refresh failed), clear session and go to login
     platformConfig.transport.onAuthFailure = {
