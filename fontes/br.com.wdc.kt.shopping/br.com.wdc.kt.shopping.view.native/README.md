@@ -42,11 +42,21 @@ graph TD
 - **Dirty-flag coalescing**: múltiplas chamadas `update()` são consolidadas em um único `doUpdate()` por frame
 - **Layout responsivo**: breakpoints detectam largura disponível e alternam entre layouts compacto (mobile) e wide (tablet/desktop)
 
-## Tela Principal (versão Web)
+## Telas (versão Native Web como referência)
 
-![Home — versão Web](../../br.com.wdc.kt.shopping.view.native/screenshots/01-home-web.png)
+| Login | Home (Produtos + Compras) |
+|:---:|:---:|
+| ![Login](screenshots/01-login.png) | ![Home](screenshots/02-home.png) |
 
-> Para capturar: acesse `http://localhost:8080/native/index.html` com o backend rodando e salve o screenshot em `screenshots/01-home-web.png`.
+| Detalhes do Produto | Carrinho |
+|:---:|:---:|
+| ![Detalhes do Produto](screenshots/03-detalhes-produto.png) | ![Carrinho](screenshots/04-carrinho.png) |
+
+| Recibo |
+|:---:|
+| ![Recibo](screenshots/05-recibo.png) |
+
+> As três plataformas (Web, Android, iOS) produzem telas visualmente equivalentes, com pequenas nuances em função dos recursos nativos disponíveis.
 
 ## Referências
 
