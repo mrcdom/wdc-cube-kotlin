@@ -1,5 +1,7 @@
 package br.com.wdc.shopping.nativeui.android
 
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.StrictMode
 import android.widget.FrameLayout
@@ -31,6 +33,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Allow rotation on tablets (manifest locks portrait by default for phones)
+        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
+        if (isTablet) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
 
         // Edge-to-edge: app draws behind status bar
         WindowCompat.setDecorFitsSystemWindows(window, false)

@@ -28,6 +28,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
     private var lastPage = -1
     private var lastTotalCount = -1
     private var lastCapacity = -1
+    private var lastStackHeight = -1
 
     companion object {
         private const val CARD_PADDING_DP = 12
@@ -204,6 +205,29 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                 factory = { PurchaseCardView(presenter).also { it.initialize() } },
                 updater = { view, item -> view.setState(item); view.forceUpdate() }
             )
+
+            // Recalculate capacity when stackView height changes (e.g. orientation change)
+            stackView.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
+                val newHeight = bottom - top
+                if (lastStackHeight > 0 && newHeight != lastStackHeight && newHeight > 0) {
+                    lastStackHeight = newHeight
+                    stackView.post {
+                        val ctx = RootViewAndroid.appContext
+                        val metrics = ctx.resources.displayMetrics
+                        val availablePx = newHeight - stackView.paddingTop - stackView.paddingBottom
+                        val cardHeightPx = computeCardHeightPx(metrics.density, metrics.scaledDensity)
+                        val spacing = (LIST_SPACING_DP * metrics.density).toInt()
+                        val newCapacity = ((availablePx + spacing) / (cardHeightPx + spacing)).coerceAtLeast(1)
+                        if (newCapacity != lastCapacity) {
+                            lastCapacity = newCapacity
+                            lastPurchases = null
+                            lastPage = -1
+                            lastTotalCount = -1
+                            presenter.onItemSizeCapacityChanged(newCapacity)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -217,6 +241,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
             val spacing = (LIST_SPACING_DP * metrics.density).toInt()
             val capacity = ((availablePx + spacing) / (cardHeightPx + spacing)).coerceAtLeast(1)
 
+            lastStackHeight = stackView.height
             lastCapacity = capacity
             presenter.onItemSizeCapacityChanged(capacity)
         } else if (lastCapacity < 0) {
