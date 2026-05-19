@@ -29,6 +29,7 @@ object Dimens {
 
     // Breakpoint
     const val wideBreakpointDp = 700
+    const val maxContentWidthDp = 900
 
     // Card
     const val cardMaxWidth = 560

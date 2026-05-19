@@ -65,15 +65,15 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                     height = ViewGroup.LayoutParams.MATCH_PARENT
                 }
             }) {
-                // === COMPACT HEADER (2 rows, 88dp) ===
+                // === COMPACT HEADER (2 rows) ===
                 compactHeader = vStack(configure = {
                     setBackgroundColor(ShoppingColors.Primary)
                     clipChildren = false
                     clipToPadding = false
                     (layoutParams as LinearLayout.LayoutParams).height = (Dimens.headerHeightCompact * density).toInt()
-                    setPadding((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (8 * density).toInt())
+                    setPadding((12 * density).toInt(), (10 * density).toInt(), (12 * density).toInt(), (10 * density).toInt())
                 }) {
-                    // Row 1: Logo + "Shopping" + Exit
+                    // Row 1: Logo + "Shopping" + Logout icon (all on left)
                     hStack(configure = {
                         gravity = Gravity.CENTER_VERTICAL
                         (layoutParams as LinearLayout.LayoutParams).apply {
@@ -105,22 +105,29 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                             setTextColor(Color.WHITE)
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 marginStart = (8 * density).toInt()
-                                weight = 1f
-                                width = 0
+                                width = ViewGroup.LayoutParams.WRAP_CONTENT
                             }
                         }
-                        button("Sair") {
-                            textSize = 13f
-                            setTextColor(Color.WHITE)
-                            background = ShoppingStyles.borderPill(ShoppingColors.WhiteOverlay50, 10 * density)
-                            val padH = (12 * density).toInt()
-                            val padV = (4 * density).toInt()
-                            setPadding(padH, padV, padH, padV)
+                        // Logout icon (subtle, near brand)
+                        frame(configure = {
+                            val bg = ShoppingStyles.roundedBackground(ShoppingColors.WhiteOverlay10, 14 * density)
+                            background = bg
                             (layoutParams as LinearLayout.LayoutParams).apply {
-                                width = ViewGroup.LayoutParams.WRAP_CONTENT
-                                height = (30 * density).toInt()
+                                width = (28 * density).toInt()
+                                height = (28 * density).toInt()
+                                marginStart = (12 * density).toInt()
                             }
                             setOnClickListener { safeAction("exit") { presenter.onExit() } }
+                        }) {
+                            imageView {
+                                setImageDrawable(ShoppingIcons.logout(ctx, 16, Color.WHITE))
+                                alpha = 0.7f
+                                (layoutParams as FrameLayout.LayoutParams).apply {
+                                    width = (16 * density).toInt()
+                                    height = (16 * density).toInt()
+                                    gravity = Gravity.CENTER
+                                }
+                            }
                         }
                     }
 
@@ -155,6 +162,10 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                             cartButton = button("Carrinho") {
                                 textSize = 13f
                                 setTextColor(Color.WHITE)
+                                isAllCaps = false
+                                stateListAnimator = null
+                                minimumHeight = 0
+                                minimumWidth = 0
                                 background = ShoppingStyles.roundedBackground(ShoppingColors.WhiteOverlay20, 10 * density)
                                 val padH = (12 * density).toInt()
                                 val padV = (4 * density).toInt()
@@ -190,15 +201,15 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                     }
                 }
 
-                // === WIDE HEADER (single row, 56dp) ===
+                // === WIDE HEADER (single row) ===
                 wideHeader = hStack(configure = {
                     setBackgroundColor(ShoppingColors.Primary)
                     visibility = View.GONE
                     clipChildren = false
                     clipToPadding = false
                     gravity = Gravity.CENTER_VERTICAL
-                    (layoutParams as LinearLayout.LayoutParams).height = (Dimens.headerHeightWide * density).toInt()
-                    setPadding((24 * density).toInt(), 0, (24 * density).toInt(), 0)
+                    (layoutParams as LinearLayout.LayoutParams).height = (64 * density).toInt()
+                    setPadding((24 * density).toInt(), (12 * density).toInt(), (24 * density).toInt(), (12 * density).toInt())
                 }) {
                     // Logo
                     frame(configure = {
@@ -223,9 +234,42 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                         textSize = 18f
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(Color.WHITE)
-                        (layoutParams as LinearLayout.LayoutParams).marginStart = (12 * density).toInt()
+                        (layoutParams as LinearLayout.LayoutParams).apply {
+                            marginStart = (12 * density).toInt()
+                            width = ViewGroup.LayoutParams.WRAP_CONTENT
+                        }
                     }
-                    flexSpacer()
+
+                    // Logout icon button (subtle, separated from actions)
+                    frame(configure = {
+                        val bg = ShoppingStyles.roundedBackground(ShoppingColors.WhiteOverlay10, 16 * density)
+                        background = bg
+                        (layoutParams as LinearLayout.LayoutParams).apply {
+                            width = (32 * density).toInt()
+                            height = (32 * density).toInt()
+                            marginStart = (16 * density).toInt()
+                        }
+                        setOnClickListener { safeAction("exit") { presenter.onExit() } }
+                    }) {
+                        imageView {
+                            setImageDrawable(ShoppingIcons.logout(ctx, 18, Color.WHITE))
+                            alpha = 0.7f
+                            (layoutParams as FrameLayout.LayoutParams).apply {
+                                width = (18 * density).toInt()
+                                height = (18 * density).toInt()
+                                gravity = Gravity.CENTER
+                            }
+                        }
+                    }
+
+                    // Spacer (pushes right elements to the end)
+                    textView {
+                        (layoutParams as LinearLayout.LayoutParams).apply {
+                            width = 0
+                            height = 0
+                            weight = 1f
+                        }
+                    }
 
                     // Greeting pill
                     frame(configure = {
@@ -234,7 +278,11 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                         val padH = (16 * density).toInt()
                         val padV = (8 * density).toInt()
                         setPadding(padH, padV, padH, padV)
-                        (layoutParams as LinearLayout.LayoutParams).marginEnd = (16 * density).toInt()
+                        (layoutParams as LinearLayout.LayoutParams).apply {
+                            width = ViewGroup.LayoutParams.WRAP_CONTENT
+                            height = ViewGroup.LayoutParams.WRAP_CONTENT
+                            marginEnd = (16 * density).toInt()
+                        }
                     }) {
                         wideNicknameLabel = textView {
                             textSize = 14f
@@ -247,19 +295,26 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                     frame(configure = {
                         clipChildren = false
                         clipToPadding = false
-                        (layoutParams as LinearLayout.LayoutParams).marginEnd = (8 * density).toInt()
+                        (layoutParams as LinearLayout.LayoutParams).apply {
+                            width = ViewGroup.LayoutParams.WRAP_CONTENT
+                            height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        }
                     }) {
                         wideCartButton = button("Carrinho") {
                             textSize = 14f
                             setTextColor(Color.WHITE)
+                            isAllCaps = false
+                            stateListAnimator = null
+                            minimumHeight = 0
+                            minimumWidth = 0
                             background = ShoppingStyles.roundedBackground(ShoppingColors.WhiteOverlay20, 12 * density)
                             val padH = (14 * density).toInt()
-                            val padV = (6 * density).toInt()
+                            val padV = (8 * density).toInt()
                             setPadding(padH, padV, padH, padV)
                             setCompoundDrawablesRelativeWithIntrinsicBounds(
                                 ShoppingIcons.shoppingCart(ctx, 18, Color.WHITE), null, null, null
                             )
-                            compoundDrawablePadding = (4 * density).toInt()
+                            compoundDrawablePadding = (6 * density).toInt()
                             (layoutParams as FrameLayout.LayoutParams).apply {
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -279,21 +334,6 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                 gravity = Gravity.TOP or Gravity.END
                             }
                         }
-                    }
-
-                    // Exit button
-                    button("Sair") {
-                        textSize = 14f
-                        setTextColor(Color.WHITE)
-                        background = ShoppingStyles.borderPill(ShoppingColors.WhiteOverlay50, 12 * density)
-                        val padH = (16 * density).toInt()
-                        val padV = (6 * density).toInt()
-                        setPadding(padH, padV, padH, padV)
-                        (layoutParams as LinearLayout.LayoutParams).apply {
-                            width = ViewGroup.LayoutParams.WRAP_CONTENT
-                            height = ViewGroup.LayoutParams.WRAP_CONTENT
-                        }
-                        setOnClickListener { safeAction("exit") { presenter.onExit() } }
                     }
                 }
 
@@ -414,6 +454,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                         (layoutParams as FrameLayout.LayoutParams).apply {
                             width = ViewGroup.LayoutParams.MATCH_PARENT
                             height = ViewGroup.LayoutParams.MATCH_PARENT
+                            gravity = Gravity.CENTER_HORIZONTAL
                         }
                     }) {
                         // Products panel (60%)
@@ -444,6 +485,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                         (layoutParams as FrameLayout.LayoutParams).apply {
                             width = ViewGroup.LayoutParams.MATCH_PARENT
                             height = ViewGroup.LayoutParams.MATCH_PARENT
+                            gravity = Gravity.CENTER_HORIZONTAL
                         }
                     })
                 }
@@ -472,6 +514,16 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                 if (nowWide != isWide) {
                     isWide = nowWide
                     applyLayout()
+                }
+                // Apply max content width in wide mode
+                if (nowWide) {
+                    val maxPx = (Dimens.maxContentWidthDp * density).toInt()
+                    val availablePx = right - left
+                    val cappedWidth = if (availablePx > maxPx) maxPx else ViewGroup.LayoutParams.MATCH_PARENT
+                    (widePanelsContainer.layoutParams as FrameLayout.LayoutParams).width = cappedWidth
+                    widePanelsContainer.requestLayout()
+                    (detailContainer.layoutParams as FrameLayout.LayoutParams).width = cappedWidth
+                    detailContainer.requestLayout()
                 }
             }
         }

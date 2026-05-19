@@ -41,6 +41,9 @@ object ShoppingIcons {
     fun chevronRight(context: Context, sizeDp: Int, color: Int): Drawable =
         renderIcon(context, sizeDp, color, PATH_CHEVRON_RIGHT)
 
+    fun logout(context: Context, sizeDp: Int, color: Int): Drawable =
+        renderIcon(context, sizeDp, color, PATH_LOGOUT)
+
     private fun renderIcon(context: Context, sizeDp: Int, color: Int, pathData: String): Drawable {
         val density = context.resources.displayMetrics.density
         val sizePx = (sizeDp * density).toInt()
@@ -103,4 +106,5 @@ object ShoppingIcons {
     private const val PATH_ADD_SHOPPING_CART = "M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zm-9.83-3.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25z"
     private const val PATH_CHEVRON_LEFT = "M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
     private const val PATH_CHEVRON_RIGHT = "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
+    private const val PATH_LOGOUT = "M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
 }

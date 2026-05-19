@@ -190,29 +190,38 @@ pick_emulator() {
     ok "Selected: $EMULATOR_NAME"
 }
 
-get_running_emulator_serial() {
-    "$ADB" devices 2>/dev/null | grep "emulator-" | grep "device$" | awk '{print $1}' | head -1
+get_all_emulator_serials() {
+    "$ADB" devices 2>/dev/null | grep "emulator-" | grep "device$" | awk '{print $1}'
+}
+
+get_serial_for_avd() {
+    local target_avd="$1"
+    local serial
+    while IFS= read -r serial; do
+        [[ -z "$serial" ]] && continue
+        local avd_name
+        avd_name=$("$ADB" -s "$serial" emu avd name 2>/dev/null | head -1 | tr -d '\r')
+        if [[ "$avd_name" == "$target_avd" ]]; then
+            echo "$serial"
+            return
+        fi
+    done < <(get_all_emulator_serials)
 }
 
 start_emulator() {
     info "Starting emulator: $EMULATOR_NAME..."
 
+    # Check if the requested AVD is already running
     local serial
-    serial=$(get_running_emulator_serial)
+    serial=$(get_serial_for_avd "$EMULATOR_NAME")
 
     if [[ -n "$serial" ]]; then
-        # Check if same AVD is running
-        local running_avd
-        running_avd=$("$ADB" -s "$serial" emu avd name 2>/dev/null | head -1 | tr -d '\r')
-        if [[ "$running_avd" == "$EMULATOR_NAME" ]]; then
-            ok "Emulator already running ($serial)"
-            DEVICE_SERIAL="$serial"
-            return
-        else
-            warn "Different emulator running ($running_avd). Starting requested AVD..."
-        fi
+        ok "Emulator already running ($serial)"
+        DEVICE_SERIAL="$serial"
+        return
     fi
 
+    # Start the requested AVD
     local emu_args=("-avd" "$EMULATOR_NAME" "-no-snapshot-load")
     if [[ "$COLD_BOOT" == true ]]; then
         emu_args+=("-no-snapshot")
@@ -225,7 +234,7 @@ start_emulator() {
     local timeout=120
     local elapsed=0
     while [[ $elapsed -lt $timeout ]]; do
-        serial=$(get_running_emulator_serial)
+        serial=$(get_serial_for_avd "$EMULATOR_NAME")
         if [[ -n "$serial" ]]; then
             local boot_complete
             boot_complete=$("$ADB" -s "$serial" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')

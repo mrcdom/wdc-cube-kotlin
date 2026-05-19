@@ -26,6 +26,7 @@ object ShoppingColors {
     val SurfaceVariant50 = Color.argb(128, 0xE7, 0xEB, 0xF0)
     val PriceBackground = Color.argb(26, 0x2E, 0x7D, 0x32)
 
+    val WhiteOverlay10 = Color.argb(26, 255, 255, 255)
     val WhiteOverlay15 = Color.argb(38, 255, 255, 255)
     val WhiteOverlay20 = Color.argb(51, 255, 255, 255)
     val WhiteOverlay50 = Color.argb(128, 255, 255, 255)
