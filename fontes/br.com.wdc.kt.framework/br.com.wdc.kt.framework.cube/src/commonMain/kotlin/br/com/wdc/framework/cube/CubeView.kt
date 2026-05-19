@@ -2,7 +2,7 @@ package br.com.wdc.framework.cube
 
 interface CubeView {
 
-    fun instanceId(): String
+    val instanceId: String
 
     fun update()
 

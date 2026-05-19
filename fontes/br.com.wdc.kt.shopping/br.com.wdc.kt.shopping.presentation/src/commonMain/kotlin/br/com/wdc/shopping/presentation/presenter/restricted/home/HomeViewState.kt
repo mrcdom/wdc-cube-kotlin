@@ -26,15 +26,15 @@ class HomeViewState : ViewState {
         json.name("cartItemCount").value(cartItemCount.toLong())
 
         contentView?.let {
-            json.name("contentViewId").value(it.instanceId())
+            json.name("contentViewId").value(it.instanceId)
         }
 
         productsPanelView?.let {
-            json.name("productsPanelViewId").value(it.instanceId())
+            json.name("productsPanelViewId").value(it.instanceId)
         }
 
         purchasesPanelView?.let {
-            json.name("purchasesPanelViewId").value(it.instanceId())
+            json.name("purchasesPanelViewId").value(it.instanceId)
         }
 
         if (!errorMessage.isNullOrBlank()) {

@@ -17,6 +17,6 @@ class CartReactViewImpl(private val presenter: CartPresenter) : GenericViewImpl(
     }
 
     override fun writeState(json: ExtensibleObjectOutput) {
-        presenter.state.write(instanceId(), json)
+        presenter.state.write(instanceId, json)
     }
 }

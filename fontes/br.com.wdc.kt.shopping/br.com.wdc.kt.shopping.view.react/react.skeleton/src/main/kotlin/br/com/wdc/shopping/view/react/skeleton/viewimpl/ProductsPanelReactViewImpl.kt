@@ -15,6 +15,6 @@ class ProductsPanelReactViewImpl(private val presenter: ProductsPanelPresenter) 
     }
 
     override fun writeState(json: ExtensibleObjectOutput) {
-        presenter.state.write(instanceId(), json)
+        presenter.state.write(instanceId, json)
     }
 }

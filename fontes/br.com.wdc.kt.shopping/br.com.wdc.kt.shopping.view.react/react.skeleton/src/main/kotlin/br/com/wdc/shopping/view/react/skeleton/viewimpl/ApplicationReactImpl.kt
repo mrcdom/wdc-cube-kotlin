@@ -169,8 +169,8 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
     private fun postConstruct() {
         this.dataSecurity = DataSecurity()
         this.browserView = BrowserReactViewImpl(this)
-        this.viewMap[browserView.instanceId()] = browserView
-        this.dirtyViewMap[browserView.instanceId()] = browserView
+        this.viewMap[browserView.instanceId] = browserView
+        this.dirtyViewMap[browserView.instanceId] = browserView
         this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.inWholeMilliseconds
     }
 
@@ -278,7 +278,7 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
     }
 
     fun putView(view: GenericViewImpl) {
-        viewMap[view.instanceId()] = view
+        viewMap[view.instanceId] = view
     }
 
     fun removeView(stateId: String): GenericViewImpl? {
@@ -288,7 +288,7 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
 
     @Synchronized
     fun markDirty(view: GenericViewImpl) {
-        dirtyViewMap[view.instanceId()] = view
+        dirtyViewMap[view.instanceId] = view
         if (!requestInProgress && wsSession != null) {
             schedulePush()
         }

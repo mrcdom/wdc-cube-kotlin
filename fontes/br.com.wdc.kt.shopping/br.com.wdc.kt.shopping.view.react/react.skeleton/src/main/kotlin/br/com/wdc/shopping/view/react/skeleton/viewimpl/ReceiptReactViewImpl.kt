@@ -14,6 +14,6 @@ class ReceiptReactViewImpl(private val presenter: ReceiptPresenter) : GenericVie
     }
 
     override fun writeState(json: ExtensibleObjectOutput) {
-        presenter.state.write(instanceId(), json)
+        presenter.state.write(instanceId, json)
     }
 }

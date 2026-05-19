@@ -28,6 +28,6 @@ class LoginReactViewImpl(private val presenter: LoginPresenter) : GenericViewImp
     }
 
     override fun writeState(json: ExtensibleObjectOutput) {
-        presenter.state.write(instanceId(), json)
+        presenter.state.write(instanceId, json)
     }
 }

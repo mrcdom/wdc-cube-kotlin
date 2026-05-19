@@ -22,7 +22,7 @@ abstract class GenericViewImpl : CubeView {
         this.app.markDirty(this)
     }
 
-    override fun instanceId(): String = _instanceId
+    override val instanceId: String get() = _instanceId
 
     override fun release() {
         app.removeView(_instanceId)

@@ -26,7 +26,7 @@ abstract class ComposeCubeView(
     /** Revision counter — read this in @Composable functions to trigger recomposition. */
     val revision: MutableState<Int> = mutableIntStateOf(0)
 
-    override fun instanceId(): String = id
+    override val instanceId: String get() = id
 
     override fun update() {
         revision.value++

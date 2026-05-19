@@ -15,7 +15,7 @@ class RootViewState : ViewState {
         json.name("id").value(instanceId)
 
         contentView?.let {
-            json.name("contentViewId").value(it.instanceId())
+            json.name("contentViewId").value(it.instanceId)
         }
 
         if (!errorMessage.isNullOrBlank()) {

@@ -52,7 +52,7 @@ abstract class AbstractViewIos<P>(
     private var released = false
     private var firstRender = true
 
-    override fun instanceId(): String = viewId
+    override val instanceId: String get() = viewId
 
     override fun update() {
         if (released) return

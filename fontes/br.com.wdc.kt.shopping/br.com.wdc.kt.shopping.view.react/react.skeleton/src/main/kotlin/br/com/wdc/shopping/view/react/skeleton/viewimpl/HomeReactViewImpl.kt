@@ -15,6 +15,6 @@ class HomeReactViewImpl(private val presenter: HomePresenter) : GenericViewImpl(
     }
 
     override fun writeState(json: ExtensibleObjectOutput) {
-        presenter.state.write(instanceId(), json)
+        presenter.state.write(instanceId, json)
     }
 }

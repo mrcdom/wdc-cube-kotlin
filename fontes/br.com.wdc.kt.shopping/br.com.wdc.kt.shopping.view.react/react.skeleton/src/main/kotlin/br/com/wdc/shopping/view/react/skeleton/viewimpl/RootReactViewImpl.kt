@@ -26,11 +26,11 @@ class RootReactViewImpl(presenter: RootPresenter) : GenericViewImpl(presenter.ap
 
         json.beginObject()
         run {
-            json.name("id").value(instanceId())
+            json.name("id").value(instanceId)
 
             val contentView = state.contentView
             if (contentView is GenericViewImpl) {
-                json.name("contentViewId").value(contentView.instanceId())
+                json.name("contentViewId").value(contentView.instanceId)
             }
 
             if (!state.errorMessage.isNullOrBlank()) {

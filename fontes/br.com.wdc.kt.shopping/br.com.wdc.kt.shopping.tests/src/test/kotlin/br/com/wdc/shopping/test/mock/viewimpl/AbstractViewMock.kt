@@ -14,6 +14,8 @@ abstract class AbstractViewMock<P : CubePresenter>(
         val INSTANCE_ID_GEN = AtomicInteger()
     }
 
+    override val instanceId: String = INSTANCE_ID_GEN.incrementAndGet().toString()
+
     var released = false
 
     override fun release() {
@@ -22,9 +24,5 @@ abstract class AbstractViewMock<P : CubePresenter>(
 
     override fun update() {
         // NOOP
-    }
-
-    override fun instanceId(): String {
-        return INSTANCE_ID_GEN.incrementAndGet().toString()
     }
 }

@@ -103,7 +103,7 @@ class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID
     override fun writeState(json: ExtensibleObjectOutput) {
         json.beginObject()
         run {
-            json.name("id").value(instanceId())
+            json.name("id").value(instanceId)
 
             if (alertId != 0) {
                 json.name("alertMessage").beginObject()
@@ -120,7 +120,7 @@ class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID
 
             val rootView = app.getRootPresenter()?.view()
             if (rootView is GenericViewImpl) {
-                json.name("contentViewId").value(rootView.instanceId())
+                json.name("contentViewId").value(rootView.instanceId)
             }
         }
         json.endObject()

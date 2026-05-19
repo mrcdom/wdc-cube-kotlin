@@ -26,7 +26,7 @@ abstract class AbstractViewAndroid<P>(
     private var firstRender = true
     private val myListSlots = mutableListOf<ListSlot<*, *>>()
 
-    override fun instanceId(): String = viewId
+    override val instanceId: String get() = viewId
 
     override fun update() {
         if (released) return

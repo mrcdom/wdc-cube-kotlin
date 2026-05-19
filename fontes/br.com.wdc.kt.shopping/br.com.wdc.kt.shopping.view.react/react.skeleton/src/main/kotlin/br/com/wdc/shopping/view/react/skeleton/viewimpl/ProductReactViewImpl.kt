@@ -16,6 +16,6 @@ class ProductReactViewImpl(private val presenter: ProductPresenter) : GenericVie
     }
 
     override fun writeState(json: ExtensibleObjectOutput) {
-        presenter.state.write(instanceId(), json)
+        presenter.state.write(instanceId, json)
     }
 }
