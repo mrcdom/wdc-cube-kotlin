@@ -176,7 +176,14 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewA
 
         return AndroidDom.build(ctx) {
             val card = parent()
-            ShoppingStyles.applyCardStyle(card, 8f)
+            val cornerPx = 8f * density
+            val normalBg = ShoppingStyles.roundedBackground(ShoppingColors.Surface, cornerPx)
+            val pressedBg = ShoppingStyles.roundedBackground(ShoppingColors.SurfaceVariant, cornerPx)
+            val statesBg = android.graphics.drawable.StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_pressed), pressedBg)
+                addState(intArrayOf(), normalBg)
+            }
+            card.background = statesBg
             card.isClickable = true
             card.isFocusable = true
             card.setOnClickListener {

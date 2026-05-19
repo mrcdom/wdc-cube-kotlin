@@ -84,6 +84,24 @@ class UIKitDom private constructor(private val parent: UIView) {
         return sv
     }
 
+    fun flowLayout(
+        minChildWidth: Double = 160.0,
+        horizontalSpacing: Double = 12.0,
+        verticalSpacing: Double = 12.0,
+        configure: (FlowLayoutView.() -> Unit)? = null,
+        builder: UIKitDom.() -> Unit
+    ): FlowLayoutView {
+        val fl = FlowLayoutView().apply {
+            this.minChildWidth = minChildWidth
+            this.horizontalSpacing = horizontalSpacing
+            this.verticalSpacing = verticalSpacing
+        }
+        addToParent(fl)
+        configure?.invoke(fl)
+        UIKitDom(fl).builder()
+        return fl
+    }
+
     // MARK: - Leaf Components
 
     fun label(configure: UILabel.() -> Unit): UILabel {

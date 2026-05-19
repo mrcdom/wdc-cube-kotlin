@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.nativeui.ios.views
 
 import br.com.wdc.shopping.nativeui.ios.toolkit.AbstractViewIos
+import br.com.wdc.shopping.nativeui.ios.toolkit.FlowLayoutView
 import br.com.wdc.shopping.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
@@ -23,7 +24,7 @@ import platform.darwin.NSObject
 class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<ProductsPanelPresenter>("products-panel-view", presenter) {
 
     private lateinit var scrollView: UIScrollView
-    private lateinit var stackView: UIStackView
+    private lateinit var stackView: FlowLayoutView
     private lateinit var emptyLabel: UILabel
     private lateinit var headerTitle: UILabel
     private lateinit var headerBadge: UILabel
@@ -54,19 +55,27 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
                     centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                 ))
             }
-            headerBadge = label {
-                font = UIFont.systemFontOfSize(12.0, UIFontWeightMedium)
-                textColor = ShoppingColors.OnPrimaryContainer
-                backgroundColor = ShoppingColors.PrimaryContainer
-                textAlignment = UIK.TextAlignCenter
-                layer.cornerRadius = 10.0
+            // Chip background
+            view(configure = {
+                backgroundColor = ShoppingColors.SecondaryContainer
+                layer.cornerRadius = 8.0
                 clipsToBounds = true
                 NSLayoutConstraint.activateConstraints(listOf(
                     trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
                     centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
-                    heightAnchor.constraintEqualToConstant(20.0),
-                    widthAnchor.constraintGreaterThanOrEqualToConstant(50.0)
+                    heightAnchor.constraintEqualToConstant(28.0)
                 ))
+            }) {
+                headerBadge = label {
+                    font = UIFont.systemFontOfSize(12.0)
+                    textColor = ShoppingColors.OnPrimaryContainer
+                    textAlignment = UIK.TextAlignCenter
+                    NSLayoutConstraint.activateConstraints(listOf(
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
+                        centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
+                    ))
+                }
             }
         }
 
@@ -90,7 +99,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
                 bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
             ))
         }) {
-            stackView = vStack(spacing = 12.0) {}
+            stackView = flowLayout(minChildWidth = 160.0, horizontalSpacing = 12.0, verticalSpacing = 12.0) {}
             NSLayoutConstraint.activateConstraints(listOf(
                 stackView.topAnchor.constraintEqualToAnchor(parent().topAnchor, 8.0),
                 stackView.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 12.0),
@@ -127,7 +136,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
             productsSlot.sync(emptyList())
             if (lastCount != 0) {
                 lastCount = 0
-                headerBadge.text = "  0 itens  "
+                headerBadge.text = "0 itens"
             }
         } else {
             emptyLabel.hidden = true
@@ -136,7 +145,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
             val count = products.size
             if (count != lastCount) {
                 lastCount = count
-                headerBadge.text = "  $count itens  "
+                headerBadge.text = "$count itens"
             }
         }
     }
@@ -176,7 +185,7 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewI
         vStack(spacing = 0.0, configure = { alignment = UIK.StackAlignFill }) {
             // Product image — full width, fixed height
             imageView = imageView {
-                contentMode = UIK.ContentModeScaleAspectFill
+                contentMode = UIK.ContentModeScaleAspectFit
                 backgroundColor = ShoppingColors.SurfaceVariant
                 clipsToBounds = true
                 heightAnchor.constraintEqualToConstant(140.0).active = true
@@ -213,8 +222,8 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewI
             }
         }.also { pin(it) }
 
-        // Tap gesture
-        tapAction = ProductCardTapAction(this@ProductCardView).also { retainForGC(it) }
+        // Tap gesture with visual feedback
+        tapAction = ProductCardTapAction(this@ProductCardView, card).also { retainForGC(it) }
         card.addGestureRecognizer(tapAction.gesture)
     }
 
@@ -242,12 +251,31 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewI
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private class ProductCardTapAction(private val cardView: ProductCardView) : NSObject() {
+private class ProductCardTapAction(private val cardView: ProductCardView, private val card: UIView) : NSObject() {
 
-    val gesture: UITapGestureRecognizer = UITapGestureRecognizer(target = this, action = sel_registerName("onTap"))
+    val gesture: UILongPressGestureRecognizer = UILongPressGestureRecognizer(target = this, action = sel_registerName("onGesture")).apply {
+        minimumPressDuration = 0.0
+    }
 
     @ObjCAction
-    fun onTap() {
-        cardView.onTap()
+    fun onGesture() {
+        when (gesture.state) {
+            UIGestureRecognizerStateBegan -> {
+                card.backgroundColor = ShoppingColors.SurfaceVariant
+            }
+            UIGestureRecognizerStateEnded -> {
+                UIView.animateWithDuration(0.2) {
+                    card.backgroundColor = UIColor.whiteColor
+                }
+                cardView.onTap()
+            }
+            UIGestureRecognizerStateCancelled,
+            UIGestureRecognizerStateFailed -> {
+                UIView.animateWithDuration(0.2) {
+                    card.backgroundColor = UIColor.whiteColor
+                }
+            }
+            else -> {}
+        }
     }
 }

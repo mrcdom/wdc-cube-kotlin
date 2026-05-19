@@ -29,6 +29,7 @@ object ShoppingColors {
     val SurfaceVariant50 = UIColor(red = 0.906, green = 0.922, blue = 0.941, alpha = 0.5)
     val PriceBackground = UIColor(red = 0.180, green = 0.490, blue = 0.196, alpha = 0.1)   // #2E7D321A
 
+    val WhiteOverlay10 = UIColor(red = 1.0, green = 1.0, blue = 1.0, alpha = 0.10)
     val WhiteOverlay15 = UIColor(red = 1.0, green = 1.0, blue = 1.0, alpha = 0.15)
     val WhiteOverlay20 = UIColor(red = 1.0, green = 1.0, blue = 1.0, alpha = 0.20)
     val WhiteOverlay50 = UIColor(red = 1.0, green = 1.0, blue = 1.0, alpha = 0.50)

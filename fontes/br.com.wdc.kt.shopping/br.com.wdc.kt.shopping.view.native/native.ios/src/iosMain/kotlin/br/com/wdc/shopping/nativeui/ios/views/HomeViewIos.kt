@@ -22,6 +22,8 @@ import platform.UIKit.UIDeviceOrientationDidChangeNotification
 import platform.UIKit.UIDevice
 
 private const val WIDE_BREAKPOINT = 700.0
+private const val MAX_CONTENT_WIDTH = 1200.0
+private const val MAX_DETAIL_WIDTH = 560.0
 
 /**
  * Home view — responsive layout:
@@ -119,7 +121,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                         center(logoIv)
                         size(logoIv, width = 20.0, height = 20.0)
                     }
-                    label {
+                    val compactBrandLabel = label {
                         text = "Shopping"
                         font = UIFont.boldSystemFontOfSize(20.0)
                         textColor = UIColor.whiteColor
@@ -128,18 +130,18 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                             centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                         ))
                     }
-                    exitButton = button("Sair") {
-                        setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
-                        titleLabel?.font = UIFont.systemFontOfSize(13.0)
-                        layer.borderWidth = 1.0
-                        layer.borderColor = ShoppingColors.WhiteOverlay50.CGColor
-                        layer.cornerRadius = 10.0
-                        contentEdgeInsets = UIEdgeInsetsMake(4.0, 12.0, 4.0, 12.0)
+                    // Logout icon (subtle, near brand)
+                    exitButton = button("") {
+                        backgroundColor = ShoppingColors.WhiteOverlay10
+                        layer.cornerRadius = 14.0
+                        setImage(ShoppingIcons.logout(16.0, UIColor.whiteColor), forState = UIControlStateNormal)
+                        alpha = 0.7
                         addTarget(actions, action = sel_registerName("onExitTapped"), forControlEvents = UIControlEventTouchUpInside)
                         NSLayoutConstraint.activateConstraints(listOf(
-                            trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
+                            leadingAnchor.constraintEqualToAnchor(compactBrandLabel.trailingAnchor, 16.0),
                             centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
-                            heightAnchor.constraintEqualToConstant(30.0)
+                            widthAnchor.constraintEqualToConstant(28.0),
+                            heightAnchor.constraintEqualToConstant(28.0)
                         ))
                     }
                 }
@@ -220,7 +222,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                     center(logoIv)
                     size(logoIv, width = 22.0, height = 22.0)
                 }
-                label {
+                val wideBrandLabel = label {
                     text = "Shopping"
                     font = UIFont.boldSystemFontOfSize(18.0)
                     textColor = UIColor.whiteColor
@@ -230,17 +232,18 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                     ))
                 }
 
-                wideExitButton = button("Sair") {
-                    setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
-                    titleLabel?.font = UIFont.systemFontOfSize(14.0)
-                    layer.borderWidth = 1.0
-                    layer.borderColor = ShoppingColors.WhiteOverlay50.CGColor
-                    layer.cornerRadius = 12.0
-                    contentEdgeInsets = UIEdgeInsetsMake(6.0, 16.0, 6.0, 16.0)
+                // Logout icon (subtle, after brand)
+                wideExitButton = button("") {
+                    backgroundColor = ShoppingColors.WhiteOverlay10
+                    layer.cornerRadius = 16.0
+                    setImage(ShoppingIcons.logout(18.0, UIColor.whiteColor), forState = UIControlStateNormal)
+                    alpha = 0.7
                     addTarget(actions, action = sel_registerName("onExitTapped"), forControlEvents = UIControlEventTouchUpInside)
                     NSLayoutConstraint.activateConstraints(listOf(
-                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -24.0),
-                        centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
+                        leadingAnchor.constraintEqualToAnchor(wideBrandLabel.trailingAnchor, 16.0),
+                        centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                        widthAnchor.constraintEqualToConstant(32.0),
+                        heightAnchor.constraintEqualToConstant(32.0)
                     ))
                 }
 
@@ -254,7 +257,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                     imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
                     addTarget(actions, action = sel_registerName("onCartTapped"), forControlEvents = UIControlEventTouchUpInside)
                     NSLayoutConstraint.activateConstraints(listOf(
-                        trailingAnchor.constraintEqualToAnchor(wideExitButton.leadingAnchor, -8.0),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -24.0),
                         centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                     ))
                 }
@@ -356,10 +359,16 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
             hidden = true
             NSLayoutConstraint.activateConstraints(listOf(
                 topAnchor.constraintEqualToAnchor(headerBar.bottomAnchor, 16.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
-                bottomAnchor.constraintEqualToAnchor(root.bottomAnchor, -16.0)
+                centerXAnchor.constraintEqualToAnchor(root.centerXAnchor),
+                bottomAnchor.constraintEqualToAnchor(root.bottomAnchor, -16.0),
+                widthAnchor.constraintLessThanOrEqualToConstant(MAX_CONTENT_WIDTH),
+                leadingAnchor.constraintGreaterThanOrEqualToAnchor(root.leadingAnchor, 16.0),
+                trailingAnchor.constraintLessThanOrEqualToAnchor(root.trailingAnchor, -16.0)
             ))
+            // Prefer stretching to fill available width (lower priority than max)
+            val fillWidth = widthAnchor.constraintEqualToAnchor(root.widthAnchor, constant = -32.0)
+            fillWidth.priority = 750.0f
+            fillWidth.active = true
         }) {
             wideProductsPanel = view(configure = {
                 backgroundColor = UIColor.whiteColor
@@ -391,10 +400,16 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
             hidden = true
             NSLayoutConstraint.activateConstraints(listOf(
                 topAnchor.constraintEqualToAnchor(headerBar.bottomAnchor),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
-                bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
+                centerXAnchor.constraintEqualToAnchor(root.centerXAnchor),
+                bottomAnchor.constraintEqualToAnchor(root.bottomAnchor),
+                widthAnchor.constraintLessThanOrEqualToConstant(MAX_DETAIL_WIDTH),
+                leadingAnchor.constraintGreaterThanOrEqualToAnchor(root.leadingAnchor),
+                trailingAnchor.constraintLessThanOrEqualToAnchor(root.trailingAnchor)
             ))
+            // Prefer stretching to fill available width (lower priority than max)
+            val fillWidth = widthAnchor.constraintEqualToAnchor(root.widthAnchor)
+            fillWidth.priority = 750.0f
+            fillWidth.active = true
         })
 
         // Error label
@@ -456,23 +471,26 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
             isWide = shouldBeWide
             applyLayout()
         }
+        // After any orientation/size change, let panels relayout
+        rootView.setNeedsLayout()
     }
 
     private fun applyLayout() {
+        val hasDetail = !detailContainer.hidden
         if (isWide) {
             headerHeightConstraint.constant = 56.0
             compactHeaderContent.hidden = true
             wideHeaderContent.hidden = false
             tabsContainer.hidden = true
             compactPanelsContainer.hidden = true
-            widePanelsContainer.hidden = false
+            widePanelsContainer.hidden = hasDetail
             remountPanelsForWide()
         } else {
             headerHeightConstraint.constant = 88.0
             compactHeaderContent.hidden = false
             wideHeaderContent.hidden = true
-            tabsContainer.hidden = false
-            compactPanelsContainer.hidden = false
+            tabsContainer.hidden = hasDetail
+            compactPanelsContainer.hidden = hasDetail
             widePanelsContainer.hidden = true
             remountPanelsForCompact()
         }
@@ -603,7 +621,26 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         // Detail overlay
         val newContentView = state.contentView
         detailSlot.sync(newContentView)
-        detailContainer.hidden = (newContentView == null)
+        val hasDetail = (newContentView != null)
+        detailContainer.hidden = !hasDetail
+
+        // When detail is showing, hide the panels underneath
+        if (hasDetail) {
+            widePanelsContainer.hidden = true
+            compactPanelsContainer.hidden = true
+            tabsContainer.hidden = true
+        } else {
+            // Restore panels visibility based on current layout
+            if (isWide) {
+                widePanelsContainer.hidden = false
+                compactPanelsContainer.hidden = true
+                tabsContainer.hidden = true
+            } else {
+                widePanelsContainer.hidden = true
+                compactPanelsContainer.hidden = false
+                tabsContainer.hidden = false
+            }
+        }
 
         // Error
         val errorMessage = state.errorMessage

@@ -65,15 +65,14 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                 if (products != null) {
                     Box {
                         sx {
-                            backgroundColor = ShoppingColors.PrimaryContainer.unsafeCast<BackgroundColor>()
-                            borderRadius = 12.px
-                            padding = Padding(4.px, 12.px)
+                            backgroundColor = ShoppingColors.SecondaryContainer.unsafeCast<BackgroundColor>()
+                            borderRadius = 8.px
+                            padding = Padding(6.px, 16.px)
                         }
                         Typography {
                             variant = TypographyVariant.caption
                             sx {
                                 color = ShoppingColors.OnPrimaryContainer.unsafeCast<Color>()
-                                fontWeight = integer(500)
                             }
                             +"${products.size} itens"
                         }
@@ -138,7 +137,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                                 img {
                                     src = productImageUrl(product.id)
                                     alt = product.name ?: ""
-                                    style = js("({width: '100%', height: '140px', objectFit: 'cover', backgroundColor: '${ShoppingColors.SurfaceVariant}'})").unsafeCast<react.CSSProperties>()
+                                    style = js("({width: '100%', height: '140px', objectFit: 'contain', backgroundColor: '${ShoppingColors.SurfaceVariant}'})").unsafeCast<react.CSSProperties>()
                                 }
 
                                 CardContent {
