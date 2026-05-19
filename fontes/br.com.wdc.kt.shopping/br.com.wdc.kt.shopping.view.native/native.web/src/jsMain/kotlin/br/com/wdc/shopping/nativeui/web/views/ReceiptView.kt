@@ -1,16 +1,15 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.bridge.WorkerProxy
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
 import br.com.wdc.shopping.nativeui.web.util.formatDate
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
 import mui.icons.material.ArrowBack
 import mui.icons.material.CheckCircle
 import mui.icons.material.Receipt
-import mui.material.Alert
-import mui.material.AlertColor
 import mui.material.Box
 import mui.material.Button
 import mui.material.ButtonVariant
@@ -30,7 +29,73 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("receipt-view", presenter.app) {
+private class ReceiptItemData(
+    val id: Long,
+    val description: String?,
+    val value: Double,
+    val quantity: Int
+)
+
+private class ReceiptData(
+    val date: Long?,
+    val total: Double?,
+    val items: List<ReceiptItemData>
+)
+
+class ReceiptView(viewId: String, proxy: WorkerProxy) : ReactCubeView(viewId, proxy) {
+
+    // Local state
+    private var notifySuccess: Boolean = false
+    private var receipt: ReceiptData? = null
+
+    override fun readState(json: String) {
+        val inp = JsonInputFactory.createStringInput(json).input
+        inp.beginObject()
+        while (inp.hasNext()) {
+            when (inp.nextName()) {
+                "id" -> inp.skipValue()
+                "notifySuccess" -> notifySuccess = inp.nextBoolean()
+                "receipt" -> {
+                    var date: Long? = null
+                    var total: Double? = null
+                    val items = mutableListOf<ReceiptItemData>()
+                    inp.beginObject()
+                    while (inp.hasNext()) {
+                        when (inp.nextName()) {
+                            "date" -> date = inp.nextLong()
+                            "total" -> total = inp.nextDouble()
+                            "items" -> {
+                                inp.beginArray()
+                                while (inp.hasNext()) {
+                                    var id = 0L
+                                    var description: String? = null
+                                    var value = 0.0
+                                    var quantity = 0
+                                    inp.beginObject()
+                                    while (inp.hasNext()) {
+                                        when (inp.nextName()) {
+                                            "description" -> description = inp.nextString()
+                                            "value" -> value = inp.nextDouble()
+                                            "quantity" -> quantity = inp.nextInt()
+                                            else -> inp.skipValue()
+                                        }
+                                    }
+                                    inp.endObject()
+                                    items.add(ReceiptItemData(id++, description, value, quantity))
+                                }
+                                inp.endArray()
+                            }
+                            else -> inp.skipValue()
+                        }
+                    }
+                    inp.endObject()
+                    receipt = ReceiptData(date, total, items)
+                }
+                else -> inp.skipValue()
+            }
+        }
+        inp.endObject()
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -41,8 +106,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
-        val receipt = state.receipt
+        val rcpt = receipt
 
         Box {
             sx {
@@ -59,7 +123,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                     spacing = responsive(2)
 
                     // Success banner
-                    if (state.notifySuccess) {
+                    if (notifySuccess) {
                         Paper {
                             sx {
                                 padding = 20.px
@@ -86,7 +150,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                         }
                     }
 
-                    if (receipt != null) {
+                    if (rcpt != null) {
                         // Receipt header
                         Stack {
                             direction = responsive(StackDirection.row)
@@ -105,7 +169,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                                 }
                             }
 
-                            receipt.date?.let { date ->
+                            rcpt.date?.let { date ->
                                 Chip {
                                     label = ReactNode(formatDate(date))
                                     sx {
@@ -149,7 +213,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                             direction = responsive(StackDirection.column)
                             spacing = responsive(1)
 
-                            for (item in receipt.items) {
+                            for (item in rcpt.items) {
                                 Paper {
                                     key = "${item.id}"
                                     sx {
@@ -202,7 +266,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                                 +"Total: "
                             }
 
-                            receipt.total?.let { total ->
+                            rcpt.total?.let { total ->
                                 Box {
                                     sx {
                                         backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
@@ -230,7 +294,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
 
                         Button {
                             variant = ButtonVariant.contained
-                            onClick = { safeCall { presenter.onOpenProducts() } }
+                            onClick = { action("onOpenProducts") }
                             asDynamic().style = ShoppingStyles.fontMedium
                             sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                             ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }

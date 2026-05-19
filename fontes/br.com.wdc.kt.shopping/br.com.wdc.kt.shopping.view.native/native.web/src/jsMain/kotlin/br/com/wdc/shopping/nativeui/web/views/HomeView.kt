@@ -1,9 +1,10 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.shopping.nativeui.web.bridge.RenderSlot
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.bridge.WorkerProxy
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
 import mui.icons.material.Inventory2
 import mui.icons.material.LocalMall
 import mui.icons.material.Logout
@@ -36,7 +37,37 @@ import web.cssom.*
 
 private const val COMPACT_BREAKPOINT = 480
 
-class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view", presenter.app) {
+class HomeView(viewId: String, proxy: WorkerProxy) : ReactCubeView(viewId, proxy) {
+
+    // Local state
+    private var nickName: String? = null
+    private var cartItemCount: Int = 0
+    private var contentViewId: String? = null
+    private var productsPanelViewId: String? = null
+    private var purchasesPanelViewId: String? = null
+    private var errorMessage: String? = null
+
+    override fun readState(json: String) {
+        // Reset nullable fields before parsing — fields absent from JSON mean null
+        contentViewId = null
+        errorMessage = null
+
+        val inp = JsonInputFactory.createStringInput(json).input
+        inp.beginObject()
+        while (inp.hasNext()) {
+            when (inp.nextName()) {
+                "id" -> inp.skipValue()
+                "nickName" -> nickName = inp.nextString()
+                "cartItemCount" -> cartItemCount = inp.nextInt()
+                "contentViewId" -> contentViewId = inp.nextString()
+                "productsPanelViewId" -> productsPanelViewId = inp.nextString()
+                "purchasesPanelViewId" -> purchasesPanelViewId = inp.nextString()
+                "errorMessage" -> errorMessage = inp.nextString()
+                else -> inp.skipValue()
+            }
+        }
+        inp.endObject()
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -47,7 +78,6 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
         var selectedTab by useState(0)
         var isCompact by useState(kotlinx.browser.window.innerWidth < COMPACT_BREAKPOINT)
 
@@ -104,7 +134,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                             // Logout icon (subtle, near brand)
                             IconButton {
-                                onClick = { safeCall { presenter.onExit() } }
+                                onClick = { action("onExit") }
                                 sx {
                                     width = 28.px
                                     height = 28.px
@@ -130,17 +160,17 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                             Typography {
                                 variant = TypographyVariant.body2
                                 sx { color = ShoppingColors.WhiteOverlay85.unsafeCast<Color>() }
-                                +"Olá, ${state.nickName ?: ""}"
+                                +"Olá, ${nickName ?: ""}"
                             }
 
                             Badge {
-                                badgeContent = ReactNode("${state.cartItemCount}")
+                                badgeContent = ReactNode("$cartItemCount")
                                 color = BadgeColor.error
-                                invisible = state.cartItemCount <= 0
+                                invisible = cartItemCount <= 0
 
                                 Button {
                                     variant = ButtonVariant.contained
-                                    onClick = { safeCall { presenter.onOpenCart() } }
+                                    onClick = { action("onOpenCart") }
                                     sx {
                                         backgroundColor = ShoppingColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
                                         borderRadius = 10.px
@@ -182,7 +212,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                         // Logout icon (subtle, near brand)
                         IconButton {
-                            onClick = { safeCall { presenter.onExit() } }
+                            onClick = { action("onExit") }
                             sx {
                                 width = 32.px
                                 height = 32.px
@@ -206,20 +236,20 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                             Typography {
                                 variant = TypographyVariant.body2
                                 sx { color = NamedColor.white.unsafeCast<Color>() }
-                                +"Olá, ${state.nickName ?: ""}"
+                                +"Olá, ${nickName ?: ""}"
                             }
                         }
 
                         // Cart button
                         Badge {
-                            badgeContent = ReactNode("${state.cartItemCount}")
+                            badgeContent = ReactNode("$cartItemCount")
                             color = BadgeColor.error
-                            invisible = state.cartItemCount <= 0
+                            invisible = cartItemCount <= 0
 
                             Button {
                                 variant = ButtonVariant.contained
                                 asDynamic().disableElevation = true
-                                onClick = { safeCall { presenter.onOpenCart() } }
+                                onClick = { action("onOpenCart") }
                                 sx {
                                     backgroundColor = ShoppingColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
                                     borderRadius = 12.px
@@ -234,17 +264,17 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
             }
 
             // Error message
-            val errorMessage = state.errorMessage
-            if (!errorMessage.isNullOrBlank()) {
+            val err = errorMessage
+            if (!err.isNullOrBlank()) {
                 Alert {
                     severity = "error"
                     sx { margin = Margin(8.px, 16.px) }
-                    +errorMessage
+                    +err
                 }
             }
 
             // Content area
-            val contentView = state.contentView
+            val contentView = contentViewId?.let { proxy.getView(it) }
             if (contentView != null) {
                 Box {
                     sx {
@@ -321,13 +351,13 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                         when (selectedTab) {
                             0 -> {
-                                val productsView = state.productsPanelView
+                                val productsView = productsPanelViewId?.let { proxy.getView(it) }
                                 if (productsView != null) {
                                     RenderSlot { view = productsView }
                                 }
                             }
                             1 -> {
-                                val purchasesView = state.purchasesPanelView
+                                val purchasesView = purchasesPanelViewId?.let { proxy.getView(it) }
                                 if (purchasesView != null) {
                                     RenderSlot { view = purchasesView }
                                 }
@@ -361,7 +391,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                         }
                         elevation = 0
 
-                        val productsView = state.productsPanelView
+                        val productsView = productsPanelViewId?.let { proxy.getView(it) }
                         if (productsView != null) {
                             RenderSlot { view = productsView }
                         }
@@ -376,7 +406,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                         }
                         elevation = 0
 
-                        val purchasesView = state.purchasesPanelView
+                        val purchasesView = purchasesPanelViewId?.let { proxy.getView(it) }
                         if (purchasesView != null) {
                             RenderSlot { view = purchasesView }
                         }

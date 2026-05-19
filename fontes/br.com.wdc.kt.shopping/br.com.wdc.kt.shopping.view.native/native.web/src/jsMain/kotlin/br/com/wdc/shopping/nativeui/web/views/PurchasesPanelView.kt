@@ -1,11 +1,12 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.bridge.WorkerProxy
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
 import br.com.wdc.shopping.nativeui.web.util.formatDate
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
 import mui.icons.material.ChevronLeft
 import mui.icons.material.ChevronRight
 import mui.icons.material.Inventory2
@@ -14,7 +15,6 @@ import mui.material.Card
 import mui.material.CardActionArea
 import mui.material.CardContent
 import mui.material.Chip
-import mui.material.ChipColor
 import mui.material.Divider
 import mui.material.IconButton
 import mui.material.Stack
@@ -35,7 +35,65 @@ import web.html.HTMLDivElement
 
 private const val ITEM_HEIGHT_PX = 76
 
-class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ReactCubeView("purchases-panel-view", presenter.app) {
+private class PurchaseItem(
+    val id: Long,
+    val date: Long,
+    val total: Double,
+    val items: List<String>
+)
+
+class PurchasesPanelView(viewId: String, proxy: WorkerProxy) : ReactCubeView(viewId, proxy) {
+
+    // Local state
+    private var purchases: List<PurchaseItem> = emptyList()
+    private var page: Int = 0
+    private var pageSize: Int = -1
+    private var totalCount: Int = 0
+
+    override fun readState(json: String) {
+        val inp = JsonInputFactory.createStringInput(json).input
+        inp.beginObject()
+        while (inp.hasNext()) {
+            when (inp.nextName()) {
+                "id" -> inp.skipValue()
+                "page" -> page = inp.nextInt()
+                "pageSize" -> pageSize = inp.nextInt()
+                "totalCount" -> totalCount = inp.nextInt()
+                "purchases" -> {
+                    val list = mutableListOf<PurchaseItem>()
+                    inp.beginArray()
+                    while (inp.hasNext()) {
+                        var id = 0L
+                        var date = 0L
+                        var total = 0.0
+                        val items = mutableListOf<String>()
+                        inp.beginObject()
+                        while (inp.hasNext()) {
+                            when (inp.nextName()) {
+                                "id" -> id = inp.nextLong()
+                                "date" -> date = inp.nextLong()
+                                "total" -> total = inp.nextDouble()
+                                "items" -> {
+                                    inp.beginArray()
+                                    while (inp.hasNext()) {
+                                        items.add(inp.nextString())
+                                    }
+                                    inp.endArray()
+                                }
+                                else -> inp.skipValue()
+                            }
+                        }
+                        inp.endObject()
+                        list.add(PurchaseItem(id, date, total, items))
+                    }
+                    inp.endArray()
+                    purchases = list
+                }
+                else -> inp.skipValue()
+            }
+        }
+        inp.endObject()
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -46,7 +104,6 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
         val containerRef = useRef<HTMLDivElement>()
         val lastCapacityRef = useRef(-1)
 
@@ -59,7 +116,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                 val capacity = (h / ITEM_HEIGHT_PX).coerceAtLeast(1)
                 if (capacity != (lastCapacityRef.current ?: -1)) {
                     lastCapacityRef.current = capacity
-                    safeCall { presenter.onItemSizeCapacityChanged(capacity) }
+                    action("onItemSizeCapacityChanged", capacity)
                 }
             }
 
@@ -89,7 +146,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                     +"Compras"
                 }
 
-                if (state.totalCount > 0) {
+                if (totalCount > 0) {
                     Box {
                         sx {
                             backgroundColor = ShoppingColors.SecondaryContainer.unsafeCast<BackgroundColor>()
@@ -102,7 +159,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                                 color = ShoppingColors.OnPrimaryContainer.unsafeCast<Color>()
                                 fontWeight = integer(500)
                             }
-                            +"${state.totalCount} itens"
+                            +"$totalCount itens"
                         }
                     }
                 }
@@ -115,9 +172,8 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                 ref = containerRef
                 style = js("({flex: '1 1 auto', overflow: 'hidden'})").unsafeCast<react.CSSProperties>()
 
-                val purchases = state.purchases
                 if (purchases.isEmpty()) {
-                    if ((lastCapacityRef.current ?: -1) >= 1 && state.totalCount == 0) {
+                    if ((lastCapacityRef.current ?: -1) >= 1 && totalCount == 0) {
                         Box {
                             sx {
                                 display = Display.flex
@@ -149,7 +205,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                                 }
 
                                 CardActionArea {
-                                    onClick = { safeCall { presenter.onOpenReceipt(purchase.id) } }
+                                    onClick = { action("onOpenReceipt", purchase.id) }
 
                                     CardContent {
                                         sx { padding = 14.px }
@@ -201,8 +257,8 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
             }
 
             // Pagination
-            if (state.totalCount > state.pageSize && state.pageSize > 0) {
-                val totalPages = (state.totalCount + state.pageSize - 1) / state.pageSize
+            if (totalCount > pageSize && pageSize > 0) {
+                val totalPages = (totalCount + pageSize - 1) / pageSize
 
                 Stack {
                     direction = responsive(StackDirection.row)
@@ -214,20 +270,20 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                     spacing = responsive(2)
 
                     IconButton {
-                        disabled = state.page <= 0
-                        onClick = { safeCall { presenter.onPageChange(state.page - 1) } }
+                        disabled = page <= 0
+                        onClick = { action("onPageChange", page - 1) }
                         ChevronLeft {}
                     }
 
                     Typography {
                         variant = TypographyVariant.body2
                         sx { fontWeight = FontWeight.bold }
-                        +"${state.page + 1} / $totalPages"
+                        +"${page + 1} / $totalPages"
                     }
 
                     IconButton {
-                        disabled = state.page >= totalPages - 1
-                        onClick = { safeCall { presenter.onPageChange(state.page + 1) } }
+                        disabled = page >= totalPages - 1
+                        onClick = { action("onPageChange", page + 1) }
                         ChevronRight {}
                     }
                 }

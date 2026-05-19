@@ -1,28 +1,23 @@
 package br.com.wdc.shopping.nativeui.web.bridge
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.ShoppingApplication
 import kotlinx.browser.window
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import react.FC
 import react.Props
 
 /**
- * Base class for React-backed CubeView implementations.
+ * Base class for React-backed views on the main thread.
  *
- * Each view keeps a revision counter. When a presenter calls [update],
- * the counter increments and the React root is re-rendered, picking up
- * the new presenter state.
+ * Each view keeps a revision counter. When the Worker sends a state update,
+ * [readState] is called with the JSON, then [update] increments the revision
+ * and triggers a React re-render.
  */
 abstract class ReactCubeView(
-    private val id: String,
-    val app: ShoppingApplication
-) : CubeView {
+    val instanceId: String,
+    val proxy: WorkerProxy
+) {
 
-    /** Revision counter — incremented by presenters to signal state changes. */
+    /** Revision counter — incremented to signal React re-render. */
     var revision: Int = 0
         private set
 
@@ -32,9 +27,7 @@ abstract class ReactCubeView(
     /** Whether a requestAnimationFrame is already scheduled. */
     private var frameScheduled: Boolean = false
 
-    override fun instanceId(): String = id
-
-    override fun update() {
+    fun update() {
         revision++
         if (onUpdate != null && !frameScheduled) {
             frameScheduled = true
@@ -45,37 +38,27 @@ abstract class ReactCubeView(
         }
     }
 
+    /**
+     * Deserialize state from JSON string received from the Worker.
+     * Each view subclass implements this to populate its local typed state.
+     */
+    abstract fun readState(json: String)
+
     /** The React functional component that renders this view. */
     abstract val component: FC<Props>
 
-    override fun release() {
+    fun release() {
         onUpdate = null
     }
 
     /**
-     * Wraps a presenter call with error protection and dispatches it
-     * on a single-threaded scope to ensure serial execution of presenter actions.
+     * Send an action to this view's presenter in the Worker.
      */
-    fun safeCall(action: () -> Unit) {
-        presenterScope.launch {
-            try {
-                action()
-            } catch (e: Exception) {
-                app.alertUnexpectedError(LOG, "Erro inesperado em $id", e)
-            }
-        }
+    fun action(method: String, vararg args: Any?) {
+        proxy.action(instanceId, method, *args)
     }
 
     companion object {
         internal val LOG = Log.getLogger("ReactCubeView")
-
-        /**
-         * Single-threaded coroutine scope for presenter actions.
-         * limitedParallelism(1) guarantees serial execution, avoiding
-         * concurrency issues in presenter state.
-         */
-        private val presenterScope = CoroutineScope(
-            Dispatchers.Default.limitedParallelism(1)
-        )
     }
 }

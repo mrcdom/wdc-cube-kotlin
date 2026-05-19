@@ -30,8 +30,7 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
-                implementation(project(":shopping-presentation"))
-                implementation(project(":shopping-persistence-client"))
+                implementation(project(":framework-commons"))
 
                 implementation(kotlinWrappers.react)
                 implementation(kotlinWrappers.reactDom)

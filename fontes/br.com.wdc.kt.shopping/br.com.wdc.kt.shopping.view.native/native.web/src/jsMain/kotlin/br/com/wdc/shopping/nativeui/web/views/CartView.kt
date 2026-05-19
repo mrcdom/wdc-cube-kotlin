@@ -1,16 +1,16 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.bridge.WorkerProxy
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import mui.icons.material.Add
 import mui.icons.material.ArrowBack
 import mui.icons.material.Remove
 import mui.icons.material.ShoppingCart
 import mui.material.Alert
-import mui.material.AlertColor
 import mui.material.Box
 import mui.material.Button
 import mui.material.ButtonColor
@@ -34,7 +34,55 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view", presenter.app) {
+private class CartItemData(
+    val id: Long,
+    val name: String?,
+    val price: Double,
+    val quantity: Int
+)
+
+class CartView(viewId: String, proxy: WorkerProxy) : ReactCubeView(viewId, proxy) {
+
+    // Local state
+    private var items: List<CartItemData> = emptyList()
+    private var errorMessage: String? = null
+
+    override fun readState(json: String) {
+        val inp = JsonInputFactory.createStringInput(json).input
+        inp.beginObject()
+        while (inp.hasNext()) {
+            when (inp.nextName()) {
+                "id" -> inp.skipValue()
+                "items" -> {
+                    val list = mutableListOf<CartItemData>()
+                    inp.beginArray()
+                    while (inp.hasNext()) {
+                        var id = 0L
+                        var name: String? = null
+                        var price = 0.0
+                        var quantity = 0
+                        inp.beginObject()
+                        while (inp.hasNext()) {
+                            when (inp.nextName()) {
+                                "id" -> id = inp.nextLong()
+                                "name" -> name = inp.nextString()
+                                "price" -> price = inp.nextDouble()
+                                "quantity" -> quantity = inp.nextInt()
+                                else -> inp.skipValue()
+                            }
+                        }
+                        inp.endObject()
+                        list.add(CartItemData(id, name, price, quantity))
+                    }
+                    inp.endArray()
+                    items = list
+                }
+                "errorMessage" -> errorMessage = inp.nextString()
+                else -> inp.skipValue()
+            }
+        }
+        inp.endObject()
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -44,8 +92,6 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
 
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
-
-        val state = presenter.state
 
         Box {
             sx {
@@ -79,16 +125,16 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                 Divider {}
 
                 // Error message
-                val errorMessage = state.errorMessage
-                if (!errorMessage.isNullOrBlank()) {
+                val err = errorMessage
+                if (!err.isNullOrBlank()) {
                     Alert {
                         severity = "error"
                         sx { marginTop = 12.px; borderRadius = 8.px }
-                        +errorMessage
+                        +err
                     }
                 }
 
-                if (state.items.isEmpty()) {
+                if (items.isEmpty()) {
                     // Empty state
                     Box {
                         sx {
@@ -123,7 +169,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                             direction = responsive(StackDirection.column)
                             spacing = responsive(1)
 
-                            for (item in state.items) {
+                            for (item in items) {
                                 Card {
                                     key = "${item.id}"
                                     sx {
@@ -178,12 +224,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                                         height = 32.px
                                                     }
                                                     onClick = {
-                                                        safeCall {
-                                                            presenter.onModifyQuantity(
-                                                                item.id,
-                                                                (item.quantity - 1).coerceAtLeast(1)
-                                                            )
-                                                        }
+                                                        action("onModifyQuantity", item.id, (item.quantity - 1).coerceAtLeast(1))
                                                     }
                                                     Remove { sx { fontSize = 16.px } }
                                                 }
@@ -202,7 +243,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                                         height = 32.px
                                                     }
                                                     onClick = {
-                                                        safeCall { presenter.onModifyQuantity(item.id, item.quantity + 1) }
+                                                        action("onModifyQuantity", item.id, item.quantity + 1)
                                                     }
                                                     Add { sx { fontSize = 16.px } }
                                                 }
@@ -212,7 +253,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                             Button {
                                                 variant = ButtonVariant.text
                                                 color = ButtonColor.error
-                                                onClick = { safeCall { presenter.onRemoveProduct(item.id) } }
+                                                onClick = { action("onRemoveProduct", item.id) }
                                                 asDynamic().style = ShoppingStyles.smallAction
                                                 +"Remover"
                                             }
@@ -237,7 +278,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                             +"Total: "
                         }
 
-                        val total = state.items.sumOf { it.price * it.quantity }
+                        val total = items.sumOf { it.price * it.quantity }
                         Box {
                             sx {
                                 backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
@@ -265,16 +306,16 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
 
                     Button {
                         variant = ButtonVariant.outlined
-                        onClick = { safeCall { presenter.onOpenProducts() } }
+                        onClick = { action("onOpenProducts") }
                         sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                         ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
                         +"Continuar Comprando"
                     }
 
-                    if (state.items.isNotEmpty()) {
+                    if (items.isNotEmpty()) {
                         Button {
                             variant = ButtonVariant.contained
-                            onClick = { safeCall { presenter.onBuy() } }
+                            onClick = { action("onBuy") }
                             sx {
                                 borderRadius = 12.px
                                 height = 48.px

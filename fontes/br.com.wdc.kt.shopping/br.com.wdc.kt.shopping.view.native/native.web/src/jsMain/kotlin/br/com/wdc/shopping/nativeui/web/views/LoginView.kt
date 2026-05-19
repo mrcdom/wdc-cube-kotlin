@@ -1,8 +1,9 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.bridge.WorkerProxy
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import mui.icons.material.LocalMall
 import mui.material.Alert
 import mui.material.Avatar
@@ -31,7 +32,26 @@ import react.useState
 import web.cssom.*
 import web.html.HTMLInputElement
 
-class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-view", presenter.app) {
+class LoginView(viewId: String, proxy: WorkerProxy) : ReactCubeView(viewId, proxy) {
+
+    // Local state
+    private var errorMessage: String? = null
+    private var loading: Boolean = false
+
+    override fun readState(json: String) {
+        val inp = JsonInputFactory.createStringInput(json).input
+        inp.beginObject()
+        while (inp.hasNext()) {
+            when (inp.nextName()) {
+                "id" -> inp.skipValue()
+                "userName" -> inp.skipValue() // managed locally by React
+                "errorMessage" -> errorMessage = inp.nextString()
+                "loading" -> loading = inp.nextBoolean()
+                else -> inp.skipValue()
+            }
+        }
+        inp.endObject()
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -42,10 +62,9 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
-        val loading = state.loading
-        var userName by useState(state.userName ?: "")
-        var password by useState(state.password ?: "")
+        val isLoading = loading
+        var userName by useState("")
+        var password by useState("")
 
         // Full-screen gradient background
         Box {
@@ -67,7 +86,6 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                 CardContent {
                     sx { padding = 24.px }
 
-                    // Use a form with autocomplete off to prevent all password managers
                     form {
                         asDynamic().autoComplete = "off"
                         asDynamic().onSubmit = { e: dynamic -> e.preventDefault() }
@@ -105,12 +123,11 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             fullWidth = true
                             label = ReactNode("Usuário")
                             value = userName
-                            disabled = loading
+                            disabled = isLoading
                             asDynamic().autoComplete = "off"
                             onChange = { e ->
                                 val v = (e.target as HTMLInputElement).value
                                 userName = v
-                                state.userName = v
                             }
                         }
 
@@ -126,26 +143,25 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                                     style: { 'WebkitTextSecurity': 'disc', 'textSecurity': 'disc' }
                                 }
                             })""")
-                            disabled = loading
+                            disabled = isLoading
                             onChange = { e ->
                                 val v = (e.target as HTMLInputElement).value
                                 password = v
-                                state.password = v
                             }
                             onKeyDown = { e: KeyboardEvent<*> ->
                                 if (e.key == "Enter") {
-                                    safeCall { presenter.onEnter() }
+                                    action("onEnter", userName, password)
                                 }
                             }
                         }
 
                         // Error message
-                        val errorMessage = state.errorMessage
-                        if (!errorMessage.isNullOrBlank()) {
+                        val err = errorMessage
+                        if (!err.isNullOrBlank()) {
                             Alert {
                                 severity = "error"
                                 sx { width = 100.pct; borderRadius = 8.px }
-                                +errorMessage
+                                +err
                             }
                         }
 
@@ -153,9 +169,9 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                         Button {
                             fullWidth = true
                             variant = ButtonVariant.contained
-                            disabled = loading
+                            disabled = isLoading
                             asDynamic().type = "button"
-                            onClick = { safeCall { presenter.onEnter() } }
+                            onClick = { action("onEnter", userName, password) }
                             sx {
                                 height = 48.px
                                 borderRadius = 12.px
@@ -164,7 +180,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                                 textTransform = None.none
                             }
 
-                            if (loading) {
+                            if (isLoading) {
                                 CircularProgress {
                                     size = Size.small
                                     sx { color = NamedColor.white.unsafeCast<Color>() }

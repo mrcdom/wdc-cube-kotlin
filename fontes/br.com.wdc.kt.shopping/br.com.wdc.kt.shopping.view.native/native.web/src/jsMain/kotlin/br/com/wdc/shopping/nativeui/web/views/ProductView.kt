@@ -1,24 +1,20 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.bridge.WorkerProxy
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
 import br.com.wdc.shopping.nativeui.web.util.productImageUrl
 import br.com.wdc.shopping.nativeui.web.util.stripHtml
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
 import mui.icons.material.Add
 import mui.icons.material.AddShoppingCart
 import mui.icons.material.ArrowBack
 import mui.icons.material.Remove
-import mui.icons.material.ShoppingBag
 import mui.material.Alert
-import mui.material.AlertColor
 import mui.material.Box
 import mui.material.Button
 import mui.material.ButtonVariant
-import mui.material.Card
-import mui.material.CardContent
-import mui.material.CardMedia
 import mui.material.Chip
 import mui.material.CircularProgress
 import mui.material.Divider
@@ -38,7 +34,49 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class ProductView(private val presenter: ProductPresenter) : ReactCubeView("product-view", presenter.app) {
+private class ProductData(
+    val id: Long,
+    val name: String?,
+    val description: String?,
+    val price: Double
+)
+
+class ProductView(viewId: String, proxy: WorkerProxy) : ReactCubeView(viewId, proxy) {
+
+    // Local state
+    private var product: ProductData? = null
+    private var errorMessage: String? = null
+
+    override fun readState(json: String) {
+        val inp = JsonInputFactory.createStringInput(json).input
+        inp.beginObject()
+        while (inp.hasNext()) {
+            when (inp.nextName()) {
+                "id" -> inp.skipValue()
+                "product" -> {
+                    var id = 0L
+                    var name: String? = null
+                    var description: String? = null
+                    var price = 0.0
+                    inp.beginObject()
+                    while (inp.hasNext()) {
+                        when (inp.nextName()) {
+                            "id" -> id = inp.nextLong()
+                            "name" -> name = inp.nextString()
+                            "description" -> description = inp.nextString()
+                            "price" -> price = inp.nextDouble()
+                            else -> inp.skipValue()
+                        }
+                    }
+                    inp.endObject()
+                    product = ProductData(id, name, description, price)
+                }
+                "errorMessage" -> errorMessage = inp.nextString()
+                else -> inp.skipValue()
+            }
+        }
+        inp.endObject()
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -49,8 +87,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
-        val product = state.product
+        val prod = product
         var quantity by useState(1)
 
         Box {
@@ -60,7 +97,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                 padding = Padding(16.px, 10.px, 16.px, 16.px)
             }
 
-            if (product != null) {
+            if (prod != null) {
                 Box {
                     sx { maxWidth = 600.px; width = 100.pct }
 
@@ -69,12 +106,12 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                         spacing = responsive(2)
 
                         // Error message
-                        val errorMessage = state.errorMessage
-                        if (!errorMessage.isNullOrBlank()) {
+                        val err = errorMessage
+                        if (!err.isNullOrBlank()) {
                             Alert {
                                 severity = "error"
                                 sx { borderRadius = 8.px }
-                                +errorMessage
+                                +err
                             }
                         }
 
@@ -82,13 +119,13 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                         Typography {
                             variant = TypographyVariant.h4
                             sx { fontWeight = FontWeight.bold }
-                            +(product.name ?: "")
+                            +(prod.name ?: "")
                         }
 
                         Divider {}
 
                         // Description
-                        val rawDesc = product.description
+                        val rawDesc = prod.description
                         if (!rawDesc.isNullOrBlank() && rawDesc != "unknown") {
                             val cleanDesc = stripHtml(rawDesc)
                             if (cleanDesc.isNotBlank()) {
@@ -126,7 +163,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
 
                                 // Price
                                 Chip {
-                                    label = ReactNode("R$ ${formatPrice(product.price)}")
+                                    label = ReactNode("R$ ${formatPrice(prod.price)}")
                                     sx {
                                         backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
                                         color = ShoppingColors.PriceColor.unsafeCast<Color>()
@@ -189,8 +226,8 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                                     backgroundColor = ShoppingColors.SurfaceVariant.unsafeCast<BackgroundColor>()
                                 }
                                 img {
-                                    src = productImageUrl(product.id)
-                                    alt = product.name ?: ""
+                                    src = productImageUrl(prod.id)
+                                    alt = prod.name ?: ""
                                     style = js("({width: '120px', height: '120px', objectFit: 'contain'})").unsafeCast<react.CSSProperties>()
                                 }
                             }
@@ -204,7 +241,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
 
                             Button {
                                 variant = ButtonVariant.outlined
-                                onClick = { safeCall { presenter.onOpenProducts() } }
+                                onClick = { action("onOpenProducts") }
                                 sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                                 ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
                                 +"Voltar"
@@ -212,7 +249,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
 
                             Button {
                                 variant = ButtonVariant.contained
-                                onClick = { safeCall { presenter.onAddToCart(quantity) } }
+                                onClick = { action("onAddToCart", quantity) }
                                 sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                                 AddShoppingCart { sx { marginRight = 6.px; fontSize = 18.px } }
                                 +"Adicionar ao Carrinho"

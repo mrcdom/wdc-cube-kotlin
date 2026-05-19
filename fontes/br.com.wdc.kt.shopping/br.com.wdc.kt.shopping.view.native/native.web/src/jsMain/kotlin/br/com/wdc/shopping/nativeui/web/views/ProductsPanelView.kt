@@ -1,19 +1,17 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.bridge.WorkerProxy
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
 import br.com.wdc.shopping.nativeui.web.util.productImageUrl
 import br.com.wdc.shopping.nativeui.web.util.stripHtml
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
-import mui.icons.material.ShoppingBag
 import mui.material.Box
 import mui.material.Card
 import mui.material.CardActionArea
 import mui.material.CardContent
-import mui.material.CardMedia
 import mui.material.Chip
-import mui.material.ChipColor
 import mui.material.CircularProgress
 import mui.material.Divider
 import mui.material.Stack
@@ -30,7 +28,56 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCubeView("products-panel-view", presenter.app) {
+private class ProductItem(
+    val id: Long,
+    val image: String?,
+    val name: String?,
+    val description: String?,
+    val price: Double
+)
+
+class ProductsPanelView(viewId: String, proxy: WorkerProxy) : ReactCubeView(viewId, proxy) {
+
+    // Local state
+    private var products: List<ProductItem>? = null
+
+    override fun readState(json: String) {
+        val inp = JsonInputFactory.createStringInput(json).input
+        inp.beginObject()
+        while (inp.hasNext()) {
+            when (inp.nextName()) {
+                "id" -> inp.skipValue()
+                "products" -> {
+                    val list = mutableListOf<ProductItem>()
+                    inp.beginArray()
+                    while (inp.hasNext()) {
+                        var id = 0L
+                        var image: String? = null
+                        var name: String? = null
+                        var description: String? = null
+                        var price = 0.0
+                        inp.beginObject()
+                        while (inp.hasNext()) {
+                            when (inp.nextName()) {
+                                "id" -> id = inp.nextLong()
+                                "image" -> image = inp.nextString()
+                                "name" -> name = inp.nextString()
+                                "description" -> description = inp.nextString()
+                                "price" -> price = inp.nextDouble()
+                                else -> inp.skipValue()
+                            }
+                        }
+                        inp.endObject()
+                        list.add(ProductItem(id, image, name, description, price))
+                    }
+                    inp.endArray()
+                    products = list
+                }
+                else -> inp.skipValue()
+            }
+        }
+        inp.endObject()
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -41,8 +88,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
-        val products = state.products
+        val prods = products
 
         Box {
             sx { padding = Padding(12.px, 6.px, 12.px, 12.px) }
@@ -62,7 +108,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                     +"Produtos"
                 }
 
-                if (products != null) {
+                if (prods != null) {
                     Box {
                         sx {
                             backgroundColor = ShoppingColors.PrimaryContainer.unsafeCast<BackgroundColor>()
@@ -75,7 +121,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                                 color = ShoppingColors.OnPrimaryContainer.unsafeCast<Color>()
                                 fontWeight = integer(500)
                             }
-                            +"${products.size} itens"
+                            +"${prods.size} itens"
                         }
                     }
                 }
@@ -83,7 +129,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
 
             Divider { sx { marginBottom = 12.px } }
 
-            if (products == null) {
+            if (prods == null) {
                 // Loading
                 Box {
                     sx {
@@ -100,7 +146,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                         +"Carregando produtos..."
                     }
                 }
-            } else if (products.isEmpty()) {
+            } else if (prods.isEmpty()) {
                 Box {
                     sx {
                         display = Display.flex
@@ -122,7 +168,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                         gap = 12.px
                     }
 
-                    for (product in products) {
+                    for (product in prods) {
                         Card {
                             key = "${product.id}"
                             elevation = 0
@@ -132,7 +178,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                             }
 
                             CardActionArea {
-                                onClick = { safeCall { presenter.onOpenProduct(product.id) } }
+                                onClick = { action("onOpenProduct", product.id) }
 
                                 // Product image
                                 img {
