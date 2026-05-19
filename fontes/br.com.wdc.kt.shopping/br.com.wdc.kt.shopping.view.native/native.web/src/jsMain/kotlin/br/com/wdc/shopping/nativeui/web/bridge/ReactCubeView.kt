@@ -32,7 +32,7 @@ abstract class ReactCubeView(
     /** Whether a requestAnimationFrame is already scheduled. */
     private var frameScheduled: Boolean = false
 
-    override fun instanceId(): String = id
+    override val instanceId: String = id
 
     override fun update() {
         revision++
