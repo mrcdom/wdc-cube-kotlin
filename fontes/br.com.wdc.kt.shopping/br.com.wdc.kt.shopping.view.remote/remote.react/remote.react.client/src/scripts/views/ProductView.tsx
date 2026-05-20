@@ -1,19 +1,22 @@
 import React from 'react'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
+import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
-import Link from '@mui/material/Link'
+import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import RemoveIcon from '@mui/icons-material/Remove'
 import AddIcon from '@mui/icons-material/Add'
-import Snackbar from '@mui/material/Snackbar'
-import MuiAlert from '@mui/material/Alert'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import RemoveIcon from '@mui/icons-material/Remove'
 import app, { type ViewProps } from '@root/App'
 import { BaseViewClass } from '@root/utils/ViewUtils'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as EndpointUtils from '@root/utils/EndpointUtils'
+import { Colors } from '@root/theme'
 
 // :: Actions
 
@@ -44,152 +47,158 @@ export type ProductViewState = {
   errorMessage?: string
 }
 
-class ProductViewClass extends BaseViewClass<ViewProps, ProductViewState> {
-  // :: Renderes
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li>/gi, '\n• ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
 
+class ProductViewClass extends BaseViewClass<ViewProps, ProductViewState> {
   override render({ className }: ViewProps) {
     const { state } = this
     const quantity = (state.quantity = state.quantity ?? 1)
     const product = state.product ?? DefaultProduct
 
+    if (product.id === -1) {
+      return (
+        <Stack direction="column" spacing={2} sx={{ alignItems: 'center', p: 6 }}>
+          <CircularProgress />
+          <Typography variant="body2" sx={{ color: Colors.OnSurfaceVariant }}>
+            Carregando produto...
+          </Typography>
+        </Stack>
+      )
+    }
+
+    const cleanDesc = product.description ? stripHtml(product.description) : ''
+
     return (
-      <Box
-        sx={{
-          maxWidth: 900,
-          mx: 'auto',
-          bgcolor: '#fff',
-          borderRadius: '12px',
-          border: '1px solid #e0e0e0',
-          p: 3,
-        }}
-      >
-        {/* Product name */}
-        <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
-          {product.name}
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: '16px 10px 16px 16px' }}>
+        <Box sx={{ maxWidth: 600, width: '100%' }}>
+          <Stack direction="column" spacing={2}>
+            {/* Error message */}
+            {state.errorMessage && (
+              <Alert severity="error" sx={{ borderRadius: '8px' }}>
+                {state.errorMessage}
+              </Alert>
+            )}
 
-        {/* Row: info panel (left) + image (right) */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mt: 1 }}>
-          {/* Left: price + quantity + button */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
-            <Typography
-              sx={{
-                fontSize: '1.75rem',
-                fontWeight: 'bold',
-                color: '#1976d2',
-                mt: 0.5,
-              }}
-            >
-              R$ {NumberUtils.format(product.price)}
+            {/* Product name */}
+            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              {product.name}
             </Typography>
 
-            <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1 }}>
-              Quantidade
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  border: '1px solid',
-                  borderColor: 'grey.400',
-                  borderRadius: 1,
-                  overflow: 'hidden',
-                }}
+            <Divider />
+
+            {/* Description */}
+            {cleanDesc && (
+              <Paper
+                elevation={0}
+                sx={{ p: 2, borderRadius: '8px', bgcolor: Colors.SurfaceVariant50 }}
               >
-                <IconButton size="small" onClick={this.emitDecrement} disabled={quantity <= 1}>
-                  <RemoveIcon fontSize="small" />
-                </IconButton>
                 <Typography
+                  variant="body1"
+                  sx={{ color: Colors.OnSurfaceVariant, lineHeight: '24px', whiteSpace: 'pre-wrap' }}
+                >
+                  {cleanDesc}
+                </Typography>
+              </Paper>
+            )}
+
+            {/* Price + quantity + image row */}
+            <Stack direction="row" spacing={3} sx={{ alignItems: 'center' }}>
+              {/* Left: price + quantity */}
+              <Stack direction="column" spacing={2} sx={{ flex: '1 1 0' }}>
+                {/* Price */}
+                <Box
                   sx={{
-                    minWidth: 40,
+                    bgcolor: Colors.PriceBackground,
+                    borderRadius: '12px',
+                    py: 1.5,
                     textAlign: 'center',
-                    fontSize: '0.875rem',
-                    userSelect: 'none',
-                    px: 1,
                   }}
                 >
-                  {quantity}
-                </Typography>
-                <IconButton size="small" onClick={this.emitIncrement}>
-                  <AddIcon fontSize="small" />
-                </IconButton>
-              </Box>
+                  <Typography variant="body1" sx={{ color: Colors.PriceColor, fontWeight: 500, fontSize: 16 }}>
+                    R$ {NumberUtils.format(product.price)}
+                  </Typography>
+                </Box>
 
+                {/* Quantity selector */}
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                    Qtd:
+                  </Typography>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      borderRadius: '12px',
+                      bgcolor: Colors.SurfaceVariant,
+                      display: 'flex',
+                      alignItems: 'center',
+                      px: 0.5,
+                    }}
+                  >
+                    <IconButton size="small" disabled={quantity <= 1} onClick={this.emitDecrement}>
+                      <RemoveIcon />
+                    </IconButton>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', px: 2.5 }}>
+                      {quantity}
+                    </Typography>
+                    <IconButton size="small" onClick={this.emitIncrement}>
+                      <AddIcon />
+                    </IconButton>
+                  </Paper>
+                </Stack>
+              </Stack>
+
+              {/* Product image */}
+              <Box
+                sx={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  bgcolor: Colors.SurfaceVariant,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={EndpointUtils.productImagePath(product.id)}
+                  alt={product.name}
+                  sx={{ width: 120, height: 120, objectFit: 'contain' }}
+                />
+              </Box>
+            </Stack>
+
+            {/* Action buttons */}
+            <Stack direction="row" spacing={2} sx={{ justifyContent: 'center' }}>
+              <Button
+                variant="outlined"
+                onClick={this.emitGoHome}
+                sx={{ borderRadius: '12px', height: 48, textTransform: 'none' }}
+                startIcon={<ArrowBackIcon />}
+              >
+                Voltar
+              </Button>
               <Button
                 variant="contained"
-                color="primary"
-                startIcon={<AddShoppingCartIcon />}
                 onClick={this.emitAddToCart}
+                sx={{ borderRadius: '12px', height: 48, textTransform: 'none' }}
+                startIcon={<AddShoppingCartIcon />}
               >
-                Adicionar
+                Adicionar ao Carrinho
               </Button>
-            </Box>
-          </Box>
-
-          {/* Right: product image */}
-          <Box
-            component="img"
-            src={EndpointUtils.productImagePath(product.id)}
-            alt={product.name}
-            sx={{
-              width: 240,
-              height: 240,
-              objectFit: 'contain',
-              flexShrink: 0,
-              p: 1,
-            }}
-          />
+            </Stack>
+          </Stack>
         </Box>
-
-        {/* Description label */}
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'text.secondary',
-            fontWeight: 600,
-            mt: 1,
-          }}
-        >
-          Descrição
-        </Typography>
-
-        {/* Description content */}
-        <Box
-          sx={{ fontSize: 14, lineHeight: 1.6, py: 0.5 }}
-          dangerouslySetInnerHTML={{ __html: product.description }}
-        />
-
-        {/* Error notification */}
-        <Snackbar
-          open={!!state.errorMessage}
-          autoHideDuration={5000}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-          onClose={this.emitDismissError}
-        >
-          <MuiAlert severity="error" elevation={6} variant="filled" onClose={this.emitDismissError}>
-            {state.errorMessage}
-          </MuiAlert>
-        </Snackbar>
-
-        {/* Back link */}
-        <Link
-          component="button"
-          underline="always"
-          onClick={this.emitGoHome}
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.5,
-            color: '#1976d2',
-            mt: 2,
-            fontSize: '0.875rem',
-            cursor: 'pointer',
-          }}
-        >
-          <ArrowBackIcon fontSize="small" />
-          Voltar aos produtos
-        </Link>
       </Box>
     )
   }

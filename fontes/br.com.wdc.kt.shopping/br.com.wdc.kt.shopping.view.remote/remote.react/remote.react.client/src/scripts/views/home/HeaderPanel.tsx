@@ -1,16 +1,18 @@
 import React from 'react'
 import AppBar from '@mui/material/AppBar'
+import Avatar from '@mui/material/Avatar'
 import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import Toolbar from '@mui/material/Toolbar'
-import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import LocalMallIcon from '@mui/icons-material/LocalMall'
+import LogoutIcon from '@mui/icons-material/Logout'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew'
 import app from '@root/App'
 import { BasePanelClass } from '@root/utils/ViewUtils'
-import ShoppingLogo from './ShoppingLogo'
+import { Colors } from '@root/theme'
 
 // :: Actions
 
@@ -23,45 +25,137 @@ type HeaderPanelProps = {
   vsid: string
   nickName: string
   cartItemCount: number
+  isCompact?: boolean
 }
 
 class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
   vsid!: string
 
-  override render({ vsid, nickName, cartItemCount }: HeaderPanelProps) {
+  override render({ vsid, nickName, cartItemCount, isCompact }: HeaderPanelProps) {
     this.vsid = vsid
 
-    return (
-      <AppBar position="static" color="primary" elevation={2} sx={{ flexShrink: 0 }}>
-        <Toolbar>
-          {/* Left: Sair + Olá */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-            <Tooltip title="Sair">
-              <IconButton size="small" onClick={this.emitExit} sx={{ color: '#fff' }}>
-                <PowerSettingsNewIcon fontSize="small" />
+    if (isCompact) {
+      return (
+        <AppBar position="static" sx={{ bgcolor: Colors.Primary }}>
+          <Box sx={{ p: '10px 12px' }}>
+            {/* Top row: logo + "Shopping" + logout */}
+            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+              <Avatar
+                sx={{
+                  width: 32,
+                  height: 32,
+                  bgcolor: Colors.WhiteOverlay20,
+                  borderRadius: '8px',
+                  mr: 1,
+                }}
+              >
+                <LocalMallIcon sx={{ fontSize: 20, color: '#fff' }} />
+              </Avatar>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
+                Shopping
+              </Typography>
+              <IconButton
+                onClick={this.emitExit}
+                sx={{ width: 28, height: 28, ml: 1.5, bgcolor: Colors.WhiteOverlay10 }}
+              >
+                <LogoutIcon sx={{ fontSize: 16, color: '#fff', opacity: 0.7 }} />
               </IconButton>
-            </Tooltip>
+            </Box>
+
+            {/* Spacer */}
+            <Box sx={{ height: 8 }} />
+
+            {/* Bottom row: greeting + cart */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <Typography variant="body2" sx={{ color: Colors.WhiteOverlay85 }}>
+                Olá, {nickName}
+              </Typography>
+              <Badge badgeContent={cartItemCount} color="error" invisible={cartItemCount <= 0}>
+                <Button
+                  variant="contained"
+                  onClick={this.emitOpenCart}
+                  sx={{
+                    bgcolor: Colors.WhiteOverlay20,
+                    borderRadius: '10px',
+                    textTransform: 'none',
+                    py: 0.5,
+                    px: 1.5,
+                    fontSize: 13,
+                  }}
+                >
+                  <ShoppingCartIcon sx={{ mr: 0.75, fontSize: 16 }} />
+                  Carrinho
+                </Button>
+              </Badge>
+            </Box>
+          </Box>
+        </AppBar>
+      )
+    }
+
+    // Desktop header: single row
+    return (
+      <AppBar position="static" sx={{ bgcolor: Colors.Primary }}>
+        <Toolbar sx={{ p: '12px 24px !important', minHeight: 'auto !important' }}>
+          {/* Logo */}
+          <Avatar
+            sx={{
+              width: 36,
+              height: 36,
+              bgcolor: Colors.WhiteOverlay20,
+              borderRadius: '10px',
+              mr: 1.5,
+            }}
+          >
+            <LocalMallIcon sx={{ fontSize: 22, color: '#fff' }} />
+          </Avatar>
+
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
+            Shopping
+          </Typography>
+
+          {/* Logout icon */}
+          <IconButton
+            onClick={this.emitExit}
+            sx={{ width: 32, height: 32, ml: 2, bgcolor: Colors.WhiteOverlay10 }}
+          >
+            <LogoutIcon sx={{ fontSize: 18, color: '#fff', opacity: 0.7 }} />
+          </IconButton>
+
+          {/* Spacer */}
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Greeting pill */}
+          <Box
+            sx={{
+              bgcolor: Colors.WhiteOverlay15,
+              borderRadius: '20px',
+              px: 2,
+              py: 1,
+              mr: 2,
+            }}
+          >
             <Typography variant="body2" sx={{ color: '#fff' }}>
               Olá, {nickName}
             </Typography>
           </Box>
 
-          {/* Center: Logo */}
-          <ShoppingLogo height={32} />
-
-          {/* Right: Carrinho */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
-            <Tooltip title="Abrir carrinho">
-              <IconButton color="inherit" onClick={this.emitOpenCart} sx={{ color: '#fff' }}>
-                <Badge badgeContent={cartItemCount} color="error">
-                  <ShoppingCartIcon />
-                </Badge>
-                <Typography variant="body2" sx={{ ml: 0.5, color: '#fff' }}>
-                  Carrinho
-                </Typography>
-              </IconButton>
-            </Tooltip>
-          </Box>
+          {/* Cart button */}
+          <Badge badgeContent={cartItemCount} color="error" invisible={cartItemCount <= 0}>
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={this.emitOpenCart}
+              sx={{
+                bgcolor: Colors.WhiteOverlay20,
+                borderRadius: '12px',
+                textTransform: 'none',
+              }}
+            >
+              <ShoppingCartIcon sx={{ mr: 0.75, fontSize: 18 }} />
+              Carrinho
+            </Button>
+          </Badge>
         </Toolbar>
       </AppBar>
     )

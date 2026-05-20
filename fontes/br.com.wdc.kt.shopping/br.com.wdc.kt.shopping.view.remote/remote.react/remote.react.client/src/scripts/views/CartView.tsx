@@ -7,27 +7,23 @@ import CardContent from '@mui/material/CardContent'
 import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import Paper from '@mui/material/Paper'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import Toolbar from '@mui/material/Toolbar'
+import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import Link from '@mui/material/Link'
+import AddIcon from '@mui/icons-material/Add'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import DeleteIcon from '@mui/icons-material/Delete'
+import RemoveIcon from '@mui/icons-material/Remove'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import app, { type ViewProps } from '@root/App'
 import { BaseViewClass, BasePanelClass } from '@root/utils/ViewUtils'
 import * as NumberUtils from '@root/utils/NumberUtils'
-import * as EndpointUtils from '@root/utils/EndpointUtils'
+import { Colors } from '@root/theme'
 
 // :: Actions
 
 const ON_BUY = 1
 const ON_REMOVE_PRODUCT = 2
 const ON_OPEN_PRODUCTS = 3
+const ON_MODIFY_QUANTITY = 4
 
 // :: Types
 
@@ -48,165 +44,109 @@ export type CartViewState = {
 class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
   override render({ className }: ViewProps) {
     const { vsid, state } = this
-
-    let valorTotal = 0
-    let carrinhoTotal = 0
     const items = state.items ?? []
-
+    let valorTotal = 0
     items.forEach((prod) => {
-      carrinhoTotal += prod.quantity
       valorTotal += prod.price * prod.quantity
     })
 
     return (
-      <Card elevation={3} sx={{ maxWidth: 900, mx: 'auto', my: 3 }}>
-        <CardContent>
-          {/* Header */}
-          <Toolbar disableGutters sx={{ mb: 1 }}>
-            <ShoppingCartIcon sx={{ mr: 1 }} />
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              Carrinho{' '}
-              <Typography component="span" variant="body2" color="text.secondary">
-                ({NumberUtils.format(carrinhoTotal, 0)} {carrinhoTotal === 1 ? 'item' : 'itens'})
-              </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: '16px 10px 16px 16px' }}>
+        <Box sx={{ maxWidth: 700, width: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Title */}
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1.5 }}>
+            <ShoppingCartIcon sx={{ fontSize: 28 }} />
+            <Typography variant="h5" sx={{ fontWeight: 500, fontSize: 28 }}>
+              Carrinho de Compras
             </Typography>
-            <Typography variant="subtitle2" color="text.secondary">
-              LISTA DE PRODUTOS
-            </Typography>
-          </Toolbar>
+          </Stack>
 
-          <Divider sx={{ mb: 2 }} />
+          <Divider />
 
-          {/* Table */}
-          <Paper variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: 'grey.100' }}>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Item</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                    Valor unitário
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold' }}>
-                    Quantidade
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold' }}>
-                    Remover
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {items.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align="center">
-                      <Box sx={{ py: 5, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="100"
-                          height="100"
-                          viewBox="0 0 64 64"
-                          style={{ marginBottom: 12 }}
-                        >
-                          <circle cx="32" cy="32" r="30" fill="#e3f2fd" />
-                          <path
-                            d="M16 18h4l3 14h18l3-10H24"
-                            fill="none"
-                            stroke="#1976d2"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <circle cx="25" cy="38" r="2.5" fill="#1976d2" />
-                          <circle cx="39" cy="38" r="2.5" fill="#1976d2" />
-                          <line
-                            x1="28"
-                            y1="26"
-                            x2="38"
-                            y2="26"
-                            stroke="#ff9800"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <Typography color="text.secondary" variant="body1" sx={{ mb: 1 }}>
-                          Seu carrinho está vazio
-                        </Typography>
-                        <Button
-                          variant="text"
-                          color="primary"
-                          onClick={this.emitClickVoltar}
-                          sx={{ textTransform: 'none', fontWeight: 'bold', fontSize: '1rem' }}
-                        >
-                          Vamos às compras!
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  items.map((prod) => (
-                    <TableRow key={prod.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box
-                            component="img"
-                            src={EndpointUtils.productImagePath(prod.id)}
-                            alt={prod.name}
-                            sx={{ width: 42, height: 40, objectFit: 'contain' }}
-                          />
-                          {prod.name}
-                        </Box>
-                      </TableCell>
-                      <TableCell align="right">R$ {NumberUtils.format(prod.price)}</TableCell>
-                      <TableCell align="center">{NumberUtils.format(prod.quantity, 0)}</TableCell>
-                      <TableCell align="center">
-                        <RemoveProductButton vsid={vsid} product={prod} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Paper>
-
-          {/* Total */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, mr: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-              VALOR TOTAL: R$ {NumberUtils.format(valorTotal)}
-            </Typography>
-          </Box>
-
-          {/* Error */}
+          {/* Error message */}
           {state.errorMessage && (
-            <Alert severity="error" sx={{ mt: 1 }}>
+            <Alert severity="error" sx={{ mt: 1.5, borderRadius: '8px' }}>
               {state.errorMessage}
             </Alert>
           )}
 
-          {/* Actions */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
-            <Link
-              component="button"
-              underline="always"
-              onClick={this.emitClickVoltar}
+          {items.length === 0 ? (
+            /* Empty state */
+            <Box
               sx={{
-                display: 'inline-flex',
+                display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                gap: 0.5,
-                color: '#1976d2',
-                fontSize: '0.875rem',
-                cursor: 'pointer',
+                justifyContent: 'center',
+                flex: '1 1 0',
+                p: 6,
               }}
             >
-              <ArrowBackIcon fontSize="small" />
-              Voltar aos produtos
-            </Link>
+              <ShoppingCartIcon sx={{ fontSize: 48, color: Colors.OnSurfaceVariant }} />
+              <Typography variant="h6" sx={{ mt: 2, color: Colors.OnSurfaceVariant }}>
+                Seu carrinho está vazio
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1, color: Colors.OnSurfaceVariant, opacity: 0.7 }}>
+                Adicione produtos para começar suas compras
+              </Typography>
+            </Box>
+          ) : (
+            /* Cart items */
+            <Box sx={{ mt: 1.5, mr: -0.75 }}>
+              <Stack direction="column" spacing={1}>
+                {items.map((item) => (
+                  <CartItemCard key={item.id} vsid={vsid} item={item} />
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          {/* Total section */}
+          {items.length > 0 && (
+            <>
+              <Divider sx={{ mt: 1, mb: 1 }} />
+              <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
+                <Typography variant="subtitle1" sx={{ color: Colors.OnSurfaceVariant }}>
+                  Total:
+                </Typography>
+                <Box sx={{ bgcolor: Colors.PriceBackground, borderRadius: '10px', px: 1.75, py: 0.75 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: 22, color: Colors.PriceColor }}>
+                    R$ {NumberUtils.format(valorTotal)}
+                  </Typography>
+                </Box>
+              </Stack>
+            </>
+          )}
+
+          {/* Action buttons */}
+          <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end', mt: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={this.emitClickVoltar}
+              sx={{ borderRadius: '12px', height: 48, textTransform: 'none' }}
+              startIcon={<ArrowBackIcon />}
+            >
+              Continuar Comprando
+            </Button>
             {items.length > 0 && (
-              <Button variant="contained" color="warning" onClick={this.emitClickFinalizar}>
-                Finalizar pedido &rarr;
+              <Button
+                variant="contained"
+                onClick={this.emitClickFinalizar}
+                sx={{
+                  borderRadius: '12px',
+                  height: 48,
+                  textTransform: 'none',
+                  fontWeight: 'bold',
+                  fontSize: 16,
+                  bgcolor: Colors.PriceColor,
+                }}
+              >
+                Comprar
               </Button>
             )}
-          </Box>
-        </CardContent>
-      </Card>
+          </Stack>
+        </Box>
+      </Box>
     )
   }
 
@@ -225,33 +165,101 @@ class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
 
 export default BaseViewClass.FC(CartViewClass, '7eb485e5f843')
 
-// :: RemoveProductButton Component
+// :: CartItemCard Component
 
-type RemoveProductButtonProps = {
+type CartItemCardProps = {
   vsid: string
-  product: ItemCarrinho
+  item: ItemCarrinho
 }
 
-class RemoveProductButtonClass extends BasePanelClass<RemoveProductButtonProps> {
+class CartItemCardClass extends BasePanelClass<CartItemCardProps> {
   vsid!: string
-  product!: ItemCarrinho
+  item!: ItemCarrinho
 
-  override render({ vsid, product }: RemoveProductButtonProps) {
+  override render({ vsid, item }: CartItemCardProps) {
     this.vsid = vsid
-    this.product = product
+    this.item = item
 
     return (
-      <IconButton size="small" color="error" onClick={this.emitRemoveProduct} aria-label={`Remover ${product.name}`}>
-        <DeleteIcon fontSize="small" />
-      </IconButton>
+      <Card elevation={0} sx={{ borderRadius: '8px', bgcolor: Colors.SurfaceVariant40 }}>
+        <CardContent sx={{ p: 2 }}>
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+            {/* Product info */}
+            <Box sx={{ flex: '1 1 0' }}>
+              <Typography variant="body2" noWrap sx={{ fontWeight: 500, fontSize: 14 }}>
+                {item.name}
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: Colors.PriceColor }}>
+                R$ {NumberUtils.format(item.price)}
+              </Typography>
+            </Box>
+
+            {/* Quantity controls */}
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: '10px',
+                bgcolor: Colors.SurfaceVariant,
+                display: 'flex',
+                alignItems: 'center',
+                px: 0.5,
+              }}
+            >
+              <IconButton
+                size="small"
+                onClick={this.emitDecrement}
+                sx={{ bgcolor: Colors.SecondaryContainer, width: 32, height: 32 }}
+              >
+                <RemoveIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', px: 1.75 }}>
+                {item.quantity}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={this.emitIncrement}
+                sx={{ bgcolor: Colors.SecondaryContainer, width: 32, height: 32 }}
+              >
+                <AddIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Paper>
+
+            {/* Remove button */}
+            <Button
+              variant="text"
+              color="error"
+              onClick={this.emitRemoveProduct}
+              sx={{ fontWeight: 'normal', fontSize: 12, textTransform: 'none' }}
+            >
+              Remover
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
     )
   }
 
   readonly emitRemoveProduct = () => {
-    const { vsid, product } = this
-    app.setFormField(vsid, 'p.productId', product.id)
+    const { vsid, item } = this
+    app.setFormField(vsid, 'p.productId', item.id)
     app.submit(vsid, ON_REMOVE_PRODUCT)
+  }
+
+  readonly emitIncrement = () => {
+    const { vsid, item } = this
+    app.setFormField(vsid, 'p.productId', item.id)
+    app.setFormField(vsid, 'p.quantity', item.quantity + 1)
+    app.submit(vsid, ON_MODIFY_QUANTITY)
+  }
+
+  readonly emitDecrement = () => {
+    const { vsid, item } = this
+    if (item.quantity > 1) {
+      app.setFormField(vsid, 'p.productId', item.id)
+      app.setFormField(vsid, 'p.quantity', item.quantity - 1)
+      app.submit(vsid, ON_MODIFY_QUANTITY)
+    }
   }
 }
 
-const RemoveProductButton = BasePanelClass.FC(RemoveProductButtonClass)
+const CartItemCard = BasePanelClass.FC(CartItemCardClass)

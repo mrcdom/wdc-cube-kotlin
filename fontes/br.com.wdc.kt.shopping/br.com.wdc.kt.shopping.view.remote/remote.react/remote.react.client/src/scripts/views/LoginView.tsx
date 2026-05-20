@@ -1,17 +1,18 @@
 import React, { ReactNode } from 'react'
 import Alert from '@mui/material/Alert'
+import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CircularProgress from '@mui/material/CircularProgress'
-import Divider from '@mui/material/Divider'
+import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import LocalMallIcon from '@mui/icons-material/LocalMall'
 import app, { type ViewProps } from '@root/App'
 import { BaseViewClass } from '@root/utils/ViewUtils'
-import ShoppingLogo from './home/ShoppingLogo'
+import { Colors } from '@root/theme'
 
 // :: Actions
 
@@ -38,124 +39,103 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
         sx={{
           minHeight: '100vh',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'grey.100',
+          background: `linear-gradient(180deg, ${Colors.Primary} 0%, ${Colors.PrimaryContainer} 100%)`,
         }}
       >
         <Card
-          elevation={0}
           sx={{
             width: 400,
-            border: '1px solid',
-            borderColor: 'grey.200',
-            borderRadius: 3,
-            overflow: 'hidden',
+            borderRadius: '12px',
+            boxShadow: '0px 2px 8px rgba(0,0,0,0.12)',
           }}
         >
-          {/* Blue header with logo */}
-          <Box
-            sx={{
-              bgcolor: 'primary.main',
-              py: 3,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 1.5,
-            }}
-          >
-            <ShoppingLogo height={38} />
-          </Box>
+          <CardContent sx={{ p: 3 }}>
+            <form autoComplete="off" onSubmit={(e) => e.preventDefault()}>
+              <Stack direction="column" spacing={2} sx={{ alignItems: 'center' }}>
+                {/* Logo */}
+                <Avatar
+                  sx={{
+                    width: 72,
+                    height: 72,
+                    bgcolor: Colors.Primary,
+                    borderRadius: '18px',
+                  }}
+                >
+                  <LocalMallIcon sx={{ fontSize: 40 }} />
+                </Avatar>
 
-          <CardContent sx={{ p: 4 }}>
-            {/* Lock icon + title */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '50%',
-                  bgcolor: 'primary.main',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 1.5,
-                }}
-              >
-                <LockOutlinedIcon sx={{ color: '#fff', fontSize: 22 }} />
-              </Box>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                Acesso ao sistema
-              </Typography>
-            </Box>
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                  Shopping
+                </Typography>
 
-            {/* Form */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }} onKeyDown={this.onKeyDown}>
-              <TextField
-                inputRef={this.usrInputRef}
-                label="Usuário"
-                type="text"
-                name="login-usr"
-                autoComplete="one-time-code"
-                defaultValue={state.userName ?? ''}
-                fullWidth
-                size="small"
-                disabled={!!state.loading}
-              />
-              <TextField
-                inputRef={this.pwdInputRef}
-                label="Senha"
-                type="password"
-                name="login-pwd"
-                autoComplete="one-time-code"
-                defaultValue={state.password ?? ''}
-                fullWidth
-                size="small"
-                disabled={!!state.loading}
-              />
-              {!!state.errorMessage && (
-                <Alert severity="error" sx={{ mt: 0.5 }}>
-                  {state.errorMessage}
-                </Alert>
-              )}
-              <Button
-                type="button"
-                variant="contained"
-                color="primary"
-                size="large"
-                fullWidth
-                sx={{ mt: 1, py: 1.2, borderRadius: 2, textTransform: 'none', fontWeight: 'bold', fontSize: '1rem' }}
-                onClick={this.emitOnEnter}
-                disabled={!!state.loading}
-              >
-                {state.loading ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <CircularProgress size={20} color="inherit" />
-                    Autenticando...
-                  </Box>
-                ) : (
-                  'Entrar'
+                <Typography
+                  variant="body2"
+                  sx={{ color: Colors.OnSurfaceVariant, textAlign: 'center' }}
+                >
+                  Entre com suas credenciais para continuar
+                </Typography>
+
+                {/* Username */}
+                <TextField
+                  inputRef={this.usrInputRef}
+                  label="Usuário"
+                  type="text"
+                  name="login-usr"
+                  autoComplete="off"
+                  defaultValue={state.userName ?? ''}
+                  fullWidth
+                  disabled={!!state.loading}
+                />
+
+                {/* Password */}
+                <TextField
+                  inputRef={this.pwdInputRef}
+                  label="Senha"
+                  name="login-pwd"
+                  autoComplete="off"
+                  defaultValue={state.password ?? ''}
+                  fullWidth
+                  disabled={!!state.loading}
+                  onKeyDown={this.onKeyDown}
+                  slotProps={{
+                    htmlInput: {
+                      style: { WebkitTextSecurity: 'disc', textSecurity: 'disc' } as React.CSSProperties,
+                    },
+                  }}
+                />
+
+                {/* Error message */}
+                {!!state.errorMessage && (
+                  <Alert severity="error" sx={{ width: '100%', borderRadius: '8px' }}>
+                    {state.errorMessage}
+                  </Alert>
                 )}
-              </Button>
-            </Box>
 
-            {/* Demo credentials hint */}
-            <Divider sx={{ mt: 3, mb: 2 }} />
-            <Box
-              sx={{
-                bgcolor: 'grey.50',
-                border: '1px dashed',
-                borderColor: 'grey.300',
-                borderRadius: 2,
-                p: 1.5,
-                textAlign: 'center',
-              }}
-            >
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                Acesso demo: usuário <strong>admin</strong> / senha <strong>admin</strong>
-              </Typography>
-            </Box>
+                {/* Login button */}
+                <Button
+                  type="button"
+                  variant="contained"
+                  fullWidth
+                  onClick={this.emitOnEnter}
+                  disabled={!!state.loading}
+                  sx={{
+                    height: 48,
+                    borderRadius: '12px',
+                    fontWeight: 'bold',
+                    fontSize: 16,
+                    textTransform: 'none',
+                  }}
+                >
+                  {state.loading ? (
+                    <CircularProgress size={24} sx={{ color: '#fff' }} />
+                  ) : (
+                    'Entrar'
+                  )}
+                </Button>
+              </Stack>
+            </form>
           </CardContent>
         </Card>
       </Box>

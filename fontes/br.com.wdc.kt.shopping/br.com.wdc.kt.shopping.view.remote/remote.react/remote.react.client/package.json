@@ -19,7 +19,9 @@
   "scripts": {
     "start": "parcel watch --public-url ./",
     "watch": "parcel watch --public-url ./",
+    "clean:watch": "rm -rf .parcel-cache ../remote.react.skeleton/src/main/resources/META-INF/resources/* && parcel watch --public-url ./",
     "build": "parcel build --public-url ./",
+    "clean:build": "rm -rf .parcel-cache ../remote.react.skeleton/src/main/resources/META-INF/resources/* && parcel build --public-url ./",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

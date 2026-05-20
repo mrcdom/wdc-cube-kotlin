@@ -31,22 +31,23 @@ app.registerComponents(
 
 const theme = createTheme({
   palette: {
-    primary: { main: '#1976d2' },
-    warning: { main: '#ff5500', contrastText: '#fff' },
-    background: { default: '#ededed' },
+    primary: { main: '#1B5E7B', contrastText: '#FFFFFF' },
+    secondary: { main: '#4A6572', contrastText: '#FFFFFF' },
+    error: { main: '#BA1A1A' },
+    background: { default: '#F5F7FA', paper: '#FFFFFF' },
   },
   typography: {
-    fontFamily: 'Verdana, Geneva, Tahoma, sans-serif',
+    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
   },
   components: {
     MuiButton: {
       styleOverrides: {
-        root: { textTransform: 'none', borderRadius: 4 },
+        root: { textTransform: 'none', borderRadius: 12 },
       },
     },
     MuiCard: {
       styleOverrides: {
-        root: { borderRadius: 4 },
+        root: { borderRadius: 8 },
       },
     },
   },

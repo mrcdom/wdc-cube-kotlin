@@ -8,5 +8,5 @@ export function format(value: number | undefined, decimalPoint = 2) {
     return ''
   }
 
-  return value.toLocaleString(navigator.language, { minimumFractionDigits: decimalPoint })
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: decimalPoint })
 }

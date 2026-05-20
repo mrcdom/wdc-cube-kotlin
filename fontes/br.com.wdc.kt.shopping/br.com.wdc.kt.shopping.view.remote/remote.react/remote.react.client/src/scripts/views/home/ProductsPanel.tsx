@@ -2,13 +2,17 @@ import React, { ReactNode } from 'react'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardActionArea from '@mui/material/CardActionArea'
-import CardMedia from '@mui/material/CardMedia'
-import Grid from '@mui/material/Grid'
+import CardContent from '@mui/material/CardContent'
+import Chip from '@mui/material/Chip'
+import CircularProgress from '@mui/material/CircularProgress'
+import Divider from '@mui/material/Divider'
+import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import app, { type ViewProps } from '@root/App'
 import { BaseViewClass, BasePanelClass } from '@root/utils/ViewUtils'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as EndpointUtils from '@root/utils/EndpointUtils'
+import { Colors } from '@root/theme'
 
 // :: Actions
 
@@ -19,6 +23,7 @@ const ON_OPEN_PRODUCT = 1
 export type Product = {
   id: number
   name: string
+  description?: string
   price: number
 }
 
@@ -31,23 +36,55 @@ type ProductsPanelState = {
 class ProductPanelClass extends BaseViewClass<ViewProps, ProductsPanelState> {
   override render({ className }: ViewProps): React.ReactNode {
     const { vsid, state } = this
-
-    const divProdutos: ReactNode[] = []
-    if (state.products) {
-      for (let i = 0; i < state.products.length; i++) {
-        let produto = state.products[i]
-        divProdutos.push(<CardProduto key={produto.id} vsid={vsid} product={produto} />)
-      }
-    }
+    const products = state.products
 
     return (
-      <Grid className={className} container spacing={3} sx={{ flex: 1 }}>
-        {divProdutos.map((card, idx) => (
-          <Grid key={idx} size={{ xs: 12, sm: 6, md: 4 }}>
-            {card}
-          </Grid>
-        ))}
-      </Grid>
+      <Box className={className} sx={{ p: '12px 6px 12px 12px' }}>
+        {/* Section header */}
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            Produtos
+          </Typography>
+          {products && (
+            <Box sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: '8px', px: 2, py: 0.75 }}>
+              <Typography variant="caption" sx={{ color: Colors.OnPrimaryContainer }}>
+                {products.length} itens
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+
+        <Divider sx={{ mb: 1.5 }} />
+
+        {products == null ? (
+          /* Loading */
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 6 }}>
+            <CircularProgress />
+            <Typography variant="body2" sx={{ mt: 1.5, color: Colors.OnSurfaceVariant }}>
+              Carregando produtos...
+            </Typography>
+          </Box>
+        ) : products.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
+            <Typography variant="body1" sx={{ color: Colors.OnSurfaceVariant }}>
+              Nenhum produto disponível
+            </Typography>
+          </Box>
+        ) : (
+          /* Product grid */
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+              gap: 1.5,
+            }}
+          >
+            {products.map((product) => (
+              <CardProduto key={product.id} vsid={vsid} product={product} />
+            ))}
+          </Box>
+        )}
+      </Box>
     )
   }
 }
@@ -72,64 +109,39 @@ class CardProdutoClass extends BasePanelClass<CardProdutoProps> {
       <Card
         elevation={0}
         sx={{
-          height: '100%',
-          border: '1px solid',
-          borderColor: 'grey.200',
-          borderRadius: 3,
-          overflow: 'hidden',
-          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: '0 12px 24px rgba(0,0,0,0.1)',
-            borderColor: 'primary.light',
-          },
+          borderRadius: '8px',
+          '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.12)' },
         }}
       >
-        <CardActionArea
-          onClick={this.emitOpenProduct}
-          sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
-        >
+        <CardActionArea onClick={this.emitOpenProduct}>
+          {/* Product image */}
           <Box
+            component="img"
+            src={EndpointUtils.productImagePath(product.id)}
+            alt={product.name}
             sx={{
-              position: 'relative',
-              bgcolor: '#f8f9fa',
-              borderBottom: '1px solid',
-              borderColor: 'grey.100',
+              width: '100%',
+              height: 140,
+              objectFit: 'contain',
+              bgcolor: Colors.SurfaceVariant,
             }}
-          >
-            <CardMedia
-              component="img"
-              image={EndpointUtils.productImagePath(product.id)}
-              alt={product.name}
-              sx={{ width: '100%', height: 180, objectFit: 'contain', p: 2 }}
-            />
-          </Box>
-          <Box sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.primary',
-                fontWeight: 500,
-                mb: 1.5,
-                lineHeight: 1.4,
-                minHeight: '2.8em',
-              }}
-            >
+          />
+          <CardContent>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
               {product.name}
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography
-                variant="body1"
-                sx={{
-                  color: 'primary.main',
-                  fontWeight: 'bold',
-                  fontSize: '1.1rem',
-                }}
-              >
-                R$ {NumberUtils.format(product.price)}
-              </Typography>
-            </Box>
-          </Box>
+            <Chip
+              label={`R$ ${NumberUtils.format(product.price)}`}
+              size="small"
+              sx={{
+                mt: 1.5,
+                bgcolor: Colors.PriceBackground,
+                color: Colors.PriceColor,
+                fontWeight: 'bold',
+                borderRadius: '8px',
+              }}
+            />
+          </CardContent>
         </CardActionArea>
       </Card>
     )

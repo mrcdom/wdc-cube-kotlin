@@ -1,16 +1,23 @@
 import React from 'react'
 import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import CardActionArea from '@mui/material/CardActionArea'
+import CardContent from '@mui/material/CardContent'
+import Chip from '@mui/material/Chip'
+import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
-import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import Inventory2Icon from '@mui/icons-material/Inventory2'
 import app, { type ViewProps } from '@root/App'
 import { BaseViewClass, BasePanelClass } from '@root/utils/ViewUtils'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as DateUtils from '@root/utils/DateUtils'
+import { Colors } from '@root/theme'
 
-const ITEM_HEIGHT_PX = 50
+const ITEM_HEIGHT_PX = 76
 
 // :: Actions
 
@@ -64,8 +71,6 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
     this.resizeTimer = window.setTimeout(this.computePageSize, 150)
   }
 
-  // :: Renders
-
   override render({ className }: ViewProps, initial?: boolean): React.ReactNode {
     const { state } = this
     const pageSize = Math.max(1, state.pageSize)
@@ -78,74 +83,60 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
     }
 
     return (
-      <Paper
-        className={className}
-        elevation={0}
-        sx={{
-          width: 300,
-          flexShrink: 0,
-          bgcolor: '#fff',
-          border: '1px solid',
-          borderColor: 'grey.300',
-          borderRadius: 2,
-          m: 2,
-          ml: 0,
-          p: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          alignSelf: 'stretch',
-        }}
-      >
-        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1.5, fontWeight: 'bold' }}>
-          Seu histórico de compras
-        </Typography>
-        <Box ref={this.listRef} sx={{ flex: 1, overflow: 'hidden' }}>
-          {this.#renderCompras()}
-        </Box>
-        {state.totalCount > 0 && this.#renderPageNavigation()}
-      </Paper>
-    )
-  }
-
-  #renderCompras(): React.ReactNode {
-    const { vsid, state } = this
-
-    return (state.purchases ?? []).map((compra) => <PurchaseItemRow key={compra.id} vsid={vsid} purchase={compra} />)
-  }
-
-  #renderPageNavigation(): React.ReactNode {
-    const { state } = this
-    return (
       <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mt: 1,
-          pt: 1,
-          borderTop: '1px solid',
-          borderColor: 'grey.200',
-        }}
+        className={className}
+        sx={{ p: 1.5, display: 'flex', flexDirection: 'column', height: '100%' }}
       >
-        <IconButton
-          size="small"
-          disabled={state.page === 0}
-          onClick={this.emitPreviousPage}
-          sx={{ color: 'primary.main', '&.Mui-disabled': { color: 'grey.400' } }}
-        >
-          <ChevronLeftIcon fontSize="small" />
-        </IconButton>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          {state.page + 1}/{this.totalPages}
-        </Typography>
-        <IconButton
-          size="small"
-          disabled={state.page >= this.totalPages - 1}
-          onClick={this.emitNextPage}
-          sx={{ color: 'primary.main', '&.Mui-disabled': { color: 'grey.400' } }}
-        >
-          <ChevronRightIcon fontSize="small" />
-        </IconButton>
+        {/* Section header */}
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            Compras
+          </Typography>
+          {state.totalCount > 0 && (
+            <Box sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: '8px', px: 2, py: 0.75 }}>
+              <Typography variant="caption" sx={{ color: Colors.OnPrimaryContainer }}>
+                {state.totalCount} itens
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+
+        <Divider sx={{ mb: 1.5 }} />
+
+        {/* Purchase list */}
+        <Box ref={this.listRef} sx={{ flex: '1 1 auto', overflow: 'hidden' }}>
+          {(state.purchases ?? []).length === 0 ? (
+            state.totalCount === 0 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 6 }}>
+                <Inventory2Icon sx={{ fontSize: 48, color: Colors.OnSurfaceVariant }} />
+                <Typography variant="body1" sx={{ mt: 1, color: Colors.OnSurfaceVariant }}>
+                  Nenhuma compra realizada
+                </Typography>
+              </Box>
+            )
+          ) : (
+            <Stack direction="column" spacing={1}>
+              {(state.purchases ?? []).map((purchase) => (
+                <PurchaseItemRow key={purchase.id} vsid={this.vsid} purchase={purchase} />
+              ))}
+            </Stack>
+          )}
+        </Box>
+
+        {/* Pagination */}
+        {state.totalCount > state.pageSize && state.pageSize > 0 && (
+          <Stack direction="row" spacing={2} sx={{ justifyContent: 'center', alignItems: 'center', mt: 1 }}>
+            <IconButton disabled={state.page <= 0} onClick={this.emitPreviousPage}>
+              <ChevronLeftIcon />
+            </IconButton>
+            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+              {state.page + 1} / {this.totalPages}
+            </Typography>
+            <IconButton disabled={state.page >= this.totalPages - 1} onClick={this.emitNextPage}>
+              <ChevronRightIcon />
+            </IconButton>
+          </Stack>
+        )}
       </Box>
     )
   }
@@ -171,16 +162,11 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
 
 export default BaseViewClass.FC(PurchasesPanelClass, 'b3c4d5e6f7a8')
 
-// :: Internal - PurchaseItemRow (compact)
+// :: Internal - PurchaseItemRow
 
 type PurchaseItemRowProps = {
   vsid: string
   purchase: Purchase
-}
-
-function formatItems(items: string[]): string {
-  if (!items || items.length === 0) return ''
-  return items.join(', ')
 }
 
 class PurchaseItemRowClass extends BasePanelClass<PurchaseItemRowProps> {
@@ -192,58 +178,41 @@ class PurchaseItemRowClass extends BasePanelClass<PurchaseItemRowProps> {
     this.purchase = purchase
 
     return (
-      <Box
+      <Card
         data-purchase-item
-        onClick={this.emitOpenReceipt}
-        sx={{
-          mb: 0.75,
-          borderRadius: 1,
-          overflow: 'hidden',
-          cursor: 'pointer',
-          bgcolor: 'grey.50',
-          borderLeft: '3px solid',
-          borderColor: 'primary.main',
-          transition: 'all 0.15s',
-          '&:hover': {
-            bgcolor: 'primary.50',
-            borderColor: 'primary.dark',
-            transform: 'translateX(2px)',
-          },
-        }}
+        elevation={0}
+        sx={{ borderRadius: '8px', bgcolor: Colors.SurfaceVariant50 }}
       >
-        {/* Line 1: #id + date */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1.5, pt: 0.75 }}>
-          <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 'bold', fontSize: '0.75rem' }}>
-            #{purchase.id}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
-            {DateUtils.formatDate(purchase.date)}
-          </Typography>
-        </Box>
-        {/* Line 2: products + total */}
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, px: 1.5, pb: 0.75 }}>
-          <Typography
-            variant="caption"
-            sx={{
-              color: 'text.secondary',
-              flex: 1,
-              minWidth: 0,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              fontSize: '0.75rem',
-            }}
-          >
-            {formatItems(purchase.items)}
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{ color: 'text.primary', fontWeight: 'bold', whiteSpace: 'nowrap', fontSize: '0.75rem' }}
-          >
-            R$ {NumberUtils.format(purchase.total)}
-          </Typography>
-        </Box>
-      </Box>
+        <CardActionArea onClick={this.emitOpenReceipt}>
+          <CardContent sx={{ p: '14px !important' }}>
+            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: 'hidden' }}>
+                <Typography variant="caption" sx={{ color: Colors.OnSurfaceVariant }}>
+                  {DateUtils.formatDate(purchase.date)}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  noWrap
+                  sx={{ fontWeight: 'normal' }}
+                >
+                  {purchase.items.join(', ')}
+                </Typography>
+              </Box>
+              <Chip
+                label={`R$ ${NumberUtils.format(purchase.total)}`}
+                size="small"
+                sx={{
+                  bgcolor: Colors.PriceBackground,
+                  color: Colors.PriceColor,
+                  fontWeight: 'bold',
+                  borderRadius: '8px',
+                  ml: 1,
+                }}
+              />
+            </Stack>
+          </CardContent>
+        </CardActionArea>
+      </Card>
     )
   }
 

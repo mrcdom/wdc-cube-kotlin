@@ -1,22 +1,19 @@
 import React from 'react'
-import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
+import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
+import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import Link from '@mui/material/Link'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import ReceiptIcon from '@mui/icons-material/Receipt'
 import app, { type ViewProps } from '@root/App'
 import { BaseViewClass } from '@root/utils/ViewUtils'
 import * as NumberUtils from '@root/utils/NumberUtils'
+import * as DateUtils from '@root/utils/DateUtils'
+import { Colors } from '@root/theme'
 
 // :: Actions
 
@@ -25,6 +22,7 @@ const ON_OPEN_PRODUCTS = 1
 // :: Types
 
 type ReceiptItem = {
+  id?: number
   description: string
   value: number
   quantity: number
@@ -44,96 +42,117 @@ export type ReceiptViewState = {
 }
 
 class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptViewState> {
-  // :: Renderes
-
   override render({ className }: ViewProps) {
     const { state } = this
-    const reciboItems = state.receipt.items
+    const receipt = state.receipt
 
     return (
-      <Card className={className} elevation={3} sx={{ maxWidth: 900, mx: 'auto', my: 3 }}>
-        <CardContent>
-          {state.notifySuccess && (
-            <Alert icon={<CheckCircleOutlinedIcon fontSize="inherit" />} severity="success" sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                COMPRA EFETUADA COM SUCESSO
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: '16px 10px 16px 16px' }}>
+        <Box sx={{ maxWidth: 600, width: '100%' }}>
+          <Stack direction="column" spacing={2}>
+            {/* Success banner */}
+            {state.notifySuccess && (
+              <Paper
+                elevation={0}
+                sx={{ p: 2.5, borderRadius: '12px', bgcolor: Colors.SuccessContainer, textAlign: 'center' }}
+              >
+                <Stack direction="column" spacing={1} sx={{ alignItems: 'center' }}>
+                  <CheckCircleIcon sx={{ fontSize: 32, color: Colors.SuccessColor }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 500, color: Colors.SuccessColor }}>
+                    Compra realizada com sucesso!
+                  </Typography>
+                </Stack>
+              </Paper>
+            )}
+
+            {/* Receipt header */}
+            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <ReceiptIcon sx={{ fontSize: 28 }} />
+                <Typography variant="h5" sx={{ fontWeight: 500, fontSize: 28 }}>
+                  Recibo
+                </Typography>
+              </Stack>
+              {receipt.date && (
+                <Chip
+                  label={DateUtils.formatDate(receipt.date)}
+                  size="small"
+                  sx={{ bgcolor: Colors.SurfaceVariant }}
+                />
+              )}
+            </Stack>
+
+            <Divider />
+
+            {/* Items header */}
+            <Stack direction="row" sx={{ justifyContent: 'space-between', px: 0.5 }}>
+              <Typography variant="caption" sx={{ flex: '1 1 0', color: Colors.OnSurfaceVariant }}>
+                Item
               </Typography>
-            </Alert>
-          )}
+              <Typography variant="caption" sx={{ width: 50, textAlign: 'center', color: Colors.OnSurfaceVariant }}>
+                Qtd
+              </Typography>
+              <Typography variant="caption" sx={{ width: 100, textAlign: 'right', color: Colors.OnSurfaceVariant }}>
+                Valor
+              </Typography>
+            </Stack>
 
-          <Typography variant="h6" gutterBottom>
-            IMPRIMA SEU RECIBO:
-          </Typography>
-
-          <Box
-            sx={{
-              border: '1px solid',
-              borderColor: 'grey.500',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: '"Courier New", Courier, monospace',
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-              STELA SHOPPING - SUA COMPRA CERTA NA INTERNET
-            </Typography>
-            <Typography variant="subtitle2" gutterBottom>
-              Recibo de compra
-            </Typography>
-            <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'inherit', fontWeight: 'bold' }}>ITEM</TableCell>
-                  <TableCell align="right" sx={{ fontFamily: 'inherit', fontWeight: 'bold' }}>
-                    VALOR UNITÁRIO
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontFamily: 'inherit', fontWeight: 'bold' }}>
-                    QUANTIDADE
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {reciboItems.map((item, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell sx={{ fontFamily: 'inherit' }}>{item.description}</TableCell>
-                    <TableCell align="right" sx={{ fontFamily: 'inherit' }}>
+            {/* Items */}
+            <Stack direction="column" spacing={1}>
+              {receipt.items.map((item, idx) => (
+                <Paper
+                  key={item.id ?? idx}
+                  elevation={0}
+                  sx={{ p: 1.5, borderRadius: '8px', bgcolor: Colors.SurfaceVariant40 }}
+                >
+                  <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ flex: '1 1 0', fontWeight: 500 }}>
+                      {item.description}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ width: 50, textAlign: 'center', color: Colors.OnSurfaceVariant }}
+                    >
+                      {item.quantity}x
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ width: 100, textAlign: 'right', color: Colors.PriceColor, fontWeight: 500 }}
+                    >
                       R$ {NumberUtils.format(item.value)}
-                    </TableCell>
-                    <TableCell align="center" sx={{ fontFamily: 'inherit' }}>
-                      {NumberUtils.format(item.quantity, 0)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <Divider sx={{ my: 1.5 }} />
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Typography variant="body2" sx={{ fontFamily: 'inherit', fontWeight: 'bold' }}>
-                VALOR TOTAL: R$ {NumberUtils.format(state.receipt.total)}
-              </Typography>
-            </Box>
-          </Box>
+                    </Typography>
+                  </Stack>
+                </Paper>
+              ))}
+            </Stack>
 
-          <Link
-            component="button"
-            underline="always"
-            onClick={this.emitOpenProducts}
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 0.5,
-              color: '#1976d2',
-              mt: 3,
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-            }}
-          >
-            <ArrowBackIcon fontSize="small" />
-            Voltar aos produtos
-          </Link>
-        </CardContent>
-      </Card>
+            {/* Total */}
+            <Divider />
+            <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
+              <Typography variant="subtitle1" sx={{ color: Colors.OnSurfaceVariant }}>
+                Total:
+              </Typography>
+              <Box sx={{ bgcolor: Colors.PriceBackground, borderRadius: '10px', px: 1.75, py: 0.75 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: 22, color: Colors.PriceColor }}>
+                  R$ {NumberUtils.format(receipt.total)}
+                </Typography>
+              </Box>
+            </Stack>
+
+            {/* Action button */}
+            <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
+              <Button
+                variant="contained"
+                onClick={this.emitOpenProducts}
+                sx={{ borderRadius: '12px', height: 48, textTransform: 'none', fontWeight: 500 }}
+                startIcon={<ArrowBackIcon />}
+              >
+                Continuar Comprando
+              </Button>
+            </Stack>
+          </Stack>
+        </Box>
+      </Box>
     )
   }
 
