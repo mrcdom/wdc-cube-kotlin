@@ -1,8 +1,9 @@
 # WDC Cube Kotlin — Shopping Demo
 
-Aplicação de demonstração do framework **Cube MVP** em Kotlin Multiplatform, com duas modalidades de view:
+Aplicação de demonstração do framework **Cube MVP** em Kotlin Multiplatform, com três modalidades de view:
 
 - **Compose Multiplatform** — presenters no cliente (Desktop, Android, iOS, Web/WASM)
+- **Native** — presenters no cliente com UI nativa por plataforma (Android Views, UIKit, React/MUI)
 - **React (View Remota)** — presenters no servidor via WebSocket
 
 **Documentação:** [Visão geral](docs/architecture.md) · [Framework Cube](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [View React](docs/architecture-react.md) · [Persistência](docs/architecture-persistence.md)
