@@ -5,7 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
-class LoginReactViewImpl(private val presenter: LoginPresenter) : GenericViewImpl(presenter.app, "c677cda52d14") {
+class LoginReactViewImpl(private val presenter: LoginPresenter) : GenericViewImpl(presenter.app, "c677cda52d14", presenter) {
 
     override fun syncClientToServer(formData: Map<String, Any?>) {
         val state = presenter.state

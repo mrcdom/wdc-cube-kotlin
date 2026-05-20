@@ -6,7 +6,7 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
-class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID, 0) {
+class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID, instanceId = 0) {
 
     companion object {
         const val VID = "7b32e816a191"

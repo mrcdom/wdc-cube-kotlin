@@ -1,25 +1,30 @@
 package br.com.wdc.shopping.view.react.skeleton.util
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
+import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.view.react.skeleton.viewimpl.ApplicationReactImpl
 
-abstract class GenericViewImpl : CubeView {
+abstract class GenericViewImpl protected constructor(
+    app: ShoppingApplication,
+    vid: String,
+    private val presenter: CubePresenter? = null,
+    instanceId: Int = (app as ApplicationReactImpl).nextInstanceId()
+) : CubeView {
 
-    protected val app: ApplicationReactImpl
-    private val _instanceId: String
+    protected val app: ApplicationReactImpl = app as ApplicationReactImpl
+    private val _instanceId: String = "$vid:$instanceId"
 
     protected var alertId: Int = 0
 
-    protected constructor(app: ShoppingApplication, vid: String)
-        : this(app, vid, (app as ApplicationReactImpl).nextInstanceId())
-
-    protected constructor(app: ShoppingApplication, vid: String, instanceId: Int) {
-        this.app = app as ApplicationReactImpl
-        this._instanceId = "$vid:$instanceId"
+    init {
         this.app.putView(this)
         this.app.markDirty(this)
+    }
+
+    fun commitComputedState() {
+        presenter?.commitComputedState()
     }
 
     override val instanceId: String get() = _instanceId

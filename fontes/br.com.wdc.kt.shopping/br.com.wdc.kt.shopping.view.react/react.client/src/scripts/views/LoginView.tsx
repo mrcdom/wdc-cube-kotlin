@@ -4,6 +4,7 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
+import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
@@ -21,6 +22,7 @@ const ON_ENTER = 1
 export type LoginViewState = {
   userName?: string
   password?: string
+  loading?: boolean
   errorMessage?: string
 }
 
@@ -99,6 +101,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                 defaultValue={state.userName ?? ''}
                 fullWidth
                 size="small"
+                disabled={!!state.loading}
               />
               <TextField
                 inputRef={this.pwdInputRef}
@@ -109,6 +112,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                 defaultValue={state.password ?? ''}
                 fullWidth
                 size="small"
+                disabled={!!state.loading}
               />
               {!!state.errorMessage && (
                 <Alert severity="error" sx={{ mt: 0.5 }}>
@@ -123,8 +127,16 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                 fullWidth
                 sx={{ mt: 1, py: 1.2, borderRadius: 2, textTransform: 'none', fontWeight: 'bold', fontSize: '1rem' }}
                 onClick={this.emitOnEnter}
+                disabled={!!state.loading}
               >
-                Entrar
+                {state.loading ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <CircularProgress size={20} color="inherit" />
+                    Autenticando...
+                  </Box>
+                ) : (
+                  'Entrar'
+                )}
               </Button>
             </Box>
 

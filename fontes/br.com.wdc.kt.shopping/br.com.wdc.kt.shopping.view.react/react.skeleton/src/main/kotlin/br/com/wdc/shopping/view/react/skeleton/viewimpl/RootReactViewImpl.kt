@@ -4,7 +4,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
-class RootReactViewImpl(presenter: RootPresenter) : GenericViewImpl(presenter.app, "f2d345c4a610") {
+class RootReactViewImpl(presenter: RootPresenter) : GenericViewImpl(presenter.app, "f2d345c4a610", presenter) {
 
     private val presenter: RootPresenter = presenter
 

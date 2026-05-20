@@ -1,8 +1,6 @@
 package br.com.wdc.shopping.view.react.skeleton.viewimpl
 
 import br.com.wdc.framework.commons.codec.Base62
-import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
-import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.gson.JsonExtensibleObjectOutput
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
@@ -32,22 +30,21 @@ import br.com.wdc.shopping.view.react.skeleton.spi.WebSocketConnection
 import br.com.wdc.shopping.view.react.skeleton.util.AppSecurity
 import br.com.wdc.shopping.view.react.skeleton.util.DataSecurity
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
+import br.com.wdc.shopping.view.react.ViewFlushScheduler
 import com.google.gson.stream.JsonWriter
 import java.io.IOException
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
-class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
+class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
 
     companion object {
         private val LOG = Log.getLogger("ApplicationReactImpl")
 
         val DEFAULT_TIME_SPAN: Duration = 3.minutes
-        private val PUSH_DELAY: Duration = 200.milliseconds
 
         private val instanceMap = ConcurrentHashMap<String, ApplicationReactImpl>()
 
@@ -65,14 +62,6 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
         fun get(appId: String?): ApplicationReactImpl? {
             if (appId.isNullOrBlank()) return null
             return instanceMap[appId]
-        }
-
-        fun getOrCreate(appId: String, path: String): ApplicationReactImpl {
-            val request = HashMap<String, Any?>()
-            val browserViewState = HashMap<String, Any?>()
-            browserViewState["p.path"] = path
-            request[BrowserReactViewImpl.VSID] = browserViewState
-            return getOrCreate(appId, request)
         }
 
         fun getOrCreate(appId: String, request: Map<String, Any?>): ApplicationReactImpl {
@@ -100,10 +89,6 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
                 throw caught
             }
             return app
-        }
-
-        fun remove(sessionId: String): ApplicationReactImpl? {
-            return instanceMap.remove(sessionId)
         }
 
         fun removeExpireds() {
@@ -150,23 +135,14 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
     private var removeInstanceAction: (() -> Unit) = {}
 
     private var rootPresenterField: RootPresenter? = null
-    private val dirtyViewMap = LinkedHashMap<String, GenericViewImpl>()
+    private val dirtyViewMap = ConcurrentHashMap<String, GenericViewImpl>()
     private val viewMap = HashMap<String, GenericViewImpl>()
     private var lastRequestId: Long = 0L
     private var historyDirty: Boolean = false
     private lateinit var browserView: BrowserReactViewImpl
     private var instanceIdGen: Int = 1
 
-    @Volatile
-    private var requestInProgress: Boolean = false
-    @Volatile
-    private var pushRegistration: Registration = Registration.noop()
-
     init {
-        postConstruct()
-    }
-
-    private fun postConstruct() {
         this.dataSecurity = DataSecurity()
         this.browserView = BrowserReactViewImpl(this)
         this.viewMap[browserView.instanceId] = browserView
@@ -177,13 +153,12 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
     override fun release() {
         try {
             try {
-                this.pushRegistration.remove()
-                this.pushRegistration = Registration.noop()
                 this.browserView.release()
                 this.removeInstanceAction()
                 this.removeInstanceAction = {}
                 super.release()
             } finally {
+                ViewFlushScheduler.removeDirty(id)
                 instanceMap.remove(id)
                 LOG.info("Application removed: {}", this.id)
             }
@@ -221,14 +196,6 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
     fun setRootPresenter(presenter: RootPresenter?) {
         this.rootPresenterField = presenter
     }
-
-    fun getViewInstanceById(vsid: String): GenericViewImpl? {
-        synchronized(this) {
-            return viewMap[vsid]
-        }
-    }
-
-    fun getViewMap(): Map<String, GenericViewImpl> = viewMap
 
     override fun updateHistory() {
         this.historyDirty = true
@@ -286,12 +253,9 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
         return viewMap.remove(stateId)
     }
 
-    @Synchronized
     fun markDirty(view: GenericViewImpl) {
         dirtyViewMap[view.instanceId] = view
-        if (!requestInProgress && wsSession != null) {
-            schedulePush()
-        }
+        ViewFlushScheduler.markDirty(this)
     }
 
     fun updateAllViews() {
@@ -303,59 +267,59 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
     }
 
     @Synchronized
-    fun beginRequest() {
-        this.requestInProgress = true
-        this.pushRegistration.remove()
-        this.pushRegistration = Registration.noop()
-    }
-
-    @Synchronized
-    fun endRequest() {
-        this.requestInProgress = false
-    }
-
     @Throws(Exception::class)
     fun sendResponse(request: Map<String, Any?>) {
         try {
-            beginRequest()
             DispatchPhaseBhv(this).run(request)
             ResponsePhaseBhv(this).run(request)
         } catch (e: Exception) {
             val exn = IOException("Sending response")
             exn.addSuppressed(e)
             throw exn
-        } finally {
-            try {
-                endRequest()
-            } catch (e: Exception) {
-                LOG.error("error in endRequest", e)
-            }
         }
     }
 
-    // :: Internal
+    // :: Flush
 
-    private fun schedulePush() {
-        if (pushRegistration !== Registration.noop()) {
-            return
-        }
-        val scheduler = ScheduledExecutor.BEAN.getOrNull() ?: return
-        this.pushRegistration = scheduler.schedule(::executePush, PUSH_DELAY)
-    }
+    fun flushDirtyViews() {
+        if (dirtyViewMap.isEmpty()) return
+        val ws = wsSession ?: return
 
-    private fun executePush() {
-        synchronized(this) {
-            this.pushRegistration = Registration.noop()
-            if (requestInProgress || dirtyViewMap.isEmpty() || wsSession == null) {
-                return
-            }
+        val allViews = ArrayList<GenericViewImpl>()
+        val iter = dirtyViewMap.entries.iterator()
+        while (iter.hasNext()) {
+            allViews.add(iter.next().value)
+            iter.remove()
         }
+
+        if (allViews.isEmpty()) return
+
+        val strWriter = StringWriter()
+        val json = JsonExtensibleObjectOutput(JsonWriter(strWriter))
         try {
-            val pushRequest = mapOf<String, Any?>("requestId" to lastRequestId)
-            ResponsePhaseBhv(this).run(pushRequest)
-        } catch (e: Exception) {
-            LOG.error("Error during server push", e)
+            json.beginObject()
+            json.name("requestId").value(lastRequestId)
+
+            if (historyDirty) {
+                doUpdateHistory()
+            }
+
+            if (fragment != null) {
+                json.name("uri").value(fragment)
+            }
+
+            json.name("states")
+            json.beginArray()
+            for (view in allViews) {
+                view.writeState(json)
+            }
+            json.endArray()
+            json.endObject()
+        } finally {
+            json.flush()
         }
+
+        ws.sendText(strWriter.toString())
     }
 
     internal fun sendTextToClient(text: String) {
@@ -452,18 +416,32 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
             val requestId = getRequestId(request).also { me.lastRequestId = it }
             val isPing = isPing(request)
 
-            if (!isPing && hasNoDirtyViews()) {
-                return false
+            me.doUpdateHistory()
+
+            val viewsToFlush = ArrayList<GenericViewImpl>()
+            val iter = me.dirtyViewMap.entries.iterator()
+            while (iter.hasNext()) {
+                var view = iter.next().value
+                viewsToFlush.add(view)
+
+                // commitComputedState per view (synchronized on app instance)
+                try {
+                    view.commitComputedState()
+                } catch (e: Exception) {
+                    LOG.error("commitComputedState for view {}", view.instanceId, e)
+                }
+
+                iter.remove()
             }
 
-            commitComputedState()
-
-            me.doUpdateHistory()
+            if (!isPing && !me.historyDirty && viewsToFlush.isEmpty()) {
+                return false
+            }
 
             val strWriter = StringWriter()
             val json = JsonExtensibleObjectOutput(JsonWriter(strWriter))
             try {
-                writeResponse(json, requestId, isPing)
+                writeResponse(json, requestId, isPing, viewsToFlush)
             } finally {
                 json.flush()
             }
@@ -482,21 +460,7 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
             return CoerceUtils.asBoolean(request["ping"], false) == true
         }
 
-        private fun hasNoDirtyViews(): Boolean {
-            return !me.historyDirty && me.dirtyViewMap.isEmpty()
-        }
-
-        private fun commitComputedState() {
-            me.forEachPresenter { presenter ->
-                try {
-                    presenter.commitComputedState()
-                } catch (cause: Exception) {
-                    LOG.error("presenter.commitComputedState()", cause)
-                }
-            }
-        }
-
-        private fun writeResponse(json: ExtensibleObjectOutput, requestId: Long, isPing: Boolean) {
+        private fun writeResponse(json: ExtensibleObjectOutput, requestId: Long, isPing: Boolean, views: List<GenericViewImpl>) {
             json.beginObject()
             run {
                 json.name("requestId").value(requestId)
@@ -509,17 +473,12 @@ class ApplicationReactImpl(private val id: String) : ShoppingApplication() {
                     json.name("uri").value(me.fragment)
                 }
 
-                if (me.dirtyViewMap.isNotEmpty()) {
+                if (views.isNotEmpty()) {
                     json.name("states")
                     json.beginArray()
-
-                    val dirtyViews = me.dirtyViewMap.values.iterator()
-                    while (dirtyViews.hasNext()) {
-                        val view = dirtyViews.next()
+                    for (view in views) {
                         view.writeState(json)
-                        dirtyViews.remove()
                     }
-
                     json.endArray()
                 }
             }

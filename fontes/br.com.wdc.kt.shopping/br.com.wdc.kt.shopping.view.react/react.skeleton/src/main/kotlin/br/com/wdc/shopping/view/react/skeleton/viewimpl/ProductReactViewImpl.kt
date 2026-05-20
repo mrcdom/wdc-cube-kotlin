@@ -5,7 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
-class ProductReactViewImpl(private val presenter: ProductPresenter) : GenericViewImpl(presenter.app, "48b693f67410") {
+class ProductReactViewImpl(private val presenter: ProductPresenter) : GenericViewImpl(presenter.app, "48b693f67410", presenter) {
 
     @Throws(Exception::class)
     override fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
