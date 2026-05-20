@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.rest
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.shopping.domain.criteria.UserCriteria
 import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
 import com.google.gson.JsonObject
@@ -26,6 +27,7 @@ class UserApiController {
             config.routes.post("/api/repo/user/delete", ctrl::delete)
             config.routes.post("/api/repo/user/count", ctrl::count)
             config.routes.post("/api/repo/user/fetch", ctrl::fetch)
+            config.routes.post("/api/repo/user/fetchPage", ctrl::fetchPage)
             config.routes.post("/api/repo/user/fetchById", ctrl::fetchByIdPost)
             config.routes.get("/api/repo/user/{id}", ctrl::fetchById)
         }
@@ -119,6 +121,15 @@ class UserApiController {
         criteria.withProjection(projection)
         val items = repo().fetch(criteria)
         json(ctx, mapOf("items" to items))
+    }
+
+    private fun fetchPage(ctx: Context) {
+        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
+        val criteria = parseCriteria(body)
+        val projection = ApiGson.parseProjection(body, User::class.java)
+        criteria.withProjection(projection)
+        val page = repo().fetchPage(criteria)
+        json(ctx, mapOf("items" to page.items, "totalCount" to page.totalCount))
     }
 
     private fun fetchById(ctx: Context) {

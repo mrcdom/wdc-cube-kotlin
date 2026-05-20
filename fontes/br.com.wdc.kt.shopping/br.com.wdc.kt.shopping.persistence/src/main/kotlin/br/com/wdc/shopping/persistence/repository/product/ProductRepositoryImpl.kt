@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.repository.product
 import br.com.wdc.framework.commons.util.TransactionContext
 import br.com.wdc.shopping.domain.criteria.ProductCriteria
 import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.utils.ProjectionValues
 import br.com.wdc.shopping.persistence.repository.BaseRepository
@@ -53,6 +54,16 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
     override fun fetch(criteria: ProductCriteria): List<Product> = try {
         TransactionContext.begin(dataSource()).use { tx ->
             FetchProductsCmd.byCriteria(tx.connection(), criteria)
+        }
+    } catch (e: Exception) {
+        readException(e)
+    }
+
+    override fun fetchPage(criteria: ProductCriteria): Page<Product> = try {
+        TransactionContext.begin(dataSource()).use { tx ->
+            val totalCount = CountProductsCmd.byCriteria(tx.connection(), criteria)
+            val items = FetchProductsCmd.byCriteria(tx.connection(), criteria)
+            Page(items, totalCount)
         }
     } catch (e: Exception) {
         readException(e)

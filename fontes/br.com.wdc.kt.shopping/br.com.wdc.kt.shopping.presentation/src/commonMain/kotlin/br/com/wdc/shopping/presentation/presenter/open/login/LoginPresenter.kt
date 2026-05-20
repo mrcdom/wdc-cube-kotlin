@@ -64,7 +64,10 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     // :: User Actions
 
-    fun onEnter() {
+    fun onEnter(userName: String? = null, password: String? = null) {
+        if (userName != null) state.userName = userName
+        if (password != null) state.password = password
+
         state.loading = true
         state.errorCode = 0
         state.errorMessage = null

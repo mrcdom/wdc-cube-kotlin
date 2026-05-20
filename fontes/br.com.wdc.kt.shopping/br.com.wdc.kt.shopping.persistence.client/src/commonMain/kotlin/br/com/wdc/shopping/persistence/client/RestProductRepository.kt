@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.shopping.domain.criteria.ProductCriteria
 import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 
 class RestProductRepository(private val config: RestConfig) : ProductRepository {
@@ -50,6 +51,17 @@ class RestProductRepository(private val config: RestConfig) : ProductRepository 
         }
         val input = config.postJson("/api/repo/product/fetch", body)
         return readProductList(input)
+    }
+
+    override fun fetchPage(criteria: ProductCriteria): Page<Product> {
+        val body = config.toJson { out ->
+            out.beginObject()
+            writeCriteriaFields(out, criteria)
+            criteria.projection?.let { out.name("projection"); it.writeTo(out) }
+            out.endObject()
+        }
+        val input = config.postJson("/api/repo/product/fetchPage", body)
+        return readProductPage(input)
     }
 
     override fun fetchById(productId: Long, projection: Product?): Product? {
@@ -119,5 +131,24 @@ class RestProductRepository(private val config: RestConfig) : ProductRepository 
         }
         input.endObject()
         return result
+    }
+
+    private fun readProductPage(input: ExtensibleObjectInput): Page<Product> {
+        val items = mutableListOf<Product>()
+        var totalCount = 0
+        input.beginObject()
+        while (input.hasNext()) {
+            when (input.nextName()) {
+                "items" -> {
+                    input.beginArray()
+                    while (input.hasNext()) { items.add(input.readProduct()) }
+                    input.endArray()
+                }
+                "totalCount" -> totalCount = input.nextInt()
+                else -> input.skipValue()
+            }
+        }
+        input.endObject()
+        return Page(items, totalCount)
     }
 }

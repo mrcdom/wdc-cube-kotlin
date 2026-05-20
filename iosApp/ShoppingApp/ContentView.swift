@@ -4,7 +4,7 @@ import ShoppingApp
 
 struct ComposeView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController(baseUrl: "http://localhost:8080")
+        AppBootstrapKt.createRootViewController(baseUrl: "http://localhost:8080")
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}

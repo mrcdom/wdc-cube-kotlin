@@ -14,6 +14,9 @@ kotlin {
 
     jvm()
     androidTarget()
+    js(IR) {
+        browser()
+    }
     wasmJs {
         browser()
     }

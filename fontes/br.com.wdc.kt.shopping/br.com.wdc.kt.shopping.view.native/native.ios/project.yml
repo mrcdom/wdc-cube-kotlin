@@ -1,0 +1,56 @@
+name: ShoppingNativeApp
+options:
+  bundleIdPrefix: br.com.wdc.shopping
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "16.0"
+
+settings:
+  ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+
+targets:
+  ShoppingNativeApp:
+    type: application
+    platform: iOS
+    sources:
+      - app
+    settings:
+      base:
+        INFOPLIST_FILE: app/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: br.com.wdc.shopping.native.ios
+        PRODUCT_MODULE_NAME: ShoppingNativeApp
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        OTHER_LINKER_FLAGS:
+          - "-lc++"
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+      configs:
+        Debug:
+          FRAMEWORK_SEARCH_PATHS:
+            - "$(SRCROOT)/build/bin/iosSimulatorArm64/debugFramework"
+            - "$(SRCROOT)/build/bin/iosArm64/debugFramework"
+        Release:
+          FRAMEWORK_SEARCH_PATHS:
+            - "$(SRCROOT)/build/bin/iosSimulatorArm64/releaseFramework"
+            - "$(SRCROOT)/build/bin/iosArm64/releaseFramework"
+    dependencies: []
+    preBuildScripts:
+      - name: "Build Kotlin Framework"
+        script: |
+          # Determine target based on SDK
+          if [ "$PLATFORM_NAME" = "iphonesimulator" ]; then
+            GRADLE_TASK="linkDebugFrameworkIosSimulatorArm64"
+          else
+            GRADLE_TASK="linkDebugFrameworkIosArm64"
+          fi
+
+          if [ "$CONFIGURATION" = "Release" ]; then
+            GRADLE_TASK="${GRADLE_TASK/Debug/Release}"
+          fi
+
+          cd "$SRCROOT/../../.."
+          export JAVA_HOME=$(/usr/libexec/java_home -v 21 2>/dev/null || echo "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home")
+          ./gradlew :view-native-ios:$GRADLE_TASK --no-daemon
+        basedOnDependencyAnalysis: false

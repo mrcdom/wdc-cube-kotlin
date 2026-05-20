@@ -18,6 +18,8 @@ class PurchasesPanelViewMock(
         }
     }
 
+    override val instanceId: String = AbstractViewMock.INSTANCE_ID_GEN.incrementAndGet().toString()
+
     var state: PurchasesPanelViewState = presenter.state
 
     override fun release() {
@@ -26,9 +28,5 @@ class PurchasesPanelViewMock(
 
     override fun update() {
         // NOOP
-    }
-
-    override fun instanceId(): String {
-        return AbstractViewMock.INSTANCE_ID_GEN.incrementAndGet().toString()
     }
 }

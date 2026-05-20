@@ -1,0 +1,20 @@
+/* Shopping — Native Web — styles managed by MUI ThemeProvider */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body, #app {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-color: #F5F7FA;
+    color: #1A1C1E;
+    overflow: hidden;
+}
+

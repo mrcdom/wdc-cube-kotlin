@@ -2,6 +2,7 @@
 .idea/
 .vscode/
 .ecp-*/
+.copilot/
 .project
 .settings/
 *.iml
