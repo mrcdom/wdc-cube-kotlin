@@ -150,14 +150,13 @@ class PurchasesPanelView(viewId: String, proxy: WorkerProxy) : ReactCubeView(vie
                     Box {
                         sx {
                             backgroundColor = ShoppingColors.SecondaryContainer.unsafeCast<BackgroundColor>()
-                            borderRadius = 12.px
-                            padding = Padding(4.px, 12.px)
+                            borderRadius = 8.px
+                            padding = Padding(6.px, 16.px)
                         }
                         Typography {
                             variant = TypographyVariant.caption
                             sx {
                                 color = ShoppingColors.OnPrimaryContainer.unsafeCast<Color>()
-                                fontWeight = integer(500)
                             }
                             +"$totalCount itens"
                         }

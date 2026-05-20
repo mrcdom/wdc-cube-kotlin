@@ -42,6 +42,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.Purc
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
+import br.com.wdc.shopping.view.compose.bridge.ViewUpdateScheduler
 import br.com.wdc.shopping.view.compose.views.*
 import br.com.wdc.shopping.view.compose.theme.ShoppingTheme
 import kotlinx.browser.document
@@ -152,6 +153,7 @@ fun main() {
     initializePlatform(baseUrl)
 
     val app = ComposeShoppingApplication()
+    ViewUpdateScheduler.initialize { app }
 
     // On irrecoverable auth failure (401 + refresh failed), clear session and go to login
     platformConfig.transport.onAuthFailure = {

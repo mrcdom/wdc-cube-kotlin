@@ -4,4 +4,4 @@ Cliente REST multiplataforma que implementa as interfaces de repositório via HT
 
 **Plataformas:** JVM, Android, iOS, wasmJs
 
-Usado na [arquitetura Compose (view local)](../../../docs/architecture.md), onde os presenters rodam no cliente e acessam dados via REST.
+Usado nas arquiteturas de view local ([Compose](../../../docs/architecture.md) e [Native](../../../docs/architecture.md)), onde os presenters rodam no cliente e acessam dados via REST.

@@ -2,6 +2,7 @@ package br.com.wdc.shopping.presentation.repository
 
 import br.com.wdc.shopping.domain.criteria.UserCriteria
 import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
 import br.com.wdc.shopping.presentation.util.withSecurityContext
@@ -28,6 +29,9 @@ class SecuredUserRepository(
 
     override fun fetch(criteria: UserCriteria) =
         withSecurityContext(contextSupplier) { delegate.fetch(criteria) }
+
+    override fun fetchPage(criteria: UserCriteria) =
+        withSecurityContext(contextSupplier) { delegate.fetchPage(criteria) }
 
     override fun fetchById(userId: Long, projection: User?) =
         withSecurityContext(contextSupplier) { delegate.fetchById(userId, projection) }

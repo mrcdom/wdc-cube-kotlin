@@ -2,6 +2,7 @@ package br.com.wdc.shopping.persistence.security
 
 import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.model.PurchaseItem
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
 
@@ -42,6 +43,12 @@ class SecuredPurchaseItemRepository(private val delegate: PurchaseItemRepository
         val sc = SecurityEnforcer.require(ENTITY, "read")
         enforceUserScope(sc, criteria)
         return delegate.fetch(criteria)
+    }
+
+    override fun fetchPage(criteria: PurchaseItemCriteria): Page<PurchaseItem> {
+        val sc = SecurityEnforcer.require(ENTITY, "read")
+        enforceUserScope(sc, criteria)
+        return delegate.fetchPage(criteria)
     }
 
     override fun fetchById(purchaseId: Long, projection: PurchaseItem?): PurchaseItem? {

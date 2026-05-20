@@ -19,7 +19,8 @@ Módulos da aplicação Shopping, organizada em camadas: domínio, persistência
 ### Views
 
 - [br.com.wdc.kt.shopping.view.compose/](br.com.wdc.kt.shopping.view.compose/) — View Compose Multiplatform (local) — [arquitetura](../../docs/architecture.md)
-- [br.com.wdc.kt.shopping.view.react/](br.com.wdc.kt.shopping.view.react/) — View React (remota, server-side) — [arquitetura](../../docs/architecture-react.md)
+- [br.com.wdc.kt.shopping.view.remote/](br.com.wdc.kt.shopping.view.remote/) — Views remotas (server-side) — React, Vaadin, ZK
+- [br.com.wdc.kt.shopping.view.native/](br.com.wdc.kt.shopping.view.native/) — Views nativas por plataforma (Android Views, UIKit, React/MUI)
 
 ### Servidor e Testes
 

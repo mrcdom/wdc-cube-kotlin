@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.rest
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.shopping.domain.criteria.ProductCriteria
 import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.utils.ProjectionValues
 import com.google.gson.JsonObject
@@ -31,6 +32,7 @@ class ProductApiController {
             config.routes.post("/api/repo/product/delete", ctrl::delete)
             config.routes.post("/api/repo/product/count", ctrl::count)
             config.routes.post("/api/repo/product/fetch", ctrl::fetch)
+            config.routes.post("/api/repo/product/fetchPage", ctrl::fetchPage)
             config.routes.post("/api/repo/product/fetchById", ctrl::fetchByIdPost)
             config.routes.get("/api/repo/product/{id}", ctrl::fetchById)
             config.routes.get("/api/repo/product/{id}/image", ctrl::fetchImage)
@@ -110,6 +112,15 @@ class ProductApiController {
         criteria.withProjection(projection ?: fullProjection())
         val items = repo().fetch(criteria)
         json(ctx, mapOf("items" to items))
+    }
+
+    private fun fetchPage(ctx: Context) {
+        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
+        val criteria = parseCriteria(body)
+        val projection = ApiGson.parseProjection(body, Product::class.java)
+        criteria.withProjection(projection ?: fullProjection())
+        val page = repo().fetchPage(criteria)
+        json(ctx, mapOf("items" to page.items, "totalCount" to page.totalCount))
     }
 
     private fun fetchById(ctx: Context) {

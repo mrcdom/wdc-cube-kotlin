@@ -8,6 +8,7 @@ import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.shopping.domain.security.IosCryptoProvider
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.toolkit.AbstractViewIos
+import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUpdateScheduler
 import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.ios.views.*
 import br.com.wdc.shopping.persistence.client.IosHttpTransport
@@ -54,6 +55,7 @@ fun createRootViewController(baseUrl: String): UIViewController {
 
     // Create the application
     val app = IosNativeShoppingApplication()
+    ViewUpdateScheduler.initialize { app }
 
     // Create root ViewController
     val viewController = UIViewController()

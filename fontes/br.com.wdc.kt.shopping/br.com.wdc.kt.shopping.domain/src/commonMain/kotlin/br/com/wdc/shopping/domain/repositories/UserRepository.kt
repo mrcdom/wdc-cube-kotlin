@@ -18,6 +18,8 @@ interface UserRepository {
 
     fun fetch(criteria: UserCriteria): List<User>
 
+    fun fetchPage(criteria: UserCriteria): Page<User>
+
     fun fetchById(userId: Long, projection: User?): User?
 
     companion object {

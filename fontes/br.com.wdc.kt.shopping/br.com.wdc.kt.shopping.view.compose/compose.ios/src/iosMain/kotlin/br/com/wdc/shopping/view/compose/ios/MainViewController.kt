@@ -40,6 +40,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.Purc
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
+import br.com.wdc.shopping.view.compose.bridge.ViewUpdateScheduler
 import br.com.wdc.shopping.view.compose.theme.ShoppingTheme
 import br.com.wdc.shopping.view.compose.util.PlatformConfig
 import br.com.wdc.shopping.view.compose.views.*
@@ -111,6 +112,7 @@ fun MainViewController(baseUrl: String): UIViewController {
     initializePlatform(baseUrl)
 
     val app = IosShoppingApplication()
+    ViewUpdateScheduler.initialize { app }
     app.go("public")
 
     return ComposeUIViewController {

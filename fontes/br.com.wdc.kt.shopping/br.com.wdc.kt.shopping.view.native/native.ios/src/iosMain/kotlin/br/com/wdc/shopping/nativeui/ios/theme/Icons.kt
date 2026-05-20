@@ -48,6 +48,9 @@ object ShoppingIcons {
     private const val PATH_CHEVRON_RIGHT =
         "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
 
+    private const val PATH_LOGOUT =
+        "M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+
     fun localMall(size: Double, color: UIColor): UIImage = renderIcon(PATH_LOCAL_MALL, size, color)
     fun shoppingCart(size: Double, color: UIColor): UIImage = renderIcon(PATH_SHOPPING_CART, size, color)
     fun shoppingBag(size: Double, color: UIColor): UIImage = renderIcon(PATH_SHOPPING_BAG, size, color)
@@ -60,6 +63,7 @@ object ShoppingIcons {
     fun checkCircle(size: Double, color: UIColor): UIImage = renderIcon(PATH_CHECK_CIRCLE, size, color)
     fun chevronLeft(size: Double, color: UIColor): UIImage = renderIcon(PATH_CHEVRON_LEFT, size, color)
     fun chevronRight(size: Double, color: UIColor): UIImage = renderIcon(PATH_CHEVRON_RIGHT, size, color)
+    fun logout(size: Double, color: UIColor): UIImage = renderIcon(PATH_LOGOUT, size, color)
 
     // --- Rendering ---
 

@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.repository.purchase
 import br.com.wdc.framework.commons.util.TransactionContext
 import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
 import br.com.wdc.shopping.domain.model.Purchase
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.persistence.repository.BaseRepository
 
@@ -52,6 +53,16 @@ class PurchaseRepositoryImpl : BaseRepository(), PurchaseRepository {
     override fun fetch(criteria: PurchaseCriteria): List<Purchase> = try {
         TransactionContext.begin(dataSource()).use { tx ->
             FetchPurchaseCmd.byCriteria(tx.connection(), criteria)
+        }
+    } catch (e: Exception) {
+        readException(e)
+    }
+
+    override fun fetchPage(criteria: PurchaseCriteria): Page<Purchase> = try {
+        TransactionContext.begin(dataSource()).use { tx ->
+            val totalCount = CountPurchasesCmd.byCriteria(tx.connection(), criteria)
+            val items = FetchPurchaseCmd.byCriteria(tx.connection(), criteria)
+            Page(items, totalCount)
         }
     } catch (e: Exception) {
         readException(e)

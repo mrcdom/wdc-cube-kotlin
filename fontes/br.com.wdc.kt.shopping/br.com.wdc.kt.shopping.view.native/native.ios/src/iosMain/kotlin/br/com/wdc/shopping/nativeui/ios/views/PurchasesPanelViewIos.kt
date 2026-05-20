@@ -63,19 +63,27 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
                     centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                 ))
             }
-            headerBadge = label {
-                font = UIFont.systemFontOfSize(12.0, UIFontWeightMedium)
-                textColor = ShoppingColors.OnPrimaryContainer
+            // Chip background
+            view(configure = {
                 backgroundColor = ShoppingColors.SecondaryContainer
-                textAlignment = UIK.TextAlignCenter
-                layer.cornerRadius = 10.0
+                layer.cornerRadius = 8.0
                 clipsToBounds = true
                 NSLayoutConstraint.activateConstraints(listOf(
                     trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
                     centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
-                    heightAnchor.constraintEqualToConstant(20.0),
-                    widthAnchor.constraintGreaterThanOrEqualToConstant(60.0)
+                    heightAnchor.constraintEqualToConstant(28.0)
                 ))
+            }) {
+                headerBadge = label {
+                    font = UIFont.systemFontOfSize(12.0)
+                    textColor = ShoppingColors.OnPrimaryContainer
+                    textAlignment = UIK.TextAlignCenter
+                    NSLayoutConstraint.activateConstraints(listOf(
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
+                        centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
+                    ))
+                }
             }
         }
 
@@ -100,36 +108,34 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
                 heightAnchor.constraintEqualToConstant(44.0)
             ))
         }) {
-            prevButton = button("◀ Anterior") {
+            prevButton = button("◀") {
                 setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
                 setTitleColor(ShoppingColors.OnSurfaceVariant, forState = UIControlStateDisabled)
-                titleLabel?.font = UIFont.systemFontOfSize(14.0)
+                titleLabel?.font = UIFont.systemFontOfSize(16.0)
                 addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onPrev")))
-                NSLayoutConstraint.activateConstraints(listOf(
-                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                    topAnchor.constraintEqualToAnchor(parent().topAnchor),
-                    bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor)
-                ))
             }
 
             pageLabel = label {
                 font = UIFont.systemFontOfSize(14.0)
-                textColor = ShoppingColors.OnSurface
+                textColor = ShoppingColors.OnSurfaceVariant
                 textAlignment = UIK.TextAlignCenter
             }
             center(pageLabel)
 
-            nextButton = button("Próxima ▶") {
+            nextButton = button("▶") {
                 setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
                 setTitleColor(ShoppingColors.OnSurfaceVariant, forState = UIControlStateDisabled)
-                titleLabel?.font = UIFont.systemFontOfSize(14.0)
+                titleLabel?.font = UIFont.systemFontOfSize(16.0)
                 addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onNext")))
-                NSLayoutConstraint.activateConstraints(listOf(
-                    trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
-                    topAnchor.constraintEqualToAnchor(parent().topAnchor),
-                    bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor)
-                ))
             }
+
+            // Layout: prev - 12pt - pageLabel - 12pt - next, centered
+            NSLayoutConstraint.activateConstraints(listOf(
+                prevButton.trailingAnchor.constraintEqualToAnchor(pageLabel.leadingAnchor, -12.0),
+                prevButton.centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
+                nextButton.leadingAnchor.constraintEqualToAnchor(pageLabel.trailingAnchor, 12.0),
+                nextButton.centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
+            ))
         }
 
         scrollView = scrollView(configure = {
@@ -216,7 +222,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
             pageLabel.text = "${page + 1} / $totalPages"
             prevButton.enabled = page > 0
             nextButton.enabled = page < totalPages - 1
-            headerBadge.text = "  $totalCount compras  "
+            headerBadge.text = "$totalCount itens"
         }
     }
 
@@ -300,8 +306,8 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
             }
         }.also { pin(it) }
 
-        // Tap gesture
-        tapAction = PurchaseCardTapAction(this@PurchaseCardView).also { retainForGC(it) }
+        // Tap gesture with visual feedback
+        tapAction = PurchaseCardTapAction(this@PurchaseCardView, card).also { retainForGC(it) }
         card.addGestureRecognizer(tapAction.gesture)
     }
 
@@ -342,12 +348,31 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private class PurchaseCardTapAction(private val cardView: PurchaseCardView) : NSObject() {
+private class PurchaseCardTapAction(private val cardView: PurchaseCardView, private val card: UIView) : NSObject() {
 
-    val gesture: UITapGestureRecognizer = UITapGestureRecognizer(target = this, action = sel_registerName("onTap"))
+    val gesture: UILongPressGestureRecognizer = UILongPressGestureRecognizer(target = this, action = sel_registerName("onGesture")).apply {
+        minimumPressDuration = 0.0
+    }
 
     @ObjCAction
-    fun onTap() {
-        cardView.onTap()
+    fun onGesture() {
+        when (gesture.state) {
+            UIGestureRecognizerStateBegan -> {
+                card.backgroundColor = ShoppingColors.SurfaceVariant
+            }
+            UIGestureRecognizerStateEnded -> {
+                UIView.animateWithDuration(0.2) {
+                    card.backgroundColor = ShoppingColors.SurfaceVariant50
+                }
+                cardView.onTap()
+            }
+            UIGestureRecognizerStateCancelled,
+            UIGestureRecognizerStateFailed -> {
+                UIView.animateWithDuration(0.2) {
+                    card.backgroundColor = ShoppingColors.SurfaceVariant50
+                }
+            }
+            else -> {}
+        }
     }
 }

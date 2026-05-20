@@ -7,6 +7,11 @@ import platform.UIKit.UIStackView
 import platform.UIKit.UIView
 import platform.UIKit.NSLayoutConstraint
 
+/** Shared contract for slot types that need cleanup on release. */
+interface Releasable {
+    fun releaseAll()
+}
+
 /**
  * Base class for all iOS native views in the Cube MVP architecture.
  *
@@ -37,7 +42,7 @@ abstract class AbstractViewIos<P>(
     }
 
     private val myGcRetained = mutableListOf<Any>()
-    private val myListSlots = mutableListOf<ListSlot<*, *>>()
+    private val myListSlots = mutableListOf<Releasable>()
 
     protected fun retainForGC(obj: Any) {
         myGcRetained.add(obj)
@@ -48,7 +53,6 @@ abstract class AbstractViewIos<P>(
     lateinit var rootView: UIView
         protected set
 
-    private var dirty = false
     private var released = false
     private var firstRender = true
 
@@ -56,16 +60,13 @@ abstract class AbstractViewIos<P>(
 
     override fun update() {
         if (released) return
-        if (!dirty) {
-            dirty = true
-            scheduleUpdate()
-        }
+        ViewUpdateScheduler.markDirty(this)
     }
 
     override fun release() {
         if (released) return
         released = true
-        dirty = false
+        ViewUpdateScheduler.removeDirty(this)
         myListSlots.forEach { it.releaseAll() }
         myListSlots.clear()
         myGcRetained.forEach { gcRoots.remove(it) }
@@ -109,11 +110,10 @@ abstract class AbstractViewIos<P>(
     }
 
     /**
-     * Force immediate update (bypasses dirty flag check).
+     * Force immediate update (bypasses scheduler).
      */
     fun forceUpdate() {
         if (released) return
-        dirty = false
         try {
             doUpdate()
         } catch (e: Exception) {
@@ -177,9 +177,10 @@ abstract class AbstractViewIos<P>(
     /**
      * Creates a list slot that efficiently syncs items to views.
      * Uses grow/shrink at edges + update-in-place (same algorithm as Gluon).
+     * Works with any container: UIStackView (addArrangedSubview) or UIView (addSubview).
      */
     protected fun <T, V : AbstractViewIos<*>> newListSlot(
-        container: UIStackView,
+        container: UIView,
         factory: () -> V,
         updater: (V, T) -> Unit
     ): ListSlot<T, V> {
@@ -190,12 +191,13 @@ abstract class AbstractViewIos<P>(
 
     /**
      * A list slot that recycles item views — grows/shrinks at edges, updates in-place.
+     * Layout-agnostic: the container determines how children are arranged.
      */
     class ListSlot<T, V : AbstractViewIos<*>>(
-        private val container: UIStackView,
+        private val container: UIView,
         private val factory: () -> V,
         private val updater: (V, T) -> Unit
-    ) {
+    ) : Releasable {
         private val viewList = mutableListOf<V>()
 
         val size: Int get() = viewList.size
@@ -215,7 +217,11 @@ abstract class AbstractViewIos<P>(
             while (viewList.size < newSize) {
                 val view = factory()
                 viewList.add(view)
-                container.addArrangedSubview(view.rootView)
+                if (container is UIStackView) {
+                    (container as UIStackView).addArrangedSubview(view.rootView)
+                } else {
+                    container.addSubview(view.rootView)
+                }
             }
 
             if (items != null) {
@@ -223,26 +229,13 @@ abstract class AbstractViewIos<P>(
                     updater(viewList[i], items[i])
                 }
             }
+
+            container.setNeedsLayout()
         }
 
-        fun releaseAll() {
+        override fun releaseAll() {
             viewList.forEach { it.release() }
             viewList.clear()
-        }
-    }
-
-    // MARK: - Private
-
-    private fun scheduleUpdate() {
-        platform.darwin.dispatch_async(platform.darwin.dispatch_get_main_queue()) {
-            if (dirty && !released) {
-                dirty = false
-                try {
-                    doUpdate()
-                } catch (e: Exception) {
-                    NSLog("AbstractViewIos[$viewId] doUpdate error: ${e.message}")
-                }
-            }
         }
     }
 }

@@ -63,11 +63,11 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         loginView.state.password = "admin"
         loginView.presenter.onEnter()
 
-        var restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
+        var homeView = RestrictedViewMock.cast(rootView.state.contentView)
 
-        restrictedView.presenter.onOpenProduct(DBReset.PEN_DRIVE2GB_ID)
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
-        var produtoView = ProductViewMock.cast(restrictedView.state.contentView)
+        homeView.presenter.onOpenProduct(DBReset.PEN_DRIVE2GB_ID)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
+        var produtoView = ProductViewMock.cast(homeView.state.contentView)
         assertTrue(produtoView.state.product != null, "Produto deve ter sido selecionado")
         assertTrue(
             produtoView.state.product!!.id == DBReset.PEN_DRIVE2GB_ID,
@@ -75,8 +75,8 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         )
 
         produtoView.presenter.onAddToCart(1)
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
-        var carrinhoView = CartViewMock.cast(restrictedView.state.contentView)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
+        var carrinhoView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(carrinhoView.state.errorCode == 0, "Não deve haver indicação de erros")
         assertTrue(carrinhoView.state.items.size == 1, "Um item no carrinho")
         assertTrue(carrinhoView.state.items[0].quantity == 1, "O item deve ter quantidade 1")
@@ -86,60 +86,60 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         )
 
         carrinhoView.presenter.onModifyQuantity(DBReset.PEN_DRIVE2GB_ID, 0)
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
-        carrinhoView = CartViewMock.cast(restrictedView.state.contentView)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
+        carrinhoView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(carrinhoView.state.errorCode == 1, "Indicação de quantidade inválida")
         carrinhoView.state.errorCode = 0
 
         carrinhoView.presenter.onModifyQuantity(DBReset.PEN_DRIVE2GB_ID, 2)
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
-        carrinhoView = CartViewMock.cast(restrictedView.state.contentView)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
+        carrinhoView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(carrinhoView.state.errorCode == 0, "Tem que funcionar sem erro")
         assertTrue(carrinhoView.state.items[0].quantity == 2, "O item deve ter quantidade 2")
 
         carrinhoView.presenter.onModifyQuantity(Long.MIN_VALUE, 2)
-        carrinhoView = CartViewMock.cast(restrictedView.state.contentView)
+        carrinhoView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(carrinhoView.state.errorCode == 2, "Produto não encontrado")
         carrinhoView.state.errorCode = 0
 
         carrinhoView.presenter.onOpenProducts()
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
 
-        restrictedView.presenter.onOpenProduct(DBReset.BOLA_WILSON_ID)
-        produtoView = ProductViewMock.cast(restrictedView.state.contentView)
+        homeView.presenter.onOpenProduct(DBReset.BOLA_WILSON_ID)
+        produtoView = ProductViewMock.cast(homeView.state.contentView)
         assertTrue(
             produtoView.state.product!!.id == DBReset.BOLA_WILSON_ID,
             "Produto BOLA_WILSON não localizado"
         )
 
         produtoView.presenter.onOpenProducts()
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
 
-        restrictedView.presenter.onOpenProduct(DBReset.FITA_VEDA_ROSCA_ID)
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
-        produtoView = ProductViewMock.cast(restrictedView.state.contentView)
+        homeView.presenter.onOpenProduct(DBReset.FITA_VEDA_ROSCA_ID)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
+        produtoView = ProductViewMock.cast(homeView.state.contentView)
         assertTrue(
             produtoView.state.product!!.id == DBReset.FITA_VEDA_ROSCA_ID,
             "Produto FITA_VEDA_ROSCA não localizado"
         )
 
         produtoView.presenter.onAddToCart(1)
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
-        carrinhoView = CartViewMock.cast(restrictedView.state.contentView)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
+        carrinhoView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(carrinhoView.state.items.size == 2, "Um item no carrinho")
         assertTrue(carrinhoView.state.items[1].quantity == 1, "O item deve ter quantidade 1")
 
         carrinhoView.presenter.onBuy()
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
-        val reciboView = ReceiptViewMock.cast(restrictedView.state.contentView)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
+        val reciboView = ReceiptViewMock.cast(homeView.state.contentView)
         assertTrue(reciboView.state.notifySuccess, "Tem que estar marcado como novo recibo")
         assertNotNull(reciboView.state.receipt)
         assertEquals(2, reciboView.state.receipt!!.items.size)
 
         reciboView.presenter.onOpenProducts()
-        restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
+        homeView = RestrictedViewMock.cast(rootView.state.contentView)
         assertNull(
-            restrictedView.state.contentView,
+            homeView.state.contentView,
             "A visão restrita deveria estar mostrando o conteúdo padrão"
         )
     }

@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.security
 import br.com.wdc.shopping.domain.criteria.UserCriteria
 import br.com.wdc.shopping.domain.exception.AccessDeniedException
 import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
 
@@ -47,6 +48,15 @@ class SecuredUserRepository(private val delegate: UserRepository) : UserReposito
         val results = delegate.fetch(criteria)
         results.forEach { it.password = null }
         return results
+    }
+
+    override fun fetchPage(criteria: UserCriteria): Page<User> {
+        val sc = SecurityEnforcer.require(ENTITY, "read")
+        enforceUserScope(sc, criteria)
+        sanitizeProjection(criteria)
+        val page = delegate.fetchPage(criteria)
+        page.items.forEach { it.password = null }
+        return page
     }
 
     override fun fetchById(userId: Long, projection: User?): User? {

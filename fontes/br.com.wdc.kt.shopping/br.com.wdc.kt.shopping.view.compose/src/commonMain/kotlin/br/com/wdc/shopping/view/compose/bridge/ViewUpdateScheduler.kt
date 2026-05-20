@@ -1,0 +1,76 @@
+package br.com.wdc.shopping.view.compose.bridge
+
+import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.shopping.presentation.ShoppingApplication
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
+/**
+ * Centralized dirty-view scheduler for the Compose platform.
+ *
+ * When a presenter calls view.update(), the view is marked dirty here.
+ * After safeCall completes, flush() is invoked — it calls commitComputedState()
+ * giving every presenter a last chance to mark additional views as dirty, then
+ * increments the revision counter for each dirty view (triggering recomposition).
+ *
+ * Thread safety: All operations (markDirty, removeDirty, flush) execute on the
+ * single-threaded presenterScope, so no locking is needed. External callers that
+ * wish to invoke update() from outside presenterScope must launch on it first.
+ */
+object ViewUpdateScheduler {
+
+    private val LOG = Log.getLogger("ViewUpdateScheduler")
+
+    private val dirtyViews = linkedSetOf<ComposeCubeView>()
+    private var appProvider: (() -> ShoppingApplication?)? = null
+
+    /**
+     * Single-threaded coroutine scope for presenter actions and flush.
+     * limitedParallelism(1) guarantees serial execution.
+     */
+    internal val presenterScope = CoroutineScope(
+        Dispatchers.Default.limitedParallelism(1)
+    )
+
+    fun initialize(appProvider: () -> ShoppingApplication?) {
+        this.appProvider = appProvider
+    }
+
+    /**
+     * Marks a view as dirty. Must be called from presenterScope.
+     */
+    fun markDirty(view: ComposeCubeView) {
+        dirtyViews.add(view)
+    }
+
+    /**
+     * Removes a view from the dirty set. Safe to call from any context via launch.
+     */
+    fun removeDirty(view: ComposeCubeView) {
+        presenterScope.launch {
+            dirtyViews.remove(view)
+        }
+    }
+
+    /**
+     * Flushes all dirty views. Called at the end of every safeCall on presenterScope.
+     * Calls commitComputedState() first, then notifies (increments revision for) each dirty view.
+     */
+    internal fun flush() {
+        // commitComputedState gives presenters a last chance to call update()
+        try {
+            appProvider?.invoke()?.commitComputedState()
+        } catch (e: Exception) {
+            LOG.error("commitComputedState error: ${e.message}", e)
+        }
+
+        // Snapshot and clear
+        val snapshot = dirtyViews.toList()
+        dirtyViews.clear()
+
+        for (view in snapshot) {
+            view.revision.value++
+        }
+    }
+}

@@ -2,6 +2,7 @@ package br.com.wdc.shopping.persistence.security
 
 import br.com.wdc.shopping.domain.criteria.ProductCriteria
 import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 
 class SecuredProductRepository(private val delegate: ProductRepository) : ProductRepository {
@@ -38,6 +39,11 @@ class SecuredProductRepository(private val delegate: ProductRepository) : Produc
     override fun fetch(criteria: ProductCriteria): List<Product> {
         SecurityEnforcer.require(ENTITY, "read")
         return delegate.fetch(criteria)
+    }
+
+    override fun fetchPage(criteria: ProductCriteria): Page<Product> {
+        SecurityEnforcer.require(ENTITY, "read")
+        return delegate.fetchPage(criteria)
     }
 
     override fun fetchById(productId: Long, projection: Product?): Product? {

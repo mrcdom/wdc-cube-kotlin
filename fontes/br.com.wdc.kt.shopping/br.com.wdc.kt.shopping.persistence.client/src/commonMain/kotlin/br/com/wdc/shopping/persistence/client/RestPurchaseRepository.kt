@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
 import br.com.wdc.shopping.domain.model.Purchase
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 
 class RestPurchaseRepository(private val config: RestConfig) : PurchaseRepository {
@@ -50,6 +51,17 @@ class RestPurchaseRepository(private val config: RestConfig) : PurchaseRepositor
         }
         val input = config.postJson("/api/repo/purchase/fetch", body)
         return readPurchaseList(input)
+    }
+
+    override fun fetchPage(criteria: PurchaseCriteria): Page<Purchase> {
+        val body = config.toJson { out ->
+            out.beginObject()
+            writeCriteriaFields(out, criteria)
+            criteria.projection?.let { out.name("projection"); it.writeTo(out) }
+            out.endObject()
+        }
+        val input = config.postJson("/api/repo/purchase/fetchPage", body)
+        return readPurchasePage(input)
     }
 
     override fun fetchById(purchaseId: Long, projection: Purchase?): Purchase? {
@@ -112,5 +124,24 @@ class RestPurchaseRepository(private val config: RestConfig) : PurchaseRepositor
         }
         input.endObject()
         return result
+    }
+
+    private fun readPurchasePage(input: ExtensibleObjectInput): Page<Purchase> {
+        val items = mutableListOf<Purchase>()
+        var totalCount = 0
+        input.beginObject()
+        while (input.hasNext()) {
+            when (input.nextName()) {
+                "items" -> {
+                    input.beginArray()
+                    while (input.hasNext()) { items.add(input.readPurchase()) }
+                    input.endArray()
+                }
+                "totalCount" -> totalCount = input.nextInt()
+                else -> input.skipValue()
+            }
+        }
+        input.endObject()
+        return Page(items, totalCount)
     }
 }

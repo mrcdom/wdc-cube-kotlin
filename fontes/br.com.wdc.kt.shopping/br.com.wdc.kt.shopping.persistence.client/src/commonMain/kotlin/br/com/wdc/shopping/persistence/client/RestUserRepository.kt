@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.shopping.domain.criteria.UserCriteria
 import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.UserRepository
 
 class RestUserRepository(private val config: RestConfig) : UserRepository {
@@ -50,6 +51,17 @@ class RestUserRepository(private val config: RestConfig) : UserRepository {
         }
         val input = config.postJson("/api/repo/user/fetch", body)
         return readUserList(input)
+    }
+
+    override fun fetchPage(criteria: UserCriteria): Page<User> {
+        val body = config.toJson { out ->
+            out.beginObject()
+            writeCriteriaFields(out, criteria)
+            criteria.projection?.let { out.name("projection"); it.writeTo(out) }
+            out.endObject()
+        }
+        val input = config.postJson("/api/repo/user/fetchPage", body)
+        return readUserPage(input)
     }
 
     override fun fetchById(userId: Long, projection: User?): User? {
@@ -113,5 +125,24 @@ class RestUserRepository(private val config: RestConfig) : UserRepository {
         }
         input.endObject()
         return result
+    }
+
+    private fun readUserPage(input: ExtensibleObjectInput): Page<User> {
+        val items = mutableListOf<User>()
+        var totalCount = 0
+        input.beginObject()
+        while (input.hasNext()) {
+            when (input.nextName()) {
+                "items" -> {
+                    input.beginArray()
+                    while (input.hasNext()) { items.add(input.readUser()) }
+                    input.endArray()
+                }
+                "totalCount" -> totalCount = input.nextInt()
+                else -> input.skipValue()
+            }
+        }
+        input.endObject()
+        return Page(items, totalCount)
     }
 }

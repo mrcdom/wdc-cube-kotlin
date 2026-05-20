@@ -58,22 +58,20 @@ class PurchasesPanelPresenter(
     // :: Data load
 
     fun loadPurchases() {
-        try {
-            val subject = app.subject
-            if (subject != null) {
-                state.totalCount = purchasesPanelService.countPurchasesOfUser(subject.id!!)
+        val subject = app.subject
+        if (subject != null && state.pageSize > 0) {
+            val offset = state.page * state.pageSize
+            val page = purchasesPanelService.fetchPageOfUser(subject.id!!, offset, state.pageSize)
 
-                val totalPages = max(1, ceil(state.totalCount.toDouble() / state.pageSize).toInt())
-                if (state.page >= totalPages) {
-                    state.page = totalPages - 1
-                }
+            state.totalCount = page.totalCount
 
-                val offset = state.page * state.pageSize
-                state.purchases = purchasesPanelService.loadPurchasesOfUser(subject.id!!, offset, state.pageSize)
-                update()
+            val totalPages = max(1, ceil(state.totalCount.toDouble() / state.pageSize).toInt())
+            if (state.page >= totalPages) {
+                state.page = totalPages - 1
             }
-        } catch (caught: Exception) {
-            LOG.error("Failed to load purchases", caught)
+
+            state.purchases = page.items
+            update()
         }
     }
 }

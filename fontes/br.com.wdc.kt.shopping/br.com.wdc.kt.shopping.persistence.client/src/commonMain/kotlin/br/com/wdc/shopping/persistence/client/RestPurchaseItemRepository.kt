@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.model.PurchaseItem
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 
 class RestPurchaseItemRepository(private val config: RestConfig) : PurchaseItemRepository {
@@ -50,6 +51,17 @@ class RestPurchaseItemRepository(private val config: RestConfig) : PurchaseItemR
         }
         val input = config.postJson("/api/repo/purchase-item/fetch", body)
         return readPurchaseItemList(input)
+    }
+
+    override fun fetchPage(criteria: PurchaseItemCriteria): Page<PurchaseItem> {
+        val body = config.toJson { out ->
+            out.beginObject()
+            writeCriteriaFields(out, criteria)
+            criteria.projection?.let { out.name("projection"); it.writeTo(out) }
+            out.endObject()
+        }
+        val input = config.postJson("/api/repo/purchase-item/fetchPage", body)
+        return readPurchaseItemPage(input)
     }
 
     override fun fetchById(purchaseId: Long, projection: PurchaseItem?): PurchaseItem? {
@@ -124,5 +136,24 @@ class RestPurchaseItemRepository(private val config: RestConfig) : PurchaseItemR
         }
         input.endObject()
         return result
+    }
+
+    private fun readPurchaseItemPage(input: ExtensibleObjectInput): Page<PurchaseItem> {
+        val items = mutableListOf<PurchaseItem>()
+        var totalCount = 0
+        input.beginObject()
+        while (input.hasNext()) {
+            when (input.nextName()) {
+                "items" -> {
+                    input.beginArray()
+                    while (input.hasNext()) { items.add(input.readPurchaseItem()) }
+                    input.endArray()
+                }
+                "totalCount" -> totalCount = input.nextInt()
+                else -> input.skipValue()
+            }
+        }
+        input.endObject()
+        return Page(items, totalCount)
     }
 }

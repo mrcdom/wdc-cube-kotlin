@@ -327,6 +327,7 @@ class JavalinApplication(
 
     fun start() {
         try {
+            ViewFlushScheduler.start()
             app.start(port)
             LOG.info("Javalin server started on port {}", port)
             LOG.info("Static files served from {}: {}", staticFilesSettings.location, staticFilesSettings.directory)
@@ -341,6 +342,7 @@ class JavalinApplication(
 
     fun stop() {
         try {
+            ViewFlushScheduler.stop()
             businessContext.stop()
             app.stop()
             LOG.info("Javalin server stopped")

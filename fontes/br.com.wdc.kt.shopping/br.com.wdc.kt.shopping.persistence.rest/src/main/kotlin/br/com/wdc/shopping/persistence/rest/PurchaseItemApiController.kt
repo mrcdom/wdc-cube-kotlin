@@ -4,6 +4,7 @@ import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.utils.ProjectionValues
 import com.google.gson.JsonObject
@@ -21,6 +22,7 @@ class PurchaseItemApiController {
             config.routes.post("/api/repo/purchase-item/delete", ctrl::delete)
             config.routes.post("/api/repo/purchase-item/count", ctrl::count)
             config.routes.post("/api/repo/purchase-item/fetch", ctrl::fetch)
+            config.routes.post("/api/repo/purchase-item/fetchPage", ctrl::fetchPage)
             config.routes.post("/api/repo/purchase-item/fetchById", ctrl::fetchByIdPost)
             config.routes.get("/api/repo/purchase-item/{id}", ctrl::fetchById)
         }
@@ -124,6 +126,16 @@ class PurchaseItemApiController {
         val items = repo().fetch(criteria)
         items.forEach { it.purchase = null }
         json(ctx, mapOf("items" to items))
+    }
+
+    private fun fetchPage(ctx: Context) {
+        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
+        val criteria = parseCriteria(body)
+        val projection = ApiGson.parseProjection(body, PurchaseItem::class.java)
+        criteria.withProjection(projection ?: fullProjection())
+        val page = repo().fetchPage(criteria)
+        page.items.forEach { it.purchase = null }
+        json(ctx, mapOf("items" to page.items, "totalCount" to page.totalCount))
     }
 
     private fun fetchById(ctx: Context) {
