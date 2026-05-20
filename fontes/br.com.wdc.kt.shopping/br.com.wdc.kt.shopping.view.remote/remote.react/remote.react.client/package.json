@@ -5,12 +5,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/mrcdom/wdc-cube-kotlin.git",
-    "directory": "fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.react/react.client"
+    "directory": "fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.remote/remote.react/remote.react.client"
   },
   "source": "src/index.html",
   "targets": {
     "default": {
-      "distDir": "../react.skeleton/src/main/resources/META-INF/resources"
+      "distDir": "../remote.react.skeleton/src/main/resources/META-INF/resources"
     }
   },
   "alias": {

@@ -11,7 +11,7 @@ tasks.named<JavaExec>("run") {
 }
 
 dependencies {
-    api(project(":view-react-skeleton"))
+    api(project(":view-remote-react-skeleton"))
     api(project(":persistence-rest"))
     api(project(":shopping-scripts"))
     api(project(":shopping-persistence"))
