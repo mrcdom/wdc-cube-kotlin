@@ -18,6 +18,8 @@ interface ProductRepository {
 
     fun fetch(criteria: ProductCriteria): List<Product>
 
+    fun fetchPage(criteria: ProductCriteria): Page<Product>
+
     fun fetchById(productId: Long, projection: Product?): Product?
 
     fun fetchImage(productId: Long): ByteArray?

@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.repository.user
 import br.com.wdc.framework.commons.util.TransactionContext
 import br.com.wdc.shopping.domain.criteria.UserCriteria
 import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.persistence.repository.BaseRepository
 
@@ -52,6 +53,16 @@ class UserRepositoryImpl : BaseRepository(), UserRepository {
     override fun fetch(criteria: UserCriteria): List<User> = try {
         TransactionContext.begin(dataSource()).use { tx ->
             FetchUsersCmd.byCriteria(tx.connection(), criteria)
+        }
+    } catch (e: Exception) {
+        readException(e)
+    }
+
+    override fun fetchPage(criteria: UserCriteria): Page<User> = try {
+        TransactionContext.begin(dataSource()).use { tx ->
+            val totalCount = CountUsersCmd.byCriteria(tx.connection(), criteria)
+            val items = FetchUsersCmd.byCriteria(tx.connection(), criteria)
+            Page(items, totalCount)
         }
     } catch (e: Exception) {
         readException(e)

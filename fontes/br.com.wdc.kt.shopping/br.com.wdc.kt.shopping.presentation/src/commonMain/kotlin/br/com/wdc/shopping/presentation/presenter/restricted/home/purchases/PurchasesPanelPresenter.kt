@@ -60,15 +60,17 @@ class PurchasesPanelPresenter(
     fun loadPurchases() {
         val subject = app.subject
         if (subject != null && state.pageSize > 0) {
-            state.totalCount = purchasesPanelService.countPurchasesOfUser(subject.id!!)
+            val offset = state.page * state.pageSize
+            val page = purchasesPanelService.fetchPageOfUser(subject.id!!, offset, state.pageSize)
+
+            state.totalCount = page.totalCount
 
             val totalPages = max(1, ceil(state.totalCount.toDouble() / state.pageSize).toInt())
             if (state.page >= totalPages) {
                 state.page = totalPages - 1
             }
 
-            val offset = state.page * state.pageSize
-            state.purchases = purchasesPanelService.loadPurchasesOfUser(subject.id!!, offset, state.pageSize)
+            state.purchases = page.items
             update()
         }
     }

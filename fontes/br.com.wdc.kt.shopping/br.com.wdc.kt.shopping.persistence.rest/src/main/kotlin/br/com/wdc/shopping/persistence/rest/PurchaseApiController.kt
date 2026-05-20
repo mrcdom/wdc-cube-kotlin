@@ -5,6 +5,7 @@ import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.utils.ProjectionValues
 import com.google.gson.JsonObject
@@ -23,6 +24,7 @@ class PurchaseApiController {
             config.routes.post("/api/repo/purchase/delete", ctrl::delete)
             config.routes.post("/api/repo/purchase/count", ctrl::count)
             config.routes.post("/api/repo/purchase/fetch", ctrl::fetch)
+            config.routes.post("/api/repo/purchase/fetchPage", ctrl::fetchPage)
             config.routes.post("/api/repo/purchase/fetchById", ctrl::fetchByIdPost)
             config.routes.get("/api/repo/purchase/{id}", ctrl::fetchById)
         }
@@ -150,6 +152,23 @@ class PurchaseApiController {
         val items = repo().fetch(criteria)
         clearCircularRefs(items)
         json(ctx, mapOf("items" to items))
+    }
+
+    private fun fetchPage(ctx: Context) {
+        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
+        val criteria = parseCriteria(body)
+
+        val projection = ApiGson.parseProjection(body, Purchase::class.java)
+        if (projection == null) {
+            val includeItems = hasValue(body, "includeItems") && body.get("includeItems").asBoolean
+            criteria.withProjection(if (includeItems) fullProjectionWithItems() else simpleProjection())
+        } else {
+            criteria.withProjection(projection)
+        }
+
+        val page = repo().fetchPage(criteria)
+        clearCircularRefs(page.items)
+        json(ctx, mapOf("items" to page.items, "totalCount" to page.totalCount))
     }
 
     private fun fetchById(ctx: Context) {

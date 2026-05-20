@@ -18,6 +18,8 @@ interface PurchaseItemRepository {
 
     fun fetch(criteria: PurchaseItemCriteria): List<PurchaseItem>
 
+    fun fetchPage(criteria: PurchaseItemCriteria): Page<PurchaseItem>
+
     fun fetchById(purchaseId: Long, projection: PurchaseItem?): PurchaseItem?
 
     companion object {
