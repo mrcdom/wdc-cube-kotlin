@@ -16,14 +16,6 @@ internal class AndroidNativeShoppingApplication(
     private val persistentStorage: AndroidPersistentSessionStorage
 ) : ShoppingApplication() {
 
-    private val attributes = mutableMapOf<String, Any?>()
-
-    override fun setAttribute(name: String, value: Any?): Any? = attributes.put(name, value)
-
-    override fun getAttribute(name: String): Any? = attributes[name]
-
-    override fun removeAttribute(name: String): Any? = attributes.remove(name)
-
     override fun updateHistory() { /* No browser history on Android */ }
 
     override fun createUserDelegate(delegate: UserRepository) =

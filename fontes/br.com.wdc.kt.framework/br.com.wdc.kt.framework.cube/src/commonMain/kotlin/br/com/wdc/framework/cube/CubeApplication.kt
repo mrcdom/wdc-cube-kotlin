@@ -73,7 +73,7 @@ abstract class CubeApplication {
 
     // Attributes — default in-memory storage (override for thread-safe or persistent implementations)
 
-    private val attributes = mutableMapOf<String, Any?>()
+    private val attributes: MutableMap<String, Any?> = concurrentMutableMapOf()
 
     open fun setAttribute(name: String, value: Any?): Any? = attributes.put(name, value)
 

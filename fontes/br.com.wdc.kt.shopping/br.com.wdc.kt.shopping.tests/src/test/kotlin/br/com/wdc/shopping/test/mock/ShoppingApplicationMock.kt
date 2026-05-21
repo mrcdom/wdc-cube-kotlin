@@ -41,8 +41,6 @@ class ShoppingApplicationMock : ShoppingApplication() {
         PurchasesPanelPresenter.createView = { p -> PurchasesPanelViewMock(p) }
     }
 
-    private val attributes = HashMap<String, Any?>()
-
     override fun createUserDelegate(delegate: UserRepository) =
         SecuredUserRepository(delegate, ::getSecurityContext)
 
@@ -61,18 +59,6 @@ class ShoppingApplicationMock : ShoppingApplication() {
         val rootPresenter = getRootPresenter()
         val v = rootPresenter?.view()
         return if (v is RootViewMock) v else null
-    }
-
-    override fun setAttribute(name: String, value: Any?): Any? {
-        return attributes.put(name, value)
-    }
-
-    override fun getAttribute(name: String): Any? {
-        return attributes[name]
-    }
-
-    override fun removeAttribute(name: String): Any? {
-        return attributes.remove(name)
     }
 
     override fun updateHistory() {

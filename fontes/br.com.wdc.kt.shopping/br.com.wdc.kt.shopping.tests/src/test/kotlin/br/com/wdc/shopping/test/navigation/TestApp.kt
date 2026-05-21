@@ -7,12 +7,6 @@ class TestApp : CubeApplication() {
     var historyUpdateCount = 0
         private set
 
-    override fun setAttribute(name: String, value: Any?): Any? = null
-
-    override fun getAttribute(name: String): Any? = null
-
-    override fun removeAttribute(name: String): Any? = null
-
     override fun updateHistory() {
         historyUpdateCount++
     }

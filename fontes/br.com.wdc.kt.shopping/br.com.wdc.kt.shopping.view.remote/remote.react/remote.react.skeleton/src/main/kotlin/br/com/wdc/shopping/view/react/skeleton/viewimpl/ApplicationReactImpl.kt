@@ -139,7 +139,6 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
     private var dataSecurity: DataSecurity = DataSecurity()
     @Volatile
     var wsSession: WebSocketConnection? = null
-    private val attributes = ConcurrentHashMap<String, Any?>()
 
     private var removeInstanceAction: (() -> Unit) = {}
 
@@ -193,12 +192,6 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
     fun isAuthenticated(): Boolean = subject != null
 
     fun getDataSecurity(): DataSecurity = dataSecurity
-
-    override fun setAttribute(name: String, value: Any?): Any? = attributes.put(name, value)
-
-    override fun getAttribute(name: String): Any? = attributes[name]
-
-    override fun removeAttribute(name: String): Any? = attributes.remove(name)
 
     override fun getRootPresenter(): RootPresenter? = rootPresenterField
 
