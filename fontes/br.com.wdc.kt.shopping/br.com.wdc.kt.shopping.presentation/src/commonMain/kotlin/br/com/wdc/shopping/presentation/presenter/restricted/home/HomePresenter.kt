@@ -100,6 +100,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
         if (deepest) {
             setContentView(null)
+            reloadPurchasesIfNeeded()
         } else {
             intent.setViewSlot(PlaceAttributes.SLOT_OWNER, contentSlot)
         }
@@ -198,6 +199,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             app.setSecurityContext(null)
             app.sessionStorage.clear()
             setContentView(null)
+            reloadPurchasesIfNeeded()
 
             Routes.login(app)
         } catch (caught: Exception) {
@@ -233,15 +235,14 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     // :: Slots
 
-    private suspend fun setContentView(view: CubeView?) {
+    private fun setContentView(view: CubeView?) {
         if (state.contentView !== view) {
             state.contentView = view
             update()
-
-            // Reload purchases when returning to the main view
-            if (view == null) {
-                purchasesPanel?.loadPurchases()
-            }
         }
+    }
+
+    private suspend fun reloadPurchasesIfNeeded() {
+        purchasesPanel?.loadPurchases()
     }
 }
