@@ -960,7 +960,7 @@ sequenceDiagram
     PS->>BG: launch { repo.fetchExtraInfo() }
     Note over PS: Não espera — continua
     deactivate PS
-    Note over PS: Ação corrente termina,\nUI já mostra conteúdo parcial
+    Note over PS: Ação corrente termina,<br/>UI já mostra conteúdo parcial
 
     activate BG
     BG->>Repo: fetchExtraInfo() — suspend
@@ -992,12 +992,12 @@ app.presenterScope.launch {
 
 ```mermaid
 flowchart TD
-    Q{Precisa rodar em\nparalelo com a\nação corrente?}
-    Q -->|Sim| PAR["Scope separado\n+ despacho via\napp.presenterScope.launch"]
-    Q -->|Não| SER["app.presenterScope.launch\n(enfileirado, serial)"]
+    Q{Precisa rodar em<br/>paralelo com a<br/>ação corrente?}
+    Q -->|Sim| PAR["Scope separado<br/>+ despacho via<br/>app.presenterScope.launch"]
+    Q -->|Não| SER["app.presenterScope.launch<br/>(enfileirado, serial)"]
 
-    PAR --> R1["⚠️ NÃO mute state\nfora do presenterScope"]
-    SER --> R2["✅ Pode mutar state\ndiretamente"]
+    PAR --> R1["⚠️ NÃO mute state<br/>fora do presenterScope"]
+    SER --> R2["✅ Pode mutar state<br/>diretamente"]
 
     style PAR fill:#e3f2fd,stroke:#1565c0
     style SER fill:#e8f5e9,stroke:#2e7d32
