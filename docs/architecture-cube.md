@@ -38,6 +38,7 @@
   - [Child Presenters — Inicialização Assíncrona](#child-presenters--inicialização-assíncrona)
   - [Quando Usar e Quando NÃO Usar Suspend](#quando-usar-e-quando-não-usar-suspend)
   - [Regras Práticas para o Desenvolvedor](#regras-práticas-para-o-desenvolvedor)
+  - [Disparo Assíncrono Paralelo — Fire-and-Forget com Retorno](#disparo-assíncrono-paralelo--fire-and-forget-com-retorno)
 
 ---
 
@@ -903,3 +904,109 @@ flowchart LR
     style D fill:#e8f5e9,stroke:#2e7d32
     style E fill:#fce4ec,stroke:#880e4f
 ```
+
+### Disparo Assíncrono Paralelo — Fire-and-Forget com Retorno
+
+Há cenários em que o presenter precisa disparar uma operação de I/O **sem bloquear** a ação corrente — por exemplo, pré-carregar dados, enviar telemetria, ou buscar informações secundárias enquanto a UI já exibe o conteúdo principal.
+
+Como o `presenterScope` é serial (`limitedParallelism(1)`), usar `app.presenterScope.launch { ... }` apenas **enfileira** a tarefa para depois. Se o objetivo é execução **realmente paralela**, deve-se usar um scope separado e, ao obter o resultado, despachar de volta para o `presenterScope` para mutar o estado com segurança.
+
+O `presenterScope` está acessível nos presenters via `app.presenterScope` (definido em `ShoppingApplication`).
+
+#### Padrão: Scope Paralelo com Retorno ao presenterScope
+
+```kotlin
+// Dentro de um presenter (app é ShoppingApplication)
+suspend fun onEnter() {
+    // Exibe imediatamente com dados parciais
+    state.loading = true
+    update()
+
+    // Dispara operação pesada em paralelo — NÃO bloqueia
+    CoroutineScope(Dispatchers.Default).launch {
+        try {
+            val extra = repository.fetchExtraInfo(id)  // I/O paralelo
+
+            // Retorna ao presenterScope para mutar estado
+            app.presenterScope.launch {
+                state.extraInfo = extra
+                state.loading = false
+                update()
+            }
+        } catch (e: Exception) {
+            app.presenterScope.launch {
+                state.errorMessage = e.message
+                state.loading = false
+                update()
+            }
+        }
+    }
+}
+```
+
+#### Diagrama de Sequência
+
+```mermaid
+sequenceDiagram
+    participant UI as View (UI thread)
+    participant PS as presenterScope (serial)
+    participant BG as Scope paralelo
+    participant Repo as Repository (I/O)
+
+    UI->>PS: safeCall { presenter.onEnter() }
+    activate PS
+    PS->>PS: state.loading = true
+    PS->>PS: update()
+    PS->>BG: launch { repo.fetchExtraInfo() }
+    Note over PS: Não espera — continua
+    deactivate PS
+    Note over PS: Ação corrente termina,\nUI já mostra conteúdo parcial
+
+    activate BG
+    BG->>Repo: fetchExtraInfo() — suspend
+    Repo-->>BG: resultado
+    BG->>PS: launch { state.extra = resultado; update() }
+    deactivate BG
+
+    activate PS
+    Note over PS: Executa no presenterScope (seguro)
+    PS->>PS: state.extraInfo = resultado
+    PS->>PS: state.loading = false
+    PS->>PS: update()
+    deactivate PS
+```
+
+#### Contraste com o Modo Serial (enfileirado)
+
+Se a operação não precisa ser paralela — apenas desacoplada da ação corrente — basta enfileirar no próprio `presenterScope`:
+
+```kotlin
+// Enfileirado — executa APÓS a ação corrente terminar (serial, sem paralelismo)
+app.presenterScope.launch {
+    val data = repository.sendAnalytics(payload)
+    // Pode mutar state diretamente aqui (já está no presenterScope)
+    state.analyticsConfirmed = true
+    update()
+}
+```
+
+```mermaid
+flowchart TD
+    Q{Precisa rodar em\nparalelo com a\nação corrente?}
+    Q -->|Sim| PAR["Scope separado\n+ despacho via\napp.presenterScope.launch"]
+    Q -->|Não| SER["app.presenterScope.launch\n(enfileirado, serial)"]
+
+    PAR --> R1["⚠️ NÃO mute state\nfora do presenterScope"]
+    SER --> R2["✅ Pode mutar state\ndiretamente"]
+
+    style PAR fill:#e3f2fd,stroke:#1565c0
+    style SER fill:#e8f5e9,stroke:#2e7d32
+    style R1 fill:#fff3e0,stroke:#e65100
+    style R2 fill:#e8f5e9,stroke:#2e7d32
+```
+
+#### Regra de Segurança
+
+> **Toda mutação de `state` e chamada a `update()` deve acontecer dentro do `presenterScope`.**
+>
+> Se o código está executando em um scope paralelo, ele deve despachar de volta via `app.presenterScope.launch { ... }` antes de tocar no estado do presenter. Violar essa regra causa condições de corrida silenciosas.
