@@ -134,6 +134,27 @@ class VirtualClient(
 
     fun getViewState(instanceId: String): Map<String, Any?> = viewStates[instanceId] ?: emptyMap()
 
+    /**
+     * Finds the full instance ID (e.g. "c677cda52d14:1") for a given VID prefix (e.g. "c677cda52d14").
+     * Returns null if no matching view state is currently tracked.
+     */
+    fun findViewByVid(vid: String): String? {
+        return viewStates.keys.firstOrNull { it.startsWith("$vid:") }
+    }
+
+    /**
+     * Returns the state map for the view identified by VID prefix.
+     */
+    fun getViewStateByVid(vid: String): Map<String, Any?> {
+        val instanceId = findViewByVid(vid) ?: return emptyMap()
+        return viewStates[instanceId] ?: emptyMap()
+    }
+
+    /**
+     * Returns all currently tracked instance IDs (for diagnostics).
+     */
+    fun getTrackedViewIds(): Set<String> = viewStates.keys
+
     // :: Private — HTTP session
 
     private fun fetchSessionCookies(): Boolean {
