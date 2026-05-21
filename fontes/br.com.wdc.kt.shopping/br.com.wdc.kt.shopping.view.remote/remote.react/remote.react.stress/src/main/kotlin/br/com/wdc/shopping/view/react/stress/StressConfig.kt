@@ -4,8 +4,8 @@ package br.com.wdc.shopping.view.react.stress
  * Configuration for the stress test runner.
  */
 data class StressConfig(
-    /** Base URL of the server (e.g., "http://localhost:8080") */
-    val baseUrl: String = "http://localhost:8080",
+    /** Base URL of the server (e.g., "http://shopping-wdc.localhost:8080") */
+    val baseUrl: String = "http://shopping-wdc.localhost:8080",
 
     /** Number of virtual clients to spawn */
     val clientCount: Int = 10,

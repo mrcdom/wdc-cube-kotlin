@@ -7,10 +7,11 @@ import com.google.gson.reflect.TypeToken
 import okhttp3.*
 import org.slf4j.LoggerFactory
 import java.math.BigInteger
-import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import javax.crypto.Cipher
@@ -38,9 +39,12 @@ class VirtualClient(
             .create()
         private val RESPONSE_TYPE = object : TypeToken<Map<String, Any?>>() {}
         private val random = SecureRandom()
+        private val KEEP_ALIVE_EXECUTOR = Executors.newSingleThreadScheduledExecutor { r ->
+            Thread(r, "stress-keepalive").apply { isDaemon = true }
+        }
     }
 
-    private val requestIdGen = AtomicLong(1)
+    private val requestIdGen = AtomicLong(0)
 
     // Session state
     private var appId: String = ""
@@ -54,8 +58,10 @@ class VirtualClient(
     private var webSocket: WebSocket? = null
     private var connected = false
     private var lastResponse: Map<String, Any?>? = null
-    private val responseLatch = CountDownLatch(1)
     private var pendingLatch: CountDownLatch? = null
+
+    // Keep-alive
+    private var keepAliveTask: ScheduledFuture<*>? = null
 
     // View state (tracks current screen from server responses)
     private var currentUri: String = ""
@@ -120,9 +126,11 @@ class VirtualClient(
     }
 
     /**
-     * Disconnects the WebSocket.
+     * Disconnects the WebSocket and cancels keep-alive.
      */
     fun disconnect() {
+        keepAliveTask?.cancel(false)
+        keepAliveTask = null
         webSocket?.close(1000, "stress test complete")
         webSocket = null
         connected = false
@@ -286,16 +294,31 @@ class VirtualClient(
 
         // Wait for first response (initial view state)
         pendingLatch = CountDownLatch(1)
-        return pendingLatch!!.await(10, TimeUnit.SECONDS)
+        val gotInitialState = pendingLatch!!.await(10, TimeUnit.SECONDS)
+
+        if (gotInitialState) {
+            startKeepAlive()
+        }
+        return gotInitialState
     }
 
     private fun buildInitialMessage(): Map<String, Any?> {
         return mapOf(
-            "requestId" to requestIdGen.getAndIncrement(),
+            "requestId" to -1L,
             "ping" to true,
             "secret" to signature,
-            "path" to "",
+            "path" to "/",
         )
+    }
+
+    private fun startKeepAlive() {
+        val browserViewId = findViewByVid(Vid.BROWSER) ?: return
+        keepAliveTask = KEEP_ALIVE_EXECUTOR.scheduleAtFixedRate({
+            if (connected) {
+                val request = buildRequest(requestIdGen.getAndIncrement(), browserViewId, 2, emptyMap())
+                webSocket?.send(GSON.toJson(request))
+            }
+        }, 15, 15, TimeUnit.SECONDS)
     }
 
     private fun buildRequest(
@@ -324,14 +347,16 @@ class VirtualClient(
                 currentUri = uri
             }
 
-            // Update view states
+            // Replace view states with current snapshot from server
             @Suppress("UNCHECKED_CAST")
             val states = response["states"] as? List<Map<String, Any?>>
             if (states != null) {
+                val newStates = mutableMapOf<String, Map<String, Any?>>()
                 for (state in states) {
                     val id = state["id"] as? String ?: continue
-                    viewStates[id] = state
+                    newStates[id] = state
                 }
+                viewStates = newStates
             }
 
             lastResponse = response
