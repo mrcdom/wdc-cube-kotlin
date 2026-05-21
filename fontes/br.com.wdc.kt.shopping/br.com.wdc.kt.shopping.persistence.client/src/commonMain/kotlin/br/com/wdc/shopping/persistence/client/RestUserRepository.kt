@@ -10,13 +10,13 @@ import br.com.wdc.shopping.domain.repositories.UserRepository
 
 class RestUserRepository(private val config: RestConfig) : UserRepository {
 
-    override fun insert(user: User): Boolean {
+    override suspend fun insert(user: User): Boolean {
         val body = config.toJson { user.writeTo(it) }
         val input = config.postJson("/api/repo/user/insert", body)
         return readSuccessWithId(input, user)
     }
 
-    override fun update(newUser: User, oldUser: User): Boolean {
+    override suspend fun update(newUser: User, oldUser: User): Boolean {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("newEntity"); newUser.writeTo(out)
@@ -26,23 +26,23 @@ class RestUserRepository(private val config: RestConfig) : UserRepository {
         return readSuccess(config.postJson("/api/repo/user/update", body))
     }
 
-    override fun insertOrUpdate(user: User): Boolean {
+    override suspend fun insertOrUpdate(user: User): Boolean {
         val body = config.toJson { user.writeTo(it) }
         val input = config.postJson("/api/repo/user/upsert", body)
         return readSuccessWithId(input, user)
     }
 
-    override fun delete(criteria: UserCriteria): Int {
+    override suspend fun delete(criteria: UserCriteria): Int {
         val body = config.toJson { writeCriteria(it, criteria) }
         return readCount(config.postJson("/api/repo/user/delete", body))
     }
 
-    override fun count(criteria: UserCriteria): Int {
+    override suspend fun count(criteria: UserCriteria): Int {
         val body = config.toJson { writeCriteria(it, criteria) }
         return readCount(config.postJson("/api/repo/user/count", body))
     }
 
-    override fun fetch(criteria: UserCriteria): List<User> {
+    override suspend fun fetch(criteria: UserCriteria): List<User> {
         val body = config.toJson { out ->
             out.beginObject()
             writeCriteriaFields(out, criteria)
@@ -53,7 +53,7 @@ class RestUserRepository(private val config: RestConfig) : UserRepository {
         return readUserList(input)
     }
 
-    override fun fetchPage(criteria: UserCriteria): Page<User> {
+    override suspend fun fetchPage(criteria: UserCriteria): Page<User> {
         val body = config.toJson { out ->
             out.beginObject()
             writeCriteriaFields(out, criteria)
@@ -64,7 +64,7 @@ class RestUserRepository(private val config: RestConfig) : UserRepository {
         return readUserPage(input)
     }
 
-    override fun fetchById(userId: Long, projection: User?): User? {
+    override suspend fun fetchById(userId: Long, projection: User?): User? {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("id").value(userId)

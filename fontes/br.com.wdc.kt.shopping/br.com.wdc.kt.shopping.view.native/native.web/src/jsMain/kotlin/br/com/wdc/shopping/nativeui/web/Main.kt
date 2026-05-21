@@ -9,7 +9,6 @@ import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.storage.JsSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
@@ -20,6 +19,7 @@ import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JsCryptoProvider
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
 import br.com.wdc.shopping.nativeui.web.bridge.ViewUpdateScheduler
+import kotlinx.coroutines.launch
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingTheme
 import br.com.wdc.shopping.nativeui.web.views.*
 import br.com.wdc.shopping.persistence.client.JsHttpTransport
@@ -60,14 +60,6 @@ private lateinit var platformConfig: RestConfig
 
 private class JsShoppingApplication : ShoppingApplication() {
 
-    private val attributes = mutableMapOf<String, Any?>()
-
-    override fun setAttribute(name: String, value: Any?): Any? = attributes.put(name, value)
-
-    override fun getAttribute(name: String): Any? = attributes[name]
-
-    override fun removeAttribute(name: String): Any? = attributes.remove(name)
-
     override fun updateHistory() {
         val intent = CubeIntent()
         intent.place = getLastPlace() ?: getRootPlace()
@@ -83,7 +75,7 @@ private class JsShoppingApplication : ShoppingApplication() {
         window.location.hash = "#$newFragment"
     }
 
-    fun safeGo(path: String?) {
+    suspend fun safeGo(path: String?) {
         val intent = CubeIntent.parse(path ?: "")
         if (intent.place == null) {
             intent.place = getRootPlace()
@@ -103,20 +95,6 @@ private class JsShoppingApplication : ShoppingApplication() {
             go(newIntent)
         }
     }
-
-    override fun createPresenterMap(): MutableMap<Int, CubePresenter> = LinkedHashMap()
-
-    override fun createUserDelegate(delegate: UserRepository) =
-        SecuredUserRepository(delegate) { getSecurityContext() }
-
-    override fun createProductDelegate(delegate: ProductRepository) =
-        SecuredProductRepository(delegate) { getSecurityContext() }
-
-    override fun createPurchaseDelegate(delegate: PurchaseRepository) =
-        SecuredPurchaseRepository(delegate) { getSecurityContext() }
-
-    override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
-        SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
 
     override fun createSessionStorage(): SessionStorage = JsSessionStorage()
 }
@@ -170,11 +148,13 @@ fun main() {
 
     // On irrecoverable auth failure (401 + refresh failed), clear session and go to login
     platformConfig.transport.onAuthFailure = {
-        platformConfig.authClient?.clearTokens()
-        app.sessionStorage.remove("authState")
-        app.sessionStorage.remove("securityContext")
-        app.setSecurityContext(null)
-        app.go("public")
+        app.presenterScope.launch {
+            platformConfig.authClient?.clearTokens()
+            app.sessionStorage.remove("authState")
+            app.sessionStorage.remove("securityContext")
+            app.setSecurityContext(null)
+            app.go("public")
+        }
     }
 
     // Restore auth state BEFORE first navigation
@@ -184,21 +164,25 @@ fun main() {
     Routes.Place.entries
 
     // Read initial path from URL hash, verify signature, or default to "public"
-    val hash = getLocationHash()
-    if (hash.isNotBlank()) {
-        app.safeGo(hash)
-    } else {
-        app.go("public")
+    app.presenterScope.launch {
+        val hash = getLocationHash()
+        if (hash.isNotBlank()) {
+            app.safeGo(hash)
+        } else {
+            app.go("public")
+        }
     }
 
     // Listen for browser back/forward and manual URL hash changes
     window.addEventListener("hashchange", {
-        val newHash = getLocationHash()
-        if (newHash != app.fragment) {
-            if (newHash.isNotBlank()) {
-                app.safeGo(newHash)
-            } else {
-                app.go("public")
+        app.presenterScope.launch {
+            val newHash = getLocationHash()
+            if (newHash != app.fragment) {
+                if (newHash.isNotBlank()) {
+                    app.safeGo(newHash)
+                } else {
+                    app.go("public")
+                }
             }
         }
     })

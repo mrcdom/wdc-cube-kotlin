@@ -6,25 +6,25 @@ import br.com.wdc.framework.commons.util.AtomicRef
 
 interface ProductRepository {
 
-    fun insert(product: Product): Boolean
+    suspend fun insert(product: Product): Boolean
 
-    fun update(newProduct: Product, oldProduct: Product): Boolean
+    suspend fun update(newProduct: Product, oldProduct: Product): Boolean
 
-    fun insertOrUpdate(product: Product): Boolean
+    suspend fun insertOrUpdate(product: Product): Boolean
 
-    fun delete(criteria: ProductCriteria): Int
+    suspend fun delete(criteria: ProductCriteria): Int
 
-    fun count(criteria: ProductCriteria): Int
+    suspend fun count(criteria: ProductCriteria): Int
 
-    fun fetch(criteria: ProductCriteria): List<Product>
+    suspend fun fetch(criteria: ProductCriteria): List<Product>
 
-    fun fetchPage(criteria: ProductCriteria): Page<Product>
+    suspend fun fetchPage(criteria: ProductCriteria): Page<Product>
 
-    fun fetchById(productId: Long, projection: Product?): Product?
+    suspend fun fetchById(productId: Long, projection: Product?): Product?
 
-    fun fetchImage(productId: Long): ByteArray?
+    suspend fun fetchImage(productId: Long): ByteArray?
 
-    fun updateImage(productId: Long, image: ByteArray): Boolean
+    suspend fun updateImage(productId: Long, image: ByteArray): Boolean
 
     companion object {
         val BEAN = AtomicRef<ProductRepository>()

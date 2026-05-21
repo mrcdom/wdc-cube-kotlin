@@ -34,7 +34,7 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
         return ChallengeResult(nonce, expiresAt)
     }
 
-    override fun login(userName: String, digest: String, nonce: String): AuthResult? {
+    override suspend fun login(userName: String, digest: String, nonce: String): AuthResult? {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("userName").value(userName)

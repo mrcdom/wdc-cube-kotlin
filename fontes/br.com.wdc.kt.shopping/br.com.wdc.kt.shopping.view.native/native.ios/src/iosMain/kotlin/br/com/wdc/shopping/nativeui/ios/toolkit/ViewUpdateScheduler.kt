@@ -1,6 +1,5 @@
 package br.com.wdc.shopping.nativeui.ios.toolkit
 
-import br.com.wdc.shopping.presentation.ShoppingApplication
 import platform.Foundation.NSLog
 import platform.Foundation.NSLock
 import platform.darwin.dispatch_async
@@ -21,12 +20,7 @@ object ViewUpdateScheduler {
 
     private val dirtyViews = linkedSetOf<AbstractViewIos<*>>()
     private var flushScheduled = false
-    private var appProvider: (() -> ShoppingApplication?)? = null
     private val lock = NSLock()
-
-    fun initialize(appProvider: () -> ShoppingApplication?) {
-        this.appProvider = appProvider
-    }
 
     fun markDirty(view: AbstractViewIos<*>) {
         lock.lock()
@@ -51,9 +45,6 @@ object ViewUpdateScheduler {
     }
 
     private fun flush() {
-        // commitComputedState gives presenters a last chance to call update()
-        appProvider?.invoke()?.commitComputedState()
-
         // Snapshot and clear
         val snapshot: List<AbstractViewIos<*>>
         lock.lock()
@@ -67,6 +58,7 @@ object ViewUpdateScheduler {
 
         for (view in snapshot) {
             try {
+                view.presenterBase.commitComputedState()
                 view.forceUpdate()
             } catch (e: Exception) {
                 NSLog("ViewUpdateScheduler flush error: ${e.message}")

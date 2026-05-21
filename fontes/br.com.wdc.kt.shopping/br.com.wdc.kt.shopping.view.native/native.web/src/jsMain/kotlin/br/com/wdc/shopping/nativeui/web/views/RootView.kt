@@ -15,7 +15,7 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class RootView(private val presenter: RootPresenter) : ReactCubeView("root-view", presenter.app) {
+class RootView(private val presenter: RootPresenter) : ReactCubeView("root-view", presenter) {
 
     override val component = FC<Props> {
         var rev by useState(revision)

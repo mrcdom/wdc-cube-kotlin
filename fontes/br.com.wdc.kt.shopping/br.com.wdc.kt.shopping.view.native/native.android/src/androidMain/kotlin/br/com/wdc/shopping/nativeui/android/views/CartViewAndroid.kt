@@ -118,7 +118,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
 
                             // Buttons row
                             hStack(configure = {
-                                gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                                gravity = Gravity.CENTER_HORIZONTAL or Gravity.CENTER_VERTICAL
                                 (layoutParams as LinearLayout.LayoutParams).apply {
                                     topMargin = (16 * density).toInt()
                                     height = (48 * density).toInt()
@@ -212,7 +212,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = (48 * density).toInt()
                             topMargin = (32 * density).toInt()
-                            gravity = Gravity.END
+                            gravity = Gravity.CENTER_HORIZONTAL
                         }
                         setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
                     }

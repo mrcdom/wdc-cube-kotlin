@@ -1,7 +1,7 @@
 package br.com.wdc.framework.cube
 
 open class AbstractCubePresenter<A : CubeApplication>(
-    val app: A,
+    override val app: A,
 ) : CubePresenter {
 
     protected var view: CubeView? = null
@@ -17,9 +17,6 @@ open class AbstractCubePresenter<A : CubeApplication>(
         view?.update()
     }
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean = true
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean = true
 
-    override fun publishParameters(intent: CubeIntent) {
-        // NOOP
-    }
 }

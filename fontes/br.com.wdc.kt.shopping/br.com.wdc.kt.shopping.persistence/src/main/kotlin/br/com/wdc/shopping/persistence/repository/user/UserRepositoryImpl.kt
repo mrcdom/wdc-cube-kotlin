@@ -9,7 +9,7 @@ import br.com.wdc.shopping.persistence.repository.BaseRepository
 
 class UserRepositoryImpl : BaseRepository(), UserRepository {
 
-    override fun insert(user: User): Boolean = try {
+    override suspend fun insert(user: User): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             InsertRowUserCmd.run(tx.connection(), user)
         }
@@ -17,7 +17,7 @@ class UserRepositoryImpl : BaseRepository(), UserRepository {
         readException(e)
     }
 
-    override fun insertOrUpdate(user: User): Boolean = try {
+    override suspend fun insertOrUpdate(user: User): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             if (user.id == null) InsertRowUserCmd.run(tx.connection(), user)
             else UpdateRowUserCmd.run(tx.connection(), user)
@@ -26,7 +26,7 @@ class UserRepositoryImpl : BaseRepository(), UserRepository {
         readException(e)
     }
 
-    override fun update(newUser: User, oldUser: User): Boolean = try {
+    override suspend fun update(newUser: User, oldUser: User): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             UpdateRowUserCmd.run(tx.connection(), newUser, oldUser)
         }
@@ -34,7 +34,7 @@ class UserRepositoryImpl : BaseRepository(), UserRepository {
         readException(e)
     }
 
-    override fun delete(criteria: UserCriteria): Int = try {
+    override suspend fun delete(criteria: UserCriteria): Int = try {
         TransactionContext.begin(dataSource()).use { tx ->
             DeleteUsersCmd.byCriteria(tx.connection(), criteria)
         }
@@ -42,7 +42,7 @@ class UserRepositoryImpl : BaseRepository(), UserRepository {
         readException(e)
     }
 
-    override fun count(criteria: UserCriteria): Int = try {
+    override suspend fun count(criteria: UserCriteria): Int = try {
         TransactionContext.begin(dataSource()).use { tx ->
             CountUsersCmd.byCriteria(tx.connection(), criteria)
         }
@@ -50,7 +50,7 @@ class UserRepositoryImpl : BaseRepository(), UserRepository {
         readException(e)
     }
 
-    override fun fetch(criteria: UserCriteria): List<User> = try {
+    override suspend fun fetch(criteria: UserCriteria): List<User> = try {
         TransactionContext.begin(dataSource()).use { tx ->
             FetchUsersCmd.byCriteria(tx.connection(), criteria)
         }
@@ -58,7 +58,7 @@ class UserRepositoryImpl : BaseRepository(), UserRepository {
         readException(e)
     }
 
-    override fun fetchPage(criteria: UserCriteria): Page<User> = try {
+    override suspend fun fetchPage(criteria: UserCriteria): Page<User> = try {
         TransactionContext.begin(dataSource()).use { tx ->
             val totalCount = CountUsersCmd.byCriteria(tx.connection(), criteria)
             val items = FetchUsersCmd.byCriteria(tx.connection(), criteria)
@@ -68,7 +68,7 @@ class UserRepositoryImpl : BaseRepository(), UserRepository {
         readException(e)
     }
 
-    override fun fetchById(userId: Long, projection: User?): User? = try {
+    override suspend fun fetchById(userId: Long, projection: User?): User? = try {
         TransactionContext.begin(dataSource()).use { tx ->
             FetchUsersCmd.byId(tx.connection(), userId, projection)
         }

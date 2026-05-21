@@ -39,7 +39,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     // :: Cube API
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         state.items = cart.getCartItems()
 
         if (initialization) {
@@ -88,7 +88,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         }
     }
 
-    fun onRemoveProduct(productId: Long?) {
+    suspend fun onRemoveProduct(productId: Long?) {
         try {
             if (productId == null) {
                 errorCodigoDeProdutoMalFormatado()
@@ -110,7 +110,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         }
     }
 
-    fun onBuy() {
+    suspend fun onBuy() {
         try {
             if (cart.getSize() == 0) {
                 alertPurchaseOfEmptyCart()
@@ -141,7 +141,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         }
     }
 
-    fun onOpenProducts() {
+    suspend fun onOpenProducts() {
         try {
             Routes.home(app)
         } catch (caught: Exception) {

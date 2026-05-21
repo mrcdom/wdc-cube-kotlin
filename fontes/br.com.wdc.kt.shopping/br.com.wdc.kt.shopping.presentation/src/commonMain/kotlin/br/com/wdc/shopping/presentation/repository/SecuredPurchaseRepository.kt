@@ -12,27 +12,27 @@ class SecuredPurchaseRepository(
     private val contextSupplier: () -> SecurityContext?,
 ) : PurchaseRepository {
 
-    override fun insert(purchase: Purchase) =
+    override suspend fun insert(purchase: Purchase) =
         withSecurityContext(contextSupplier) { delegate.insert(purchase) }
 
-    override fun insertOrUpdate(purchase: Purchase) =
+    override suspend fun insertOrUpdate(purchase: Purchase) =
         withSecurityContext(contextSupplier) { delegate.insertOrUpdate(purchase) }
 
-    override fun update(newPurchase: Purchase, oldPurchase: Purchase) =
+    override suspend fun update(newPurchase: Purchase, oldPurchase: Purchase) =
         withSecurityContext(contextSupplier) { delegate.update(newPurchase, oldPurchase) }
 
-    override fun delete(criteria: PurchaseCriteria) =
+    override suspend fun delete(criteria: PurchaseCriteria) =
         withSecurityContext(contextSupplier) { delegate.delete(criteria) }
 
-    override fun count(criteria: PurchaseCriteria) =
+    override suspend fun count(criteria: PurchaseCriteria) =
         withSecurityContext(contextSupplier) { delegate.count(criteria) }
 
-    override fun fetch(criteria: PurchaseCriteria) =
+    override suspend fun fetch(criteria: PurchaseCriteria) =
         withSecurityContext(contextSupplier) { delegate.fetch(criteria) }
 
-    override fun fetchPage(criteria: PurchaseCriteria) =
+    override suspend fun fetchPage(criteria: PurchaseCriteria) =
         withSecurityContext(contextSupplier) { delegate.fetchPage(criteria) }
 
-    override fun fetchById(purchaseId: Long, projection: Purchase?) =
+    override suspend fun fetchById(purchaseId: Long, projection: Purchase?) =
         withSecurityContext(contextSupplier) { delegate.fetchById(purchaseId, projection) }
 }

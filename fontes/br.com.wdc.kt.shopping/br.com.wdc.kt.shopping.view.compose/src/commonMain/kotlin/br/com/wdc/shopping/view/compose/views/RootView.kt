@@ -10,7 +10,7 @@ import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.bridge.RenderSlot
 
-class RootView(private val presenter: RootPresenter) : ComposeCubeView("root-view", presenter.app) {
+class RootView(private val presenter: RootPresenter) : ComposeCubeView("root-view", presenter) {
 
     @Composable
     override fun Render() {

@@ -39,7 +39,7 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         super.release()
     }
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (initialization) {
             view = createView?.invoke(this)
             restoreSubjectFromSession()

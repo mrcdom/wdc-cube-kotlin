@@ -13,6 +13,7 @@
 #     --backend-url <url>         Backend URL (default: http://localhost:8080)
 #     --skip-framework            Skip rebuilding the Kotlin framework
 #     --clean                     Clean build before compiling
+#     --fresh                     Fresh install (restart SpringBoard to clear icon cache)
 #     --help                      Show this help
 #
 # Prerequisites:
@@ -39,6 +40,7 @@ SIMULATOR_NAME=""
 BACKEND_URL="http://localhost:8080"
 SKIP_FRAMEWORK=false
 CLEAN_BUILD=false
+FRESH_INSTALL=false
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -273,6 +275,12 @@ print('Unknown')
     # Uninstall previous version (ignore errors)
     xcrun simctl uninstall "$SIM_UDID" "$BUNDLE_ID" 2>/dev/null || true
 
+    if [[ "$FRESH_INSTALL" == true ]]; then
+        info "Fresh install: restarting SpringBoard to clear icon cache..."
+        xcrun simctl spawn "$SIM_UDID" launchctl stop com.apple.SpringBoard 2>/dev/null || true
+        sleep 3
+    fi
+
     # Install
     local app_path
     app_path=$(get_app_path)
@@ -330,6 +338,8 @@ while [[ $# -gt 0 ]]; do
             SKIP_FRAMEWORK=true; shift ;;
         --clean)
             CLEAN_BUILD=true; shift ;;
+        --fresh)
+            FRESH_INSTALL=true; shift ;;
         --help|-h)
             show_help ;;
         *)

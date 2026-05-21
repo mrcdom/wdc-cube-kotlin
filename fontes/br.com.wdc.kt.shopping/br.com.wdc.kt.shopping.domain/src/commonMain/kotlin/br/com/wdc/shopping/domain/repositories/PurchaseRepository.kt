@@ -6,21 +6,21 @@ import br.com.wdc.framework.commons.util.AtomicRef
 
 interface PurchaseRepository {
 
-    fun insert(purchase: Purchase): Boolean
+    suspend fun insert(purchase: Purchase): Boolean
 
-    fun insertOrUpdate(purchase: Purchase): Boolean
+    suspend fun insertOrUpdate(purchase: Purchase): Boolean
 
-    fun update(newPurchase: Purchase, oldPurchase: Purchase): Boolean
+    suspend fun update(newPurchase: Purchase, oldPurchase: Purchase): Boolean
 
-    fun delete(criteria: PurchaseCriteria): Int
+    suspend fun delete(criteria: PurchaseCriteria): Int
 
-    fun count(criteria: PurchaseCriteria): Int
+    suspend fun count(criteria: PurchaseCriteria): Int
 
-    fun fetch(criteria: PurchaseCriteria): List<Purchase>
+    suspend fun fetch(criteria: PurchaseCriteria): List<Purchase>
 
-    fun fetchPage(criteria: PurchaseCriteria): Page<Purchase>
+    suspend fun fetchPage(criteria: PurchaseCriteria): Page<Purchase>
 
-    fun fetchById(purchaseId: Long, projection: Purchase?): Purchase?
+    suspend fun fetchById(purchaseId: Long, projection: Purchase?): Purchase?
 
     companion object {
         val BEAN = AtomicRef<PurchaseRepository>()

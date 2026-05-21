@@ -8,7 +8,7 @@ interface AuthenticationService {
 
     fun challenge(): ChallengeResult
 
-    fun login(userName: String, digest: String, nonce: String): AuthResult?
+    suspend fun login(userName: String, digest: String, nonce: String): AuthResult?
 
     fun refresh(refreshToken: String): AuthResult?
 

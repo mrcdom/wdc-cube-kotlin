@@ -29,7 +29,7 @@ import br.com.wdc.shopping.view.compose.util.formatPrice
 import br.com.wdc.shopping.view.compose.util.productImageUrl
 import br.com.wdc.shopping.view.compose.util.stripHtml
 
-class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("product-view", presenter.app) {
+class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("product-view", presenter) {
 
     @Composable
     override fun Render() {

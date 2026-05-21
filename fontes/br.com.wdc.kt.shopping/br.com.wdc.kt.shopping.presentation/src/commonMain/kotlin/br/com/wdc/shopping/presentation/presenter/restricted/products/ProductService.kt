@@ -9,7 +9,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.Pr
 
 class ProductService(private val repo: ProductRepository) {
 
-    fun loadProductById(productId: Long?): ProductInfo {
+    suspend fun loadProductById(productId: Long?): ProductInfo {
         if (productId == null) throw WrongParametersException()
 
         val product = repo.fetchById(productId, ProductInfo.projection())
@@ -17,7 +17,7 @@ class ProductService(private val repo: ProductRepository) {
         return ProductInfo.create(product)!!
     }
 
-    fun loadProductsWithoutDescription(limit: Int): List<ProductInfo> {
+    suspend fun loadProductsWithoutDescription(limit: Int): List<ProductInfo> {
         val criteria = ProductCriteria()
             .withProjection(ProductInfo.projection())
             .withLimit(limit)

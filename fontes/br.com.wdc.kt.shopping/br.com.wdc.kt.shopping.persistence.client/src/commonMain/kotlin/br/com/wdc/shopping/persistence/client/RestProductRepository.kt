@@ -10,13 +10,13 @@ import br.com.wdc.shopping.domain.repositories.ProductRepository
 
 class RestProductRepository(private val config: RestConfig) : ProductRepository {
 
-    override fun insert(product: Product): Boolean {
+    override suspend fun insert(product: Product): Boolean {
         val body = config.toJson { product.writeTo(it) }
         val input = config.postJson("/api/repo/product/insert", body)
         return readSuccessWithId(input, product)
     }
 
-    override fun update(newProduct: Product, oldProduct: Product): Boolean {
+    override suspend fun update(newProduct: Product, oldProduct: Product): Boolean {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("newEntity"); newProduct.writeTo(out)
@@ -26,23 +26,23 @@ class RestProductRepository(private val config: RestConfig) : ProductRepository 
         return readSuccess(config.postJson("/api/repo/product/update", body))
     }
 
-    override fun insertOrUpdate(product: Product): Boolean {
+    override suspend fun insertOrUpdate(product: Product): Boolean {
         val body = config.toJson { product.writeTo(it) }
         val input = config.postJson("/api/repo/product/upsert", body)
         return readSuccessWithId(input, product)
     }
 
-    override fun delete(criteria: ProductCriteria): Int {
+    override suspend fun delete(criteria: ProductCriteria): Int {
         val body = config.toJson { writeCriteria(it, criteria) }
         return readCount(config.postJson("/api/repo/product/delete", body))
     }
 
-    override fun count(criteria: ProductCriteria): Int {
+    override suspend fun count(criteria: ProductCriteria): Int {
         val body = config.toJson { writeCriteria(it, criteria) }
         return readCount(config.postJson("/api/repo/product/count", body))
     }
 
-    override fun fetch(criteria: ProductCriteria): List<Product> {
+    override suspend fun fetch(criteria: ProductCriteria): List<Product> {
         val body = config.toJson { out ->
             out.beginObject()
             writeCriteriaFields(out, criteria)
@@ -53,7 +53,7 @@ class RestProductRepository(private val config: RestConfig) : ProductRepository 
         return readProductList(input)
     }
 
-    override fun fetchPage(criteria: ProductCriteria): Page<Product> {
+    override suspend fun fetchPage(criteria: ProductCriteria): Page<Product> {
         val body = config.toJson { out ->
             out.beginObject()
             writeCriteriaFields(out, criteria)
@@ -64,7 +64,7 @@ class RestProductRepository(private val config: RestConfig) : ProductRepository 
         return readProductPage(input)
     }
 
-    override fun fetchById(productId: Long, projection: Product?): Product? {
+    override suspend fun fetchById(productId: Long, projection: Product?): Product? {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("id").value(productId)
@@ -75,11 +75,11 @@ class RestProductRepository(private val config: RestConfig) : ProductRepository 
         return input.readProduct()
     }
 
-    override fun fetchImage(productId: Long): ByteArray? {
+    override suspend fun fetchImage(productId: Long): ByteArray? {
         return config.getBytes("/api/repo/product/$productId/image")
     }
 
-    override fun updateImage(productId: Long, image: ByteArray): Boolean {
+    override suspend fun updateImage(productId: Long, image: ByteArray): Boolean {
         return config.putBytes("/api/repo/product/$productId/image", image)
     }
 

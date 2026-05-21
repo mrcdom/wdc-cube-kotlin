@@ -83,12 +83,31 @@ class LoginViewAndroid(presenter: LoginPresenter) : AbstractViewAndroid<LoginPre
                     }
 
                     // Title
-                    textView {
-                        text = "Shopping"
-                        textSize = 28f
-                        setTypeface(null, Typeface.BOLD)
-                        setTextColor(ShoppingColors.OnSurface)
-                        gravity = Gravity.CENTER
+                    frame(configure = {
+                        (layoutParams as LinearLayout.LayoutParams).apply {
+                            width = ViewGroup.LayoutParams.WRAP_CONTENT
+                            height = ViewGroup.LayoutParams.WRAP_CONTENT
+                            gravity = Gravity.CENTER_HORIZONTAL
+                        }
+                    }) {
+                        textView {
+                            text = "Shopping"
+                            textSize = 28f
+                            setTypeface(null, Typeface.BOLD)
+                            setTextColor(ShoppingColors.OnSurface)
+                            gravity = Gravity.CENTER
+                        }
+                        textView {
+                            text = "native"
+                            textSize = 10f
+                            setTextColor(ShoppingColors.OnSurfaceVariant)
+                            alpha = 0.5f
+                            (layoutParams as FrameLayout.LayoutParams).apply {
+                                width = ViewGroup.LayoutParams.WRAP_CONTENT
+                                gravity = Gravity.BOTTOM or Gravity.END
+                                topMargin = (32 * density).toInt()
+                            }
+                        }
                     }
 
                     // Subtitle

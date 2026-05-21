@@ -5,11 +5,17 @@ import br.com.wdc.framework.cube.CubeApplication
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePlace
 import br.com.wdc.framework.commons.storage.SessionStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
+import br.com.wdc.shopping.presentation.repository.SecuredProductRepository
+import br.com.wdc.shopping.presentation.repository.SecuredPurchaseItemRepository
+import br.com.wdc.shopping.presentation.repository.SecuredPurchaseRepository
+import br.com.wdc.shopping.presentation.repository.SecuredUserRepository
 import br.com.wdc.shopping.presentation.function.GoAction
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.Routes
@@ -17,6 +23,13 @@ import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 
 abstract class ShoppingApplication : CubeApplication() {
+
+    /**
+     * Single-threaded coroutine scope for presenter actions.
+     * limitedParallelism(1) guarantees serial execution per application instance,
+     * while allowing different application instances to run in parallel.
+     */
+    val presenterScope = CoroutineScope(Dispatchers.Default.limitedParallelism(1))
 
     val sessionStorage: SessionStorage by lazy { createSessionStorage() }
 
@@ -91,11 +104,11 @@ abstract class ShoppingApplication : CubeApplication() {
         getRootPresenter()?.alertUnexpectedError(logger, message, e)
     }
 
-    fun go(placeStr: String) {
+    suspend fun go(placeStr: String) {
         go(CubeIntent.parse(placeStr))
     }
 
-    fun go(intent: CubeIntent) {
+    suspend fun go(intent: CubeIntent) {
         Internals.go(this, intent)
     }
 
@@ -109,7 +122,7 @@ abstract class ShoppingApplication : CubeApplication() {
             goActionMap[tag] = goAction
         }
 
-        internal fun go(app: ShoppingApplication, place: CubeIntent) {
+        internal suspend fun go(app: ShoppingApplication, place: CubeIntent) {
             val goAction = goActionMap[place.place?.placeName]
                 ?: goActionMap[app.getRootPlace().placeName]
 
@@ -119,13 +132,17 @@ abstract class ShoppingApplication : CubeApplication() {
 
     // :: Repository delegate factories
 
-    protected open fun createUserDelegate(delegate: UserRepository): UserRepository = delegate
+    protected open fun createUserDelegate(delegate: UserRepository): UserRepository =
+        SecuredUserRepository(delegate) { getSecurityContext() }
 
-    protected open fun createProductDelegate(delegate: ProductRepository): ProductRepository = delegate
+    protected open fun createProductDelegate(delegate: ProductRepository): ProductRepository =
+        SecuredProductRepository(delegate) { getSecurityContext() }
 
-    protected open fun createPurchaseDelegate(delegate: PurchaseRepository): PurchaseRepository = delegate
+    protected open fun createPurchaseDelegate(delegate: PurchaseRepository): PurchaseRepository =
+        SecuredPurchaseRepository(delegate) { getSecurityContext() }
 
-    protected open fun createPurchaseItemDelegate(delegate: PurchaseItemRepository): PurchaseItemRepository = delegate
+    protected open fun createPurchaseItemDelegate(delegate: PurchaseItemRepository): PurchaseItemRepository =
+        SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
 
     protected abstract fun createSessionStorage(): SessionStorage
 }

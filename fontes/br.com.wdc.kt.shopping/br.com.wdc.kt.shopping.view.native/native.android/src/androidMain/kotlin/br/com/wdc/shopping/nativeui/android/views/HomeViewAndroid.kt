@@ -98,14 +98,29 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                 }
                             }
                         }
-                        textView {
-                            text = "Shopping"
-                            textSize = 20f
-                            setTypeface(null, Typeface.BOLD)
-                            setTextColor(Color.WHITE)
+                        frame(configure = {
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 marginStart = (8 * density).toInt()
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
+                                height = ViewGroup.LayoutParams.WRAP_CONTENT
+                            }
+                        }) {
+                            textView {
+                                text = "Shopping"
+                                textSize = 20f
+                                setTypeface(null, Typeface.BOLD)
+                                setTextColor(Color.WHITE)
+                            }
+                            textView {
+                                text = "native"
+                                textSize = 9f
+                                setTextColor(Color.WHITE)
+                                alpha = 0.45f
+                                (layoutParams as FrameLayout.LayoutParams).apply {
+                                    width = ViewGroup.LayoutParams.WRAP_CONTENT
+                                    gravity = Gravity.BOTTOM or Gravity.END
+                                    topMargin = (24 * density).toInt()
+                                }
                             }
                         }
                         // Logout icon (subtle, near brand)
@@ -229,14 +244,29 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                             }
                         }
                     }
-                    textView {
-                        text = "Shopping"
-                        textSize = 18f
-                        setTypeface(null, Typeface.BOLD)
-                        setTextColor(Color.WHITE)
+                    frame(configure = {
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             marginStart = (12 * density).toInt()
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
+                            height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        }
+                    }) {
+                        textView {
+                            text = "Shopping"
+                            textSize = 18f
+                            setTypeface(null, Typeface.BOLD)
+                            setTextColor(Color.WHITE)
+                        }
+                        textView {
+                            text = "native"
+                            textSize = 9f
+                            setTextColor(Color.WHITE)
+                            alpha = 0.45f
+                            (layoutParams as FrameLayout.LayoutParams).apply {
+                                width = ViewGroup.LayoutParams.WRAP_CONTENT
+                                gravity = Gravity.BOTTOM or Gravity.END
+                                topMargin = (22 * density).toInt()
+                            }
                         }
                     }
 

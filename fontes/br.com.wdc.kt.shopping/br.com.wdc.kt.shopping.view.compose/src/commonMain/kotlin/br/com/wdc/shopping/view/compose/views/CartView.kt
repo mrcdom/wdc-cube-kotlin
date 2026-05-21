@@ -23,7 +23,7 @@ import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.util.formatPrice
 
-class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-view", presenter.app) {
+class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-view", presenter) {
 
     @Composable
     override fun Render() {

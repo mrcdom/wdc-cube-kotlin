@@ -30,7 +30,7 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("receipt-view", presenter.app) {
+class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("receipt-view", presenter) {
 
     override val component = FC<Props> {
         var rev by useState(revision)

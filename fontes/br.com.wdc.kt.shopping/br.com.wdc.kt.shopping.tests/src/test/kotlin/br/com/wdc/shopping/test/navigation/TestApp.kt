@@ -1,15 +1,11 @@
 package br.com.wdc.shopping.test.navigation
 
 import br.com.wdc.framework.cube.CubeApplication
-import br.com.wdc.framework.cube.CubePresenter
-import java.util.concurrent.ConcurrentHashMap
 
 class TestApp : CubeApplication() {
 
     var historyUpdateCount = 0
         private set
-
-    override fun createPresenterMap(): MutableMap<Int, CubePresenter> = ConcurrentHashMap()
 
     override fun setAttribute(name: String, value: Any?): Any? = null
 

@@ -22,7 +22,7 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
         return this
     }
 
-    fun execute(targetIntent: CubeIntent): Boolean {
+    suspend fun execute(targetIntent: CubeIntent): Boolean {
         try {
             targetPlace = steps[steps.size - 1]
 
@@ -76,7 +76,7 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
         notInterrupted = false
     }
 
-    private fun rollback(caught: Exception) {
+    private suspend fun rollback(caught: Exception) {
         try {
             // Restore original presenters
             val presenterIds = curPresenterMap.keys.sorted().toList()
@@ -121,7 +121,9 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
                 releasePresenters(curPresenterMap)
             }
 
-            app.presenterMap = finalMap
+            // Update the existing map in-place (preserves thread-safe wrapper)
+            app.presenterMap.clear()
+            app.presenterMap.putAll(finalMap)
         } finally {
             app.lastPlace = targetPlace
             app.navigation = null

@@ -40,17 +40,17 @@ object Routes {
 
     // :: Root
 
-    fun root(app: ShoppingApplication): Boolean = root(app, app.newIntent())
+    suspend fun root(app: ShoppingApplication): Boolean = root(app, app.newIntent())
 
-    fun root(app: ShoppingApplication, intent: CubeIntent): Boolean {
+    suspend fun root(app: ShoppingApplication, intent: CubeIntent): Boolean {
         return home(app, intent)
     }
 
     // :: Login
 
-    fun login(app: ShoppingApplication): Boolean = login(app, app.newIntent())
+    suspend fun login(app: ShoppingApplication): Boolean = login(app, app.newIntent())
 
-    fun login(app: ShoppingApplication, intent: CubeIntent): Boolean {
+    suspend fun login(app: ShoppingApplication, intent: CubeIntent): Boolean {
         return app.navigate<ShoppingApplication>()
             .step(Place.ROOT)
             .step(Place.LOGIN)
@@ -59,9 +59,9 @@ object Routes {
 
     // :: Home
 
-    fun home(app: ShoppingApplication): Boolean = home(app, app.newIntent())
+    suspend fun home(app: ShoppingApplication): Boolean = home(app, app.newIntent())
 
-    fun home(app: ShoppingApplication, intent: CubeIntent): Boolean {
+    suspend fun home(app: ShoppingApplication, intent: CubeIntent): Boolean {
         return app.navigate<ShoppingApplication>()
             .step(Place.ROOT)
             .step(Place.HOME)
@@ -70,9 +70,9 @@ object Routes {
 
     // :: Cart
 
-    fun cart(app: ShoppingApplication): Boolean = cart(app, app.newIntent())
+    suspend fun cart(app: ShoppingApplication): Boolean = cart(app, app.newIntent())
 
-    fun cart(app: ShoppingApplication, intent: CubeIntent): Boolean {
+    suspend fun cart(app: ShoppingApplication, intent: CubeIntent): Boolean {
         return app.navigate<ShoppingApplication>()
             .step(Place.ROOT)
             .step(Place.HOME)
@@ -82,7 +82,7 @@ object Routes {
 
     // :: Product
 
-    fun product(app: ShoppingApplication, intent: CubeIntent): Boolean {
+    suspend fun product(app: ShoppingApplication, intent: CubeIntent): Boolean {
         return app.navigate<ShoppingApplication>()
             .step(Place.ROOT)
             .step(Place.HOME)
@@ -92,7 +92,7 @@ object Routes {
 
     // :: Receipt
 
-    fun receipt(app: ShoppingApplication, intent: CubeIntent): Boolean {
+    suspend fun receipt(app: ShoppingApplication, intent: CubeIntent): Boolean {
         return app.navigate<ShoppingApplication>()
             .step(Place.ROOT)
             .step(Place.HOME)

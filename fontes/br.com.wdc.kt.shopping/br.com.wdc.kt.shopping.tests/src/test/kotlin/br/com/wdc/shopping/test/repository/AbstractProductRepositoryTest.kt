@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.test.repository
 
 import br.com.wdc.shopping.domain.criteria.ProductCriteria
+import kotlinx.coroutines.runBlocking
 import br.com.wdc.shopping.domain.exception.BusinessException
 import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.repositories.ProductRepository
@@ -16,13 +17,13 @@ abstract class AbstractProductRepositoryTest {
     // :: fetch
 
     @Test
-    fun fetchAll_returnsFourProducts() {
+    fun fetchAll_returnsFourProducts() = runBlocking {
         val products = repo().fetch(ProductCriteria())
         assertEquals(4, products.size)
     }
 
     @Test
-    fun fetchById_returnsCorrectProduct() {
+    fun fetchById_returnsCorrectProduct() = runBlocking {
         val product = repo().fetchById(DBReset.CAFETEIRA_ID, null)
         assertNotNull(product)
         assertNotNull(product!!.name)
@@ -30,13 +31,13 @@ abstract class AbstractProductRepositoryTest {
     }
 
     @Test
-    fun fetchById_nonExistent_returnsNull() {
+    fun fetchById_nonExistent_returnsNull() = runBlocking {
         val product = repo().fetchById(Long.MAX_VALUE, null)
         assertNull(product)
     }
 
     @Test
-    fun fetchWithProjection_onlyRequestedFields() {
+    fun fetchWithProjection_onlyRequestedFields() = runBlocking {
         val pv = ProjectionValues
         val projection = Product()
         projection.id = pv.i64
@@ -49,14 +50,14 @@ abstract class AbstractProductRepositoryTest {
     }
 
     @Test
-    fun fetchByCriteria_productId() {
+    fun fetchByCriteria_productId() = runBlocking {
         val products = repo().fetch(ProductCriteria().withProductId(DBReset.BOLA_WILSON_ID))
         assertEquals(1, products.size)
         assertEquals(DBReset.BOLA_WILSON_ID, products[0].id)
     }
 
     @Test
-    fun fetchWithOffsetAndLimit() {
+    fun fetchWithOffsetAndLimit() = runBlocking {
         val products = repo().fetch(
             ProductCriteria()
                 .withOrderBy(ProductCriteria.OrderBy.ASCENDING)
@@ -67,7 +68,7 @@ abstract class AbstractProductRepositoryTest {
     }
 
     @Test
-    fun fetchWithOrderAscending() {
+    fun fetchWithOrderAscending() = runBlocking {
         val products = repo().fetch(
             ProductCriteria()
                 .withOrderBy(ProductCriteria.OrderBy.ASCENDING)
@@ -79,7 +80,7 @@ abstract class AbstractProductRepositoryTest {
     }
 
     @Test
-    fun fetchWithOrderDescending() {
+    fun fetchWithOrderDescending() = runBlocking {
         val products = repo().fetch(
             ProductCriteria()
                 .withOrderBy(ProductCriteria.OrderBy.DESCENDING)
@@ -93,19 +94,19 @@ abstract class AbstractProductRepositoryTest {
     // :: count
 
     @Test
-    fun countAll_returnsFour() {
+    fun countAll_returnsFour() = runBlocking {
         val count = repo().count(ProductCriteria())
         assertEquals(4, count)
     }
 
     @Test
-    fun countByProductId_returnsOne() {
+    fun countByProductId_returnsOne() = runBlocking {
         val count = repo().count(ProductCriteria().withProductId(DBReset.CAFETEIRA_ID))
         assertEquals(1, count)
     }
 
     @Test
-    fun countNonExistent_returnsZero() {
+    fun countNonExistent_returnsZero() = runBlocking {
         val count = repo().count(ProductCriteria().withProductId(Long.MAX_VALUE))
         assertEquals(0, count)
     }
@@ -113,23 +114,23 @@ abstract class AbstractProductRepositoryTest {
     // :: fetchImage
 
     @Test
-    fun fetchImage_returnsNonNullForSeededProduct() {
+    fun fetchImage_returnsNonNullForSeededProduct() = runBlocking {
         val image = repo().fetchImage(DBReset.CAFETEIRA_ID)
         assertNotNull(image)
         assertTrue(image!!.isNotEmpty())
     }
 
     @Test
-    fun fetchImage_nonExistent_throws() {
+    fun fetchImage_nonExistent_throws() = runBlocking {
         assertThrows(BusinessException::class.java) {
-            repo().fetchImage(Long.MAX_VALUE)
+            runBlocking { repo().fetchImage(Long.MAX_VALUE) }
         }
     }
 
     // :: insert
 
     @Test
-    fun insert_newProduct() {
+    fun insert_newProduct() = runBlocking {
         val product = Product()
         product.name = "Teclado USB"
         product.price = 89.90
@@ -150,7 +151,7 @@ abstract class AbstractProductRepositoryTest {
     // :: update
 
     @Test
-    fun update_existingProduct() {
+    fun update_existingProduct() = runBlocking {
         val original = repo().fetchById(DBReset.PEN_DRIVE2GB_ID, null)
         assertNotNull(original)
 
@@ -171,7 +172,7 @@ abstract class AbstractProductRepositoryTest {
     // :: insertOrUpdate
 
     @Test
-    fun insertOrUpdate_insertsWhenNew() {
+    fun insertOrUpdate_insertsWhenNew() = runBlocking {
         val product = Product()
         product.name = "Mouse Wireless"
         product.price = 49.90
@@ -185,7 +186,7 @@ abstract class AbstractProductRepositoryTest {
     }
 
     @Test
-    fun insertOrUpdate_updatesWhenExisting() {
+    fun insertOrUpdate_updatesWhenExisting() = runBlocking {
         val original = repo().fetchById(DBReset.FITA_VEDA_ROSCA_ID, null)
         assertNotNull(original)
 
@@ -205,14 +206,14 @@ abstract class AbstractProductRepositoryTest {
     // :: delete
 
     @Test
-    fun deleteByProductId() {
+    fun deleteByProductId() = runBlocking {
         val deleted = repo().delete(ProductCriteria().withProductId(DBReset.PEN_DRIVE2GB_ID))
         assertEquals(1, deleted)
         assertEquals(3, repo().count(ProductCriteria()))
     }
 
     @Test
-    fun deleteNonExistent_returnsZero() {
+    fun deleteNonExistent_returnsZero() = runBlocking {
         val deleted = repo().delete(ProductCriteria().withProductId(Long.MAX_VALUE))
         assertEquals(0, deleted)
     }

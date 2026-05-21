@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.test.repository
 
 import br.com.wdc.shopping.domain.model.Product
+import kotlinx.coroutines.runBlocking
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
@@ -26,14 +27,14 @@ class PurchaseItemRepositoryTest : AbstractPurchaseItemRepositoryTest() {
     // -- Testes exclusivos do modo LOCAL --
 
     @Test
-    fun fetchById_returnsCorrectItem_withPurchase() {
+    fun fetchById_returnsCorrectItem_withPurchase() = runBlocking {
         val item = repo().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID, projectionWithRelations())
         assertNotNull(item)
         assertNotNull(item!!.purchase)
     }
 
     @Test
-    fun insert_newPurchaseItem_withPurchaseAssertion() {
+    fun insert_newPurchaseItem_withPurchaseAssertion() = runBlocking {
         val item = PurchaseItem()
         item.amount = 5
         item.price = 15.50

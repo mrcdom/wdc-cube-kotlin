@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.test.repository
 
 import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
+import kotlinx.coroutines.runBlocking
 import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
@@ -30,13 +31,13 @@ abstract class AbstractPurchaseItemRepositoryTest {
     // :: fetch
 
     @Test
-    fun fetchAll_returnsAllSeededItems() {
+    fun fetchAll_returnsAllSeededItems() = runBlocking {
         val items = repo().fetch(PurchaseItemCriteria())
         assertEquals(3, items.size)
     }
 
     @Test
-    fun fetchById_returnsCorrectItem() {
+    fun fetchById_returnsCorrectItem() = runBlocking {
         val item = repo().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID, projectionWithRelations())
         assertNotNull(item)
         assertNotNull(item!!.amount)
@@ -45,13 +46,13 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun fetchById_nonExistent_returnsNull() {
+    fun fetchById_nonExistent_returnsNull() = runBlocking {
         val item = repo().fetchById(Long.MAX_VALUE, null)
         assertNull(item)
     }
 
     @Test
-    fun fetchWithProjection_onlyRequestedFields() {
+    fun fetchWithProjection_onlyRequestedFields() = runBlocking {
         val pv = ProjectionValues
         val projection = PurchaseItem()
         projection.id = pv.i64
@@ -66,7 +67,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun fetchByPurchaseId_firstPurchase() {
+    fun fetchByPurchaseId_firstPurchase() = runBlocking {
         val items = repo().fetch(
             PurchaseItemCriteria().withPurchaseId(DBReset.ADMIN_FIRST_PURCHASE_ID)
         )
@@ -75,7 +76,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun fetchByPurchaseId_secondPurchase() {
+    fun fetchByPurchaseId_secondPurchase() = runBlocking {
         val items = repo().fetch(
             PurchaseItemCriteria().withPurchaseId(DBReset.ADMIN_SECOND_PURCHASE_ID)
         )
@@ -83,7 +84,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun fetchByUserId() {
+    fun fetchByUserId() = runBlocking {
         val items = repo().fetch(
             PurchaseItemCriteria().withUserId(DBReset.ADMIN_ID)
         )
@@ -91,7 +92,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun fetchByUserId_noResults() {
+    fun fetchByUserId_noResults() = runBlocking {
         val items = repo().fetch(
             PurchaseItemCriteria().withUserId(DBReset.FULANO_ID)
         )
@@ -99,7 +100,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun fetchByProductId() {
+    fun fetchByProductId() = runBlocking {
         val criteria = PurchaseItemCriteria()
             .withProductId(DBReset.CAFETEIRA_ID)
             .withProjection(projectionWithRelations())
@@ -111,7 +112,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun fetchWithOffsetAndLimit() {
+    fun fetchWithOffsetAndLimit() = runBlocking {
         val items = repo().fetch(
             PurchaseItemCriteria()
                 .withOrderBy(PurchaseItemCriteria.OrderBy.ASCENDING)
@@ -122,7 +123,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun fetchWithOrderAscending() {
+    fun fetchWithOrderAscending() = runBlocking {
         val items = repo().fetch(
             PurchaseItemCriteria()
                 .withOrderBy(PurchaseItemCriteria.OrderBy.ASCENDING)
@@ -134,7 +135,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun fetchWithOrderDescending() {
+    fun fetchWithOrderDescending() = runBlocking {
         val items = repo().fetch(
             PurchaseItemCriteria()
                 .withOrderBy(PurchaseItemCriteria.OrderBy.DESCENDING)
@@ -148,13 +149,13 @@ abstract class AbstractPurchaseItemRepositoryTest {
     // :: count
 
     @Test
-    fun countAll_returnsThree() {
+    fun countAll_returnsThree() = runBlocking {
         val count = repo().count(PurchaseItemCriteria())
         assertEquals(3, count)
     }
 
     @Test
-    fun countByPurchaseId() {
+    fun countByPurchaseId() = runBlocking {
         val count = repo().count(
             PurchaseItemCriteria().withPurchaseId(DBReset.ADMIN_SECOND_PURCHASE_ID)
         )
@@ -162,7 +163,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun countByUserId() {
+    fun countByUserId() = runBlocking {
         val count = repo().count(
             PurchaseItemCriteria().withUserId(DBReset.ADMIN_ID)
         )
@@ -170,7 +171,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun countNonExistent_returnsZero() {
+    fun countNonExistent_returnsZero() = runBlocking {
         val count = repo().count(
             PurchaseItemCriteria().withPurchaseItemId(Long.MAX_VALUE)
         )
@@ -180,7 +181,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     // :: insert
 
     @Test
-    fun insert_newPurchaseItem() {
+    fun insert_newPurchaseItem() = runBlocking {
         val item = PurchaseItem()
         item.amount = 5
         item.price = 15.50
@@ -203,7 +204,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     // :: update
 
     @Test
-    fun update_existingPurchaseItem() {
+    fun update_existingPurchaseItem() = runBlocking {
         val original = repo().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID, null)
         assertNotNull(original)
 
@@ -225,7 +226,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     // :: insertOrUpdate
 
     @Test
-    fun insertOrUpdate_insertsWhenNew() {
+    fun insertOrUpdate_insertsWhenNew() = runBlocking {
         val item = PurchaseItem()
         item.amount = 3
         item.price = 25.0
@@ -242,7 +243,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun insertOrUpdate_updatesWhenExisting() {
+    fun insertOrUpdate_updatesWhenExisting() = runBlocking {
         val item = PurchaseItem()
         item.id = DBReset.ADMIN_SECOND_PURCHASE_ITEM0_ID
         item.amount = 77
@@ -263,7 +264,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     // :: delete
 
     @Test
-    fun deleteByPurchaseItemId() {
+    fun deleteByPurchaseItemId() = runBlocking {
         val deleted = repo().delete(
             PurchaseItemCriteria().withPurchaseItemId(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID)
         )
@@ -272,7 +273,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun deleteByPurchaseId() {
+    fun deleteByPurchaseId() = runBlocking {
         val deleted = repo().delete(
             PurchaseItemCriteria().withPurchaseId(DBReset.ADMIN_SECOND_PURCHASE_ID)
         )
@@ -281,7 +282,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun deleteByUserId_crossEntityExists() {
+    fun deleteByUserId_crossEntityExists() = runBlocking {
         val deleted = repo().delete(
             PurchaseItemCriteria().withUserId(DBReset.ADMIN_ID)
         )
@@ -290,7 +291,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun deleteByUserId_noResults() {
+    fun deleteByUserId_noResults() = runBlocking {
         val deleted = repo().delete(
             PurchaseItemCriteria().withUserId(DBReset.FULANO_ID)
         )
@@ -299,7 +300,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     }
 
     @Test
-    fun deleteNonExistent_returnsZero() {
+    fun deleteNonExistent_returnsZero() = runBlocking {
         val deleted = repo().delete(
             PurchaseItemCriteria().withPurchaseItemId(Long.MAX_VALUE)
         )

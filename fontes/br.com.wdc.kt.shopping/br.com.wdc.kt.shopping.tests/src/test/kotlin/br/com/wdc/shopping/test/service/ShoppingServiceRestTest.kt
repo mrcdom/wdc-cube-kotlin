@@ -2,6 +2,7 @@ package br.com.wdc.shopping.test.service
 
 import br.com.wdc.shopping.test.util.RestTestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
@@ -21,8 +22,8 @@ class ShoppingServiceRestTest {
     }
 
     @Test
-    fun test1() = ShoppingServiceTestAlgorithm.testPurchaseItemFetch(env)
+    fun test1() = runBlocking { ShoppingServiceTestAlgorithm.testPurchaseItemFetch(env) }
 
     @Test
-    fun test() = ShoppingServiceTestAlgorithm.testFullShoppingWorkflow(env)
+    fun test() = runBlocking { ShoppingServiceTestAlgorithm.testFullShoppingWorkflow(env) }
 }

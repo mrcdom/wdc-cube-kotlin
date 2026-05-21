@@ -3,6 +3,7 @@ package br.com.wdc.shopping.view.compose.views
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -19,9 +21,9 @@ import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.bridge.RenderSlot
 import br.com.wdc.shopping.view.compose.components.ShoppingLogoHeader
 
-private val COMPACT_BREAKPOINT = 700.dp
+private val COMPACT_BREAKPOINT = 518.dp
 
-class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-view", presenter.app) {
+class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-view", presenter) {
 
     @Composable
     override fun Render() {
@@ -180,23 +182,25 @@ private fun HeaderBar(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ShoppingLogoHeader(size = 32.dp, compact = true)
-                    }
+                    ShoppingLogoHeader(size = 32.dp, compact = true)
 
-                    OutlinedButton(
+                    IconButton(
                         onClick = onExit,
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                        border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.1f)
+                        )
                     ) {
-                        Text("Sair", color = Color.White.copy(alpha = 0.9f), fontSize = 13.sp)
+                        Icon(
+                            Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = "Sair",
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
 
@@ -211,7 +215,8 @@ private fun HeaderBar(
                     Text(
                         "Olá, $nickName",
                         color = Color.White.copy(alpha = 0.85f),
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        lineHeight = 16.sp
                     )
 
                     BadgedBox(
@@ -228,16 +233,17 @@ private fun HeaderBar(
                     ) {
                         FilledTonalButton(
                             onClick = onOpenCart,
+                            modifier = Modifier.defaultMinSize(minWidth = 1.dp, minHeight = 1.dp),
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = Color.White.copy(alpha = 0.2f),
                                 contentColor = Color.White
                             ),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Text("Carrinho", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                                Text("Carrinho", fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
                             }
                         }
                     }
@@ -246,16 +252,33 @@ private fun HeaderBar(
         } else {
             // Desktop header: single row
             Row(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Logo + Brand
+                // Logo + Exit
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ShoppingLogoHeader(size = 36.dp, compact = false)
+
+                    IconButton(
+                        onClick = onExit,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.1f)
+                        )
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = "Sair",
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
 
                 Row(
@@ -270,8 +293,9 @@ private fun HeaderBar(
                         Text(
                             "Olá, $nickName",
                             color = Color.White,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.bodyMedium
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                            fontSize = 14.sp,
+                            lineHeight = 16.sp
                         )
                     }
 
@@ -294,29 +318,19 @@ private fun HeaderBar(
                     ) {
                         FilledTonalButton(
                             onClick = onOpenCart,
-                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.defaultMinSize(minWidth = 1.dp, minHeight = 1.dp),
+                            shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = Color.White.copy(alpha = 0.2f),
                                 contentColor = Color.White
-                            )
+                            ),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text("Carrinho", fontWeight = FontWeight.Medium)
+                                Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Text("Carrinho", fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
                             }
                         }
-                    }
-
-                    // Exit button
-                    OutlinedButton(
-                        onClick = onExit,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color.White
-                        ),
-                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                    ) {
-                        Text("Sair", color = Color.White.copy(alpha = 0.9f))
                     }
                 }
             }

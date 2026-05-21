@@ -82,7 +82,7 @@ class UserApiController {
     private fun insert(ctx: Context) {
         val user = ApiGson.instance.fromJson(ctx.body(), User::class.java)
         decryptPasswordIfPresent(user)
-        val success = repo().insert(user)
+        val success = blocking { repo().insert(user) }
         json(ctx, mapOf("success" to success, "id" to (user.id ?: -1L)))
     }
 
@@ -91,26 +91,26 @@ class UserApiController {
         val newEntity = ApiGson.instance.fromJson(body.get("newEntity"), User::class.java)
         val oldEntity = ApiGson.instance.fromJson(body.get("oldEntity"), User::class.java)
         decryptPasswordIfPresent(newEntity)
-        val success = repo().update(newEntity, oldEntity)
+        val success = blocking { repo().update(newEntity, oldEntity) }
         json(ctx, mapOf("success" to success))
     }
 
     private fun upsert(ctx: Context) {
         val user = ApiGson.instance.fromJson(ctx.body(), User::class.java)
         decryptPasswordIfPresent(user)
-        val success = repo().insertOrUpdate(user)
+        val success = blocking { repo().insertOrUpdate(user) }
         json(ctx, mapOf("success" to success, "id" to (user.id ?: -1L)))
     }
 
     private fun delete(ctx: Context) {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = repo().delete(parseCriteria(body))
+        val count = blocking { repo().delete(parseCriteria(body)) }
         json(ctx, mapOf("count" to count))
     }
 
     private fun count(ctx: Context) {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = repo().count(parseCriteria(body))
+        val count = blocking { repo().count(parseCriteria(body)) }
         json(ctx, mapOf("count" to count))
     }
 
@@ -119,7 +119,7 @@ class UserApiController {
         val criteria = parseCriteria(body)
         val projection = ApiGson.parseProjection(body, User::class.java)
         criteria.withProjection(projection)
-        val items = repo().fetch(criteria)
+        val items = blocking { repo().fetch(criteria) }
         json(ctx, mapOf("items" to items))
     }
 
@@ -128,13 +128,13 @@ class UserApiController {
         val criteria = parseCriteria(body)
         val projection = ApiGson.parseProjection(body, User::class.java)
         criteria.withProjection(projection)
-        val page = repo().fetchPage(criteria)
+        val page = blocking { repo().fetchPage(criteria) }
         json(ctx, mapOf("items" to page.items, "totalCount" to page.totalCount))
     }
 
     private fun fetchById(ctx: Context) {
         val id = ctx.pathParam("id").toLong()
-        val result = repo().fetchById(id, null)
+        val result = blocking { repo().fetchById(id, null) }
         if (result == null) {
             ctx.status(404).json(mapOf("error" to "Not found"))
             return
@@ -146,7 +146,7 @@ class UserApiController {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
         val id = body.get("id").asLong
         val projection = ApiGson.parseProjection(body, User::class.java)
-        val result = repo().fetchById(id, projection)
+        val result = blocking { repo().fetchById(id, projection) }
         if (result == null) {
             ctx.status(404).json(mapOf("error" to "Not found"))
             return

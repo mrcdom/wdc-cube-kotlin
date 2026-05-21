@@ -33,11 +33,7 @@ object ViewUpdateScheduler {
         dirtyViews.remove(view)
     }
 
-    private fun flush() {
-        // commitComputedState gives presenters a last chance to call update()
-        // Any views marked dirty during this call join the current flush cycle
-        appProvider?.invoke()?.commitComputedState()
-
+    internal fun flush() {
         // Snapshot and clear — new markDirty() calls after this point
         // will schedule the next flush cycle
         flushScheduled = false
@@ -45,6 +41,7 @@ object ViewUpdateScheduler {
         dirtyViews.clear()
 
         for (view in snapshot) {
+            view.presenterBase.commitComputedState()
             view.notifyDirty()
         }
     }

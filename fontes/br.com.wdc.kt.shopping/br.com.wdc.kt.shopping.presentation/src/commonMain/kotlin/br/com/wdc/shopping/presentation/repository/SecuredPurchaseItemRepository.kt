@@ -12,27 +12,27 @@ class SecuredPurchaseItemRepository(
     private val contextSupplier: () -> SecurityContext?,
 ) : PurchaseItemRepository {
 
-    override fun insert(purchaseItem: PurchaseItem) =
+    override suspend fun insert(purchaseItem: PurchaseItem) =
         withSecurityContext(contextSupplier) { delegate.insert(purchaseItem) }
 
-    override fun insertOrUpdate(purchaseItem: PurchaseItem) =
+    override suspend fun insertOrUpdate(purchaseItem: PurchaseItem) =
         withSecurityContext(contextSupplier) { delegate.insertOrUpdate(purchaseItem) }
 
-    override fun update(newPurchaseItem: PurchaseItem, oldPurchaseItem: PurchaseItem) =
+    override suspend fun update(newPurchaseItem: PurchaseItem, oldPurchaseItem: PurchaseItem) =
         withSecurityContext(contextSupplier) { delegate.update(newPurchaseItem, oldPurchaseItem) }
 
-    override fun delete(criteria: PurchaseItemCriteria) =
+    override suspend fun delete(criteria: PurchaseItemCriteria) =
         withSecurityContext(contextSupplier) { delegate.delete(criteria) }
 
-    override fun count(criteria: PurchaseItemCriteria) =
+    override suspend fun count(criteria: PurchaseItemCriteria) =
         withSecurityContext(contextSupplier) { delegate.count(criteria) }
 
-    override fun fetch(criteria: PurchaseItemCriteria) =
+    override suspend fun fetch(criteria: PurchaseItemCriteria) =
         withSecurityContext(contextSupplier) { delegate.fetch(criteria) }
 
-    override fun fetchPage(criteria: PurchaseItemCriteria) =
+    override suspend fun fetchPage(criteria: PurchaseItemCriteria) =
         withSecurityContext(contextSupplier) { delegate.fetchPage(criteria) }
 
-    override fun fetchById(purchaseId: Long, projection: PurchaseItem?) =
+    override suspend fun fetchById(purchaseId: Long, projection: PurchaseItem?) =
         withSecurityContext(contextSupplier) { delegate.fetchById(purchaseId, projection) }
 }

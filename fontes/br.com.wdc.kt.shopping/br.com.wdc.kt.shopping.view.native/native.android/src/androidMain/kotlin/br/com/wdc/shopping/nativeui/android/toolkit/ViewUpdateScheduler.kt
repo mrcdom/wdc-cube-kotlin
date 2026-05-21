@@ -24,6 +24,8 @@ object ViewUpdateScheduler {
         this.appProvider = appProvider
     }
 
+    internal fun getApp(): ShoppingApplication? = appProvider?.invoke()
+
     @Synchronized
     fun markDirty(view: AbstractViewAndroid<*>) {
         dirtyViews.add(view)
@@ -39,8 +41,6 @@ object ViewUpdateScheduler {
     }
 
     private fun flush() {
-        appProvider?.invoke()?.commitComputedState()
-
         val snapshot: List<AbstractViewAndroid<*>>
         synchronized(this) {
             flushScheduled = false
@@ -50,6 +50,7 @@ object ViewUpdateScheduler {
 
         for (view in snapshot) {
             try {
+                view.presenterBase?.commitComputedState()
                 view.forceUpdate()
             } catch (e: Exception) {
                 Log.e("ViewUpdateScheduler", "flush error", e)

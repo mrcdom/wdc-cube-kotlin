@@ -5,6 +5,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
+import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import kotlinx.coroutines.launch
 
@@ -13,13 +14,15 @@ import kotlinx.coroutines.launch
  *
  * Coalesces multiple update() calls within the same cycle into a single
  * Compose recomposition via the centralized ViewUpdateScheduler. The scheduler
- * batches dirty views, calls commitComputedState(), then increments revision
- * for each dirty view — triggering a single recomposition pass.
+ * batches dirty views, calls commitComputedState() per dirty view, then
+ * increments revision — triggering a single recomposition pass.
  */
 abstract class ComposeCubeView(
     private val id: String,
-    protected val app: ShoppingApplication
+    internal val presenterBase: PresenterBase
 ) : CubeView {
+
+    protected val app: ShoppingApplication get() = presenterBase.app as ShoppingApplication
 
     /** Revision counter — read this in @Composable functions to trigger recomposition. */
     val revision: MutableState<Int> = mutableIntStateOf(0)
@@ -44,7 +47,7 @@ abstract class ComposeCubeView(
      * execution of presenter actions, preserving the synchronous semantics of the
      * Cube MVP pattern while keeping the UI thread free.
      */
-    protected fun safeCall(action: () -> Unit) {
+    protected fun safeCall(action: suspend () -> Unit) {
         ViewUpdateScheduler.presenterScope.launch {
             try {
                 action()

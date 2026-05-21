@@ -5,10 +5,10 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
-class ProductsPanelReactViewImpl(private val presenter: ProductsPanelPresenter) : GenericViewImpl(presenter.app, "a1b2c3d4e5f6") {
+class ProductsPanelReactViewImpl(presenter: ProductsPanelPresenter) : GenericViewImpl<ProductsPanelPresenter>("a1b2c3d4e5f6", presenter) {
 
     @Throws(Exception::class)
-    override fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
+    override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
         when (eventCode) {
             1 -> presenter.onOpenProduct(CoerceUtils.asLong(formData["p.productId"]) ?: 0L)
         }

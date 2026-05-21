@@ -38,7 +38,7 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class ProductView(private val presenter: ProductPresenter) : ReactCubeView("product-view", presenter.app) {
+class ProductView(private val presenter: ProductPresenter) : ReactCubeView("product-view", presenter) {
 
     override val component = FC<Props> {
         var rev by useState(revision)

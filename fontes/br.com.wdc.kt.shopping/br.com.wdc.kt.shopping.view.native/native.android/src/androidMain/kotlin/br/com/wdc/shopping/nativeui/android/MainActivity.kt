@@ -3,6 +3,7 @@ package br.com.wdc.shopping.nativeui.android
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Looper
 import android.os.StrictMode
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +30,8 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.products.Produ
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 class MainActivity : AppCompatActivity() {
 
@@ -59,7 +62,7 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
         val app = AndroidNativeShoppingApplication(AndroidPersistentSessionStorage(prefs))
         ViewUpdateScheduler.initialize { app }
-        app.go(app.getRootPlace().placeName)
+        runBlocking { app.go(app.getRootPlace().placeName) }
 
         val rootPresenter = app.getRootPresenter()
         val rootView = (rootPresenter?.view() as? AbstractViewAndroid<*>)?.rootView
@@ -82,13 +85,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun registerViewFactories() {
-        RootPresenter.createView = { RootViewAndroid(it).initialize() }
-        LoginPresenter.createView = { LoginViewAndroid(it).initialize() }
-        HomePresenter.createView = { HomeViewAndroid(it).initialize() }
-        ProductsPanelPresenter.createView = { ProductsPanelViewAndroid(it).initialize() }
-        PurchasesPanelPresenter.createView = { PurchasesPanelViewAndroid(it).initialize() }
-        ProductPresenter.createView = { ProductViewAndroid(it).initialize() }
-        CartPresenter.createView = { CartViewAndroid(it).initialize() }
-        ReceiptPresenter.createView = { ReceiptViewAndroid(it).initialize() }
+        RootPresenter.createView = { onMainThread { RootViewAndroid(it).initialize() } }
+        LoginPresenter.createView = { onMainThread { LoginViewAndroid(it).initialize() } }
+        HomePresenter.createView = { onMainThread { HomeViewAndroid(it).initialize() } }
+        ProductsPanelPresenter.createView = { onMainThread { ProductsPanelViewAndroid(it).initialize() } }
+        PurchasesPanelPresenter.createView = { onMainThread { PurchasesPanelViewAndroid(it).initialize() } }
+        ProductPresenter.createView = { onMainThread { ProductViewAndroid(it).initialize() } }
+        CartPresenter.createView = { onMainThread { CartViewAndroid(it).initialize() } }
+        ReceiptPresenter.createView = { onMainThread { ReceiptViewAndroid(it).initialize() } }
+    }
+
+    private fun <T> onMainThread(block: () -> T): T {
+        return if (Looper.myLooper() == Looper.getMainLooper()) {
+            block()
+        } else {
+            runBlocking(Dispatchers.Main) { block() }
+        }
     }
 }

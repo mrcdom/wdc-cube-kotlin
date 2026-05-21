@@ -31,7 +31,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     // :: Cube API
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (initialization) {
             ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
             view = createView?.invoke(this)
@@ -64,7 +64,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     // :: User Actions
 
-    fun onEnter(userName: String? = null, password: String? = null) {
+    suspend fun onEnter(userName: String? = null, password: String? = null) {
         if (userName != null) state.userName = userName
         if (password != null) state.password = password
 

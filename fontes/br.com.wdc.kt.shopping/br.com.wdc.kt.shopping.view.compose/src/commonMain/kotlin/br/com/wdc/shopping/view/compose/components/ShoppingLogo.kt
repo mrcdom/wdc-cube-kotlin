@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.sp
 
 /**
@@ -35,12 +36,22 @@ fun ShoppingLogoLarge() {
             }
         }
         Spacer(Modifier.height(12.dp))
-        Text(
-            "Shopping",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Box {
+            Text(
+                "Shopping",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                "compose",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 4.dp, y = 16.dp)
+            )
+        }
     }
 }
 
@@ -67,11 +78,22 @@ fun ShoppingLogoHeader(size: Dp = 36.dp, compact: Boolean = false) {
                 )
             }
         }
-        Text(
-            "Shopping",
-            style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
+        Box {
+            Text(
+                "Shopping",
+                fontSize = if (compact) 16.sp else 20.sp,
+                lineHeight = if (compact) 18.sp else 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Text(
+                "compose",
+                fontSize = if (compact) 9.sp else 10.sp,
+                color = Color.White.copy(alpha = 0.45f),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(y = if (compact) 16.dp else 16.dp)
+            )
+        }
     }
 }

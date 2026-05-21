@@ -7,8 +7,10 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.storage.JvmSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
+import br.com.wdc.framework.cube.CubeApplication
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
+import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
@@ -36,10 +38,17 @@ import java.io.IOException
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
+class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), PresenterBase {
+
+    override val app: CubeApplication get() = this
+
+    override fun commitComputedState() {
+        browserView.commitComputedState()
+    }
 
     companion object {
         private val LOG = Log.getLogger("ApplicationReactImpl")
@@ -83,7 +92,9 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
                     }
                 }
 
-                app.safeGo(path)
+                runBlocking {
+                    app.safeGo(path)
+                }
             } catch (caught: Exception) {
                 app.release()
                 throw caught
@@ -106,8 +117,6 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
             }
         }
     }
-
-    override fun createPresenterMap(): MutableMap<Int, CubePresenter> = ConcurrentHashMap()
 
     override fun createUserDelegate(delegate: UserRepository) =
         SecuredUserRepository(delegate) { getSecurityContext() }
@@ -135,8 +144,8 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
     private var removeInstanceAction: (() -> Unit) = {}
 
     private var rootPresenterField: RootPresenter? = null
-    private val dirtyViewMap = ConcurrentHashMap<String, GenericViewImpl>()
-    private val viewMap = HashMap<String, GenericViewImpl>()
+    private val dirtyViewMap = ConcurrentHashMap<String, GenericViewImpl<*>>()
+    private val viewMap = HashMap<String, GenericViewImpl<*>>()
     private var lastRequestId: Long = 0L
     private var historyDirty: Boolean = false
     private lateinit var browserView: BrowserReactViewImpl
@@ -218,7 +227,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
     }
 
     @Throws(Exception::class)
-    fun safeGo(path: String?) {
+    suspend fun safeGo(path: String?) {
         val security = AppSecurity
         val intent = CubeIntent.parse(path ?: "")
         if (intent.place == null) {
@@ -244,16 +253,16 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
         }
     }
 
-    fun putView(view: GenericViewImpl) {
+    fun putView(view: GenericViewImpl<*>) {
         viewMap[view.instanceId] = view
     }
 
-    fun removeView(stateId: String): GenericViewImpl? {
+    fun removeView(stateId: String): GenericViewImpl<*>? {
         dirtyViewMap.remove(stateId)
         return viewMap.remove(stateId)
     }
 
-    fun markDirty(view: GenericViewImpl) {
+    fun markDirty(view: GenericViewImpl<*>) {
         dirtyViewMap[view.instanceId] = view
         ViewFlushScheduler.markDirty(this)
     }
@@ -270,7 +279,9 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
     @Throws(Exception::class)
     fun sendResponse(request: Map<String, Any?>) {
         try {
-            DispatchPhaseBhv(this).run(request)
+            runBlocking {
+                DispatchPhaseBhv(this@ApplicationReactImpl).run(request)
+            }
             ResponsePhaseBhv(this).run(request)
         } catch (e: Exception) {
             val exn = IOException("Sending response")
@@ -285,7 +296,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
         if (dirtyViewMap.isEmpty()) return
         val ws = wsSession ?: return
 
-        val allViews = ArrayList<GenericViewImpl>()
+        val allViews = ArrayList<GenericViewImpl<*>>()
         val iter = dirtyViewMap.entries.iterator()
         while (iter.hasNext()) {
             allViews.add(iter.next().value)
@@ -330,7 +341,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
     private class DispatchPhaseBhv(private val me: ApplicationReactImpl) {
 
         @Throws(Exception::class)
-        fun run(request: Map<String, Any?>): Boolean {
+        suspend fun run(request: Map<String, Any?>): Boolean {
             updateSecret(request)
             updateApplicationState(request)
 
@@ -353,7 +364,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
         }
 
         @Throws(Exception::class)
-        private fun submitEvent(
+        private suspend fun submitEvent(
             request: Map<String, Any?>,
             viewNotFoundInput: Boolean,
             rawEvent: String,
@@ -418,7 +429,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
 
             me.doUpdateHistory()
 
-            val viewsToFlush = ArrayList<GenericViewImpl>()
+            val viewsToFlush = ArrayList<GenericViewImpl<*>>()
             val iter = me.dirtyViewMap.entries.iterator()
             while (iter.hasNext()) {
                 var view = iter.next().value
@@ -460,7 +471,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication() {
             return CoerceUtils.asBoolean(request["ping"], false) == true
         }
 
-        private fun writeResponse(json: ExtensibleObjectOutput, requestId: Long, isPing: Boolean, views: List<GenericViewImpl>) {
+        private fun writeResponse(json: ExtensibleObjectOutput, requestId: Long, isPing: Boolean, views: List<GenericViewImpl<*>>) {
             json.beginObject()
             run {
                 json.name("requestId").value(requestId)

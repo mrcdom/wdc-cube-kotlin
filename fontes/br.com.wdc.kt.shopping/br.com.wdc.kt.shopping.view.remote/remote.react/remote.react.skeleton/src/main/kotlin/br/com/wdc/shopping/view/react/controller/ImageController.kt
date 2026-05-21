@@ -4,6 +4,7 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
+import kotlinx.coroutines.runBlocking
 
 class ImageController {
 
@@ -28,7 +29,7 @@ class ImageController {
 
         val imageBytes: ByteArray?
         try {
-            imageBytes = ProductRepository.BEAN.get().fetchImage(productId)
+            imageBytes = runBlocking { ProductRepository.BEAN.get().fetchImage(productId) }
         } catch (caught: Exception) {
             LOG.error("Processing image request", caught)
             ctx.status(500)

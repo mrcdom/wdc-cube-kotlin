@@ -2,7 +2,6 @@ package br.com.wdc.shopping.nativeui.android
 
 import br.com.wdc.framework.commons.storage.AndroidPersistentSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
-import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
@@ -26,8 +25,6 @@ internal class AndroidNativeShoppingApplication(
     override fun removeAttribute(name: String): Any? = attributes.remove(name)
 
     override fun updateHistory() { /* No browser history on Android */ }
-
-    override fun createPresenterMap(): MutableMap<Int, CubePresenter> = LinkedHashMap()
 
     override fun createUserDelegate(delegate: UserRepository) =
         SecuredUserRepository(delegate) { getSecurityContext() }

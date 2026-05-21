@@ -6,13 +6,14 @@ import br.com.wdc.shopping.test.mock.viewimpl.LoginViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.PurchasesPanelViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.RestrictedViewMock
 import br.com.wdc.shopping.test.util.BasePresentationTest
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ShoppingLoginTest : BasePresentationTest() {
 
     @Test
-    fun testLoginPrimeiroAcesso() {
+    fun testLoginPrimeiroAcesso() = runBlocking {
         Routes.login(app)
 
         val rootView = app.getRootView()!!
@@ -22,7 +23,7 @@ class ShoppingLoginTest : BasePresentationTest() {
     }
 
     @Test
-    fun testLoginFalhaPorSenhaOuUsuarioNaoReconhecidos() {
+    fun testLoginFalhaPorSenhaOuUsuarioNaoReconhecidos() = runBlocking {
         Routes.login(app)
 
         val rootView = app.getRootView()!!
@@ -38,7 +39,7 @@ class ShoppingLoginTest : BasePresentationTest() {
     }
 
     @Test
-    fun testLoginAcessoAoSistema() {
+    fun testLoginAcessoAoSistema() = runBlocking {
         Routes.login(app)
 
         val rootView = app.getRootView()!!
