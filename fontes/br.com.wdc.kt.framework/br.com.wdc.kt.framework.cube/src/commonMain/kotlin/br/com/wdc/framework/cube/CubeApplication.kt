@@ -39,16 +39,6 @@ abstract class CubeApplication {
         }
     }
 
-    open fun commitComputedState() {
-        for (presenter in presenterMap.values) {
-            try {
-                presenter.commitComputedState()
-            } catch (caught: Exception) {
-                LOG.error("Processing ${presenter::class.simpleName}: ${caught.message}")
-            }
-        }
-    }
-
     fun newIntent(): CubeIntent {
         val intent = CubeIntent()
         intent.place = lastPlace
