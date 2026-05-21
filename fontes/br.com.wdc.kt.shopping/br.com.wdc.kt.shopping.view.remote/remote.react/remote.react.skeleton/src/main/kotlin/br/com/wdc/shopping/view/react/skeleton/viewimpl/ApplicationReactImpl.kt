@@ -73,6 +73,8 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
             return instanceMap[appId]
         }
 
+        fun getActiveSessionCount(): Int = instanceMap.size
+
         fun getOrCreate(appId: String, request: Map<String, Any?>): ApplicationReactImpl {
             return instanceMap.computeIfAbsent(appId) { createApp(appId, request) }
         }

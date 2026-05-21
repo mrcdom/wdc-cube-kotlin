@@ -298,6 +298,11 @@ class JavalinApplication(
         // Repository REST API
         RepositoryApiRoutes.configure(config)
 
+        // Stress test metrics endpoint
+        config.routes.get("/api/stress/metrics") { ctx ->
+            br.com.wdc.shopping.view.react.controller.StressMetricsController.handle(ctx)
+        }
+
         config.routes.get("/") { ctx -> ctx.redirect("/index.html") }
 
         // Deployed frontend context routes: /{context} and /{context}/ → /{context}/index.html
