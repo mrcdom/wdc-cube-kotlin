@@ -605,10 +605,10 @@ sequenceDiagram
     participant Q as presenterScope (serial)
     participant IO as Rede/Disco
 
-    UI->>Q: safeCall { presenter.onBuy() }
+    UI->>Q: safeCall → presenter.onBuy()
     Note right of Q: Ação enfileirada
 
-    UI->>Q: safeCall { presenter.onExit() }
+    UI->>Q: safeCall → presenter.onExit()
     Note right of Q: Aguarda a anterior
 
     activate Q
@@ -661,8 +661,8 @@ sequenceDiagram
     participant Repo as Repository (I/O)
 
     User->>View: click no botão "Comprar"
-    View->>Safe: safeCall { presenter.onBuy() }
-    Safe->>Scope: launch { action() }
+    View->>Safe: safeCall → presenter.onBuy()
+    Safe->>Scope: launch → action()
     Note over View: UI thread liberada imediatamente
 
     activate Scope
@@ -953,11 +953,11 @@ sequenceDiagram
     participant BG as Scope paralelo
     participant Repo as Repository (I/O)
 
-    UI->>PS: safeCall { presenter.onEnter() }
+    UI->>PS: safeCall → presenter.onEnter()
     activate PS
     PS->>PS: state.loading = true
     PS->>PS: update()
-    PS->>BG: launch { repo.fetchExtraInfo() }
+    PS->>BG: launch → repo.fetchExtraInfo()
     Note over PS: Não espera — continua
     deactivate PS
     Note over PS: Ação corrente termina,<br/>UI já mostra conteúdo parcial
@@ -965,7 +965,7 @@ sequenceDiagram
     activate BG
     BG->>Repo: fetchExtraInfo() — suspend
     Repo-->>BG: resultado
-    BG->>PS: launch { state.extra = resultado; update() }
+    BG->>PS: launch → state.extra = resultado
     deactivate BG
 
     activate PS
