@@ -1,6 +1,5 @@
 package br.com.wdc.shopping.test.mock
 
-import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.commons.storage.JvmSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.shopping.domain.repositories.ProductRepository
@@ -28,7 +27,6 @@ import br.com.wdc.shopping.test.mock.viewimpl.PurchasesPanelViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.ReceiptViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.RestrictedViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.RootViewMock
-import java.util.concurrent.ConcurrentHashMap
 
 class ShoppingApplicationMock : ShoppingApplication() {
 
@@ -42,10 +40,6 @@ class ShoppingApplicationMock : ShoppingApplication() {
         ProductsPanelPresenter.createView = { p -> ProductsPanelViewMock(p) }
         PurchasesPanelPresenter.createView = { p -> PurchasesPanelViewMock(p) }
     }
-
-    private val attributes = HashMap<String, Any?>()
-
-    override fun createPresenterMap(): MutableMap<Int, CubePresenter> = ConcurrentHashMap()
 
     override fun createUserDelegate(delegate: UserRepository) =
         SecuredUserRepository(delegate, ::getSecurityContext)
@@ -65,18 +59,6 @@ class ShoppingApplicationMock : ShoppingApplication() {
         val rootPresenter = getRootPresenter()
         val v = rootPresenter?.view()
         return if (v is RootViewMock) v else null
-    }
-
-    override fun setAttribute(name: String, value: Any?): Any? {
-        return attributes.put(name, value)
-    }
-
-    override fun getAttribute(name: String): Any? {
-        return attributes[name]
-    }
-
-    override fun removeAttribute(name: String): Any? {
-        return attributes.remove(name)
     }
 
     override fun updateHistory() {

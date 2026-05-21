@@ -4,9 +4,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
-class RootReactViewImpl(presenter: RootPresenter) : GenericViewImpl(presenter.app, "f2d345c4a610", presenter) {
-
-    private val presenter: RootPresenter = presenter
+class RootReactViewImpl(presenter: RootPresenter) : GenericViewImpl<RootPresenter>("f2d345c4a610", presenter) {
 
     init {
         app.setRootPresenter(presenter)
@@ -17,7 +15,7 @@ class RootReactViewImpl(presenter: RootPresenter) : GenericViewImpl(presenter.ap
         super.release()
     }
 
-    override fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
+    override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
         // NOOP
     }
 
@@ -29,7 +27,7 @@ class RootReactViewImpl(presenter: RootPresenter) : GenericViewImpl(presenter.ap
             json.name("id").value(instanceId)
 
             val contentView = state.contentView
-            if (contentView is GenericViewImpl) {
+            if (contentView is GenericViewImpl<*>) {
                 json.name("contentViewId").value(contentView.instanceId)
             }
 

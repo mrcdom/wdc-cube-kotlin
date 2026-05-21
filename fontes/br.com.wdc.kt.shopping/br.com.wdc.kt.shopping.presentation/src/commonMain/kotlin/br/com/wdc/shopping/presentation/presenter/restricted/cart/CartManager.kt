@@ -17,10 +17,10 @@ class CartManager(private val repo: PurchaseRepository) {
     private val cart: MutableList<CartItem> = ArrayList()
 
     private var listenerIdGen: Int = 0
-    private val commitListenerMap: MutableMap<Int, () -> Unit> = HashMap()
+    private val commitListenerMap: MutableMap<Int, suspend () -> Unit> = HashMap()
     private val changeListenerMap: MutableMap<Int, () -> Unit> = HashMap()
 
-    fun addCommitListener(listener: () -> Unit): () -> Unit {
+    fun addCommitListener(listener: suspend () -> Unit): () -> Unit {
         val listenerID = listenerIdGen++
         commitListenerMap[listenerID] = listener
         return { commitListenerMap.remove(listenerID) }
@@ -94,7 +94,7 @@ class CartManager(private val repo: PurchaseRepository) {
         return modified
     }
 
-    fun commit(subject: Subject): Long? {
+    suspend fun commit(subject: Subject): Long? {
         val purchaseId = doPurchase(subject.id!!, cart)
         clear()
 
@@ -108,7 +108,7 @@ class CartManager(private val repo: PurchaseRepository) {
         return purchaseId
     }
 
-    private fun doPurchase(userId: Long, request: List<CartItem>): Long? {
+    private suspend fun doPurchase(userId: Long, request: List<CartItem>): Long? {
         val purchase = Purchase()
         purchase.user = User()
         purchase.user!!.id = userId

@@ -5,10 +5,10 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
-class PurchasesPanelReactViewImpl(private val presenter: PurchasesPanelPresenter) : GenericViewImpl(presenter.app, "b3c4d5e6f7a8") {
+class PurchasesPanelReactViewImpl(presenter: PurchasesPanelPresenter) : GenericViewImpl<PurchasesPanelPresenter>("b3c4d5e6f7a8", presenter) {
 
     @Throws(Exception::class)
-    override fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
+    override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
         when (eventCode) {
             1 -> presenter.onOpenReceipt(CoerceUtils.asLong(formData["p.purchaseId"]) ?: 0L)
             2 -> presenter.onPageChange(CoerceUtils.asInteger(formData["p.page"]) ?: 0)

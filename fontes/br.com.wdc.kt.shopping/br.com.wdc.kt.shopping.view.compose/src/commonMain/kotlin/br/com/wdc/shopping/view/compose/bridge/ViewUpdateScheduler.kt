@@ -3,7 +3,6 @@ package br.com.wdc.shopping.view.compose.bridge
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
@@ -26,12 +25,19 @@ object ViewUpdateScheduler {
     private var appProvider: (() -> ShoppingApplication?)? = null
 
     /**
-     * Single-threaded coroutine scope for presenter actions and flush.
-     * limitedParallelism(1) guarantees serial execution.
+     * Returns the presenter scope from the current application instance.
+     * This ensures each application instance has its own serialized scope.
      */
-    internal val presenterScope = CoroutineScope(
-        Dispatchers.Default.limitedParallelism(1)
-    )
+    internal val presenterScope: CoroutineScope
+        get() = appProvider!!.invoke()!!.presenterScope
+
+    /**
+     * Launch a presenter action on the serial presenterScope.
+     * Use from platform entry points that need to call suspend navigation methods.
+     */
+    fun launchPresenterAction(action: suspend () -> Unit) {
+        presenterScope.launch { action() }
+    }
 
     fun initialize(appProvider: () -> ShoppingApplication?) {
         this.appProvider = appProvider
@@ -55,21 +61,19 @@ object ViewUpdateScheduler {
 
     /**
      * Flushes all dirty views. Called at the end of every safeCall on presenterScope.
-     * Calls commitComputedState() first, then notifies (increments revision for) each dirty view.
+     * Calls commitComputedState() per dirty view, then notifies (increments revision for) each.
      */
     internal fun flush() {
-        // commitComputedState gives presenters a last chance to call update()
-        try {
-            appProvider?.invoke()?.commitComputedState()
-        } catch (e: Exception) {
-            LOG.error("commitComputedState error: ${e.message}", e)
-        }
-
         // Snapshot and clear
         val snapshot = dirtyViews.toList()
         dirtyViews.clear()
 
         for (view in snapshot) {
+            try {
+                view.presenterBase.commitComputedState()
+            } catch (e: Exception) {
+                LOG.error("commitComputedState error for ${view.instanceId}: ${e.message}", e)
+            }
             view.revision.value++
         }
     }

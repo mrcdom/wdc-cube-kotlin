@@ -30,19 +30,19 @@ class ProductsPanelPresenter(
 
     override fun onCreateView(): CubeView = createView!!.invoke(this)
 
-    override fun onInitialize() {
+    override suspend fun onInitialize() {
         loadProducts()
     }
 
     // :: User Actions
 
-    fun onOpenProduct(productId: Long?) {
+    suspend fun onOpenProduct(productId: Long?) {
         owner.onOpenProduct(productId)
     }
 
     // :: Data load
 
-    fun loadProducts() {
+    suspend fun loadProducts() {
         try {
             state.products = productService.loadProductsWithoutDescription(1000)
             update()

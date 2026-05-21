@@ -9,7 +9,7 @@ import br.com.wdc.shopping.persistence.repository.BaseRepository
 
 class PurchaseRepositoryImpl : BaseRepository(), PurchaseRepository {
 
-    override fun insert(purchase: Purchase): Boolean = try {
+    override suspend fun insert(purchase: Purchase): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             InsertRowPurchaseCmd.runWithItems(tx.connection(), purchase)
         }
@@ -17,7 +17,7 @@ class PurchaseRepositoryImpl : BaseRepository(), PurchaseRepository {
         writeException(e)
     }
 
-    override fun insertOrUpdate(purchase: Purchase): Boolean = try {
+    override suspend fun insertOrUpdate(purchase: Purchase): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             if (purchase.id == null) InsertRowPurchaseCmd.runWithItems(tx.connection(), purchase)
             else UpdateRowPurchaseCmd.run(tx.connection(), purchase)
@@ -26,7 +26,7 @@ class PurchaseRepositoryImpl : BaseRepository(), PurchaseRepository {
         writeException(e)
     }
 
-    override fun update(newPurchase: Purchase, oldPurchase: Purchase): Boolean = try {
+    override suspend fun update(newPurchase: Purchase, oldPurchase: Purchase): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             UpdateRowPurchaseCmd.run(tx.connection(), newPurchase, oldPurchase)
         }
@@ -34,7 +34,7 @@ class PurchaseRepositoryImpl : BaseRepository(), PurchaseRepository {
         writeException(e)
     }
 
-    override fun delete(criteria: PurchaseCriteria): Int = try {
+    override suspend fun delete(criteria: PurchaseCriteria): Int = try {
         TransactionContext.begin(dataSource()).use { tx ->
             DeletePurchasesCmd.byCriteria(tx.connection(), criteria)
         }
@@ -42,7 +42,7 @@ class PurchaseRepositoryImpl : BaseRepository(), PurchaseRepository {
         readException(e)
     }
 
-    override fun count(criteria: PurchaseCriteria): Int = try {
+    override suspend fun count(criteria: PurchaseCriteria): Int = try {
         TransactionContext.begin(dataSource()).use { tx ->
             CountPurchasesCmd.byCriteria(tx.connection(), criteria)
         }
@@ -50,7 +50,7 @@ class PurchaseRepositoryImpl : BaseRepository(), PurchaseRepository {
         readException(e)
     }
 
-    override fun fetch(criteria: PurchaseCriteria): List<Purchase> = try {
+    override suspend fun fetch(criteria: PurchaseCriteria): List<Purchase> = try {
         TransactionContext.begin(dataSource()).use { tx ->
             FetchPurchaseCmd.byCriteria(tx.connection(), criteria)
         }
@@ -58,7 +58,7 @@ class PurchaseRepositoryImpl : BaseRepository(), PurchaseRepository {
         readException(e)
     }
 
-    override fun fetchPage(criteria: PurchaseCriteria): Page<Purchase> = try {
+    override suspend fun fetchPage(criteria: PurchaseCriteria): Page<Purchase> = try {
         TransactionContext.begin(dataSource()).use { tx ->
             val totalCount = CountPurchasesCmd.byCriteria(tx.connection(), criteria)
             val items = FetchPurchaseCmd.byCriteria(tx.connection(), criteria)
@@ -68,7 +68,7 @@ class PurchaseRepositoryImpl : BaseRepository(), PurchaseRepository {
         readException(e)
     }
 
-    override fun fetchById(purchaseId: Long, projection: Purchase?): Purchase? = try {
+    override suspend fun fetchById(purchaseId: Long, projection: Purchase?): Purchase? = try {
         TransactionContext.begin(dataSource()).use { tx ->
             FetchPurchaseCmd.byId(tx.connection(), purchaseId, projection)
         }

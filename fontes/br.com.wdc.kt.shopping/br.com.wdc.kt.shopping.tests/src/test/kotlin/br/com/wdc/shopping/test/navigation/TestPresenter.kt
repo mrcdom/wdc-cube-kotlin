@@ -9,7 +9,7 @@ import br.com.wdc.framework.cube.CubePresenter
  * Configurable test presenter that tracks lifecycle calls and can trigger
  * redirects or throw exceptions during applyParameters.
  */
-class TestPresenter(val app: TestApp, val placeId: Int) : CubePresenter {
+class TestPresenter(override val app: TestApp, val placeId: Int) : CubePresenter {
 
     var initialized = false
     var released = false
@@ -28,7 +28,7 @@ class TestPresenter(val app: TestApp, val placeId: Int) : CubePresenter {
     /** Set to throw during applyParameters */
     var throwOnApply: Exception? = null
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         applyCount++
         lastIntent = intent
         lastInitialization = initialization

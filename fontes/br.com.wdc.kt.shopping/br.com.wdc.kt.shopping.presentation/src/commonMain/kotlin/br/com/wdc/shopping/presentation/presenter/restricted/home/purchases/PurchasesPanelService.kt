@@ -8,20 +8,20 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.Purcha
 
 class PurchasesPanelService(private val repo: PurchaseRepository) {
 
-    fun loadPurchases(criteria: PurchaseCriteria): List<PurchaseInfo> {
+    suspend fun loadPurchases(criteria: PurchaseCriteria): List<PurchaseInfo> {
         return repo.fetch(criteria.withProjection(PurchaseInfo.projectionWithItens()))
             .mapNotNull { PurchaseInfo.create(it) }
     }
 
-    fun countPurchasesOfUser(userId: Long): Int {
+    suspend fun countPurchasesOfUser(userId: Long): Int {
         return repo.count(PurchaseCriteria().withUserId(userId))
     }
 
-    fun loadPurchasesOfUser(userId: Long): List<PurchaseInfo> {
+    suspend fun loadPurchasesOfUser(userId: Long): List<PurchaseInfo> {
         return loadPurchasesOfUser(userId, null, null)
     }
 
-    fun loadPurchasesOfUser(userId: Long, offset: Int?, limit: Int?): List<PurchaseInfo> {
+    suspend fun loadPurchasesOfUser(userId: Long, offset: Int?, limit: Int?): List<PurchaseInfo> {
         return repo.fetch(
             PurchaseCriteria()
                 .withUserId(userId)
@@ -32,7 +32,7 @@ class PurchasesPanelService(private val repo: PurchaseRepository) {
         ).mapNotNull { PurchaseInfo.create(it) }
     }
 
-    fun fetchPageOfUser(userId: Long, offset: Int?, limit: Int?): Page<PurchaseInfo> {
+    suspend fun fetchPageOfUser(userId: Long, offset: Int?, limit: Int?): Page<PurchaseInfo> {
         val page = repo.fetchPage(
             PurchaseCriteria()
                 .withUserId(userId)

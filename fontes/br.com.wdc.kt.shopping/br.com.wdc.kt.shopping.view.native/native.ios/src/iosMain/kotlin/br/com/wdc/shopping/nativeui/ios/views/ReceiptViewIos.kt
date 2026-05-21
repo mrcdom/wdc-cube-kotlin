@@ -241,7 +241,7 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
     }
 
     internal fun goBack() {
-        presenter.onOpenProducts()
+        safeAction("back") { presenter.onOpenProducts() }
     }
 }
 

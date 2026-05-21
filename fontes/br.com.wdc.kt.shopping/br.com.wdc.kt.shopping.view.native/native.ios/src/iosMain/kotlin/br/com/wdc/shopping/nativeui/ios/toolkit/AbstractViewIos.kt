@@ -1,7 +1,11 @@
 package br.com.wdc.shopping.nativeui.ios.toolkit
 
+import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
+import br.com.wdc.framework.cube.PresenterBase
+import br.com.wdc.shopping.presentation.ShoppingApplication
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.launch
 import platform.Foundation.NSLog
 import platform.UIKit.UIStackView
 import platform.UIKit.UIView
@@ -26,7 +30,7 @@ interface Releasable {
  * The doUpdate() should use guards to only update components whose data has actually changed.
  */
 @OptIn(ExperimentalForeignApi::class)
-abstract class AbstractViewIos<P>(
+abstract class AbstractViewIos<P : PresenterBase>(
     private val viewId: String,
     protected val presenter: P
 ) : CubeView {
@@ -39,10 +43,14 @@ abstract class AbstractViewIos<P>(
          * Views remove their objects in release() to avoid leaks.
          */
         private val gcRoots = mutableSetOf<Any>()
+        private val LOG = Log.getLogger("AbstractViewIos")
     }
 
     private val myGcRetained = mutableListOf<Any>()
     private val myListSlots = mutableListOf<Releasable>()
+
+    /** Exposes the presenter as PresenterBase for the scheduler. */
+    internal val presenterBase: PresenterBase get() = presenter
 
     protected fun retainForGC(obj: Any) {
         myGcRetained.add(obj)
@@ -121,15 +129,21 @@ abstract class AbstractViewIos<P>(
         }
     }
 
+    /** The ShoppingApplication instance obtained from the presenter. */
+    private val app: ShoppingApplication
+        get() = presenter.app as ShoppingApplication
+
     /**
      * Wrap a user-initiated action in error handling.
      * Logs and swallows exceptions to prevent crashes from UI interactions.
      */
-    protected fun safeAction(context: String, action: () -> Unit) {
-        try {
-            action()
-        } catch (e: Exception) {
-            NSLog("AbstractViewIos[$viewId] action '$context' error: ${e.message}")
+    protected fun safeAction(context: String, action: suspend () -> Unit) {
+        app.presenterScope.launch {
+            try {
+                action()
+            } catch (e: Exception) {
+                app.alertUnexpectedError(LOG, "action '$context' error", e)
+            }
         }
     }
 

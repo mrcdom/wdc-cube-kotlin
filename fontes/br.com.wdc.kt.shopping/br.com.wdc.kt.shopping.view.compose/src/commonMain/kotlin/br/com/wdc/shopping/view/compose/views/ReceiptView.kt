@@ -24,7 +24,7 @@ import br.com.wdc.shopping.view.compose.theme.SuccessColor
 import br.com.wdc.shopping.view.compose.theme.SuccessContainer
 import br.com.wdc.shopping.view.compose.util.formatPrice
 
-class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("receipt-view", presenter.app) {
+class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("receipt-view", presenter) {
 
     @Composable
     override fun Render() {

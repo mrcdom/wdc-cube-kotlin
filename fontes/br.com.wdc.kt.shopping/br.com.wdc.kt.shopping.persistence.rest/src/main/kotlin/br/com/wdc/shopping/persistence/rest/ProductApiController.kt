@@ -75,7 +75,7 @@ class ProductApiController {
 
     private fun insert(ctx: Context) {
         val product = ApiGson.instance.fromJson(ctx.body(), Product::class.java)
-        val success = repo().insert(product)
+        val success = blocking { repo().insert(product) }
         json(ctx, mapOf("success" to success, "id" to (product.id ?: -1L)))
     }
 
@@ -83,25 +83,25 @@ class ProductApiController {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
         val newEntity = ApiGson.instance.fromJson(body.get("newEntity"), Product::class.java)
         val oldEntity = ApiGson.instance.fromJson(body.get("oldEntity"), Product::class.java)
-        val success = repo().update(newEntity, oldEntity)
+        val success = blocking { repo().update(newEntity, oldEntity) }
         json(ctx, mapOf("success" to success))
     }
 
     private fun upsert(ctx: Context) {
         val product = ApiGson.instance.fromJson(ctx.body(), Product::class.java)
-        val success = repo().insertOrUpdate(product)
+        val success = blocking { repo().insertOrUpdate(product) }
         json(ctx, mapOf("success" to success, "id" to (product.id ?: -1L)))
     }
 
     private fun delete(ctx: Context) {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = repo().delete(parseCriteria(body))
+        val count = blocking { repo().delete(parseCriteria(body)) }
         json(ctx, mapOf("count" to count))
     }
 
     private fun count(ctx: Context) {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = repo().count(parseCriteria(body))
+        val count = blocking { repo().count(parseCriteria(body)) }
         json(ctx, mapOf("count" to count))
     }
 
@@ -110,7 +110,7 @@ class ProductApiController {
         val criteria = parseCriteria(body)
         val projection = ApiGson.parseProjection(body, Product::class.java)
         criteria.withProjection(projection ?: fullProjection())
-        val items = repo().fetch(criteria)
+        val items = blocking { repo().fetch(criteria) }
         json(ctx, mapOf("items" to items))
     }
 
@@ -119,13 +119,13 @@ class ProductApiController {
         val criteria = parseCriteria(body)
         val projection = ApiGson.parseProjection(body, Product::class.java)
         criteria.withProjection(projection ?: fullProjection())
-        val page = repo().fetchPage(criteria)
+        val page = blocking { repo().fetchPage(criteria) }
         json(ctx, mapOf("items" to page.items, "totalCount" to page.totalCount))
     }
 
     private fun fetchById(ctx: Context) {
         val id = ctx.pathParam("id").toLong()
-        val result = repo().fetchById(id, fullProjection())
+        val result = blocking { repo().fetchById(id, fullProjection()) }
         if (result == null) {
             ctx.status(404).json(mapOf("error" to "Not found"))
             return
@@ -137,7 +137,7 @@ class ProductApiController {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
         val id = body.get("id").asLong
         val projection = ApiGson.parseProjection(body, Product::class.java)
-        val result = repo().fetchById(id, projection ?: fullProjection())
+        val result = blocking { repo().fetchById(id, projection ?: fullProjection()) }
         if (result == null) {
             ctx.status(404).json(mapOf("error" to "Not found"))
             return
@@ -159,7 +159,7 @@ class ProductApiController {
         val cacheKey = if (size != null) "${id}_$size" else "$id"
 
         val resultBytes: ByteArray? = imageCache[cacheKey] ?: try {
-            val originalBytes = imageCache["$id"] ?: repo().fetchImage(id)?.also { bytes ->
+            val originalBytes = imageCache["$id"] ?: blocking { repo().fetchImage(id) }?.also { bytes ->
                 if (imageCache.size < IMAGE_CACHE_MAX_SIZE) {
                     imageCache["$id"] = bytes
                 }
@@ -220,7 +220,7 @@ class ProductApiController {
 
         try {
             val imageBytes = ctx.bodyAsBytes()
-            val success = repo().updateImage(id, imageBytes)
+            val success = blocking { repo().updateImage(id, imageBytes) }
             imageCache.keys.filter { it == "$id" || it.startsWith("${id}_") }.forEach { imageCache.remove(it) }
             ctx.json(mapOf("success" to success))
         } catch (e: Exception) {

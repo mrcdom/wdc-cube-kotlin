@@ -35,7 +35,7 @@ import web.html.HTMLDivElement
 
 private const val ITEM_HEIGHT_PX = 76
 
-class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ReactCubeView("purchases-panel-view", presenter.app) {
+class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ReactCubeView("purchases-panel-view", presenter) {
 
     override val component = FC<Props> {
         var rev by useState(revision)

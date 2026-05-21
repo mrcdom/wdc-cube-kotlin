@@ -15,7 +15,6 @@ import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.commons.storage.WasmSessionStorage
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.repositories.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
@@ -58,14 +57,6 @@ private lateinit var platformConfig: RestConfig
 
 private class ComposeShoppingApplication : ShoppingApplication() {
 
-    private val attributes = mutableMapOf<String, Any?>()
-
-    override fun setAttribute(name: String, value: Any?): Any? = attributes.put(name, value)
-
-    override fun getAttribute(name: String): Any? = attributes[name]
-
-    override fun removeAttribute(name: String): Any? = attributes.remove(name)
-
     override fun updateHistory() {
         val intent = CubeIntent()
         intent.place = getLastPlace() ?: getRootPlace()
@@ -81,7 +72,7 @@ private class ComposeShoppingApplication : ShoppingApplication() {
         jsSetLocationHash(newFragment.toJsString())
     }
 
-    fun safeGo(path: String?) {
+    suspend fun safeGo(path: String?) {
         val intent = CubeIntent.parse(path ?: "")
         if (intent.place == null) {
             intent.place = getRootPlace()
@@ -102,20 +93,6 @@ private class ComposeShoppingApplication : ShoppingApplication() {
             go(newIntent)
         }
     }
-
-    override fun createPresenterMap(): MutableMap<Int, CubePresenter> = LinkedHashMap()
-
-    override fun createUserDelegate(delegate: UserRepository) =
-        SecuredUserRepository(delegate) { getSecurityContext() }
-
-    override fun createProductDelegate(delegate: ProductRepository) =
-        SecuredProductRepository(delegate) { getSecurityContext() }
-
-    override fun createPurchaseDelegate(delegate: PurchaseRepository) =
-        SecuredPurchaseRepository(delegate) { getSecurityContext() }
-
-    override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
-        SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
 
     override fun createSessionStorage(): SessionStorage = WasmSessionStorage()
 }
@@ -157,11 +134,13 @@ fun main() {
 
     // On irrecoverable auth failure (401 + refresh failed), clear session and go to login
     platformConfig.transport.onAuthFailure = {
-        platformConfig.authClient?.clearTokens()
-        app.sessionStorage.remove("authState")
-        app.sessionStorage.remove("securityContext")
-        app.setSecurityContext(null)
-        app.go("public")
+        ViewUpdateScheduler.launchPresenterAction {
+            platformConfig.authClient?.clearTokens()
+            app.sessionStorage.remove("authState")
+            app.sessionStorage.remove("securityContext")
+            app.setSecurityContext(null)
+            app.go("public")
+        }
     }
 
     // Restore auth state (including intentSignSecret) BEFORE first navigation,
@@ -172,21 +151,25 @@ fun main() {
     Routes.Place.entries
 
     // Read initial path from URL hash, verify signature, or default to "public"
-    val hash = getLocationHash()
-    if (hash.isNotBlank()) {
-        app.safeGo(hash)
-    } else {
-        app.go("public")
+    ViewUpdateScheduler.launchPresenterAction {
+        val hash = getLocationHash()
+        if (hash.isNotBlank()) {
+            app.safeGo(hash)
+        } else {
+            app.go("public")
+        }
     }
 
     // Listen for browser back/forward and manual URL hash changes
     jsOnHashChange {
-        val newHash = getLocationHash()
-        if (newHash != app.fragment) {
-            if (newHash.isNotBlank()) {
-                app.safeGo(newHash)
-            } else {
-                app.go("public")
+        ViewUpdateScheduler.launchPresenterAction {
+            val newHash = getLocationHash()
+            if (newHash != app.fragment) {
+                if (newHash.isNotBlank()) {
+                    app.safeGo(newHash)
+                } else {
+                    app.go("public")
+                }
             }
         }
     }

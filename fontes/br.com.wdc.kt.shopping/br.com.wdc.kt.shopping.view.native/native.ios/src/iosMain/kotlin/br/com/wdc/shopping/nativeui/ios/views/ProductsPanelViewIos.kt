@@ -246,7 +246,7 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewI
 
     fun onTap() {
         val id = product?.id ?: return
-        presenter.onOpenProduct(id)
+        safeAction("openProduct") { presenter.onOpenProduct(id) }
     }
 }
 

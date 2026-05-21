@@ -1,9 +1,13 @@
 package br.com.wdc.shopping.test.navigation
 
 import br.com.wdc.framework.cube.CubeIntent
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
+import kotlinx.coroutines.runBlocking
 
 /**
  * Tests for CubeNavigation lifecycle: commit, rollback, interrupt, redirect,
@@ -25,7 +29,7 @@ class CubeNavigationTest {
     private fun presenterOf(placeId: Int): TestPresenter? =
         app.getPresenter(placeId) as? TestPresenter
 
-    private fun navigate(vararg places: TestPlace): Boolean {
+    private suspend fun navigate(vararg places: TestPlace): Boolean {
         val nav = app.navigate<TestApp>()
         val intent = CubeIntent()
         for (p in places) nav.step(p)
@@ -37,7 +41,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 1 - normal navigation commits new and reused presenters`() {
+    fun `scenario 1 - normal navigation commits new and reused presenters`() = runBlocking {
         // First navigation: ROOT, HOME
         assertTrue(navigate(TestPlace.ROOT, TestPlace.HOME))
 
@@ -64,7 +68,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 2 - exception in applyParameters triggers rollback`() {
+    fun `scenario 2 - exception in applyParameters triggers rollback`() = runBlocking {
         // Setup: ROOT, HOME
         navigate(TestPlace.ROOT, TestPlace.HOME)
         val root = presenterOf(TestPlace.ROOT.id)!!
@@ -90,7 +94,7 @@ class CubeNavigationTest {
 
         val nav = app.navigate<TestApp>()
         nav.step(TestPlace.ROOT).step(throwingPlace)
-        val caught = assertThrows(RuntimeException::class.java) { nav.execute(CubeIntent()) }
+        val caught = assertThrows(RuntimeException::class.java) { runBlocking { nav.execute(CubeIntent()) } }
         assertSame(ex, caught)
 
         // ROOT should be restored (still in presenterMap)
@@ -106,7 +110,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 3 - interrupt by redirect, new navigation commits`() {
+    fun `scenario 3 - interrupt by redirect, new navigation commits`() = runBlocking {
         // Setup: ROOT, HOME
         navigate(TestPlace.ROOT, TestPlace.HOME)
         val root = presenterOf(TestPlace.ROOT.id)!!
@@ -147,7 +151,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 4 - interrupt then rollback releases inherited presenters`() {
+    fun `scenario 4 - interrupt then rollback releases inherited presenters`() = runBlocking {
         // Setup: ROOT, HOME
         navigate(TestPlace.ROOT, TestPlace.HOME)
         val root = presenterOf(TestPlace.ROOT.id)!!
@@ -181,7 +185,7 @@ class CubeNavigationTest {
         nav.step(TestPlace.ROOT).step(redirectingPlace)
 
         // The redirect's exception propagates
-        assertThrows(RuntimeException::class.java) { nav.execute(CubeIntent()) }
+        assertThrows(RuntimeException::class.java) { runBlocking { nav.execute(CubeIntent()) } }
 
         // Original state should be restored
         assertSame(root, presenterOf(TestPlace.ROOT.id), "ROOT should be restored")
@@ -201,7 +205,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 5 - orphaned inherited presenters released on commit`() {
+    fun `scenario 5 - orphaned inherited presenters released on commit`() = runBlocking {
         // Setup: ROOT
         navigate(TestPlace.ROOT)
         val root = presenterOf(TestPlace.ROOT.id)!!
@@ -239,7 +243,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 6 - chained interrupts migrate presenters correctly`() {
+    fun `scenario 6 - chained interrupts migrate presenters correctly`() = runBlocking {
         // Setup: ROOT
         navigate(TestPlace.ROOT)
         val root = presenterOf(TestPlace.ROOT.id)!!
@@ -292,7 +296,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 7 - goAhead false commits partial navigation`() {
+    fun `scenario 7 - goAhead false commits partial navigation`() = runBlocking {
         // Setup: ROOT, HOME
         navigate(TestPlace.ROOT, TestPlace.HOME)
         val root = presenterOf(TestPlace.ROOT.id)!!
@@ -331,7 +335,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 8 - redirect reuses inherited created presenter`() {
+    fun `scenario 8 - redirect reuses inherited created presenter`() = runBlocking {
         // Setup: ROOT
         navigate(TestPlace.ROOT)
 
@@ -378,7 +382,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 9 - release order is leaf-first`() {
+    fun `scenario 9 - release order is leaf-first`() = runBlocking {
         // Navigate ROOT(1), HOME(2), PRODUCTS(3)
         navigate(TestPlace.ROOT, TestPlace.HOME, TestPlace.PRODUCTS)
 
@@ -415,7 +419,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 10 - sequential navigations work correctly`() {
+    fun `scenario 10 - sequential navigations work correctly`() = runBlocking {
         // Nav 1: ROOT, HOME
         navigate(TestPlace.ROOT, TestPlace.HOME)
         val root1 = presenterOf(TestPlace.ROOT.id)!!
@@ -448,7 +452,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 11 - rollback restores original presenters with sourceIntent`() {
+    fun `scenario 11 - rollback restores original presenters with sourceIntent`() = runBlocking {
         // Setup: ROOT, HOME
         navigate(TestPlace.ROOT, TestPlace.HOME)
         val root = presenterOf(TestPlace.ROOT.id) as TestPresenter
@@ -470,7 +474,7 @@ class CubeNavigationTest {
 
         val nav = app.navigate<TestApp>()
         nav.step(TestPlace.ROOT).step(throwingPlace)
-        assertThrows(RuntimeException::class.java) { nav.execute(CubeIntent()) }
+        assertThrows(RuntimeException::class.java) { runBlocking { nav.execute(CubeIntent()) } }
 
         // Root and Home should have been restored via applyParameters (rollback)
         assertTrue(root.applyCount >= 1, "ROOT should have applyParameters called during rollback")
@@ -484,7 +488,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 12 - recursion limit prevents infinite redirects`() {
+    fun `scenario 12 - recursion limit prevents infinite redirects`() = runBlocking {
         // Create a place that always redirects to itself
         val selfRedirecting: br.com.wdc.framework.cube.CubePlace = object : br.com.wdc.framework.cube.CubePlace {
             override val id = TestPlace.HOME.id
@@ -501,7 +505,7 @@ class CubeNavigationTest {
         val nav = app.navigate<TestApp>()
         nav.step(TestPlace.ROOT).step(selfRedirecting)
 
-        assertThrows(AssertionError::class.java) { nav.execute(CubeIntent()) }
+        assertThrows(AssertionError::class.java) { runBlocking { nav.execute(CubeIntent()) } }
     }
 
     // ---------------------------------------------------------------
@@ -509,7 +513,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 13 - first navigation on empty app`() {
+    fun `scenario 13 - first navigation on empty app`() = runBlocking {
         assertEquals(0, app.presenterCount())
 
         navigate(TestPlace.ROOT, TestPlace.HOME)
@@ -526,7 +530,7 @@ class CubeNavigationTest {
     // ---------------------------------------------------------------
 
     @Test
-    fun `scenario 14 - updateHistory called after commit and rollback`() {
+    fun `scenario 14 - updateHistory called after commit and rollback`() = runBlocking {
         // After commit
         val countBefore = app.historyUpdateCount
         navigate(TestPlace.ROOT)
@@ -545,7 +549,7 @@ class CubeNavigationTest {
         }
         val nav = app.navigate<TestApp>()
         nav.step(TestPlace.ROOT).step(throwingPlace)
-        assertThrows(RuntimeException::class.java) { nav.execute(CubeIntent()) }
+        assertThrows(RuntimeException::class.java) { runBlocking { nav.execute(CubeIntent()) } }
         assertTrue(app.historyUpdateCount > countBeforeRollback, "updateHistory should be called after rollback")
     }
 }

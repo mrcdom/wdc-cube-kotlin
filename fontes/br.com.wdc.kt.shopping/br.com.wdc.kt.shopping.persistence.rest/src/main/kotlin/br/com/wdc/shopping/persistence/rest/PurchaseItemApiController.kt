@@ -86,7 +86,7 @@ class PurchaseItemApiController {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
         val item = ApiGson.instance.fromJson(body, PurchaseItem::class.java)
         setPurchaseFromJson(body, item)
-        val success = repo().insert(item)
+        val success = blocking { repo().insert(item) }
         json(ctx, mapOf("success" to success, "id" to (item.id ?: -1L)))
     }
 
@@ -94,7 +94,7 @@ class PurchaseItemApiController {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
         val newEntity = ApiGson.instance.fromJson(body.get("newEntity"), PurchaseItem::class.java)
         val oldEntity = ApiGson.instance.fromJson(body.get("oldEntity"), PurchaseItem::class.java)
-        val success = repo().update(newEntity, oldEntity)
+        val success = blocking { repo().update(newEntity, oldEntity) }
         json(ctx, mapOf("success" to success))
     }
 
@@ -102,19 +102,19 @@ class PurchaseItemApiController {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
         val item = ApiGson.instance.fromJson(body, PurchaseItem::class.java)
         setPurchaseFromJson(body, item)
-        val success = repo().insertOrUpdate(item)
+        val success = blocking { repo().insertOrUpdate(item) }
         json(ctx, mapOf("success" to success, "id" to (item.id ?: -1L)))
     }
 
     private fun delete(ctx: Context) {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = repo().delete(parseCriteria(body))
+        val count = blocking { repo().delete(parseCriteria(body)) }
         json(ctx, mapOf("count" to count))
     }
 
     private fun count(ctx: Context) {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = repo().count(parseCriteria(body))
+        val count = blocking { repo().count(parseCriteria(body)) }
         json(ctx, mapOf("count" to count))
     }
 
@@ -123,7 +123,7 @@ class PurchaseItemApiController {
         val criteria = parseCriteria(body)
         val projection = ApiGson.parseProjection(body, PurchaseItem::class.java)
         criteria.withProjection(projection ?: fullProjection())
-        val items = repo().fetch(criteria)
+        val items = blocking { repo().fetch(criteria) }
         items.forEach { it.purchase = null }
         json(ctx, mapOf("items" to items))
     }
@@ -133,14 +133,14 @@ class PurchaseItemApiController {
         val criteria = parseCriteria(body)
         val projection = ApiGson.parseProjection(body, PurchaseItem::class.java)
         criteria.withProjection(projection ?: fullProjection())
-        val page = repo().fetchPage(criteria)
+        val page = blocking { repo().fetchPage(criteria) }
         page.items.forEach { it.purchase = null }
         json(ctx, mapOf("items" to page.items, "totalCount" to page.totalCount))
     }
 
     private fun fetchById(ctx: Context) {
         val id = ctx.pathParam("id").toLong()
-        val result = repo().fetchById(id, fullProjection())
+        val result = blocking { repo().fetchById(id, fullProjection()) }
         if (result == null) {
             ctx.status(404).json(mapOf("error" to "Not found"))
             return
@@ -153,7 +153,7 @@ class PurchaseItemApiController {
         val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
         val id = body.get("id").asLong
         val projection = ApiGson.parseProjection(body, PurchaseItem::class.java)
-        val result = repo().fetchById(id, projection ?: fullProjection())
+        val result = blocking { repo().fetchById(id, projection ?: fullProjection()) }
         if (result == null) {
             ctx.status(404).json(mapOf("error" to "Not found"))
             return

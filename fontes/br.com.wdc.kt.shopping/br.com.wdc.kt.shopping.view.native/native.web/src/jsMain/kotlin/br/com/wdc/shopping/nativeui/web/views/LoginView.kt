@@ -31,7 +31,7 @@ import react.useState
 import web.cssom.*
 import web.html.HTMLInputElement
 
-class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-view", presenter.app) {
+class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-view", presenter) {
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -88,10 +88,27 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             LocalMall { sx { fontSize = 40.px } }
                         }
 
-                        Typography {
-                            variant = TypographyVariant.h5
-                            sx { fontWeight = FontWeight.bold }
-                            +"Shopping"
+                        Box {
+                            sx {
+                                position = Position.relative
+                            }
+                            Typography {
+                                variant = TypographyVariant.h5
+                                sx { fontWeight = FontWeight.bold }
+                                +"Shopping"
+                            }
+                            Typography {
+                                variant = TypographyVariant.caption
+                                sx {
+                                    position = Position.absolute
+                                    bottom = (-10).px
+                                    right = 0.px
+                                    color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>()
+                                    opacity = number(0.5)
+                                    fontSize = 10.px
+                                }
+                                +"native"
+                            }
                         }
 
                         Typography {

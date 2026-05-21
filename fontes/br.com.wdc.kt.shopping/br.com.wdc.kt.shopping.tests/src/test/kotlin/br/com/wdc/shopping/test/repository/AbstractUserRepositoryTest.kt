@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.test.repository
 
 import br.com.wdc.shopping.domain.criteria.UserCriteria
+import kotlinx.coroutines.runBlocking
 import br.com.wdc.shopping.domain.model.User
 import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.utils.ProjectionValues
@@ -15,13 +16,13 @@ abstract class AbstractUserRepositoryTest {
     // :: fetch
 
     @Test
-    fun fetchAll_returnsAllSeededUsers() {
+    fun fetchAll_returnsAllSeededUsers() = runBlocking {
         val users = repo().fetch(UserCriteria())
         assertEquals(3, users.size)
     }
 
     @Test
-    fun fetchById_returnsCorrectUser() {
+    fun fetchById_returnsCorrectUser() = runBlocking {
         val user = repo().fetchById(DBReset.ADMIN_ID, null)
         assertNotNull(user)
         assertEquals("admin", user!!.userName)
@@ -29,13 +30,13 @@ abstract class AbstractUserRepositoryTest {
     }
 
     @Test
-    fun fetchById_nonExistent_returnsNull() {
+    fun fetchById_nonExistent_returnsNull() = runBlocking {
         val user = repo().fetchById(Long.MAX_VALUE, null)
         assertNull(user)
     }
 
     @Test
-    fun fetchWithProjection_onlyRequestedFields() {
+    fun fetchWithProjection_onlyRequestedFields() = runBlocking {
         val pv = ProjectionValues
         val projection = User()
         projection.id = pv.i64
@@ -48,14 +49,14 @@ abstract class AbstractUserRepositoryTest {
     }
 
     @Test
-    fun fetchByCriteria_userName() {
+    fun fetchByCriteria_userName() = runBlocking {
         val users = repo().fetch(UserCriteria().withUserName("fulano"))
         assertEquals(1, users.size)
         assertEquals(DBReset.FULANO_ID, users[0].id)
     }
 
     @Test
-    fun fetchByCriteria_userNameAndPassword() {
+    fun fetchByCriteria_userNameAndPassword() = runBlocking {
         val users = repo().fetch(
             UserCriteria()
                 .withUserName("admin")
@@ -66,7 +67,7 @@ abstract class AbstractUserRepositoryTest {
     }
 
     @Test
-    fun fetchByCriteria_wrongPassword_returnsEmpty() {
+    fun fetchByCriteria_wrongPassword_returnsEmpty() = runBlocking {
         val users = repo().fetch(
             UserCriteria()
                 .withUserName("admin")
@@ -76,7 +77,7 @@ abstract class AbstractUserRepositoryTest {
     }
 
     @Test
-    fun fetchWithOffsetAndLimit() {
+    fun fetchWithOffsetAndLimit() = runBlocking {
         val users = repo().fetch(
             UserCriteria()
                 .withOrderBy(UserCriteria.OrderBy.ASCENDING)
@@ -89,19 +90,19 @@ abstract class AbstractUserRepositoryTest {
     // :: count
 
     @Test
-    fun countAll_returnsThree() {
+    fun countAll_returnsThree() = runBlocking {
         val count = repo().count(UserCriteria())
         assertEquals(3, count)
     }
 
     @Test
-    fun countByUserId_returnsOne() {
+    fun countByUserId_returnsOne() = runBlocking {
         val count = repo().count(UserCriteria().withUserId(DBReset.ADMIN_ID))
         assertEquals(1, count)
     }
 
     @Test
-    fun countByNonExistentId_returnsZero() {
+    fun countByNonExistentId_returnsZero() = runBlocking {
         val count = repo().count(UserCriteria().withUserId(Long.MAX_VALUE))
         assertEquals(0, count)
     }
@@ -109,7 +110,7 @@ abstract class AbstractUserRepositoryTest {
     // :: insert
 
     @Test
-    fun insert_newUser() {
+    fun insert_newUser() = runBlocking {
         val user = User()
         user.userName = "newuser"
         user.password = "secret"
@@ -128,7 +129,7 @@ abstract class AbstractUserRepositoryTest {
     // :: update
 
     @Test
-    fun update_existingUser() {
+    fun update_existingUser() = runBlocking {
         val pv = ProjectionValues
         val fullProjection = User()
         fullProjection.id = pv.i64
@@ -155,7 +156,7 @@ abstract class AbstractUserRepositoryTest {
     // :: insertOrUpdate
 
     @Test
-    fun insertOrUpdate_insertsWhenNew() {
+    fun insertOrUpdate_insertsWhenNew() = runBlocking {
         val user = User()
         user.userName = "iou_user"
         user.password = "pass"
@@ -170,7 +171,7 @@ abstract class AbstractUserRepositoryTest {
     }
 
     @Test
-    fun insertOrUpdate_updatesWhenExisting() {
+    fun insertOrUpdate_updatesWhenExisting() = runBlocking {
         val user = User()
         user.id = DBReset.ADMIN_ID
         user.userName = "admin"
@@ -187,14 +188,14 @@ abstract class AbstractUserRepositoryTest {
     // :: delete
 
     @Test
-    fun deleteByUserId_noFkDependency() {
+    fun deleteByUserId_noFkDependency() = runBlocking {
         val deleted = repo().delete(UserCriteria().withUserId(DBReset.BEOTRANO_ID))
         assertEquals(1, deleted)
         assertEquals(2, repo().count(UserCriteria()))
     }
 
     @Test
-    fun deleteNonExistent_returnsZero() {
+    fun deleteNonExistent_returnsZero() = runBlocking {
         val deleted = repo().delete(UserCriteria().withUserId(Long.MAX_VALUE))
         assertEquals(0, deleted)
     }

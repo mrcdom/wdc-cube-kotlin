@@ -12,27 +12,27 @@ class SecuredUserRepository(
     private val contextSupplier: () -> SecurityContext?,
 ) : UserRepository {
 
-    override fun insert(user: User) =
+    override suspend fun insert(user: User) =
         withSecurityContext(contextSupplier) { delegate.insert(user) }
 
-    override fun update(newUser: User, oldUser: User) =
+    override suspend fun update(newUser: User, oldUser: User) =
         withSecurityContext(contextSupplier) { delegate.update(newUser, oldUser) }
 
-    override fun insertOrUpdate(user: User) =
+    override suspend fun insertOrUpdate(user: User) =
         withSecurityContext(contextSupplier) { delegate.insertOrUpdate(user) }
 
-    override fun delete(criteria: UserCriteria) =
+    override suspend fun delete(criteria: UserCriteria) =
         withSecurityContext(contextSupplier) { delegate.delete(criteria) }
 
-    override fun count(criteria: UserCriteria) =
+    override suspend fun count(criteria: UserCriteria) =
         withSecurityContext(contextSupplier) { delegate.count(criteria) }
 
-    override fun fetch(criteria: UserCriteria) =
+    override suspend fun fetch(criteria: UserCriteria) =
         withSecurityContext(contextSupplier) { delegate.fetch(criteria) }
 
-    override fun fetchPage(criteria: UserCriteria) =
+    override suspend fun fetchPage(criteria: UserCriteria) =
         withSecurityContext(contextSupplier) { delegate.fetchPage(criteria) }
 
-    override fun fetchById(userId: Long, projection: User?) =
+    override suspend fun fetchById(userId: Long, projection: User?) =
         withSecurityContext(contextSupplier) { delegate.fetchById(userId, projection) }
 }

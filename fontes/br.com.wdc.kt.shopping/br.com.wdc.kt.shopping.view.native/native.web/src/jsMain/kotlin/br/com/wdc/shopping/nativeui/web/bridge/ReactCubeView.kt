@@ -2,9 +2,8 @@ package br.com.wdc.shopping.nativeui.web.bridge
 
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
+import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.presentation.ShoppingApplication
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import react.FC
 import react.Props
@@ -18,8 +17,10 @@ import react.Props
  */
 abstract class ReactCubeView(
     private val id: String,
-    val app: ShoppingApplication
+    internal val presenterBase: PresenterBase
 ) : CubeView {
+
+    val app: ShoppingApplication get() = presenterBase.app as ShoppingApplication
 
     /** Revision counter — incremented during flush to signal state changes. */
     var revision: Int = 0
@@ -55,26 +56,19 @@ abstract class ReactCubeView(
      * Wraps a presenter call with error protection and dispatches it
      * on a single-threaded scope to ensure serial execution of presenter actions.
      */
-    fun safeCall(action: () -> Unit) {
-        presenterScope.launch {
+    fun safeCall(action: suspend () -> Unit) {
+        app.presenterScope.launch {
             try {
                 action()
             } catch (e: Exception) {
                 app.alertUnexpectedError(LOG, "Erro inesperado em $id", e)
+            } finally {
+                ViewUpdateScheduler.flush()
             }
         }
     }
 
     companion object {
         internal val LOG = Log.getLogger("ReactCubeView")
-
-        /**
-         * Single-threaded coroutine scope for presenter actions.
-         * limitedParallelism(1) guarantees serial execution, avoiding
-         * concurrency issues in presenter state.
-         */
-        private val presenterScope = CoroutineScope(
-            Dispatchers.Default.limitedParallelism(1)
-        )
     }
 }

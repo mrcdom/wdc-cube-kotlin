@@ -1,20 +1,20 @@
 package br.com.wdc.framework.cube
 
 abstract class AbstractChildPresenter<A : CubeApplication>(
-    val app: A,
-) {
+    override val app: A,
+) : PresenterBase {
 
     var view: CubeView? = null
         protected set
 
-    fun initialize(): CubeView {
+    suspend fun initialize(): CubeView {
         val v = onCreateView()
         view = v
         onInitialize()
         return v
     }
 
-    open fun release() {
+    override fun release() {
         view?.release()
         view = null
     }
@@ -25,5 +25,5 @@ abstract class AbstractChildPresenter<A : CubeApplication>(
 
     protected abstract fun onCreateView(): CubeView
 
-    protected abstract fun onInitialize()
+    protected abstract suspend fun onInitialize()
 }

@@ -5,7 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
-class LoginReactViewImpl(private val presenter: LoginPresenter) : GenericViewImpl(presenter.app, "c677cda52d14", presenter) {
+class LoginReactViewImpl(presenter: LoginPresenter) : GenericViewImpl<LoginPresenter>("c677cda52d14", presenter) {
 
     override fun syncClientToServer(formData: Map<String, Any?>) {
         val state = presenter.state
@@ -21,7 +21,7 @@ class LoginReactViewImpl(private val presenter: LoginPresenter) : GenericViewImp
         }
     }
 
-    override fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
+    override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
         if (eventCode == 1) {
             presenter.onEnter()
         }

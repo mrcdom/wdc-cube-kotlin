@@ -223,7 +223,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                             lastPurchases = null
                             lastPage = -1
                             lastTotalCount = -1
-                            presenter.onItemSizeCapacityChanged(newCapacity)
+                            safeAction("capacityChanged") { presenter.onItemSizeCapacityChanged(newCapacity) }
                         }
                     }
                 }
@@ -243,7 +243,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
 
             lastStackHeight = stackView.height
             lastCapacity = capacity
-            presenter.onItemSizeCapacityChanged(capacity)
+            safeAction("capacityInit") { presenter.onItemSizeCapacityChanged(capacity) }
         } else if (lastCapacity < 0) {
             // stackView not yet laid out, schedule recalculation
             stackView.post { forceUpdate() }

@@ -30,7 +30,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     // :: Cube API
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         val oldProductId = state.product?.id
 
         val newProductId = intent.getParameterAsLong(PlaceParameters.PRODUCT_ID, oldProductId)
@@ -67,7 +67,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     // :: User Actions
 
-    fun onAddToCart(quantity: Int?) {
+    suspend fun onAddToCart(quantity: Int?) {
         try {
             if (quantity == null) {
                 errorInvalidQuantity()
@@ -96,7 +96,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
         }
     }
 
-    fun onOpenProducts() {
+    suspend fun onOpenProducts() {
         try {
             Routes.home(app)
         } catch (caught: Exception) {

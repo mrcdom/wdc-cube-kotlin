@@ -24,7 +24,7 @@ import br.com.wdc.shopping.view.compose.util.formatPrice
 // Altura estimada de cada card de compra
 private val ITEM_HEIGHT_DP = 76.dp
 
-class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ComposeCubeView("purchases-panel-view", presenter.app) {
+class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ComposeCubeView("purchases-panel-view", presenter) {
 
     @Composable
     override fun Render() {
@@ -65,7 +65,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                         color = MaterialTheme.colorScheme.secondaryContainer
                     ) {
                         Text(
-                            "${state.totalCount} compras",
+                            "${state.totalCount} itens",
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer

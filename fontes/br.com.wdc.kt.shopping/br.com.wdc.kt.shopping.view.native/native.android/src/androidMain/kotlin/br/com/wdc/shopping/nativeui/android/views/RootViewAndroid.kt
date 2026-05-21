@@ -45,10 +45,12 @@ class RootViewAndroid(presenter: RootPresenter) : AbstractViewAndroid<RootPresen
             }) {}
             contentSlot = newViewSlot(container)
 
-            // Apply insets to size the status bar spacer
+            // Apply insets to size the top spacer (status bar or caption bar in freeform window mode)
             ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
-                val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-                statusBarSpacer.layoutParams.height = statusBarHeight
+                val topInset = insets.getInsets(
+                    WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.captionBar()
+                ).top
+                statusBarSpacer.layoutParams.height = topInset
                 statusBarSpacer.requestLayout()
                 insets
             }

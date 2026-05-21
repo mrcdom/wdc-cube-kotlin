@@ -31,18 +31,18 @@ class PurchasesPanelPresenter(
 
     override fun onCreateView(): CubeView = createView!!.invoke(this)
 
-    override fun onInitialize() {
+    override suspend fun onInitialize() {
         update()
     }
 
     // :: User Actions
 
-    fun onPageChange(page: Int) {
+    suspend fun onPageChange(page: Int) {
         state.page = max(0, page)
         loadPurchases()
     }
 
-    fun onItemSizeCapacityChanged(capacity: Int) {
+    suspend fun onItemSizeCapacityChanged(capacity: Int) {
         val newPageSize = max(1, capacity)
         if (newPageSize != state.pageSize) {
             state.pageSize = newPageSize
@@ -51,13 +51,13 @@ class PurchasesPanelPresenter(
         }
     }
 
-    fun onOpenReceipt(purchaseId: Long?) {
+    suspend fun onOpenReceipt(purchaseId: Long?) {
         owner.onOpenReceipt(purchaseId)
     }
 
     // :: Data load
 
-    fun loadPurchases() {
+    suspend fun loadPurchases() {
         val subject = app.subject
         if (subject != null && state.pageSize > 0) {
             val offset = state.page * state.pageSize

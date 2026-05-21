@@ -8,12 +8,13 @@ import br.com.wdc.shopping.test.mock.viewimpl.ProductViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.ReceiptViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.RestrictedViewMock
 import br.com.wdc.shopping.test.util.BasePresentationTest
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ShoppingWorkflowTest : BasePresentationTest() {
 
-    private fun gotoRestricted(): RestrictedViewMock {
+    private suspend fun gotoRestricted(): RestrictedViewMock {
         Routes.login(app)
 
         val rootView = app.getRootView()!!
@@ -27,7 +28,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     }
 
     @Test
-    fun testVisualizaProdutoInexistente() {
+    fun testVisualizaProdutoInexistente() = runBlocking {
         var restrictedView = gotoRestricted()
         val rootView = app.getRootView()!!
 
@@ -41,7 +42,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     }
 
     @Test
-    fun testVisualizaProduto() {
+    fun testVisualizaProduto() = runBlocking {
         var restrictedView = gotoRestricted()
         val rootView = app.getRootView()!!
 
@@ -53,7 +54,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     }
 
     @Test
-    fun testComprarProduto() {
+    fun testComprarProduto() = runBlocking {
         Routes.login(app)
 
         val rootView = app.getRootView()!!

@@ -1,19 +1,17 @@
 package br.com.wdc.shopping.view.react.skeleton.util
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.view.react.skeleton.viewimpl.ApplicationReactImpl
 
-abstract class GenericViewImpl protected constructor(
-    app: ShoppingApplication,
+abstract class GenericViewImpl<P : PresenterBase> protected constructor(
     vid: String,
-    private val presenter: CubePresenter? = null,
-    instanceId: Int = (app as ApplicationReactImpl).nextInstanceId()
+    protected val presenter: P,
+    instanceId: Int = (presenter.app as ApplicationReactImpl).nextInstanceId()
 ) : CubeView {
 
-    protected val app: ApplicationReactImpl = app as ApplicationReactImpl
+    protected val app: ApplicationReactImpl = presenter.app as ApplicationReactImpl
     private val _instanceId: String = "$vid:$instanceId"
 
     protected var alertId: Int = 0
@@ -24,7 +22,7 @@ abstract class GenericViewImpl protected constructor(
     }
 
     fun commitComputedState() {
-        presenter?.commitComputedState()
+        presenter.commitComputedState()
     }
 
     override val instanceId: String get() = _instanceId
@@ -42,7 +40,7 @@ abstract class GenericViewImpl protected constructor(
     }
 
     @Throws(Exception::class)
-    abstract fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>)
+    abstract suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>)
 
     abstract fun writeState(json: ExtensibleObjectOutput)
 }

@@ -42,7 +42,7 @@ class AuthApiController(private val authService: AuthenticationService) {
             return
         }
 
-        val result = authService.login(userName, digest, nonce)
+        val result = blocking { authService.login(userName, digest, nonce) }
         if (result == null) {
             ctx.status(401).json(mapOf("error" to "Invalid credentials"))
             return

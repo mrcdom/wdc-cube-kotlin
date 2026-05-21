@@ -32,7 +32,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     // :: Cube API
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         state.notifySuccess = intent.getAttribute(PlaceAttributes.ATTR_PURCHASE_MADE) == true
 
         val pPurchaseId = intent.getParameterAsLong(PlaceParameters.PURCHASE_ID, purchaseId)
@@ -73,7 +73,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
         // Not implemented
     }
 
-    fun onOpenProducts() {
+    suspend fun onOpenProducts() {
         try {
             Routes.home(app)
         } catch (caught: Exception) {
@@ -83,7 +83,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     // :: Data Loaders
 
-    private fun loadReceipt(purchaseId: Long): ReceiptForm {
+    private suspend fun loadReceipt(purchaseId: Long): ReceiptForm {
         return receiptService.loadReceipt(purchaseId) ?: throw PurchaseNotFoundException()
     }
 }

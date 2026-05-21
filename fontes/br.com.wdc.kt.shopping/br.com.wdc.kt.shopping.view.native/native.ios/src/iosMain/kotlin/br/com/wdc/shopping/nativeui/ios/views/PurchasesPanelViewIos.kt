@@ -183,7 +183,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
             val capacity = max(1, (availableHeight / cardHeight).toInt())
             if (capacity != lastCapacity) {
                 lastCapacity = capacity
-                presenter.onItemSizeCapacityChanged(capacity)
+                safeAction("capacityChanged") { presenter.onItemSizeCapacityChanged(capacity) }
                 return // presenter will trigger a new update with data
             }
         } else {
@@ -343,7 +343,7 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
 
     fun onTap() {
         val id = purchase?.id ?: return
-        presenter.onOpenReceipt(id)
+        safeAction("openReceipt") { presenter.onOpenReceipt(id) }
     }
 }
 

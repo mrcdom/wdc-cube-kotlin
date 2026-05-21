@@ -13,35 +13,35 @@ class SecuredUserRepository(private val delegate: UserRepository) : UserReposito
         private const val ENTITY = "user"
     }
 
-    override fun insert(user: User): Boolean {
+    override suspend fun insert(user: User): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
         return delegate.insert(user)
     }
 
-    override fun update(newUser: User, oldUser: User): Boolean {
+    override suspend fun update(newUser: User, oldUser: User): Boolean {
         val sc = SecurityEnforcer.require(ENTITY, "write")
         enforceUserScope(sc, newUser)
         return delegate.update(newUser, oldUser)
     }
 
-    override fun insertOrUpdate(user: User): Boolean {
+    override suspend fun insertOrUpdate(user: User): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
         return delegate.insertOrUpdate(user)
     }
 
-    override fun delete(criteria: UserCriteria): Int {
+    override suspend fun delete(criteria: UserCriteria): Int {
         val sc = SecurityEnforcer.require(ENTITY, "delete")
         enforceUserScope(sc, criteria)
         return delegate.delete(criteria)
     }
 
-    override fun count(criteria: UserCriteria): Int {
+    override suspend fun count(criteria: UserCriteria): Int {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         enforceUserScope(sc, criteria)
         return delegate.count(criteria)
     }
 
-    override fun fetch(criteria: UserCriteria): List<User> {
+    override suspend fun fetch(criteria: UserCriteria): List<User> {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         enforceUserScope(sc, criteria)
         sanitizeProjection(criteria)
@@ -50,7 +50,7 @@ class SecuredUserRepository(private val delegate: UserRepository) : UserReposito
         return results
     }
 
-    override fun fetchPage(criteria: UserCriteria): Page<User> {
+    override suspend fun fetchPage(criteria: UserCriteria): Page<User> {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         enforceUserScope(sc, criteria)
         sanitizeProjection(criteria)
@@ -59,7 +59,7 @@ class SecuredUserRepository(private val delegate: UserRepository) : UserReposito
         return page
     }
 
-    override fun fetchById(userId: Long, projection: User?): User? {
+    override suspend fun fetchById(userId: Long, projection: User?): User? {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         if (!sc.hasDataAll() && userId != sc.userId) return null
         stripPassword(projection)

@@ -10,19 +10,19 @@ import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 
 class RestPurchaseItemRepository(private val config: RestConfig) : PurchaseItemRepository {
 
-    override fun insert(purchaseItem: PurchaseItem): Boolean {
+    override suspend fun insert(purchaseItem: PurchaseItem): Boolean {
         val body = config.toJson { out -> writeItemWithPurchaseId(out, purchaseItem) }
         val input = config.postJson("/api/repo/purchase-item/insert", body)
         return readSuccessWithId(input, purchaseItem)
     }
 
-    override fun insertOrUpdate(purchaseItem: PurchaseItem): Boolean {
+    override suspend fun insertOrUpdate(purchaseItem: PurchaseItem): Boolean {
         val body = config.toJson { out -> writeItemWithPurchaseId(out, purchaseItem) }
         val input = config.postJson("/api/repo/purchase-item/upsert", body)
         return readSuccessWithId(input, purchaseItem)
     }
 
-    override fun update(newPurchaseItem: PurchaseItem, oldPurchaseItem: PurchaseItem): Boolean {
+    override suspend fun update(newPurchaseItem: PurchaseItem, oldPurchaseItem: PurchaseItem): Boolean {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("newEntity"); writeItemWithPurchaseId(out, newPurchaseItem)
@@ -32,17 +32,17 @@ class RestPurchaseItemRepository(private val config: RestConfig) : PurchaseItemR
         return readSuccess(config.postJson("/api/repo/purchase-item/update", body))
     }
 
-    override fun delete(criteria: PurchaseItemCriteria): Int {
+    override suspend fun delete(criteria: PurchaseItemCriteria): Int {
         val body = config.toJson { writeCriteria(it, criteria) }
         return readCount(config.postJson("/api/repo/purchase-item/delete", body))
     }
 
-    override fun count(criteria: PurchaseItemCriteria): Int {
+    override suspend fun count(criteria: PurchaseItemCriteria): Int {
         val body = config.toJson { writeCriteria(it, criteria) }
         return readCount(config.postJson("/api/repo/purchase-item/count", body))
     }
 
-    override fun fetch(criteria: PurchaseItemCriteria): List<PurchaseItem> {
+    override suspend fun fetch(criteria: PurchaseItemCriteria): List<PurchaseItem> {
         val body = config.toJson { out ->
             out.beginObject()
             writeCriteriaFields(out, criteria)
@@ -53,7 +53,7 @@ class RestPurchaseItemRepository(private val config: RestConfig) : PurchaseItemR
         return readPurchaseItemList(input)
     }
 
-    override fun fetchPage(criteria: PurchaseItemCriteria): Page<PurchaseItem> {
+    override suspend fun fetchPage(criteria: PurchaseItemCriteria): Page<PurchaseItem> {
         val body = config.toJson { out ->
             out.beginObject()
             writeCriteriaFields(out, criteria)
@@ -64,7 +64,7 @@ class RestPurchaseItemRepository(private val config: RestConfig) : PurchaseItemR
         return readPurchaseItemPage(input)
     }
 
-    override fun fetchById(purchaseId: Long, projection: PurchaseItem?): PurchaseItem? {
+    override suspend fun fetchById(purchaseId: Long, projection: PurchaseItem?): PurchaseItem? {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("id").value(purchaseId)

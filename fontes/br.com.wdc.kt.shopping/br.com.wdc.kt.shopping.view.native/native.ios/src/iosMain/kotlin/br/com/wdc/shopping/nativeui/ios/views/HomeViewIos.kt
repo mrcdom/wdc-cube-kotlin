@@ -130,6 +130,16 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                             centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                         ))
                     }
+                    val compactPlatformLabel = label {
+                        text = "native"
+                        font = UIFont.systemFontOfSize(9.0)
+                        textColor = UIColor.whiteColor
+                        alpha = 0.45
+                        NSLayoutConstraint.activateConstraints(listOf(
+                            trailingAnchor.constraintEqualToAnchor(compactBrandLabel.trailingAnchor),
+                            topAnchor.constraintEqualToAnchor(compactBrandLabel.bottomAnchor, -2.0)
+                        ))
+                    }
                     // Logout icon (subtle, near brand)
                     exitButton = button("") {
                         backgroundColor = ShoppingColors.WhiteOverlay10
@@ -229,6 +239,16 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                     NSLayoutConstraint.activateConstraints(listOf(
                         leadingAnchor.constraintEqualToAnchor(wideLogo.trailingAnchor, 12.0),
                         centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
+                    ))
+                }
+                val widePlatformLabel = label {
+                    text = "native"
+                    font = UIFont.systemFontOfSize(9.0)
+                    textColor = UIColor.whiteColor
+                    alpha = 0.45
+                    NSLayoutConstraint.activateConstraints(listOf(
+                        trailingAnchor.constraintEqualToAnchor(wideBrandLabel.trailingAnchor),
+                        topAnchor.constraintEqualToAnchor(wideBrandLabel.bottomAnchor, -2.0)
                     ))
                 }
 

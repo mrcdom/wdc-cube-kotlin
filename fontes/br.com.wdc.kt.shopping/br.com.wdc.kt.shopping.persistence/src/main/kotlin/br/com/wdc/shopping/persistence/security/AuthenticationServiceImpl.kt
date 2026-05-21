@@ -51,7 +51,7 @@ class AuthenticationServiceImpl(
         return ChallengeResult(nonce, expiresAt.toKotlinInstant())
     }
 
-    override fun login(userName: String, digest: String, nonce: String): AuthResult? {
+    override suspend fun login(userName: String, digest: String, nonce: String): AuthResult? {
         if (!nonceStore.consume(nonce)) {
             LOG.warn("Login failed: invalid or expired nonce")
             return null
@@ -99,7 +99,7 @@ class AuthenticationServiceImpl(
         return cache.getBySessionId(sessionId)
     }
 
-    private fun fetchUserForAuth(userName: String): User? {
+    private suspend fun fetchUserForAuth(userName: String): User? {
         val pv = ProjectionValues
         val prj = User()
         prj.id = pv.i64

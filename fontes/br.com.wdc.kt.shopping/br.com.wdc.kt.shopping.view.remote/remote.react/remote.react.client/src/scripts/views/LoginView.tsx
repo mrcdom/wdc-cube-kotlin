@@ -66,9 +66,14 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                   <LocalMallIcon sx={{ fontSize: 40 }} />
                 </Avatar>
 
-                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                  Shopping
-                </Typography>
+                <Box sx={{ position: 'relative' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                    Shopping
+                  </Typography>
+                  <Typography variant="caption" sx={{ position: 'absolute', bottom: -16, right: 0, color: Colors.OnSurfaceVariant, opacity: 0.5, fontSize: 10 }}>
+                    react
+                  </Typography>
+                </Box>
 
                 <Typography
                   variant="body2"

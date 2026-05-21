@@ -5,8 +5,9 @@ import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
+import kotlinx.coroutines.runBlocking
 
-class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID, instanceId = 0) {
+class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl<ApplicationReactImpl>(VID, app, instanceId = 0) {
 
     companion object {
         const val VID = "7b32e816a191"
@@ -49,13 +50,13 @@ class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID
 
     @Throws(Exception::class)
     private fun onStart(path: String?) {
-        app.safeGo(path)
+        runBlocking { app.safeGo(path) }
         app.updateAllViews()
     }
 
     private fun onHistoryChanged(path: String?) {
         try {
-            app.safeGo(path)
+            runBlocking { app.safeGo(path) }
         } catch (e: Exception) {
             val logger = Log.getLogger("this")
             logger.warn("onHistoryChanged", e)
@@ -80,7 +81,7 @@ class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID
     }
 
     @Throws(Exception::class)
-    override fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
+    override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
         when (eventCode) {
             1 -> onAlertOk()
             2 -> onKeepAlive()
@@ -119,7 +120,7 @@ class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl(app, VID
             }
 
             val rootView = app.getRootPresenter()?.view()
-            if (rootView is GenericViewImpl) {
+            if (rootView is GenericViewImpl<*>) {
                 json.name("contentViewId").value(rootView.instanceId)
             }
         }

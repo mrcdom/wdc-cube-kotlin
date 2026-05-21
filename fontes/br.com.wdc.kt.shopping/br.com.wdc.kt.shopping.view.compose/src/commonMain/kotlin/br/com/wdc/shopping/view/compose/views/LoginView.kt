@@ -23,7 +23,7 @@ import br.com.wdc.shopping.view.compose.components.ShoppingLogoLarge
 import br.com.wdc.shopping.view.compose.theme.Primary
 import br.com.wdc.shopping.view.compose.theme.PrimaryContainer
 
-class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-view", presenter.app) {
+class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-view", presenter) {
 
     @Composable
     override fun Render() {

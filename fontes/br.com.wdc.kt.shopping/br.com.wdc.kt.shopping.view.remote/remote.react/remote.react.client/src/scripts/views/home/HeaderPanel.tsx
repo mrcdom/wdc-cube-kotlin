@@ -51,12 +51,17 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
               >
                 <LocalMallIcon sx={{ fontSize: 20, color: '#fff' }} />
               </Avatar>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
-                Shopping
-              </Typography>
+              <Box sx={{ position: 'relative' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
+                  Shopping
+                </Typography>
+                <Typography variant="caption" sx={{ position: 'absolute', bottom: -10, right: 0, color: '#fff', opacity: 0.45, fontSize: 9 }}>
+                  remote.react
+                </Typography>
+              </Box>
               <IconButton
                 onClick={this.emitExit}
-                sx={{ width: 28, height: 28, ml: 1.5, bgcolor: Colors.WhiteOverlay10 }}
+                sx={{ width: 28, height: 28, ml: 2, bgcolor: Colors.WhiteOverlay10 }}
               >
                 <LogoutIcon sx={{ fontSize: 16, color: '#fff', opacity: 0.7 }} />
               </IconButton>
@@ -104,20 +109,25 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
               height: 36,
               bgcolor: Colors.WhiteOverlay20,
               borderRadius: '10px',
-              mr: 1.5,
+              mr: '10px',
             }}
           >
             <LocalMallIcon sx={{ fontSize: 22, color: '#fff' }} />
           </Avatar>
 
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
-            Shopping
-          </Typography>
+          <Box sx={{ position: 'relative' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
+              Shopping
+            </Typography>
+            <Typography variant="caption" sx={{ position: 'absolute', bottom: -10, right: 0, color: '#fff', opacity: 0.45, fontSize: 10 }}>
+              remote.react
+            </Typography>
+          </Box>
 
           {/* Logout icon */}
           <IconButton
             onClick={this.emitExit}
-            sx={{ width: 32, height: 32, ml: 2, bgcolor: Colors.WhiteOverlay10 }}
+            sx={{ width: 32, height: 32, ml: '10px', bgcolor: Colors.WhiteOverlay10 }}
           >
             <LogoutIcon sx={{ fontSize: 18, color: '#fff', opacity: 0.7 }} />
           </IconButton>
@@ -130,8 +140,8 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
             sx={{
               bgcolor: Colors.WhiteOverlay15,
               borderRadius: '20px',
-              px: 2,
-              py: 1,
+              px: '12px',
+              py: '4px',
               mr: 2,
             }}
           >
@@ -148,8 +158,10 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
               onClick={this.emitOpenCart}
               sx={{
                 bgcolor: Colors.WhiteOverlay20,
-                borderRadius: '12px',
+                borderRadius: '10px',
                 textTransform: 'none',
+                py: '5px',
+                px: '12px',
               }}
             >
               <ShoppingCartIcon sx={{ mr: 0.75, fontSize: 18 }} />

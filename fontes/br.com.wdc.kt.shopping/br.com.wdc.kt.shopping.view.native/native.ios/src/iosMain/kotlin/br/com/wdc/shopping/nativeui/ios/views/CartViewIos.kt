@@ -452,18 +452,18 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewIos<CartPrese
     fun onMinus() {
         val i = item ?: return
         if (i.quantity > 1) {
-            presenter.onModifyQuantity(i.id, i.quantity - 1)
+            safeAction("minus") { presenter.onModifyQuantity(i.id, i.quantity - 1) }
         }
     }
 
     fun onPlus() {
         val i = item ?: return
-        presenter.onModifyQuantity(i.id, i.quantity + 1)
+        safeAction("plus") { presenter.onModifyQuantity(i.id, i.quantity + 1) }
     }
 
     fun onRemove() {
         val i = item ?: return
-        presenter.onRemoveProduct(i.id)
+        safeAction("remove") { presenter.onRemoveProduct(i.id) }
     }
 }
 

@@ -17,7 +17,7 @@ class ReceiptService {
         this.repo = repo
     }
 
-    fun loadReceipt(purchaseId: Long?): ReceiptForm? {
+    suspend fun loadReceipt(purchaseId: Long?): ReceiptForm? {
         if (purchaseId == null) throw WrongParametersException()
 
         val receipt = ReceiptForm.create(repo.fetchById(purchaseId, ReceiptForm.projection()))

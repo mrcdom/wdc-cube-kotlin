@@ -12,33 +12,33 @@ class SecuredProductRepository(
     private val contextSupplier: () -> SecurityContext?,
 ) : ProductRepository {
 
-    override fun insert(product: Product) =
+    override suspend fun insert(product: Product) =
         withSecurityContext(contextSupplier) { delegate.insert(product) }
 
-    override fun update(newProduct: Product, oldProduct: Product) =
+    override suspend fun update(newProduct: Product, oldProduct: Product) =
         withSecurityContext(contextSupplier) { delegate.update(newProduct, oldProduct) }
 
-    override fun insertOrUpdate(product: Product) =
+    override suspend fun insertOrUpdate(product: Product) =
         withSecurityContext(contextSupplier) { delegate.insertOrUpdate(product) }
 
-    override fun delete(criteria: ProductCriteria) =
+    override suspend fun delete(criteria: ProductCriteria) =
         withSecurityContext(contextSupplier) { delegate.delete(criteria) }
 
-    override fun count(criteria: ProductCriteria) =
+    override suspend fun count(criteria: ProductCriteria) =
         withSecurityContext(contextSupplier) { delegate.count(criteria) }
 
-    override fun fetch(criteria: ProductCriteria) =
+    override suspend fun fetch(criteria: ProductCriteria) =
         withSecurityContext(contextSupplier) { delegate.fetch(criteria) }
 
-    override fun fetchPage(criteria: ProductCriteria) =
+    override suspend fun fetchPage(criteria: ProductCriteria) =
         withSecurityContext(contextSupplier) { delegate.fetchPage(criteria) }
 
-    override fun fetchById(productId: Long, projection: Product?) =
+    override suspend fun fetchById(productId: Long, projection: Product?) =
         withSecurityContext(contextSupplier) { delegate.fetchById(productId, projection) }
 
-    override fun fetchImage(productId: Long) =
+    override suspend fun fetchImage(productId: Long) =
         withSecurityContext(contextSupplier) { delegate.fetchImage(productId) }
 
-    override fun updateImage(productId: Long, image: ByteArray) =
+    override suspend fun updateImage(productId: Long, image: ByteArray) =
         withSecurityContext(contextSupplier) { delegate.updateImage(productId, image) }
 }

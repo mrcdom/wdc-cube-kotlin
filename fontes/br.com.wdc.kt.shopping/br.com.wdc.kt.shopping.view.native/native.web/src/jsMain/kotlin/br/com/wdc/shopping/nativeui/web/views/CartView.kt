@@ -34,7 +34,7 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view", presenter.app) {
+class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view", presenter) {
 
     override val component = FC<Props> {
         var rev by useState(revision)

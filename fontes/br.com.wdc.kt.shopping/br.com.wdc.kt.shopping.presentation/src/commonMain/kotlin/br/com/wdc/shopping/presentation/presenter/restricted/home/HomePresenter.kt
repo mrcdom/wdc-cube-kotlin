@@ -67,7 +67,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         view = null
     }
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (app.subject == null) {
             Routes.login(app, intent)
             return false
@@ -100,6 +100,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
         if (deepest) {
             setContentView(null)
+            reloadPurchasesIfNeeded()
         } else {
             intent.setViewSlot(PlaceAttributes.SLOT_OWNER, contentSlot)
         }
@@ -121,7 +122,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     // :: User Actions
 
-    private fun onCartCommited() {
+    private suspend fun onCartCommited() {
         productsPanel?.loadProducts()
         purchasesPanel?.onPageChange(0)
     }
@@ -131,7 +132,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         update()
     }
 
-    fun onOpenReceipt(purchaseId: Long?) {
+    suspend fun onOpenReceipt(purchaseId: Long?) {
         try {
             if (purchaseId == null) {
                 alertPurchaseIdRequired()
@@ -157,7 +158,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         }
     }
 
-    fun onOpenProduct(productId: Long?) {
+    suspend fun onOpenProduct(productId: Long?) {
         try {
             if (productId == null) {
                 alertProductIdRequired()
@@ -183,7 +184,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         }
     }
 
-    fun onOpenCart() {
+    suspend fun onOpenCart() {
         try {
             Routes.cart(app)
         } catch (caught: Exception) {
@@ -191,13 +192,14 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         }
     }
 
-    fun onExit() {
+    suspend fun onExit() {
         try {
             cart!!.clear()
             app.subject = null
             app.setSecurityContext(null)
             app.sessionStorage.clear()
             setContentView(null)
+            reloadPurchasesIfNeeded()
 
             Routes.login(app)
         } catch (caught: Exception) {
@@ -237,11 +239,10 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         if (state.contentView !== view) {
             state.contentView = view
             update()
-
-            // Reload purchases when returning to the main view
-            if (view == null) {
-                purchasesPanel?.loadPurchases()
-            }
         }
+    }
+
+    private suspend fun reloadPurchasesIfNeeded() {
+        purchasesPanel?.loadPurchases()
     }
 }

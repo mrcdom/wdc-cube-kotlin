@@ -30,7 +30,7 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCubeView("products-panel-view", presenter.app) {
+class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCubeView("products-panel-view", presenter) {
 
     override val component = FC<Props> {
         var rev by useState(revision)

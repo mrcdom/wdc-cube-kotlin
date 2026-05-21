@@ -11,49 +11,49 @@ class SecuredProductRepository(private val delegate: ProductRepository) : Produc
         private const val ENTITY = "product"
     }
 
-    override fun insert(product: Product): Boolean {
+    override suspend fun insert(product: Product): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
         return delegate.insert(product)
     }
 
-    override fun update(newProduct: Product, oldProduct: Product): Boolean {
+    override suspend fun update(newProduct: Product, oldProduct: Product): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
         return delegate.update(newProduct, oldProduct)
     }
 
-    override fun insertOrUpdate(product: Product): Boolean {
+    override suspend fun insertOrUpdate(product: Product): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
         return delegate.insertOrUpdate(product)
     }
 
-    override fun delete(criteria: ProductCriteria): Int {
+    override suspend fun delete(criteria: ProductCriteria): Int {
         SecurityEnforcer.require(ENTITY, "delete")
         return delegate.delete(criteria)
     }
 
-    override fun count(criteria: ProductCriteria): Int {
+    override suspend fun count(criteria: ProductCriteria): Int {
         SecurityEnforcer.require(ENTITY, "read")
         return delegate.count(criteria)
     }
 
-    override fun fetch(criteria: ProductCriteria): List<Product> {
+    override suspend fun fetch(criteria: ProductCriteria): List<Product> {
         SecurityEnforcer.require(ENTITY, "read")
         return delegate.fetch(criteria)
     }
 
-    override fun fetchPage(criteria: ProductCriteria): Page<Product> {
+    override suspend fun fetchPage(criteria: ProductCriteria): Page<Product> {
         SecurityEnforcer.require(ENTITY, "read")
         return delegate.fetchPage(criteria)
     }
 
-    override fun fetchById(productId: Long, projection: Product?): Product? {
+    override suspend fun fetchById(productId: Long, projection: Product?): Product? {
         SecurityEnforcer.require(ENTITY, "read")
         return delegate.fetchById(productId, projection)
     }
 
-    override fun fetchImage(productId: Long): ByteArray? = delegate.fetchImage(productId)
+    override suspend fun fetchImage(productId: Long): ByteArray? = delegate.fetchImage(productId)
 
-    override fun updateImage(productId: Long, image: ByteArray): Boolean {
+    override suspend fun updateImage(productId: Long, image: ByteArray): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
         return delegate.updateImage(productId, image)
     }

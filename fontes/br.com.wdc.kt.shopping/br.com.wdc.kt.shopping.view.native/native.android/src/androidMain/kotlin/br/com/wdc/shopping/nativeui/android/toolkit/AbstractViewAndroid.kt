@@ -4,7 +4,10 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import br.com.wdc.framework.commons.log.Log as AppLog
 import br.com.wdc.framework.cube.CubeView
+import br.com.wdc.framework.cube.PresenterBase
+import kotlinx.coroutines.launch
 
 /**
  * Base class for all Android native views in the Cube MVP architecture.
@@ -24,6 +27,9 @@ abstract class AbstractViewAndroid<P>(
     private var released = false
     private var firstRender = true
     private val myListSlots = mutableListOf<ListSlot<*, *>>()
+
+    /** Exposes the presenter as PresenterBase for the scheduler (null for child presenters). */
+    internal val presenterBase: PresenterBase? get() = presenter as? PresenterBase
 
     override val instanceId: String get() = viewId
 
@@ -67,11 +73,15 @@ abstract class AbstractViewAndroid<P>(
         }
     }
 
-    protected fun safeAction(context: String, action: () -> Unit) {
-        try {
-            action()
-        } catch (e: Exception) {
-            Log.e("View[$viewId]", "action '$context' error", e)
+    protected fun safeAction(context: String, action: suspend () -> Unit) {
+        ViewUpdateScheduler.getApp()!!.presenterScope.launch {
+            try {
+                action()
+            } catch (e: Exception) {
+                ViewUpdateScheduler.getApp()
+                    ?.alertUnexpectedError(LOG, "action '$context' error", e)
+                    ?: Log.e("View[$viewId]", "action '$context' error", e)
+            }
         }
     }
 
@@ -160,5 +170,9 @@ abstract class AbstractViewAndroid<P>(
             viewList.forEach { it.release() }
             viewList.clear()
         }
+    }
+
+    companion object {
+        private val LOG = AppLog.getLogger("AbstractViewAndroid")
     }
 }

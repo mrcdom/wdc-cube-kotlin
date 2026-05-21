@@ -247,11 +247,11 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
     }
 
     internal fun addToCart() {
-        presenter.onAddToCart(quantity)
+        safeAction("addToCart") { presenter.onAddToCart(quantity) }
     }
 
     internal fun goBack() {
-        presenter.onOpenProducts()
+        safeAction("back") { presenter.onOpenProducts() }
     }
 }
 

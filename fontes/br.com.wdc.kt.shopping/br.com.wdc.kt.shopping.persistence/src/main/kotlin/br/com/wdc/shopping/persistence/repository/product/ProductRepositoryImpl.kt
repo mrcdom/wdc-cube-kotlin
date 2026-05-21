@@ -10,7 +10,7 @@ import br.com.wdc.shopping.persistence.repository.BaseRepository
 
 class ProductRepositoryImpl : BaseRepository(), ProductRepository {
 
-    override fun insert(product: Product): Boolean = try {
+    override suspend fun insert(product: Product): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             InsertProductRowCmd.run(tx.connection(), product)
         }
@@ -18,7 +18,7 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
         readException(e)
     }
 
-    override fun insertOrUpdate(product: Product): Boolean = try {
+    override suspend fun insertOrUpdate(product: Product): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             if (product.id == null) InsertProductRowCmd.run(tx.connection(), product)
             else UpdateProductRowCmd.run(tx.connection(), product)
@@ -27,7 +27,7 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
         readException(e)
     }
 
-    override fun update(newProduct: Product, oldProduct: Product): Boolean = try {
+    override suspend fun update(newProduct: Product, oldProduct: Product): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             UpdateProductRowCmd.run(tx.connection(), newProduct, oldProduct)
         }
@@ -35,7 +35,7 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
         readException(e)
     }
 
-    override fun delete(criteria: ProductCriteria): Int = try {
+    override suspend fun delete(criteria: ProductCriteria): Int = try {
         TransactionContext.begin(dataSource()).use { tx ->
             DeleteProductsCmd.byCriteria(tx.connection(), criteria)
         }
@@ -43,7 +43,7 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
         readException(e)
     }
 
-    override fun count(criteria: ProductCriteria): Int = try {
+    override suspend fun count(criteria: ProductCriteria): Int = try {
         TransactionContext.begin(dataSource()).use { tx ->
             CountProductsCmd.byCriteria(tx.connection(), criteria)
         }
@@ -51,7 +51,7 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
         readException(e)
     }
 
-    override fun fetch(criteria: ProductCriteria): List<Product> = try {
+    override suspend fun fetch(criteria: ProductCriteria): List<Product> = try {
         TransactionContext.begin(dataSource()).use { tx ->
             FetchProductsCmd.byCriteria(tx.connection(), criteria)
         }
@@ -59,7 +59,7 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
         readException(e)
     }
 
-    override fun fetchPage(criteria: ProductCriteria): Page<Product> = try {
+    override suspend fun fetchPage(criteria: ProductCriteria): Page<Product> = try {
         TransactionContext.begin(dataSource()).use { tx ->
             val totalCount = CountProductsCmd.byCriteria(tx.connection(), criteria)
             val items = FetchProductsCmd.byCriteria(tx.connection(), criteria)
@@ -69,7 +69,7 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
         readException(e)
     }
 
-    override fun fetchById(productId: Long, projection: Product?): Product? = try {
+    override suspend fun fetchById(productId: Long, projection: Product?): Product? = try {
         TransactionContext.begin(dataSource()).use { tx ->
             FetchProductsCmd.byId(tx.connection(), productId, projection)
         }
@@ -77,7 +77,7 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
         readException(e)
     }
 
-    override fun fetchImage(productId: Long): ByteArray? = try {
+    override suspend fun fetchImage(productId: Long): ByteArray? = try {
         TransactionContext.begin(dataSource()).use { tx ->
             val projection = Product()
             projection.image = ProjectionValues.bin
@@ -87,7 +87,7 @@ class ProductRepositoryImpl : BaseRepository(), ProductRepository {
         readException(e)
     }
 
-    override fun updateImage(productId: Long, image: ByteArray): Boolean = try {
+    override suspend fun updateImage(productId: Long, image: ByteArray): Boolean = try {
         TransactionContext.begin(dataSource()).use { tx ->
             val product = Product()
             product.id = productId

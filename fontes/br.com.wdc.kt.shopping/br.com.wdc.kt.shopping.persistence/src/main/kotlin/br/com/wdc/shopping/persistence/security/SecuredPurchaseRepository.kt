@@ -13,48 +13,48 @@ class SecuredPurchaseRepository(private val delegate: PurchaseRepository) : Purc
         private const val ENTITY = "purchase"
     }
 
-    override fun insert(purchase: Purchase): Boolean {
+    override suspend fun insert(purchase: Purchase): Boolean {
         val sc = SecurityEnforcer.require(ENTITY, "write")
         enforceUserScope(sc, purchase)
         return delegate.insert(purchase)
     }
 
-    override fun insertOrUpdate(purchase: Purchase): Boolean {
+    override suspend fun insertOrUpdate(purchase: Purchase): Boolean {
         val sc = SecurityEnforcer.require(ENTITY, "write")
         enforceUserScope(sc, purchase)
         return delegate.insertOrUpdate(purchase)
     }
 
-    override fun update(newPurchase: Purchase, oldPurchase: Purchase): Boolean {
+    override suspend fun update(newPurchase: Purchase, oldPurchase: Purchase): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
         return delegate.update(newPurchase, oldPurchase)
     }
 
-    override fun delete(criteria: PurchaseCriteria): Int {
+    override suspend fun delete(criteria: PurchaseCriteria): Int {
         val sc = SecurityEnforcer.require(ENTITY, "delete")
         enforceUserScope(sc, criteria)
         return delegate.delete(criteria)
     }
 
-    override fun count(criteria: PurchaseCriteria): Int {
+    override suspend fun count(criteria: PurchaseCriteria): Int {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         enforceUserScope(sc, criteria)
         return delegate.count(criteria)
     }
 
-    override fun fetch(criteria: PurchaseCriteria): List<Purchase> {
+    override suspend fun fetch(criteria: PurchaseCriteria): List<Purchase> {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         enforceUserScope(sc, criteria)
         return delegate.fetch(criteria)
     }
 
-    override fun fetchPage(criteria: PurchaseCriteria): Page<Purchase> {
+    override suspend fun fetchPage(criteria: PurchaseCriteria): Page<Purchase> {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         enforceUserScope(sc, criteria)
         return delegate.fetchPage(criteria)
     }
 
-    override fun fetchById(purchaseId: Long, projection: Purchase?): Purchase? {
+    override suspend fun fetchById(purchaseId: Long, projection: Purchase?): Purchase? {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         val result = delegate.fetchById(purchaseId, projection)
         if (result != null && !sc.hasDataAll()

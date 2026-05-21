@@ -10,7 +10,7 @@ import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 
 class LoginService(private val app: ShoppingApplication?) {
 
-    fun fetchSubject(userName: String, password: String): Subject? {
+    suspend fun fetchSubject(userName: String, password: String): Subject? {
         val authService = AuthenticationService.BEAN.getOrNull()
         if (authService != null) {
             return authenticateViaAuthService(authService, userName, password)
@@ -18,7 +18,7 @@ class LoginService(private val app: ShoppingApplication?) {
         return authenticateViaRepository(userName, password)
     }
 
-    private fun authenticateViaAuthService(
+    private suspend fun authenticateViaAuthService(
         authService: AuthenticationService,
         userName: String,
         password: String,
@@ -54,7 +54,7 @@ class LoginService(private val app: ShoppingApplication?) {
         return if (users.isEmpty()) null else Subject.create(users[0])
     }
 
-    private fun authenticateViaRepository(userName: String, password: String): Subject? {
+    private suspend fun authenticateViaRepository(userName: String, password: String): Subject? {
         val repository = UserRepository.BEAN.get()
         return repository.fetch(
             UserCriteria()

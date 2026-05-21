@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Assertions.*
  */
 object ShoppingServiceTestAlgorithm {
 
-    fun testPurchaseItemFetch(env: ShoppingTestEnvironment) {
+    suspend fun testPurchaseItemFetch(env: ShoppingTestEnvironment) {
         val pv = ProjectionValues
 
         val usrPrj = User()
@@ -58,7 +58,7 @@ object ShoppingServiceTestAlgorithm {
         assertEquals(3, purchaseItemList.size, "purchaseItemList.size()")
     }
 
-    fun testFullShoppingWorkflow(env: ShoppingTestEnvironment) {
+    suspend fun testFullShoppingWorkflow(env: ShoppingTestEnvironment) {
         // Autentica via repositório
         val users = env.userRepo.fetch(
             UserCriteria()

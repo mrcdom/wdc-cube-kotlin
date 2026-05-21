@@ -8,7 +8,6 @@ import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.shopping.domain.security.IosCryptoProvider
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.toolkit.AbstractViewIos
-import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUpdateScheduler
 import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.ios.views.*
 import br.com.wdc.shopping.persistence.client.IosHttpTransport
@@ -23,6 +22,9 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.Purc
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import platform.Foundation.NSThread
 import platform.UIKit.*
 
 /**
@@ -55,14 +57,13 @@ fun createRootViewController(baseUrl: String): UIViewController {
 
     // Create the application
     val app = IosNativeShoppingApplication()
-    ViewUpdateScheduler.initialize { app }
 
     // Create root ViewController
     val viewController = UIViewController()
     viewController.view.backgroundColor = ShoppingColors.Background
 
     // Start navigation
-    app.go(app.getRootPlace().placeName)
+    kotlinx.coroutines.runBlocking { app.go(app.getRootPlace().placeName) }
 
     // Mount root view
     val rootPresenter = app.getRootPresenter()
@@ -85,38 +86,50 @@ fun createRootViewController(baseUrl: String): UIViewController {
 }
 
 /**
+ * Ensures the given block runs on the main thread.
+ * If already on main, executes directly; otherwise dispatches synchronously.
+ */
+private fun <T> onMainThread(block: () -> T): T {
+    return if (NSThread.isMainThread) {
+        block()
+    } else {
+        runBlocking(Dispatchers.Main) { block() }
+    }
+}
+
+/**
  * Registers CubeView factory lambdas for all presenters.
  */
 private fun registerViewFactories() {
     RootPresenter.createView = { presenter ->
-        RootViewIos(presenter).initialize()
+        onMainThread { RootViewIos(presenter).initialize() }
     }
 
     LoginPresenter.createView = { presenter ->
-        LoginViewIos(presenter).initialize()
+        onMainThread { LoginViewIos(presenter).initialize() }
     }
 
     HomePresenter.createView = { presenter ->
-        HomeViewIos(presenter).initialize()
+        onMainThread { HomeViewIos(presenter).initialize() }
     }
 
     ProductsPanelPresenter.createView = { presenter ->
-        ProductsPanelViewIos(presenter).initialize()
+        onMainThread { ProductsPanelViewIos(presenter).initialize() }
     }
 
     PurchasesPanelPresenter.createView = { presenter ->
-        PurchasesPanelViewIos(presenter).initialize()
+        onMainThread { PurchasesPanelViewIos(presenter).initialize() }
     }
 
     ProductPresenter.createView = { presenter ->
-        ProductViewIos(presenter).initialize()
+        onMainThread { ProductViewIos(presenter).initialize() }
     }
 
     CartPresenter.createView = { presenter ->
-        CartViewIos(presenter).initialize()
+        onMainThread { CartViewIos(presenter).initialize() }
     }
 
     ReceiptPresenter.createView = { presenter ->
-        ReceiptViewIos(presenter).initialize()
+        onMainThread { ReceiptViewIos(presenter).initialize() }
     }
 }

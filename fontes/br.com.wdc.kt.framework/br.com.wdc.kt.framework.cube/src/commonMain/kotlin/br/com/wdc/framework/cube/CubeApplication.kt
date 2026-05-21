@@ -1,10 +1,11 @@
 package br.com.wdc.framework.cube
 
+import br.com.wdc.framework.commons.concurrent.concurrentMutableMapOf
 import br.com.wdc.framework.commons.log.Log
 
 abstract class CubeApplication {
 
-    internal var presenterMap: MutableMap<Int, CubePresenter> = createPresenterMap()
+    internal var presenterMap: MutableMap<Int, CubePresenter> = concurrentMutableMapOf()
 
     internal var lastPlace: CubePlace? = null
 
@@ -35,16 +36,6 @@ abstract class CubeApplication {
     fun publishParameters(intent: CubeIntent) {
         for (presenter in presenterMap.values) {
             presenter.publishParameters(intent)
-        }
-    }
-
-    fun commitComputedState() {
-        for (presenter in presenterMap.values) {
-            try {
-                presenter.commitComputedState()
-            } catch (caught: Exception) {
-                LOG.error("Processing ${presenter::class.simpleName}: ${caught.message}")
-            }
         }
     }
 
@@ -80,17 +71,15 @@ abstract class CubeApplication {
         }
     }
 
-    // Abstract
+    private val attributes: MutableMap<String, Any?> = concurrentMutableMapOf()
 
-    abstract fun setAttribute(name: String, value: Any?): Any?
+    open fun setAttribute(name: String, value: Any?): Any? = attributes.put(name, value)
 
-    abstract fun getAttribute(name: String): Any?
+    open fun getAttribute(name: String): Any? = attributes[name]
 
-    abstract fun removeAttribute(name: String): Any?
+    open fun removeAttribute(name: String): Any? = attributes.remove(name)
 
-    abstract fun updateHistory()
-
-    protected abstract fun createPresenterMap(): MutableMap<Int, CubePresenter>
+    open fun updateHistory() {}
 
     fun forEachPresenter(action: (CubePresenter) -> Unit) {
         presenterMap.values.forEach(action)

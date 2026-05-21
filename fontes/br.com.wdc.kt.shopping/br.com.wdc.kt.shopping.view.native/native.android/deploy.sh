@@ -13,6 +13,9 @@
 #     --skip-build                Skip Gradle build step
 #     --clean                     Clean build before compiling
 #     --cold-boot                 Cold boot the emulator (wipe snapshot)
+#     --fresh                     Fresh install (clear icon cache by restarting launcher)
+#     --netspeed <speed>          Emulator network speed (full, lte, hsdpa, umts, edge, gprs; default: full)
+#     --netdelay <delay>           Emulator network delay (none, umts, gprs, edge; default: none)
 #     --help                      Show this help
 #
 # Prerequisites:
@@ -38,6 +41,9 @@ BACKEND_URL=""
 SKIP_BUILD=false
 CLEAN_BUILD=false
 COLD_BOOT=false
+FRESH_INSTALL=false
+NET_SPEED="full"
+NET_DELAY="none"
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -208,6 +214,27 @@ get_serial_for_avd() {
     done < <(get_all_emulator_serials)
 }
 
+apply_network_settings() {
+    local serial="$1"
+    local port="${serial#emulator-}"
+    if [[ "$NET_SPEED" != "full" || "$NET_DELAY" != "none" ]]; then
+        info "Applying network settings (speed=$NET_SPEED, delay=$NET_DELAY)..."
+        local auth_token_file="$HOME/.emulator_console_auth_token"
+        local auth_token=""
+        if [[ -f "$auth_token_file" ]]; then
+            auth_token=$(cat "$auth_token_file")
+        fi
+        {
+            if [[ -n "$auth_token" ]]; then
+                echo "auth $auth_token"
+            fi
+            echo "network speed $NET_SPEED"
+            echo "network delay $NET_DELAY"
+            echo "quit"
+        } | nc localhost "$port" >/dev/null 2>&1 && ok "Network settings applied" || warn "Could not apply network settings via console"
+    fi
+}
+
 start_emulator() {
     info "Starting emulator: $EMULATOR_NAME..."
 
@@ -218,11 +245,12 @@ start_emulator() {
     if [[ -n "$serial" ]]; then
         ok "Emulator already running ($serial)"
         DEVICE_SERIAL="$serial"
+        apply_network_settings "$serial"
         return
     fi
 
     # Start the requested AVD
-    local emu_args=("-avd" "$EMULATOR_NAME" "-no-snapshot-load")
+    local emu_args=("-avd" "$EMULATOR_NAME" "-no-snapshot-load" "-netspeed" "$NET_SPEED" "-netdelay" "$NET_DELAY")
     if [[ "$COLD_BOOT" == true ]]; then
         emu_args+=("-no-snapshot")
     fi
@@ -324,6 +352,13 @@ install_and_launch() {
     info "Uninstalling previous version..."
     "$ADB" -s "$serial" uninstall "$APP_ID" 2>/dev/null || true
 
+    if [[ "$FRESH_INSTALL" == true ]]; then
+        info "Fresh install: clearing launcher icon cache..."
+        "$ADB" -s "$serial" shell pm clear com.google.android.apps.nexuslauncher 2>/dev/null || true
+        "$ADB" -s "$serial" shell pm clear com.android.launcher3 2>/dev/null || true
+        sleep 2
+    fi
+
     info "Installing APK: $(basename "$apk")..."
     "$ADB" -s "$serial" install -r "$apk" || die "Install failed"
 
@@ -353,6 +388,12 @@ while [[ $# -gt 0 ]]; do
             CLEAN_BUILD=true; shift ;;
         --cold-boot)
             COLD_BOOT=true; shift ;;
+        --fresh)
+            FRESH_INSTALL=true; shift ;;
+        --netspeed)
+            NET_SPEED="$2"; shift 2 ;;
+        --netdelay)
+            NET_DELAY="$2"; shift 2 ;;
         --help|-h)
             show_help ;;
         *)
