@@ -3,7 +3,7 @@ plugins {
 }
 
 application {
-    mainClass.set("br.com.wdc.shopping.view.react.stress.StressRunnerKt")
+    mainClass.set("br.com.wdc.shopping.view.react.stress.StressRunner_mainKt")
 }
 
 dependencies {

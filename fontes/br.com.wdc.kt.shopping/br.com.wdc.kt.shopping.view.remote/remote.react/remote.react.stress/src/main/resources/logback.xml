@@ -5,7 +5,7 @@
         </encoder>
     </appender>
 
-    <logger name="br.com.wdc.shopping.view.react.stress" level="INFO"/>
+    <logger name="br.com.wdc.shopping.view.react.stress" level="INFO" />
     <logger name="okhttp3" level="WARN"/>
 
     <root level="WARN">

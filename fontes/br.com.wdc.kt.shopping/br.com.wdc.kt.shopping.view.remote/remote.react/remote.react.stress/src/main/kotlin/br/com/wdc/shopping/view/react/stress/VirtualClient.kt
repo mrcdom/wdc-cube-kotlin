@@ -44,7 +44,7 @@ class VirtualClient(
         }
     }
 
-    private val requestIdGen = AtomicLong(0)
+    private val requestIdGen = AtomicLong(1)
 
     // Session state
     private var appId: String = ""
@@ -59,6 +59,8 @@ class VirtualClient(
     private var connected = false
     private var lastResponse: Map<String, Any?>? = null
     private var pendingLatch: CountDownLatch? = null
+    @Volatile private var pendingRequestId: Long = Long.MIN_VALUE
+    @Volatile private var lastMessageTime: Long = 0
 
     // Keep-alive
     private var keepAliveTask: ScheduledFuture<*>? = null
@@ -83,15 +85,21 @@ class VirtualClient(
             // Step 2: Build crypto signature
             buildCryptoSignature()
 
-            // Step 3: Connect WebSocket
+            // Step 3: Connect WebSocket and wait for Login view to appear in state
             if (!connectWebSocket()) {
                 LOG.error("[Client-{}] WebSocket connection failed", clientId)
                 return false
             }
 
+            // Step 4: Wait for initial view tree to be fully loaded (Login view must exist)
+            if (!waitForView(Vid.LOGIN, 5000)) {
+                LOG.error("[Client-{}] Login view never appeared in state", clientId)
+                return false
+            }
+
             val elapsed = System.currentTimeMillis() - startTime
             metrics.recordConnectionTime(elapsed)
-            LOG.debug("[Client-{}] Connected in {}ms", clientId, elapsed)
+            LOG.debug("[Client-{}] Connected in {}ms (views: {})", clientId, elapsed, viewStates.keys)
             return true
         } catch (e: Exception) {
             LOG.error("[Client-{}] Connection failed: {}", clientId, e.message)
@@ -108,6 +116,7 @@ class VirtualClient(
         val request = buildRequest(requestId, viewId, eventCode, formData)
         val json = GSON.toJson(request)
 
+        pendingRequestId = requestId
         pendingLatch = CountDownLatch(1)
         val startTime = System.currentTimeMillis()
 
@@ -136,9 +145,30 @@ class VirtualClient(
         connected = false
     }
 
+
     fun isConnected(): Boolean = connected
 
     fun getCurrentUri(): String = currentUri
+
+    /**
+     * Waits until a view with the given VID appears in tracked state AND server is idle.
+     */
+    fun waitForView(vid: String, timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (findViewByVid(vid) != null) {
+                // Wait until server stops sending (200ms idle)
+                val idleStart = System.currentTimeMillis()
+                while (System.currentTimeMillis() - lastMessageTime < 200
+                    && System.currentTimeMillis() < deadline) {
+                    Thread.sleep(50)
+                }
+                return true
+            }
+            Thread.sleep(50)
+        }
+        return findViewByVid(vid) != null
+    }
 
     fun getViewState(instanceId: String): Map<String, Any?> = viewStates[instanceId] ?: emptyMap()
 
@@ -292,14 +322,15 @@ class VirtualClient(
         val initMsg = buildInitialMessage()
         webSocket?.send(GSON.toJson(initMsg))
 
-        // Wait for first response (initial view state)
+        // Wait for initial response (accept any requestId)
+        pendingRequestId = -1L
         pendingLatch = CountDownLatch(1)
-        val gotInitialState = pendingLatch!!.await(10, TimeUnit.SECONDS)
+        val gotResponse = pendingLatch!!.await(10, TimeUnit.SECONDS)
 
-        if (gotInitialState) {
+        if (gotResponse) {
             startKeepAlive()
         }
-        return gotInitialState
+        return gotResponse
     }
 
     private fun buildInitialMessage(): Map<String, Any?> {
@@ -338,7 +369,9 @@ class VirtualClient(
     }
 
     private fun handleResponse(text: String) {
+        lastMessageTime = System.currentTimeMillis()
         try {
+            LOG.debug("[Client-{}] Raw response: {}", clientId, text.take(2000))
             val response: Map<String, Any?> = GSON.fromJson(text, RESPONSE_TYPE.type)
 
             // Update URI if present
@@ -347,22 +380,25 @@ class VirtualClient(
                 currentUri = uri
             }
 
-            // Replace view states with current snapshot from server
+            // Update view states (merge — server sends only changed views)
             @Suppress("UNCHECKED_CAST")
             val states = response["states"] as? List<Map<String, Any?>>
             if (states != null) {
-                val newStates = mutableMapOf<String, Map<String, Any?>>()
                 for (state in states) {
                     val id = state["id"] as? String ?: continue
-                    newStates[id] = state
+                    viewStates[id] = state
                 }
-                viewStates = newStates
             }
 
             lastResponse = response
+
+            // Signal pending latch when response matches or exceeds our pending request
+            val responseId = (response["requestId"] as? Number)?.toLong() ?: return
+            if (responseId >= pendingRequestId) {
+                pendingLatch?.countDown()
+            }
         } catch (e: Exception) {
             LOG.warn("[Client-{}] Failed to parse response: {}", clientId, e.message)
-        } finally {
             pendingLatch?.countDown()
         }
     }

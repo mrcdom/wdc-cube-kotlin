@@ -287,6 +287,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
 
     // :: Flush
 
+    @Synchronized
     fun flushDirtyViews() {
         if (dirtyViewMap.isEmpty()) return
         val ws = wsSession ?: return
