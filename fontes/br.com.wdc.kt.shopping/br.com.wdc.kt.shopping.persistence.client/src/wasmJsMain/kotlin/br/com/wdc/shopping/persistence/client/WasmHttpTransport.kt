@@ -13,14 +13,16 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
     override var accessTokenSupplier: (() -> String?)? = null
     override var refreshHandler: (() -> Boolean)? = null
     override var onAuthFailure: (() -> Unit)? = null
+    override var transactionIdSupplier: (() -> String?)? = null
+    override val clientId: String = newClientId()
 
     override fun postJson(path: String, body: String): String {
-        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader())
+        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), txId = currentTxId())
             ?: throw BusinessException("Empty response for POST $path")
     }
 
     override fun postJsonNullable(path: String, body: String): String? {
-        return doRequestNullable("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader())
+        return doRequestNullable("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), txId = currentTxId())
     }
 
     override fun postJsonPublic(path: String, body: String): String {
@@ -39,12 +41,12 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
     }
 
     override fun getBytes(path: String): ByteArray? {
-        return doRequestBytes("GET", baseUrl + path, null, null, authHeader())
+        return doRequestBytes("GET", baseUrl + path, null, null, authHeader(), currentTxId())
     }
 
     override fun putBytes(path: String, data: ByteArray): Boolean {
         val response = doRequest("PUT", baseUrl + path, null, OCTET_CONTENT_TYPE, authHeader(),
-            sendBytes = data)
+            sendBytes = data, txId = currentTxId())
         return response?.contains("\"success\":true") == true ||
                response?.contains("\"success\": true") == true
     }
@@ -61,14 +63,17 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
         body: String?,
         contentType: String?,
         authorization: String?,
-        sendBytes: ByteArray? = null
+        sendBytes: ByteArray? = null,
+        txId: String? = null
     ): String? {
         val result = xhrSyncRequest(
             method.toJsString(),
             url.toJsString(),
             body?.toJsString() ?: "".toJsString(),
             (contentType ?: "").toJsString(),
-            (authorization ?: "").toJsString()
+            (authorization ?: "").toJsString(),
+            clientId.toJsString(),
+            (txId ?: "").toJsString()
         )
         val status = xhrResultStatus(result)
         val responseText = xhrResultBody(result).toString()
@@ -80,12 +85,12 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
         // On 401 with auth header: try refresh and retry once
         if (status == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequest(method, url, body, contentType, authHeader())
+                return doRequest(method, url, body, contentType, authHeader(), sendBytes, txId)
             }
             onAuthFailure?.invoke()
         }
 
-        throw BusinessException("HTTP $status: $responseText")
+        throw httpFailure(status, responseText)
     }
 
     private fun doRequestNullable(
@@ -93,14 +98,17 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
         url: String,
         body: String?,
         contentType: String?,
-        authorization: String?
+        authorization: String?,
+        txId: String? = null
     ): String? {
         val result = xhrSyncRequest(
             method.toJsString(),
             url.toJsString(),
             body?.toJsString() ?: "".toJsString(),
             (contentType ?: "").toJsString(),
-            (authorization ?: "").toJsString()
+            (authorization ?: "").toJsString(),
+            clientId.toJsString(),
+            (txId ?: "").toJsString()
         )
         val status = xhrResultStatus(result)
         if (status == 404) return null
@@ -111,12 +119,12 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
 
         if (status == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequestNullable(method, url, body, contentType, authHeader())
+                return doRequestNullable(method, url, body, contentType, authHeader(), txId)
             }
             onAuthFailure?.invoke()
         }
 
-        throw BusinessException("HTTP $status: $responseText")
+        throw httpFailure(status, responseText)
     }
 
     private fun doRequestBytes(
@@ -124,14 +132,17 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
         url: String,
         body: String?,
         contentType: String?,
-        authorization: String?
+        authorization: String?,
+        txId: String? = null
     ): ByteArray? {
         val result = xhrSyncRequestBytes(
             method.toJsString(),
             url.toJsString(),
             body?.toJsString() ?: "".toJsString(),
             (contentType ?: "").toJsString(),
-            (authorization ?: "").toJsString()
+            (authorization ?: "").toJsString(),
+            clientId.toJsString(),
+            (txId ?: "").toJsString()
         )
         val status = xhrBytesResultStatus(result)
         if (status == 404 || status == 204) return null
@@ -142,12 +153,12 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
 
         if (status == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequestBytes(method, url, body, contentType, authHeader())
+                return doRequestBytes(method, url, body, contentType, authHeader(), txId)
             }
             onAuthFailure?.invoke()
         }
 
-        throw BusinessException("HTTP $status")
+        throw httpFailure(status)
     }
 
     companion object {
@@ -158,17 +169,19 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
 
 // --- JS Interop ---
 
-@JsFun("""(method, url, body, contentType, authorization) => {
+@JsFun("""(method, url, body, contentType, authorization, clientId, txId) => {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url, false);
     if (contentType !== '') xhr.setRequestHeader('Content-Type', contentType);
     if (authorization !== '') xhr.setRequestHeader('Authorization', authorization);
+    xhr.setRequestHeader('X-Client-Id', clientId);
+    if (txId !== '') xhr.setRequestHeader('X-Tx-Id', txId);
     xhr.send(body !== '' ? body : null);
     return { status: xhr.status, body: xhr.responseText };
 }""")
 private external fun xhrSyncRequest(
     method: JsString, url: JsString, body: JsString,
-    contentType: JsString, authorization: JsString
+    contentType: JsString, authorization: JsString, clientId: JsString, txId: JsString
 ): JsAny
 
 @JsFun("(r) => r.status")
@@ -177,18 +190,20 @@ private external fun xhrResultStatus(r: JsAny): Int
 @JsFun("(r) => r.body")
 private external fun xhrResultBody(r: JsAny): JsString
 
-@JsFun("""(method, url, body, contentType, authorization) => {
+@JsFun("""(method, url, body, contentType, authorization, clientId, txId) => {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url, false);
     xhr.responseType = 'arraybuffer';
     if (contentType !== '') xhr.setRequestHeader('Content-Type', contentType);
     if (authorization !== '') xhr.setRequestHeader('Authorization', authorization);
+    xhr.setRequestHeader('X-Client-Id', clientId);
+    if (txId !== '') xhr.setRequestHeader('X-Tx-Id', txId);
     xhr.send(body !== '' ? body : null);
     return { status: xhr.status, data: xhr.response ? new Uint8Array(xhr.response) : null };
 }""")
 private external fun xhrSyncRequestBytes(
     method: JsString, url: JsString, body: JsString,
-    contentType: JsString, authorization: JsString
+    contentType: JsString, authorization: JsString, clientId: JsString, txId: JsString
 ): JsAny
 
 @JsFun("(r) => r.status")

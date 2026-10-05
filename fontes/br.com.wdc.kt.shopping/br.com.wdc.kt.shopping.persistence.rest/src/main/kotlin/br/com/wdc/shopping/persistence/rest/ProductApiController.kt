@@ -58,20 +58,20 @@ class ProductApiController {
 
     private fun insert(ctx: Context) {
         val product = codec.readEntity(ctx.jsonBody())
-        val success = transactional { repo().insert(product) }
+        val success = transactional(ctx) { repo().insert(product) }
         ctx.jsonResult { it.beginObject().name("success").value(success).name("id").value(product.id ?: -1L).endObject() }
     }
 
     /** As chaves presentes no corpo dizem o que atualizar — inclusive para `null`. */
     private fun update(ctx: Context) {
         val data = codec.readEntityForUpdate(ctx.jsonBody())
-        val success = transactional { repo().update(data.entity, null, data.projection) }
+        val success = transactional(ctx) { repo().update(data.entity, null, data.projection) }
         ctx.jsonField("success", success)
     }
 
     private fun delete(ctx: Context) {
         val criteria = readFetchRequest(ctx).criteria
-        ctx.jsonField("count", transactional { repo().delete(criteria) })
+        ctx.jsonField("count", transactional(ctx) { repo().delete(criteria) })
     }
 
     private fun count(ctx: Context) {
@@ -196,7 +196,7 @@ class ProductApiController {
 
         try {
             val imageBytes = ctx.bodyAsBytes()
-            val success = transactional { repo().updateImage(id, imageBytes) }
+            val success = transactional(ctx) { repo().updateImage(id, imageBytes) }
             imageCache.keys.filter { it == "$id" || it.startsWith("${id}_") }.forEach { imageCache.remove(it) }
             ctx.json(mapOf("success" to success))
         } catch (e: Exception) {

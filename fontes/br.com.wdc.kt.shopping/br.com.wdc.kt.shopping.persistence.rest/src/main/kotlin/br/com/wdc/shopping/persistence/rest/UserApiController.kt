@@ -80,7 +80,7 @@ class UserApiController {
     private fun insert(ctx: Context) {
         val user = codec.readEntity(ctx.jsonBody())
         decryptPasswordIfPresent(user)
-        val success = transactional { repo().insert(user) }
+        val success = transactional(ctx) { repo().insert(user) }
         ctx.jsonResult { it.beginObject().name("success").value(success).name("id").value(user.id ?: -1L).endObject() }
     }
 
@@ -88,13 +88,13 @@ class UserApiController {
     private fun update(ctx: Context) {
         val data = codec.readEntityForUpdate(ctx.jsonBody())
         decryptPasswordIfPresent(data.entity)
-        val success = transactional { repo().update(data.entity, null, data.projection) }
+        val success = transactional(ctx) { repo().update(data.entity, null, data.projection) }
         ctx.jsonField("success", success)
     }
 
     private fun delete(ctx: Context) {
         val criteria = readFetchRequest(ctx).criteria
-        ctx.jsonField("count", transactional { repo().delete(criteria) })
+        ctx.jsonField("count", transactional(ctx) { repo().delete(criteria) })
     }
 
     private fun count(ctx: Context) {

@@ -7,7 +7,10 @@ import br.com.wdc.shopping.domain.config.AppConfig
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.framework.commons.util.Defer
+import br.com.wdc.framework.persistence.transaction.RemoteTransactionCoordinatorImpl
+import br.com.wdc.framework.persistence.transaction.RemoteTransactionOptions
 import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
+import br.com.wdc.shopping.persistence.rest.RemoteTransactions
 import br.com.wdc.shopping.persistence.concurrent.ScheduledExecutorAdapter
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
 import org.h2.jdbcx.JdbcDataSource
@@ -54,6 +57,12 @@ class BusinessContext {
             }
 
             ShoppingRepositoryBootstrap.initialize(dataSource, cleanUp = cleanUp)
+
+            // as transações que os clientes REST abrem e fecham por conta própria
+            RemoteTransactions.COORDINATOR.set(
+                RemoteTransactionCoordinatorImpl({ dataSource }, RemoteTransactionOptions.fromConfig("", config::getInt))
+            )
+            cleanUp.push { RemoteTransactions.COORDINATOR.set(null) }
 
             val jwtSecret = ShoppingConfig.jwtSecret
             if (!jwtSecret.isNullOrBlank()) {

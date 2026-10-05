@@ -11,14 +11,16 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
     override var accessTokenSupplier: (() -> String?)? = null
     override var refreshHandler: (() -> Boolean)? = null
     override var onAuthFailure: (() -> Unit)? = null
+    override var transactionIdSupplier: (() -> String?)? = null
+    override val clientId: String = newClientId()
 
     override fun postJson(path: String, body: String): String {
-        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader())
+        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), currentTxId())
             ?: throw BusinessException("Empty response for POST $path")
     }
 
     override fun postJsonNullable(path: String, body: String): String? {
-        return doRequestNullable("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader())
+        return doRequestNullable("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), currentTxId())
     }
 
     override fun postJsonPublic(path: String, body: String): String {
@@ -37,7 +39,7 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
     }
 
     override fun getBytes(path: String): ByteArray? {
-        return doRequestBytes("GET", baseUrl + path, authHeader())
+        return doRequestBytes("GET", baseUrl + path, authHeader(), currentTxId())
     }
 
     override fun putBytes(path: String, data: ByteArray): Boolean {
@@ -45,6 +47,8 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
         xhr.open("PUT", baseUrl + path, async = false)
         xhr.setRequestHeader("Content-Type", OCTET_CONTENT_TYPE)
         authHeader()?.let { xhr.setRequestHeader("Authorization", it) }
+        xhr.setRequestHeader(CLIENT_HEADER, clientId)
+        currentTxId()?.let { xhr.setRequestHeader(TX_HEADER, it) }
 
         // Convert ByteArray to Int8Array for sending
         val jsArray = js("new Int8Array(data)").unsafeCast<org.khronos.webgl.Int8Array>()
@@ -55,7 +59,7 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
             val text = xhr.responseText
             return text.contains("\"success\":true") || text.contains("\"success\": true")
         }
-        throw BusinessException("HTTP $status")
+        throw httpFailure(status)
     }
 
     private fun authHeader(): String? {
@@ -69,12 +73,15 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
         url: String,
         body: String?,
         contentType: String?,
-        authorization: String?
+        authorization: String?,
+        txId: String? = null
     ): String? {
         val xhr = XMLHttpRequest()
         xhr.open(method, url, async = false)
         contentType?.let { xhr.setRequestHeader("Content-Type", it) }
         authorization?.let { xhr.setRequestHeader("Authorization", it) }
+        xhr.setRequestHeader(CLIENT_HEADER, clientId)
+        txId?.let { xhr.setRequestHeader(TX_HEADER, it) }
 
         if (body != null) xhr.send(body) else xhr.send()
 
@@ -87,12 +94,12 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
 
         if (status == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequest(method, url, body, contentType, authHeader())
+                return doRequest(method, url, body, contentType, authHeader(), txId)
             }
             onAuthFailure?.invoke()
         }
 
-        throw BusinessException("HTTP $status: $responseText")
+        throw httpFailure(status, responseText)
     }
 
     private fun doRequestNullable(
@@ -100,12 +107,15 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
         url: String,
         body: String?,
         contentType: String?,
-        authorization: String?
+        authorization: String?,
+        txId: String? = null
     ): String? {
         val xhr = XMLHttpRequest()
         xhr.open(method, url, async = false)
         contentType?.let { xhr.setRequestHeader("Content-Type", it) }
         authorization?.let { xhr.setRequestHeader("Authorization", it) }
+        xhr.setRequestHeader(CLIENT_HEADER, clientId)
+        txId?.let { xhr.setRequestHeader(TX_HEADER, it) }
 
         if (body != null) xhr.send(body) else xhr.send()
 
@@ -118,23 +128,26 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
 
         if (status == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequestNullable(method, url, body, contentType, authHeader())
+                return doRequestNullable(method, url, body, contentType, authHeader(), txId)
             }
             onAuthFailure?.invoke()
         }
 
-        throw BusinessException("HTTP $status: $responseText")
+        throw httpFailure(status, responseText)
     }
 
     private fun doRequestBytes(
         method: String,
         url: String,
-        authorization: String?
+        authorization: String?,
+        txId: String? = null
     ): ByteArray? {
         val xhr = XMLHttpRequest()
         xhr.open(method, url, async = false)
         xhr.asDynamic().responseType = "arraybuffer"
         authorization?.let { xhr.setRequestHeader("Authorization", it) }
+        xhr.setRequestHeader(CLIENT_HEADER, clientId)
+        txId?.let { xhr.setRequestHeader(TX_HEADER, it) }
 
         xhr.send()
 
@@ -153,12 +166,12 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
 
         if (status == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequestBytes(method, url, authHeader())
+                return doRequestBytes(method, url, authHeader(), txId)
             }
             onAuthFailure?.invoke()
         }
 
-        throw BusinessException("HTTP $status")
+        throw httpFailure(status)
     }
 
     companion object {

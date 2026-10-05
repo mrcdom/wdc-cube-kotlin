@@ -40,7 +40,7 @@ class SecuredRestPurchaseRepositoryTest {
     fun signOut() = env.logout()
 
     private fun assertHttp(status: Int, block: suspend () -> Unit) {
-        val e = assertThrows(BusinessException::class.java) { runBlocking { block() } }
+        val e = assertThrows(RuntimeException::class.java) { runBlocking { block() } }
         assertTrue(e.message!!.startsWith("HTTP $status"), "esperava HTTP $status, veio: ${e.message}")
     }
 

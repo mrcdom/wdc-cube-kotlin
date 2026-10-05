@@ -1,6 +1,8 @@
 package br.com.wdc.shopping.persistence.rest
 
 import br.com.wdc.framework.domain.exception.InvalidRequestException
+import br.com.wdc.framework.domain.exception.TransactionConflictException
+import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
 import br.com.wdc.shopping.domain.exception.AccessDeniedException
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
@@ -33,6 +35,9 @@ object RepositoryApiRoutes {
             val securityFilter = SecurityFilter(authService)
             config.routes.before("/api/repo/*", securityFilter::handle)
             config.routes.after("/api/repo/*") { SecurityContextHolder.clear() }
+            // a transação remota é de quem a abriu: os seus endpoints exigem a mesma autenticação
+            config.routes.before("/api/tx/*", securityFilter::handle)
+            config.routes.after("/api/tx/*") { SecurityContextHolder.clear() }
         }
 
         // Exception handler para AccessDeniedException
@@ -47,10 +52,22 @@ object RepositoryApiRoutes {
             ctx.json(mapOf("error" to e.message))
         }
 
+        // Transação remota: uso indevido (dono errado → 403 acima; desfecho oposto, uso concorrente, escrita sem o
+        // cabeçalho → 409) e tetos de transações abertas → 429
+        config.routes.exception(TransactionConflictException::class.java) { e, ctx ->
+            ctx.status(409)
+            ctx.json(mapOf("error" to e.message))
+        }
+        config.routes.exception(TransactionLimitExceededException::class.java) { e, ctx ->
+            ctx.status(429)
+            ctx.json(mapOf("error" to e.message))
+        }
+
         // Controllers de entidades
         UserApiController.configure(config)
         ProductApiController.configure(config)
         PurchaseApiController.configure(config)
         PurchaseItemApiController.configure(config)
+        TxApiController.configure(config)
     }
 }

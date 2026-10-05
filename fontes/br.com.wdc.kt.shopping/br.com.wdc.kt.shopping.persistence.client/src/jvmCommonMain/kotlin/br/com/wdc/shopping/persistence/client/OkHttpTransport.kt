@@ -22,6 +22,8 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
     override var accessTokenSupplier: (() -> String?)? = null
     override var refreshHandler: (() -> Boolean)? = null
     override var onAuthFailure: (() -> Unit)? = null
+    override var transactionIdSupplier: (() -> String?)? = null
+    override val clientId: String = newClientId()
 
     override fun postJson(path: String, body: String): String {
         val requestBuilder = Request.Builder()
@@ -42,7 +44,7 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
                 if (response.code == 404) return null
                 val responseBody = response.body?.string()
                 if (!response.isSuccessful) {
-                    throw BusinessException("HTTP ${response.code}: $responseBody")
+                    throw httpFailure(response.code, responseBody)
                 }
                 return responseBody ?: ""
             }
@@ -57,6 +59,7 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         val request = Request.Builder()
             .url(baseUrl + path)
             .post(body.toRequestBody(jsonMediaType))
+            .header(CLIENT_HEADER, clientId)
             .build()
         return executeForString(request, "POST $path")
     }
@@ -66,6 +69,7 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
             .url(baseUrl + path)
             .post(body.toRequestBody(jsonMediaType))
             .header("Authorization", "Bearer $token")
+            .header(CLIENT_HEADER, clientId)
             .build()
         return executeForString(request, "POST $path")
     }
@@ -74,6 +78,7 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         val request = Request.Builder()
             .url(baseUrl + path)
             .get()
+            .header(CLIENT_HEADER, clientId)
             .build()
         return executeForString(request, "GET $path")
     }
@@ -88,7 +93,7 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
             client.newCall(requestBuilder.build()).execute().use { response ->
                 if (response.code == 404 || response.code == 204) return null
                 if (!response.isSuccessful) {
-                    throw BusinessException("HTTP ${response.code}")
+                    throw httpFailure(response.code)
                 }
                 return response.body?.bytes()
             }
@@ -108,7 +113,7 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         try {
             client.newCall(requestBuilder.build()).execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw BusinessException("HTTP ${response.code}")
+                    throw httpFailure(response.code)
                 }
                 val responseBody = response.body?.string() ?: return false
                 return responseBody.contains("\"success\":true") ||
@@ -126,7 +131,7 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
             client.newCall(request).execute().use { response ->
                 val responseBody = response.body?.string()
                 if (!response.isSuccessful) {
-                    throw BusinessException("HTTP ${response.code}: $responseBody")
+                    throw httpFailure(response.code, responseBody)
                 }
                 return responseBody ?: ""
             }
@@ -137,7 +142,10 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         }
     }
 
+    /** Os cabeçalhos de uma chamada autenticada: o token, o cliente e a transação remota corrente. */
     private fun addAuthHeader(builder: Request.Builder) {
+        builder.header(CLIENT_HEADER, clientId)
+        currentTxId()?.let { builder.header(TX_HEADER, it) }
         val supplier = accessTokenSupplier
         if (supplier != null) {
             val token = supplier()

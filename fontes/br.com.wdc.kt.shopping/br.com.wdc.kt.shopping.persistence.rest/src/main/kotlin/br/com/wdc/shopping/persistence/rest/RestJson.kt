@@ -22,6 +22,8 @@ internal inline fun Context.jsonResult(write: (ExtensibleObjectOutput) -> Unit) 
 /** `{ "<name>": <value> }` */
 internal fun Context.jsonField(name: String, value: Boolean) = jsonResult { it.beginObject().name(name).value(value).endObject() }
 
+internal fun Context.jsonField(name: String, value: String) = jsonResult { it.beginObject().name(name).value(value).endObject() }
+
 internal fun Context.jsonField(name: String, value: Int) = jsonResult { it.beginObject().name(name).value(value.toLong()).endObject() }
 
 /**

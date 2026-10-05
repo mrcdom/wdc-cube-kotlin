@@ -13,14 +13,16 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
     override var accessTokenSupplier: (() -> String?)? = null
     override var refreshHandler: (() -> Boolean)? = null
     override var onAuthFailure: (() -> Unit)? = null
+    override var transactionIdSupplier: (() -> String?)? = null
+    override val clientId: String = newClientId()
 
     override fun postJson(path: String, body: String): String {
-        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader())
+        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), currentTxId())
             ?: throw BusinessException("Empty response for POST $path")
     }
 
     override fun postJsonNullable(path: String, body: String): String? {
-        return doRequestNullable("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader())
+        return doRequestNullable("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), currentTxId())
     }
 
     override fun postJsonPublic(path: String, body: String): String {
@@ -39,13 +41,14 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
     }
 
     override fun getBytes(path: String): ByteArray? {
-        return doRequestBytes("GET", baseUrl + path, authHeader())
+        return doRequestBytes("GET", baseUrl + path, authHeader(), currentTxId())
     }
 
     override fun putBytes(path: String, data: ByteArray): Boolean {
         val request = createRequest("PUT", baseUrl + path)
         request.setValue(OCTET_CONTENT_TYPE, forHTTPHeaderField = "Content-Type")
         authHeader()?.let { request.setValue(it, forHTTPHeaderField = "Authorization") }
+        currentTxId()?.let { request.setValue(it, forHTTPHeaderField = TX_HEADER) }
 
         data.usePinned { pinned ->
             request.setHTTPBody(NSData.create(bytes = pinned.addressOf(0), length = data.size.toULong()))
@@ -57,7 +60,7 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
             val text = responseData?.toKotlinString() ?: ""
             return text.contains("\"success\":true") || text.contains("\"success\": true")
         }
-        throw BusinessException("HTTP $statusCode")
+        throw httpFailure(statusCode)
     }
 
     private fun authHeader(): String? {
@@ -70,6 +73,7 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
         val nsUrl = NSURL.URLWithString(url) ?: throw BusinessException("Invalid URL: $url")
         val request = NSMutableURLRequest.requestWithURL(nsUrl)
         request.setHTTPMethod(method)
+        request.setValue(clientId, forHTTPHeaderField = CLIENT_HEADER)
         return request
     }
 
@@ -78,11 +82,13 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
         url: String,
         body: String?,
         contentType: String?,
-        authorization: String?
+        authorization: String?,
+        txId: String? = null
     ): String? {
         val request = createRequest(method, url)
         contentType?.let { request.setValue(it, forHTTPHeaderField = "Content-Type") }
         authorization?.let { request.setValue(it, forHTTPHeaderField = "Authorization") }
+        txId?.let { request.setValue(it, forHTTPHeaderField = TX_HEADER) }
         body?.let {
             request.setHTTPBody((it as NSString).dataUsingEncoding(NSUTF8StringEncoding))
         }
@@ -97,12 +103,12 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
 
         if (statusCode == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequest(method, url, body, contentType, authHeader())
+                return doRequest(method, url, body, contentType, authHeader(), txId)
             }
             onAuthFailure?.invoke()
         }
 
-        throw BusinessException("HTTP $statusCode: $responseText")
+        throw httpFailure(statusCode, responseText)
     }
 
     private fun doRequestNullable(
@@ -110,11 +116,13 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
         url: String,
         body: String?,
         contentType: String?,
-        authorization: String?
+        authorization: String?,
+        txId: String? = null
     ): String? {
         val request = createRequest(method, url)
         contentType?.let { request.setValue(it, forHTTPHeaderField = "Content-Type") }
         authorization?.let { request.setValue(it, forHTTPHeaderField = "Authorization") }
+        txId?.let { request.setValue(it, forHTTPHeaderField = TX_HEADER) }
         body?.let {
             request.setHTTPBody((it as NSString).dataUsingEncoding(NSUTF8StringEncoding))
         }
@@ -129,17 +137,18 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
 
         if (statusCode == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequestNullable(method, url, body, contentType, authHeader())
+                return doRequestNullable(method, url, body, contentType, authHeader(), txId)
             }
             onAuthFailure?.invoke()
         }
 
-        throw BusinessException("HTTP $statusCode: $responseText")
+        throw httpFailure(statusCode, responseText)
     }
 
-    private fun doRequestBytes(method: String, url: String, authorization: String?): ByteArray? {
+    private fun doRequestBytes(method: String, url: String, authorization: String?, txId: String? = null): ByteArray? {
         val request = createRequest(method, url)
         authorization?.let { request.setValue(it, forHTTPHeaderField = "Authorization") }
+        txId?.let { request.setValue(it, forHTTPHeaderField = TX_HEADER) }
 
         val (responseData, response) = sendSynchronous(request)
         val statusCode = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
@@ -150,12 +159,12 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
 
         if (statusCode == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequestBytes(method, url, authHeader())
+                return doRequestBytes(method, url, authHeader(), txId)
             }
             onAuthFailure?.invoke()
         }
 
-        throw BusinessException("HTTP $statusCode")
+        throw httpFailure(statusCode)
     }
 
     @Suppress("CAST_NEVER_SUCCEEDS")

@@ -15,7 +15,10 @@ import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.shopping.domain.security.PasswordUtil
 import br.com.wdc.framework.commons.util.Defer
+import br.com.wdc.framework.persistence.transaction.RemoteTransactionCoordinatorImpl
+import br.com.wdc.framework.persistence.transaction.RemoteTransactionOptions
 import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
+import br.com.wdc.shopping.persistence.rest.RemoteTransactions
 import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestAuthClient
 import br.com.wdc.shopping.persistence.client.RestConfig
@@ -46,6 +49,7 @@ class RestTestEnvironment(
     private val dbName: String = "wedocode-shopping-rest-test",
     /** Com segredo, o servidor sobe com a segurança ligada (JWT + controle de acesso); `null` = sem segurança. */
     private val jwtSecret: String? = null,
+    private val remoteTransactionOptions: RemoteTransactionOptions = RemoteTransactionOptions.defaults(),
 ) : ShoppingTestEnvironment {
 
     private lateinit var datasource: JdbcConnectionPool
@@ -97,6 +101,8 @@ class RestTestEnvironment(
         ShoppingConfig.Internals.setTempDir(basePath.resolve("temp"))
         ScheduledExecutor.BEAN.set(executor)
         ShoppingRepositoryBootstrap.initialize(ds, cleanUp = cleanUp)
+        RemoteTransactions.COORDINATOR.set(RemoteTransactionCoordinatorImpl({ ds }, remoteTransactionOptions))
+        cleanUp.push { RemoteTransactions.COORDINATOR.set(null) }
         if (jwtSecret != null) {
             ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, cleanUp = cleanUp)
         }
