@@ -10,7 +10,7 @@ enum class Role(val permissions: Set<String>) {
         "data:all",
     )),
 
-    // user:read para quem não tem data:all alcança só o próprio usuário (ver SecuredUserRepository)
+    // user:read para quem não tem data:all alcança só o próprio usuário (ver UserApiController)
     CUSTOMER(setOf(
         "user:read",
         "product:read",

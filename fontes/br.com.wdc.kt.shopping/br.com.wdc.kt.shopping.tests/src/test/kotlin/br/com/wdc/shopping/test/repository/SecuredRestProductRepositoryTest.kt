@@ -100,7 +100,8 @@ class SecuredRestProductRepositoryTest {
         assertHttp(401) { repo().updateImage(DBReset.CAFETEIRA_ID, replacement) }
 
         env.loginAs("fulano")
-        assertThrows(BusinessException::class.java) { runBlocking { repo().updateImage(DBReset.CAFETEIRA_ID, replacement) } }
+        // recusa por permissão, como nas outras escritas (antes saía como erro genérico do upload)
+        assertHttp(403) { repo().updateImage(DBReset.CAFETEIRA_ID, replacement) }
         assertArrayEquals(original, repo().fetchImage(DBReset.CAFETEIRA_ID))
 
         env.loginAs("admin")

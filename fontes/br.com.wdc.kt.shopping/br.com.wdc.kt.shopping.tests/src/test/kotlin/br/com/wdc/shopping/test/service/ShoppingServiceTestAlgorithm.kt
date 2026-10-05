@@ -148,10 +148,14 @@ object ShoppingServiceTestAlgorithm {
         assertEquals(2, ultimaCompra.items.size)
         assertEquals(65.0, ultimaCompra.total)
 
-        val recibo = ReceiptService(env.purchaseRepo).loadReceipt(idCompra)
+        val recibo = ReceiptService(env.purchaseRepo).loadReceipt(idCompra, userId)
         assertNotNull(recibo)
         assertEquals(65.0, recibo!!.total)
         assertEquals(2, recibo.items.size)
+
+        // o recibo é de quem comprou: para outro usuário, a compra não existe
+        val outroUsuario = if (userId == DBReset.FULANO_ID) DBReset.BEOTRANO_ID else DBReset.FULANO_ID
+        assertNull(ReceiptService(env.purchaseRepo).loadReceipt(idCompra, outroUsuario))
 
         val pedido0 = purchase.items!![0]
         assertEquals(pedido0.price, recibo.items[0].value)

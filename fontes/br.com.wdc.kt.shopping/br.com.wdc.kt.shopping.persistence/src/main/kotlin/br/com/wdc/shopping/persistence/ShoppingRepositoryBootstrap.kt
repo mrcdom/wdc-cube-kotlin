@@ -14,10 +14,6 @@ import br.com.wdc.shopping.persistence.repository.purchase.PurchaseRepositoryImp
 import br.com.wdc.shopping.persistence.repository.purchaseitem.PurchaseItemRepositoryImpl
 import br.com.wdc.shopping.persistence.repository.user.UserRepositoryImpl
 import br.com.wdc.shopping.persistence.security.AuthenticationServiceImpl
-import br.com.wdc.shopping.persistence.security.SecuredProductRepository
-import br.com.wdc.shopping.persistence.security.SecuredPurchaseItemRepository
-import br.com.wdc.shopping.persistence.security.SecuredPurchaseRepository
-import br.com.wdc.shopping.persistence.security.SecuredUserRepository
 import javax.sql.DataSource
 import org.jooq.SQLDialect
 import org.jooq.conf.RenderNameCase
@@ -29,7 +25,7 @@ import org.jooq.impl.DSL
  * entrega (backend, testes).
  *
  * [initialize] registra os quatro repositórios; [initializeSecurity], chamado depois e só quando há segredo
- * JWT configurado, decora-os com o controle de acesso e registra o serviço de autenticação.
+ * JWT configurado, registra o serviço de autenticação.
  */
 object ShoppingRepositoryBootstrap {
 
@@ -66,20 +62,13 @@ object ShoppingRepositoryBootstrap {
     }
 
     /**
-     * Liga a segurança: decora os repositórios já registrados e registra o [AuthenticationService].
+     * Liga a autenticação: registra o [AuthenticationService], com o que a API REST passa a exigir e conferir
+     * o acesso. Os repositórios não mudam — o controle de acesso é da fronteira HTTP.
      *
-     * @param cleanUp recebe a ação que retira o serviço de autenticação (os repositórios saem com [initialize])
+     * @param cleanUp recebe a ação que retira o serviço de autenticação
      */
     fun initializeSecurity(jwtSecret: String, refreshTokenTtlDays: Int = 7, cleanUp: Defer) {
-        val rawUserRepo = UserRepository.BEAN.get()
-        val rawPurchaseRepo = PurchaseRepository.BEAN.get()
-
-        UserRepository.BEAN.set(SecuredUserRepository(rawUserRepo))
-        ProductRepository.BEAN.set(SecuredProductRepository(ProductRepository.BEAN.get()))
-        PurchaseRepository.BEAN.set(SecuredPurchaseRepository(rawPurchaseRepo))
-        PurchaseItemRepository.BEAN.set(SecuredPurchaseItemRepository(PurchaseItemRepository.BEAN.get(), rawPurchaseRepo))
-
-        AuthenticationService.BEAN.set(AuthenticationServiceImpl(rawUserRepo, jwtSecret, refreshTokenTtlDays))
+        AuthenticationService.BEAN.set(AuthenticationServiceImpl(UserRepository.BEAN.get(), jwtSecret, refreshTokenTtlDays))
         cleanUp.push { AuthenticationService.BEAN.set(null) }
     }
 }

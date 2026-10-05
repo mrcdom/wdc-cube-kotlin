@@ -14,7 +14,8 @@ import io.javalin.config.JavalinConfig
  *
  * Se o [AuthenticationService] estiver inicializado (via
  * `ShoppingRepositoryBootstrap.initializeSecurity`), registra automaticamente
- * o filtro de segurança e os endpoints de autenticação.
+ * o filtro de autenticação e os endpoints de login. A permissão e o alcance de cada
+ * operação são conferidos pelos controladores ([ApiSecurity]).
  */
 object RepositoryApiRoutes {
 

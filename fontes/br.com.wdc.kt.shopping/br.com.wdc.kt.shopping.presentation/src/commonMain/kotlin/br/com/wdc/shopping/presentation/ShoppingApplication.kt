@@ -12,10 +12,6 @@ import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
-import br.com.wdc.shopping.presentation.repository.SecuredProductRepository
-import br.com.wdc.shopping.presentation.repository.SecuredPurchaseItemRepository
-import br.com.wdc.shopping.presentation.repository.SecuredPurchaseRepository
-import br.com.wdc.shopping.presentation.repository.SecuredUserRepository
 import br.com.wdc.shopping.presentation.function.GoAction
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.Routes
@@ -39,11 +35,6 @@ abstract class ShoppingApplication : CubeApplication() {
 
     private var securityContext: SecurityContext? = null
 
-    private var userRepository: UserRepository? = null
-    private var productRepository: ProductRepository? = null
-    private var purchaseRepository: PurchaseRepository? = null
-    private var purchaseItemRepository: PurchaseItemRepository? = null
-
     // :: Getters and Setters
 
     fun getRootPlace(): CubePlace = Routes.Place.ROOT
@@ -55,48 +46,18 @@ abstract class ShoppingApplication : CubeApplication() {
 
     fun setSecurityContext(ctx: SecurityContext?) {
         this.securityContext = ctx
-        // Recriar delegates quando o contexto muda
-        userRepository = null
-        productRepository = null
-        purchaseRepository = null
-        purchaseItemRepository = null
     }
 
-    fun getUserRepository(): UserRepository {
-        var repo = userRepository
-        if (repo == null) {
-            repo = createUserDelegate(UserRepository.BEAN.get())
-            userRepository = repo
-        }
-        return repo
-    }
+    // Os repositórios são os registrados pelo composition root: no servidor, os que falam com o banco; num
+    // cliente, os que falam com a API REST — que é onde o acesso é conferido.
 
-    fun getProductRepository(): ProductRepository {
-        var repo = productRepository
-        if (repo == null) {
-            repo = createProductDelegate(ProductRepository.BEAN.get())
-            productRepository = repo
-        }
-        return repo
-    }
+    fun getUserRepository(): UserRepository = UserRepository.BEAN.get()
 
-    fun getPurchaseRepository(): PurchaseRepository {
-        var repo = purchaseRepository
-        if (repo == null) {
-            repo = createPurchaseDelegate(PurchaseRepository.BEAN.get())
-            purchaseRepository = repo
-        }
-        return repo
-    }
+    fun getProductRepository(): ProductRepository = ProductRepository.BEAN.get()
 
-    fun getPurchaseItemRepository(): PurchaseItemRepository {
-        var repo = purchaseItemRepository
-        if (repo == null) {
-            repo = createPurchaseItemDelegate(PurchaseItemRepository.BEAN.get())
-            purchaseItemRepository = repo
-        }
-        return repo
-    }
+    fun getPurchaseRepository(): PurchaseRepository = PurchaseRepository.BEAN.get()
+
+    fun getPurchaseItemRepository(): PurchaseItemRepository = PurchaseItemRepository.BEAN.get()
 
     // :: API
 
@@ -129,20 +90,6 @@ abstract class ShoppingApplication : CubeApplication() {
             goAction?.apply(app, place)
         }
     }
-
-    // :: Repository delegate factories
-
-    protected open fun createUserDelegate(delegate: UserRepository): UserRepository =
-        SecuredUserRepository(delegate) { getSecurityContext() }
-
-    protected open fun createProductDelegate(delegate: ProductRepository): ProductRepository =
-        SecuredProductRepository(delegate) { getSecurityContext() }
-
-    protected open fun createPurchaseDelegate(delegate: PurchaseRepository): PurchaseRepository =
-        SecuredPurchaseRepository(delegate) { getSecurityContext() }
-
-    protected open fun createPurchaseItemDelegate(delegate: PurchaseItemRepository): PurchaseItemRepository =
-        SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
 
     protected abstract fun createSessionStorage(): SessionStorage
 }

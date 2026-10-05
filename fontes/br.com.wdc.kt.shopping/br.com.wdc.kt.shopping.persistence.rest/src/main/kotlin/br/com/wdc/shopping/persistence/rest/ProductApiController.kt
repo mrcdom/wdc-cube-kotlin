@@ -7,6 +7,7 @@ import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.product.ProductCodec
 import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.product.ProductRepository
+import br.com.wdc.shopping.domain.security.SecurityContext
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import java.awt.RenderingHints
@@ -18,12 +19,14 @@ import javax.imageio.ImageIO
 
 /**
  * Endpoints REST de produto. Lê e escreve com o [ProductCodec] — o mesmo que o cliente usa —, sem reflexão.
- * O controle de acesso é do repositório registrado (decorado quando a segurança está ligada).
+ * O controle de acesso é feito aqui ([ApiSecurity]): ler exige `product:read`, escrever `product:write`; a
+ * leitura da imagem é pública.
  */
 class ProductApiController {
 
     companion object {
         private val LOG = Log.getLogger("ProductApiController")
+        private const val ENTITY = "product"
         private const val IMAGE_CACHE_MAX_SIZE = 200
         // Key: "id" for original, "id_size" for resized
         private val imageCache = ConcurrentHashMap<String, ByteArray>()
@@ -56,7 +59,11 @@ class ProductApiController {
         return request
     }
 
+    /** O catálogo é de todos: não há restrição por usuário. */
+    private fun scoped(@Suppress("UNUSED_PARAMETER") sc: SecurityContext?, criteria: ProductCriteria): ProductCriteria = criteria
+
     private fun insert(ctx: Context) {
+        ApiSecurity.require(ENTITY, "write")
         val product = codec.readEntity(ctx.jsonBody())
         val success = transactional(ctx) { repo().insert(product) }
         ctx.jsonResult { it.beginObject().name("success").value(success).name("id").value(product.id ?: -1L).endObject() }
@@ -64,36 +71,39 @@ class ProductApiController {
 
     /** As chaves presentes no corpo dizem o que atualizar — inclusive para `null`. */
     private fun update(ctx: Context) {
+        ApiSecurity.require(ENTITY, "write")
         val data = codec.readEntityForUpdate(ctx.jsonBody())
         val success = transactional(ctx) { repo().update(data.entity, null, data.projection) }
         ctx.jsonField("success", success)
     }
 
     private fun delete(ctx: Context) {
-        val criteria = readFetchRequest(ctx).criteria
+        val criteria = scoped(ApiSecurity.require(ENTITY, "delete"), readFetchRequest(ctx).criteria)
         ctx.jsonField("count", transactional(ctx) { repo().delete(criteria) })
     }
 
     private fun count(ctx: Context) {
-        val criteria = readFetchRequest(ctx).criteria
+        val criteria = scoped(ApiSecurity.require(ENTITY, "read"), readFetchRequest(ctx).criteria)
         ctx.jsonField("count", blocking { repo().count(criteria) })
     }
 
     private fun fetch(ctx: Context) {
         val request = readFetchRequest(ctx)
+        scoped(ApiSecurity.require(ENTITY, "read"), request.criteria)
         val items = blocking { repo().fetch(request.criteria, request.offset, request.limit) }
         ctx.jsonResult { codec.writeItems(it, items) }
     }
 
     private fun fetchPage(ctx: Context) {
         val request = readFetchRequest(ctx)
+        scoped(ApiSecurity.require(ENTITY, "read"), request.criteria)
         val page = blocking { repo().fetchPage(request.criteria, request.page, request.pageSize) }
         ctx.jsonResult { codec.writeItems(it, page.items, page.totalItems) }
     }
 
     private fun fetchById(ctx: Context) {
         val id = ctx.pathParam("id").toLongOrNull() ?: throw InvalidRequestException("id de produto inválido")
-        respondEntity(ctx, blocking { repo().fetchById(id) })
+        respondEntity(ctx, fetchOne(id, null))
     }
 
     private fun fetchByIdPost(ctx: Context) {
@@ -109,8 +119,13 @@ class ProductApiController {
             }
         }
         input.endObject()
-        val productId = id ?: throw InvalidRequestException("fetch-by-id exige o id")
-        respondEntity(ctx, blocking { repo().fetchById(productId, projection) })
+        respondEntity(ctx, fetchOne(id ?: throw InvalidRequestException("fetch-by-id exige o id"), projection))
+    }
+
+    /** Buscar pela chave é a mesma consulta das outras: passa pela mesma permissão e pelo mesmo alcance. */
+    private fun fetchOne(id: Long, projection: Product?): Product? {
+        val criteria = scoped(ApiSecurity.require(ENTITY, "read"), ProductCriteria().withProductId(id).withProjection(projection ?: repo().newProjection()))
+        return blocking { repo().fetch(criteria, 0, 1) }.firstOrNull()
     }
 
     private fun respondEntity(ctx: Context, product: Product?) {
@@ -194,6 +209,7 @@ class ProductApiController {
             return
         }
 
+        ApiSecurity.require(ENTITY, "write")
         try {
             val imageBytes = ctx.bodyAsBytes()
             val success = transactional(ctx) { repo().updateImage(id, imageBytes) }

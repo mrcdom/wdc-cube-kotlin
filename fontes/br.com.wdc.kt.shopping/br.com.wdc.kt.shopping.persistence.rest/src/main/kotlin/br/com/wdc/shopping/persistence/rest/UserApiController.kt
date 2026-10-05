@@ -3,6 +3,8 @@ package br.com.wdc.shopping.persistence.rest
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.domain.exception.InvalidRequestException
+import br.com.wdc.shopping.domain.exception.AccessDeniedException
+import br.com.wdc.shopping.domain.security.SecurityContext
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
 import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.user.UserCodec
@@ -17,8 +19,8 @@ import javax.crypto.Cipher
 
 /**
  * Endpoints REST de usuário. Lê e escreve com o [UserCodec] — o mesmo que o cliente usa —, sem reflexão.
- * O controle de acesso e o escopo por usuário são do repositório registrado (decorado quando a segurança está
- * ligada).
+ * O controle de acesso é feito aqui ([ApiSecurity]): permissão e, para quem não alcança os dados de todos,
+ * restrição ao próprio usuário.
  *
  * **A senha é só de escrita nesta API**: entra no insert e no update, e nunca é devolvida — nem o resumo, nem
  * com a segurança desligada, nem quando pedida na projeção.
@@ -27,6 +29,7 @@ class UserApiController {
 
     companion object {
         private val LOG = Log.getLogger("UserApiController")
+        private const val ENTITY = "user"
 
         fun configure(config: JavalinConfig) {
             val ctrl = UserApiController()
@@ -77,7 +80,14 @@ class UserApiController {
     /** Última barreira: o que vai ser escrito na resposta não leva senha. */
     private fun withoutPassword(users: List<User>): List<User> = users.onEach { it.password = null }
 
+    /** Quem não alcança os dados de todos só alcança o próprio usuário, peça o que pedir. */
+    private fun scoped(sc: SecurityContext?, criteria: UserCriteria): UserCriteria {
+        ApiSecurity.ownerScope(sc)?.let { criteria.userId.eq(it) }
+        return criteria
+    }
+
     private fun insert(ctx: Context) {
+        ApiSecurity.require(ENTITY, "write")
         val user = codec.readEntity(ctx.jsonBody())
         decryptPasswordIfPresent(user)
         val success = transactional(ctx) { repo().insert(user) }
@@ -86,37 +96,44 @@ class UserApiController {
 
     /** As chaves presentes no corpo dizem o que atualizar — inclusive para `null`. */
     private fun update(ctx: Context) {
+        val sc = ApiSecurity.require(ENTITY, "write")
         val data = codec.readEntityForUpdate(ctx.jsonBody())
+        val owner = ApiSecurity.ownerScope(sc)
+        if (owner != null && data.entity.id != null && data.entity.id != owner) {
+            throw AccessDeniedException("Cannot modify other user's data")
+        }
         decryptPasswordIfPresent(data.entity)
         val success = transactional(ctx) { repo().update(data.entity, null, data.projection) }
         ctx.jsonField("success", success)
     }
 
     private fun delete(ctx: Context) {
-        val criteria = readFetchRequest(ctx).criteria
+        val criteria = scoped(ApiSecurity.require(ENTITY, "delete"), readFetchRequest(ctx).criteria)
         ctx.jsonField("count", transactional(ctx) { repo().delete(criteria) })
     }
 
     private fun count(ctx: Context) {
-        val criteria = readFetchRequest(ctx).criteria
+        val criteria = scoped(ApiSecurity.require(ENTITY, "read"), readFetchRequest(ctx).criteria)
         ctx.jsonField("count", blocking { repo().count(criteria) })
     }
 
     private fun fetch(ctx: Context) {
         val request = readFetchRequest(ctx)
+        scoped(ApiSecurity.require(ENTITY, "read"), request.criteria)
         val items = blocking { repo().fetch(request.criteria, request.offset, request.limit) }
         ctx.jsonResult { codec.writeItems(it, withoutPassword(items)) }
     }
 
     private fun fetchPage(ctx: Context) {
         val request = readFetchRequest(ctx)
+        scoped(ApiSecurity.require(ENTITY, "read"), request.criteria)
         val page = blocking { repo().fetchPage(request.criteria, request.page, request.pageSize) }
         ctx.jsonResult { codec.writeItems(it, withoutPassword(page.items), page.totalItems) }
     }
 
     private fun fetchById(ctx: Context) {
         val id = ctx.pathParam("id").toLongOrNull() ?: throw InvalidRequestException("id de usuário inválido")
-        respondEntity(ctx, blocking { repo().fetchById(id) })
+        respondEntity(ctx, fetchOne(id, null))
     }
 
     private fun fetchByIdPost(ctx: Context) {
@@ -132,9 +149,14 @@ class UserApiController {
             }
         }
         input.endObject()
-        val userId = id ?: throw InvalidRequestException("fetch-by-id exige o id")
-        projection?.password = null
-        respondEntity(ctx, blocking { repo().fetchById(userId, projection) })
+        respondEntity(ctx, fetchOne(id ?: throw InvalidRequestException("fetch-by-id exige o id"), projection))
+    }
+
+    /** Buscar pela chave é a mesma consulta das outras: passa pela mesma permissão e pelo mesmo alcance. */
+    private fun fetchOne(id: Long, projection: User?): User? {
+        val criteria = scoped(ApiSecurity.require(ENTITY, "read"), UserCriteria().withUserId(id).withProjection(projection ?: repo().newProjection()))
+        criteria.projection?.password = null
+        return blocking { repo().fetch(criteria, 0, 1) }.firstOrNull()
     }
 
     private fun respondEntity(ctx: Context, user: User?) {

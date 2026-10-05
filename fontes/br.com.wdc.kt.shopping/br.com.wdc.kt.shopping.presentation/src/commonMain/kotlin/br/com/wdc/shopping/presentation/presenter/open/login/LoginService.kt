@@ -5,7 +5,6 @@ import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.PasswordUtil
-import br.com.wdc.shopping.domain.security.SecurityContextHolder
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 
@@ -36,16 +35,10 @@ class LoginService(private val app: ShoppingApplication?) {
         // 4. Autenticar
         val authResult = authService.login(userName, digest, challenge.nonce) ?: return null
 
-        // 5. Resolver token → SecurityContext (server-side; null em REST client)
-        val securityContext = authService.resolveToken(authResult.accessToken)
-        if (securityContext != null) {
-            SecurityContextHolder.set(securityContext)
-        }
+        // 5. Guardar na aplicação o contexto da sessão (no servidor; num cliente REST não há o que resolver)
+        app!!.setSecurityContext(authService.resolveToken(authResult.accessToken))
 
-        // 6. Armazenar SecurityContext na aplicação (para delegates de repositório)
-        app!!.setSecurityContext(securityContext)
-
-        // 7. Buscar nome de exibição do usuário
+        // 6. Buscar nome de exibição do usuário
         val users = app!!.getUserRepository().fetch(
             UserCriteria().withUserId(authResult.userId).withProjection(Subject.projection()),
             limit = 1,

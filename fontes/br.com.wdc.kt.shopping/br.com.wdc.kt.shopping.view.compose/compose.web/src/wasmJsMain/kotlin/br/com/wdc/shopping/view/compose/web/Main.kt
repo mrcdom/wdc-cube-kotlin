@@ -26,10 +26,6 @@ import br.com.wdc.shopping.domain.security.WasmCryptoProvider
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.persistence.client.WasmHttpTransport
-import br.com.wdc.shopping.presentation.repository.SecuredProductRepository
-import br.com.wdc.shopping.presentation.repository.SecuredPurchaseItemRepository
-import br.com.wdc.shopping.presentation.repository.SecuredPurchaseRepository
-import br.com.wdc.shopping.presentation.repository.SecuredUserRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.RootPresenter

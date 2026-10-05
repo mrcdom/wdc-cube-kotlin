@@ -11,14 +11,6 @@ import br.com.wdc.framework.cube.CubeApplication
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.PresenterBase
-import br.com.wdc.shopping.domain.product.ProductRepository
-import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
-import br.com.wdc.shopping.domain.purchase.PurchaseRepository
-import br.com.wdc.shopping.domain.user.UserRepository
-import br.com.wdc.shopping.presentation.repository.SecuredProductRepository
-import br.com.wdc.shopping.presentation.repository.SecuredPurchaseItemRepository
-import br.com.wdc.shopping.presentation.repository.SecuredPurchaseRepository
-import br.com.wdc.shopping.presentation.repository.SecuredUserRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
@@ -118,18 +110,6 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
             }
         }
     }
-
-    override fun createUserDelegate(delegate: UserRepository) =
-        SecuredUserRepository(delegate) { getSecurityContext() }
-
-    override fun createProductDelegate(delegate: ProductRepository) =
-        SecuredProductRepository(delegate) { getSecurityContext() }
-
-    override fun createPurchaseDelegate(delegate: PurchaseRepository) =
-        SecuredPurchaseRepository(delegate) { getSecurityContext() }
-
-    override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
-        SecuredPurchaseItemRepository(delegate) { getSecurityContext() }
 
     override fun createSessionStorage(): SessionStorage = JvmSessionStorage()
 

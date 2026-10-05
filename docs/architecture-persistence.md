@@ -34,8 +34,7 @@ graph TB
 
     subgraph "Servidor — JVM"
         IMPL["XxxRepositoryImpl (jOOQ)"]
-        SEC["SecuredXxxRepository"]
-        CTRL["XxxApiController"]
+        CTRL["XxxApiController<br/>(controle de acesso)"]
         TXS["TransactionServiceImpl"]
         DB[("H2 ou PostgreSQL")]
     end
@@ -48,8 +47,7 @@ graph TB
     REPO --> IMPL
     REPO --> HTTP
     IMPL --> DB
-    SEC --> IMPL
-    CTRL --> SEC
+    CTRL --> IMPL
     HTTP -- "POST /api/repo/…" --> CTRL
     CODEC -. "mesmo codec" .-> CTRL
     CODEC -. "mesmo codec" .-> HTTP
@@ -74,8 +72,8 @@ Três ideias sustentam o desenho:
 | `:framework-persistence` | JVM | `TransactionServiceImpl` (JDBC), `TransactionScope`, coordenador de transações remotas |
 | `:framework-jooq` | JVM | `JsonQueryBuilder`, dialetos H2 e PostgreSQL, `CriterionTranslator` |
 | `:shopping-domain` | KMP | Entidades, `XxxCriteria`, `XxxCodec`, `XxxRepository`, `ShoppingTransactions` |
-| `:shopping-persistence` | JVM | `XxxRepositoryImpl`, classes jOOQ geradas, decoradores de segurança, bootstrap |
-| `:persistence-rest` | JVM | Controladores Javalin, `/api/tx`, `/api/auth`, `/openapi.json` |
+| `:shopping-persistence` | JVM | `XxxRepositoryImpl`, classes jOOQ geradas, autenticação, bootstrap |
+| `:persistence-rest` | JVM | Controladores Javalin com o controle de acesso, `/api/tx`, `/api/auth`, `/openapi.json` |
 | `:shopping-persistence-client` | KMP | `HttpRepository`, transportes por plataforma, `RestTransactionService` |
 | `:shopping-scripts` | JVM | `DBCreate`, `DBReset`, migrações, gerador das classes jOOQ |
 
@@ -316,16 +314,21 @@ O `HttpTransport` tem uma implementação por plataforma — `OkHttpTransport` (
 
 ## Segurança
 
-Com `security.jwt.secret` configurado, o backend exige autenticação em `/api/repo` e `/api/tx` e decora os repositórios com `SecuredXxxRepository`. Cada decorador confere:
+**O controle de acesso fica na fronteira HTTP, e só nela.** Os repositórios não conferem permissão nem dono dos dados. Um repositório é chamado de dois lugares:
+
+- **De um cliente** (Compose, nativo), pela API REST. O usuário controla o cliente e pode pedir o que quiser; por isso cada controlador confere o pedido antes de executá-lo.
+- **De dentro do servidor**, pelos presenters da view remota. Ali o usuário não tem como chamar um repositório: só o que a apresentação pedir é executado. A garantia é a apresentação estar correta — pedir sempre os dados de quem está logado.
+
+Com `security.jwt.secret` configurado, o backend exige autenticação em `/api/repo` e `/api/tx`, e cada controlador confere (`ApiSecurity`):
 
 - a **permissão** (`<entidade>:read`, `:write`, `:delete`), dada pelos papéis do usuário;
-- o **alcance**: quem não tem `data:all` só lê e escreve o que é seu — o próprio usuário, as próprias compras e os itens delas. Uma compra inserida por um cliente é sempre dele.
+- o **alcance**: quem não tem `data:all` só lê e escreve o que é seu — o próprio usuário, as próprias compras e os itens delas. Uma compra inserida por um cliente é sempre dele. Buscar pela chave passa pela mesma restrição: o que é de outro "não existe" (404).
 
 **A senha nunca sai pela API.** Ela é aceita na escrita de usuário e retirada de toda projeção e de toda resposta, inclusive quando o usuário vem dentro de uma compra — com a segurança ligada ou não.
 
 Sem o segredo, a API fica aberta e `/api/auth` não existe: é o modo de desenvolvimento e o dos testes que não tratam de segurança.
 
-Na view remota (React), os presenters rodam no servidor e usam os mesmos repositórios decorados, com o contexto de segurança da sessão.
+**Na apresentação**, o cuidado é com o que chega pela navegação: um parâmetro de rota é escolhido pelo usuário. Quando ele identifica um dado — o `purchaseId` do recibo, por exemplo —, o serviço busca restringindo a quem está logado (`ReceiptService.loadReceipt(purchaseId, userId)`), e nunca só pela chave.
 
 ---
 
@@ -342,7 +345,7 @@ A ordem de subida, em `BusinessContext`:
 3. `DBCreate` cria o que falta e roda as migrações.
 4. `ShoppingRepositoryBootstrap.initialize(…)` registra o `DSLContext`, o `TransactionService` e os repositórios.
 5. O coordenador de transações remotas é registrado.
-6. `ShoppingRepositoryBootstrap.initializeSecurity(…)`, se houver segredo JWT.
+6. `ShoppingRepositoryBootstrap.initializeSecurity(…)`, se houver segredo JWT: registra o serviço de autenticação.
 
 ---
 
@@ -367,10 +370,10 @@ cd fontes
 
 1. **Domínio** (`:shopping-domain`, pacote `domain.<entidade>`): a entidade (`KeyedEntity`, campos anuláveis), o `XxxCriteria` com os campos de filtro e o `OrderBy`, o `XxxCodec` e a interface `XxxRepository` com `newProjection()`, `fetchById` e o holder `BEAN`.
 2. **Esquema** (`:shopping-scripts`): a tabela, a sequência e os índices das ordenações em `DBCreate`; a migração para os bancos existentes; a carga em `DBReset`, se couber. Regenere as classes jOOQ.
-3. **Servidor** (`:shopping-persistence`): o `XxxRepositoryImpl` com o mapeamento `QUERY`, as condições e a ordenação; o registro em `ShoppingRepositoryBootstrap`; o `SecuredXxxRepository` e as permissões em `Role`.
-4. **REST** (`:persistence-rest`): o `XxxApiController` e o registro em `RepositoryApiRoutes`; a entidade em `RepositoryApiDocs`.
+3. **Servidor** (`:shopping-persistence`): o `XxxRepositoryImpl` com o mapeamento `QUERY`, as condições e a ordenação; o registro em `ShoppingRepositoryBootstrap`.
+4. **REST** (`:persistence-rest`): o `XxxApiController`, **com a conferência de permissão e de alcance** (`ApiSecurity`), e o registro em `RepositoryApiRoutes`; as permissões em `Role`; a entidade em `RepositoryApiDocs`.
 5. **Cliente** (`:shopping-persistence-client`): o `HttpXxxRepository` e o registro em `RestRepositoryBootstrap`.
-6. **Apresentação**: o decorador que aplica o contexto de segurança (`presentation.repository`) e o acesso em `ShoppingApplication`.
+6. **Apresentação**: o acesso em `ShoppingApplication`. Nos serviços, peça sempre os dados de quem está logado.
 7. **Testes**: um `AbstractXxxRepositoryTest` com as subclasses local e REST, e um teste REST com a segurança ligada.
 
 Os quatro repositórios existentes servem de modelo; `Product` é o mais simples e `Purchase`/`PurchaseItem` mostram associações, coleção e relação mútua.

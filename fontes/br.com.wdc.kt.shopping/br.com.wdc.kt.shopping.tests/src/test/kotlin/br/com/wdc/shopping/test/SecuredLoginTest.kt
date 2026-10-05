@@ -1,8 +1,6 @@
 package br.com.wdc.shopping.test
 
-import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
-import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.user.UserCriteria
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginService
 import br.com.wdc.shopping.scripts.sgbd.DBReset
@@ -17,7 +15,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * O login pela camada de apresentação **com a segurança ligada**, como o servidor da view remota o executa:
- * desafio, HMAC, JWT e a busca do nome de exibição pelo repositório com controle de acesso.
+ * desafio, HMAC, JWT e a busca do nome de exibição.
  */
 class SecuredLoginTest {
 
@@ -60,13 +58,22 @@ class SecuredLoginTest {
     }
 
     @Test
-    fun afterLogin_aCustomerReachesOnlyTheirOwnUser_andNeverAPassword() = runBlocking {
+    fun afterLogin_theApplicationHoldsTheContextOfTheSession() {
         login("fulano")
-        val projection = User().apply { id = ProjectionValues.i64; userName = ProjectionValues.str; password = ProjectionValues.str }
-        val users = app.getUserRepository().fetch(UserCriteria().withProjection(projection))
-        assertEquals(listOf<String?>("fulano"), users.map { it.userName })
-        assertNull(users.single().password)
-        assertNull(app.getUserRepository().fetchById(DBReset.ADMIN_ID))
+        val context = app.getSecurityContext()!!
+        assertEquals(DBReset.FULANO_ID, context.userId)
+        assertFalse(context.hasDataAll())
+        assertTrue(context.hasPermission("purchase", "write"))
+        assertFalse(context.hasPermission("product", "write"))
+    }
+
+    @Test
+    fun repositoriesInsideTheServer_areNotRestricted_theApiIs() = runBlocking {
+        // Dentro do servidor, quem chama o repositório é a apresentação, e é ela que pede só o que cabe ao
+        // usuário. O controle de acesso fica na fronteira HTTP (ver os testes SecuredRest*).
+        login("fulano")
+        assertEquals(3, app.getUserRepository().count(UserCriteria()))
+        assertNotNull(app.getUserRepository().fetchById(DBReset.ADMIN_ID))
     }
 
     @Test
