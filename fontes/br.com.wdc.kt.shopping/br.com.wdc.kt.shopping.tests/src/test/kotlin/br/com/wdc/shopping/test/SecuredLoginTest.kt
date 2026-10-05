@@ -1,6 +1,9 @@
 package br.com.wdc.shopping.test
 
+import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
+import br.com.wdc.shopping.domain.user.User
+import br.com.wdc.shopping.domain.user.UserCriteria
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginService
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.mock.ShoppingApplicationMock
@@ -9,7 +12,6 @@ import br.com.wdc.shopping.test.util.TestEnvironmentExtension
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
@@ -45,11 +47,6 @@ class SecuredLoginTest {
     }
 
     @Test
-    @Disabled(
-        "defeito conhecido: depois de autenticar, o LoginService busca o nome do usuário pelo repositório com " +
-        "controle de acesso, e CUSTOMER/MANAGER não têm user:read — falha com AccessDeniedException. " +
-        "Com a segurança ligada, só ADMIN completa o login pela apresentação"
-    )
     fun customer_logsIn() {
         val subject = login("fulano")
         assertEquals(DBReset.FULANO_ID, subject!!.id)
@@ -57,13 +54,19 @@ class SecuredLoginTest {
     }
 
     @Test
-    @Disabled(
-        "defeito conhecido: o resumo da senha de beotrano tem o bit de sinal — a carga grava a variante com sinal " +
-        "(-17msd…) e o cliente calcula a sem sinal (dxz5j…), então o HMAC nunca confere; ver PasswordUtil × DBReset"
-    )
     fun customerWhoseDigestHasTheSignBit_logsIn() {
         val subject = login("beotrano")
         assertEquals(DBReset.BEOTRANO_ID, subject!!.id)
+    }
+
+    @Test
+    fun afterLogin_aCustomerReachesOnlyTheirOwnUser_andNeverAPassword() = runBlocking {
+        login("fulano")
+        val projection = User().apply { id = ProjectionValues.i64; userName = ProjectionValues.str; password = ProjectionValues.str }
+        val users = app.getUserRepository().fetch(UserCriteria().withProjection(projection))
+        assertEquals(listOf<String?>("fulano"), users.map { it.userName })
+        assertNull(users.single().password)
+        assertNull(app.getUserRepository().fetchById(DBReset.ADMIN_ID))
     }
 
     @Test

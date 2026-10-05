@@ -128,8 +128,7 @@ object DBReset {
         row.id(id)
         row.userName(userName)
         if (!password.isNullOrBlank()) {
-            val pwd = BigInteger(md5().digest(password.toByteArray(StandardCharsets.UTF_8))).toString(36)
-            row.password(pwd)
+            row.password(passwordDigest(password))
         }
         row.name(name)
         row.roles(roles)
@@ -185,5 +184,11 @@ object DBReset {
         InsertRowPurchaseItemCmd().execute(c, row)
     }
 
-    private fun md5(): MessageDigest = MessageDigest.getInstance("MD5")
+    /**
+     * O resumo da senha como a aplicação o calcula (`PasswordUtil.hashPassword`): MD5 lido como inteiro **sem
+     * sinal**, em base 36. Lido com sinal, o resumo sai diferente sempre que o primeiro bit do MD5 é 1 — e o
+     * usuário não consegue autenticar.
+     */
+    fun passwordDigest(password: String): String =
+        BigInteger(1, MessageDigest.getInstance("MD5").digest(password.toByteArray(StandardCharsets.UTF_8))).toString(36)
 }

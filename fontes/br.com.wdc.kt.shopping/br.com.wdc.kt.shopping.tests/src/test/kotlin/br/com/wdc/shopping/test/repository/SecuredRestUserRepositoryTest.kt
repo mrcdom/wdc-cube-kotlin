@@ -11,7 +11,6 @@ import br.com.wdc.shopping.test.util.TestEnvironmentExtension
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
@@ -68,14 +67,21 @@ class SecuredRestUserRepositoryTest {
     }
 
     @Test
-    fun customer_cannotReadNorWriteUsers() {
+    fun customer_readsOnlyTheirOwnUser_andCannotWrite() = runBlocking {
         env.loginAs("fulano")
 
-        assertHttp(403) { repo().fetch(UserCriteria()) }
-        assertHttp(403) { repo().count(UserCriteria()) }
-        assertHttp(403) { repo().fetchById(DBReset.ADMIN_ID) }
-        assertHttp(403) { repo().update(User().apply { id = DBReset.ADMIN_ID; roles = "ADMIN" }, null, User().apply { roles = ProjectionValues.str }) }
+        // o escopo restringe ao próprio usuário, peça o que pedir
+        assertEquals(listOf<String?>("fulano"), repo().fetch(UserCriteria().withProjection(withPassword())).map { it.userName })
+        assertEquals(1, repo().count(UserCriteria()))
+        assertEquals(emptyList<User>(), repo().fetch(UserCriteria().withUserName("admin")))
+        assertNull(repo().fetchById(DBReset.ADMIN_ID))
+        assertEquals("Fulano de Tal", repo().fetchById(DBReset.FULANO_ID)!!.name)
+        assertNull(repo().fetchById(DBReset.FULANO_ID, withPassword())!!.password)
+
+        assertHttp(403) { repo().insert(User().apply { userName = "x"; password = "p"; name = "X" }) }
+        assertHttp(403) { repo().update(User().apply { id = DBReset.FULANO_ID; roles = "ADMIN" }, null, User().apply { roles = ProjectionValues.str }) }
         assertHttp(403) { repo().delete(UserCriteria().withUserId(DBReset.BEOTRANO_ID)) }
+        assertEquals("CUSTOMER", repo().fetchById(DBReset.FULANO_ID)!!.roles)
     }
 
     @Test
@@ -95,19 +101,23 @@ class SecuredRestUserRepositoryTest {
     }
 
     @Test
-    fun restLogin_worksForAdminAndCustomer() {
-        for (user in listOf("admin", "fulano")) {
+    fun restLogin_worksForEverySeededUser() {
+        for (user in listOf("admin", "fulano", "beotrano")) {
             env.loginAs(user)
             env.logout()
         }
     }
 
     @Test
-    @Disabled(
-        "defeito conhecido: o resumo da senha de beotrano tem o bit de sinal — a carga grava a variante com sinal " +
-        "(-17msd…) e o cliente calcula a sem sinal (dxz5j…), então o HMAC nunca confere; ver PasswordUtil × DBReset"
-    )
-    fun restLogin_worksForTheUserWhoseDigestHasTheSignBit() {
-        env.loginAs("beotrano")
+    fun rawResponses_neverCarryAPasswordKey() {
+        env.loginAs("admin")
+        val bodies = listOf(
+            env.transport.postJson("/api/repo/user/fetch", """{"projection":{"id":1,"userName":"~","password":"~"}}"""),
+            env.transport.postJson("/api/repo/user/fetch-page", """{"page":0,"pageSize":10,"projection":{"password":"~"}}"""),
+            env.transport.postJson("/api/repo/user/fetch-by-id", """{"id":${DBReset.ADMIN_ID},"projection":{"password":"~"}}"""),
+        )
+        for (body in bodies) {
+            assertFalse("password" in body, body)
+        }
     }
 }

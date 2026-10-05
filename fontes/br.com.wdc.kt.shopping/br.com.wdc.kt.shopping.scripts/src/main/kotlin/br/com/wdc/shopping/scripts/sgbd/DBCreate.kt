@@ -179,6 +179,7 @@ class DBCreate {
             .run(Migration_0002_PurchaseBuyDateToTimestamp(conn))
             .run(Migration_0003_CreateSecurityTables(conn))
             .run(Migration_0004_ImageVarbinaryAndOrderingIndexes(conn))
+            .run(Migration_0005_UnsignedPasswordDigest(conn))
 
         return this
     }

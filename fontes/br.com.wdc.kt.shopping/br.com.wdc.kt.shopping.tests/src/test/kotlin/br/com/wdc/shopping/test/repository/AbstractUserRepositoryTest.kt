@@ -77,14 +77,6 @@ abstract class AbstractUserRepositoryTest {
     }
 
     @Test
-    fun passwordDigest_comesOnlyWhenProjected() = runBlocking {
-        val projection = User().apply { id = ProjectionValues.i64; password = ProjectionValues.str }
-        val stored = repo().fetch(UserCriteria().withUserName("admin").withProjection(projection)).single()
-        // é o resumo, não a senha; a coluna é CHAR(32), então vem completado com espaços
-        assertEquals("1ymiigxvce4vzea4zp5bsfbgj", stored.password!!.trim())
-    }
-
-    @Test
     fun fetchWithOffsetAndLimit() = runBlocking {
         assertEquals(listOf<Long?>(fulano), ids(byIdAsc(), offset = 1, limit = 1))
         assertEquals(listOf<Long?>(admin, fulano), ids(byIdAsc(), limit = 2))
@@ -186,23 +178,19 @@ abstract class AbstractUserRepositoryTest {
 
     @Test
     fun update_existingUser() = runBlocking {
-        val pv = ProjectionValues
-        val full = User().apply { id = pv.i64; userName = pv.str; password = pv.str; name = pv.str; roles = pv.str }
-        val original = repo().fetchById(admin, full)!!
+        val original = repo().fetchById(admin)!!
 
         val updated = User().apply {
             id = original.id
             userName = original.userName
-            password = original.password
             name = "Nome Alterado"
             roles = original.roles
         }
-        assertTrue(repo().update(updated, original))
+        assertTrue(repo().update(updated, original, repo().newProjection()))
 
-        val fetched = repo().fetchById(admin, full)!!
+        val fetched = repo().fetchById(admin)!!
         assertEquals("Nome Alterado", fetched.name)
         assertEquals("admin", fetched.userName)
-        assertEquals(original.password, fetched.password)
     }
 
     @Test
@@ -214,16 +202,6 @@ abstract class AbstractUserRepositoryTest {
         assertEquals("Só o nome", fetched.name)
         assertEquals("fulano", fetched.userName)
         assertNull(fetched.roles)
-    }
-
-    @Test
-    fun update_defaultProjection_doesNotTouchThePassword() = runBlocking {
-        val projection = User().apply { id = ProjectionValues.i64; password = ProjectionValues.str }
-        val before = repo().fetchById(fulano, projection)!!.password
-
-        assertTrue(repo().update(User().apply { id = fulano; userName = "fulano"; name = "Outro Nome"; roles = "CUSTOMER"; password = "nao-deve-gravar" }))
-
-        assertEquals(before, repo().fetchById(fulano, projection)!!.password)
     }
 
     @Test

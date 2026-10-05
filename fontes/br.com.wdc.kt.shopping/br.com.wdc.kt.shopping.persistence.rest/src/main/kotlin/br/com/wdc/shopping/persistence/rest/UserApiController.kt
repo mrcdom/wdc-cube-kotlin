@@ -17,8 +17,11 @@ import javax.crypto.Cipher
 
 /**
  * Endpoints REST de usuário. Lê e escreve com o [UserCodec] — o mesmo que o cliente usa —, sem reflexão.
- * O controle de acesso, o escopo por usuário e a retirada da senha são do repositório registrado (decorado
- * quando a segurança está ligada).
+ * O controle de acesso e o escopo por usuário são do repositório registrado (decorado quando a segurança está
+ * ligada).
+ *
+ * **A senha é só de escrita nesta API**: entra no insert e no update, e nunca é devolvida — nem o resumo, nem
+ * com a segurança desligada, nem quando pedida na projeção.
  */
 class UserApiController {
 
@@ -61,14 +64,18 @@ class UserApiController {
 
     private val codec = UserCodec()
 
-    /** Lê o pedido de consulta; sem projeção, vale a padrão do repositório (tudo menos a senha). */
+    /** Lê o pedido de consulta; sem projeção, vale a padrão do repositório. A senha nunca é projetada. */
     private fun readFetchRequest(ctx: Context): FetchRequest<UserCriteria> {
         val request = codec.readFetchRequest(ctx.jsonBody(), UserCriteria()) { c, prj -> c.withProjection(prj) }
         if (request.criteria.projection == null) {
             request.criteria.withProjection(repo().newProjection())
         }
+        request.criteria.projection?.password = null
         return request
     }
+
+    /** Última barreira: o que vai ser escrito na resposta não leva senha. */
+    private fun withoutPassword(users: List<User>): List<User> = users.onEach { it.password = null }
 
     private fun insert(ctx: Context) {
         val user = codec.readEntity(ctx.jsonBody())
@@ -98,13 +105,13 @@ class UserApiController {
     private fun fetch(ctx: Context) {
         val request = readFetchRequest(ctx)
         val items = blocking { repo().fetch(request.criteria, request.offset, request.limit) }
-        ctx.jsonResult { codec.writeItems(it, items) }
+        ctx.jsonResult { codec.writeItems(it, withoutPassword(items)) }
     }
 
     private fun fetchPage(ctx: Context) {
         val request = readFetchRequest(ctx)
         val page = blocking { repo().fetchPage(request.criteria, request.page, request.pageSize) }
-        ctx.jsonResult { codec.writeItems(it, page.items, page.totalItems) }
+        ctx.jsonResult { codec.writeItems(it, withoutPassword(page.items), page.totalItems) }
     }
 
     private fun fetchById(ctx: Context) {
@@ -126,6 +133,7 @@ class UserApiController {
         }
         input.endObject()
         val userId = id ?: throw InvalidRequestException("fetch-by-id exige o id")
+        projection?.password = null
         respondEntity(ctx, blocking { repo().fetchById(userId, projection) })
     }
 
@@ -134,6 +142,7 @@ class UserApiController {
             ctx.status(404).json(mapOf("error" to "Not found"))
             return
         }
+        user.password = null
         ctx.jsonResult { codec.writeEntity(it, user) }
     }
 }

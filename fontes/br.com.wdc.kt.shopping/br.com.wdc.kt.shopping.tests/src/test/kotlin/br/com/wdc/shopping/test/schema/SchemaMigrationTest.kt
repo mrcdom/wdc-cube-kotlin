@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.test.schema
 
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
+import br.com.wdc.shopping.scripts.sgbd.DBReset
 import java.sql.Connection
 import java.sql.DriverManager
 import java.util.concurrent.atomic.AtomicInteger
@@ -125,6 +126,31 @@ class SchemaMigrationTest {
                     rs.next(); assertNull(rs.getBytes(2))
                 }
             }
+        }
+    }
+
+    @Test
+    fun migration_rewritesSignedPasswordDigests_asTheUnsignedOnesTheApplicationComputes() {
+        newDatabase().use { legacy ->
+            legacy.createLegacySchema()
+            legacy.prepareStatement("INSERT INTO EN_USER (ID, USERNAME, PASSWORD, NAME, ROLES) VALUES (?, ?, ?, ?, 'CUSTOMER')").use { ps ->
+                // como a carga antiga gravava: MD5 lido com sinal, em base 36
+                listOf(
+                    Triple(0L, "admin", "1ymiigxvce4vzea4zp5bsfbgj"),      // bit de sinal 0: já coincide
+                    Triple(2L, "beotrano", "-17msdx5ah76k0tdyvaoieqemg"),   // bit de sinal 1: negativo
+                    Triple(7L, "externo", "senha-gravada-sem-resumo"),      // gravada pela API, sem resumo: fica como está
+                ).forEach { (id, user, digest) ->
+                    ps.setLong(1, id); ps.setString(2, user); ps.setString(3, digest); ps.setString(4, user); ps.executeUpdate()
+                }
+            }
+
+            DBCreate().withConnection(legacy).run()
+
+            assertEquals(
+                listOf("admin | 1ymiigxvce4vzea4zp5bsfbgj", "beotrano | dxz5j4uooih4r59rlath82ago", "externo | senha-gravada-sem-resumo"),
+                legacy.rows("SELECT USERNAME, TRIM(PASSWORD) FROM EN_USER ORDER BY ID"),
+            )
+            assertEquals(DBReset.passwordDigest("beotrano"), "dxz5j4uooih4r59rlath82ago")
         }
     }
 
