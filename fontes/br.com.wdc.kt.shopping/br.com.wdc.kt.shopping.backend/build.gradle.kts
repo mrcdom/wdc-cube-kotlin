@@ -20,6 +20,12 @@ dependencies {
     api(libs.javalin)
     api(libs.gson)
     implementation(libs.h2)
+    implementation(libs.postgresql)
+    implementation(libs.agroal.pool)
     implementation(libs.logback.classic)
     implementation(libs.slf4j.api)
+
+    testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.embedded.postgres)
 }

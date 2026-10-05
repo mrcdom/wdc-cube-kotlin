@@ -13,8 +13,7 @@ import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
 import br.com.wdc.shopping.persistence.rest.RemoteTransactions
 import br.com.wdc.shopping.persistence.concurrent.ScheduledExecutorAdapter
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
-import org.h2.jdbcx.JdbcDataSource
-import java.nio.file.Path
+import br.com.wdc.shopping.view.react.supports.SqlDataSourceSupport
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 
@@ -22,7 +21,6 @@ class BusinessContext {
 
     companion object {
         private val LOG = Log.getLogger("BusinessContext")
-        private const val DEFAULT_DB_NAME = "wedocode-shopping"
     }
 
     private val cleanUp = Defer()
@@ -43,10 +41,8 @@ class BusinessContext {
             val scheduledExecutor = createScheduledExecutor()
             ScheduledExecutor.BEAN.set(ScheduledExecutorAdapter(scheduledExecutor))
 
-            val dataSource = JdbcDataSource()
-            dataSource.setURL(resolveJdbcUrl(config, ShoppingConfig.dataDir!!))
-            dataSource.user = config.get("database.username", "sa")
-            dataSource.password = config.get("database.password", "sa")
+            val dataSourceSupport = SqlDataSourceSupport(config, ShoppingConfig.dataDir)
+            val dataSource = dataSourceSupport.init(cleanUp)
 
             dataSource.connection.use { connection ->
                 val command = DBCreate().withConnection(connection)
@@ -56,7 +52,7 @@ class BusinessContext {
                 command.run()
             }
 
-            ShoppingRepositoryBootstrap.initialize(dataSource, cleanUp = cleanUp)
+            ShoppingRepositoryBootstrap.initialize(dataSource, dataSourceSupport.logSql, dataSourceSupport.dialect, cleanUp)
 
             // as transações que os clientes REST abrem e fecham por conta própria
             RemoteTransactions.COORDINATOR.set(
@@ -69,18 +65,10 @@ class BusinessContext {
                 ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, ShoppingConfig.refreshTokenTtlDays, cleanUp)
             }
 
-            LOG.info("Shopping backend context initialized with database {}", dataSource.getURL())
+            LOG.info("Shopping backend context initialized with database {}", dataSourceSupport.jdbcUrl)
         } catch (e: Exception) {
             throw IllegalStateException("Failed to initialize shopping backend context", e)
         }
-    }
-
-    private fun resolveJdbcUrl(config: AppConfig, dataDir: Path): String {
-        val configuredUrl = config.get("database.url")
-        if (!configuredUrl.isNullOrBlank()) {
-            return configuredUrl
-        }
-        return "jdbc:h2:file:${dataDir.resolve(DEFAULT_DB_NAME).toAbsolutePath()};DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
     }
 
     private fun createScheduledExecutor(): ScheduledExecutorService {

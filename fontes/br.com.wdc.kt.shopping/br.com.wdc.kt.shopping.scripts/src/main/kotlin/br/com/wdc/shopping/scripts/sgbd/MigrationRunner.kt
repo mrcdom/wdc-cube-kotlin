@@ -5,8 +5,14 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.sql.Timestamp
 import java.time.Instant
+import org.jooq.SQLDialect
 
 class MigrationRunner(private val connection: Connection) {
+
+    private val nextIdSql =
+        if (DBCreate.detectDialect(connection) == SQLDialect.POSTGRES) "SELECT nextval('sq_migration_log')"
+        else "SELECT NEXT VALUE FOR SQ_MIGRATION_LOG"
+
 
     @Throws(SQLException::class)
     fun run(migrationScript: Any): MigrationRunner {
@@ -55,7 +61,7 @@ class MigrationRunner(private val connection: Connection) {
 
     private fun recordStep(scriptName: String, stepName: String) {
         val nextId = connection.createStatement().use { stmt ->
-            stmt.executeQuery("SELECT NEXT VALUE FOR SQ_MIGRATION_LOG").use { rs ->
+            stmt.executeQuery(nextIdSql).use { rs ->
                 if (!rs.next()) throw SQLException("No value returned from sequence")
                 rs.getLong(1)
             }

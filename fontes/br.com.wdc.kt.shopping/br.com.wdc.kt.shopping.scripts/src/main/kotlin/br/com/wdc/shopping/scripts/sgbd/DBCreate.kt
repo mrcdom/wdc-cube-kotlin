@@ -189,7 +189,9 @@ class DBCreate {
 
     private fun loadExistingTables(conn: Connection): Set<String> {
         val tables = HashSet<String>()
-        conn.metaData.getTables(null, null, "%", arrayOf("TABLE")).use { rs ->
+        // No PostgreSQL só contam as tabelas do esquema corrente: a mesma base pode ter outro esquema com as mesmas tabelas.
+        val schema = if (detectDialect(conn) == SQLDialect.POSTGRES) conn.schema else null
+        conn.metaData.getTables(null, schema, "%", arrayOf("TABLE")).use { rs ->
             while (rs.next()) {
                 tables.add(rs.getString("TABLE_NAME").uppercase())
             }

@@ -14,7 +14,6 @@ import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
-import org.h2.jdbcx.JdbcConnectionPool
 import java.nio.file.Paths
 
 class TestEnvironment(
@@ -23,7 +22,7 @@ class TestEnvironment(
     private val jwtSecret: String? = null,
 ) : ShoppingTestEnvironment {
 
-    private lateinit var datasource: JdbcConnectionPool
+    private lateinit var database: TestDatabase
     private lateinit var executor: ScheduledExecutorForTest
     private val cleanUp = Defer()
 
@@ -38,9 +37,8 @@ class TestEnvironment(
         JsonInputFactory.installCommon()
         JsonOutputFactory.installCommon()
 
-        val ds = JdbcConnectionPool.create("jdbc:h2:mem:$dbName;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE", "sa", "sa")
-        ds.maxConnections = 10
-        datasource = ds
+        database = TestDatabase.open(dbName)
+        val ds = database.dataSource
 
         val basePath = Paths.get("work")
         ShoppingConfig.Internals.setBaseDir(basePath)
@@ -51,7 +49,7 @@ class TestEnvironment(
         ScheduledExecutor.BEAN.set(executor)
         // o login sem serviço de autenticação confere o resumo da senha na apresentação
         CryptoProvider.BEAN.set(JceCryptoProvider())
-        ShoppingRepositoryBootstrap.initialize(ds, cleanUp = cleanUp)
+        ShoppingRepositoryBootstrap.initialize(ds, dialect = database.dialect, cleanUp = cleanUp)
         if (jwtSecret != null) {
             ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, cleanUp = cleanUp)
         }
@@ -64,12 +62,12 @@ class TestEnvironment(
 
     override fun stop() {
         cleanUp.run()
-        datasource.dispose()
+        database.close()
         executor.shutdown()
     }
 
     override fun resetDatabase() {
-        datasource.connection.use { connection ->
+        database.dataSource.connection.use { connection ->
             DBCreate().withConnection(connection).withReset().run()
         }
     }

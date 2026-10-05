@@ -31,7 +31,6 @@ import br.com.wdc.shopping.scripts.sgbd.DBCreate
 import com.google.gson.Gson
 import io.javalin.Javalin
 import io.javalin.json.JsonMapper
-import org.h2.jdbcx.JdbcConnectionPool
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.lang.reflect.Type
@@ -52,7 +51,7 @@ class RestTestEnvironment(
     private val remoteTransactionOptions: RemoteTransactionOptions = RemoteTransactionOptions.defaults(),
 ) : ShoppingTestEnvironment {
 
-    private lateinit var datasource: JdbcConnectionPool
+    private lateinit var database: TestDatabase
     private lateinit var executor: ScheduledExecutorForTest
     private val cleanUp = Defer()
     private lateinit var javalin: Javalin
@@ -92,9 +91,8 @@ class RestTestEnvironment(
 
         executor = ScheduledExecutorForTestAsync()
 
-        val ds = JdbcConnectionPool.create("jdbc:h2:mem:$dbName;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE", "sa", "sa")
-        ds.maxConnections = 10
-        datasource = ds
+        database = TestDatabase.open(dbName)
+        val ds = database.dataSource
 
         val basePath = Paths.get("work")
         ShoppingConfig.Internals.setBaseDir(basePath)
@@ -103,7 +101,7 @@ class RestTestEnvironment(
         ShoppingConfig.Internals.setLogDir(basePath.resolve("log"))
         ShoppingConfig.Internals.setTempDir(basePath.resolve("temp"))
         ScheduledExecutor.BEAN.set(executor)
-        ShoppingRepositoryBootstrap.initialize(ds, cleanUp = cleanUp)
+        ShoppingRepositoryBootstrap.initialize(ds, dialect = database.dialect, cleanUp = cleanUp)
         RemoteTransactions.COORDINATOR.set(RemoteTransactionCoordinatorImpl({ ds }, remoteTransactionOptions))
         cleanUp.push { RemoteTransactions.COORDINATOR.set(null) }
         if (jwtSecret != null) {
@@ -152,12 +150,12 @@ class RestTestEnvironment(
     override fun stop() {
         javalin.stop()
         cleanUp.run()
-        datasource.dispose()
+        database.close()
         executor.shutdown()
     }
 
     override fun resetDatabase() {
-        datasource.connection.use { connection ->
+        database.dataSource.connection.use { connection ->
             DBCreate().withConnection(connection).withReset().run()
         }
     }
