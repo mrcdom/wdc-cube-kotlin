@@ -21,8 +21,21 @@ abstract class GenericViewImpl<P : PresenterBase> protected constructor(
         this.app.markDirty(this)
     }
 
-    fun commitComputedState() {
-        presenter.commitComputedState()
+    // True while the presenter computes derived state for the paint about to happen;
+    // update() is ignored meanwhile, since this view is already being painted.
+    @Volatile
+    private var updateMuted = false
+
+    /**
+     * Runs the presenter's commitComputedState() right before this view is painted.
+     */
+    internal fun prepareForPaint() {
+        updateMuted = true
+        try {
+            presenter.commitComputedState()
+        } finally {
+            updateMuted = false
+        }
     }
 
     override val instanceId: String get() = _instanceId
@@ -32,6 +45,7 @@ abstract class GenericViewImpl<P : PresenterBase> protected constructor(
     }
 
     override fun update() {
+        if (updateMuted) return
         app.markDirty(this)
     }
 

@@ -9,6 +9,14 @@ package br.com.wdc.framework.cube
  */
 interface PresenterBase {
     val app: CubeApplication
+
+    /**
+     * Computes the calculated/derived fields the view reads from the presenter state.
+     *
+     * Called by the view layer exactly once per paint cycle, right before the view
+     * state is read for rendering. The view ignores its own `update()` during this call.
+     */
     fun commitComputedState() {}
+
     fun release()
 }

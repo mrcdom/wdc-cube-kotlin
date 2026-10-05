@@ -10,7 +10,8 @@ import kotlinx.coroutines.launch
  *
  * When a presenter calls view.update(), the view is marked dirty here.
  * After safeCall completes, flush() is invoked — it calls commitComputedState()
- * giving every presenter a last chance to mark additional views as dirty, then
+ * so each dirty view's presenter computes the derived fields the view reads (once
+ * per paint cycle, right before painting), then
  * increments the revision counter for each dirty view (triggering recomposition).
  *
  * Thread safety: All operations (markDirty, removeDirty, flush) execute on the
@@ -70,7 +71,7 @@ object ViewUpdateScheduler {
 
         for (view in snapshot) {
             try {
-                view.presenterBase.commitComputedState()
+                view.prepareForPaint()
             } catch (e: Exception) {
                 LOG.error("commitComputedState error for ${view.instanceId}: ${e.message}", e)
             }
