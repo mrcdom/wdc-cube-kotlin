@@ -77,6 +77,9 @@ class RestTestEnvironment(
         authClient.login(userName, PasswordUtil.hashPassword(password))
     }
 
+    /** O cliente de autenticação da sessão corrente, ou `null` sem login. */
+    val authClient: RestAuthClient? get() = restConfig.authClient
+
     /** Volta o cliente ao estado sem autenticação. */
     fun logout() {
         restConfig.setAuthClientInstance(null)

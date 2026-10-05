@@ -44,11 +44,32 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
         return doRequestBytes("GET", baseUrl + path, null, null, authHeader(), currentTxId())
     }
 
-    override fun putBytes(path: String, data: ByteArray): Boolean {
-        val response = doRequest("PUT", baseUrl + path, null, OCTET_CONTENT_TYPE, authHeader(),
-            sendBytes = data, txId = currentTxId())
-        return response?.contains("\"success\":true") == true ||
-               response?.contains("\"success\": true") == true
+    override fun putBytes(path: String, data: ByteArray): Boolean = putBytes(baseUrl + path, data, authHeader(), currentTxId())
+
+    private fun putBytes(url: String, data: ByteArray, authorization: String?, txId: String?): Boolean {
+        val result = xhrSyncPutBytes(
+            url.toJsString(),
+            byteArrayToJsUint8Array(data),
+            OCTET_CONTENT_TYPE.toJsString(),
+            (authorization ?: "").toJsString(),
+            clientId.toJsString(),
+            (txId ?: "").toJsString()
+        )
+        val status = xhrResultStatus(result)
+        val responseText = xhrResultBody(result).toString()
+
+        if (status in 200..299) {
+            return responseText.contains("\"success\":true") || responseText.contains("\"success\": true")
+        }
+
+        if (status == 401 && authorization != null) {
+            if (refreshHandler?.invoke() == true) {
+                return putBytes(url, data, authHeader(), txId)
+            }
+            onAuthFailure?.invoke()
+        }
+
+        throw httpFailure(status, responseText)
     }
 
     private fun authHeader(): String? {
@@ -63,7 +84,6 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
         body: String?,
         contentType: String?,
         authorization: String?,
-        sendBytes: ByteArray? = null,
         txId: String? = null
     ): String? {
         val result = xhrSyncRequest(
@@ -85,7 +105,7 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
         // On 401 with auth header: try refresh and retry once
         if (status == 401 && authorization != null) {
             if (refreshHandler?.invoke() == true) {
-                return doRequest(method, url, body, contentType, authHeader(), sendBytes, txId)
+                return doRequest(method, url, body, contentType, authHeader(), txId)
             }
             onAuthFailure?.invoke()
         }
@@ -184,6 +204,21 @@ private external fun xhrSyncRequest(
     contentType: JsString, authorization: JsString, clientId: JsString, txId: JsString
 ): JsAny
 
+@JsFun("""(url, data, contentType, authorization, clientId, txId) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url, false);
+    xhr.setRequestHeader('Content-Type', contentType);
+    if (authorization !== '') xhr.setRequestHeader('Authorization', authorization);
+    xhr.setRequestHeader('X-Client-Id', clientId);
+    if (txId !== '') xhr.setRequestHeader('X-Tx-Id', txId);
+    xhr.send(data);
+    return { status: xhr.status, body: xhr.responseText };
+}""")
+private external fun xhrSyncPutBytes(
+    url: JsString, data: JsAny, contentType: JsString,
+    authorization: JsString, clientId: JsString, txId: JsString
+): JsAny
+
 @JsFun("(r) => r.status")
 private external fun xhrResultStatus(r: JsAny): Int
 
@@ -226,3 +261,17 @@ private external fun jsUint8ArrayLength(a: JsAny): Int
 
 @JsFun("(a, i) => a[i]")
 private external fun jsUint8ArrayGet(a: JsAny, i: Int): Int
+
+private fun byteArrayToJsUint8Array(bytes: ByteArray): JsAny {
+    val array = jsUint8ArrayCreate(bytes.size)
+    for (i in bytes.indices) {
+        jsUint8ArraySet(array, i, bytes[i].toInt() and 0xFF)
+    }
+    return array
+}
+
+@JsFun("(n) => new Uint8Array(n)")
+private external fun jsUint8ArrayCreate(n: Int): JsAny
+
+@JsFun("(a, i, v) => { a[i] = v; }")
+private external fun jsUint8ArraySet(a: JsAny, i: Int, v: Int)

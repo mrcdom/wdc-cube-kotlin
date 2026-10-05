@@ -5,6 +5,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -25,35 +26,24 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
     override var transactionIdSupplier: (() -> String?)? = null
     override val clientId: String = newClientId()
 
-    override fun postJson(path: String, body: String): String {
-        val requestBuilder = Request.Builder()
-            .url(baseUrl + path)
-            .post(body.toRequestBody(jsonMediaType))
-        addAuthHeader(requestBuilder)
-        return executeForString(requestBuilder.build(), "POST $path")
-    }
-
-    override fun postJsonNullable(path: String, body: String): String? {
-        val requestBuilder = Request.Builder()
-            .url(baseUrl + path)
-            .post(body.toRequestBody(jsonMediaType))
-        addAuthHeader(requestBuilder)
-
-        try {
-            client.newCall(requestBuilder.build()).execute().use { response ->
-                if (response.code == 404) return null
-                val responseBody = response.body?.string()
-                if (!response.isSuccessful) {
-                    throw httpFailure(response.code, responseBody)
-                }
-                return responseBody ?: ""
+    override fun postJson(path: String, body: String): String =
+        authenticated("POST $path", { Request.Builder().url(baseUrl + path).post(body.toRequestBody(jsonMediaType)) }) { response ->
+            val responseBody = response.body?.string()
+            if (!response.isSuccessful) {
+                throw httpFailure(response.code, responseBody)
             }
-        } catch (e: BusinessException) {
-            throw e
-        } catch (e: IOException) {
-            throw BusinessException.wrap("POST $path", e)
+            responseBody ?: ""
         }
-    }
+
+    override fun postJsonNullable(path: String, body: String): String? =
+        authenticated("POST $path", { Request.Builder().url(baseUrl + path).post(body.toRequestBody(jsonMediaType)) }) { response ->
+            if (response.code == 404) return@authenticated null
+            val responseBody = response.body?.string()
+            if (!response.isSuccessful) {
+                throw httpFailure(response.code, responseBody)
+            }
+            responseBody ?: ""
+        }
 
     override fun postJsonPublic(path: String, body: String): String {
         val request = Request.Builder()
@@ -83,46 +73,52 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         return executeForString(request, "GET $path")
     }
 
-    override fun getBytes(path: String): ByteArray? {
-        val requestBuilder = Request.Builder()
-            .url(baseUrl + path)
-            .get()
-        addAuthHeader(requestBuilder)
-
-        try {
-            client.newCall(requestBuilder.build()).execute().use { response ->
-                if (response.code == 404 || response.code == 204) return null
-                if (!response.isSuccessful) {
-                    throw httpFailure(response.code)
-                }
-                return response.body?.bytes()
+    override fun getBytes(path: String): ByteArray? =
+        authenticated("GET $path", { Request.Builder().url(baseUrl + path).get() }) { response ->
+            if (response.code == 404 || response.code == 204) return@authenticated null
+            if (!response.isSuccessful) {
+                throw httpFailure(response.code)
             }
-        } catch (e: BusinessException) {
-            throw e
-        } catch (e: IOException) {
-            throw BusinessException.wrap("GET $path", e)
+            response.body?.bytes()
         }
-    }
 
-    override fun putBytes(path: String, data: ByteArray): Boolean {
-        val requestBuilder = Request.Builder()
-            .url(baseUrl + path)
-            .put(data.toRequestBody(octetMediaType))
-        addAuthHeader(requestBuilder)
-
-        try {
-            client.newCall(requestBuilder.build()).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw httpFailure(response.code)
-                }
-                val responseBody = response.body?.string() ?: return false
-                return responseBody.contains("\"success\":true") ||
-                       responseBody.contains("\"success\": true")
+    override fun putBytes(path: String, data: ByteArray): Boolean =
+        authenticated("PUT $path", { Request.Builder().url(baseUrl + path).put(data.toRequestBody(octetMediaType)) }) { response ->
+            if (!response.isSuccessful) {
+                throw httpFailure(response.code)
             }
-        } catch (e: BusinessException) {
-            throw e
+            val responseBody = response.body?.string() ?: return@authenticated false
+            responseBody.contains("\"success\":true") || responseBody.contains("\"success\": true")
+        }
+
+    /**
+     * Executa uma chamada autenticada. Se o servidor recusar o token (401), renova a sessão pelo
+     * [refreshHandler] e repete a chamada **uma vez**, já com o token novo; se não houver como renovar, avisa
+     * o [onAuthFailure] e a recusa sobe para o chamador.
+     *
+     * @param request monta a requisição sem os cabeçalhos de autenticação — é chamada de novo na repetição
+     */
+    private fun <T> authenticated(label: String, request: () -> Request.Builder, read: (Response) -> T): T {
+        try {
+            val first = request()
+            val sentToken = addAuthHeader(first)
+            val refusal = client.newCall(first.build()).execute().use { response ->
+                if (response.code != 401 || !sentToken) {
+                    return read(response)
+                }
+                response.body?.string()
+            }
+            if (refreshHandler?.invoke() != true) {
+                onAuthFailure?.invoke()
+                throw httpFailure(401, refusal)
+            }
+            val retry = request()
+            addAuthHeader(retry)
+            client.newCall(retry.build()).execute().use { response ->
+                return read(response)
+            }
         } catch (e: IOException) {
-            throw BusinessException.wrap("PUT $path", e)
+            throw BusinessException.wrap(label, e)
         }
     }
 
@@ -142,16 +138,16 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         }
     }
 
-    /** Os cabeçalhos de uma chamada autenticada: o token, o cliente e a transação remota corrente. */
-    private fun addAuthHeader(builder: Request.Builder) {
+    /**
+     * Os cabeçalhos de uma chamada autenticada: o token, o cliente e a transação remota corrente.
+     *
+     * @return se havia token para enviar
+     */
+    private fun addAuthHeader(builder: Request.Builder): Boolean {
         builder.header(CLIENT_HEADER, clientId)
         currentTxId()?.let { builder.header(TX_HEADER, it) }
-        val supplier = accessTokenSupplier
-        if (supplier != null) {
-            val token = supplier()
-            if (token != null) {
-                builder.header("Authorization", "Bearer $token")
-            }
-        }
+        val token = accessTokenSupplier?.invoke() ?: return false
+        builder.header("Authorization", "Bearer $token")
+        return true
     }
 }
