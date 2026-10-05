@@ -11,6 +11,9 @@ logback = "1.5.32"
 junit-jupiter = "5.11.4"
 h2 = "2.4.240"
 jdbi = "3.52.1"
+jooq = "3.19.16"
+postgresql = "42.7.4"
+embedded-postgres = "2.1.0"
 tomcat-dbcp = "6.0.53"
 javalin = "7.2.0"
 okhttp = "4.12.0"
@@ -31,6 +34,9 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+embedded-postgres = { module = "io.zonky.test:embedded-postgres", version.ref = "embedded-postgres" }
 tomcat-dbcp = { module = "org.apache.tomcat:dbcp", version.ref = "tomcat-dbcp" }
 javalin = { module = "io.javalin:javalin", version.ref = "javalin" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }

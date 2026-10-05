@@ -28,6 +28,7 @@ include(":framework-commons")
 include(":framework-cube")
 include(":framework-domain")
 include(":framework-persistence")
+include(":framework-jooq")
 
 // Shopping modules
 include(":shopping-domain")
@@ -54,6 +55,7 @@ project(":framework-commons").projectDir      = file("br.com.wdc.kt.framework/br
 project(":framework-cube").projectDir         = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube")
 project(":framework-domain").projectDir       = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.domain")
 project(":framework-persistence").projectDir  = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.persistence")
+project(":framework-jooq").projectDir         = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.jooq")
 project(":shopping-domain").projectDir        = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.domain")
 project(":shopping-persistence").projectDir   = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence")
 project(":persistence-rest").projectDir       = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence.rest")
