@@ -48,7 +48,7 @@ class JooqSchemaTest {
         val generated = kotlinFiles(tempDir.resolve(packagePath))
         // o teste roda com o diretório do módulo :shopping-tests como corrente
         val versioned = kotlinFiles(
-            Paths.get("../br.com.wdc.kt.shopping.persistence/src/main/kotlin").resolve(packagePath).toAbsolutePath().normalize()
+            Paths.get("../br.com.wdc.kt.shopping.persistence/persistence.impl/src/main/kotlin").resolve(packagePath).toAbsolutePath().normalize()
         )
 
         val hint = "esquema e classes jOOQ divergiram — rode ./gradlew :shopping-scripts:generateJooqSchema e faça commit"

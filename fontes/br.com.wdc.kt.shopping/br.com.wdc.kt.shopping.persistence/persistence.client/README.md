@@ -1,4 +1,4 @@
-# shopping-persistence-client
+# persistence.client
 
 Cliente REST multiplataforma: implementa os repositórios e o serviço de transação do domínio sobre HTTP.
 
@@ -10,4 +10,4 @@ Cliente REST multiplataforma: implementa os repositórios e o serviço de transa
 - `RestAuthClient` / `RestAuthenticationService` — login por desafio e renovação de sessão.
 - `RestRepositoryBootstrap.initialize(config, cryptoProvider)` — registra tudo; todo entry point de cliente o chama.
 
-Usado pelas views locais (Compose e nativas), em que os presenters rodam no cliente. Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md#cliente-http).
+Usado pelas views locais (Compose e nativas), em que os presenters rodam no cliente. Veja a [arquitetura de persistência](../../../../docs/architecture-persistence.md#cliente-http).

@@ -1,4 +1,4 @@
-# persistence-rest
+# persistence.rest
 
 Endpoints REST dos repositórios, em **Javalin**.
 
@@ -13,4 +13,4 @@ Os controladores leem e escrevem com os codecs do domínio — os mesmos que o c
 
 `RepositoryApiRoutes.configure(config)` registra tudo. É usado pelo backend e pelos testes.
 
-Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md#api-rest).
+Veja a [arquitetura de persistência](../../../../docs/architecture-persistence.md#api-rest).

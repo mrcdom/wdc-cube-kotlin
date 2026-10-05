@@ -7,9 +7,10 @@ Módulos da aplicação Shopping, organizada em camadas: domínio, persistência
 ### Domínio e Dados
 
 - [br.com.wdc.kt.shopping.domain/](br.com.wdc.kt.shopping.domain/) — Entidades e interfaces de repositório (KMP)
-- [br.com.wdc.kt.shopping.persistence/](br.com.wdc.kt.shopping.persistence/) — Implementação JDBC/H2 dos repositórios (JVM)
-- [br.com.wdc.kt.shopping.persistence.rest/](br.com.wdc.kt.shopping.persistence.rest/) — Endpoints REST dos repositórios (JVM)
-- [br.com.wdc.kt.shopping.persistence.client/](br.com.wdc.kt.shopping.persistence.client/) — Cliente REST para os repositórios (KMP)
+- [br.com.wdc.kt.shopping.persistence/](br.com.wdc.kt.shopping.persistence/) — Camada de persistência, em três subprojetos:
+  - [persistence.impl/](br.com.wdc.kt.shopping.persistence/persistence.impl/) — Repositórios sobre jOOQ, para H2 e PostgreSQL (JVM)
+  - [persistence.rest/](br.com.wdc.kt.shopping.persistence/persistence.rest/) — API REST dos repositórios (JVM)
+  - [persistence.client/](br.com.wdc.kt.shopping.persistence/persistence.client/) — Cliente REST dos repositórios (KMP)
 - [br.com.wdc.kt.shopping.scripts/](br.com.wdc.kt.shopping.scripts/) — Scripts de criação/migração do banco (JVM)
 
 ### Apresentação

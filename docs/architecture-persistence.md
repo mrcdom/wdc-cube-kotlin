@@ -77,6 +77,8 @@ Três ideias sustentam o desenho:
 | `:shopping-persistence-client` | KMP | `HttpRepository`, transportes por plataforma, `RestTransactionService` |
 | `:shopping-scripts` | JVM | `DBCreate`, `DBReset`, migrações, gerador das classes jOOQ |
 
+Os três módulos de persistência do Shopping ficam agrupados no diretório `br.com.wdc.kt.shopping.persistence/`, como `persistence.impl` (`:shopping-persistence`), `persistence.rest` e `persistence.client`.
+
 No domínio, cada entidade ocupa um pacote: `domain.product`, `domain.user`, `domain.purchase`, `domain.purchaseitem`.
 
 ---
