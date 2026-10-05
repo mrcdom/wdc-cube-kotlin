@@ -46,10 +46,6 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
 
     override val app: CubeApplication get() = this
 
-    override fun commitComputedState() {
-        browserView.commitComputedState()
-    }
-
     companion object {
         private val LOG = Log.getLogger("ApplicationReactImpl")
 
@@ -94,10 +90,13 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
                     }
                 }
 
+                LOG.debug("[createApp] Before safeGo, path={}, dirtyViewMap.keys={}", path, app.dirtyViewMap.keys)
                 runBlocking {
                     app.safeGo(path)
                 }
+                LOG.debug("[createApp] After safeGo, dirtyViewMap.keys={}, viewMap.keys={}", app.dirtyViewMap.keys, app.viewMap.keys)
             } catch (caught: Exception) {
+                LOG.error("[createApp] Exception during safeGo", caught)
                 app.release()
                 throw caught
             }
@@ -287,11 +286,28 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
 
     // :: Flush
 
+    /**
+     * Single paint point of a view: the presenter computes its derived fields right
+     * before the ViewState is read, once per paint cycle.
+     */
+    private fun writeViewState(json: ExtensibleObjectOutput, view: GenericViewImpl<*>) {
+        try {
+            view.prepareForPaint()
+        } catch (e: Exception) {
+            LOG.error("commitComputedState for view {}", view.instanceId, e)
+        }
+        view.writeState(json)
+    }
+
     @Synchronized
     fun flushDirtyViews() {
         if (dirtyViewMap.isEmpty()) return
-        val ws = wsSession ?: return
+        val ws = wsSession ?: run {
+            LOG.debug("[flushDirtyViews] wsSession is null, skipping. dirtyViewMap.keys={}", dirtyViewMap.keys)
+            return
+        }
 
+        LOG.debug("[flushDirtyViews] Flushing dirtyViewMap.keys={}", dirtyViewMap.keys)
         val allViews = ArrayList<GenericViewImpl<*>>()
         val iter = dirtyViewMap.entries.iterator()
         while (iter.hasNext()) {
@@ -318,7 +334,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
             json.name("states")
             json.beginArray()
             for (view in allViews) {
-                view.writeState(json)
+                writeViewState(json, view)
             }
             json.endArray()
             json.endObject()
@@ -425,21 +441,16 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
 
             me.doUpdateHistory()
 
+            LOG.debug("[ResponsePhase] reqId={} dirtyViewMap.keys={} viewMap.keys={}", requestId, me.dirtyViewMap.keys, me.viewMap.keys)
+
             val viewsToFlush = ArrayList<GenericViewImpl<*>>()
             val iter = me.dirtyViewMap.entries.iterator()
             while (iter.hasNext()) {
-                var view = iter.next().value
-                viewsToFlush.add(view)
-
-                // commitComputedState per view (synchronized on app instance)
-                try {
-                    view.commitComputedState()
-                } catch (e: Exception) {
-                    LOG.error("commitComputedState for view {}", view.instanceId, e)
-                }
-
+                viewsToFlush.add(iter.next().value)
                 iter.remove()
             }
+
+            LOG.debug("[ResponsePhase] viewsToFlush={}", viewsToFlush.map { it.instanceId })
 
             if (!isPing && !me.historyDirty && viewsToFlush.isEmpty()) {
                 return false
@@ -484,7 +495,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
                     json.name("states")
                     json.beginArray()
                     for (view in views) {
-                        view.writeState(json)
+                        me.writeViewState(json, view)
                     }
                     json.endArray()
                 }

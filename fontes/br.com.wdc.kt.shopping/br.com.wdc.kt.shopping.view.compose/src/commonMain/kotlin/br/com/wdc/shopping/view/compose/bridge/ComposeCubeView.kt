@@ -29,7 +29,24 @@ abstract class ComposeCubeView(
 
     override val instanceId: String get() = id
 
+    // True while the presenter computes derived state for the paint about to happen;
+    // update() is ignored meanwhile, since this view is already being painted.
+    private var updateMuted = false
+
+    /**
+     * Runs the presenter's commitComputedState() right before this view is painted.
+     */
+    internal fun prepareForPaint() {
+        updateMuted = true
+        try {
+            presenterBase.commitComputedState()
+        } finally {
+            updateMuted = false
+        }
+    }
+
     override fun update() {
+        if (updateMuted) return
         ViewUpdateScheduler.markDirty(this)
     }
 

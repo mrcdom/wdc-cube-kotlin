@@ -10,8 +10,8 @@ import platform.darwin.dispatch_get_main_queue
  *
  * When a presenter calls view.update(), the view is marked dirty here.
  * A single dispatch_async(main_queue) callback is scheduled to flush all dirty views.
- * Before flushing, commitComputedState() gives every presenter a last chance
- * to mark additional views as dirty.
+ * Before flushing, commitComputedState() lets each dirty view's presenter compute
+ * the derived fields the view reads — once per paint cycle, right before painting.
  *
  * Thread safety: markDirty/removeDirty use NSLock since update() may
  * be called from any thread. The flush always runs on the main queue.
@@ -58,7 +58,7 @@ object ViewUpdateScheduler {
 
         for (view in snapshot) {
             try {
-                view.presenterBase.commitComputedState()
+                view.prepareForPaint()
                 view.forceUpdate()
             } catch (e: Exception) {
                 NSLog("ViewUpdateScheduler flush error: ${e.message}")

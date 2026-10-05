@@ -113,11 +113,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     }
 
     override fun commitComputedState() {
-        val newCartItemCount = cart?.getItemCount() ?: 0
-        if (state.cartItemCount != newCartItemCount) {
-            state.cartItemCount = newCartItemCount
-            update()
-        }
+        state.cartItemCount = cart?.getItemCount() ?: 0
     }
 
     // :: User Actions
@@ -128,7 +124,6 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     }
 
     private fun onCartChanged() {
-        state.cartItemCount = cart!!.getItemCount()
         update()
     }
 

@@ -8,8 +8,8 @@ import kotlinx.browser.window
  *
  * When a presenter calls view.update(), the view is marked dirty here.
  * A single requestAnimationFrame callback is scheduled to flush all dirty views.
- * Before flushing, commitComputedState() gives every presenter a last chance
- * to mark additional views as dirty.
+ * Before flushing, commitComputedState() lets each dirty view's presenter compute
+ * the derived fields the view reads — once per paint cycle, right before painting.
  */
 object ViewUpdateScheduler {
 
@@ -41,7 +41,7 @@ object ViewUpdateScheduler {
         dirtyViews.clear()
 
         for (view in snapshot) {
-            view.presenterBase.commitComputedState()
+            view.prepareForPaint()
             view.notifyDirty()
         }
     }
