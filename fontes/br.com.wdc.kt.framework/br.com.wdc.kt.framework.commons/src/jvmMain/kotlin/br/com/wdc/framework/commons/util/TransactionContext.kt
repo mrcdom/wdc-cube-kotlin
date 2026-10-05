@@ -23,6 +23,10 @@ import javax.sql.DataSource
  * }
  * ```
  */
+@Deprecated(
+    "Só propagação REQUIRED, e comita em caso de exceção. Use TransactionService " +
+        "(br.com.wdc.framework.domain.transaction), implementado por TransactionServiceImpl em framework-persistence."
+)
 class TransactionContext private constructor(
     private val connection: Connection,
     private val owner: Boolean,

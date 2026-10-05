@@ -27,6 +27,7 @@ rootProject.name = "wdc-cube-kotlin"
 include(":framework-commons")
 include(":framework-cube")
 include(":framework-domain")
+include(":framework-persistence")
 
 // Shopping modules
 include(":shopping-domain")
@@ -52,6 +53,7 @@ include(":backend")
 project(":framework-commons").projectDir      = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.commons")
 project(":framework-cube").projectDir         = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube")
 project(":framework-domain").projectDir       = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.domain")
+project(":framework-persistence").projectDir  = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.persistence")
 project(":shopping-domain").projectDir        = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.domain")
 project(":shopping-persistence").projectDir   = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence")
 project(":persistence-rest").projectDir       = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence.rest")
