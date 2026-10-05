@@ -40,6 +40,34 @@ sealed class ActionScenario(val name: String) {
         }
         return instanceId
     }
+
+    /**
+     * Logs in from the Login view. A scenario that failed midway leaves the session
+     * authenticated, so log out first when the Home view is still on screen.
+     */
+    protected fun login(client: VirtualClient, metrics: MetricsCollector, credentials: UserCredentials): Boolean {
+        if (client.findViewByVid(Vid.LOGIN) == null) {
+            val homeViewId = client.findViewByVid(Vid.HOME)
+            if (homeViewId != null && !recordAction(metrics, "exit", client.sendEvent(homeViewId, 1))) return false
+        }
+        val viewId = resolveView(client, Vid.LOGIN) ?: return false
+        val formData = mapOf(
+            "userName" to credentials.userName,
+            "password" to client.cipherField(credentials.password),
+        )
+        val latency = client.sendEvent(viewId, 1, formData)
+        return recordAction(metrics, "login", latency)
+    }
+
+    /**
+     * Product IDs currently listed by the products panel (IDs are not contiguous).
+     */
+    protected fun productIds(client: VirtualClient): List<Long> {
+        val state = client.getViewStateByVid(Vid.PRODUCTS_PANEL)
+        @Suppress("UNCHECKED_CAST")
+        val products = state["products"] as? List<Map<String, Any?>> ?: return emptyList()
+        return products.mapNotNull { (it["id"] as? Number)?.toLong() }
+    }
 }
 
 /**
@@ -58,13 +86,13 @@ object Vid {
 }
 
 /**
- * Full shopping journey: Login → Browse → View Product → Add to Cart → Buy → View Receipt → Return
+ * Full shopping journey: Login → View Product → Add to Cart → Buy → View Receipt → Return → Logout
  */
 class FullShoppingScenario(private val credentials: UserCredentials) : ActionScenario("full-shopping") {
 
     override fun execute(client: VirtualClient, metrics: MetricsCollector): Boolean {
         // 1. Login
-        if (!doLogin(client, metrics)) return false
+        if (!login(client, metrics, credentials)) return false
 
         // 2. Pick a random product from the products panel state
         val productId = pickProductId(client) ?: return true
@@ -72,35 +100,19 @@ class FullShoppingScenario(private val credentials: UserCredentials) : ActionSce
         // 3. Open product detail
         if (!doOpenProduct(client, metrics, productId)) return false
 
-        // 4. Add to cart
+        // 4. Add to cart (the application navigates straight to the cart)
         if (!doAddToCart(client, metrics)) return false
 
-        // 5. Go back to products
-        if (!doOpenProducts(client, metrics, Vid.PRODUCT)) return false
-
-        // 6. Open cart
-        if (!doOpenCart(client, metrics)) return false
-
-        // 7. Buy
+        // 5. Buy
         if (!doBuy(client, metrics)) return false
 
-        // 8. Return to products from receipt
+        // 6. Return to products from receipt
         if (!doOpenProducts(client, metrics, Vid.RECEIPT)) return false
 
-        // 9. Logout
+        // 7. Logout
         if (!doExit(client, metrics)) return false
 
         return true
-    }
-
-    private fun doLogin(client: VirtualClient, metrics: MetricsCollector): Boolean {
-        val viewId = resolveView(client, Vid.LOGIN) ?: return false
-        val formData = mapOf(
-            "userName" to credentials.userName,
-            "password" to client.cipherField(credentials.password),
-        )
-        val latency = client.sendEvent(viewId, 1, formData)
-        return recordAction(metrics, "login", latency)
     }
 
     private fun doOpenProduct(client: VirtualClient, metrics: MetricsCollector, productId: Long): Boolean {
@@ -121,12 +133,6 @@ class FullShoppingScenario(private val credentials: UserCredentials) : ActionSce
         return recordAction(metrics, "openProducts", latency)
     }
 
-    private fun doOpenCart(client: VirtualClient, metrics: MetricsCollector): Boolean {
-        val viewId = resolveView(client, Vid.HOME) ?: return false
-        val latency = client.sendEvent(viewId, 2)
-        return recordAction(metrics, "openCart", latency)
-    }
-
     private fun doBuy(client: VirtualClient, metrics: MetricsCollector): Boolean {
         val viewId = resolveView(client, Vid.CART) ?: return false
         val latency = client.sendEvent(viewId, 1)
@@ -140,12 +146,9 @@ class FullShoppingScenario(private val credentials: UserCredentials) : ActionSce
     }
 
     private fun pickProductId(client: VirtualClient): Long? {
-        val state = client.getViewStateByVid(Vid.PRODUCTS_PANEL)
-        @Suppress("UNCHECKED_CAST")
-        val products = state["products"] as? List<Map<String, Any?>>
-        if (!products.isNullOrEmpty()) {
-            val product = products[Random.nextInt(products.size)]
-            return (product["id"] as? Number)?.toLong()
+        val ids = productIds(client)
+        if (ids.isNotEmpty()) {
+            return ids[Random.nextInt(ids.size)]
         }
         // Fallback: use product ID 1
         return 1L
@@ -160,32 +163,32 @@ class BrowseOnlyScenario(private val credentials: UserCredentials) : ActionScena
 
     override fun execute(client: VirtualClient, metrics: MetricsCollector): Boolean {
         // 1. Login
-        val loginViewId = resolveView(client, Vid.LOGIN) ?: return false
-        val formData = mapOf(
-            "userName" to credentials.userName,
-            "password" to client.cipherField(credentials.password),
-        )
-        val loginLatency = client.sendEvent(loginViewId, 1, formData)
-        if (!recordAction(metrics, "login", loginLatency)) return false
+        if (!login(client, metrics, credentials)) return false
 
-        // 2. Paginate purchases (pages 0..2)
+        // 2. Report the panel capacity, as the browser does on layout; until then the
+        //    server has no page size and answers nothing to page changes
+        val panelViewId = resolveView(client, Vid.PURCHASES_PANEL) ?: return false
+        val capacityLatency = client.sendEvent(panelViewId, 3, mapOf("p.capacity" to 5))
+        if (!recordAction(metrics, "capacityChange", capacityLatency)) return false
+
+        // 3. Paginate purchases (pages 0..2)
         for (page in 0..2) {
             val purchasesViewId = resolveView(client, Vid.PURCHASES_PANEL) ?: return false
             val latency = client.sendEvent(purchasesViewId, 2, mapOf("p.page" to page))
             if (!recordAction(metrics, "pageChange", latency)) return false
         }
 
-        // 3. Open a product
+        // 4. Open a product
         val productsViewId = resolveView(client, Vid.PRODUCTS_PANEL) ?: return false
         val latency = client.sendEvent(productsViewId, 1, mapOf("p.productId" to 1L))
         if (!recordAction(metrics, "openProduct", latency)) return false
 
-        // 4. Return to products
+        // 5. Return to products
         val productViewId = resolveView(client, Vid.PRODUCT) ?: return false
         val backLatency = client.sendEvent(productViewId, 1)
         if (!recordAction(metrics, "openProducts", backLatency)) return false
 
-        // 5. Logout
+        // 6. Logout
         val homeViewId = resolveView(client, Vid.HOME) ?: return false
         val exitLatency = client.sendEvent(homeViewId, 1)
         if (!recordAction(metrics, "exit", exitLatency)) return false
@@ -202,18 +205,13 @@ class RapidNavigationScenario(private val credentials: UserCredentials) : Action
 
     override fun execute(client: VirtualClient, metrics: MetricsCollector): Boolean {
         // 1. Login
-        val loginViewId = resolveView(client, Vid.LOGIN) ?: return false
-        val formData = mapOf(
-            "userName" to credentials.userName,
-            "password" to client.cipherField(credentials.password),
-        )
-        val loginLatency = client.sendEvent(loginViewId, 1, formData)
-        if (!recordAction(metrics, "login", loginLatency)) return false
+        if (!login(client, metrics, credentials)) return false
 
         // 2. Rapid open product → back → open product → back (5 times)
+        val ids = productIds(client).ifEmpty { listOf(1L) }
         repeat(5) {
             val productsViewId = resolveView(client, Vid.PRODUCTS_PANEL) ?: return false
-            val productId = (it + 1).toLong()
+            val productId = ids[it % ids.size]
             val openLatency = client.sendEvent(productsViewId, 1, mapOf("p.productId" to productId))
             if (!recordAction(metrics, "openProduct", openLatency)) return false
 

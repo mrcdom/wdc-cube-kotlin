@@ -91,9 +91,19 @@ class VirtualClient(
                 return false
             }
 
-            // Step 4: Wait for initial view tree to be fully loaded (Login view must exist)
+            // Step 4: Send onStart event to Browser to trigger navigation
+            val browserViewId = findViewByVid(Vid.BROWSER)
+            if (browserViewId != null) {
+                val latency = sendEvent(browserViewId, -1, mapOf("p.path" to "/"))
+                if (latency < 0) {
+                    LOG.error("[Client-{}] Start event failed (timeout)", clientId)
+                    return false
+                }
+            }
+
+            // Step 5: Wait for Login view (arrives via flushDirtyViews after navigation)
             if (!waitForView(Vid.LOGIN, 5000)) {
-                LOG.error("[Client-{}] Login view never appeared in state", clientId)
+                LOG.error("[Client-{}] Login view not in state after onStart (views: {})", clientId, viewStates.keys)
                 return false
             }
 
@@ -177,7 +187,29 @@ class VirtualClient(
      * Returns null if no matching view state is currently tracked.
      */
     fun findViewByVid(vid: String): String? {
-        return viewStates.keys.firstOrNull { it.startsWith("$vid:") }
+        return reachableViewIds().firstOrNull { it.startsWith("$vid:") }
+    }
+
+    /**
+     * Instance IDs still attached to the Browser view, following every state field that
+     * references another tracked view. The server never announces released views, so
+     * viewStates keeps stale entries (e.g. the Login view of a previous session).
+     */
+    private fun reachableViewIds(): Set<String> {
+        val states = HashMap(viewStates)
+        val reachable = LinkedHashSet<String>()
+        val pending = ArrayDeque<String>()
+        states.keys.firstOrNull { it.startsWith("${Vid.BROWSER}:") }?.let(pending::add)
+        while (pending.isNotEmpty()) {
+            val id = pending.removeFirst()
+            if (!reachable.add(id)) continue
+            for ((name, value) in states[id] ?: continue) {
+                if (name != "id" && value is String && states.containsKey(value)) {
+                    pending.add(value)
+                }
+            }
+        }
+        return reachable
     }
 
     /**
@@ -237,10 +269,10 @@ class VirtualClient(
     // :: Private — Crypto
 
     private fun buildCryptoSignature() {
-        // Generate random password (16 bytes)
-        val password = ByteArray(16)
+        // Generate random password (12 bytes, base64url — same as the browser client)
+        val password = ByteArray(12)
         random.nextBytes(password)
-        val passwordB64 = Base64.getEncoder().encodeToString(password)
+        val passwordB64 = Base64.getUrlEncoder().withoutPadding().encodeToString(password)
 
         // Generate random salt and IV
         val salt = ByteArray(16)
@@ -254,8 +286,9 @@ class VirtualClient(
         val secretKey = keyFactory.generateSecret(spec)
         aesKey = SecretKeySpec(secretKey.encoded, "AES")
 
-        // Encrypt password with RSA (raw BigInteger modular exponentiation)
-        val passwordBytes = passwordB64.toByteArray(Charsets.UTF_8)
+        // Encrypt password with RSA (raw BigInteger modular exponentiation).
+        // The server Base64-decodes the RSA payload to recover the PBKDF2 password.
+        val passwordBytes = Base64.getEncoder().encode(passwordB64.toByteArray(Charsets.UTF_8))
         val passwordBigInt = BigInteger(1, passwordBytes)
         val encrypted = passwordBigInt.modPow(rsaExponent, rsaPublicKey)
         val encryptedBase36 = encrypted.toString(36)
@@ -371,7 +404,7 @@ class VirtualClient(
     private fun handleResponse(text: String) {
         lastMessageTime = System.currentTimeMillis()
         try {
-            LOG.debug("[Client-{}] Raw response: {}", clientId, text.take(2000))
+            LOG.debug("[Client-{}] Raw response ({} chars): {}", clientId, text.length, text)
             val response: Map<String, Any?> = GSON.fromJson(text, RESPONSE_TYPE.type)
 
             // Update URI if present
@@ -388,6 +421,7 @@ class VirtualClient(
                     val id = state["id"] as? String ?: continue
                     viewStates[id] = state
                 }
+                LOG.debug("[Client-{}] After merge, viewStates keys: {}", clientId, viewStates.keys)
             }
 
             lastResponse = response
