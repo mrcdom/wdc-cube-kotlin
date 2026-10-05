@@ -1,14 +1,24 @@
 # backend
 
-Servidor principal da aplicação, baseado em **Javalin** (porta 8080).
+Servidor da aplicação, em **Javalin** (porta 8080).
 
-Combina três responsabilidades:
-- **REST API** (`/api/repo/*`) — para clientes Compose Multiplatform e Native — [arquitetura](../../../docs/architecture.md)
+Reúne três responsabilidades:
+- **API REST** (`/api/repo`, `/api/tx`, `/api/auth`, `/openapi.json`) — para os clientes Compose e nativos — [arquitetura](../../../docs/architecture-persistence.md#api-rest)
 - **WebSocket** (`/dispatcher/{id}`) — para o cliente React (view remota) — [arquitetura](../../../docs/architecture-react.md)
-- **Arquivos estáticos** — serve os clientes React e Native Web
+- **Arquivos estáticos** — serve os clientes web
 
-Também inicializa o banco H2 e executa migrações na inicialização.
+Na subida, monta o pool de conexões, cria as tabelas que faltam e roda as migrações.
 
 ```bash
 cd fontes && ./gradlew :backend:run
 ```
+
+## Configuração
+
+O backend lê `work/config/application.toml` (diretório não versionado) ou o arquivo indicado por `-Dshopping.config.file=…`. Sem arquivo, sobe com os padrões: H2 em `work/data` e **sem segurança**.
+
+[`application.example.toml`](application.example.toml) lista todas as chaves, com os padrões:
+
+- **Banco** — H2 (padrão) ou PostgreSQL, escolhido pela `url`; pool de conexões; transações remotas.
+- **Segurança** — com `security.jwt.secret`, a API exige autenticação. Sem ele, fica aberta: só para desenvolvimento.
+- **Servidor** — porta e CORS.

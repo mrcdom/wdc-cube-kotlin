@@ -1,9 +1,18 @@
 # shopping-domain
 
-Entidades de domínio e interfaces de repositório da aplicação Shopping.
+O domínio da aplicação Shopping: entidades, critérios, contratos de repositório e os codecs com que tudo isso trafega.
 
-**Plataformas:** JVM, Android, iOS, wasmJs
+**Plataformas:** JVM, Android, iOS, JS, wasmJs
 
-Define `User`, `Product`, `Purchase`, `PurchaseItem` e suas respectivas interfaces de repositório (`UserRepository`, `ProductRepository`, etc.). Inclui também as **classes de critério** (`ProductCriteria`, `UserCriteria`, etc.) usadas para compor queries dinâmicas com filtros opcionais, projeção e paginação.
+Cada entidade ocupa um pacote — `product`, `user`, `purchase`, `purchaseitem` — com quatro classes:
 
-Veja a [documentação de arquitetura de persistência](../../../docs/architecture-persistence.md) para detalhes dos padrões de critério e projeção.
+| Classe | Papel |
+|---|---|
+| `Xxx` | A entidade. Também serve de projeção: campo preenchido = "traga este campo" |
+| `XxxCriteria` | Os filtros e a ordenação de uma consulta |
+| `XxxRepository` | O contrato, implementado no servidor (jOOQ) e no cliente (HTTP) |
+| `XxxCodec` | Leitura e escrita em JSON — o mesmo no cliente e no servidor |
+
+Também ficam aqui `ShoppingTransactions` (o serviço de transação da aplicação), a segurança (`SecurityContext`, `Role`, `AuthenticationService`) e a configuração.
+
+Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).

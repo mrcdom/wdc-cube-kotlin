@@ -6,6 +6,7 @@ import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
 import br.com.wdc.shopping.domain.exception.AccessDeniedException
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
+import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
 import io.javalin.config.JavalinConfig
 
 /**
@@ -69,5 +70,8 @@ object RepositoryApiRoutes {
         PurchaseApiController.configure(config)
         PurchaseItemApiController.configure(config)
         TxApiController.configure(config)
+
+        // A descrição da API, derivada do domínio. Pública: fica fora de /api/repo e /api/tx.
+        RepositoryApiDocs.configure(config)
     }
 }

@@ -1,9 +1,12 @@
 # shopping-persistence
 
-Implementação JVM dos repositórios usando **JDBI 3** com banco **H2**.
+Implementação JVM dos repositórios, sobre **jOOQ**, para **H2** e **PostgreSQL**.
 
-A arquitetura é baseada no padrão **Query Object (Critérios)** — cada operação de busca, contagem ou deleção recebe um objeto de critério com filtros opcionais, projeção de campos e paginação. Internamente, cada operação é encapsulada em um **Command** que traduz o critério em SQL usando CTEs e serialização JSON para carga eager de grafos de entidades em uma única query.
+- `repository/` — um `XxxRepositoryImpl` por entidade. Cada um declara o mapeamento entidade ↔ tabela (`JsonQueryBuilder`) e traduz o critério em condições; a consulta devolve o grafo pedido pela projeção numa única ida ao banco.
+- `scheme/` — classes jOOQ **geradas** a partir do DDL de `DBCreate`. Não edite à mão: `./gradlew :shopping-scripts:generateJooqSchema`.
+- `security/` — autenticação (JWT, sessões, segredos de intent) e os `SecuredXxxRepository`, que aplicam permissão e alcance por usuário.
+- `ShoppingRepositoryBootstrap` — liga o módulo ao `DataSource`: registra o `DSLContext`, o serviço de transação e os repositórios; `initializeSecurity` decora-os quando há segredo JWT.
 
-Veja a [documentação de arquitetura de persistência](../../../docs/architecture-persistence.md) para detalhes completos dos padrões e exemplos.
+Os repositórios não demarcam transação: usam a conexão da transação corrente ou, fora dela, uma avulsa em autocommit.
 
-Acesso direto via JDBC — usado pelos presenters na [arquitetura React (view remota)](../../../docs/architecture-react.md), onde presenters executam no servidor.
+Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).
