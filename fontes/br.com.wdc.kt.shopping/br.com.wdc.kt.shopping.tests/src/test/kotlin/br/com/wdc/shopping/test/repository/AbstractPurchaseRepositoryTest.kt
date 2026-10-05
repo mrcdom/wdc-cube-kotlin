@@ -3,7 +3,9 @@ package br.com.wdc.shopping.test.repository
 import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
 import kotlinx.coroutines.runBlocking
 import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
+import br.com.wdc.shopping.domain.model.Product
 import br.com.wdc.shopping.domain.model.Purchase
+import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.model.User
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
@@ -242,5 +244,31 @@ abstract class AbstractPurchaseRepositoryTest {
     fun deleteNonExistent_returnsZero() = runBlocking {
         val deleted = repo().delete(PurchaseCriteria().withPurchaseId(Long.MAX_VALUE))
         assertEquals(0, deleted)
+    }
+
+    // :: Relações e sub-critério (ainda não honrados pelo caminho REST — ver Rest*RepositoryTest)
+
+    @Test
+    fun fetchWithProjectionList_filterItemsByCriteria() = runBlocking {
+        val pv = ProjectionValues
+
+        val itemPrj = PurchaseItem()
+        itemPrj.id = pv.i64
+        itemPrj.amount = pv.i32
+        itemPrj.product = Product()
+        itemPrj.product!!.id = pv.i64
+
+        val itemCriteria = PurchaseItemCriteria()
+            .withProductId(DBReset.BOLA_WILSON_ID)
+
+        val projection = Purchase()
+        projection.id = pv.i64
+        projection.items = pv.singletonList(itemPrj, itemCriteria)
+
+        val purchase = repo().fetchById(DBReset.ADMIN_SECOND_PURCHASE_ID, projection)
+        assertNotNull(purchase)
+        assertNotNull(purchase!!.items)
+        assertEquals(1, purchase.items!!.size)
+        assertEquals(DBReset.BOLA_WILSON_ID, purchase.items!![0].product!!.id)
     }
 }

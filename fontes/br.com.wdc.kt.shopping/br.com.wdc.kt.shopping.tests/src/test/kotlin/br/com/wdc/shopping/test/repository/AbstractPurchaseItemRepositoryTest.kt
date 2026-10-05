@@ -306,4 +306,32 @@ abstract class AbstractPurchaseItemRepositoryTest {
         )
         assertEquals(0, deleted)
     }
+
+    // :: Relações e sub-critério (ainda não honrados pelo caminho REST — ver Rest*RepositoryTest)
+
+    @Test
+    fun fetchById_returnsCorrectItem_withPurchase() = runBlocking {
+        val item = repo().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID, projectionWithRelations())
+        assertNotNull(item)
+        assertNotNull(item!!.purchase)
+    }
+
+    @Test
+    fun insert_newPurchaseItem_withPurchaseAssertion() = runBlocking {
+        val item = PurchaseItem()
+        item.amount = 5
+        item.price = 15.50
+        item.purchase = Purchase()
+        item.purchase!!.id = DBReset.ADMIN_FIRST_PURCHASE_ID
+        item.product = Product()
+        item.product!!.id = DBReset.PEN_DRIVE2GB_ID
+
+        val inserted = repo().insert(item)
+        assertTrue(inserted)
+
+        val fetched = repo().fetchById(item.id!!, projectionWithRelations())
+        assertNotNull(fetched)
+        assertEquals(DBReset.ADMIN_FIRST_PURCHASE_ID, fetched!!.purchase!!.id)
+        assertEquals(DBReset.PEN_DRIVE2GB_ID, fetched.product!!.id)
+    }
 }
