@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.persistence.repository.product
 
-import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.persistence.repository.BaseCommand
 import br.com.wdc.shopping.persistence.schema.EnProduct
 import br.com.wdc.shopping.persistence.sql.SqlList

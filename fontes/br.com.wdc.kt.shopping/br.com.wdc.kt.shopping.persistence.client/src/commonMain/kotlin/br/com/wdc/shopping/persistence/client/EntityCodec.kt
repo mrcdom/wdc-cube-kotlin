@@ -3,7 +3,7 @@ package br.com.wdc.shopping.persistence.client
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.SerializationToken
-import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.model.User

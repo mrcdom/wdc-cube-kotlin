@@ -1,21 +1,4 @@
 package br.com.wdc.shopping.domain.exception
 
-open class BusinessException : RuntimeException {
-
-    constructor() : super()
-
-    constructor(message: String) : super(message)
-
-    constructor(message: String, cause: Throwable) : super(message, cause)
-
-    constructor(cause: Throwable) : super(cause)
-
-    companion object {
-        fun wrap(message: String, e: Exception): BusinessException {
-            if (e is BusinessException) return e
-            val exn = BusinessException(message)
-            exn.addSuppressed(e)
-            return exn
-        }
-    }
-}
+/** Falha de regra de negócio — a exceção base do framework, sob o nome que a aplicação já usava. */
+typealias BusinessException = br.com.wdc.framework.domain.exception.BusinessException

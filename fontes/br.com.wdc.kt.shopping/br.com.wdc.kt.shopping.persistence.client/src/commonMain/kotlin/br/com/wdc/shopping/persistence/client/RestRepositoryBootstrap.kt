@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.persistence.client
 
-import br.com.wdc.shopping.domain.repositories.ProductRepository
+import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.repositories.UserRepository
@@ -12,7 +12,7 @@ object RestRepositoryBootstrap {
     fun initialize(config: RestConfig, cryptoProvider: CryptoProvider) {
         CryptoProvider.BEAN.set(cryptoProvider)
         UserRepository.BEAN.set(RestUserRepository(config))
-        ProductRepository.BEAN.set(RestProductRepository(config))
+        ProductRepository.BEAN.set(HttpProductRepository(config.transport))
         PurchaseRepository.BEAN.set(RestPurchaseRepository(config))
         PurchaseItemRepository.BEAN.set(RestPurchaseItemRepository(config))
         AuthenticationService.BEAN.set(RestAuthenticationService(config))

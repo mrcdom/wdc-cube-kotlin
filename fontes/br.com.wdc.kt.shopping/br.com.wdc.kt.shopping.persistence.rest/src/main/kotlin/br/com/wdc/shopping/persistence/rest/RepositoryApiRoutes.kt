@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.persistence.rest
 
+import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.shopping.domain.exception.AccessDeniedException
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
@@ -37,6 +38,12 @@ object RepositoryApiRoutes {
         // Exception handler para AccessDeniedException
         config.routes.exception(AccessDeniedException::class.java) { e, ctx ->
             ctx.status(403)
+            ctx.json(mapOf("error" to e.message))
+        }
+
+        // Pedido recusado por validação (ordenação desconhecida, delete sem filtro…) → 400, com o motivo no corpo
+        config.routes.exception(InvalidRequestException::class.java) { e, ctx ->
+            ctx.status(400)
             ctx.json(mapOf("error" to e.message))
         }
 

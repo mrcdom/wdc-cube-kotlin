@@ -23,7 +23,7 @@ class SecurityFilter(private val authService: AuthenticationService) {
     /**
      * Handler a ser registrado como `before("/api/repo/{path}")`.
      *
-     * Rotas de imagem de produto são públicas (catálogo) e não exigem autenticação.
+     * A leitura da imagem de produto é pública (catálogo) e não exige autenticação.
      */
     fun handle(ctx: Context) {
         // Skip CORS preflight requests (OPTIONS)
@@ -31,7 +31,7 @@ class SecurityFilter(private val authService: AuthenticationService) {
             return
         }
 
-        if (isPublicRoute(ctx.path())) {
+        if (isPublicRoute(ctx.method().name(), ctx.path())) {
             return
         }
 
@@ -54,7 +54,8 @@ class SecurityFilter(private val authService: AuthenticationService) {
         LOG.debug("Authenticated request: user={} path={}", securityContext.userName, ctx.path())
     }
 
-    private fun isPublicRoute(path: String): Boolean {
-        return path.endsWith("/image")
+    /** Só a **leitura** da imagem é pública; gravá-la exige autenticação. */
+    private fun isPublicRoute(method: String, path: String): Boolean {
+        return method.equals("GET", ignoreCase = true) && path.endsWith("/image")
     }
 }

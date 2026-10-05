@@ -2,7 +2,7 @@ package br.com.wdc.shopping.persistence.repository.purchaseitem
 
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
-import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.model.User
@@ -259,7 +259,7 @@ class FetchPurchaseItemsCmd : BaseCommand() {
 
     private fun cteProduct(prj: Product, superEn: EnPurchaseItem): SqlList {
         val child = FetchProductsCmd()
-        val sql = child.cteProduct(null, prj, superEn.alias, superEn.productId)
+        val sql = child.cteProduct(prj, superEn.alias, superEn.productId)
         child.transferParamsTo(this)
         return sql
     }

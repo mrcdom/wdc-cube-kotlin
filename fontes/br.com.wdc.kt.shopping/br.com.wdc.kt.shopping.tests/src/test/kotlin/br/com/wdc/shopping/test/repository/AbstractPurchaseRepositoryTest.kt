@@ -3,7 +3,7 @@ package br.com.wdc.shopping.test.repository
 import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
 import kotlinx.coroutines.runBlocking
 import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
-import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.model.User

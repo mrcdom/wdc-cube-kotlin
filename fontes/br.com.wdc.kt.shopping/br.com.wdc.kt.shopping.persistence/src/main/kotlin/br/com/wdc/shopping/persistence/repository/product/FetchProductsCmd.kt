@@ -1,8 +1,7 @@
 package br.com.wdc.shopping.persistence.repository.product
 
 import br.com.wdc.framework.commons.lang.CoerceUtils
-import br.com.wdc.shopping.domain.criteria.ProductCriteria
-import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.utils.ProjectionValues
 import br.com.wdc.shopping.persistence.repository.BaseCommand
 import br.com.wdc.shopping.persistence.schema.EnProduct
@@ -10,23 +9,15 @@ import br.com.wdc.shopping.persistence.schema.support.DbField
 import br.com.wdc.shopping.persistence.sql.SqlList
 import br.com.wdc.shopping.persistence.sql.SqlUtils
 import com.google.gson.stream.JsonReader
-import org.jdbi.v3.core.Jdbi
 import java.io.StringReader
-import java.sql.Connection
 
+/**
+ * O que resta do acesso JDBI a produto: a projeção do produto embutida nas consultas de compra e de item de
+ * compra, que ainda não foram portadas para jOOQ. As operações do repositório estão em [ProductRepositoryImpl].
+ */
 class FetchProductsCmd : BaseCommand() {
 
     companion object {
-        fun byId(connection: Connection, productId: Long, projection: Product?): Product? {
-            val list = byCriteria(connection, ProductCriteria()
-                .withProductId(productId)
-                .withProjection(projection))
-            return list.firstOrNull()
-        }
-
-        fun byCriteria(connection: Connection, criteria: ProductCriteria): List<Product> =
-            FetchProductsCmd().execute(connection, criteria)
-
         fun fields(prj: Product?, en: EnProduct): List<DbField> {
             val pv = ProjectionValues
             var p = prj
@@ -64,29 +55,7 @@ class FetchProductsCmd : BaseCommand() {
         }
     }
 
-    fun execute(connection: Connection, criteria: ProductCriteria): List<Product> {
-        val sql = SqlList()
-
-        val cteProduct = EnProduct("cteProduct")
-        sql.ln(WITH, cteProduct.alias, AS, '(')
-        sql.ln(cteProduct(criteria, criteria.projection, null, null).toText("  "))
-        sql.ln(')')
-        sql.ln(SELECT)
-
-        val fieldsList = fields(criteria.projection, cteProduct)
-        val fJsonData = sql.strColumn(SqlUtils.toJsonField(fieldsList), AS, "json_data")
-        sql.ln(FROM, cteProduct.alias)
-
-        Jdbi.create(connection).open().use { handle ->
-            val query = handle.createQuery(sql.toText())
-            applyParams(query)
-
-            val productMap = mutableMapOf<Long, Product>()
-            return query.map { rs, _ -> fromJson(fJsonData(rs)!!, productMap) }.list()
-        }
-    }
-
-    fun cteProduct(criteria: ProductCriteria?, prj: Product?, superAlias: String?, superId: DbField?): SqlList {
+    fun cteProduct(prj: Product?, superAlias: String?, superId: DbField?): SqlList {
         val p = EnProduct("P")
 
         val sql = SqlList()
@@ -102,23 +71,6 @@ class FetchProductsCmd : BaseCommand() {
                 ll.ln(WHERE, superId, EQUAL, p.id)
             })
         }
-
-        if (criteria == null) return sql
-
-        val applier = ApplyProductCriteria(this)
-        applier.criteria = criteria
-        applier.root = p
-        applier.apply(sql)
-
-        criteria.orderBy?.let {
-            when (it) {
-                ProductCriteria.OrderBy.ASCENDING -> sql.ln(ORDER_BY(p.id.asc()))
-                ProductCriteria.OrderBy.DESCENDING -> sql.ln(ORDER_BY(p.id.desc()))
-            }
-        }
-
-        criteria.limit?.let { sql.ln(LIMIT, it) }
-        criteria.offset?.let { sql.ln(OFFSET, it) }
 
         return sql
     }

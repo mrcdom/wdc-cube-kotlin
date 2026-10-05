@@ -1,12 +1,12 @@
 package br.com.wdc.shopping.persistence.rest
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.shopping.domain.criteria.ProductCriteria
-import br.com.wdc.shopping.domain.model.Product
-import br.com.wdc.shopping.domain.repositories.Page
-import br.com.wdc.shopping.domain.repositories.ProductRepository
-import br.com.wdc.shopping.domain.utils.ProjectionValues
-import com.google.gson.JsonObject
+import br.com.wdc.framework.commons.serialization.InputCoerceUtils
+import br.com.wdc.framework.domain.exception.InvalidRequestException
+import br.com.wdc.shopping.domain.product.Product
+import br.com.wdc.shopping.domain.product.ProductCodec
+import br.com.wdc.shopping.domain.product.ProductCriteria
+import br.com.wdc.shopping.domain.product.ProductRepository
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import java.awt.RenderingHints
@@ -16,6 +16,10 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 
+/**
+ * Endpoints REST de produto. Lê e escreve com o [ProductCodec] — o mesmo que o cliente usa —, sem reflexão.
+ * O controle de acesso é do repositório registrado (decorado quando a segurança está ligada).
+ */
 class ProductApiController {
 
     companion object {
@@ -28,121 +32,93 @@ class ProductApiController {
             val ctrl = ProductApiController()
             config.routes.post("/api/repo/product/insert", ctrl::insert)
             config.routes.post("/api/repo/product/update", ctrl::update)
-            config.routes.post("/api/repo/product/upsert", ctrl::upsert)
             config.routes.post("/api/repo/product/delete", ctrl::delete)
             config.routes.post("/api/repo/product/count", ctrl::count)
             config.routes.post("/api/repo/product/fetch", ctrl::fetch)
-            config.routes.post("/api/repo/product/fetchPage", ctrl::fetchPage)
-            config.routes.post("/api/repo/product/fetchById", ctrl::fetchByIdPost)
+            config.routes.post("/api/repo/product/fetch-page", ctrl::fetchPage)
+            config.routes.post("/api/repo/product/fetch-by-id", ctrl::fetchByIdPost)
             config.routes.get("/api/repo/product/{id}", ctrl::fetchById)
             config.routes.get("/api/repo/product/{id}/image", ctrl::fetchImage)
             config.routes.put("/api/repo/product/{id}/image", ctrl::updateImage)
         }
 
         private fun repo(): ProductRepository = ProductRepository.BEAN.get()
+    }
 
-        private fun fullProjection(): Product {
-            val pv = ProjectionValues
-            return Product().apply {
-                id = pv.i64
-                name = pv.str
-                price = pv.f64
-                description = pv.str
-            }
-        }
+    private val codec = ProductCodec()
 
-        private fun json(ctx: Context, obj: Any) {
-            ctx.contentType("application/json")
-            ctx.result(ApiGson.instance.toJson(obj))
+    /** Lê o pedido de consulta; sem projeção, vale a padrão do repositório (tudo menos a imagem). */
+    private fun readFetchRequest(ctx: Context): FetchRequest<ProductCriteria> {
+        val request = codec.readFetchRequest(ctx.jsonBody(), ProductCriteria()) { c, prj -> c.withProjection(prj) }
+        if (request.criteria.projection == null) {
+            request.criteria.withProjection(repo().newProjection())
         }
-
-        private fun parseCriteria(body: JsonObject): ProductCriteria {
-            val criteria = ProductCriteria()
-            if (hasValue(body, "productId")) criteria.withProductId(body.get("productId").asLong)
-            if (hasValue(body, "offset")) criteria.withOffset(body.get("offset").asInt)
-            if (hasValue(body, "limit")) {
-                val limit = body.get("limit").asInt
-                if (limit >= 0) criteria.withLimit(limit)
-            }
-            if (hasValue(body, "orderBy")) criteria.withOrderBy(ProductCriteria.OrderBy.valueOf(body.get("orderBy").asString))
-            return criteria
-        }
-
-        private fun hasValue(obj: JsonObject, field: String): Boolean {
-            return obj.has(field) && !obj.get(field).isJsonNull
-        }
+        return request
     }
 
     private fun insert(ctx: Context) {
-        val product = ApiGson.instance.fromJson(ctx.body(), Product::class.java)
+        val product = codec.readEntity(ctx.jsonBody())
         val success = blocking { repo().insert(product) }
-        json(ctx, mapOf("success" to success, "id" to (product.id ?: -1L)))
+        ctx.jsonResult { it.beginObject().name("success").value(success).name("id").value(product.id ?: -1L).endObject() }
     }
 
+    /** As chaves presentes no corpo dizem o que atualizar — inclusive para `null`. */
     private fun update(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val newEntity = ApiGson.instance.fromJson(body.get("newEntity"), Product::class.java)
-        val oldEntity = ApiGson.instance.fromJson(body.get("oldEntity"), Product::class.java)
-        val success = blocking { repo().update(newEntity, oldEntity) }
-        json(ctx, mapOf("success" to success))
-    }
-
-    private fun upsert(ctx: Context) {
-        val product = ApiGson.instance.fromJson(ctx.body(), Product::class.java)
-        val success = blocking { repo().insertOrUpdate(product) }
-        json(ctx, mapOf("success" to success, "id" to (product.id ?: -1L)))
+        val data = codec.readEntityForUpdate(ctx.jsonBody())
+        val success = blocking { repo().update(data.entity, null, data.projection) }
+        ctx.jsonField("success", success)
     }
 
     private fun delete(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = blocking { repo().delete(parseCriteria(body)) }
-        json(ctx, mapOf("count" to count))
+        val criteria = readFetchRequest(ctx).criteria
+        ctx.jsonField("count", blocking { repo().delete(criteria) })
     }
 
     private fun count(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = blocking { repo().count(parseCriteria(body)) }
-        json(ctx, mapOf("count" to count))
+        val criteria = readFetchRequest(ctx).criteria
+        ctx.jsonField("count", blocking { repo().count(criteria) })
     }
 
     private fun fetch(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val criteria = parseCriteria(body)
-        val projection = ApiGson.parseProjection(body, Product::class.java)
-        criteria.withProjection(projection ?: fullProjection())
-        val items = blocking { repo().fetch(criteria) }
-        json(ctx, mapOf("items" to items))
+        val request = readFetchRequest(ctx)
+        val items = blocking { repo().fetch(request.criteria, request.offset, request.limit) }
+        ctx.jsonResult { codec.writeItems(it, items) }
     }
 
     private fun fetchPage(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val criteria = parseCriteria(body)
-        val projection = ApiGson.parseProjection(body, Product::class.java)
-        criteria.withProjection(projection ?: fullProjection())
-        val page = blocking { repo().fetchPage(criteria) }
-        json(ctx, mapOf("items" to page.items, "totalCount" to page.totalCount))
+        val request = readFetchRequest(ctx)
+        val page = blocking { repo().fetchPage(request.criteria, request.page, request.pageSize) }
+        ctx.jsonResult { codec.writeItems(it, page.items, page.totalItems) }
     }
 
     private fun fetchById(ctx: Context) {
-        val id = ctx.pathParam("id").toLong()
-        val result = blocking { repo().fetchById(id, fullProjection()) }
-        if (result == null) {
-            ctx.status(404).json(mapOf("error" to "Not found"))
-            return
-        }
-        json(ctx, result)
+        val id = ctx.pathParam("id").toLongOrNull() ?: throw InvalidRequestException("id de produto inválido")
+        respondEntity(ctx, blocking { repo().fetchById(id) })
     }
 
     private fun fetchByIdPost(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val id = body.get("id").asLong
-        val projection = ApiGson.parseProjection(body, Product::class.java)
-        val result = blocking { repo().fetchById(id, projection ?: fullProjection()) }
-        if (result == null) {
+        var id: Long? = null
+        var projection: Product? = null
+        val input = ctx.jsonBody()
+        input.beginObject()
+        while (input.hasNext()) {
+            when (input.nextName()) {
+                "id" -> id = InputCoerceUtils.asLong(input)
+                "projection" -> projection = codec.readEntity(input)
+                else -> input.skipValue()
+            }
+        }
+        input.endObject()
+        val productId = id ?: throw InvalidRequestException("fetch-by-id exige o id")
+        respondEntity(ctx, blocking { repo().fetchById(productId, projection) })
+    }
+
+    private fun respondEntity(ctx: Context, product: Product?) {
+        if (product == null) {
             ctx.status(404).json(mapOf("error" to "Not found"))
             return
         }
-        json(ctx, result)
+        ctx.jsonResult { codec.writeEntity(it, product) }
     }
 
     private fun fetchImage(ctx: Context) {

@@ -1,10 +1,10 @@
 package br.com.wdc.shopping.test.service
 
-import br.com.wdc.shopping.domain.criteria.ProductCriteria
+import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
 import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.criteria.UserCriteria
-import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.model.User

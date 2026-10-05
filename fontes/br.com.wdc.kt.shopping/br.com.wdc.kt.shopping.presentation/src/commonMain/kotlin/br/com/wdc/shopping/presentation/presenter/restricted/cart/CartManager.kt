@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.cart
 
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
-import br.com.wdc.shopping.domain.model.Product
+import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
 import br.com.wdc.shopping.domain.model.User

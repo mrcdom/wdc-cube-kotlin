@@ -40,6 +40,9 @@ object DBReset {
     fun run(c: Connection) {
         // Clean all
         for (tbName in arrayOf(
+            // sessões e segredos referenciam o usuário: sem limpá-los antes, a carga falha depois de qualquer login
+            "EN_USER_SESSION",
+            "EN_USER_INTENT_SECRET",
             EnPurchaseItem.INSTANCE.tableName(),
             EnPurchase.INSTANCE.tableName(),
             EnProduct.INSTANCE.tableName(),

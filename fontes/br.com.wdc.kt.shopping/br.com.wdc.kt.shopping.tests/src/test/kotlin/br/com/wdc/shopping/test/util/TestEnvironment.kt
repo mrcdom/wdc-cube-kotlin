@@ -7,7 +7,7 @@ import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.sql.SqlDataSource
 import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
-import br.com.wdc.shopping.domain.repositories.ProductRepository
+import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.repositories.UserRepository
@@ -15,12 +15,12 @@ import br.com.wdc.framework.commons.util.Defer
 import br.com.wdc.shopping.persistence.RepositoryBootstrap
 import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
-import org.apache.tomcat.dbcp.dbcp.BasicDataSource
+import org.h2.jdbcx.JdbcConnectionPool
 import java.nio.file.Paths
 
 class TestEnvironment(private val dbName: String = "wedocode-shopping") : ShoppingTestEnvironment {
 
-    private lateinit var datasource: BasicDataSource
+    private lateinit var datasource: JdbcConnectionPool
     private lateinit var executor: ScheduledExecutorForTest
     private val cleanUp = Defer()
 
@@ -35,15 +35,8 @@ class TestEnvironment(private val dbName: String = "wedocode-shopping") : Shoppi
         JsonInputFactory.installCommon()
         JsonOutputFactory.installCommon()
 
-        val ds = BasicDataSource()
-        ds.driverClassName = "org.h2.jdbcx.JdbcDataSource"
-        ds.url = "jdbc:h2:mem:$dbName;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
-        ds.username = "sa"
-        ds.password = "sa"
-        ds.initialSize = 1
-        ds.maxActive = 10
-        ds.maxIdle = 5
-        ds.validationQuery = "SELECT 1 FROM DUAL"
+        val ds = JdbcConnectionPool.create("jdbc:h2:mem:$dbName;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE", "sa", "sa")
+        ds.maxConnections = 10
         datasource = ds
 
         val basePath = Paths.get("work")
@@ -68,7 +61,7 @@ class TestEnvironment(private val dbName: String = "wedocode-shopping") : Shoppi
     override fun stop() {
         cleanUp.run()
         RepositoryBootstrap.release()
-        datasource.close()
+        datasource.dispose()
         executor.shutdown()
     }
 

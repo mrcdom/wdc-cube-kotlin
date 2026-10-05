@@ -9,7 +9,6 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.logback.classic)
-    testImplementation(libs.tomcat.dbcp)
     testImplementation(libs.h2)
     testImplementation(libs.jooq)
     testImplementation(libs.javalin)

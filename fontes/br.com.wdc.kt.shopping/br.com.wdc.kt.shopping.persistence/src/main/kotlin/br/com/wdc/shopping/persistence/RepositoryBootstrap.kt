@@ -1,11 +1,10 @@
 package br.com.wdc.shopping.persistence
 
-import br.com.wdc.shopping.domain.repositories.ProductRepository
+import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.security.AuthenticationService
-import br.com.wdc.shopping.persistence.repository.product.ProductRepositoryImpl
 import br.com.wdc.shopping.persistence.repository.purchase.PurchaseRepositoryImpl
 import br.com.wdc.shopping.persistence.repository.purchaseitem.PurchaseItemRepositoryImpl
 import br.com.wdc.shopping.persistence.repository.user.UserRepositoryImpl
@@ -19,7 +18,6 @@ object RepositoryBootstrap {
 
     fun initialize() {
         UserRepository.BEAN.set(UserRepositoryImpl())
-        ProductRepository.BEAN.set(ProductRepositoryImpl())
         PurchaseRepository.BEAN.set(PurchaseRepositoryImpl())
         PurchaseItemRepository.BEAN.set(PurchaseItemRepositoryImpl())
     }

@@ -1,29 +1,29 @@
 package br.com.wdc.shopping.persistence.security
 
-import br.com.wdc.shopping.domain.criteria.ProductCriteria
-import br.com.wdc.shopping.domain.model.Product
-import br.com.wdc.shopping.domain.repositories.Page
-import br.com.wdc.shopping.domain.repositories.ProductRepository
+import br.com.wdc.shopping.domain.product.Product
+import br.com.wdc.shopping.domain.product.ProductCriteria
+import br.com.wdc.shopping.domain.product.ProductRepository
 
+/**
+ * Aplica o controle de acesso a produto. `fetchById`, `fetchPage` e `insertOrUpdate` não são sobrescritos de
+ * propósito: os defaults da interface passam por `fetch`, `count`, `insert` e `update`, que já são verificados.
+ */
 class SecuredProductRepository(private val delegate: ProductRepository) : ProductRepository {
 
     companion object {
         private const val ENTITY = "product"
     }
 
-    override suspend fun insert(product: Product): Boolean {
+    override fun newProjection(): Product = delegate.newProjection()
+
+    override suspend fun insert(bean: Product): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
-        return delegate.insert(product)
+        return delegate.insert(bean)
     }
 
-    override suspend fun update(newProduct: Product, oldProduct: Product): Boolean {
+    override suspend fun update(newBean: Product, oldBean: Product?, projection: Product?): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
-        return delegate.update(newProduct, oldProduct)
-    }
-
-    override suspend fun insertOrUpdate(product: Product): Boolean {
-        SecurityEnforcer.require(ENTITY, "write")
-        return delegate.insertOrUpdate(product)
+        return delegate.update(newBean, oldBean, projection)
     }
 
     override suspend fun delete(criteria: ProductCriteria): Int {
@@ -36,21 +36,12 @@ class SecuredProductRepository(private val delegate: ProductRepository) : Produc
         return delegate.count(criteria)
     }
 
-    override suspend fun fetch(criteria: ProductCriteria): List<Product> {
+    override suspend fun fetch(criteria: ProductCriteria, offset: Int, limit: Int): List<Product> {
         SecurityEnforcer.require(ENTITY, "read")
-        return delegate.fetch(criteria)
+        return delegate.fetch(criteria, offset, limit)
     }
 
-    override suspend fun fetchPage(criteria: ProductCriteria): Page<Product> {
-        SecurityEnforcer.require(ENTITY, "read")
-        return delegate.fetchPage(criteria)
-    }
-
-    override suspend fun fetchById(productId: Long, projection: Product?): Product? {
-        SecurityEnforcer.require(ENTITY, "read")
-        return delegate.fetchById(productId, projection)
-    }
-
+    /** A imagem é pública: faz parte do catálogo. */
     override suspend fun fetchImage(productId: Long): ByteArray? = delegate.fetchImage(productId)
 
     override suspend fun updateImage(productId: Long, image: ByteArray): Boolean {
