@@ -8,12 +8,6 @@ import kotlin.test.assertTrue
 
 class QueryStringParserTest {
 
-    /**
-     * Pela API pública: sem parâmetros, o intent se escreve só com o nome do lugar. O mapa interno
-     * (`parameters`) não é alcançável dos testes no alvo JS.
-     */
-    private fun CubeIntent.hasNoParameters(): Boolean = toString() == CubeIntent().toString()
-
     private fun parseQuery(query: String): CubeIntent {
         val intent = CubeIntent()
         QueryStringParser.parse(intent, query)
@@ -118,21 +112,21 @@ class QueryStringParserTest {
     fun `null data does nothing`() {
         val intent = CubeIntent()
         QueryStringParser.parse(intent, null)
-        assertTrue(intent.hasNoParameters())
+        assertTrue(intent.parameters.isEmpty())
     }
 
     @Test
     fun `empty string does nothing`() {
         val intent = CubeIntent()
         QueryStringParser.parse(intent, "")
-        assertTrue(intent.hasNoParameters())
+        assertTrue(intent.parameters.isEmpty())
     }
 
     @Test
     fun `blank string does nothing`() {
         val intent = CubeIntent()
         QueryStringParser.parse(intent, "   ")
-        assertTrue(intent.hasNoParameters())
+        assertTrue(intent.parameters.isEmpty())
     }
 
     @Test
@@ -162,7 +156,7 @@ class QueryStringParserTest {
     fun `parseParameters with empty string does nothing`() {
         val intent = CubeIntent()
         QueryStringParser.parseParameters(intent, "")
-        assertTrue(intent.hasNoParameters())
+        assertTrue(intent.parameters.isEmpty())
     }
 
     // -- Complex scenarios --
