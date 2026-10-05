@@ -1,8 +1,7 @@
 package br.com.wdc.shopping.test.repository
 
-import br.com.wdc.shopping.domain.repositories.PurchaseRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
-import br.com.wdc.shopping.test.util.DisabledTests
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
 import br.com.wdc.shopping.test.util.RestTestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -19,15 +18,6 @@ class RestPurchaseRepositoryTest : AbstractPurchaseRepositoryTest() {
         @JvmField
         @RegisterExtension
         val envExtension = TestEnvironmentExtension(env)
-
-        // Falhas conhecidas do caminho REST atual
-        @JvmField
-        @RegisterExtension
-        val knownGaps = DisabledTests(mapOf(
-            "fetchWithProjectionList_filterItemsByCriteria" to
-                "REST perde o critério da coleção filha: a projeção pede só os itens do produto " +
-                "BOLA_WILSON, mas voltam todos os itens da compra (2 em vez de 1)",
-        ))
     }
 
     override fun repo(): PurchaseRepository = env.purchaseRepo

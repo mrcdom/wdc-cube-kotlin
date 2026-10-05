@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.products.structs
 
 import br.com.wdc.shopping.domain.product.Product
-import br.com.wdc.shopping.domain.utils.ProjectionValues
+import br.com.wdc.framework.domain.projection.ProjectionValues
 
 class ProductInfo {
 

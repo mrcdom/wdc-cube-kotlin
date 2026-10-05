@@ -2,7 +2,11 @@ package br.com.wdc.shopping.test.schema
 
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
 import br.com.wdc.shopping.scripts.sgbd.DBReset
+import br.com.wdc.shopping.scripts.sgbd.Migration_0006_PurchaseBuyDateToUtc
 import java.sql.Connection
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.sql.DriverManager
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
@@ -151,6 +155,59 @@ class SchemaMigrationTest {
                 legacy.rows("SELECT USERNAME, TRIM(PASSWORD) FROM EN_USER ORDER BY ID"),
             )
             assertEquals(DBReset.passwordDigest("beotrano"), "dxz5j4uooih4r59rlath82ago")
+        }
+    }
+
+    @Test
+    fun migration_movesLegacyPurchaseDates_fromLocalWallTimeToUtc() {
+        newDatabase().use { legacy ->
+            legacy.createLegacySchema()
+            legacy.createStatement().use { stmt ->
+                stmt.execute("INSERT INTO EN_USER (ID, USERNAME, PASSWORD, NAME, ROLES) VALUES (0, 'admin', 'x', 'Admin', 'ADMIN')")
+                // como a persistência antiga gravava: a hora local da máquina
+                stmt.execute("INSERT INTO EN_PURCHASE (ID, USERID, BUYDATE) VALUES (0, 0, TIMESTAMP '2024-01-15 10:30:00')")
+                stmt.execute("INSERT INTO EN_PURCHASE (ID, USERID, BUYDATE) VALUES (1, 0, TIMESTAMP '2024-07-15 10:30:00')")
+            }
+            DBCreate().withConnection(legacy).run()
+
+            val zone = ZoneId.systemDefault()
+            fun utcOf(local: String) =
+                LocalDateTime.parse(local).atZone(zone).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime().toString()
+            assertEquals(
+                listOf(utcOf("2024-01-15T10:30:00"), utcOf("2024-07-15T10:30:00")),
+                legacy.rows("SELECT FORMATDATETIME(BUYDATE, 'yyyy-MM-dd''T''HH:mm') FROM EN_PURCHASE ORDER BY ID").map { LocalDateTime.parse(it).toString() },
+            )
+        }
+    }
+
+    @Test
+    fun migration_convertsWithTheZoneTheDataWasWrittenIn() {
+        newDatabase().use { legacy ->
+            legacy.createLegacySchema()
+            legacy.createStatement().use { stmt ->
+                stmt.execute("INSERT INTO EN_USER (ID, USERNAME, PASSWORD, NAME, ROLES) VALUES (0, 'admin', 'x', 'Admin', 'ADMIN')")
+                stmt.execute("INSERT INTO EN_PURCHASE (ID, USERID, BUYDATE) VALUES (0, 0, TIMESTAMP '2024-01-15 10:30:00')")
+                stmt.execute("INSERT INTO EN_PURCHASE (ID, USERID, BUYDATE) VALUES (1, 0, TIMESTAMP '2024-07-15 10:30:00')")
+            }
+            Migration_0006_PurchaseBuyDateToUtc(legacy, ZoneId.of("Europe/Paris")).step01_localWallTimeToUtc()
+
+            // inverno: UTC+1; verão: UTC+2
+            assertEquals(
+                listOf("2024-01-15 09:30", "2024-07-15 08:30"),
+                legacy.rows("SELECT FORMATDATETIME(BUYDATE, 'yyyy-MM-dd HH:mm') FROM EN_PURCHASE ORDER BY ID"),
+            )
+        }
+    }
+
+    @Test
+    fun newDatabase_seedsPurchaseDatesInUtc_andMigrationsDoNotShiftThem() {
+        newDatabase().use { db ->
+            DBCreate().withConnection(db).run()
+            DBCreate().withConnection(db).run()
+            assertEquals(
+                listOf("2010-01-01 14:30", "2011-04-03 09:15"),
+                db.rows("SELECT FORMATDATETIME(BUYDATE, 'yyyy-MM-dd HH:mm') FROM EN_PURCHASE ORDER BY ID"),
+            )
         }
     }
 

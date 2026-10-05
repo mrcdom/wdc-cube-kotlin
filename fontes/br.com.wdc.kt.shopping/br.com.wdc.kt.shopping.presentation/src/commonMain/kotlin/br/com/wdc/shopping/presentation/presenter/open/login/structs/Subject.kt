@@ -5,7 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.shopping.domain.user.User
-import br.com.wdc.shopping.domain.utils.ProjectionValues
+import br.com.wdc.framework.domain.projection.ProjectionValues
 
 class Subject : Externalizable {
 

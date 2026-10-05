@@ -1,10 +1,6 @@
 package br.com.wdc.shopping.scripts.sgbd
 
-import br.com.wdc.framework.commons.lang.CoerceUtils
-import br.com.wdc.framework.commons.lang.asJavaOffsetDateTime
 import br.com.wdc.shopping.persistence.repository.product.InsertProductRowCmd
-import br.com.wdc.shopping.persistence.repository.purchase.InsertRowPurchaseCmd
-import br.com.wdc.shopping.persistence.repository.purchaseitem.InsertRowPurchaseItemCmd
 import br.com.wdc.shopping.persistence.repository.user.InsertRowUserCmd
 import br.com.wdc.shopping.persistence.schema.EnProduct
 import br.com.wdc.shopping.persistence.schema.EnPurchase
@@ -16,7 +12,7 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.sql.Connection
 import java.sql.SQLException
-import java.util.Calendar
+import java.time.LocalDateTime
 
 object DBReset {
 
@@ -151,37 +147,26 @@ object DBReset {
         InsertProductRowCmd().execute(c, row)
     }
 
-    private fun addPurchase(c: Connection, id: Long, userId: Long, date: IntArray?) {
-        val row = EnPurchase.Row()
-        row.id(id)
-        row.userId(userId)
-        if (date != null && date.size >= 3) {
-            val cal = Calendar.getInstance()
-            cal.set(Calendar.YEAR, date[0])
-            cal.set(Calendar.MONTH, date[1] - 1)
-            cal.set(Calendar.DAY_OF_MONTH, date[2])
-            if (date.size >= 5) {
-                cal.set(Calendar.HOUR_OF_DAY, date[3])
-                cal.set(Calendar.MINUTE, date[4])
-            } else {
-                cal.set(Calendar.HOUR_OF_DAY, 0)
-                cal.set(Calendar.MINUTE, 0)
-            }
-            cal.set(Calendar.SECOND, 0)
-            cal.set(Calendar.MILLISECOND, 0)
-            row.buyDate(CoerceUtils.asJavaOffsetDateTime(cal.time)!!)
+    /** [date] é o instante da compra em UTC — a convenção da coluna, que não guarda fuso. */
+    private fun addPurchase(c: Connection, id: Long, userId: Long, date: IntArray) {
+        val buyDate = LocalDateTime.of(date[0], date[1], date[2], date.getOrElse(3) { 0 }, date.getOrElse(4) { 0 })
+        c.prepareStatement("INSERT INTO EN_PURCHASE (ID, USERID, BUYDATE) VALUES (?, ?, ?)").use { ps ->
+            ps.setLong(1, id)
+            ps.setLong(2, userId)
+            ps.setObject(3, buyDate)
+            ps.executeUpdate()
         }
-        InsertRowPurchaseCmd().execute(c, row)
     }
 
     private fun addPurchaseItem(c: Connection, id: Long, purchaseId: Long, productId: Long, amount: Int, price: Double) {
-        val row = EnPurchaseItem.Row()
-        row.id(id)
-        row.purchaseId(purchaseId)
-        row.productId(productId)
-        row.amount(amount)
-        row.price(BigDecimal.valueOf(price))
-        InsertRowPurchaseItemCmd().execute(c, row)
+        c.prepareStatement("INSERT INTO EN_PURCHASEITEM (ID, PURCHASEID, PRODUCTID, AMOUNT, PRICE) VALUES (?, ?, ?, ?, ?)").use { ps ->
+            ps.setLong(1, id)
+            ps.setLong(2, purchaseId)
+            ps.setLong(3, productId)
+            ps.setInt(4, amount)
+            ps.setBigDecimal(5, BigDecimal.valueOf(price))
+            ps.executeUpdate()
+        }
     }
 
     /**

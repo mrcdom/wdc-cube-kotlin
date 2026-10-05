@@ -169,10 +169,6 @@ class DBCreate {
             )
         }
 
-        if (mustResetDb && !skipReset) {
-            DBReset.run(conn)
-        }
-
         // As migrações levam os bancos criados por versões anteriores ao esquema acima; num banco novo, não mudam nada.
         MigrationRunner(conn)
             .run(Migration_0001_AddUserRoles(conn))
@@ -180,6 +176,12 @@ class DBCreate {
             .run(Migration_0003_CreateSecurityTables(conn))
             .run(Migration_0004_ImageVarbinaryAndOrderingIndexes(conn))
             .run(Migration_0005_UnsignedPasswordDigest(conn))
+            .run(Migration_0006_PurchaseBuyDateToUtc(conn))
+
+        // A carga vem depois das migrações: ela já grava no formato atual, e não deve ser migrada.
+        if (mustResetDb && !skipReset) {
+            DBReset.run(conn)
+        }
 
         return this
     }

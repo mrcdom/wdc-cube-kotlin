@@ -10,8 +10,8 @@ import br.com.wdc.framework.commons.sql.SqlDataSource
 import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.product.ProductRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseRepository
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
@@ -23,8 +23,8 @@ import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestAuthClient
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.HttpProductRepository
-import br.com.wdc.shopping.persistence.client.RestPurchaseItemRepository
-import br.com.wdc.shopping.persistence.client.RestPurchaseRepository
+import br.com.wdc.shopping.persistence.client.HttpPurchaseItemRepository
+import br.com.wdc.shopping.persistence.client.HttpPurchaseRepository
 import br.com.wdc.shopping.persistence.client.HttpUserRepository
 import br.com.wdc.shopping.persistence.rest.RepositoryApiRoutes
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
@@ -101,9 +101,6 @@ class RestTestEnvironment(
 
         SqlDataSource.BEAN.set(SqlDataSourceDelegate(ds))
         ScheduledExecutor.BEAN.set(executor)
-
-        // Inicializa repos JDBC no server-side (sem segurança)
-        RepositoryBootstrap.initialize()
         ShoppingRepositoryBootstrap.initialize(ds, cleanUp = cleanUp)
         if (jwtSecret != null) {
             RepositoryBootstrap.initializeSecurity(jwtSecret)
@@ -144,8 +141,8 @@ class RestTestEnvironment(
         CryptoProvider.BEAN.set(JceCryptoProvider())
         userRepo = HttpUserRepository(transport)
         productRepo = HttpProductRepository(transport)
-        purchaseRepo = RestPurchaseRepository(restConfig)
-        purchaseItemRepo = RestPurchaseItemRepository(restConfig)
+        purchaseRepo = HttpPurchaseRepository(transport)
+        purchaseItemRepo = HttpPurchaseItemRepository(transport)
     }
 
     override fun stop() {

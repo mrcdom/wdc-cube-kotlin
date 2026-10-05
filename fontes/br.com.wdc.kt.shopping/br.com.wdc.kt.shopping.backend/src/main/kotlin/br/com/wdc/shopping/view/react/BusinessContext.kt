@@ -60,7 +60,6 @@ class BusinessContext {
                 command.run()
             }
 
-            RepositoryBootstrap.initialize()
             ShoppingRepositoryBootstrap.initialize(dataSource, cleanUp = cleanUp)
 
             val jwtSecret = ShoppingConfig.jwtSecret

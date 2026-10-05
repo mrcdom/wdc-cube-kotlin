@@ -136,3 +136,15 @@ private fun readStringField(input: ExtensibleObjectInput, fieldName: String): St
     input.endObject()
     return result
 }
+
+private val HEX_CHARS = "0123456789abcdef".toCharArray()
+
+private fun bytesToHex(bytes: ByteArray): String {
+    val sb = StringBuilder(bytes.size * 2)
+    for (b in bytes) {
+        val v = b.toInt() and 0xFF
+        sb.append(HEX_CHARS[v ushr 4])
+        sb.append(HEX_CHARS[v and 0x0F])
+    }
+    return sb.toString()
+}

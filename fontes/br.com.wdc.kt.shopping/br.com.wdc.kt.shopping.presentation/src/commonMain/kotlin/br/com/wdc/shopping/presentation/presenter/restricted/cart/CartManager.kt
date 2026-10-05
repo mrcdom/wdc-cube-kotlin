@@ -2,10 +2,10 @@ package br.com.wdc.shopping.presentation.presenter.restricted.cart
 
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
 import br.com.wdc.shopping.domain.product.Product
-import br.com.wdc.shopping.domain.model.Purchase
-import br.com.wdc.shopping.domain.model.PurchaseItem
+import br.com.wdc.shopping.domain.purchase.Purchase
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
 import br.com.wdc.shopping.domain.user.User
-import br.com.wdc.shopping.domain.repositories.PurchaseRepository
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem

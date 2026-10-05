@@ -5,8 +5,12 @@ import br.com.wdc.framework.jooq.TransactionAwareConnectionProvider
 import br.com.wdc.framework.persistence.transaction.TransactionServiceImpl
 import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.product.ProductRepository
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.persistence.repository.product.ProductRepositoryImpl
+import br.com.wdc.shopping.persistence.repository.purchase.PurchaseRepositoryImpl
+import br.com.wdc.shopping.persistence.repository.purchaseitem.PurchaseItemRepositoryImpl
 import br.com.wdc.shopping.persistence.repository.user.UserRepositoryImpl
 import javax.sql.DataSource
 import org.jooq.SQLDialect
@@ -18,8 +22,8 @@ import org.jooq.impl.DSL
  * Bootstrap da persistência do Shopping sobre jOOQ: liga o módulo ao DataSource que o composition root lhe
  * entrega (backend, testes).
  *
- * Em migração: os repositórios já portados para jOOQ (User, Product) são registrados aqui; os demais, ainda por
- * [RepositoryBootstrap]. Chame os dois, e `RepositoryBootstrap.initializeSecurity` por último.
+ * Registra os quatro repositórios; a decoração de segurança vem depois, por
+ * `RepositoryBootstrap.initializeSecurity`.
  */
 object ShoppingRepositoryBootstrap {
 
@@ -42,10 +46,14 @@ object ShoppingRepositoryBootstrap {
         ShoppingTransactions.BEAN.set(TransactionServiceImpl { dataSource })
         UserRepository.BEAN.set(UserRepositoryImpl())
         ProductRepository.BEAN.set(ProductRepositoryImpl())
+        PurchaseRepository.BEAN.set(PurchaseRepositoryImpl())
+        PurchaseItemRepository.BEAN.set(PurchaseItemRepositoryImpl())
 
         cleanUp.push {
             UserRepository.BEAN.set(null)
             ProductRepository.BEAN.set(null)
+            PurchaseRepository.BEAN.set(null)
+            PurchaseItemRepository.BEAN.set(null)
             ShoppingTransactions.BEAN.set(null)
             ShoppingDSLContext.BEAN.set(null)
         }

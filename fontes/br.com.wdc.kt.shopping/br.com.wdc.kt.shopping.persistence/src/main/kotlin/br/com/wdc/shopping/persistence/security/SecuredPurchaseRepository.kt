@@ -1,33 +1,48 @@
 package br.com.wdc.shopping.persistence.security
 
-import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
-import br.com.wdc.shopping.domain.model.Purchase
-import br.com.wdc.shopping.domain.user.User
-import br.com.wdc.shopping.domain.repositories.Page
-import br.com.wdc.shopping.domain.repositories.PurchaseRepository
+import br.com.wdc.shopping.domain.exception.AccessDeniedException
+import br.com.wdc.shopping.domain.purchase.Purchase
+import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
+import br.com.wdc.shopping.domain.user.User
 
+/**
+ * Aplica o controle de acesso a compra: permissão e escopo — quem não tem `data:all` só alcança as próprias
+ * compras, e a senha do usuário da compra nunca sai por aqui.
+ *
+ * `fetchById`, `fetchPage` e `insertOrUpdate` não são sobrescritos de propósito: os defaults da interface
+ * passam por `fetch`, `count`, `insert` e `update`, que já são verificados.
+ */
 class SecuredPurchaseRepository(private val delegate: PurchaseRepository) : PurchaseRepository {
 
     companion object {
         private const val ENTITY = "purchase"
     }
 
-    override suspend fun insert(purchase: Purchase): Boolean {
+    override fun newProjection(): Purchase = delegate.newProjection()
+
+    override suspend fun insert(bean: Purchase): Boolean {
         val sc = SecurityEnforcer.require(ENTITY, "write")
-        enforceUserScope(sc, purchase)
-        return delegate.insert(purchase)
+        if (!sc.hasDataAll()) {
+            // a compra é sempre de quem a faz
+            bean.user = User().apply { id = sc.userId }
+        }
+        return delegate.insert(bean)
     }
 
-    override suspend fun insertOrUpdate(purchase: Purchase): Boolean {
+    override suspend fun update(newBean: Purchase, oldBean: Purchase?, projection: Purchase?): Boolean {
         val sc = SecurityEnforcer.require(ENTITY, "write")
-        enforceUserScope(sc, purchase)
-        return delegate.insertOrUpdate(purchase)
-    }
-
-    override suspend fun update(newPurchase: Purchase, oldPurchase: Purchase): Boolean {
-        SecurityEnforcer.require(ENTITY, "write")
-        return delegate.update(newPurchase, oldPurchase)
+        if (!sc.hasDataAll()) {
+            val id = newBean.id
+            if (id == null || delegate.count(PurchaseCriteria().withPurchaseId(id).withUserId(sc.userId)) == 0) {
+                throw AccessDeniedException("Cannot modify other user's purchase")
+            }
+            if (newBean.user != null && newBean.userId != sc.userId) {
+                throw AccessDeniedException("Cannot reassign a purchase to another user")
+            }
+        }
+        return delegate.update(newBean, oldBean, projection)
     }
 
     override suspend fun delete(criteria: PurchaseCriteria): Int {
@@ -42,36 +57,17 @@ class SecuredPurchaseRepository(private val delegate: PurchaseRepository) : Purc
         return delegate.count(criteria)
     }
 
-    override suspend fun fetch(criteria: PurchaseCriteria): List<Purchase> {
+    override suspend fun fetch(criteria: PurchaseCriteria, offset: Int, limit: Int): List<Purchase> {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         enforceUserScope(sc, criteria)
-        return delegate.fetch(criteria)
+        criteria.projection?.user?.password = null
+        val results = delegate.fetch(criteria, offset, limit)
+        results.forEach { it.user?.password = null }
+        return results
     }
 
-    override suspend fun fetchPage(criteria: PurchaseCriteria): Page<Purchase> {
-        val sc = SecurityEnforcer.require(ENTITY, "read")
-        enforceUserScope(sc, criteria)
-        return delegate.fetchPage(criteria)
-    }
-
-    override suspend fun fetchById(purchaseId: Long, projection: Purchase?): Purchase? {
-        val sc = SecurityEnforcer.require(ENTITY, "read")
-        val result = delegate.fetchById(purchaseId, projection)
-        if (result != null && !sc.hasDataAll()
-            && result.user != null && sc.userId != result.user!!.id) {
-            return null
-        }
-        return result
-    }
-
+    /** Os pedidos de um campo acumulam em `AND`: o que o chamador pediu continua valendo, restrito ao próprio usuário. */
     private fun enforceUserScope(sc: SecurityContext, criteria: PurchaseCriteria) {
-        if (!sc.hasDataAll()) criteria.withUserId(sc.userId)
-    }
-
-    private fun enforceUserScope(sc: SecurityContext, purchase: Purchase) {
-        if (!sc.hasDataAll()) {
-            if (purchase.user == null) purchase.user = User()
-            purchase.user!!.id = sc.userId
-        }
+        if (!sc.hasDataAll()) criteria.userId.eq(sc.userId)
     }
 }

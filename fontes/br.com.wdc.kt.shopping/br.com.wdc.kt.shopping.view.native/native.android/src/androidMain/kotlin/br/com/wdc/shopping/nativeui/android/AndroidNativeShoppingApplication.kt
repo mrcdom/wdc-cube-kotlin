@@ -3,8 +3,8 @@ package br.com.wdc.shopping.nativeui.android
 import br.com.wdc.framework.commons.storage.AndroidPersistentSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.shopping.domain.product.ProductRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseRepository
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.repository.SecuredProductRepository

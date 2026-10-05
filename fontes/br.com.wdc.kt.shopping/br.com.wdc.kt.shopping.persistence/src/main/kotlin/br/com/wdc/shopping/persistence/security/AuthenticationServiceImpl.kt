@@ -9,7 +9,7 @@ import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.ChallengeResult
 import br.com.wdc.shopping.domain.security.Role
 import br.com.wdc.shopping.domain.security.SecurityContext
-import br.com.wdc.shopping.domain.utils.ProjectionValues
+import br.com.wdc.framework.domain.projection.ProjectionValues
 import kotlin.time.toKotlinInstant
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest

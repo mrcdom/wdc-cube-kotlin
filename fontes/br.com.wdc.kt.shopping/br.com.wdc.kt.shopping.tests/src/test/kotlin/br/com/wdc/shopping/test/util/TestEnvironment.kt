@@ -8,8 +8,8 @@ import br.com.wdc.framework.commons.sql.SqlDataSource
 import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.product.ProductRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseRepository
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.framework.commons.util.Defer
 import br.com.wdc.shopping.domain.security.CryptoProvider
@@ -56,8 +56,6 @@ class TestEnvironment(
         ScheduledExecutor.BEAN.set(executor)
         // o login sem serviço de autenticação confere o resumo da senha na apresentação
         CryptoProvider.BEAN.set(JceCryptoProvider())
-
-        RepositoryBootstrap.initialize()
         ShoppingRepositoryBootstrap.initialize(ds, cleanUp = cleanUp)
         if (jwtSecret != null) {
             RepositoryBootstrap.initializeSecurity(jwtSecret)
