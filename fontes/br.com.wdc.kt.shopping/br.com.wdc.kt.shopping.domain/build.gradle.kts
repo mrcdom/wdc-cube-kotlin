@@ -43,6 +43,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":framework-commons"))
+            api(project(":framework-domain"))
             api(libs.kotlinx.coroutines.core)
         }
 

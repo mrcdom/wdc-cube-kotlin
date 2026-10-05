@@ -1,6 +1,7 @@
 dependencies {
     api(project(":shopping-domain"))
     api(project(":framework-commons"))
+    api(project(":framework-jooq"))
     api(libs.gson)
     api(libs.jdbi3.core)
 

@@ -15,7 +15,9 @@ import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
+import br.com.wdc.framework.commons.util.Defer
 import br.com.wdc.shopping.persistence.RepositoryBootstrap
+import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
 import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestProductRepository
@@ -45,6 +47,7 @@ class RestTestEnvironment(private val dbName: String = "wedocode-shopping-rest-t
 
     private lateinit var datasource: BasicDataSource
     private lateinit var executor: ScheduledExecutorForTest
+    private val cleanUp = Defer()
     private lateinit var javalin: Javalin
 
     override lateinit var userRepo: UserRepository; private set
@@ -85,6 +88,7 @@ class RestTestEnvironment(private val dbName: String = "wedocode-shopping-rest-t
 
         // Inicializa repos JDBC no server-side (sem segurança)
         RepositoryBootstrap.initialize()
+        ShoppingRepositoryBootstrap.initialize(ds, cleanUp = cleanUp)
 
         // Inicia Javalin em porta aleatória
         val gson = Gson()
@@ -125,6 +129,7 @@ class RestTestEnvironment(private val dbName: String = "wedocode-shopping-rest-t
 
     override fun stop() {
         javalin.stop()
+        cleanUp.run()
         RepositoryBootstrap.release()
         datasource.close()
         executor.shutdown()

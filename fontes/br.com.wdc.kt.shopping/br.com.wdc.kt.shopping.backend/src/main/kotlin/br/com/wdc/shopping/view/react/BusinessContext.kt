@@ -8,7 +8,9 @@ import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.config.AppConfig
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
+import br.com.wdc.framework.commons.util.Defer
 import br.com.wdc.shopping.persistence.RepositoryBootstrap
+import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
 import br.com.wdc.shopping.persistence.concurrent.ScheduledExecutorAdapter
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
 import org.h2.jdbcx.JdbcDataSource
@@ -23,7 +25,10 @@ class BusinessContext {
         private const val DEFAULT_DB_NAME = "wedocode-shopping"
     }
 
+    private val cleanUp = Defer()
+
     fun stop() {
+        cleanUp.run()
         RepositoryBootstrap.release()
         ScheduledExecutor.BEAN.set(null)
         SqlDataSource.BEAN.set(null)
@@ -56,6 +61,7 @@ class BusinessContext {
             }
 
             RepositoryBootstrap.initialize()
+            ShoppingRepositoryBootstrap.initialize(dataSource, cleanUp = cleanUp)
 
             val jwtSecret = ShoppingConfig.jwtSecret
             if (!jwtSecret.isNullOrBlank()) {

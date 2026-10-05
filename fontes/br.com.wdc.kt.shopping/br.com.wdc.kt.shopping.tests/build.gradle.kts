@@ -11,6 +11,7 @@ dependencies {
     testImplementation(libs.logback.classic)
     testImplementation(libs.tomcat.dbcp)
     testImplementation(libs.h2)
+    testImplementation(libs.jooq)
     testImplementation(libs.javalin)
     testImplementation(libs.gson)
     testImplementation(libs.okhttp)
