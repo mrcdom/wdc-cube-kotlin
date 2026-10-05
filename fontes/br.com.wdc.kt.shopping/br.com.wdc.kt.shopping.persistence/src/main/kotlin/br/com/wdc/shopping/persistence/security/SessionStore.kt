@@ -1,21 +1,24 @@
 package br.com.wdc.shopping.persistence.security
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.sql.SqlDataSource
-import br.com.wdc.shopping.persistence.schema.EnUserSession
+import br.com.wdc.shopping.persistence.ShoppingDSLContext
+import br.com.wdc.shopping.persistence.scheme.tables.references.EN_USER_SESSION
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
-import java.sql.Timestamp
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import org.jooq.DSLContext
+import org.jooq.Record
 import java.util.Base64
 
 /**
- * Persistent store for user sessions in H2.
+ * Persistent store for user sessions.
  *
  * Each session is stored with its full state (RSA key pair, permissions, refresh token, etc.)
- * so that it can be reconstructed after a server restart.
+ * so that it can be reconstructed after a server restart. `EXPIRES_AT` is stored in UTC.
  */
 class SessionStore {
 
@@ -44,126 +47,70 @@ class SessionStore {
         }
     }
 
+    private fun dsl(): DSLContext = ShoppingDSLContext.BEAN.get()
+
     fun save(session: AccessContext) {
-        val ds = SqlDataSource.BEAN.get()
-        val en = EnUserSession.INSTANCE
+        val t = EN_USER_SESSION
         val (pubKey, privKey) = encodeKeyPair(session.rsaKeyPair)
+        val expiresAt = LocalDateTime.ofInstant(session.expiresAt, ZoneOffset.UTC)
+        val permissions = permissionsToString(session.permissions)
 
-        ds.connection.use { conn ->
-            conn.prepareStatement(
-                "MERGE INTO ${en.tableName()} (${en.sessionId.name}, ${en.userId.name}, ${en.userName.name}, " +
-                        "${en.refreshToken.name}, ${en.expiresAt.name}, ${en.permissions.name}, " +
-                        "${en.rsaPublicKey.name}, ${en.rsaPrivateKey.name}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-            ).use { stmt ->
-                stmt.setString(1, session.sessionId)
-                stmt.setLong(2, session.userId!!)
-                stmt.setString(3, session.userName!!)
-                stmt.setString(4, session.refreshToken)
-                stmt.setTimestamp(5, Timestamp.from(session.expiresAt))
-                stmt.setString(6, permissionsToString(session.permissions))
-                stmt.setString(7, pubKey)
-                stmt.setString(8, privKey)
-                stmt.executeUpdate()
-            }
-        }
+        dsl().insertInto(t)
+            .set(t.SESSION_ID, session.sessionId)
+            .set(t.USERID, session.userId!!)
+            .set(t.USERNAME, session.userName!!)
+            .set(t.REFRESH_TOKEN, session.refreshToken)
+            .set(t.EXPIRES_AT, expiresAt)
+            .set(t.PERMISSIONS, permissions)
+            .set(t.RSA_PUBLIC_KEY, pubKey)
+            .set(t.RSA_PRIVATE_KEY, privKey)
+            .onConflict(t.SESSION_ID)
+            .doUpdate()
+            .set(t.USERID, session.userId!!)
+            .set(t.USERNAME, session.userName!!)
+            .set(t.REFRESH_TOKEN, session.refreshToken)
+            .set(t.EXPIRES_AT, expiresAt)
+            .set(t.PERMISSIONS, permissions)
+            .set(t.RSA_PUBLIC_KEY, pubKey)
+            .set(t.RSA_PRIVATE_KEY, privKey)
+            .execute()
     }
 
-    fun findBySessionId(sessionId: String): AccessContext? {
-        val ds = SqlDataSource.BEAN.get()
-        val en = EnUserSession.INSTANCE
+    fun findBySessionId(sessionId: String): AccessContext? =
+        dsl().selectFrom(EN_USER_SESSION).where(EN_USER_SESSION.SESSION_ID.eq(sessionId)).fetchOne()?.let(::mapRow)
 
-        ds.connection.use { conn ->
-            conn.prepareStatement(
-                "SELECT ${en.sessionId.name}, ${en.userId.name}, ${en.userName.name}, " +
-                        "${en.refreshToken.name}, ${en.expiresAt.name}, ${en.permissions.name}, " +
-                        "${en.rsaPublicKey.name}, ${en.rsaPrivateKey.name} " +
-                        "FROM ${en.tableName()} WHERE ${en.sessionId.name} = ?"
-            ).use { stmt ->
-                stmt.setString(1, sessionId)
-                stmt.executeQuery().use { rs ->
-                    if (rs.next()) return mapRow(rs)
-                }
-            }
-        }
-        return null
-    }
-
-    fun findByRefreshToken(refreshToken: String): AccessContext? {
-        val ds = SqlDataSource.BEAN.get()
-        val en = EnUserSession.INSTANCE
-
-        ds.connection.use { conn ->
-            conn.prepareStatement(
-                "SELECT ${en.sessionId.name}, ${en.userId.name}, ${en.userName.name}, " +
-                        "${en.refreshToken.name}, ${en.expiresAt.name}, ${en.permissions.name}, " +
-                        "${en.rsaPublicKey.name}, ${en.rsaPrivateKey.name} " +
-                        "FROM ${en.tableName()} WHERE ${en.refreshToken.name} = ?"
-            ).use { stmt ->
-                stmt.setString(1, refreshToken)
-                stmt.executeQuery().use { rs ->
-                    if (rs.next()) return mapRow(rs)
-                }
-            }
-        }
-        return null
-    }
+    fun findByRefreshToken(refreshToken: String): AccessContext? =
+        dsl().selectFrom(EN_USER_SESSION).where(EN_USER_SESSION.REFRESH_TOKEN.eq(refreshToken)).fetchOne()?.let(::mapRow)
 
     fun deleteBySessionId(sessionId: String) {
-        val ds = SqlDataSource.BEAN.get()
-        val en = EnUserSession.INSTANCE
-
-        ds.connection.use { conn ->
-            conn.prepareStatement(
-                "DELETE FROM ${en.tableName()} WHERE ${en.sessionId.name} = ?"
-            ).use { stmt ->
-                stmt.setString(1, sessionId)
-                stmt.executeUpdate()
-            }
-        }
+        dsl().deleteFrom(EN_USER_SESSION).where(EN_USER_SESSION.SESSION_ID.eq(sessionId)).execute()
     }
 
     fun deleteByRefreshToken(refreshToken: String) {
-        val ds = SqlDataSource.BEAN.get()
-        val en = EnUserSession.INSTANCE
-
-        ds.connection.use { conn ->
-            conn.prepareStatement(
-                "DELETE FROM ${en.tableName()} WHERE ${en.refreshToken.name} = ?"
-            ).use { stmt ->
-                stmt.setString(1, refreshToken)
-                stmt.executeUpdate()
-            }
-        }
+        dsl().deleteFrom(EN_USER_SESSION).where(EN_USER_SESSION.REFRESH_TOKEN.eq(refreshToken)).execute()
     }
 
     fun deleteExpired(cutoff: Instant) {
-        val ds = SqlDataSource.BEAN.get()
-        val en = EnUserSession.INSTANCE
-
-        ds.connection.use { conn ->
-            conn.prepareStatement(
-                "DELETE FROM ${en.tableName()} WHERE ${en.expiresAt.name} < ?"
-            ).use { stmt ->
-                stmt.setTimestamp(1, Timestamp.from(cutoff))
-                val deleted = stmt.executeUpdate()
-                if (deleted > 0) {
-                    LOG.debug("Evicted {} expired sessions from DB", deleted)
-                }
-            }
+        val deleted = dsl().deleteFrom(EN_USER_SESSION)
+            .where(EN_USER_SESSION.EXPIRES_AT.lt(LocalDateTime.ofInstant(cutoff, ZoneOffset.UTC)))
+            .execute()
+        if (deleted > 0) {
+            LOG.debug("Evicted {} expired sessions from DB", deleted)
         }
     }
 
-    private fun mapRow(rs: java.sql.ResultSet): AccessContext {
-        val sid = rs.getString(1)
-        val userId = rs.getLong(2)
-        val userName = rs.getString(3)
-        val refreshToken = rs.getString(4)
-        val expiresAt = rs.getTimestamp(5).toInstant()
-        val permissions = stringToPermissions(rs.getString(6))
-        val pubKey = rs.getString(7)
-        val privKey = rs.getString(8)
-        val keyPair = decodeKeyPair(pubKey, privKey)
-
-        return AccessContext(sid, userId, userName, permissions, keyPair, expiresAt, refreshToken, "")
+    private fun mapRow(row: Record): AccessContext {
+        val t = EN_USER_SESSION
+        val keyPair = decodeKeyPair(row.get(t.RSA_PUBLIC_KEY)!!, row.get(t.RSA_PRIVATE_KEY)!!)
+        return AccessContext(
+            row.get(t.SESSION_ID)!!,
+            row.get(t.USERID)!!,
+            row.get(t.USERNAME)!!,
+            stringToPermissions(row.get(t.PERMISSIONS)),
+            keyPair,
+            row.get(t.EXPIRES_AT)!!.toInstant(ZoneOffset.UTC),
+            row.get(t.REFRESH_TOKEN)!!,
+            "",
+        )
     }
 }

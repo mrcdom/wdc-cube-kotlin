@@ -2,14 +2,11 @@ package br.com.wdc.shopping.view.react
 
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.sql.SqlDataSource
-import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.config.AppConfig
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.framework.commons.util.Defer
-import br.com.wdc.shopping.persistence.RepositoryBootstrap
 import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
 import br.com.wdc.shopping.persistence.concurrent.ScheduledExecutorAdapter
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
@@ -29,9 +26,7 @@ class BusinessContext {
 
     fun stop() {
         cleanUp.run()
-        RepositoryBootstrap.release()
         ScheduledExecutor.BEAN.set(null)
-        SqlDataSource.BEAN.set(null)
         CryptoProvider.BEAN.set(null)
     }
 
@@ -50,8 +45,6 @@ class BusinessContext {
             dataSource.user = config.get("database.username", "sa")
             dataSource.password = config.get("database.password", "sa")
 
-            SqlDataSource.BEAN.set(SqlDataSourceDelegate(dataSource))
-
             dataSource.connection.use { connection ->
                 val command = DBCreate().withConnection(connection)
                 if (config.getBoolean("database.reset", false)) {
@@ -64,7 +57,7 @@ class BusinessContext {
 
             val jwtSecret = ShoppingConfig.jwtSecret
             if (!jwtSecret.isNullOrBlank()) {
-                RepositoryBootstrap.initializeSecurity(jwtSecret, ShoppingConfig.refreshTokenTtlDays)
+                ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, ShoppingConfig.refreshTokenTtlDays, cleanUp)
             }
 
             LOG.info("Shopping backend context initialized with database {}", dataSource.getURL())

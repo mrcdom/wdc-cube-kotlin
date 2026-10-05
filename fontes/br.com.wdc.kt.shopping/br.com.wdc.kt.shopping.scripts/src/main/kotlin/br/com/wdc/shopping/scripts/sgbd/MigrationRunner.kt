@@ -1,16 +1,12 @@
 package br.com.wdc.shopping.scripts.sgbd
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.shopping.persistence.sql.SqlKeywords
-import br.com.wdc.shopping.persistence.sql.SqlList
-import br.com.wdc.shopping.persistence.sql.SqlUtils
-import br.com.wdc.shopping.scripts.sgbd.schema.EnMigrationLog
 import java.sql.Connection
 import java.sql.SQLException
 import java.sql.Timestamp
 import java.time.Instant
 
-class MigrationRunner(private val connection: Connection) : SqlKeywords {
+class MigrationRunner(private val connection: Connection) {
 
     @Throws(SQLException::class)
     fun run(migrationScript: Any): MigrationRunner {
@@ -45,20 +41,12 @@ class MigrationRunner(private val connection: Connection) : SqlKeywords {
     }
 
     private fun loadExecutedSteps(scriptName: String): Set<String> {
-        val en = EnMigrationLog.INSTANCE
-
-        val sql = SqlList()
-        sql.ln(SELECT)
-        val fStepName = sql.strColumn(en.stepName)
-        sql.ln(FROM, en.tableName())
-        sql.ln(WHERE, en.scriptName, EQUAL, "?")
-
         val steps = mutableSetOf<String>()
-        connection.prepareStatement(sql.toText()).use { ps ->
+        connection.prepareStatement("SELECT STEP_NAME FROM EN_MIGRATION_LOG WHERE SCRIPT_NAME = ?").use { ps ->
             ps.setString(1, scriptName)
             ps.executeQuery().use { rs ->
                 while (rs.next()) {
-                    fStepName(rs)?.let { steps.add(it) }
+                    rs.getString(1)?.let { steps.add(it) }
                 }
             }
         }
@@ -66,20 +54,15 @@ class MigrationRunner(private val connection: Connection) : SqlKeywords {
     }
 
     private fun recordStep(scriptName: String, stepName: String) {
-        val en = EnMigrationLog.INSTANCE
-        val nextId = SqlUtils.nextSequence(connection, "SQ_MIGRATION_LOG")
-
-        val sql = SqlList()
-        sql.ln(INSERT_INTO, en.tableName(), "(")
-        sql.ln(" ", en.id)
-        sql.ln(",", en.scriptName)
-        sql.ln(",", en.stepName)
-        sql.ln(",", en.executedAt)
-        sql.ln(")")
-        sql.ln(VALUES)
-        sql.ln("(?, ?, ?, ?)")
-
-        connection.prepareStatement(sql.toText()).use { ps ->
+        val nextId = connection.createStatement().use { stmt ->
+            stmt.executeQuery("SELECT NEXT VALUE FOR SQ_MIGRATION_LOG").use { rs ->
+                if (!rs.next()) throw SQLException("No value returned from sequence")
+                rs.getLong(1)
+            }
+        }
+        connection.prepareStatement(
+            "INSERT INTO EN_MIGRATION_LOG (ID, SCRIPT_NAME, STEP_NAME, EXECUTED_AT) VALUES (?, ?, ?, ?)"
+        ).use { ps ->
             ps.setLong(1, nextId)
             ps.setString(2, scriptName)
             ps.setString(3, stepName)

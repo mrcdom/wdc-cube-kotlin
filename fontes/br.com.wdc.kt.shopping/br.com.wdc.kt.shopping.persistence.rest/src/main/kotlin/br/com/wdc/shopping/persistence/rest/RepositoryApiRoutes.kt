@@ -10,7 +10,7 @@ import io.javalin.config.JavalinConfig
  * Registra todos os endpoints REST da API de repositório no Javalin.
  *
  * Se o [AuthenticationService] estiver inicializado (via
- * `RepositoryBootstrap.initializeSecurity`), registra automaticamente
+ * `ShoppingRepositoryBootstrap.initializeSecurity`), registra automaticamente
  * o filtro de segurança e os endpoints de autenticação.
  */
 object RepositoryApiRoutes {

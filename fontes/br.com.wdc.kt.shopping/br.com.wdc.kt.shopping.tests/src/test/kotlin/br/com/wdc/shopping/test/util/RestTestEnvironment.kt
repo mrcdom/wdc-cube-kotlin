@@ -6,8 +6,6 @@ import br.com.wdc.framework.commons.log.Slf4jLogFactory
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
-import br.com.wdc.framework.commons.sql.SqlDataSource
-import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
@@ -17,7 +15,6 @@ import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.shopping.domain.security.PasswordUtil
 import br.com.wdc.framework.commons.util.Defer
-import br.com.wdc.shopping.persistence.RepositoryBootstrap
 import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
 import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestAuthClient
@@ -98,12 +95,10 @@ class RestTestEnvironment(
         ShoppingConfig.Internals.setDataDir(basePath.resolve("data"))
         ShoppingConfig.Internals.setLogDir(basePath.resolve("log"))
         ShoppingConfig.Internals.setTempDir(basePath.resolve("temp"))
-
-        SqlDataSource.BEAN.set(SqlDataSourceDelegate(ds))
         ScheduledExecutor.BEAN.set(executor)
         ShoppingRepositoryBootstrap.initialize(ds, cleanUp = cleanUp)
         if (jwtSecret != null) {
-            RepositoryBootstrap.initializeSecurity(jwtSecret)
+            ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, cleanUp = cleanUp)
         }
 
         // Inicia Javalin em porta aleatória
@@ -148,7 +143,6 @@ class RestTestEnvironment(
     override fun stop() {
         javalin.stop()
         cleanUp.run()
-        RepositoryBootstrap.release()
         datasource.dispose()
         executor.shutdown()
     }

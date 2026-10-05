@@ -1,11 +1,5 @@
 package br.com.wdc.shopping.scripts.sgbd
 
-import br.com.wdc.shopping.persistence.repository.product.InsertProductRowCmd
-import br.com.wdc.shopping.persistence.repository.user.InsertRowUserCmd
-import br.com.wdc.shopping.persistence.schema.EnProduct
-import br.com.wdc.shopping.persistence.schema.EnPurchase
-import br.com.wdc.shopping.persistence.schema.EnPurchaseItem
-import br.com.wdc.shopping.persistence.schema.EnUser
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
@@ -39,10 +33,10 @@ object DBReset {
             // sessões e segredos referenciam o usuário: sem limpá-los antes, a carga falha depois de qualquer login
             "EN_USER_SESSION",
             "EN_USER_INTENT_SECRET",
-            EnPurchaseItem.INSTANCE.tableName(),
-            EnPurchase.INSTANCE.tableName(),
-            EnProduct.INSTANCE.tableName(),
-            EnUser.INSTANCE.tableName()
+            "EN_PURCHASEITEM",
+            "EN_PURCHASE",
+            "EN_PRODUCT",
+            "EN_USER",
         )) {
             c.createStatement().use { stmt ->
                 stmt.execute("DELETE FROM $tbName")
@@ -56,7 +50,7 @@ object DBReset {
         addUser(c, id.also { ADMIN_ID = it; id++ }, "admin", "admin", "João da Silva", "ADMIN")
         addUser(c, id.also { FULANO_ID = it; id++ }, "fulano", "fulano", "Fulano de Tal", "CUSTOMER")
         addUser(c, id.also { BEOTRANO_ID = it; id++ }, "beotrano", "beotrano", "Beotrano de Alguma Coisa", "CUSTOMER")
-        EnUser.INSTANCE.alterSeqUser(c, id)
+        restartSequence(c, "SQ_USER", id)
 
         // Products
         id = 0
@@ -103,48 +97,47 @@ object DBReset {
             "images/pendrive2gb.png"
         )
 
-        EnProduct.INSTANCE.alterSeqProduct(c, id)
+        restartSequence(c, "SQ_PRODUCT", id)
 
         // Purchases
         id = 0
         addPurchase(c, id.also { ADMIN_FIRST_PURCHASE_ID = it; id++ }, ADMIN_ID, intArrayOf(2010, 1, 1, 14, 30))
         addPurchase(c, id.also { ADMIN_SECOND_PURCHASE_ID = it; id++ }, ADMIN_ID, intArrayOf(2011, 4, 3, 9, 15))
-        EnPurchase.INSTANCE.alterSeqPurchase(c, id)
+        restartSequence(c, "SQ_PURCHASE", id)
 
         // Purchase items
         id = 0
         addPurchaseItem(c, id.also { ADMIN_FIRST_PURCHASE_ITEM0_ID = it; id++ }, ADMIN_FIRST_PURCHASE_ID, CAFETEIRA_ID, 1, 200.0)
         addPurchaseItem(c, id.also { ADMIN_SECOND_PURCHASE_ITEM0_ID = it; id++ }, ADMIN_SECOND_PURCHASE_ID, BOLA_WILSON_ID, 1, 45.30)
         addPurchaseItem(c, id.also { ADMIN_SECOND_PURCHASE_ITEM1_ID = it; id++ }, ADMIN_SECOND_PURCHASE_ID, FITA_VEDA_ROSCA_ID, 1, 2.67)
-        EnPurchaseItem.INSTANCE.alterSeqPurchaseItem(c, id)
+        restartSequence(c, "SQ_PURCHASEITEM", id)
+    }
+
+    private fun restartSequence(c: Connection, name: String, value: Long) {
+        c.createStatement().use { stmt -> stmt.execute("ALTER SEQUENCE $name RESTART WITH $value") }
     }
 
     private fun addUser(c: Connection, id: Long, userName: String, password: String?, name: String, roles: String) {
-        val row = EnUser.Row()
-        row.id(id)
-        row.userName(userName)
-        if (!password.isNullOrBlank()) {
-            row.password(passwordDigest(password))
+        c.prepareStatement("INSERT INTO EN_USER (ID, USERNAME, PASSWORD, NAME, ROLES) VALUES (?, ?, ?, ?, ?)").use { ps ->
+            ps.setLong(1, id)
+            ps.setString(2, userName)
+            ps.setString(3, password?.takeIf { it.isNotBlank() }?.let(::passwordDigest))
+            ps.setString(4, name)
+            ps.setString(5, roles)
+            ps.executeUpdate()
         }
-        row.name(name)
-        row.roles(roles)
-        InsertRowUserCmd().execute(c, row)
     }
 
     private fun addProduct(c: Connection, id: Long, name: String, price: Double, description: String, image: String?) {
-        val row = EnProduct.Row()
-        row.id(id)
-        row.name(name)
-        row.description(description)
-        row.price(BigDecimal.valueOf(price))
-
-        if (image != null) {
-            val imageStream = DBReset::class.java.getResourceAsStream("/META-INF/$image")
-            if (imageStream != null) {
-                imageStream.use { row.image(it.readAllBytes()) }
-            }
+        val imageBytes = image?.let { DBReset::class.java.getResourceAsStream("/META-INF/$it") }?.use { it.readAllBytes() }
+        c.prepareStatement("INSERT INTO EN_PRODUCT (ID, NAME, PRICE, DESCRIPTION, IMAGE) VALUES (?, ?, ?, ?, ?)").use { ps ->
+            ps.setLong(1, id)
+            ps.setString(2, name)
+            ps.setBigDecimal(3, BigDecimal.valueOf(price))
+            ps.setString(4, description)
+            ps.setBytes(5, imageBytes)
+            ps.executeUpdate()
         }
-        InsertProductRowCmd().execute(c, row)
     }
 
     /** [date] é o instante da compra em UTC — a convenção da coluna, que não guarda fuso. */

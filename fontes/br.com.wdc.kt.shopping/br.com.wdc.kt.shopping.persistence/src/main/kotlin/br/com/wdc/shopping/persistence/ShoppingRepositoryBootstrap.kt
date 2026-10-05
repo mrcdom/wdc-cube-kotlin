@@ -7,11 +7,17 @@ import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
+import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.persistence.repository.product.ProductRepositoryImpl
 import br.com.wdc.shopping.persistence.repository.purchase.PurchaseRepositoryImpl
 import br.com.wdc.shopping.persistence.repository.purchaseitem.PurchaseItemRepositoryImpl
 import br.com.wdc.shopping.persistence.repository.user.UserRepositoryImpl
+import br.com.wdc.shopping.persistence.security.AuthenticationServiceImpl
+import br.com.wdc.shopping.persistence.security.SecuredProductRepository
+import br.com.wdc.shopping.persistence.security.SecuredPurchaseItemRepository
+import br.com.wdc.shopping.persistence.security.SecuredPurchaseRepository
+import br.com.wdc.shopping.persistence.security.SecuredUserRepository
 import javax.sql.DataSource
 import org.jooq.SQLDialect
 import org.jooq.conf.RenderNameCase
@@ -22,8 +28,8 @@ import org.jooq.impl.DSL
  * Bootstrap da persistência do Shopping sobre jOOQ: liga o módulo ao DataSource que o composition root lhe
  * entrega (backend, testes).
  *
- * Registra os quatro repositórios; a decoração de segurança vem depois, por
- * `RepositoryBootstrap.initializeSecurity`.
+ * [initialize] registra os quatro repositórios; [initializeSecurity], chamado depois e só quando há segredo
+ * JWT configurado, decora-os com o controle de acesso e registra o serviço de autenticação.
  */
 object ShoppingRepositoryBootstrap {
 
@@ -57,5 +63,23 @@ object ShoppingRepositoryBootstrap {
             ShoppingTransactions.BEAN.set(null)
             ShoppingDSLContext.BEAN.set(null)
         }
+    }
+
+    /**
+     * Liga a segurança: decora os repositórios já registrados e registra o [AuthenticationService].
+     *
+     * @param cleanUp recebe a ação que retira o serviço de autenticação (os repositórios saem com [initialize])
+     */
+    fun initializeSecurity(jwtSecret: String, refreshTokenTtlDays: Int = 7, cleanUp: Defer) {
+        val rawUserRepo = UserRepository.BEAN.get()
+        val rawPurchaseRepo = PurchaseRepository.BEAN.get()
+
+        UserRepository.BEAN.set(SecuredUserRepository(rawUserRepo))
+        ProductRepository.BEAN.set(SecuredProductRepository(ProductRepository.BEAN.get()))
+        PurchaseRepository.BEAN.set(SecuredPurchaseRepository(rawPurchaseRepo))
+        PurchaseItemRepository.BEAN.set(SecuredPurchaseItemRepository(PurchaseItemRepository.BEAN.get(), rawPurchaseRepo))
+
+        AuthenticationService.BEAN.set(AuthenticationServiceImpl(rawUserRepo, jwtSecret, refreshTokenTtlDays))
+        cleanUp.push { AuthenticationService.BEAN.set(null) }
     }
 }

@@ -4,8 +4,6 @@ import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
-import br.com.wdc.framework.commons.sql.SqlDataSource
-import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
@@ -14,7 +12,6 @@ import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.framework.commons.util.Defer
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
-import br.com.wdc.shopping.persistence.RepositoryBootstrap
 import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
 import org.h2.jdbcx.JdbcConnectionPool
@@ -51,14 +48,12 @@ class TestEnvironment(
         ShoppingConfig.Internals.setDataDir(basePath.resolve("data"))
         ShoppingConfig.Internals.setLogDir(basePath.resolve("log"))
         ShoppingConfig.Internals.setTempDir(basePath.resolve("temp"))
-
-        SqlDataSource.BEAN.set(SqlDataSourceDelegate(ds))
         ScheduledExecutor.BEAN.set(executor)
         // o login sem serviço de autenticação confere o resumo da senha na apresentação
         CryptoProvider.BEAN.set(JceCryptoProvider())
         ShoppingRepositoryBootstrap.initialize(ds, cleanUp = cleanUp)
         if (jwtSecret != null) {
-            RepositoryBootstrap.initializeSecurity(jwtSecret)
+            ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, cleanUp = cleanUp)
         }
 
         userRepo = UserRepository.BEAN.get()
@@ -69,7 +64,6 @@ class TestEnvironment(
 
     override fun stop() {
         cleanUp.run()
-        RepositoryBootstrap.release()
         datasource.dispose()
         executor.shutdown()
     }

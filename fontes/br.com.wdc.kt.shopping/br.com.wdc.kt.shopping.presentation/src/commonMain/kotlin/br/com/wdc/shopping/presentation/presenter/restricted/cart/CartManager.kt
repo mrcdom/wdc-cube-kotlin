@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.cart
 
+import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.purchase.Purchase
@@ -129,9 +130,16 @@ class CartManager(private val repo: PurchaseRepository) {
             purchase.items!!.add(purchaseItem)
         }
 
-        check(repo.insert(purchase)) { "Record not inserted" }
+        // A compra e os seus itens confirmam juntos, ou nada confirma. Sem serviço de transação (testes sem
+        // persistência), executa direto.
+        val transactions = ShoppingTransactions.BEAN.getOrNull()
+        if (transactions == null) insert(purchase) else transactions.required { insert(purchase) }
 
         return purchase.id
+    }
+
+    private suspend fun insert(purchase: Purchase) {
+        check(repo.insert(purchase)) { "Record not inserted" }
     }
 
     fun getItemCount(): Int {

@@ -177,6 +177,7 @@ class DBCreate {
             .run(Migration_0004_ImageVarbinaryAndOrderingIndexes(conn))
             .run(Migration_0005_UnsignedPasswordDigest(conn))
             .run(Migration_0006_PurchaseBuyDateToUtc(conn))
+            .run(Migration_0007_SessionExpiryToUtc(conn))
 
         // A carga vem depois das migrações: ela já grava no formato atual, e não deve ser migrada.
         if (mustResetDb && !skipReset) {

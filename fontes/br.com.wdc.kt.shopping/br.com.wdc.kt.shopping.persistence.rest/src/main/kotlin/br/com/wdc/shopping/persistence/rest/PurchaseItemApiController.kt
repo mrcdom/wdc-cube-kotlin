@@ -52,20 +52,20 @@ class PurchaseItemApiController {
 
     private fun insert(ctx: Context) {
         val item = codec.readEntity(ctx.jsonBody())
-        val success = blocking { repo().insert(item) }
+        val success = transactional { repo().insert(item) }
         ctx.jsonResult { it.beginObject().name("success").value(success).name("id").value(item.id ?: -1L).endObject() }
     }
 
     /** As chaves presentes no corpo dizem o que atualizar — inclusive para `null`. */
     private fun update(ctx: Context) {
         val data = codec.readEntityForUpdate(ctx.jsonBody())
-        val success = blocking { repo().update(data.entity, null, data.projection) }
+        val success = transactional { repo().update(data.entity, null, data.projection) }
         ctx.jsonField("success", success)
     }
 
     private fun delete(ctx: Context) {
         val criteria = readFetchRequest(ctx).criteria
-        ctx.jsonField("count", blocking { repo().delete(criteria) })
+        ctx.jsonField("count", transactional { repo().delete(criteria) })
     }
 
     private fun count(ctx: Context) {
