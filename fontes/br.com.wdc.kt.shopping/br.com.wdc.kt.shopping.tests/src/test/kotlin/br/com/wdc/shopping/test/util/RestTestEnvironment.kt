@@ -12,7 +12,7 @@ import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
-import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.shopping.domain.security.PasswordUtil
@@ -25,7 +25,7 @@ import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.HttpProductRepository
 import br.com.wdc.shopping.persistence.client.RestPurchaseItemRepository
 import br.com.wdc.shopping.persistence.client.RestPurchaseRepository
-import br.com.wdc.shopping.persistence.client.RestUserRepository
+import br.com.wdc.shopping.persistence.client.HttpUserRepository
 import br.com.wdc.shopping.persistence.rest.RepositoryApiRoutes
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
 import com.google.gson.Gson
@@ -142,7 +142,7 @@ class RestTestEnvironment(
         this.restConfig = restConfig
 
         CryptoProvider.BEAN.set(JceCryptoProvider())
-        userRepo = RestUserRepository(restConfig)
+        userRepo = HttpUserRepository(transport)
         productRepo = HttpProductRepository(transport)
         purchaseRepo = RestPurchaseRepository(restConfig)
         purchaseItemRepo = RestPurchaseItemRepository(restConfig)

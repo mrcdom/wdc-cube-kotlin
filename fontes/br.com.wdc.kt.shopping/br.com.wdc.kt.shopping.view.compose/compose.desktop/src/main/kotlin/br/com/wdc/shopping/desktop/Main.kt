@@ -19,7 +19,7 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
-import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig

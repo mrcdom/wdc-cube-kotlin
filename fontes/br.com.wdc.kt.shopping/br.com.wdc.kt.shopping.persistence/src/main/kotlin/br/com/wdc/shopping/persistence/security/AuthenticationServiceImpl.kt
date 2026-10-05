@@ -1,9 +1,9 @@
 package br.com.wdc.shopping.persistence.security
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.shopping.domain.criteria.UserCriteria
-import br.com.wdc.shopping.domain.model.User
-import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.domain.user.UserCriteria
+import br.com.wdc.shopping.domain.user.User
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.AuthResult
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.ChallengeResult
@@ -107,10 +107,7 @@ class AuthenticationServiceImpl(
         prj.password = pv.str
         prj.roles = pv.str
 
-        val users = rawUserRepo.fetch(UserCriteria()
-            .withUserName(userName)
-            .withProjection(prj)
-            .withLimit(1))
+        val users = rawUserRepo.fetch(UserCriteria().withUserName(userName).withProjection(prj), limit = 1)
 
         if (users.isEmpty()) return null
 

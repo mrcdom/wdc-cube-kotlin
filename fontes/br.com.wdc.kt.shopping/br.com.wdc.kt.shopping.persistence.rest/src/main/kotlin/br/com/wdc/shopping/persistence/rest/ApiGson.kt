@@ -4,7 +4,7 @@ import br.com.wdc.shopping.domain.model.PlatformDateTime
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
-import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.user.User
 import com.google.gson.ExclusionStrategy
 import com.google.gson.FieldAttributes
 import com.google.gson.Gson

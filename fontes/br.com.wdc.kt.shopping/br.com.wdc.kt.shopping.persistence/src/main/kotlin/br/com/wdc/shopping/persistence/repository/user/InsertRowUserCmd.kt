@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.persistence.repository.user
 
-import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.persistence.repository.BaseCommand
 import br.com.wdc.shopping.persistence.schema.EnUser
 import br.com.wdc.shopping.persistence.sql.SqlList

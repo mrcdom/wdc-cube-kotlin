@@ -1,32 +1,37 @@
 package br.com.wdc.shopping.persistence.security
 
-import br.com.wdc.shopping.domain.criteria.UserCriteria
 import br.com.wdc.shopping.domain.exception.AccessDeniedException
-import br.com.wdc.shopping.domain.model.User
-import br.com.wdc.shopping.domain.repositories.Page
-import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
+import br.com.wdc.shopping.domain.user.User
+import br.com.wdc.shopping.domain.user.UserCriteria
+import br.com.wdc.shopping.domain.user.UserRepository
 
+/**
+ * Aplica o controle de acesso a usuário: permissão, escopo (quem não tem `data:all` só alcança o próprio
+ * usuário) e a regra de que **a senha nunca sai por aqui**.
+ *
+ * `fetchById`, `fetchPage` e `insertOrUpdate` não são sobrescritos de propósito: os defaults da interface
+ * passam por `fetch`, `count`, `insert` e `update`, que já são verificados.
+ */
 class SecuredUserRepository(private val delegate: UserRepository) : UserRepository {
 
     companion object {
         private const val ENTITY = "user"
     }
 
-    override suspend fun insert(user: User): Boolean {
+    override fun newProjection(): User = delegate.newProjection()
+
+    override suspend fun insert(bean: User): Boolean {
         SecurityEnforcer.require(ENTITY, "write")
-        return delegate.insert(user)
+        return delegate.insert(bean)
     }
 
-    override suspend fun update(newUser: User, oldUser: User): Boolean {
+    override suspend fun update(newBean: User, oldBean: User?, projection: User?): Boolean {
         val sc = SecurityEnforcer.require(ENTITY, "write")
-        enforceUserScope(sc, newUser)
-        return delegate.update(newUser, oldUser)
-    }
-
-    override suspend fun insertOrUpdate(user: User): Boolean {
-        SecurityEnforcer.require(ENTITY, "write")
-        return delegate.insertOrUpdate(user)
+        if (!sc.hasDataAll() && newBean.id != null && newBean.id != sc.userId) {
+            throw AccessDeniedException("Cannot modify other user's data")
+        }
+        return delegate.update(newBean, oldBean, projection)
     }
 
     override suspend fun delete(criteria: UserCriteria): Int {
@@ -41,48 +46,17 @@ class SecuredUserRepository(private val delegate: UserRepository) : UserReposito
         return delegate.count(criteria)
     }
 
-    override suspend fun fetch(criteria: UserCriteria): List<User> {
+    override suspend fun fetch(criteria: UserCriteria, offset: Int, limit: Int): List<User> {
         val sc = SecurityEnforcer.require(ENTITY, "read")
         enforceUserScope(sc, criteria)
-        sanitizeProjection(criteria)
-        val results = delegate.fetch(criteria)
+        criteria.projection?.password = null
+        val results = delegate.fetch(criteria, offset, limit)
         results.forEach { it.password = null }
         return results
     }
 
-    override suspend fun fetchPage(criteria: UserCriteria): Page<User> {
-        val sc = SecurityEnforcer.require(ENTITY, "read")
-        enforceUserScope(sc, criteria)
-        sanitizeProjection(criteria)
-        val page = delegate.fetchPage(criteria)
-        page.items.forEach { it.password = null }
-        return page
-    }
-
-    override suspend fun fetchById(userId: Long, projection: User?): User? {
-        val sc = SecurityEnforcer.require(ENTITY, "read")
-        if (!sc.hasDataAll() && userId != sc.userId) return null
-        stripPassword(projection)
-        val result = delegate.fetchById(userId, projection)
-        result?.let { it.password = null }
-        return result
-    }
-
+    /** Os pedidos de um campo acumulam em `AND`: o que o chamador pediu continua valendo, restrito ao próprio usuário. */
     private fun enforceUserScope(sc: SecurityContext, criteria: UserCriteria) {
-        if (!sc.hasDataAll()) criteria.withUserId(sc.userId)
-    }
-
-    private fun enforceUserScope(sc: SecurityContext, user: User) {
-        if (!sc.hasDataAll() && user.id != null && user.id != sc.userId) {
-            throw AccessDeniedException("Cannot modify other user's data")
-        }
-    }
-
-    private fun sanitizeProjection(criteria: UserCriteria) {
-        criteria.projection?.let { it.password = null }
-    }
-
-    private fun stripPassword(projection: User?) {
-        projection?.let { it.password = null }
+        if (!sc.hasDataAll()) criteria.userId.eq(sc.userId)
     }
 }

@@ -4,7 +4,7 @@ import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
-import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.utils.ProjectionValues

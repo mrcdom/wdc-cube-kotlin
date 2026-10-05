@@ -5,7 +5,9 @@ import br.com.wdc.framework.jooq.TransactionAwareConnectionProvider
 import br.com.wdc.framework.persistence.transaction.TransactionServiceImpl
 import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.product.ProductRepository
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.persistence.repository.product.ProductRepositoryImpl
+import br.com.wdc.shopping.persistence.repository.user.UserRepositoryImpl
 import javax.sql.DataSource
 import org.jooq.SQLDialect
 import org.jooq.conf.RenderNameCase
@@ -16,7 +18,7 @@ import org.jooq.impl.DSL
  * Bootstrap da persistência do Shopping sobre jOOQ: liga o módulo ao DataSource que o composition root lhe
  * entrega (backend, testes).
  *
- * Em migração: os repositórios já portados para jOOQ (Product) são registrados aqui; os demais, ainda por
+ * Em migração: os repositórios já portados para jOOQ (User, Product) são registrados aqui; os demais, ainda por
  * [RepositoryBootstrap]. Chame os dois, e `RepositoryBootstrap.initializeSecurity` por último.
  */
 object ShoppingRepositoryBootstrap {
@@ -38,9 +40,11 @@ object ShoppingRepositoryBootstrap {
         // Dentro de uma transação as consultas usam a conexão do escopo; fora dela, uma avulsa em autocommit.
         ShoppingDSLContext.BEAN.set(DSL.using(TransactionAwareConnectionProvider(dataSource), dialect, settings))
         ShoppingTransactions.BEAN.set(TransactionServiceImpl { dataSource })
+        UserRepository.BEAN.set(UserRepositoryImpl())
         ProductRepository.BEAN.set(ProductRepositoryImpl())
 
         cleanUp.push {
+            UserRepository.BEAN.set(null)
             ProductRepository.BEAN.set(null)
             ShoppingTransactions.BEAN.set(null)
             ShoppingDSLContext.BEAN.set(null)

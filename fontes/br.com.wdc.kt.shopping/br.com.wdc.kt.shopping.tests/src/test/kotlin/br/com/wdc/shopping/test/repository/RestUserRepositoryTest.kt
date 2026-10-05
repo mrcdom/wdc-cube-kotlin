@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.test.repository
 
-import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.test.util.RestTestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
 import org.junit.jupiter.api.extension.RegisterExtension

@@ -5,7 +5,7 @@ import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
-import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.utils.ProjectionList
 import br.com.wdc.shopping.domain.utils.ProjectionValues
 import br.com.wdc.shopping.persistence.repository.BaseCommand
@@ -266,7 +266,7 @@ class FetchPurchaseCmd : BaseCommand() {
 
     private fun cteUser(prj: User, owner: EnPurchase): SqlList {
         val child = FetchUsersCmd()
-        val sql = child.cteUser(null, prj, owner.alias, owner.userId)
+        val sql = child.cteUser(prj, owner.alias, owner.userId)
         child.transferParamsTo(this)
         return sql
     }

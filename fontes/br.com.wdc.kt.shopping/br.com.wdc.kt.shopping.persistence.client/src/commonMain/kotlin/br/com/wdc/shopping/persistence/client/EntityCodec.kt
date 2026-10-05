@@ -6,7 +6,7 @@ import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
-import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.user.User
 import kotlin.time.Instant
 
 // ── Product ──

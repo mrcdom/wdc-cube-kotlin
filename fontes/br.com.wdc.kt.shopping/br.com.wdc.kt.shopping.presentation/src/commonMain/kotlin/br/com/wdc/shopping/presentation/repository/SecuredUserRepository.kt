@@ -1,25 +1,27 @@
 package br.com.wdc.shopping.presentation.repository
 
-import br.com.wdc.shopping.domain.criteria.UserCriteria
-import br.com.wdc.shopping.domain.model.User
-import br.com.wdc.shopping.domain.repositories.Page
-import br.com.wdc.shopping.domain.repositories.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
+import br.com.wdc.shopping.domain.user.User
+import br.com.wdc.shopping.domain.user.UserCriteria
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.presentation.util.withSecurityContext
 
+/**
+ * Executa as operações de usuário com o contexto de segurança da aplicação. `fetchById`, `fetchPage` e
+ * `insertOrUpdate` vêm dos defaults da interface, que passam pelas operações abaixo.
+ */
 class SecuredUserRepository(
     private val delegate: UserRepository,
     private val contextSupplier: () -> SecurityContext?,
 ) : UserRepository {
 
-    override suspend fun insert(user: User) =
-        withSecurityContext(contextSupplier) { delegate.insert(user) }
+    override fun newProjection(): User = delegate.newProjection()
 
-    override suspend fun update(newUser: User, oldUser: User) =
-        withSecurityContext(contextSupplier) { delegate.update(newUser, oldUser) }
+    override suspend fun insert(bean: User) =
+        withSecurityContext(contextSupplier) { delegate.insert(bean) }
 
-    override suspend fun insertOrUpdate(user: User) =
-        withSecurityContext(contextSupplier) { delegate.insertOrUpdate(user) }
+    override suspend fun update(newBean: User, oldBean: User?, projection: User?) =
+        withSecurityContext(contextSupplier) { delegate.update(newBean, oldBean, projection) }
 
     override suspend fun delete(criteria: UserCriteria) =
         withSecurityContext(contextSupplier) { delegate.delete(criteria) }
@@ -27,12 +29,6 @@ class SecuredUserRepository(
     override suspend fun count(criteria: UserCriteria) =
         withSecurityContext(contextSupplier) { delegate.count(criteria) }
 
-    override suspend fun fetch(criteria: UserCriteria) =
-        withSecurityContext(contextSupplier) { delegate.fetch(criteria) }
-
-    override suspend fun fetchPage(criteria: UserCriteria) =
-        withSecurityContext(contextSupplier) { delegate.fetchPage(criteria) }
-
-    override suspend fun fetchById(userId: Long, projection: User?) =
-        withSecurityContext(contextSupplier) { delegate.fetchById(userId, projection) }
+    override suspend fun fetch(criteria: UserCriteria, offset: Int, limit: Int) =
+        withSecurityContext(contextSupplier) { delegate.fetch(criteria, offset, limit) }
 }

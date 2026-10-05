@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
-import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
 import br.com.wdc.shopping.presentation.repository.SecuredProductRepository
 import br.com.wdc.shopping.presentation.repository.SecuredPurchaseItemRepository

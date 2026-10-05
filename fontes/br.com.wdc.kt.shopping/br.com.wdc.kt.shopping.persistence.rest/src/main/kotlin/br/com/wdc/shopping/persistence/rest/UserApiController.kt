@@ -1,12 +1,13 @@
 package br.com.wdc.shopping.persistence.rest
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.shopping.domain.criteria.UserCriteria
-import br.com.wdc.shopping.domain.model.User
-import br.com.wdc.shopping.domain.repositories.Page
-import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.framework.commons.serialization.InputCoerceUtils
+import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
-import com.google.gson.JsonObject
+import br.com.wdc.shopping.domain.user.User
+import br.com.wdc.shopping.domain.user.UserCodec
+import br.com.wdc.shopping.domain.user.UserCriteria
+import br.com.wdc.shopping.domain.user.UserRepository
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import java.nio.charset.StandardCharsets
@@ -14,6 +15,11 @@ import java.security.PrivateKey
 import java.util.Base64
 import javax.crypto.Cipher
 
+/**
+ * Endpoints REST de usuário. Lê e escreve com o [UserCodec] — o mesmo que o cliente usa —, sem reflexão.
+ * O controle de acesso, o escopo por usuário e a retirada da senha são do repositório registrado (decorado
+ * quando a segurança está ligada).
+ */
 class UserApiController {
 
     companion object {
@@ -23,43 +29,17 @@ class UserApiController {
             val ctrl = UserApiController()
             config.routes.post("/api/repo/user/insert", ctrl::insert)
             config.routes.post("/api/repo/user/update", ctrl::update)
-            config.routes.post("/api/repo/user/upsert", ctrl::upsert)
             config.routes.post("/api/repo/user/delete", ctrl::delete)
             config.routes.post("/api/repo/user/count", ctrl::count)
             config.routes.post("/api/repo/user/fetch", ctrl::fetch)
-            config.routes.post("/api/repo/user/fetchPage", ctrl::fetchPage)
-            config.routes.post("/api/repo/user/fetchById", ctrl::fetchByIdPost)
+            config.routes.post("/api/repo/user/fetch-page", ctrl::fetchPage)
+            config.routes.post("/api/repo/user/fetch-by-id", ctrl::fetchByIdPost)
             config.routes.get("/api/repo/user/{id}", ctrl::fetchById)
         }
 
         private fun repo(): UserRepository = UserRepository.BEAN.get()
 
-        private fun parseCriteria(body: JsonObject): UserCriteria {
-            val criteria = UserCriteria()
-            if (hasValue(body, "userId")) criteria.withUserId(body.get("userId").asLong)
-            if (hasValue(body, "userName")) criteria.withUserName(body.get("userName").asString)
-            if (hasValue(body, "password")) criteria.withPassword(body.get("password").asString)
-            if (hasValue(body, "offset")) criteria.withOffset(body.get("offset").asInt)
-            if (hasValue(body, "limit")) {
-                val limit = body.get("limit").asInt
-                if (limit >= 0) criteria.withLimit(limit)
-            }
-            if (hasValue(body, "orderBy")) criteria.withOrderBy(UserCriteria.OrderBy.valueOf(body.get("orderBy").asString))
-            return criteria
-        }
-
-        private fun hasValue(obj: JsonObject, field: String): Boolean {
-            return obj.has(field) && !obj.get(field).isJsonNull
-        }
-
-        private fun json(ctx: Context, obj: Any) {
-            ctx.contentType("application/json")
-            ctx.result(ApiGson.instance.toJson(obj))
-        }
-
-        /**
-         * Decripta a senha se presente e criptografada com RSA (chave da sessão).
-         */
+        /** Decifra a senha, se veio cifrada com a chave RSA da sessão; senão, fica como veio. */
         private fun decryptPasswordIfPresent(user: User) {
             val sc = SecurityContextHolder.get()
             if (sc != null && !user.password.isNullOrBlank()) {
@@ -79,78 +59,81 @@ class UserApiController {
         }
     }
 
+    private val codec = UserCodec()
+
+    /** Lê o pedido de consulta; sem projeção, vale a padrão do repositório (tudo menos a senha). */
+    private fun readFetchRequest(ctx: Context): FetchRequest<UserCriteria> {
+        val request = codec.readFetchRequest(ctx.jsonBody(), UserCriteria()) { c, prj -> c.withProjection(prj) }
+        if (request.criteria.projection == null) {
+            request.criteria.withProjection(repo().newProjection())
+        }
+        return request
+    }
+
     private fun insert(ctx: Context) {
-        val user = ApiGson.instance.fromJson(ctx.body(), User::class.java)
+        val user = codec.readEntity(ctx.jsonBody())
         decryptPasswordIfPresent(user)
         val success = blocking { repo().insert(user) }
-        json(ctx, mapOf("success" to success, "id" to (user.id ?: -1L)))
+        ctx.jsonResult { it.beginObject().name("success").value(success).name("id").value(user.id ?: -1L).endObject() }
     }
 
+    /** As chaves presentes no corpo dizem o que atualizar — inclusive para `null`. */
     private fun update(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val newEntity = ApiGson.instance.fromJson(body.get("newEntity"), User::class.java)
-        val oldEntity = ApiGson.instance.fromJson(body.get("oldEntity"), User::class.java)
-        decryptPasswordIfPresent(newEntity)
-        val success = blocking { repo().update(newEntity, oldEntity) }
-        json(ctx, mapOf("success" to success))
-    }
-
-    private fun upsert(ctx: Context) {
-        val user = ApiGson.instance.fromJson(ctx.body(), User::class.java)
-        decryptPasswordIfPresent(user)
-        val success = blocking { repo().insertOrUpdate(user) }
-        json(ctx, mapOf("success" to success, "id" to (user.id ?: -1L)))
+        val data = codec.readEntityForUpdate(ctx.jsonBody())
+        decryptPasswordIfPresent(data.entity)
+        val success = blocking { repo().update(data.entity, null, data.projection) }
+        ctx.jsonField("success", success)
     }
 
     private fun delete(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = blocking { repo().delete(parseCriteria(body)) }
-        json(ctx, mapOf("count" to count))
+        val criteria = readFetchRequest(ctx).criteria
+        ctx.jsonField("count", blocking { repo().delete(criteria) })
     }
 
     private fun count(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val count = blocking { repo().count(parseCriteria(body)) }
-        json(ctx, mapOf("count" to count))
+        val criteria = readFetchRequest(ctx).criteria
+        ctx.jsonField("count", blocking { repo().count(criteria) })
     }
 
     private fun fetch(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val criteria = parseCriteria(body)
-        val projection = ApiGson.parseProjection(body, User::class.java)
-        criteria.withProjection(projection)
-        val items = blocking { repo().fetch(criteria) }
-        json(ctx, mapOf("items" to items))
+        val request = readFetchRequest(ctx)
+        val items = blocking { repo().fetch(request.criteria, request.offset, request.limit) }
+        ctx.jsonResult { codec.writeItems(it, items) }
     }
 
     private fun fetchPage(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val criteria = parseCriteria(body)
-        val projection = ApiGson.parseProjection(body, User::class.java)
-        criteria.withProjection(projection)
-        val page = blocking { repo().fetchPage(criteria) }
-        json(ctx, mapOf("items" to page.items, "totalCount" to page.totalCount))
+        val request = readFetchRequest(ctx)
+        val page = blocking { repo().fetchPage(request.criteria, request.page, request.pageSize) }
+        ctx.jsonResult { codec.writeItems(it, page.items, page.totalItems) }
     }
 
     private fun fetchById(ctx: Context) {
-        val id = ctx.pathParam("id").toLong()
-        val result = blocking { repo().fetchById(id, null) }
-        if (result == null) {
-            ctx.status(404).json(mapOf("error" to "Not found"))
-            return
-        }
-        json(ctx, result)
+        val id = ctx.pathParam("id").toLongOrNull() ?: throw InvalidRequestException("id de usuário inválido")
+        respondEntity(ctx, blocking { repo().fetchById(id) })
     }
 
     private fun fetchByIdPost(ctx: Context) {
-        val body = ApiGson.instance.fromJson(ctx.body(), JsonObject::class.java)
-        val id = body.get("id").asLong
-        val projection = ApiGson.parseProjection(body, User::class.java)
-        val result = blocking { repo().fetchById(id, projection) }
-        if (result == null) {
+        var id: Long? = null
+        var projection: User? = null
+        val input = ctx.jsonBody()
+        input.beginObject()
+        while (input.hasNext()) {
+            when (input.nextName()) {
+                "id" -> id = InputCoerceUtils.asLong(input)
+                "projection" -> projection = codec.readEntity(input)
+                else -> input.skipValue()
+            }
+        }
+        input.endObject()
+        val userId = id ?: throw InvalidRequestException("fetch-by-id exige o id")
+        respondEntity(ctx, blocking { repo().fetchById(userId, projection) })
+    }
+
+    private fun respondEntity(ctx: Context, user: User?) {
+        if (user == null) {
             ctx.status(404).json(mapOf("error" to "Not found"))
             return
         }
-        json(ctx, result)
+        ctx.jsonResult { codec.writeEntity(it, user) }
     }
 }

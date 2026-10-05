@@ -10,15 +10,21 @@ import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
-import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.framework.commons.util.Defer
+import br.com.wdc.shopping.domain.security.CryptoProvider
+import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.shopping.persistence.RepositoryBootstrap
 import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
 import org.h2.jdbcx.JdbcConnectionPool
 import java.nio.file.Paths
 
-class TestEnvironment(private val dbName: String = "wedocode-shopping") : ShoppingTestEnvironment {
+class TestEnvironment(
+    private val dbName: String = "wedocode-shopping",
+    /** Com segredo, a segurança fica ligada (serviço de autenticação + controle de acesso); `null` = sem segurança. */
+    private val jwtSecret: String? = null,
+) : ShoppingTestEnvironment {
 
     private lateinit var datasource: JdbcConnectionPool
     private lateinit var executor: ScheduledExecutorForTest
@@ -48,9 +54,14 @@ class TestEnvironment(private val dbName: String = "wedocode-shopping") : Shoppi
 
         SqlDataSource.BEAN.set(SqlDataSourceDelegate(ds))
         ScheduledExecutor.BEAN.set(executor)
+        // o login sem serviço de autenticação confere o resumo da senha na apresentação
+        CryptoProvider.BEAN.set(JceCryptoProvider())
 
         RepositoryBootstrap.initialize()
         ShoppingRepositoryBootstrap.initialize(ds, cleanUp = cleanUp)
+        if (jwtSecret != null) {
+            RepositoryBootstrap.initializeSecurity(jwtSecret)
+        }
 
         userRepo = UserRepository.BEAN.get()
         productRepo = ProductRepository.BEAN.get()

@@ -2,7 +2,7 @@ package br.com.wdc.shopping.persistence.security
 
 import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
 import br.com.wdc.shopping.domain.model.Purchase
-import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.repositories.Page
 import br.com.wdc.shopping.domain.repositories.PurchaseRepository
 import br.com.wdc.shopping.domain.security.SecurityContext

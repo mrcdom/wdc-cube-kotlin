@@ -3,11 +3,11 @@ package br.com.wdc.shopping.test.service
 import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
 import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
-import br.com.wdc.shopping.domain.criteria.UserCriteria
+import br.com.wdc.shopping.domain.user.UserCriteria
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.model.Purchase
 import br.com.wdc.shopping.domain.model.PurchaseItem
-import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.utils.ProjectionValues
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelService
@@ -61,11 +61,8 @@ object ShoppingServiceTestAlgorithm {
     suspend fun testFullShoppingWorkflow(env: ShoppingTestEnvironment) {
         // Autentica via repositório
         val users = env.userRepo.fetch(
-            UserCriteria()
-                .withUserName("admin")
-                .withPassword("admin")
-                .withProjection(Subject.projection())
-                .withLimit(1)
+            UserCriteria().withUserName("admin").withProjection(Subject.projection()),
+            limit = 1,
         )
         assertFalse(users.isEmpty(), "Missing subject")
         val subject = Subject.create(users[0])

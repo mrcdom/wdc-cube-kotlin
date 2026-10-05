@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.persistence.repository.user
 
-import br.com.wdc.shopping.domain.criteria.UserCriteria
-import br.com.wdc.shopping.domain.model.User
+import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.utils.ProjectionValues
 import br.com.wdc.shopping.persistence.repository.BaseCommand
 import br.com.wdc.shopping.persistence.schema.EnUser
@@ -9,23 +8,15 @@ import br.com.wdc.shopping.persistence.schema.support.DbField
 import br.com.wdc.shopping.persistence.sql.SqlList
 import br.com.wdc.shopping.persistence.sql.SqlUtils
 import com.google.gson.stream.JsonReader
-import org.jdbi.v3.core.Jdbi
 import java.io.StringReader
-import java.sql.Connection
 
+/**
+ * O que resta do acesso JDBI a usuário: a projeção do usuário embutida nas consultas de compra e de item de
+ * compra, que ainda não foram portadas para jOOQ. As operações do repositório estão em [UserRepositoryImpl].
+ */
 class FetchUsersCmd : BaseCommand() {
 
     companion object {
-        fun byId(connection: Connection, userId: Long, projection: User?): User? {
-            val list = FetchUsersCmd().execute(connection, UserCriteria()
-                .withUserId(userId)
-                .withProjection(projection))
-            return list.firstOrNull()
-        }
-
-        fun byCriteria(connection: Connection, criteria: UserCriteria): List<User> =
-            FetchUsersCmd().execute(connection, criteria)
-
         fun fields(prj: User?, en: EnUser): List<DbField> {
             val pv = ProjectionValues
             var p = prj
@@ -63,29 +54,7 @@ class FetchUsersCmd : BaseCommand() {
         }
     }
 
-    fun execute(connection: Connection, criteria: UserCriteria): List<User> {
-        val sql = SqlList()
-
-        val cteUser = EnUser("cteUser")
-        sql.ln(WITH, cteUser.alias, AS, '(')
-        sql.ln(cteUser(criteria, criteria.projection, null, null).toText("  "))
-        sql.ln(')')
-        sql.ln(SELECT)
-
-        val fieldsList = fields(criteria.projection, cteUser)
-        val fJsonData = sql.strColumn(SqlUtils.toJsonField(fieldsList), AS, "json_data")
-        sql.ln(FROM, cteUser.alias)
-
-        Jdbi.create(connection).open().use { handle ->
-            val query = handle.createQuery(sql.toText())
-            applyParams(query)
-
-            val userMap = mutableMapOf<Long, User>()
-            return query.map { rs, _ -> fromJson(fJsonData(rs)!!, userMap) }.list()
-        }
-    }
-
-    fun cteUser(criteria: UserCriteria?, prj: User?, superAlias: String?, superId: DbField?): SqlList {
+    fun cteUser(prj: User?, superAlias: String?, superId: DbField?): SqlList {
         val u = EnUser("U")
 
         val sql = SqlList()
@@ -101,23 +70,6 @@ class FetchUsersCmd : BaseCommand() {
                 ll.ln(WHERE, superId, EQUAL, u.id)
             })
         }
-
-        if (criteria == null) return sql
-
-        val applier = ApplyUserCriteria(this)
-        applier.criteria = criteria
-        applier.root = u
-        applier.apply(sql)
-
-        criteria.orderBy?.let {
-            when (it) {
-                UserCriteria.OrderBy.ASCENDING -> sql.ln(ORDER_BY(u.id.asc()))
-                UserCriteria.OrderBy.DESCENDING -> sql.ln(ORDER_BY(u.id.desc()))
-            }
-        }
-
-        criteria.limit?.let { sql.ln(LIMIT, it) }
-        criteria.offset?.let { sql.ln(OFFSET, it) }
 
         return sql
     }
