@@ -1,27 +1,31 @@
 package br.com.wdc.shopping.test
 
 import br.com.wdc.shopping.domain.ShoppingConfig
-import br.com.wdc.shopping.domain.config.AppConfig
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Todas as pastas de execução saem do mesmo diretório-base. */
+/** O diretório de trabalho é dado de fora, e todas as pastas de execução saem dele. */
 class ShoppingConfigTest {
 
     /** Roda o bloco e devolve a configuração global ao que era: outros testes dependem dela. */
     private fun <T> preservingTheConfiguration(block: () -> T): T {
-        val saved = listOf(ShoppingConfig.baseDir, ShoppingConfig.configDir, ShoppingConfig.dataDir, ShoppingConfig.logDir, ShoppingConfig.tempDir, ShoppingConfig.deployDir)
+        val saved = listOf(
+            ShoppingConfig.workDir, ShoppingConfig.configDir, ShoppingConfig.dataDir,
+            ShoppingConfig.logDir, ShoppingConfig.tmpDir, ShoppingConfig.deploymentDir,
+        )
         val jwtSecret = ShoppingConfig.jwtSecret
         val ttl = ShoppingConfig.refreshTokenTtlDays
         try {
             return block()
         } finally {
             val setters: List<(Path) -> Unit> = listOf(
-                ShoppingConfig.Internals::setBaseDir, ShoppingConfig.Internals::setConfigDir, ShoppingConfig.Internals::setDataDir,
-                ShoppingConfig.Internals::setLogDir, ShoppingConfig.Internals::setTempDir, ShoppingConfig.Internals::setDeployDir,
+                ShoppingConfig.Internals::setWorkDir, ShoppingConfig.Internals::setConfigDir, ShoppingConfig.Internals::setDataDir,
+                ShoppingConfig.Internals::setLogDir, ShoppingConfig.Internals::setTmpDir, ShoppingConfig.Internals::setDeploymentDir,
             )
             saved.zip(setters).forEach { (path, set) -> path?.let(set) }
             ShoppingConfig.Internals.setJwtSecret(jwtSecret)
@@ -29,45 +33,45 @@ class ShoppingConfigTest {
         }
     }
 
-    private fun emptyConfig(): AppConfig {
-        System.setProperty("shopping.config.file", Files.createTempFile("application", ".toml").toString())
-        try {
-            return AppConfig.load()
-        } finally {
-            System.clearProperty("shopping.config.file")
-        }
-    }
-
     @Test
-    fun everyRuntimeDirectory_isUnderTheConfiguredBaseDirectory() = preservingTheConfiguration {
-        val base = Files.createTempDirectory("shopping-base").toRealPath()
+    fun everyRuntimeDirectory_comesFromTheWorkDirectory_andIsCreated() = preservingTheConfiguration {
+        val work = Files.createTempDirectory("shopping-work").toRealPath()
 
-        ShoppingConfig.Internals.configure(emptyConfig().withOverride("app.basedir", base.toString()))
+        ShoppingConfig.Internals.useWorkDir(work)
 
-        assertEquals(base, ShoppingConfig.baseDir!!.toRealPath())
+        assertEquals(work, ShoppingConfig.workDir!!.toRealPath())
         val directories = mapOf(
             "config" to ShoppingConfig.configDir, "data" to ShoppingConfig.dataDir, "log" to ShoppingConfig.logDir,
-            "temp" to ShoppingConfig.tempDir, "deploy" to ShoppingConfig.deployDir,
+            "tmp" to ShoppingConfig.tmpDir, "deployment" to ShoppingConfig.deploymentDir,
         )
         for ((name, directory) in directories) {
-            assertEquals(base.resolve(name), directory!!.toRealPath(), name)
+            assertEquals(work.resolve(name), directory!!.toRealPath(), name)
             assertTrue(Files.isDirectory(directory), "$name não foi criado")
         }
     }
 
     @Test
-    fun withoutBaseDirectory_itIsWorkUnderTheWorkingDirectory() = preservingTheConfiguration {
-        val work = Path.of("work").toAbsolutePath().normalize()
-        val existed = Files.exists(work)
-        try {
-            ShoppingConfig.Internals.configure(emptyConfig())
+    fun aWorkDirectoryThatDoesNotExist_isRefused_andNotCreated() = preservingTheConfiguration {
+        val missing = Files.createTempDirectory("shopping-work").resolve("nao-existe")
 
-            assertEquals(work, ShoppingConfig.baseDir)
-            assertEquals(work.resolve("deploy"), ShoppingConfig.deployDir)
-            assertEquals(work.resolve("data"), ShoppingConfig.dataDir)
-        } finally {
-            // configurar cria as pastas: o teste não deixa um work/ para trás no módulo
-            if (!existed) work.toFile().deleteRecursively()
-        }
+        val e = assertFailsWith<IllegalArgumentException> { ShoppingConfig.Internals.useWorkDir(missing) }
+
+        assertTrue("não existe" in e.message!!, e.message)
+        assertTrue(Files.notExists(missing))
+    }
+
+    @Test
+    fun configuration_isReadFromConfigInTheWorkDirectory() = preservingTheConfiguration {
+        val work = Files.createTempDirectory("shopping-work")
+        ShoppingConfig.Internals.useWorkDir(work)
+
+        // sem o arquivo, vale o padrão
+        assertNull(ShoppingConfig.Internals.loadConfig().get("server.port"))
+        assertNull(ShoppingConfig.jwtSecret)
+
+        Files.writeString(work.resolve("config/application.toml"), "[server]\nport = 9123\n\n[security]\njwt.secret = \"abc\"\n")
+        val config = ShoppingConfig.Internals.loadConfig()
+        assertEquals(9123, config.getInt("server.port", 8080))
+        assertEquals("abc", ShoppingConfig.jwtSecret)
     }
 }

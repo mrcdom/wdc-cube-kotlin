@@ -3,7 +3,6 @@ package br.com.wdc.shopping.view.react.supports
 import br.com.wdc.framework.commons.util.Defer
 import br.com.wdc.shopping.domain.config.AppConfig
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
-import java.nio.file.Files
 import java.nio.file.Path
 import java.sql.SQLException
 import kotlin.test.Test
@@ -16,15 +15,8 @@ import org.jooq.SQLDialect
 
 class SqlDataSourceSupportTest {
 
-    private fun config(vararg entries: Pair<String, String>): AppConfig {
-        // um arquivo de configuração vazio, para o teste não depender do que houver no diretório de trabalho
-        System.setProperty("shopping.config.file", Files.createTempFile("application", ".toml").toString())
-        try {
-            return entries.fold(AppConfig.load()) { config, (key, value) -> config.withOverride(key, value) }
-        } finally {
-            System.clearProperty("shopping.config.file")
-        }
-    }
+    private fun config(vararg entries: Pair<String, String>): AppConfig =
+        entries.fold(AppConfig.empty()) { config, (key, value) -> config.withOverride(key, value) }
 
     private fun h2(name: String, vararg entries: Pair<String, String>) =
         SqlDataSourceSupport(config("database.url" to "jdbc:h2:mem:$name;DB_CLOSE_DELAY=-1", *entries), null)

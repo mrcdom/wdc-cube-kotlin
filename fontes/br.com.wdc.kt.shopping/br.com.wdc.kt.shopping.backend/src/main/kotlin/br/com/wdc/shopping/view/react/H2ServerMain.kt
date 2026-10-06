@@ -1,8 +1,8 @@
 package br.com.wdc.shopping.view.react
 
+import br.com.wdc.shopping.view.react.supports.WorkDirectory
 import org.h2.tools.Server
 import java.nio.file.Path
-import java.nio.file.Paths
 
 object H2ServerMain {
 
@@ -10,7 +10,7 @@ object H2ServerMain {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val dataDir = resolveDataDir()
+        val dataDir = resolveDataDir(args)
         val dbFile = dataDir.resolve(DEFAULT_DB_NAME).toAbsolutePath()
 
         val baseDir = dataDir.toAbsolutePath().toString()
@@ -51,9 +51,6 @@ object H2ServerMain {
         Thread.currentThread().join()
     }
 
-    private fun resolveDataDir(): Path {
-        val configuredDir = System.getProperty("wedocode.shopping.runtime.dir")
-        val baseDir = if (!configuredDir.isNullOrBlank()) Paths.get(configuredDir) else Paths.get("work")
-        return baseDir.toAbsolutePath().normalize().resolve("data")
-    }
+    /** A pasta `data/` do diretório de trabalho informado (`--workdir=…` ou `SHOPPING_WORKDIR`). */
+    private fun resolveDataDir(args: Array<String>): Path = WorkDirectory.resolve(args).resolve("data")
 }

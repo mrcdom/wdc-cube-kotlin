@@ -25,13 +25,13 @@ fontes/local.properties
 # Node
 node_modules/
 
-# Runtime data — fontes/work é o diretório de execução do backend.
-# São versionados os padrões de work/config (application.example.toml) e o esqueleto de work/deploy;
-# o application.toml é local (tem segredo) e o resto é gerado.
+# Runtime data — fontes/work é o diretório de trabalho do backend em desenvolvimento.
+# São versionados os padrões de work/config (application.example.toml, logback.xml) e o esqueleto de
+# work/deployment; o application.toml é local (tem segredo) e o resto é gerado.
 **/work/config/application.toml
 **/work/data/
 **/work/log/
-**/work/temp/
+**/work/tmp/
 *.mv.db
 
 # Maven (legacy)

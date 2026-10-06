@@ -95,11 +95,11 @@ class RestTestEnvironment(
         val ds = database.dataSource
 
         val basePath = Paths.get("work")
-        ShoppingConfig.Internals.setBaseDir(basePath)
+        ShoppingConfig.Internals.setWorkDir(basePath)
         ShoppingConfig.Internals.setConfigDir(basePath.resolve("config"))
         ShoppingConfig.Internals.setDataDir(basePath.resolve("data"))
         ShoppingConfig.Internals.setLogDir(basePath.resolve("log"))
-        ShoppingConfig.Internals.setTempDir(basePath.resolve("temp"))
+        ShoppingConfig.Internals.setTmpDir(basePath.resolve("tmp"))
         ScheduledExecutor.BEAN.set(executor)
         ShoppingRepositoryBootstrap.initialize(ds, dialect = database.dialect, cleanUp = cleanUp)
         RemoteTransactions.COORDINATOR.set(RemoteTransactionCoordinatorImpl({ ds }, remoteTransactionOptions))

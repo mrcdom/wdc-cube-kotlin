@@ -41,11 +41,11 @@ class TestEnvironment(
         val ds = database.dataSource
 
         val basePath = Paths.get("work")
-        ShoppingConfig.Internals.setBaseDir(basePath)
+        ShoppingConfig.Internals.setWorkDir(basePath)
         ShoppingConfig.Internals.setConfigDir(basePath.resolve("config"))
         ShoppingConfig.Internals.setDataDir(basePath.resolve("data"))
         ShoppingConfig.Internals.setLogDir(basePath.resolve("log"))
-        ShoppingConfig.Internals.setTempDir(basePath.resolve("temp"))
+        ShoppingConfig.Internals.setTmpDir(basePath.resolve("tmp"))
         ScheduledExecutor.BEAN.set(executor)
         // o login sem serviço de autenticação confere o resumo da senha na apresentação
         CryptoProvider.BEAN.set(JceCryptoProvider())

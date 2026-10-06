@@ -1,19 +1,18 @@
 # WeDoCode Shopping — configuração do backend (exemplo)
 #
-# Copie para application.toml, nesta mesma pasta, e ajuste: esse arquivo é local e não é versionado. Outro
-# caminho pode ser indicado com -Dshopping.config.file=/caminho/application.toml.
+# Copie para application.toml, nesta mesma pasta, e ajuste: esse arquivo é local e não é versionado.
+#
+# O backend lê sempre <diretório de trabalho>/config/application.toml. O diretório de trabalho é informado ao
+# subir o serviço (--workdir=<pasta> ou a variável SHOPPING_WORKDIR); em desenvolvimento é fontes/work.
 #
 # Toda chave é opcional: comentada, vale o padrão indicado. O leitor aceita seções e pares chave = valor;
 # não aceita listas nem comentário no fim da linha.
-
-[app]
-# Diretório-base dos dados de execução (config, data, log, temp, deploy).
-# Padrão: "work", relativo ao diretório de trabalho — em desenvolvimento, fontes/work.
-# basedir = "/caminho/para/work"
+#
+# A configuração do log fica ao lado, em logback.xml.
 
 [database]
 # --- H2 (padrão) -----------------------------------------------------------------------------------------
-# Sem url, o banco é um H2 em arquivo no diretório de dados: <basedir>/data/wedocode-shopping.
+# Sem url, o banco é um H2 em arquivo na pasta de dados: <diretório de trabalho>/data/wedocode-shopping.
 # url = "jdbc:h2:file:/caminho/wedocode-shopping;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 # username = "sa"
 # password = "sa"

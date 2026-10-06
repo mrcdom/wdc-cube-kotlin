@@ -5,11 +5,26 @@ import java.io.IOException
 import java.io.UncheckedIOException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 
+/**
+ * O diretório de trabalho do serviço e o que a configuração diz de geral.
+ *
+ * **O diretório de trabalho é informado por quem sobe o serviço** — não há padrão, nem ele é deduzido de onde o
+ * processo roda. Dele saem todas as pastas de execução:
+ *
+ * | Pasta | Para quê |
+ * |---|---|
+ * | `config/` | a configuração (`application.toml`) e os arquivos que a apoiam, inclusive a do log |
+ * | `data/` | dados locais que a aplicação reaproveita entre reinícios (o banco H2 padrão) |
+ * | `log/` | o arquivo de log e as suas rotações, conforme a configuração do log |
+ * | `tmp/` | arquivos temporários gerados durante a execução |
+ * | `deployment/` | cada subpasta é um contexto de recursos estáticos que o servidor publica |
+ */
 object ShoppingConfig {
 
-    var baseDir: Path? = null
+    const val CONFIG_FILE_NAME = "application.toml"
+
+    var workDir: Path? = null
         private set
 
     var configDir: Path? = null
@@ -21,11 +36,10 @@ object ShoppingConfig {
     var logDir: Path? = null
         private set
 
-    var tempDir: Path? = null
+    var tmpDir: Path? = null
         private set
 
-    /** Onde ficam os frontends web publicados: uma subpasta por contexto (`compose/`, `native/`…). */
-    var deployDir: Path? = null
+    var deploymentDir: Path? = null
         private set
 
     var jwtSecret: String? = null
@@ -36,35 +50,43 @@ object ShoppingConfig {
 
     object Internals {
 
-        fun setBaseDir(path: Path) { ShoppingConfig.baseDir = path }
+        fun setWorkDir(path: Path) { ShoppingConfig.workDir = path }
         fun setConfigDir(path: Path) { ShoppingConfig.configDir = path }
         fun setDataDir(path: Path) { ShoppingConfig.dataDir = path }
         fun setLogDir(path: Path) { ShoppingConfig.logDir = path }
-        fun setTempDir(path: Path) { ShoppingConfig.tempDir = path }
-        fun setDeployDir(path: Path) { ShoppingConfig.deployDir = path }
+        fun setTmpDir(path: Path) { ShoppingConfig.tmpDir = path }
+        fun setDeploymentDir(path: Path) { ShoppingConfig.deploymentDir = path }
         fun setJwtSecret(secret: String?) { ShoppingConfig.jwtSecret = secret }
         fun setRefreshTokenTtlDays(days: Int) { ShoppingConfig.refreshTokenTtlDays = days }
 
-        fun configure(config: AppConfig) {
+        /**
+         * Fixa as pastas de execução a partir do diretório de trabalho, criando as que faltarem.
+         *
+         * @param workDir diretório de trabalho; **precisa existir** — um caminho errado não vira, em silêncio,
+         *                um ambiente novo e vazio
+         */
+        fun useWorkDir(workDir: Path) {
+            val work = workDir.toAbsolutePath().normalize()
+            require(Files.isDirectory(work)) { "O diretório de trabalho não existe: $work" }
             try {
-                val base = resolveRuntimeBaseDir(config)
-                val cfg = createDirectory(base.resolve("config"))
-                val data = createDirectory(base.resolve("data"))
-                val log = createDirectory(base.resolve("log"))
-                val temp = createDirectory(base.resolve("temp"))
-                val deploy = createDirectory(base.resolve("deploy"))
-
-                setBaseDir(base)
-                setConfigDir(cfg)
-                setDataDir(data)
-                setLogDir(log)
-                setTempDir(temp)
-                setDeployDir(deploy)
-                setJwtSecret(config.get("security.jwt.secret"))
-                setRefreshTokenTtlDays(config.getInt("security.refresh.token.ttl.days", 7))
+                setWorkDir(work)
+                setConfigDir(createDirectory(work.resolve("config")))
+                setDataDir(createDirectory(work.resolve("data")))
+                setLogDir(createDirectory(work.resolve("log")))
+                setTmpDir(createDirectory(work.resolve("tmp")))
+                setDeploymentDir(createDirectory(work.resolve("deployment")))
             } catch (e: IOException) {
                 throw UncheckedIOException(e)
             }
+        }
+
+        /** Carrega a configuração de `config/application.toml`, no diretório de trabalho já fixado. */
+        fun loadConfig(): AppConfig {
+            val configDir = ShoppingConfig.configDir ?: throw IllegalStateException("Diretório de trabalho não informado")
+            val config = AppConfig.load(configDir.resolve(CONFIG_FILE_NAME))
+            setJwtSecret(config.get("security.jwt.secret"))
+            setRefreshTokenTtlDays(config.getInt("security.refresh.token.ttl.days", 7))
+            return config
         }
 
         private fun createDirectory(dir: Path): Path {
@@ -72,12 +94,6 @@ object ShoppingConfig {
                 Files.createDirectories(dir)
             }
             return dir
-        }
-
-        private fun resolveRuntimeBaseDir(config: AppConfig): Path {
-            val configuredDir = config.get("app.basedir")
-            val base = if (!configuredDir.isNullOrBlank()) Paths.get(configuredDir) else Paths.get("work")
-            return createDirectory(base.toAbsolutePath().normalize())
         }
     }
 }

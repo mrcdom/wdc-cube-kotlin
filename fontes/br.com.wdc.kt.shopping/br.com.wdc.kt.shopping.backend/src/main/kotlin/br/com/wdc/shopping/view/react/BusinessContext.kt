@@ -17,7 +17,10 @@ import br.com.wdc.shopping.view.react.supports.SqlDataSourceSupport
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 
-class BusinessContext {
+/**
+ * @param config a configuração do serviço, já carregada do diretório de trabalho
+ */
+class BusinessContext(private val config: AppConfig) {
 
     companion object {
         private val LOG = Log.getLogger("BusinessContext")
@@ -33,9 +36,6 @@ class BusinessContext {
 
     fun start() {
         try {
-            val config = AppConfig.load()
-            ShoppingConfig.Internals.configure(config)
-
             CryptoProvider.BEAN.set(JceCryptoProvider())
 
             val scheduledExecutor = createScheduledExecutor()

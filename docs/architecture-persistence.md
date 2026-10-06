@@ -350,11 +350,11 @@ Sem o segredo, a API fica aberta e `/api/auth` não existe: é o modo de desenvo
 
 O backend roda em **H2** (padrão: arquivo no diretório de dados) ou em **PostgreSQL**; o banco é escolhido pela URL. As conexões vêm de um pool Agroal.
 
-As chaves ficam na seção `[database]` do `application.toml`: `url`, `username`, `password`, `schema` (só PostgreSQL), `reset`, `logSql`, `pool.*` e `remoteTransaction.*`. Todas, com os padrões, estão em [`application.example.toml`](../fontes/work/config/application.example.toml).
+As chaves ficam na seção `[database]` do `config/application.toml`, no diretório de trabalho do backend: `url`, `username`, `password`, `schema` (só PostgreSQL), `reset`, `logSql`, `pool.*` e `remoteTransaction.*`. Todas, com os padrões, estão em [`application.example.toml`](../fontes/work/config/application.example.toml).
 
 A ordem de subida, em `BusinessContext`:
 
-1. Configuração, criptografia e executor.
+1. Diretório de trabalho (obrigatório: `--workdir=<pasta>` ou `SHOPPING_WORKDIR`), log e configuração (`config/application.toml`); depois criptografia e executor.
 2. `SqlDataSourceSupport` monta o pool.
 3. `DBCreate` cria o que falta e roda as migrações.
 4. `ShoppingRepositoryBootstrap.initialize(…)` registra o `DSLContext`, o `TransactionService` e os repositórios.
