@@ -85,19 +85,31 @@ No domínio, cada entidade ocupa um pacote: `domain.product`, `domain.user`, `do
 
 ## Repositório
 
+O contrato tem dois níveis: quem só consulta implementa (ou pede) o de leitura; o completo acrescenta a escrita.
+
 ```kotlin
-interface Repository<E, C, K> {
-    suspend fun insert(bean: E): Boolean
-    suspend fun update(newBean: E, oldBean: E? = null, projection: E? = null): Boolean
-    suspend fun insertOrUpdate(newBean: E, oldBean: E?): Boolean
-    suspend fun delete(criteria: C): Int
+interface ReadOnlyRepository<E, C, K> {
     suspend fun count(criteria: C): Int
     suspend fun fetch(criteria: C, offset: Int = 0, limit: Int = 0): List<E>
     suspend fun fetchPage(criteria: C, page: Int, pageSize: Int): Page<E>
     suspend fun fetchById(id: K, projection: E? = null): E?
     fun newProjection(): E
 }
+
+interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
+    suspend fun insert(bean: E): Boolean
+    suspend fun update(newBean: E, oldBean: E? = null, projection: E? = null): Boolean
+    suspend fun insertOrUpdate(newBean: E, oldBean: E?): Boolean
+    suspend fun delete(criteria: C): Int
+}
 ```
+
+`ReadOnlyRepository` serve a duas situações:
+
+- **Dados que não se gravam por aqui** — a visão de um painel, um relatório, um agregado calculado no banco. O repositório implementa só as consultas, sem ter de inventar o que fazer com um `insert`.
+- **Código que só lê** — um serviço que declara depender de `ReadOnlyRepository` diz, pelo tipo, que não altera nada, e aceita tanto um repositório de leitura quanto um completo.
+
+As quatro entidades do Shopping têm repositório completo.
 
 - **`update` é parcial.** A `projection` diz quais campos considerar; com `oldBean`, só entram os que mudaram. Sem nenhuma das duas, vale a projeção padrão da entidade.
 - **`insertOrUpdate`** insere quando `oldBean` é `null` e atualiza caso contrário — não consulta o banco para decidir.
@@ -302,7 +314,7 @@ Erros voltam como `{"error": "…"}`:
 
 ## Cliente HTTP
 
-`HttpRepository<E, C, K>` implementa as operações uma vez para todas as entidades; cada `HttpXxxRepository` só informa o codec e o caminho. O `HttpProductRepository` acrescenta a leitura e a gravação da imagem.
+`HttpReadOnlyRepository<E, C, K>` implementa as consultas uma vez para todas as entidades, e `HttpRepository<E, C, K>` o estende com a escrita; cada `HttpXxxRepository` só informa o codec e o caminho. Um repositório de somente leitura no cliente estende `HttpReadOnlyRepository` diretamente. O `HttpProductRepository` acrescenta a leitura e a gravação da imagem.
 
 O `HttpTransport` tem uma implementação por plataforma — `OkHttpTransport` (JVM e Android), `JsHttpTransport`, `WasmHttpTransport` e `IosHttpTransport` —, todas bloqueantes. Cada uma:
 
@@ -377,5 +389,7 @@ cd fontes
 5. **Cliente** (`:shopping-persistence-client`): o `HttpXxxRepository` e o registro em `RestRepositoryBootstrap`.
 6. **Apresentação**: o acesso em `ShoppingApplication`. Nos serviços, peça sempre os dados de quem está logado.
 7. **Testes**: um `AbstractXxxRepositoryTest` com as subclasses local e REST, e um teste REST com a segurança ligada.
+
+Para dados de somente leitura (um painel, por exemplo), a interface estende `ReadOnlyRepository`, o cliente estende `HttpReadOnlyRepository`, e o controlador registra só `count`, `fetch`, `fetch-page` e `fetch-by-id`.
 
 Os quatro repositórios existentes servem de modelo; `Product` é o mais simples e `Purchase`/`PurchaseItem` mostram associações, coleção e relação mútua.

@@ -1,9 +1,8 @@
 package br.com.wdc.framework.domain.repository
 
-import br.com.wdc.framework.domain.pagination.Page
-
 /**
- * Contrato base dos repositórios.
+ * Contrato dos repositórios que leem **e gravam**: as consultas de [ReadOnlyRepository] mais inserir,
+ * atualizar e apagar.
  *
  * Vale igual para a implementação que fala com o banco (servidor) e para a que fala HTTP (cliente):
  * é o que permite o mesmo caso de uso rodar dos dois lados.
@@ -12,7 +11,7 @@ import br.com.wdc.framework.domain.pagination.Page
  * @param C tipo do critério de pesquisa
  * @param K tipo da chave primária
  */
-interface Repository<E, C, K> {
+interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
 
     suspend fun insert(bean: E): Boolean
 
@@ -31,33 +30,6 @@ interface Repository<E, C, K> {
         if (oldBean == null) insert(newBean) else update(newBean, oldBean)
 
     suspend fun delete(criteria: C): Int
-
-    suspend fun count(criteria: C): Int
-
-    /**
-     * Busca pelo critério. `0` em [offset] ou [limit] significa "sem salto" / "sem limite".
-     *
-     * Atenção à ordem posicional: `fetch(c, 10)` pula 10 linhas. Para limitar, nomeie: `fetch(c, limit = 10)`.
-     */
-    suspend fun fetch(criteria: C, offset: Int = 0, limit: Int = 0): List<E>
-
-    suspend fun fetchPage(criteria: C, page: Int, pageSize: Int): Page<E> {
-        val total = count(criteria)
-        val items = fetch(criteria, page * pageSize, pageSize)
-        return Page.of(items, page, pageSize, total)
-    }
-
-    /**
-     * Busca pela chave. Implementada na interface de cada entidade, como um default que monta o
-     * `XxxCriteria` com igualdade sobre a chave e delega a [fetch] — assim buscar por id é a mesma
-     * consulta das outras, com o mesmo tratamento de projeção, segurança e transação.
-     *
-     * @param projection `null` projeta [newProjection]
-     * @return a entidade, ou `null` se não houver linha com essa chave
-     */
-    suspend fun fetchById(id: K, projection: E? = null): E?
-
-    fun newProjection(): E
 
     companion object {
         /**
