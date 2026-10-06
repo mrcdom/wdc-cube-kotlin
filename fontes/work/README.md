@@ -12,4 +12,4 @@ Diretório de execução do backend em desenvolvimento. `./gradlew :backend:run`
 
 Para começar: copie `config/application.example.toml` para `config/application.toml` e ajuste. Sem esse arquivo o backend sobe com os padrões — banco H2 em `data/` e **sem segurança**.
 
-O diretório-base pode ser outro: chave `app.basedir` na configuração. O arquivo de configuração também: `-Dshopping.config.file=/caminho/application.toml`.
+O diretório-base pode ser outro: com a chave `app.basedir` na configuração, todas as pastas acima (inclusive `deploy/`) passam a ser as dele. O arquivo de configuração também pode ser outro: `-Dshopping.config.file=/caminho/application.toml`.

@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.log.Slf4jLogFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
+import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.config.AppConfig
 import br.com.wdc.shopping.view.react.controller.DispatcherController
 import br.com.wdc.shopping.view.react.controller.ImageController
@@ -38,7 +39,6 @@ class JavalinApplication(
         private const val STATIC_FILES_EXTERNAL_DIR_ENV = "SHOPPING_STATIC_FILES_DIR"
         private const val STATIC_FILES_EXTERNAL_DIR_PROPERTY = "shopping.staticFilesDir"
         private const val STATIC_HOSTED_IMAGE_PATH = "/images"
-        private const val DEPLOY_DIR = "work/deploy"
 
         private const val DEFAULT_PORT = 8080
 
@@ -153,11 +153,18 @@ class JavalinApplication(
     }
 
     /**
-     * Scans work/deploy/ for subdirectories, each representing a deployed frontend
+     * The directory of the deployed frontends: `deploy/` under the runtime base directory (`work` by default,
+     * or `app.basedir`), like the data and log directories.
+     */
+    private fun deployDir(): File =
+        ShoppingConfig.deployDir?.toFile() ?: throw IllegalStateException("Runtime directories not configured")
+
+    /**
+     * Scans the deploy directory for subdirectories, each representing a deployed frontend
      * context (e.g. "native" for React/JS, "compose" for Wasm/Compose).
      */
     private fun detectDeployedContexts(): List<String> {
-        val deployDir = File(DEPLOY_DIR)
+        val deployDir = deployDir()
         if (!deployDir.isDirectory) return emptyList()
 
         return deployDir.listFiles()
@@ -227,7 +234,7 @@ class JavalinApplication(
 
             // Deployed frontends: registered as explicit routes in configureRoutes()
             for (context in deployedContexts) {
-                val contextDir = File(DEPLOY_DIR, context).absolutePath
+                val contextDir = File(deployDir(), context).absolutePath
                 LOG.info("Deployed frontend registered: /{} -> {}", context, contextDir)
             }
 
@@ -247,7 +254,7 @@ class JavalinApplication(
 
         // Serve deployed frontend files with correct MIME types and optional gzip pre-compression
         for (context in deployedContexts) {
-            val contextBaseDir = File(DEPLOY_DIR, context).canonicalFile
+            val contextBaseDir = File(deployDir(), context).canonicalFile
             config.routes.get("/$context/<path>") { ctx ->
                 val requestedPath = ctx.pathParam("path")
                 val file = File(contextBaseDir, requestedPath).canonicalFile

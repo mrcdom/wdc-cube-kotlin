@@ -24,6 +24,10 @@ object ShoppingConfig {
     var tempDir: Path? = null
         private set
 
+    /** Onde ficam os frontends web publicados: uma subpasta por contexto (`compose/`, `native/`…). */
+    var deployDir: Path? = null
+        private set
+
     var jwtSecret: String? = null
         private set
 
@@ -37,6 +41,7 @@ object ShoppingConfig {
         fun setDataDir(path: Path) { ShoppingConfig.dataDir = path }
         fun setLogDir(path: Path) { ShoppingConfig.logDir = path }
         fun setTempDir(path: Path) { ShoppingConfig.tempDir = path }
+        fun setDeployDir(path: Path) { ShoppingConfig.deployDir = path }
         fun setJwtSecret(secret: String?) { ShoppingConfig.jwtSecret = secret }
         fun setRefreshTokenTtlDays(days: Int) { ShoppingConfig.refreshTokenTtlDays = days }
 
@@ -47,12 +52,14 @@ object ShoppingConfig {
                 val data = createDirectory(base.resolve("data"))
                 val log = createDirectory(base.resolve("log"))
                 val temp = createDirectory(base.resolve("temp"))
+                val deploy = createDirectory(base.resolve("deploy"))
 
                 setBaseDir(base)
                 setConfigDir(cfg)
                 setDataDir(data)
                 setLogDir(log)
                 setTempDir(temp)
+                setDeployDir(deploy)
                 setJwtSecret(config.get("security.jwt.secret"))
                 setRefreshTokenTtlDays(config.getInt("security.refresh.token.ttl.days", 7))
             } catch (e: IOException) {
