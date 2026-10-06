@@ -7,6 +7,6 @@ Consultas declarativas sobre jOOQ (JVM).
 - `JsonDialect` — o que muda de um banco para outro. Há dialetos para H2 e PostgreSQL.
 - `TransactionAwareConnectionProvider` — faz o jOOQ usar a conexão da transação corrente.
 
-Os testes rodam os mesmos casos em H2 e em PostgreSQL embutido. Ainda não publicado no Maven Central.
+Os testes rodam os mesmos casos em H2 e em PostgreSQL embutido. Publicado no Maven Central como `io.github.mrcdom.wdc.kt:framework-jooq`.
 
 Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).

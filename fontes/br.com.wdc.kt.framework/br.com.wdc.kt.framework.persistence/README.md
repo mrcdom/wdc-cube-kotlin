@@ -6,6 +6,6 @@ Transações sobre JDBC (JVM).
 - `TransactionScope` — a transação corrente da thread; é por ele que o acesso a dados acha a conexão.
 - `RemoteTransactionCoordinatorImpl` — guarda transações abertas por clientes remotos, com dono, tetos, expiração por ociosidade e desfecho idempotente.
 
-Ainda não publicado no Maven Central.
+Publicado no Maven Central como `io.github.mrcdom.wdc.kt:framework-persistence`.
 
 Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).
