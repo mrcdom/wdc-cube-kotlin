@@ -1,14 +1,14 @@
 # WeDoCode Shopping — configuração do backend (exemplo)
 #
-# Copie para work/config/application.toml (esse diretório não é versionado) e ajuste. Outro caminho pode ser
-# indicado com -Dshopping.config.file=/caminho/application.toml.
+# Copie para application.toml, nesta mesma pasta, e ajuste: esse arquivo é local e não é versionado. Outro
+# caminho pode ser indicado com -Dshopping.config.file=/caminho/application.toml.
 #
 # Toda chave é opcional: comentada, vale o padrão indicado. O leitor aceita seções e pares chave = valor;
 # não aceita listas nem comentário no fim da linha.
 
 [app]
-# Diretório-base dos dados de execução (config, data, log, temp).
-# Padrão: "work", relativo ao diretório de trabalho.
+# Diretório-base dos dados de execução (config, data, log, temp, deploy).
+# Padrão: "work", relativo ao diretório de trabalho — em desenvolvimento, fontes/work.
 # basedir = "/caminho/para/work"
 
 [database]

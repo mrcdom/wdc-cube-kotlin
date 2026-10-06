@@ -15,9 +15,9 @@ cd fontes && ./gradlew :backend:run
 
 ## Configuração
 
-O backend lê `work/config/application.toml` (diretório não versionado) ou o arquivo indicado por `-Dshopping.config.file=…`. Sem arquivo, sobe com os padrões: H2 em `work/data` e **sem segurança**.
+Em desenvolvimento, o backend roda a partir de `fontes/` e usa [`fontes/work`](../../work/): lê `work/config/application.toml` (local, não versionado) e grava o banco, os logs e os frontends publicados nas outras pastas. Outro arquivo de configuração pode ser indicado com `-Dshopping.config.file=…`. Sem arquivo, sobe com os padrões: H2 em `work/data` e **sem segurança**.
 
-[`application.example.toml`](application.example.toml) lista todas as chaves, com os padrões:
+[`work/config/application.example.toml`](../../work/config/application.example.toml) lista todas as chaves, com os padrões:
 
 - **Banco** — H2 (padrão) ou PostgreSQL, escolhido pela `url`; pool de conexões; transações remotas.
 - **Segurança** — com `security.jwt.secret`, a API exige autenticação. Sem ele, fica aberta: só para desenvolvimento.

@@ -25,9 +25,10 @@ fontes/local.properties
 # Node
 node_modules/
 
-# Runtime data
-fontes/work/
-**/work/config/
+# Runtime data — fontes/work é o diretório de execução do backend.
+# São versionados os padrões de work/config (application.example.toml) e o esqueleto de work/deploy;
+# o application.toml é local (tem segredo) e o resto é gerado.
+**/work/config/application.toml
 **/work/data/
 **/work/log/
 **/work/temp/

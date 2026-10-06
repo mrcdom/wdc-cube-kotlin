@@ -4,15 +4,15 @@
 #
 # Usage: ./deploy.sh
 #
-# This script builds the production bundle and copies it to the backend's
-# work/deploy/compose/ directory. The backend serves it at /compose/ context path.
+# This script builds the production bundle and copies it to
+# fontes/work/deploy/compose/ directory. The backend serves it at /compose/ context path.
 #
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FONTES_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-BACKEND_DEPLOY_DIR="$FONTES_DIR/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.backend/work/deploy/compose"
+BACKEND_DEPLOY_DIR="$FONTES_DIR/work/deploy/compose"
 BUILD_OUTPUT_DIR="$SCRIPT_DIR/build/dist/wasmJs/productionExecutable"
 
 echo "=== Compose Web (Wasm/Compose) Deploy ==="

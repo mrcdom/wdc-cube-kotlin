@@ -6,8 +6,9 @@ application {
     mainClass.set("br.com.wdc.shopping.view.react.JavalinApplication")
 }
 
+// O backend roda a partir de fontes/: é lá que fica work/ (configuração, banco, logs e os frontends publicados).
 tasks.named<JavaExec>("run") {
-    workingDir = projectDir
+    workingDir = rootProject.projectDir
 }
 
 dependencies {

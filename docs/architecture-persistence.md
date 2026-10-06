@@ -350,7 +350,7 @@ Sem o segredo, a API fica aberta e `/api/auth` não existe: é o modo de desenvo
 
 O backend roda em **H2** (padrão: arquivo no diretório de dados) ou em **PostgreSQL**; o banco é escolhido pela URL. As conexões vêm de um pool Agroal.
 
-As chaves ficam na seção `[database]` do `application.toml`: `url`, `username`, `password`, `schema` (só PostgreSQL), `reset`, `logSql`, `pool.*` e `remoteTransaction.*`. Todas, com os padrões, estão em [`application.example.toml`](../fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.backend/application.example.toml).
+As chaves ficam na seção `[database]` do `application.toml`: `url`, `username`, `password`, `schema` (só PostgreSQL), `reset`, `logSql`, `pool.*` e `remoteTransaction.*`. Todas, com os padrões, estão em [`application.example.toml`](../fontes/work/config/application.example.toml).
 
 A ordem de subida, em `BusinessContext`:
 
