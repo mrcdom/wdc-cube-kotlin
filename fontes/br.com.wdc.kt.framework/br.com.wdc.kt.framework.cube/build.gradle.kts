@@ -1,19 +1,17 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.agp.library)
-}
-
-android {
-    namespace = "br.com.wdc.framework.cube"
-    compileSdk = 35
-    defaultConfig { minSdk = 26 }
+    alias(libs.plugins.android.kmp.library)
 }
 
 kotlin {
     jvmToolchain(21)
 
     jvm()
-    androidTarget()
+    androidLibrary {
+        namespace = "br.com.wdc.framework.cube"
+        compileSdk = 35
+        minSdk = 26
+    }
     js(IR) {
         browser()
     }

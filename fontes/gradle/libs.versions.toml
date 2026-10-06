@@ -1,6 +1,6 @@
 [versions]
-kotlin = "2.2.20"
-agp = "8.13.2"
+kotlin = "2.3.21"
+agp = "9.1.1"
 androidx-activity-compose = "1.10.1"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.7.1"
@@ -49,5 +49,5 @@ kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref 
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 agp = { id = "com.android.application", version.ref = "agp" }
-agp-library = { id = "com.android.library", version.ref = "agp" }
+android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
