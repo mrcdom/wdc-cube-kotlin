@@ -1,21 +1,20 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.agp.library)
-}
-
-android {
-    namespace = "br.com.wdc.shopping.domain"
-    compileSdk = 35
-    defaultConfig { minSdk = 26 }
+    alias(libs.plugins.android.kmp.library)
 }
 
 kotlin {
     jvmToolchain(21)
 
     jvm()
-    androidTarget()
+    androidLibrary {
+        namespace = "br.com.wdc.shopping.domain"
+        compileSdk = 35
+        minSdk = 26
+    }
     js(IR) {
         browser()
     }
@@ -30,7 +29,8 @@ kotlin {
         common {
             group("jvmCommon") {
                 withJvm()
-                withAndroidTarget()
+                // o alvo Android do plugin com.android.kotlin.multiplatform.library
+                withCompilations { it.target.platformType == KotlinPlatformType.androidJvm }
             }
         }
     }
@@ -43,6 +43,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":framework-commons"))
+            api(project(":framework-domain"))
             api(libs.kotlinx.coroutines.core)
         }
 

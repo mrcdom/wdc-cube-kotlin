@@ -4,15 +4,15 @@
 #
 # Usage: ./deploy.sh
 #
-# This script builds the production bundle and copies it to the backend's
-# work/deploy/native/ directory. The backend serves it at /native/ context path.
+# This script builds the production bundle and copies it to
+# fontes/work/deployment/native/ directory. The backend serves it at /native/ context path.
 #
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FONTES_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-BACKEND_DEPLOY_DIR="$FONTES_DIR/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.backend/work/deploy/native"
+BACKEND_DEPLOY_DIR="$FONTES_DIR/work/deployment/native"
 BUILD_OUTPUT_DIR="$SCRIPT_DIR/build/dist/js/productionExecutable"
 
 echo "=== Native Web (React/JS) Deploy ==="

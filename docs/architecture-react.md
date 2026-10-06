@@ -94,7 +94,7 @@ graph TB
         BACK["backend<br/>Javalin HTTP/WS"]
         SKEL["react.skeleton<br/>View Impls + Dispatcher"]
         PRES["presentation<br/>Presenters (KMP commonMain)"]
-        PERS["persistence<br/>Repositories JDBC"]
+        PERS["persistence<br/>Repositories jOOQ"]
         PERSR["persistence.rest<br/>REST API (para Compose)"]
         DOM["domain<br/>Entidades + Interfaces"]
         CUBE["framework-cube<br/>Engine MVP"]
@@ -117,7 +117,7 @@ graph TB
 | **react.skeleton** | Bridge server-side: cada `*ReactViewImpl` traduz eventos do cliente para chamadas no presenter e serializa o ViewState para JSON. |
 | **backend** | Servidor Javalin que hospeda o WebSocket (`/dispatcher/{id}`), serve arquivos estáticos do React e expõe a REST API para clientes Compose. |
 | **presentation** | Presenters compartilhados (KMP commonMain) — o mesmo código usado tanto pelo React quanto pelo Compose. |
-| **persistence** | Implementação JDBC/H2 dos repositórios — usada diretamente pelos presenters na arquitetura React. |
+| **persistence** | Implementação jOOQ dos repositórios (H2 ou PostgreSQL) — usada diretamente pelos presenters na arquitetura React. |
 | **persistence.rest** | Endpoints REST — usados pelos clientes Compose via `persistence.client`. |
 
 ---

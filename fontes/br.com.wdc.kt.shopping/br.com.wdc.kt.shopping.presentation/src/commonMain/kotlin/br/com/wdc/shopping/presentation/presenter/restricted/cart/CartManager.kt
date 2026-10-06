@@ -1,11 +1,12 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.cart
 
+import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
-import br.com.wdc.shopping.domain.model.Product
-import br.com.wdc.shopping.domain.model.Purchase
-import br.com.wdc.shopping.domain.model.PurchaseItem
-import br.com.wdc.shopping.domain.model.User
-import br.com.wdc.shopping.domain.repositories.PurchaseRepository
+import br.com.wdc.shopping.domain.product.Product
+import br.com.wdc.shopping.domain.purchase.Purchase
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
+import br.com.wdc.shopping.domain.user.User
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
@@ -129,9 +130,16 @@ class CartManager(private val repo: PurchaseRepository) {
             purchase.items!!.add(purchaseItem)
         }
 
-        check(repo.insert(purchase)) { "Record not inserted" }
+        // A compra e os seus itens confirmam juntos, ou nada confirma. Sem serviço de transação (testes sem
+        // persistência), executa direto.
+        val transactions = ShoppingTransactions.BEAN.getOrNull()
+        if (transactions == null) insert(purchase) else transactions.required { insert(purchase) }
 
         return purchase.id
+    }
+
+    private suspend fun insert(purchase: Purchase) {
+        check(repo.insert(purchase)) { "Record not inserted" }
     }
 
     fun getItemCount(): Int {

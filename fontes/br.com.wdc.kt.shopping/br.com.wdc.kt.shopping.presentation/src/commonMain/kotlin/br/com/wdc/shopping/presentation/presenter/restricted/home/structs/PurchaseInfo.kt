@@ -1,9 +1,9 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.structs
 
-import br.com.wdc.shopping.domain.model.Product
-import br.com.wdc.shopping.domain.model.Purchase
-import br.com.wdc.shopping.domain.model.PurchaseItem
-import br.com.wdc.shopping.domain.utils.ProjectionValues
+import br.com.wdc.shopping.domain.product.Product
+import br.com.wdc.shopping.domain.purchase.Purchase
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
+import br.com.wdc.framework.domain.projection.ProjectionValues
 
 class PurchaseInfo {
 
@@ -26,7 +26,7 @@ class PurchaseInfo {
 
             val prj = Purchase()
             prj.id = pv.i64
-            prj.buyDate = pv.offsetDateTime
+            prj.buyDate = pv.instant
             prj.items = mutableListOf(itemPrj)
 
             return prj

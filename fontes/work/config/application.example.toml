@@ -1,0 +1,66 @@
+# WeDoCode Shopping — configuração do backend (exemplo)
+#
+# Copie para application.toml, nesta mesma pasta, e ajuste: esse arquivo é local e não é versionado.
+#
+# O backend lê sempre <diretório de trabalho>/config/application.toml. O diretório de trabalho é informado ao
+# subir o serviço (--workdir=<pasta> ou a variável SHOPPING_WORKDIR); em desenvolvimento é fontes/work.
+#
+# Toda chave é opcional: comentada, vale o padrão indicado. O leitor aceita seções e pares chave = valor;
+# não aceita listas nem comentário no fim da linha.
+#
+# A configuração do log fica ao lado, em logback.xml.
+
+[database]
+# --- H2 (padrão) -----------------------------------------------------------------------------------------
+# Sem url, o banco é um H2 em arquivo na pasta de dados: <diretório de trabalho>/data/wedocode-shopping.
+# url = "jdbc:h2:file:/caminho/wedocode-shopping;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+# username = "sa"
+# password = "sa"
+
+# --- PostgreSQL ------------------------------------------------------------------------------------------
+# O banco é escolhido pela url. A base precisa existir; as tabelas são criadas na subida.
+# url = "jdbc:postgresql://localhost:5432/shopping"
+# username = "postgres"
+# password = "troque-me"
+# Esquema da aplicação (só PostgreSQL). É criado se não existir; sem ele, vale o esquema padrão do usuário.
+# schema = "shopping"
+
+# Apaga os dados e recarrega a carga de demonstração a cada subida.
+# reset = false
+
+# Registra no log (nível DEBUG) os SQLs executados.
+# logSql = false
+
+# --- Pool de conexões ------------------------------------------------------------------------------------
+# pool.maxSize = 20
+# pool.minIdle = 5
+# Quanto esperar por uma conexão livre antes de desistir.
+# pool.connectionTimeoutSeconds = 30
+# Idade máxima de uma conexão; 0 desliga a reciclagem por idade.
+# pool.maxLifetimeMinutes = 30
+
+# --- Transações remotas (as que um cliente REST abre em /api/tx/begin) -------------------------------------
+# Tempo sem uso até a transação ser desfeita.
+# remoteTransaction.idleTimeoutSeconds = 60
+# Tempo máximo de vida, mesmo em uso.
+# remoteTransaction.maxLifetimeSeconds = 600
+# Por quanto tempo o desfecho fica guardado, para repetir commit/rollback sem erro.
+# remoteTransaction.outcomeRetentionSeconds = 300
+# Tetos de transações abertas: no total e por cliente.
+# remoteTransaction.maxOpen = 128
+# remoteTransaction.maxOpenPerOwner = 16
+
+[server]
+# Porta HTTP.
+# port = 8080
+
+# Aceita qualquer origem no CORS (desenvolvimento).
+# cors.allowAll = false
+
+[security]
+# Segredo do JWT. Com ele, /api/repo e /api/tx exigem autenticação e /api/auth passa a existir.
+# Sem ele, a API fica ABERTA — só para desenvolvimento.
+# jwt.secret = "um-segredo-longo-e-aleatorio"
+
+# Validade do refresh token, em dias.
+# refresh.token.ttl.days = 7

@@ -2,14 +2,6 @@ package br.com.wdc.shopping.test.mock
 
 import br.com.wdc.framework.commons.storage.JvmSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
-import br.com.wdc.shopping.domain.repositories.ProductRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseRepository
-import br.com.wdc.shopping.domain.repositories.UserRepository
-import br.com.wdc.shopping.presentation.repository.SecuredProductRepository
-import br.com.wdc.shopping.presentation.repository.SecuredPurchaseItemRepository
-import br.com.wdc.shopping.presentation.repository.SecuredPurchaseRepository
-import br.com.wdc.shopping.presentation.repository.SecuredUserRepository
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
@@ -40,18 +32,6 @@ class ShoppingApplicationMock : ShoppingApplication() {
         ProductsPanelPresenter.createView = { p -> ProductsPanelViewMock(p) }
         PurchasesPanelPresenter.createView = { p -> PurchasesPanelViewMock(p) }
     }
-
-    override fun createUserDelegate(delegate: UserRepository) =
-        SecuredUserRepository(delegate, ::getSecurityContext)
-
-    override fun createProductDelegate(delegate: ProductRepository) =
-        SecuredProductRepository(delegate, ::getSecurityContext)
-
-    override fun createPurchaseDelegate(delegate: PurchaseRepository) =
-        SecuredPurchaseRepository(delegate, ::getSecurityContext)
-
-    override fun createPurchaseItemDelegate(delegate: PurchaseItemRepository) =
-        SecuredPurchaseItemRepository(delegate, ::getSecurityContext)
 
     override fun createSessionStorage(): SessionStorage = JvmSessionStorage()
 

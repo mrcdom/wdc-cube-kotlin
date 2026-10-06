@@ -24,7 +24,7 @@ wdc-cube-kotlin/
 ## Pré-requisitos
 
 - JDK 21
-- Gradle 8.14 (via wrapper)
+- Gradle 9.3 (via wrapper)
 - Android Studio (para Android e Compose Web)
 - Xcode 16+ (para iOS)
 - Node.js (para o cliente React)

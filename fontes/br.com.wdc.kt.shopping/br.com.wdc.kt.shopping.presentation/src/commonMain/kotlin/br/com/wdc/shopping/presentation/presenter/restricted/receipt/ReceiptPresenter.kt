@@ -84,6 +84,6 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
     // :: Data Loaders
 
     private suspend fun loadReceipt(purchaseId: Long): ReceiptForm {
-        return receiptService.loadReceipt(purchaseId) ?: throw PurchaseNotFoundException()
+        return receiptService.loadReceipt(purchaseId, app.subject?.id) ?: throw PurchaseNotFoundException()
     }
 }

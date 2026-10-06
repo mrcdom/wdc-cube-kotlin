@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform) apply false
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.agp) apply false
-    alias(libs.plugins.agp.library) apply false
+    alias(libs.plugins.android.kmp.library) apply false
     alias(libs.plugins.maven.publish) apply false
 }
 
@@ -19,7 +19,7 @@ allprojects {
 }
 
 // KMP modules handle their own plugin configuration
-val kmpModules = setOf("framework-commons", "framework-cube", "shopping-domain", "shopping-presentation", "shopping-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android")
+val kmpModules = setOf("framework-commons", "framework-cube", "framework-domain", "shopping-domain", "shopping-presentation", "shopping-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android")
 
 subprojects {
     if (name !in kmpModules) {
@@ -39,6 +39,20 @@ subprojects {
     tasks.withType<Test> {
         useJUnitPlatform()
     }
+
+    // `./gradlew test` também roda os testes comuns dos módulos multiplataforma, na JVM. (Com o plugin Android
+    // antigo eles entravam pelos testes unitários do Android; o plugin multiplataforma novo não cria essa tarefa.)
+    pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+        afterEvaluate {
+            if (tasks.findByName("test") == null && tasks.findByName("jvmTest") != null) {
+                tasks.register("test") {
+                    group = "verification"
+                    description = "Runs the common tests on the JVM."
+                    dependsOn("jvmTest")
+                }
+            }
+        }
+    }
 }
 
 // Framework modules published to Maven Central (artifactId = project name)
@@ -53,7 +67,7 @@ configure(subprojects.filter { it.name in publishedModules }) {
     version = "0.1.0"
 
     // The modules apply the Kotlin Multiplatform plugin first, then the Android library one
-    pluginManager.withPlugin("com.android.library") {
+    pluginManager.withPlugin("com.android.kotlin.multiplatform.library") {
         apply(plugin = "com.vanniktech.maven.publish")
 
         configure<com.vanniktech.maven.publish.MavenPublishBaseExtension> {

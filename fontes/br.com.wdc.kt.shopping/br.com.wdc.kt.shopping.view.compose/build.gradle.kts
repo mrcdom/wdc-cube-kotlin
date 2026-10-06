@@ -2,20 +2,18 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.agp.library)
-}
-
-android {
-    namespace = "br.com.wdc.shopping.view.compose"
-    compileSdk = 35
-    defaultConfig { minSdk = 26 }
+    alias(libs.plugins.android.kmp.library)
 }
 
 kotlin {
     jvmToolchain(21)
 
     jvm()
-    androidTarget()
+    androidLibrary {
+        namespace = "br.com.wdc.shopping.view.compose"
+        compileSdk = 35
+        minSdk = 26
+    }
     wasmJs {
         browser()
     }

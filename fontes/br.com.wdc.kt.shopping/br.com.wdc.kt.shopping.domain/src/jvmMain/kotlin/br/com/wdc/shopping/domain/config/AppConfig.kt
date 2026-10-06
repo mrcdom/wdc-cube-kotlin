@@ -2,7 +2,7 @@ package br.com.wdc.shopping.domain.config
 
 import br.com.wdc.framework.commons.log.Log
 import java.nio.file.Files
-import java.nio.file.Paths
+import java.nio.file.Path
 
 class AppConfig private constructor(
     private val properties: Map<String, String>,
@@ -36,31 +36,23 @@ class AppConfig private constructor(
     companion object {
         private val LOG = Log.getLogger("AppConfig")
 
-        private const val CONFIG_FILE_PROPERTY = "shopping.config.file"
-        private const val DEFAULT_CONFIG_PATH = "work/config/application.toml"
-
-        fun load(): AppConfig {
-            val configPath = resolveConfigPath()
-            if (Files.exists(configPath)) {
-                LOG.info("Loading configuration from {}", configPath.toAbsolutePath())
+        /** Lê o arquivo de configuração informado; se ele não existir, vale tudo no padrão. */
+        fun load(configFile: Path): AppConfig {
+            if (Files.exists(configFile)) {
+                LOG.info("Loading configuration from {}", configFile.toAbsolutePath())
                 try {
-                    val content = Files.readString(configPath)
-                    val props = parseToml(content)
-                    return AppConfig(props)
+                    return AppConfig(parseToml(Files.readString(configFile)))
                 } catch (e: java.io.IOException) {
-                    LOG.warn("Failed to read config file {}: {}", configPath, e.message)
+                    LOG.warn("Failed to read config file {}: {}", configFile, e.message)
                 }
             } else {
-                LOG.info("No config file found at {}, using defaults", configPath.toAbsolutePath())
+                LOG.info("No config file found at {}, using defaults", configFile.toAbsolutePath())
             }
             return AppConfig(emptyMap())
         }
 
-        private fun resolveConfigPath(): java.nio.file.Path {
-            val configured = System.getProperty(CONFIG_FILE_PROPERTY)
-            return if (!configured.isNullOrBlank()) Paths.get(configured)
-            else Paths.get(DEFAULT_CONFIG_PATH)
-        }
+        /** Uma configuração sem arquivo: tudo no padrão. */
+        fun empty(): AppConfig = AppConfig(emptyMap())
 
         internal fun parseToml(content: String): Map<String, String> {
             val result = LinkedHashMap<String, String>()

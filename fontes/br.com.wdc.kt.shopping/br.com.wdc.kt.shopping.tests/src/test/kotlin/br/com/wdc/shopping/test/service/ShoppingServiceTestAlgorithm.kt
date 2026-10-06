@@ -1,14 +1,14 @@
 package br.com.wdc.shopping.test.service
 
-import br.com.wdc.shopping.domain.criteria.ProductCriteria
-import br.com.wdc.shopping.domain.criteria.PurchaseCriteria
-import br.com.wdc.shopping.domain.criteria.PurchaseItemCriteria
-import br.com.wdc.shopping.domain.criteria.UserCriteria
-import br.com.wdc.shopping.domain.model.Product
-import br.com.wdc.shopping.domain.model.Purchase
-import br.com.wdc.shopping.domain.model.PurchaseItem
-import br.com.wdc.shopping.domain.model.User
-import br.com.wdc.shopping.domain.utils.ProjectionValues
+import br.com.wdc.shopping.domain.product.ProductCriteria
+import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemCriteria
+import br.com.wdc.shopping.domain.user.UserCriteria
+import br.com.wdc.shopping.domain.product.Product
+import br.com.wdc.shopping.domain.purchase.Purchase
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
+import br.com.wdc.shopping.domain.user.User
+import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelService
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
@@ -41,7 +41,7 @@ object ShoppingServiceTestAlgorithm {
         val pchPrj = Purchase()
         pchPrj.id = pv.i64
         pchPrj.user = usrPrj
-        pchPrj.buyDate = pv.offsetDateTime
+        pchPrj.buyDate = pv.instant
 
         val itemPrj = PurchaseItem()
         itemPrj.id = pv.i64
@@ -61,11 +61,8 @@ object ShoppingServiceTestAlgorithm {
     suspend fun testFullShoppingWorkflow(env: ShoppingTestEnvironment) {
         // Autentica via repositório
         val users = env.userRepo.fetch(
-            UserCriteria()
-                .withUserName("admin")
-                .withPassword("admin")
-                .withProjection(Subject.projection())
-                .withLimit(1)
+            UserCriteria().withUserName("admin").withProjection(Subject.projection()),
+            limit = 1,
         )
         assertFalse(users.isEmpty(), "Missing subject")
         val subject = Subject.create(users[0])
@@ -105,7 +102,7 @@ object ShoppingServiceTestAlgorithm {
         val homeService = PurchasesPanelService(env.purchaseRepo)
 
         var compras: List<PurchaseInfo> = homeService.loadPurchases(
-            PurchaseCriteria().withOrderBy(PurchaseCriteria.OrderBy.ASCENDING)
+            PurchaseCriteria().withOrderBy(PurchaseCriteria.OrderBy.OLDEST_FIRST)
         )
 
         assertNotNull(compras)
@@ -151,10 +148,14 @@ object ShoppingServiceTestAlgorithm {
         assertEquals(2, ultimaCompra.items.size)
         assertEquals(65.0, ultimaCompra.total)
 
-        val recibo = ReceiptService(env.purchaseRepo).loadReceipt(idCompra)
+        val recibo = ReceiptService(env.purchaseRepo).loadReceipt(idCompra, userId)
         assertNotNull(recibo)
         assertEquals(65.0, recibo!!.total)
         assertEquals(2, recibo.items.size)
+
+        // o recibo é de quem comprou: para outro usuário, a compra não existe
+        val outroUsuario = if (userId == DBReset.FULANO_ID) DBReset.BEOTRANO_ID else DBReset.FULANO_ID
+        assertNull(ReceiptService(env.purchaseRepo).loadReceipt(idCompra, outroUsuario))
 
         val pedido0 = purchase.items!![0]
         assertEquals(pedido0.price, recibo.items[0].value)

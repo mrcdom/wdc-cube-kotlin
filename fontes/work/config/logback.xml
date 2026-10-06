@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Configuração do log do backend. O serviço a lê de <diretório de trabalho>/config/logback.xml e informa a
+  pasta de log em ${shopping.log.dir} (<diretório de trabalho>/log).
+
+  Este é o padrão versionado: console e arquivo, com rotação diária. Ajuste os níveis à vontade.
+-->
+<configuration>
+
+    <property name="PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Um arquivo por dia (e por 20 MB, dentro do dia), guardando 30 dias e no máximo 500 MB. -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${shopping.log.dir}/shopping.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${shopping.log.dir}/shopping.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Bibliotecas: só o que merece atenção. -->
+    <logger name="org.eclipse.jetty" level="WARN"/>
+    <logger name="io.javalin" level="INFO"/>
+    <logger name="org.jooq" level="WARN"/>
+    <logger name="io.agroal" level="WARN"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>

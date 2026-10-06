@@ -26,6 +26,9 @@ rootProject.name = "wdc-cube-kotlin"
 // Framework modules
 include(":framework-commons")
 include(":framework-cube")
+include(":framework-domain")
+include(":framework-persistence")
+include(":framework-jooq")
 
 // Shopping modules
 include(":shopping-domain")
@@ -50,12 +53,15 @@ include(":backend")
 // Map module names to actual directory paths
 project(":framework-commons").projectDir      = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.commons")
 project(":framework-cube").projectDir         = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube")
+project(":framework-domain").projectDir       = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.domain")
+project(":framework-persistence").projectDir  = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.persistence")
+project(":framework-jooq").projectDir         = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.jooq")
 project(":shopping-domain").projectDir        = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.domain")
-project(":shopping-persistence").projectDir   = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence")
-project(":persistence-rest").projectDir       = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence.rest")
+project(":shopping-persistence").projectDir   = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence/persistence.impl")
+project(":persistence-rest").projectDir       = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence/persistence.rest")
 project(":shopping-scripts").projectDir       = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.scripts")
 project(":shopping-presentation").projectDir  = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.presentation")
-project(":shopping-persistence-client").projectDir = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence.client")
+project(":shopping-persistence-client").projectDir = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.persistence/persistence.client")
 project(":shopping-tests").projectDir         = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.tests")
 project(":view-remote-react-skeleton").projectDir = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.remote/remote.react/remote.react.skeleton")
 project(":stress-remote-react").projectDir = file("br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.remote/remote.react/remote.react.stress")

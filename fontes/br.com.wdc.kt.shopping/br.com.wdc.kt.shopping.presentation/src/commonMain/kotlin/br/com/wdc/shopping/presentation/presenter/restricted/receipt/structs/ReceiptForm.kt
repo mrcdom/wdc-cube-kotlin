@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs
 
-import br.com.wdc.shopping.domain.model.Purchase
-import br.com.wdc.shopping.domain.utils.ProjectionValues
+import br.com.wdc.shopping.domain.purchase.Purchase
+import br.com.wdc.framework.domain.projection.ProjectionValues
 
 class ReceiptForm {
 
@@ -14,7 +14,7 @@ class ReceiptForm {
             val pv = ProjectionValues
 
             val prj = Purchase()
-            prj.buyDate = pv.offsetDateTime
+            prj.buyDate = pv.instant
             prj.items = mutableListOf(ReceiptItem.projection())
 
             return prj

@@ -165,8 +165,8 @@ graph TB
 | `:framework-commons` | Utilitários compartilhados — logging, JSON, HTTP, crypto, schedulers |
 | `:shopping-presentation` | Presenters e ViewStates — lógica de apresentação pura (sem UI) |
 | `:shopping-domain` | Modelos de domínio, interfaces de repositório, serviços |
-| `:shopping-persistence-client` | Implementação REST dos repositórios (cliente HTTP) |
-| `:shopping-persistence` | Implementação JDBC dos repositórios (acesso direto ao banco) |
+| `:shopping-persistence-client` | Implementação REST dos repositórios e do serviço de transação (cliente HTTP) |
+| `:shopping-persistence` | Implementação jOOQ dos repositórios (acesso direto ao banco) |
 | `:view-compose` | Views Compose Multiplatform compartilhadas |
 | `:view-compose-desktop` | Entry point JVM Desktop |
 | `:view-compose-android` | Entry point Android |
@@ -380,7 +380,7 @@ A camada de domínio contém:
 - **Interfaces de repositório** — contratos com critérios de busca (Query Object Pattern)
 - **Serviços** — operações de negócio que coordenam repositórios
 
-Os modelos e interfaces são compartilhados entre todas as plataformas (`commonMain`). As implementações de repositório variam: REST client para views locais, JDBC para o backend.
+Os modelos e interfaces são compartilhados entre todas as plataformas (`commonMain`). As implementações de repositório variam: REST client para views locais, jOOQ para o backend.
 
 Veja [architecture-persistence.md](architecture-persistence.md) para detalhes do padrão de repositórios com critérios.
 
@@ -391,9 +391,9 @@ Veja [architecture-persistence.md](architecture-persistence.md) para detalhes do
 | Implementação | Módulo | Uso |
 |---------------|--------|-----|
 | **REST Client** | `:shopping-persistence-client` | Views locais (Compose) — chama o backend via HTTP |
-| **JDBC/H2** | `:shopping-persistence` | Backend — acesso direto ao banco H2 |
+| **jOOQ** | `:shopping-persistence` | Backend — acesso direto ao banco (H2 ou PostgreSQL) |
 
-A implementação REST converte critérios de domínio em query parameters HTTP. A implementação JDBC converte critérios em cláusulas SQL com bind parameters.
+As duas implementam o mesmo contrato. A implementação REST envia o critério e a projeção em JSON, com o mesmo codec que o servidor usa para lê-los; a implementação jOOQ os traduz numa única consulta SQL, com bind parameters.
 
 ---
 
@@ -573,7 +573,7 @@ sequenceDiagram
 | [architecture-cube.md](architecture-cube.md) | Framework Cube — mecanismo de navegação transacional, ciclo de vida de presenters, interrupção e migração, commit/rollback, garantias |
 | [architecture-cube-compose.md](architecture-cube-compose.md) | Integração Cube + Compose — ComposeCubeView, revision counter, safeCall, RenderSlot, view factories, inicialização por plataforma |
 | [architecture-react.md](architecture-react.md) | Modalidade de view remota — React + WebSocket, Skeletons, sincronização de estado, segurança |
-| [architecture-persistence.md](architecture-persistence.md) | Camada de persistência — repositórios com critérios, DbTable, Row com change tracking, SQL builder, transações |
+| [architecture-persistence.md](architecture-persistence.md) | Camada de persistência — repositórios, critérios, projeção, transações (locais e remotas), API REST |
 
 ---
 

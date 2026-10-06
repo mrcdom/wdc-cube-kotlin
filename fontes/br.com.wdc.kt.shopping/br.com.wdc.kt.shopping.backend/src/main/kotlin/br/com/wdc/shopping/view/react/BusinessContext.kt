@@ -2,50 +2,47 @@ package br.com.wdc.shopping.view.react
 
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.sql.SqlDataSource
-import br.com.wdc.framework.commons.sql.SqlDataSourceDelegate
 import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.config.AppConfig
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JceCryptoProvider
-import br.com.wdc.shopping.persistence.RepositoryBootstrap
+import br.com.wdc.framework.commons.util.Defer
+import br.com.wdc.framework.persistence.transaction.RemoteTransactionCoordinatorImpl
+import br.com.wdc.framework.persistence.transaction.RemoteTransactionOptions
+import br.com.wdc.shopping.persistence.ShoppingRepositoryBootstrap
+import br.com.wdc.shopping.persistence.rest.RemoteTransactions
 import br.com.wdc.shopping.persistence.concurrent.ScheduledExecutorAdapter
 import br.com.wdc.shopping.scripts.sgbd.DBCreate
-import org.h2.jdbcx.JdbcDataSource
-import java.nio.file.Path
+import br.com.wdc.shopping.view.react.supports.SqlDataSourceSupport
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 
-class BusinessContext {
+/**
+ * @param config a configuração do serviço, já carregada do diretório de trabalho
+ */
+class BusinessContext(private val config: AppConfig) {
 
     companion object {
         private val LOG = Log.getLogger("BusinessContext")
-        private const val DEFAULT_DB_NAME = "wedocode-shopping"
     }
 
+    private val cleanUp = Defer()
+
     fun stop() {
-        RepositoryBootstrap.release()
+        cleanUp.run()
         ScheduledExecutor.BEAN.set(null)
-        SqlDataSource.BEAN.set(null)
         CryptoProvider.BEAN.set(null)
     }
 
     fun start() {
         try {
-            val config = AppConfig.load()
-            ShoppingConfig.Internals.configure(config)
-
             CryptoProvider.BEAN.set(JceCryptoProvider())
 
             val scheduledExecutor = createScheduledExecutor()
             ScheduledExecutor.BEAN.set(ScheduledExecutorAdapter(scheduledExecutor))
 
-            val dataSource = JdbcDataSource()
-            dataSource.setURL(resolveJdbcUrl(config, ShoppingConfig.dataDir!!))
-            dataSource.user = config.get("database.username", "sa")
-            dataSource.password = config.get("database.password", "sa")
-
-            SqlDataSource.BEAN.set(SqlDataSourceDelegate(dataSource))
+            val dataSourceSupport = SqlDataSourceSupport(config, ShoppingConfig.dataDir)
+            val dataSource = dataSourceSupport.init(cleanUp)
 
             dataSource.connection.use { connection ->
                 val command = DBCreate().withConnection(connection)
@@ -55,25 +52,23 @@ class BusinessContext {
                 command.run()
             }
 
-            RepositoryBootstrap.initialize()
+            ShoppingRepositoryBootstrap.initialize(dataSource, dataSourceSupport.logSql, dataSourceSupport.dialect, cleanUp)
+
+            // as transações que os clientes REST abrem e fecham por conta própria
+            RemoteTransactions.COORDINATOR.set(
+                RemoteTransactionCoordinatorImpl({ dataSource }, RemoteTransactionOptions.fromConfig("", config::getInt))
+            )
+            cleanUp.push { RemoteTransactions.COORDINATOR.set(null) }
 
             val jwtSecret = ShoppingConfig.jwtSecret
             if (!jwtSecret.isNullOrBlank()) {
-                RepositoryBootstrap.initializeSecurity(jwtSecret, ShoppingConfig.refreshTokenTtlDays)
+                ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, ShoppingConfig.refreshTokenTtlDays, cleanUp)
             }
 
-            LOG.info("Shopping backend context initialized with database {}", dataSource.getURL())
+            LOG.info("Shopping backend context initialized with database {}", dataSourceSupport.jdbcUrl)
         } catch (e: Exception) {
             throw IllegalStateException("Failed to initialize shopping backend context", e)
         }
-    }
-
-    private fun resolveJdbcUrl(config: AppConfig, dataDir: Path): String {
-        val configuredUrl = config.get("database.url")
-        if (!configuredUrl.isNullOrBlank()) {
-            return configuredUrl
-        }
-        return "jdbc:h2:file:${dataDir.resolve(DEFAULT_DB_NAME).toAbsolutePath()};DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
     }
 
     private fun createScheduledExecutor(): ScheduledExecutorService {

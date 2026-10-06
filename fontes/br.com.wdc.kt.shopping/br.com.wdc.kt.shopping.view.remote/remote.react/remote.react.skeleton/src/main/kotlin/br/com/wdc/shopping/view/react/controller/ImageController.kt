@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.view.react.controller
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.shopping.domain.repositories.ProductRepository
+import br.com.wdc.shopping.domain.product.ProductRepository
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import kotlinx.coroutines.runBlocking

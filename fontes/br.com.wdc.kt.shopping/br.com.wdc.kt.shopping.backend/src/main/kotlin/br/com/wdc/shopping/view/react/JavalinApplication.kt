@@ -5,7 +5,10 @@ import br.com.wdc.framework.commons.log.Slf4jLogFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
+import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.config.AppConfig
+import br.com.wdc.shopping.view.react.supports.LoggingSupport
+import br.com.wdc.shopping.view.react.supports.WorkDirectory
 import br.com.wdc.shopping.view.react.controller.DispatcherController
 import br.com.wdc.shopping.view.react.controller.ImageController
 import br.com.wdc.shopping.view.react.controller.IndexHtmlController
@@ -26,6 +29,7 @@ import java.nio.file.Paths
 import java.time.Duration
 
 class JavalinApplication(
+    config: AppConfig,
     private val port: Int = DEFAULT_PORT,
     private val corsAllowAll: Boolean = false,
 ) {
@@ -38,7 +42,6 @@ class JavalinApplication(
         private const val STATIC_FILES_EXTERNAL_DIR_ENV = "SHOPPING_STATIC_FILES_DIR"
         private const val STATIC_FILES_EXTERNAL_DIR_PROPERTY = "shopping.staticFilesDir"
         private const val STATIC_HOSTED_IMAGE_PATH = "/images"
-        private const val DEPLOY_DIR = "work/deploy"
 
         private const val DEFAULT_PORT = 8080
 
@@ -94,14 +97,22 @@ class JavalinApplication(
             Log.setFactory(Slf4jLogFactory())
             JsonOutputFactory.installCommon()
             JsonInputFactory.installCommon()
-            val config = AppConfig.load()
+
+            // O diretório de trabalho é obrigatório: dele vêm a configuração, o log e as pastas de execução.
+            ShoppingConfig.Internals.useWorkDir(WorkDirectory.resolve(args))
+            if (LoggingSupport.configure(ShoppingConfig.configDir!!, ShoppingConfig.logDir!!)) {
+                LOG.info("Logging configured from {}", ShoppingConfig.configDir!!.resolve(LoggingSupport.CONFIG_FILE_NAME))
+            }
+            LOG.info("Work directory: {}", ShoppingConfig.workDir)
+            val config = ShoppingConfig.Internals.loadConfig()
             var port = config.getInt("server.port", DEFAULT_PORT)
 
-            if (args.isNotEmpty()) {
+            val portArgument = WorkDirectory.otherArguments(args).firstOrNull()
+            if (portArgument != null) {
                 try {
-                    port = args[0].toInt()
+                    port = portArgument.toInt()
                 } catch (_: NumberFormatException) {
-                    LOG.warn("Invalid port number: {}, using default {}", args[0], DEFAULT_PORT)
+                    LOG.warn("Invalid port number: {}, using default {}", portArgument, DEFAULT_PORT)
                 }
             }
 
@@ -121,7 +132,7 @@ class JavalinApplication(
                 LOG.info("CORS: allowing any origin (development mode)")
             }
 
-            val server = JavalinApplication(port, corsAllowAll)
+            val server = JavalinApplication(config, port, corsAllowAll)
 
             Runtime.getRuntime().addShutdownHook(Thread {
                 LOG.info("Shutdown signal received")
@@ -141,7 +152,7 @@ class JavalinApplication(
 
     private data class StaticFilesSettings(val directory: String, val location: Location)
 
-    private val businessContext = BusinessContext()
+    private val businessContext = BusinessContext(config)
     private val staticFilesSettings = resolveStaticFilesSettings()
     private val deployedContexts: List<String>
     private val app: Javalin
@@ -152,15 +163,19 @@ class JavalinApplication(
         app = createJavalinApp()
     }
 
+    /** The directory of the deployed frontends: `deployment/` under the work directory. */
+    private fun deploymentDir(): File =
+        ShoppingConfig.deploymentDir?.toFile() ?: throw IllegalStateException("Work directory not set")
+
     /**
-     * Scans work/deploy/ for subdirectories, each representing a deployed frontend
+     * Scans the deployment directory for subdirectories, each representing a deployed frontend
      * context (e.g. "native" for React/JS, "compose" for Wasm/Compose).
      */
     private fun detectDeployedContexts(): List<String> {
-        val deployDir = File(DEPLOY_DIR)
-        if (!deployDir.isDirectory) return emptyList()
+        val deploymentDir = deploymentDir()
+        if (!deploymentDir.isDirectory) return emptyList()
 
-        return deployDir.listFiles()
+        return deploymentDir.listFiles()
             ?.filter { it.isDirectory && File(it, "index.html").exists() }
             ?.map { it.name }
             ?.sorted()
@@ -227,7 +242,7 @@ class JavalinApplication(
 
             // Deployed frontends: registered as explicit routes in configureRoutes()
             for (context in deployedContexts) {
-                val contextDir = File(DEPLOY_DIR, context).absolutePath
+                val contextDir = File(deploymentDir(), context).absolutePath
                 LOG.info("Deployed frontend registered: /{} -> {}", context, contextDir)
             }
 
@@ -247,7 +262,7 @@ class JavalinApplication(
 
         // Serve deployed frontend files with correct MIME types and optional gzip pre-compression
         for (context in deployedContexts) {
-            val contextBaseDir = File(DEPLOY_DIR, context).canonicalFile
+            val contextBaseDir = File(deploymentDir(), context).canonicalFile
             config.routes.get("/$context/<path>") { ctx ->
                 val requestedPath = ctx.pathParam("path")
                 val file = File(contextBaseDir, requestedPath).canonicalFile

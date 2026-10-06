@@ -1,9 +1,9 @@
 package br.com.wdc.shopping.test.util
 
-import br.com.wdc.shopping.domain.repositories.ProductRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseItemRepository
-import br.com.wdc.shopping.domain.repositories.PurchaseRepository
-import br.com.wdc.shopping.domain.repositories.UserRepository
+import br.com.wdc.shopping.domain.product.ProductRepository
+import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
+import br.com.wdc.shopping.domain.user.UserRepository
 
 interface ShoppingTestEnvironment {
     val userRepo: UserRepository
