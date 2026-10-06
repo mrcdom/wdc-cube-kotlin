@@ -5,7 +5,6 @@ import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.pagination.Page
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -105,21 +104,6 @@ class RepositoryContractTest {
         val repo = repo(0)
         repo.update(Thing(1L))
         assertEquals(listOf("update(old=false,prj=false)"), repo.calls)
-    }
-
-    @Test
-    fun changed_requiresProjectionMark_andDifference() {
-        val projection = Thing(name = "~")
-        // projeção marca o campo e não há oldBean → grava (inclusive null, que limpa o valor)
-        assertTrue(Repository.changed(Thing(1L, "a"), null, projection) { it.name })
-        assertTrue(Repository.changed(Thing(1L, null), null, projection) { it.name })
-        // marca e mudou
-        assertTrue(Repository.changed(Thing(1L, "a"), Thing(1L, "b"), projection) { it.name })
-        assertTrue(Repository.changed(Thing(1L, null), Thing(1L, "b"), projection) { it.name })
-        // marca mas não mudou
-        assertFalse(Repository.changed(Thing(1L, "a"), Thing(1L, "a"), projection) { it.name })
-        // mudou mas a projeção não marca
-        assertFalse(Repository.changed(Thing(1L, "a"), Thing(1L, "b"), Thing()) { it.name })
     }
 
     @Test

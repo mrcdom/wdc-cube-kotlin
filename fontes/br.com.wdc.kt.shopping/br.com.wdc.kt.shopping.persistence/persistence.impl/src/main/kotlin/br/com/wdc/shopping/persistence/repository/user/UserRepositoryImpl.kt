@@ -2,7 +2,6 @@ package br.com.wdc.shopping.persistence.repository.user
 
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.projection.ProjectionValues
-import br.com.wdc.framework.domain.repository.Repository.Companion.changed
 import br.com.wdc.framework.jooq.CriterionTranslator
 import br.com.wdc.framework.jooq.JsonChildQueryBuilder
 import br.com.wdc.framework.jooq.JsonQuery

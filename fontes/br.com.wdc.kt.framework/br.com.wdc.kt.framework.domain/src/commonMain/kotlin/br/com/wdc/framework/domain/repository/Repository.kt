@@ -30,13 +30,4 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
         if (oldBean == null) insert(newBean) else update(newBean, oldBean)
 
     suspend fun delete(criteria: C): Int
-
-    companion object {
-        /**
-         * Verifica se um campo deve entrar no UPDATE: a projeção indica o campo (não-nulo) e o valor mudou
-         * em relação a [oldBean] (ou não há [oldBean]).
-         */
-        fun <E, V> changed(newBean: E, oldBean: E?, projection: E, getter: (E) -> V?): Boolean =
-            getter(projection) != null && (oldBean == null || getter(newBean) != getter(oldBean))
-    }
 }
