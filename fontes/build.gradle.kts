@@ -59,58 +59,76 @@ subprojects {
 val publishedModules = mapOf(
     "framework-commons" to "Kotlin Multiplatform base utilities: serialization, logging, concurrency and coercion helpers",
     "framework-cube" to "Cube MVP: transactional navigation and presenter lifecycle for Kotlin Multiplatform",
+    "framework-domain" to "Data access contracts for Kotlin Multiplatform: repository, criteria, projection, codecs and transactions",
+    "framework-persistence" to "JDBC transactions with propagation, coroutine-aware, and a coordinator for client-driven remote transactions",
+    "framework-jooq" to "Declarative jOOQ queries that load an object graph in one statement, for H2 and PostgreSQL",
 )
+
+/** Publishing to Maven Central, the same for every published module; only the kind of artifact changes. */
+fun Project.publishToCentral(platform: com.vanniktech.maven.publish.Platform) {
+    apply(plugin = "com.vanniktech.maven.publish")
+
+    configure<com.vanniktech.maven.publish.MavenPublishBaseExtension> {
+        configure(platform)
+
+        publishToMavenCentral()
+
+        // Maven Central requires signatures; local publishing works without a key
+        if (providers.gradleProperty("signingInMemoryKey").isPresent ||
+            providers.gradleProperty("signing.keyId").isPresent
+        ) {
+            signAllPublications()
+        }
+
+        pom {
+            name.set(project.name)
+            description.set(publishedModules.getValue(project.name))
+            url.set("https://github.com/mrcdom/wdc-cube-kotlin")
+            licenses {
+                license {
+                    name.set("MIT License")
+                    url.set("https://opensource.org/licenses/MIT")
+                }
+            }
+            developers {
+                developer {
+                    id.set("mrcdom")
+                    name.set("Marcelo Domingos")
+                    url.set("https://github.com/mrcdom")
+                }
+            }
+            scm {
+                url.set("https://github.com/mrcdom/wdc-cube-kotlin")
+                connection.set("scm:git:https://github.com/mrcdom/wdc-cube-kotlin.git")
+                developerConnection.set("scm:git:ssh://git@github.com/mrcdom/wdc-cube-kotlin.git")
+            }
+        }
+    }
+}
 
 configure(subprojects.filter { it.name in publishedModules }) {
     // Maven Central namespace verified through the GitHub account; "wdc.kt" mirrors br.com.wdc.kt
     group = "io.github.mrcdom.wdc.kt"
-    version = "0.1.0"
+    version = "0.2.0"
 
-    // The modules apply the Kotlin Multiplatform plugin first, then the Android library one
+    // Multiplatform modules: they apply the Kotlin Multiplatform plugin first, then the Android library one
     pluginManager.withPlugin("com.android.kotlin.multiplatform.library") {
-        apply(plugin = "com.vanniktech.maven.publish")
-
-        configure<com.vanniktech.maven.publish.MavenPublishBaseExtension> {
-            configure(
-                com.vanniktech.maven.publish.KotlinMultiplatform(
-                    javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
-                    sourcesJar = true,
-                    androidVariantsToPublish = listOf("release"),
-                )
+        publishToCentral(
+            com.vanniktech.maven.publish.KotlinMultiplatform(
+                javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
+                sourcesJar = true,
+                androidVariantsToPublish = listOf("release"),
             )
+        )
+    }
 
-            publishToMavenCentral()
-
-            // Maven Central requires signatures; local publishing works without a key
-            if (providers.gradleProperty("signingInMemoryKey").isPresent ||
-                providers.gradleProperty("signing.keyId").isPresent
-            ) {
-                signAllPublications()
-            }
-
-            pom {
-                name.set(project.name)
-                description.set(publishedModules.getValue(project.name))
-                url.set("https://github.com/mrcdom/wdc-cube-kotlin")
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("mrcdom")
-                        name.set("Marcelo Domingos")
-                        url.set("https://github.com/mrcdom")
-                    }
-                }
-                scm {
-                    url.set("https://github.com/mrcdom/wdc-cube-kotlin")
-                    connection.set("scm:git:https://github.com/mrcdom/wdc-cube-kotlin.git")
-                    developerConnection.set("scm:git:ssh://git@github.com/mrcdom/wdc-cube-kotlin.git")
-                }
-            }
-        }
+    // JVM-only modules
+    pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        publishToCentral(
+            com.vanniktech.maven.publish.KotlinJvm(
+                javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
+                sourcesJar = true,
+            )
+        )
     }
 }

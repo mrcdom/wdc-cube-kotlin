@@ -9,6 +9,6 @@ Contratos de acesso a dados, independentes de banco e de transporte (KMP).
 - `transaction` — `TransactionService` e `TransactionContext`.
 - `exception` — `BusinessException`, `InvalidRequestException`, `AccessDeniedException` e as de transação.
 
-**Plataformas:** JVM, Android, iOS, JS, wasmJs. Ainda não publicado no Maven Central.
+**Plataformas:** JVM, Android, iOS, JS, wasmJs. Publicado no Maven Central como `io.github.mrcdom.wdc.kt:framework-domain`.
 
 Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).
