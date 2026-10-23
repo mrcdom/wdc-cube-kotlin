@@ -62,6 +62,7 @@ val publishedModules = mapOf(
     "framework-domain" to "Data access contracts for Kotlin Multiplatform: repository, criteria, projection, codecs and transactions",
     "framework-persistence" to "JDBC transactions with propagation, coroutine-aware, and a coordinator for client-driven remote transactions",
     "framework-jooq" to "Declarative jOOQ queries that load an object graph in one statement, for H2 and PostgreSQL",
+    "framework-rest" to "REST APIs on Javalin: resource routes, pluggable security, exception mapping, per-request context and transactions, OpenAPI",
 )
 
 /** Publishing to Maven Central, the same for every published module; only the kind of artifact changes. */
@@ -109,7 +110,7 @@ fun Project.publishToCentral(platform: com.vanniktech.maven.publish.Platform) {
 configure(subprojects.filter { it.name in publishedModules }) {
     // Maven Central namespace verified through the GitHub account; "wdc.kt" mirrors br.com.wdc.kt
     group = "io.github.mrcdom.wdc.kt"
-    version = "0.2.0"
+    version = "0.3.0"
 
     // Multiplatform modules: they apply the Kotlin Multiplatform plugin first, then the Android library one
     pluginManager.withPlugin("com.android.kotlin.multiplatform.library") {

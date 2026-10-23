@@ -9,10 +9,11 @@ Bibliotecas base reutilizáveis, independentes da aplicação Shopping.
 - [br.com.wdc.kt.framework.domain/](br.com.wdc.kt.framework.domain/) — Contratos de acesso a dados: repositório, critérios, projeção, transação (KMP)
 - [br.com.wdc.kt.framework.persistence/](br.com.wdc.kt.framework.persistence/) — Transações sobre JDBC e coordenador de transações remotas (JVM)
 - [br.com.wdc.kt.framework.jooq/](br.com.wdc.kt.framework.jooq/) — Consultas declarativas sobre jOOQ, para H2 e PostgreSQL (JVM)
+- [br.com.wdc.kt.framework.rest/](br.com.wdc.kt.framework.rest/) — APIs REST sobre Javalin: rotas, segurança, erros, contexto e transação por requisição, OpenAPI (JVM)
 
 ## Uso como dependência
 
-Os cinco módulos são publicados no Maven Central, sob a licença [MIT](LICENSE), no grupo `io.github.mrcdom.wdc.kt`. Todos saem com a mesma versão.
+Os seis módulos são publicados no Maven Central, sob a licença [MIT](LICENSE), no grupo `io.github.mrcdom.wdc.kt`. Todos saem com a mesma versão.
 
 | Artefato | Plataformas | Traz junto |
 |---|---|---|
@@ -21,6 +22,7 @@ Os cinco módulos são publicados no Maven Central, sob a licença [MIT](LICENSE
 | `framework-domain` | JVM, Android, JS, WasmJS, iOS | `framework-commons` |
 | `framework-persistence` | JVM | `framework-domain` |
 | `framework-jooq` | JVM | `framework-persistence`, jOOQ |
+| `framework-rest` | JVM | `framework-persistence`, Javalin 7, Gson |
 
 Alvos: JVM (Java 21), Android (minSdk 26), JS, WasmJS, iosArm64 e iosSimulatorArm64. Compilados com Kotlin 2.3: quem consome nos alvos JS, WasmJS e iOS precisa de Kotlin 2.3 ou mais novo.
 
@@ -29,20 +31,22 @@ Alvos: JVM (Java 21), Android (minSdk 26), JS, WasmJS, iosArm64 e iosSimulatorAr
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.mrcdom.wdc.kt:framework-cube:0.2.0")   // navegação e presenters
-            implementation("io.github.mrcdom.wdc.kt:framework-domain:0.2.0") // contratos de acesso a dados
+            implementation("io.github.mrcdom.wdc.kt:framework-cube:0.3.0")   // navegação e presenters
+            implementation("io.github.mrcdom.wdc.kt:framework-domain:0.3.0") // contratos de acesso a dados
         }
     }
 }
 
 // build.gradle.kts de um módulo JVM de servidor
 dependencies {
-    implementation("io.github.mrcdom.wdc.kt:framework-jooq:0.2.0") // já traz persistence e domain
+    implementation("io.github.mrcdom.wdc.kt:framework-jooq:0.3.0") // já traz persistence e domain
+    implementation("io.github.mrcdom.wdc.kt:framework-rest:0.3.0") // API REST sobre Javalin
 }
 ```
 
 | Versão | O que trouxe |
 |---|---|
+| 0.3.0 | `framework-rest` |
 | 0.2.0 | `framework-domain`, `framework-persistence` e `framework-jooq`; compilação com Kotlin 2.3 |
 | 0.1.0 | `framework-commons` e `framework-cube` |
 
