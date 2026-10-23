@@ -9,17 +9,43 @@ import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.user.UserCriteria
-import com.google.gson.GsonBuilder
-import io.javalin.config.JavalinConfig
+import br.com.wdc.framework.rest.openapi.OpenApiConfig
+import br.com.wdc.framework.rest.openapi.OperationDoc
+import br.com.wdc.framework.rest.rpc.RepositoryRpc
 
 /**
- * A descrição OpenAPI da API de repositório, servida em `GET /openapi.json`.
+ * O conteúdo da descrição OpenAPI da API de repositório, servida em `GET /openapi.json`.
+ *
+ * O documento é montado pelo `framework-rest` a partir das rotas registradas — uma rota servida nunca fica de
+ * fora. Daqui saem as operações escritas à mão (aplicadas sobre as geradas), os esquemas e o texto de abertura.
  *
  * O que pode ser lido do domínio não é escrito aqui: os campos de cada `XxxCriteria` saem de
  * `Criteria.criterions()`, as ordenações do `OrderBy` da entidade e os operadores de [Operator]. Assim a
  * documentação não envelhece à parte do código — e o `OpenApiSpecTest` confere que continua assim.
  */
 object RepositoryApiDocs {
+
+    private val DESCRIPTION = """
+        REST access to the Shopping repositories. Every entity has the same operations, and the client
+        and the server read and write with the same codecs.
+
+        **Criteria.** Each filterable field is sent as a `Criterion`: an object carrying one or more
+        comparison requests. Requests on the same field combine with `AND`, or with `OR` when the field
+        sets `"or": true`; different fields always combine with `AND`. A bare value is shorthand for
+        equality: `{"name": "Ball"}`.
+
+        **Projection.** `projection` names the fields to bring: a present field is requested, an absent
+        one is not. Without it, each entity has a default. A to-many field may be a
+        `ProjectedCollection`, which filters, orders and slices the collection.
+
+        **Transactions.** Every write is atomic. To make several writes atomic, open a remote
+        transaction (`POST /api/tx/begin`), send its `X-Tx-Id` on the writes and finish with
+        `commit` or `rollback`. Reads do not join the transaction.
+
+        **Security.** When the server has a JWT secret, `/api/repo` and `/api/tx` require
+        `Authorization: Bearer <accessToken>` (the product image is public to read) and `/api/auth`
+        exists. Without the secret the API is open and `/api/auth` is not served.
+        """.trimIndent()
 
     private class Entity(
         val name: String,
@@ -31,16 +57,46 @@ object RepositoryApiDocs {
         val scope: String,
     )
 
-    private val json: String by lazy { GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(document()) }
-
-    fun configure(config: JavalinConfig) {
-        config.routes.get("/openapi.json") { ctx ->
-            ctx.contentType("application/json")
-            ctx.result(json)
-        }
+    /** As operações escritas à mão, por caminho e verbo. */
+    private val operations: Map<String, Any> by lazy {
+        val paths = LinkedHashMap<String, Any>()
+        entities().forEach { paths.putAll(entityPaths(it)) }
+        paths.putAll(imagePaths())
+        paths.putAll(transactionPaths())
+        paths.putAll(authPaths())
+        paths
     }
 
-    fun toJson(): String = json
+    private fun operation(path: String, method: String): (OperationDoc.() -> Unit)? {
+        @Suppress("UNCHECKED_CAST")
+        val op = (operations[path] as Map<String, Any>?)?.get(method) as Map<String, Any?>? ?: return null
+        return { raw(op) }
+    }
+
+    /** A documentação de uma operação do RPC de [route]. */
+    fun rpcDoc(route: String, op: RepositoryRpc.Operation): (OperationDoc.() -> Unit)? =
+        operation("/api/repo/$route/${op.route}", if (op == RepositoryRpc.Operation.GET_BY_ID) "get" else "post")
+
+    fun imageDoc(method: String) = operation("/api/repo/product/{id}/image", method)
+
+    fun transactionDoc(name: String) = operation("/api/tx/$name", if (name == "status") "get" else "post")
+
+    fun authDoc(name: String) = operation("/api/auth/$name", if (name == "challenge") "get" else "post")
+
+    /** O que não sai das rotas: abertura, tags, esquemas e parâmetros reutilizáveis. */
+    fun configure(config: OpenApiConfig) {
+        val entities = entities()
+        config.title = "WeDoCode Shopping — Repository API"
+        config.version = "1.0.0"
+        config.description = DESCRIPTION
+        entities.forEach { config.tag(it.name, it.scope) }
+        config.tag("Transaction", "Client-driven remote transactions.")
+        config.tag("Auth", "Challenge–response login. Only served when security is on.")
+        config.schemas.putAll(schemas(entities))
+        config.parameters.putAll(parameters())
+        // a segurança é opcional no documento: vale para os dois modos do servidor
+        config.raw["security"] = listOf(mapOf("bearerAuth" to emptyList<String>()), emptyMap<String, Any>())
+    }
 
     // :: Documento
 
@@ -98,14 +154,7 @@ object RepositoryApiDocs {
         ),
     )
 
-    private fun document(): Map<String, Any> {
-        val entities = entities()
-        val paths = LinkedHashMap<String, Any>()
-        entities.forEach { paths.putAll(entityPaths(it)) }
-        paths.putAll(imagePaths())
-        paths.putAll(transactionPaths())
-        paths.putAll(authPaths())
-
+    private fun schemas(entities: List<Entity>): Map<String, Any> {
         val schemas = LinkedHashMap<String, Any>()
         schemas["Error"] = obj("An error response.", "error" to string("What went wrong."))
         schemas["SuccessResponse"] = obj("Outcome of a write.", "success" to boolean("Whether a row was written."))
@@ -149,55 +198,19 @@ object RepositoryApiDocs {
             "intentSignKey" to string("Per-user key the web clients use to sign navigation intents."),
         )
 
-        return linkedMapOf(
-            "openapi" to "3.0.3",
-            "info" to mapOf(
-                "title" to "WeDoCode Shopping — Repository API",
-                "version" to "1.0.0",
-                "description" to """
-                    REST access to the Shopping repositories. Every entity has the same operations, and the client
-                    and the server read and write with the same codecs.
-
-                    **Criteria.** Each filterable field is sent as a `Criterion`: an object carrying one or more
-                    comparison requests. Requests on the same field combine with `AND`, or with `OR` when the field
-                    sets `"or": true`; different fields always combine with `AND`. A bare value is shorthand for
-                    equality: `{"name": "Ball"}`.
-
-                    **Projection.** `projection` names the fields to bring: a present field is requested, an absent
-                    one is not. Without it, each entity has a default. A to-many field may be a
-                    `ProjectedCollection`, which filters, orders and slices the collection.
-
-                    **Transactions.** Every write is atomic. To make several writes atomic, open a remote
-                    transaction (`POST /api/tx/begin`), send its `X-Tx-Id` on the writes and finish with
-                    `commit` or `rollback`. Reads do not join the transaction.
-
-                    **Security.** When the server has a JWT secret, `/api/repo` and `/api/tx` require
-                    `Authorization: Bearer <accessToken>` (the product image is public to read) and `/api/auth`
-                    exists. Without the secret the API is open and `/api/auth` is not served.
-                """.trimIndent(),
-            ),
-            "tags" to (entities.map { mapOf("name" to it.name, "description" to it.scope) } + listOf(
-                mapOf("name" to "Transaction", "description" to "Client-driven remote transactions."),
-                mapOf("name" to "Auth", "description" to "Challenge–response login. Only served when security is on."),
-            )),
-            "security" to listOf(mapOf("bearerAuth" to emptyList<String>()), emptyMap()),
-            "paths" to paths,
-            "components" to mapOf(
-                "schemas" to schemas,
-                "securitySchemes" to mapOf("bearerAuth" to mapOf("type" to "http", "scheme" to "bearer", "bearerFormat" to "JWT")),
-                "parameters" to mapOf(
-                    "TxId" to mapOf(
-                        "name" to "X-Tx-Id", "in" to "header", "required" to false, "schema" to mapOf("type" to "string"),
-                        "description" to "Joins the write to this remote transaction; the write is then confirmed only by the commit.",
-                    ),
-                    "ClientId" to mapOf(
-                        "name" to "X-Client-Id", "in" to "header", "required" to false, "schema" to mapOf("type" to "string"),
-                        "description" to "Identifies the client instance. It owns the remote transactions when there is no authenticated user.",
-                    ),
-                ),
-            ),
-        )
+        return schemas
     }
+
+    private fun parameters(): Map<String, Any> = mapOf(
+        "TxId" to mapOf(
+            "name" to "X-Tx-Id", "in" to "header", "required" to false, "schema" to mapOf("type" to "string"),
+            "description" to "Joins the write to this remote transaction; the write is then confirmed only by the commit.",
+        ),
+        "ClientId" to mapOf(
+            "name" to "X-Client-Id", "in" to "header", "required" to false, "schema" to mapOf("type" to "string"),
+            "description" to "Identifies the client instance. It owns the remote transactions when there is no authenticated user.",
+        ),
+    )
 
     // :: Critério
 
