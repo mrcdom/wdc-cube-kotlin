@@ -35,7 +35,7 @@ class SecurityConfig {
 
     internal val publicMatchers = ArrayList<RequestMatcher>()
 
-    /** Rotas públicas, por padrão de caminho com verbo opcional: `"POST /auth/sign_in"`, `"GET /company/active"` (ver [RequestMatcher]). */
+    /** Rotas públicas, por padrão de caminho com verbo opcional: `"POST /auth/login"`, `"GET /catalog/featured"` (ver [RequestMatcher]). */
     fun permitAll(vararg specs: String) {
         specs.mapTo(publicMatchers) { RequestMatcher.of(it) }
     }

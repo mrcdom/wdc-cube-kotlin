@@ -3,7 +3,7 @@ package br.com.wdc.framework.rest.security
 /**
  * Casa verbo e caminho da requisição, no estilo dos `requestMatchers` do Spring:
  *
- * - `"/auth/sign_in"` — qualquer verbo; `"POST /auth/sign_in"` — só POST;
+ * - `"/auth/login"` — qualquer verbo; `"POST /auth/login"` — só POST;
  * - `*` casa parte de um segmento (`foto*.png`), `{x}` um segmento inteiro, `**` zero ou mais segmentos;
  * - a barra final é ignorada (`/a/` casa `/a`), como no Spring MVC.
  */

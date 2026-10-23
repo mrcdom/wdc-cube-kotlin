@@ -43,12 +43,12 @@ typealias AfterFilter = suspend (RequestContext, Throwable?) -> Unit
  *     security {
  *         authenticator = BearerAuthenticator { token -> jwt.resolve(token) }
  *         unauthenticatedStatus = 403
- *         permitAll("POST /auth/sign_in", "GET /company/active")
+ *         permitAll("POST /auth/login", "GET /catalog/featured")
  *     }
  *     errors { on<UniqueException> { e, _ -> ErrorResponse(400, mapOf(e.field to e.message)) } }
- *     before { r -> r[CLIENT_APP] = ClientApp.of(r.header("X-Client-App")) }
- *     group("/patient", tags = listOf("Patient")) {
- *         get("/{id}", rule = roles.hasRole("ADMIN")) { call -> service.find(call.pathLong("id")) }
+ *     before { r -> r[APP_VERSION] = r.header("X-App-Version") }
+ *     group("/order", tags = listOf("Order")) {
+ *         get("/{id}", rule = roles.hasRole("ADMIN")) { call -> orders.find(call.pathLong("id")) }
  *     }
  * }
  * ```

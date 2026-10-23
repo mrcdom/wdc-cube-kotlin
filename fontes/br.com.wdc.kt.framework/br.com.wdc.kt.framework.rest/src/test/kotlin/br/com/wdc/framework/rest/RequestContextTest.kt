@@ -25,13 +25,13 @@ class RequestContextTest {
 
     companion object {
         val TIMEZONE = RequestKey<ZoneId>("timezone")
-        val CLIENT_APP = RequestKey<String>("clientApp")
+        val APP_VERSION = RequestKey<String>("appVersion")
 
         /** Camada "de baixo": não recebe nada, lê da requisição corrente. */
-        fun clientZone(): ZoneId = RequestContext.currentOrNull()?.get(TIMEZONE) ?: ZoneId.of("America/Sao_Paulo")
+        fun clientZone(): ZoneId = RequestContext.currentOrNull()?.get(TIMEZONE) ?: ZoneOffset.UTC
     }
 
-    /** Como o módulo de fuso do backend a substituir: converte UTC para o fuso do cliente na escrita. */
+    /** Adaptador que depende da requisição: converte UTC para o fuso do cliente na escrita. */
     class ClientZoneAdapter : TypeAdapter<LocalDateTime>() {
         override fun write(out: JsonWriter, value: LocalDateTime?) {
             if (value == null) {
@@ -52,11 +52,11 @@ class RequestContextTest {
         json = GsonJsonMapper(JsonOptions().apply { customize { it.registerTypeAdapter(LocalDateTime::class.java, ClientZoneAdapter()) } })
         before { r ->
             r[TIMEZONE] = r.header("X-Timezone")?.let { runCatching { ZoneId.of(it) }.getOrNull() }
-            r[CLIENT_APP] = r.header("X-Client-App")
+            r[APP_VERSION] = r.header("X-App-Version")
             events += "before ${r.path}"
         }
         before("/guarded/**") { r ->
-            if (r.header("X-Client") == null) throw br.com.wdc.framework.domain.exception.InvalidRequestException("X-Client")
+            if (r.header("X-Tenant") == null) throw br.com.wdc.framework.domain.exception.InvalidRequestException("X-Tenant")
         }
         after { r, failure -> events += "after ${r.path} ${failure?.javaClass?.simpleName}" }
 
@@ -65,7 +65,7 @@ class RequestContextTest {
                 val a = async(Dispatchers.Default) { clientZone().id }
                 val b = withContext(Dispatchers.IO) {
                     delay(5)
-                    RequestContext.current()[CLIENT_APP]
+                    RequestContext.current()[APP_VERSION]
                 }
                 mapOf("default" to a.await(), "io" to b)
             }
@@ -81,22 +81,22 @@ class RequestContextTest {
 
     @Test
     fun contextFollowsTheRequestThroughCoroutines() {
-        val response = server.client().header("X-Timezone", "Asia/Tokyo").header("X-Client-App", "legacy").get("/zone")
-        assertEquals("""{"default":"Asia/Tokyo","io":"legacy"}""", response.body)
+        val response = server.client().header("X-Timezone", "Asia/Tokyo").header("X-App-Version", "2.4.1").get("/zone")
+        assertEquals("""{"default":"Asia/Tokyo","io":"2.4.1"}""", response.body)
         assertNull(RequestContext.currentOrNull(), "fora da requisição não há contexto")
     }
 
     @Test
     fun serializationSeesTheRequest() {
         assertEquals("""{"at":"2026-01-01T21:00"}""", server.client().header("X-Timezone", "Asia/Tokyo").get("/event").body)
-        assertEquals("""{"at":"2026-01-01T09:00"}""", server.client().get("/event").body)
+        assertEquals("""{"at":"2026-01-01T12:00"}""", server.client().get("/event").body)
     }
 
     @Test
     fun filters_runAroundTheRoute_andCanRefuse() {
         events.clear()
         assertEquals(400, server.client().get("/guarded/x").status)
-        assertEquals("ok", server.client().header("X-Client", "panel").get("/guarded/x").body)
+        assertEquals("ok", server.client().header("X-Tenant", "acme").get("/guarded/x").body)
         assertEquals(
             listOf("before /guarded/x", "after /guarded/x InvalidRequestException", "before /guarded/x", "after /guarded/x null"),
             events.toList(),

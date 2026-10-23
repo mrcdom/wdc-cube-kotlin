@@ -19,9 +19,9 @@ import java.time.Duration
  *
  * ```kotlin
  * RestTestServer(api).use { server ->
- *     val response = server.client().bearer(token).get("/patient/1")
+ *     val response = server.client().bearer(token).get("/order/1")
  *     assertEquals(200, response.status)
- *     assertEquals("Ana", response.json().asJsonObject["name"].asString)
+ *     assertEquals("open", response.json().asJsonObject["status"].asString)
  * }
  * ```
  */

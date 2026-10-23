@@ -21,24 +21,24 @@ val api = RestApi {
         authenticator = BearerAuthenticator { token -> jwt.resolve(token) }   // a aplicação valida o token
         unauthenticatedStatus = 403                            // o Spring Security sem entry point responde 403
         protectUnmatched = true                                // anônimo leva 403 até em caminho inexistente
-        permitAll("POST /auth/sign_in", "GET /company/active", "/swagger-ui/**")
+        permitAll("POST /auth/login", "GET /catalog/featured", "/swagger-ui/**")
     }
     errors {
         errorBody = { status, _, request -> mapOf("status" to status, "path" to request.path) }   // o corpo de /error
-        on<AccessDeniedException> { _, _ -> ErrorResponse(403, mapOf("message" to "Acesso negado.")) }
+        on<AccessDeniedException> { _, _ -> ErrorResponse(403, mapOf("message" to "Access denied.")) }
         on<UniqueException> { e, _ -> ErrorResponse(400, mapOf(e.field to e.message)) }
     }
     transactions { service = TransactionServiceImpl { dataSource } }
     cors { anyOrigin(); maxAge = 3600 }
     compression { mimeTypes += CompressionOptions.SPRING_MIME_TYPES }
-    openApi { path = "/v3/api-docs"; title = "Galileo" }
-    before { request -> request[CLIENT_APP] = ClientApp.of(request.header("X-Client-App")) }
+    openApi { path = "/v3/api-docs"; title = "Orders" }
+    before { request -> request[APP_VERSION] = request.header("X-App-Version") }
 
-    group("/patient", tags = listOf("Patient")) {
-        get("/{id}", rule = roles.hasAnyRole("ADMIN", "PROFESSIONAL")) { call ->
-            patients.find(call.pathLong("id")) ?: RestResponse.noContent()
+    group("/order", tags = listOf("Order")) {
+        get("/{id}", rule = roles.hasAnyRole("ADMIN", "SELLER")) { call ->
+            orders.find(call.pathLong("id")) ?: RestResponse.noContent()
         }
-        post("/search", transactional = true) { call -> patients.search(call.body<SearchRequest>()) }
+        post("/search", transactional = true) { call -> orders.search(call.body<SearchRequest>()) }
     }
 }
 
@@ -118,7 +118,7 @@ Não há JWT nem login no módulo. A aplicação fornece o `Authenticator` (`Bea
 
 | Spring Security | framework-rest |
 |---|---|
-| `requestMatchers("/x/**").permitAll()` | `permitAll("/x/**")`, `permitAll("POST /auth/sign_in")` |
+| `requestMatchers("/x/**").permitAll()` | `permitAll("/x/**")`, `permitAll("POST /auth/login")` |
 | `anyRequest().authenticated()` | `defaultRule = AccessRules.authenticated` (é o padrão) |
 | `@PreAuthorize("hasRole('ADMIN')")` | `rule = RoleRules("ROLE_").hasRole("ADMIN")`, que aceita `ADMIN` e `ROLE_ADMIN` |
 | `hasAnyRole(…)`, SpEL sobre o principal ou os parâmetros | `hasAnyRole(…)`, `AccessRules.principalOf<P> { … }`, `AccessRules.rule { request -> … }`, combinados com `and` e `or` |
@@ -138,7 +138,7 @@ val TIMEZONE = RequestKey<ZoneId>("timezone")
 
 before { request -> request[TIMEZONE] = request.header("X-Timezone")?.let(ZoneId::of) }
 
-fun clientZone(): ZoneId = RequestContext.currentOrNull()?.get(TIMEZONE) ?: ZoneId.of("America/Sao_Paulo")
+fun clientZone(): ZoneId = RequestContext.currentOrNull()?.get(TIMEZONE) ?: ZoneOffset.UTC
 ```
 
 Para levar o contexto a uma corrotina lançada fora do pipeline, use `request.asContextElement()`.
@@ -173,9 +173,9 @@ O dono de uma transação remota é `user:<principal.id>`, ou `anon:<X-Client-Id
 
 ```kotlin
 RestTestServer(api).use { server ->
-    val response = server.client().bearer(token).header("X-Timezone", "Asia/Tokyo").get("/patient/1")
+    val response = server.client().bearer(token).header("X-Timezone", "Asia/Tokyo").get("/order/1")
     assertEquals(200, response.status)
-    assertEquals("Ana", response.json().asJsonObject["name"].asString)
+    assertEquals("open", response.json().asJsonObject["status"].asString)
 }
 ```
 

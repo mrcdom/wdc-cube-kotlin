@@ -17,34 +17,34 @@ class OpenApiGeneratorTest {
 
     enum class Status { ACTIVE, BLOCKED }
 
-    data class Patient(val id: Long, val name: String, val birthday: LocalDate?, @SerializedName("plan_value") val planValue: BigDecimal, val status: Status)
+    data class Customer(val id: Long, val name: String, val birthday: LocalDate?, @SerializedName("credit_limit") val creditLimit: BigDecimal, val status: Status)
 
     data class SearchResponse<T>(val count: Int, val elements: List<T>)
 
     private val api = RestApi {
         security {
             authenticator = BearerAuthenticator { null }
-            permitAll("GET /company/active")
+            permitAll("GET /catalog/featured")
         }
         openApi {
             path = "/v3/api-docs"
-            title = "Galileo"
-            tag("Patient", "Pacientes")
+            title = "Orders"
+            tag("Customer", "Clientes")
         }
-        group("/patient", tags = listOf("Patient")) {
+        group("/customer", tags = listOf("Customer")) {
             get("/{id}", doc = {
-                summary = "Busca o paciente"
+                summary = "Busca o cliente"
                 path("id", Long::class.java)
                 query("full", Boolean::class.java)
-                returns<Patient>(200)
+                returns<Customer>(200)
                 response(404)
             }) { _ -> null }
             post("/search", doc = {
                 accepts<Map<String, String>>()
-                returns<SearchResponse<Patient>>()
+                returns<SearchResponse<Customer>>()
             }) { _ -> null }
         }
-        get("/company/active") { _ -> null }
+        get("/catalog/featured") { _ -> null }
         get("/hidden", hidden = true) { _ -> null }
         get("/files/<path>", doc = { raw(mapOf("summary" to "à mão", "x-custom" to true)) }) { _ -> null }
     }
@@ -54,17 +54,17 @@ class OpenApiGeneratorTest {
     @Test
     fun everyRegisteredRoute_isDocumented_unlessHidden() {
         val paths = spec().getAsJsonObject("paths")
-        assertEquals(setOf("/patient/{id}", "/patient/search", "/company/active", "/files/{path}"), paths.keySet())
-        assertTrue(paths.getAsJsonObject("/patient/search").has("post"))
+        assertEquals(setOf("/customer/{id}", "/customer/search", "/catalog/featured", "/files/{path}"), paths.keySet())
+        assertTrue(paths.getAsJsonObject("/customer/search").has("post"))
     }
 
     @Test
     fun parameters_fromThePath_andDeclared() {
-        val op = spec().getAsJsonObject("paths").getAsJsonObject("/patient/{id}").getAsJsonObject("get")
+        val op = spec().getAsJsonObject("paths").getAsJsonObject("/customer/{id}").getAsJsonObject("get")
         val params = op.getAsJsonArray("parameters").map { it.asJsonObject }
         assertEquals(listOf("id" to "path", "full" to "query"), params.map { it["name"].asString to it["in"].asString })
         assertEquals("int64", params[0].getAsJsonObject("schema")["format"].asString)
-        assertEquals(listOf("Patient"), op.getAsJsonArray("tags").map { it.asString })
+        assertEquals(listOf("Customer"), op.getAsJsonArray("tags").map { it.asString })
 
         val files = spec().getAsJsonObject("paths").getAsJsonObject("/files/{path}").getAsJsonObject("get")
         assertEquals("path", files.getAsJsonArray("parameters")[0].asJsonObject["name"].asString)
@@ -75,13 +75,13 @@ class OpenApiGeneratorTest {
     @Test
     fun schemas_fromTheDtoClasses_withTheJsonNames() {
         val schemas = spec().getAsJsonObject("components").getAsJsonObject("schemas")
-        val patient = schemas.getAsJsonObject("Patient").getAsJsonObject("properties")
-        assertEquals(setOf("id", "name", "birthday", "plan_value", "status"), patient.keySet())
-        assertEquals("date", patient.getAsJsonObject("birthday")["format"].asString)
-        assertEquals(listOf("ACTIVE", "BLOCKED"), patient.getAsJsonObject("status").getAsJsonArray("enum").map { it.asString })
+        val customer = schemas.getAsJsonObject("Customer").getAsJsonObject("properties")
+        assertEquals(setOf("id", "name", "birthday", "credit_limit", "status"), customer.keySet())
+        assertEquals("date", customer.getAsJsonObject("birthday")["format"].asString)
+        assertEquals(listOf("ACTIVE", "BLOCKED"), customer.getAsJsonObject("status").getAsJsonArray("enum").map { it.asString })
 
-        val page = schemas.getAsJsonObject("SearchResponsePatient").getAsJsonObject("properties")
-        assertEquals("#/components/schemas/Patient", page.getAsJsonObject("elements").getAsJsonObject("items")["\$ref"].asString)
+        val page = schemas.getAsJsonObject("SearchResponseCustomer").getAsJsonObject("properties")
+        assertEquals("#/components/schemas/Customer", page.getAsJsonObject("elements").getAsJsonObject("items")["\$ref"].asString)
     }
 
     @Test
@@ -90,8 +90,8 @@ class OpenApiGeneratorTest {
         assertTrue(spec.has("security"))
         assertTrue(spec.getAsJsonObject("components").getAsJsonObject("securitySchemes").has("bearerAuth"))
         val paths = spec.getAsJsonObject("paths")
-        assertEquals(0, paths.getAsJsonObject("/company/active").getAsJsonObject("get").getAsJsonArray("security").size())
-        assertFalse(paths.getAsJsonObject("/patient/{id}").getAsJsonObject("get").has("security"))
+        assertEquals(0, paths.getAsJsonObject("/catalog/featured").getAsJsonObject("get").getAsJsonArray("security").size())
+        assertFalse(paths.getAsJsonObject("/customer/{id}").getAsJsonObject("get").has("security"))
     }
 
     @Test
