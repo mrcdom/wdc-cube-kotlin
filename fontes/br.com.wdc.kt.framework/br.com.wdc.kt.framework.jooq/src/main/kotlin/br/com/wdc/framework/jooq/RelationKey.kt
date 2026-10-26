@@ -1,6 +1,7 @@
 package br.com.wdc.framework.jooq
 
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import org.jooq.Field
@@ -50,6 +51,9 @@ class RelationKey<T : Table<*>> internal constructor() {
 
     /** Campo de data/hora sem fuso da chave do filho, guardado nesta coluna. */
     fun addLdt(fn: String, column: (T) -> Field<out LocalDateTime?>) = add(fn, column, JsonFieldType.DATETIME)
+
+    /** Campo de dia (DATE) da chave do filho, guardado nesta coluna. */
+    fun addLocalDate(fn: String, column: (T) -> Field<out LocalDate?>) = add(fn, column, JsonFieldType.DATETIME)
 
     /** Campo `ByteArray` da chave do filho, guardado nesta coluna. */
     fun addBin(fn: String, column: (T) -> Field<out ByteArray?>) = add(fn, column, JsonFieldType.BINARY)

@@ -8,6 +8,7 @@ import com.google.gson.stream.JsonToken
 import java.io.IOException
 import java.io.StringReader
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -171,6 +172,15 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     ) = scalar(fn, getter, setter, OffsetDateTime.MIN, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
         parseTimestamp(it.nextString())
     }
+
+    /**
+     * Coluna DATE (dia, sem hora) mapeada para [LocalDate]. O banco a escreve no JSON como texto ISO (`2024-01-15`);
+     * o que vier depois do dia (uma hora, se o dialeto a acrescentar) é ignorado.
+     */
+    fun addLocalDate(fn: String, getter: (B) -> LocalDate?, setter: (B, LocalDate) -> Unit, column: (T) -> Field<out LocalDate?>) =
+        scalar(fn, getter, setter, LOCAL_DATE_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
+            LocalDate.parse(it.nextString().take(10))
+        }
 
     /** Coluna TIMESTAMP WITH TIME ZONE mapeada para [Instant] no domínio. */
     fun addInstantFromOdt(
@@ -495,6 +505,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
 
     private companion object {
         val INSTANT_SENTINEL: Instant = Instant.fromEpochMilliseconds(0L)
+        val LOCAL_DATE_SENTINEL: LocalDate = LocalDate.of(1970, 1, 1)
 
         /**
          * Lê o que o banco põe no JSON para uma coluna de data/hora: ISO-8601 com fuso, ou a forma sem fuso
