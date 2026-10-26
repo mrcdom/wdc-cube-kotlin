@@ -183,6 +183,12 @@ class RestApi private constructor(builder: Builder) {
     }
 
     private fun unmatched(e: Exception, ctx: Context) {
+        // O preflight do CORS não tem rota (o plugin só põe os cabeçalhos) e vem sem credencial: tratado como rota
+        // inexistente, o protectUnmatched o recusaria e o navegador bloquearia todo pedido de outra origem.
+        if (cors != null && ctx.method() == HandlerType.OPTIONS && ctx.header("Access-Control-Request-Method") != null) {
+            ctx.status(200)
+            return
+        }
         val request = RequestContext.of(ctx)
         RequestContext.withCurrent(request) {
             runBlocking(request.asContextElement()) {

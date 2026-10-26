@@ -1,5 +1,6 @@
 package br.com.wdc.framework.rest
 
+import br.com.wdc.framework.rest.security.BearerAuthenticator
 import br.com.wdc.framework.rest.testing.RestTestServer
 import java.io.ByteArrayInputStream
 import java.util.zip.GZIPInputStream
@@ -29,6 +30,31 @@ class HttpOptionsTest {
             assertEquals(200, preflight.status)
             assertEquals("*", preflight.header("Access-Control-Allow-Origin"))
             assertEquals("3600", preflight.header("Access-Control-Max-Age"))
+        }
+    }
+
+    @Test
+    fun cors_preflightPassesProtectUnmatched() {
+        // O navegador manda o preflight sem credencial; com protectUnmatched ele caía como rota inexistente e levava 403.
+        val secured = api {
+            cors { anyOrigin() }
+            security {
+                authenticator = BearerAuthenticator { null }
+                unauthenticatedStatus = 403
+                protectUnmatched = true
+            }
+        }
+        RestTestServer(secured).use { server ->
+            val preflight = server.client().send(
+                "OPTIONS", "/small",
+                extraHeaders = mapOf("Origin" to "https://app.example", "Access-Control-Request-Method" to "GET", "Access-Control-Request-Headers" to "Authorization"),
+            )
+            assertEquals(200, preflight.status)
+            assertEquals("*", preflight.header("Access-Control-Allow-Origin"))
+
+            // OPTIONS sem cara de preflight continua protegido, e a rota continua exigindo credencial.
+            assertEquals(403, server.client().send("OPTIONS", "/small").status)
+            assertEquals(403, server.client().header("Origin", "https://app.example").get("/small").status)
         }
     }
 
