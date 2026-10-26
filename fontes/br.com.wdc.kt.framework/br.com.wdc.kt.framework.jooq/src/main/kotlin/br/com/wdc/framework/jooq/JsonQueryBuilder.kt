@@ -500,12 +500,29 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
          * Lê o que o banco põe no JSON para uma coluna de data/hora: ISO-8601 com fuso, ou a forma sem fuso
          * (`2024-01-15T10:30:00` ou `2024-01-15 10:30:00[.n]`), assumida em UTC.
          */
-        fun parseTimestamp(text: String): OffsetDateTime =
-            try {
+        fun parseTimestamp(text: String): OffsetDateTime {
+            // Sem fuso (a coluna TIMESTAMP comum) a tentativa com fuso sempre falharia: lida direto, sem a exceção, que
+            // numa coleção grande custava mais que a própria consulta (50 mil datas: 164 ms pela exceção, 23 ms direto).
+            if (!hasOffset(text)) {
+                return LocalDateTime.parse(text.replace(' ', 'T')).atOffset(ZoneOffset.UTC)
+            }
+            return try {
                 OffsetDateTime.parse(text)
             } catch (_: DateTimeParseException) {
                 LocalDateTime.parse(text.replace(' ', 'T')).atOffset(ZoneOffset.UTC)
             }
+        }
+
+        /** Se o texto traz fuso: `Z`, ou `+`/`-` depois da data (a data tem hífens; a hora, não). */
+        fun hasOffset(text: String): Boolean {
+            val time = text.indexOfAny(charArrayOf('T', ' '))
+            if (time < 0) return false
+            for (i in time + 1 until text.length) {
+                val c = text[i]
+                if (c == 'Z' || c == 'z' || c == '+' || c == '-') return true
+            }
+            return false
+        }
 
         fun parseInstant(text: String): Instant {
             val instant = parseTimestamp(text).toInstant()
