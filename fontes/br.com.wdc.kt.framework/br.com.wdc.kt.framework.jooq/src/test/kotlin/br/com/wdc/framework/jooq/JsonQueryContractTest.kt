@@ -62,7 +62,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
             .set(BOOK.ID, id).set(BOOK.AUTHOR_ID, authorId).set(BOOK.TITLE, title)
             .set(BOOK.PRICE, price?.let(::BigDecimal)).set(BOOK.PAGES, pages).set(BOOK.ACTIVE, active)
             .set(BOOK.PUBLISHED, published?.toUtcLocalDateTime()).set(BOOK.RELEASED, published?.toUtcLocalDateTime()?.toLocalDate())
-            .set(BOOK.COVER, cover).set(BOOK.KIND, kind?.name)
+            .set(BOOK.CATALOG, java.util.UUID(0x1234L, id)).set(BOOK.COVER, cover).set(BOOK.KIND, kind?.name)
             .execute()
     }
 
@@ -91,6 +91,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         assertEquals(true, book.active)
         assertEquals(published1, book.published)
         assertEquals(java.time.LocalDate.of(2024, 1, 15), book.released)
+        assertEquals(java.util.UUID(0x1234L, 10L), book.catalog)
         assertContentEquals(byteArrayOf(1, 2, 3), book.cover)
         assertEquals(Kind.NOVEL, book.kind)
         // relações não entram na projeção total: ela só marca escalares

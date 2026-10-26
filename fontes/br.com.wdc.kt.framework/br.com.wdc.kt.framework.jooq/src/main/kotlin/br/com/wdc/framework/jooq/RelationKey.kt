@@ -4,6 +4,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.util.UUID
 import org.jooq.Field
 import org.jooq.Table
 
@@ -54,6 +55,9 @@ class RelationKey<T : Table<*>> internal constructor() {
 
     /** Campo de dia (DATE) da chave do filho, guardado nesta coluna. */
     fun addLocalDate(fn: String, column: (T) -> Field<out LocalDate?>) = add(fn, column, JsonFieldType.DATETIME)
+
+    /** Campo [UUID] da chave do filho, guardado nesta coluna. */
+    fun addUuid(fn: String, column: (T) -> Field<out UUID?>) = add(fn, column, JsonFieldType.STRING)
 
     /** Campo `ByteArray` da chave do filho, guardado nesta coluna. */
     fun addBin(fn: String, column: (T) -> Field<out ByteArray?>) = add(fn, column, JsonFieldType.BINARY)

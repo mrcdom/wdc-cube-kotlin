@@ -12,6 +12,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.UUID
 import java.time.format.DateTimeParseException
 import java.util.Base64
 import java.util.concurrent.locks.ReentrantLock
@@ -180,6 +181,12 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     fun addLocalDate(fn: String, getter: (B) -> LocalDate?, setter: (B, LocalDate) -> Unit, column: (T) -> Field<out LocalDate?>) =
         scalar(fn, getter, setter, LOCAL_DATE_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
             LocalDate.parse(it.nextString().take(10))
+        }
+
+    /** Coluna UUID mapeada para [UUID]. O banco a escreve no JSON como texto (`123e4567-e89b-...`). */
+    fun addUuid(fn: String, getter: (B) -> UUID?, setter: (B, UUID) -> Unit, column: (T) -> Field<out UUID?>) =
+        scalar(fn, getter, setter, UUID_SENTINEL, JsonFieldType.STRING, column, { it == JsonToken.STRING }) {
+            UUID.fromString(it.nextString())
         }
 
     /** Coluna TIMESTAMP WITH TIME ZONE mapeada para [Instant] no domínio. */
@@ -506,6 +513,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     private companion object {
         val INSTANT_SENTINEL: Instant = Instant.fromEpochMilliseconds(0L)
         val LOCAL_DATE_SENTINEL: LocalDate = LocalDate.of(1970, 1, 1)
+        val UUID_SENTINEL: UUID = UUID(0L, 0L)
 
         /**
          * Lê o que o banco põe no JSON para uma coluna de data/hora: ISO-8601 com fuso, ou a forma sem fuso
