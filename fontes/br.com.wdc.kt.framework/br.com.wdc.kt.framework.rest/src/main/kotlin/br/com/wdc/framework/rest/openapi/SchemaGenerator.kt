@@ -1,5 +1,6 @@
 package br.com.wdc.framework.rest.openapi
 
+import br.com.wdc.framework.domain.doc.ApiDoc
 import com.google.gson.FieldNamingStrategy
 import com.google.gson.annotations.SerializedName
 import java.lang.reflect.Field
@@ -114,12 +115,27 @@ class SchemaGenerator(private val naming: FieldNamingStrategy) {
             val bindings = type.typeParameters.map { it.name }.zip(args).toMap()
             val properties = LinkedHashMap<String, Any?>()
             for (field in fieldsOf(type)) {
-                properties[jsonName(field)] = schemaOf(field.genericType, bindings)
+                properties[jsonName(field)] = documented(schemaOf(field.genericType, bindings), field.getAnnotation(ApiDoc::class.java))
             }
-            created.schema = mapOf("type" to "object", "properties" to properties)
+            created.schema = linkedMapOf<String, Any?>("type" to "object").apply {
+                type.getAnnotation(ApiDoc::class.java)?.let { put("description", it.value) }
+                put("properties", properties)
+            }
         }
         // O nome so e decidido em [components]: ate la, a referencia fica a espera dele.
         return linkedMapOf<String, Any?>("\$ref" to null).also { entry.refs += it }
+    }
+
+    /**
+     * A propriedade com o `@ApiDoc` do campo. Uma referência a outro esquema vai num `allOf`: no OpenAPI 3.0, o que
+     * fica ao lado de um `$ref` é ignorado.
+     */
+    private fun documented(schema: Map<String, Any?>, doc: ApiDoc?): Map<String, Any?> {
+        if (doc == null) return schema
+        val base = if (schema.containsKey("\$ref")) linkedMapOf<String, Any?>("allOf" to listOf(schema)) else LinkedHashMap(schema)
+        base["description"] = doc.value
+        if (doc.example.isNotEmpty()) base["example"] = doc.example
+        return base
     }
 
     private fun enumName(constant: Enum<*>): String =

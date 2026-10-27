@@ -1,5 +1,7 @@
 package br.com.wdc.framework.rest.openapi
 
+import br.com.wdc.framework.domain.doc.ApiDoc
+import java.lang.reflect.Field
 import java.lang.reflect.Type
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
@@ -33,6 +35,33 @@ class OperationDoc {
     fun query(name: String, type: Type = String::class.java, description: String? = null, required: Boolean = false) {
         parameters += ParameterDoc(name, "query", type, description, required)
     }
+
+    /**
+     * Parâmetros de query declarados como campos de [type] (o pedido da operação): nome, tipo e o `@ApiDoc` do campo.
+     * Só os [fields] nomeados entram, porque o mesmo pedido pode juntar caminho, query e cabeçalho.
+     */
+    fun queryOf(type: Class<*>, vararg fields: String) {
+        for (name in fields) {
+            val field = fieldOf(type, name)
+            parameters += ParameterDoc(name, "query", field.genericType, field.getAnnotation(ApiDoc::class.java)?.value, false)
+        }
+    }
+
+    inline fun <reified T> queryOf(vararg fields: String) = queryOf(T::class.java, *fields)
+
+    /** O resumo (e a descrição) da operação pelo `@ApiDoc` de [type]: a classe que a implementa. */
+    fun describedBy(type: Class<*>) {
+        val doc = type.getAnnotation(ApiDoc::class.java) ?: return
+        val text = doc.value.trim()
+        summary = text.substringBefore('\n').trim()
+        text.substringAfter('\n', "").trim().takeIf { it.isNotEmpty() }?.let { description = it }
+    }
+
+    inline fun <reified T> describedBy() = describedBy(T::class.java)
+
+    private fun fieldOf(type: Class<*>, name: String): Field =
+        generateSequence(type) { it.superclass }.firstNotNullOfOrNull { c -> c.declaredFields.firstOrNull { it.name == name } }
+            ?: throw IllegalArgumentException("${type.name} não tem o campo $name")
 
     /** Parâmetro de cabeçalho. */
     fun header(name: String, type: Type = String::class.java, description: String? = null, required: Boolean = false) {

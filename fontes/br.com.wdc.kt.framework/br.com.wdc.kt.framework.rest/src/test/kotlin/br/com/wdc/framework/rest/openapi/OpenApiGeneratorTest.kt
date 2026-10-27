@@ -5,6 +5,7 @@ import br.com.wdc.framework.rest.security.BearerAuthenticator
 import br.com.wdc.framework.rest.testing.RestTestServer
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import br.com.wdc.framework.domain.doc.ApiDoc
 import com.google.gson.annotations.SerializedName
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -25,6 +26,15 @@ class OpenApiGeneratorTest {
     class CreateOrder { data class Response(val orderId: Long) }
 
     class CancelOrder { data class Response(val cancelled: Boolean) }
+
+    /** Uma operacao documentada pelos proprios tipos. */
+    @ApiDoc("Lista as faturas\nSó as do cliente da sessão.")
+    class ListInvoices {
+        data class Request(@ApiDoc("Situação da fatura") val status: String? = null, @ApiDoc("Página, a partir de 0") val page: Int? = null)
+
+        @ApiDoc("Uma fatura")
+        data class Response(@ApiDoc("Número da fatura", example = "2024-0001") val number: String, @ApiDoc("Quem paga") val customer: Customer)
+    }
 
     private val api = RestApi {
         security {
@@ -51,6 +61,11 @@ class OpenApiGeneratorTest {
         }
         post("/orders", doc = { returns<CreateOrder.Response>() }) { _ -> null }
         delete("/orders/{id}", doc = { returns<CancelOrder.Response>() }) { _ -> null }
+        get("/invoices", doc = {
+            describedBy<ListInvoices>()
+            queryOf<ListInvoices.Request>("status", "page")
+            returns<List<ListInvoices.Response>>()
+        }) { _ -> null }
         get("/catalog/featured") { _ -> null }
         get("/hidden", hidden = true) { _ -> null }
         get("/files/<path>", doc = { raw(mapOf("summary" to "à mão", "x-custom" to true)) }) { _ -> null }
@@ -61,7 +76,7 @@ class OpenApiGeneratorTest {
     @Test
     fun everyRegisteredRoute_isDocumented_unlessHidden() {
         val paths = spec().getAsJsonObject("paths")
-        assertEquals(setOf("/customer/{id}", "/customer/search", "/orders", "/orders/{id}", "/catalog/featured", "/files/{path}"), paths.keySet())
+        assertEquals(setOf("/customer/{id}", "/customer/search", "/orders", "/orders/{id}", "/invoices", "/catalog/featured", "/files/{path}"), paths.keySet())
         assertTrue(paths.getAsJsonObject("/customer/search").has("post"))
     }
 
@@ -105,6 +120,29 @@ class OpenApiGeneratorTest {
         val ref = spec.getAsJsonObject("paths").getAsJsonObject("/orders").getAsJsonObject("post").getAsJsonObject("responses")
             .getAsJsonObject("200").getAsJsonObject("content").getAsJsonObject("application/json").getAsJsonObject("schema")["\$ref"].asString
         assertEquals("#/components/schemas/$create", ref)
+    }
+
+    @Test
+    fun apiDoc_onTheTypes_documentsSchemasParametersAndSummary() {
+        val spec = spec()
+        val invoice = spec.getAsJsonObject("components").getAsJsonObject("schemas").getAsJsonObject("OpenApiGeneratorTest.ListInvoices.Response")
+        assertEquals("Uma fatura", invoice["description"].asString)
+        val number = invoice.getAsJsonObject("properties").getAsJsonObject("number")
+        assertEquals("string", number["type"].asString)
+        assertEquals("Número da fatura", number["description"].asString)
+        assertEquals("2024-0001", number["example"].asString)
+        // Referencia a outro esquema: a descricao vai ao lado de um allOf (no 3.0, ao lado de $ref e ignorada).
+        val customer = invoice.getAsJsonObject("properties").getAsJsonObject("customer")
+        assertEquals("Quem paga", customer["description"].asString)
+        assertEquals("#/components/schemas/Customer", customer.getAsJsonArray("allOf")[0].asJsonObject["\$ref"].asString)
+
+        val op = spec.getAsJsonObject("paths").getAsJsonObject("/invoices").getAsJsonObject("get")
+        assertEquals("Lista as faturas", op["summary"].asString)
+        assertEquals("Só as do cliente da sessão.", op["description"].asString)
+        val params = op.getAsJsonArray("parameters").map { it.asJsonObject }
+        assertEquals(listOf("status", "page"), params.map { it["name"].asString })
+        assertEquals("Situação da fatura", params[0]["description"].asString)
+        assertEquals("integer", params[1].getAsJsonObject("schema")["type"].asString)
     }
 
     @Test
