@@ -21,6 +21,11 @@ class OpenApiGeneratorTest {
 
     data class SearchResponse<T>(val count: Int, val elements: List<T>)
 
+    /** Duas operacoes com os tipos aninhados de mesmo nome simples. */
+    class CreateOrder { data class Response(val orderId: Long) }
+
+    class CancelOrder { data class Response(val cancelled: Boolean) }
+
     private val api = RestApi {
         security {
             authenticator = BearerAuthenticator { null }
@@ -44,6 +49,8 @@ class OpenApiGeneratorTest {
                 returns<SearchResponse<Customer>>()
             }) { _ -> null }
         }
+        post("/orders", doc = { returns<CreateOrder.Response>() }) { _ -> null }
+        delete("/orders/{id}", doc = { returns<CancelOrder.Response>() }) { _ -> null }
         get("/catalog/featured") { _ -> null }
         get("/hidden", hidden = true) { _ -> null }
         get("/files/<path>", doc = { raw(mapOf("summary" to "à mão", "x-custom" to true)) }) { _ -> null }
@@ -54,7 +61,7 @@ class OpenApiGeneratorTest {
     @Test
     fun everyRegisteredRoute_isDocumented_unlessHidden() {
         val paths = spec().getAsJsonObject("paths")
-        assertEquals(setOf("/customer/{id}", "/customer/search", "/catalog/featured", "/files/{path}"), paths.keySet())
+        assertEquals(setOf("/customer/{id}", "/customer/search", "/orders", "/orders/{id}", "/catalog/featured", "/files/{path}"), paths.keySet())
         assertTrue(paths.getAsJsonObject("/customer/search").has("post"))
     }
 
@@ -82,6 +89,22 @@ class OpenApiGeneratorTest {
 
         val page = schemas.getAsJsonObject("SearchResponseCustomer").getAsJsonObject("properties")
         assertEquals("#/components/schemas/Customer", page.getAsJsonObject("elements").getAsJsonObject("items")["\$ref"].asString)
+    }
+
+    @Test
+    fun schemas_withTheSameSimpleName_areQualifiedByTheEnclosingClass() {
+        val spec = spec()
+        val schemas = spec.getAsJsonObject("components").getAsJsonObject("schemas")
+        val create = "OpenApiGeneratorTest.CreateOrder.Response"
+        val cancel = "OpenApiGeneratorTest.CancelOrder.Response"
+        assertTrue(schemas.getAsJsonObject(create).getAsJsonObject("properties").has("orderId"))
+        assertTrue(schemas.getAsJsonObject(cancel).getAsJsonObject("properties").has("cancelled"))
+        assertTrue(!schemas.has("Response"))
+        // Quem nao colide segue com o nome simples.
+        assertTrue(schemas.has("Customer"))
+        val ref = spec.getAsJsonObject("paths").getAsJsonObject("/orders").getAsJsonObject("post").getAsJsonObject("responses")
+            .getAsJsonObject("200").getAsJsonObject("content").getAsJsonObject("application/json").getAsJsonObject("schema")["\$ref"].asString
+        assertEquals("#/components/schemas/$create", ref)
     }
 
     @Test

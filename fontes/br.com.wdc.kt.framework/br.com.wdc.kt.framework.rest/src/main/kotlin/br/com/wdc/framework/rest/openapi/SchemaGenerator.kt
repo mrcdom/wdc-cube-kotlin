@@ -25,11 +25,56 @@ import java.util.UUID
  * nomes. Classe de DTO vira componente (`$ref`), registrado uma vez com o nome simples da classe.
  *
  * Tipos genéricos (`Page<UserDto>`) viram componentes nomeados pelos argumentos (`PageUserDto`).
+ *
+ * Dois tipos diferentes com o mesmo nome simples (o `Request` e o `Response` aninhados em cada operação, por
+ * exemplo) não se sobrepõem: os dois passam a levar o nome das classes que os contêm (`CreateOrder.Response` vira
+ * `CreateOrderAction.Response`), e, se ainda assim coincidirem, o pacote. O nome depende só do conjunto de tipos do
+ * documento, não da ordem em que foram vistos; por isso as referências só ganham o nome em [components].
  */
 class SchemaGenerator(private val naming: FieldNamingStrategy) {
 
-    /** Os componentes gerados até aqui, por nome. */
-    val components = LinkedHashMap<String, Any?>()
+    private class Entry(val type: Class<*>, val args: List<Type>) {
+        var schema: Map<String, Any?>? = null
+        val refs = ArrayList<MutableMap<String, Any?>>()
+    }
+
+    private val entries = LinkedHashMap<List<Any>, Entry>()
+
+    /** Os componentes, por nome; as referências entregues por [schemaOf] recebem o nome aqui. */
+    val components: Map<String, Any?>
+        get() {
+            val names = componentNames()
+            val out = LinkedHashMap<String, Any?>()
+            for ((key, entry) in entries) {
+                val name = names.getValue(key)
+                entry.refs.forEach { it["\$ref"] = "#/components/schemas/$name" }
+                out[name] = entry.schema
+            }
+            return out
+        }
+
+    private fun componentNames(): Map<List<Any>, String> {
+        val result = HashMap<List<Any>, String>()
+        val levels = listOf<(Class<*>) -> String>({ it.simpleName }, ::nestedName, { it.name })
+        var pending = entries.keys.toList()
+        for ((i, level) in levels.withIndex()) {
+            val byName = pending.groupBy { key -> entries.getValue(key).let { level(it.type) + it.args.joinToString("") { a -> argName(a, level) } } }
+            pending = emptyList()
+            for ((name, keys) in byName) {
+                if (keys.size == 1 || i == levels.lastIndex) keys.forEach { result[it] = name } else pending = pending + keys
+            }
+        }
+        return result
+    }
+
+    /** O nome com as classes que o contêm: `CreateOrderAction.Response`. */
+    private fun nestedName(type: Class<*>): String = generateSequence(type) { it.enclosingClass }.toList().reversed().joinToString(".") { it.simpleName }
+
+    private fun argName(type: Type, level: (Class<*>) -> String): String = when (type) {
+        is Class<*> -> level(type)
+        is ParameterizedType -> level(type.rawType as Class<*>) + type.actualTypeArguments.joinToString("") { argName(it, level) }
+        else -> "Any"
+    }
 
     fun schemaOf(type: Type): Map<String, Any?> = schemaOf(type, emptyMap())
 
@@ -63,23 +108,18 @@ class SchemaGenerator(private val naming: FieldNamingStrategy) {
         if (Map::class.java.isAssignableFrom(type)) return mapOf("type" to "object")
         if (type == Any::class.java) return emptyMap()
 
-        val name = type.simpleName + args.joinToString("") { simpleName(it) }
-        if (name !in components) {
-            components[name] = null // reserva: tipos recursivos param aqui
+        val key = listOf<Any>(type) + args
+        val entry = entries[key] ?: Entry(type, args).also { created ->
+            entries[key] = created // reserva: tipos recursivos param aqui
             val bindings = type.typeParameters.map { it.name }.zip(args).toMap()
             val properties = LinkedHashMap<String, Any?>()
             for (field in fieldsOf(type)) {
                 properties[jsonName(field)] = schemaOf(field.genericType, bindings)
             }
-            components[name] = mapOf("type" to "object", "properties" to properties)
+            created.schema = mapOf("type" to "object", "properties" to properties)
         }
-        return mapOf("\$ref" to "#/components/schemas/$name")
-    }
-
-    private fun simpleName(type: Type): String = when (type) {
-        is Class<*> -> type.simpleName
-        is ParameterizedType -> (type.rawType as Class<*>).simpleName + type.actualTypeArguments.joinToString("") { simpleName(it) }
-        else -> "Any"
+        // O nome so e decidido em [components]: ate la, a referencia fica a espera dele.
+        return linkedMapOf<String, Any?>("\$ref" to null).also { entry.refs += it }
     }
 
     private fun enumName(constant: Enum<*>): String =
