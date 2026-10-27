@@ -2,6 +2,7 @@ package br.com.wdc.framework.jooq
 
 import br.com.wdc.framework.domain.criteria.Criterion
 import br.com.wdc.framework.domain.criteria.Operator
+import br.com.wdc.framework.domain.criteria.TextCriterion
 import org.jooq.Condition
 import org.jooq.Field
 import org.jooq.Table
@@ -119,8 +120,9 @@ object CriterionTranslator {
             Operator.LT -> column.lt(values[0])
             Operator.LE -> column.le(values[0])
             // like/ilike só são oferecidos em TextCriterion, que quem declara o campo escolhe pelo tipo da coluna
-            Operator.LIKE -> column.like(values[0] as String)
-            Operator.ILIKE -> column.likeIgnoreCase(values[0] as String)
+            // O escape vai declarado: e o que containing/startingWith usam, e alguns bancos nao tem escape padrao.
+            Operator.LIKE -> column.like(values[0] as String, TextCriterion.ESCAPE)
+            Operator.ILIKE -> column.likeIgnoreCase(values[0] as String, TextCriterion.ESCAPE)
             Operator.BETWEEN -> column.between(values[0], values[1])
             Operator.IN -> column.`in`(values)
             Operator.IS_NULL, Operator.IS_NOT_NULL -> null

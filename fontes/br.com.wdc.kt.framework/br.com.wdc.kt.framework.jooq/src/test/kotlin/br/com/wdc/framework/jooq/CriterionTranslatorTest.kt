@@ -29,7 +29,7 @@ class CriterionTranslatorTest {
     fun translateAny_appliesTheFieldToEachColumn_joinedByOr() {
         val c = Search().term.containing("ab")
         assertEquals(
-            sql(DSL.or(name.likeIgnoreCase("%ab%"), code.likeIgnoreCase("%ab%"))),
+            sql(DSL.or(name.likeIgnoreCase("%ab%", TextCriterion.ESCAPE), code.likeIgnoreCase("%ab%", TextCriterion.ESCAPE))),
             sql(CriterionTranslator.translateAny(listOf(name, code), c.term)),
         )
     }
@@ -37,7 +37,7 @@ class CriterionTranslatorTest {
     @Test
     fun translateAny_keepsEveryRequestOfTheFieldInsideEachColumn() {
         val c = Search().term.startingWith("a").term.containing("z")
-        val each = { f: org.jooq.Field<String?> -> DSL.and(f.likeIgnoreCase("a%"), f.likeIgnoreCase("%z%")) }
+        val each = { f: org.jooq.Field<String?> -> DSL.and(f.likeIgnoreCase("a%", TextCriterion.ESCAPE), f.likeIgnoreCase("%z%", TextCriterion.ESCAPE)) }
         assertEquals(sql(DSL.or(each(name), each(code))), sql(CriterionTranslator.translateAny(listOf(name, code), c.term)))
     }
 

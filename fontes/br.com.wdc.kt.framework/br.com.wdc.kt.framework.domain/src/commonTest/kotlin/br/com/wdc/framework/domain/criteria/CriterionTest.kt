@@ -165,6 +165,15 @@ class CriterionTest {
     }
 
     @Test
+    fun containing_andStartingWith_takeTheTextLiterally() {
+        val c = SampleCriteria()
+        c.name.containing("50%_a\\b")
+        c.name.startingWith("1_2")
+        assertEquals(listOf<String?>("%50\\%\\_a\\\\b%", "1\\_2%"), c.name.predicates.map { it.value })
+        assertEquals("sem curinga", TextCriterion.escape("sem curinga"))
+    }
+
+    @Test
     fun emptyOrNullText_addsNoRequest() {
         val c = SampleCriteria()
         c.name.like(null); c.name.like("")

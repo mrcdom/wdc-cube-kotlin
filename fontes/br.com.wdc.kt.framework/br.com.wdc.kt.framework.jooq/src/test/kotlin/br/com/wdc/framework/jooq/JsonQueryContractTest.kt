@@ -369,6 +369,11 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         assertEquals(listOf<Long?>(10L), booksWhere(BookCriteria().also { it.title.eq("Dom Casmurro") }))
         // curingas fazem parte do valor: sem eles, like é igualdade
         assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.like("Dom") }))
+        // no trecho, curinga e texto: "_" e "%" nao casam com qualquer coisa
+        assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.containing("_") }))
+        assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.containing("%") }))
+        assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.startingWith("D_m") }))
+        assertEquals(listOf<Long?>(10L), booksWhere(BookCriteria().also { it.title.ilike("d_m%") }))
     }
 
     @Test
