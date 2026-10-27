@@ -134,8 +134,16 @@ class SchemaGenerator(private val naming: FieldNamingStrategy) {
         if (doc == null) return schema
         val base = if (schema.containsKey("\$ref")) linkedMapOf<String, Any?>("allOf" to listOf(schema)) else LinkedHashMap(schema)
         base["description"] = doc.value
-        if (doc.example.isNotEmpty()) base["example"] = doc.example
+        if (doc.example.isNotEmpty()) base["example"] = typedExample(doc.example, schema["type"])
         return base
+    }
+
+    /** O exemplo no tipo do esquema: `4021` e numero num campo inteiro, e nao o texto "4021". */
+    private fun typedExample(example: String, type: Any?): Any = when (type) {
+        "integer" -> example.toLongOrNull() ?: example
+        "number" -> example.toBigDecimalOrNull() ?: example
+        "boolean" -> example.toBooleanStrictOrNull() ?: example
+        else -> example
     }
 
     private fun enumName(constant: Enum<*>): String =

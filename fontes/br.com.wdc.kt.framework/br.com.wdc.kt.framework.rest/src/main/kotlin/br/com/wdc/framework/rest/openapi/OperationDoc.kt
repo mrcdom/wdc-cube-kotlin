@@ -49,6 +49,16 @@ class OperationDoc {
 
     inline fun <reified T> queryOf(vararg fields: String) = queryOf(T::class.java, *fields)
 
+    /** Parametros de caminho declarados como campos de [type], como [queryOf]. */
+    fun pathOf(type: Class<*>, vararg fields: String) {
+        for (name in fields) {
+            val field = fieldOf(type, name)
+            parameters += ParameterDoc(name, "path", field.genericType, field.getAnnotation(ApiDoc::class.java)?.value, true)
+        }
+    }
+
+    inline fun <reified T> pathOf(vararg fields: String) = pathOf(T::class.java, *fields)
+
     /** O resumo (e a descrição) da operação pelo `@ApiDoc` de [type]: a classe que a implementa. */
     fun describedBy(type: Class<*>) {
         val doc = type.getAnnotation(ApiDoc::class.java) ?: return
