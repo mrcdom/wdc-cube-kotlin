@@ -34,6 +34,22 @@ object CriterionTranslator {
         translateWith(column, criterion, converter)
 
     /**
+     * Condição de um campo que incide sobre **várias** colunas: casa a linha em que alguma delas atende ao campo
+     * inteiro (cada coluna recebe todos os pedidos do campo; entre colunas, `OR`). É a busca de um termo em vários
+     * campos — nome, razão social, documento — sem que o critério precise de um campo por coluna.
+     *
+     * Campo não informado, ou lista sem colunas, devolve `null`, como [translate].
+     */
+    fun <V : Any> translateAny(columns: List<Field<out V?>>, criterion: Criterion<*, V>?): Condition? {
+        val ofColumns = columns.mapNotNull { translate(it, criterion) }
+        return when {
+            ofColumns.isEmpty() -> null
+            ofColumns.size == 1 -> ofColumns[0]
+            else -> DSL.or(ofColumns)
+        }
+    }
+
+    /**
      * Condição de um campo sobre a tabela informada, e não sobre a que declarou a coluna — serve à
      * subconsulta correlacionada, onde a instância da tabela tem alias próprio.
      */
