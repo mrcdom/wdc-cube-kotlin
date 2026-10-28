@@ -2,6 +2,7 @@ package br.com.wdc.framework.jooq
 
 import br.com.wdc.framework.domain.criteria.Criterion
 import br.com.wdc.framework.domain.criteria.Operator
+import br.com.wdc.framework.domain.criteria.TextCriterion
 import org.jooq.Condition
 import org.jooq.Field
 import org.jooq.Table
@@ -32,6 +33,22 @@ object CriterionTranslator {
      */
     fun <A : Any, B : Any> translate(column: Field<out B?>, criterion: Criterion<*, A>?, converter: (A) -> B): Condition? =
         translateWith(column, criterion, converter)
+
+    /**
+     * Condição de um campo que incide sobre **várias** colunas: casa a linha em que alguma delas atende ao campo
+     * inteiro (cada coluna recebe todos os pedidos do campo; entre colunas, `OR`). É a busca de um termo em vários
+     * campos — nome, razão social, documento — sem que o critério precise de um campo por coluna.
+     *
+     * Campo não informado, ou lista sem colunas, devolve `null`, como [translate].
+     */
+    fun <V : Any> translateAny(columns: List<Field<out V?>>, criterion: Criterion<*, V>?): Condition? {
+        val ofColumns = columns.mapNotNull { translate(it, criterion) }
+        return when {
+            ofColumns.isEmpty() -> null
+            ofColumns.size == 1 -> ofColumns[0]
+            else -> DSL.or(ofColumns)
+        }
+    }
 
     /**
      * Condição de um campo sobre a tabela informada, e não sobre a que declarou a coluna — serve à
@@ -103,8 +120,9 @@ object CriterionTranslator {
             Operator.LT -> column.lt(values[0])
             Operator.LE -> column.le(values[0])
             // like/ilike só são oferecidos em TextCriterion, que quem declara o campo escolhe pelo tipo da coluna
-            Operator.LIKE -> column.like(values[0] as String)
-            Operator.ILIKE -> column.likeIgnoreCase(values[0] as String)
+            // O escape vai declarado: e o que containing/startingWith usam, e alguns bancos nao tem escape padrao.
+            Operator.LIKE -> column.like(values[0] as String, TextCriterion.ESCAPE)
+            Operator.ILIKE -> column.likeIgnoreCase(values[0] as String, TextCriterion.ESCAPE)
             Operator.BETWEEN -> column.between(values[0], values[1])
             Operator.IN -> column.`in`(values)
             Operator.IS_NULL, Operator.IS_NOT_NULL -> null

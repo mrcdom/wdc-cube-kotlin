@@ -49,6 +49,8 @@ class JsonQueryUnitTest {
         assertEquals("2024-01-15T10:30:00Z", published("2024-01-15 10:30:00"))
         assertEquals("2024-01-15T10:30:00.500Z", published("2024-01-15 10:30:00.5"))
         assertEquals("2024-01-15T10:30:00Z", published("2024-01-15T07:30:00-03:00"))
+        assertEquals("2024-01-15T10:30:00Z", published("2024-01-15T10:30:00Z"))
+        assertEquals("2024-01-15T10:30:00.250Z", published("2024-01-15T12:30:00.25+02:00"))
     }
 
     // :: Projeção

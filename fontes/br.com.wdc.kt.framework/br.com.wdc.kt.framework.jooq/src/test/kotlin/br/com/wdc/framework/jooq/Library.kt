@@ -5,8 +5,10 @@ import br.com.wdc.framework.domain.criteria.Criteria
 import br.com.wdc.framework.domain.criteria.Criterion
 import br.com.wdc.framework.domain.criteria.TextCriterion
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.UUID
 import kotlin.time.Instant
 import org.jooq.Condition
 import org.jooq.DSLContext
@@ -41,6 +43,8 @@ class TBook(alias: Name = DSL.name("BOOK"), aliased: Table<Record>? = null) : Ta
     val PAGES: TableField<Record, Int?> = createField(DSL.name("PAGES"), SQLDataType.INTEGER, this)
     val ACTIVE: TableField<Record, Boolean?> = createField(DSL.name("ACTIVE"), SQLDataType.BOOLEAN, this)
     val PUBLISHED: TableField<Record, LocalDateTime?> = createField(DSL.name("PUBLISHED"), SQLDataType.LOCALDATETIME(6), this)
+    val RELEASED: TableField<Record, LocalDate?> = createField(DSL.name("RELEASED"), SQLDataType.LOCALDATE, this)
+    val CATALOG: TableField<Record, UUID?> = createField(DSL.name("CATALOG"), SQLDataType.UUID, this)
     val COVER: TableField<Record, ByteArray?> = createField(DSL.name("COVER"), SQLDataType.BLOB, this)
     val KIND: TableField<Record, String?> = createField(DSL.name("KIND"), SQLDataType.VARCHAR(20), this)
 
@@ -81,6 +85,8 @@ class Book(
     var pages: Int? = null,
     var active: Boolean? = null,
     var published: Instant? = null,
+    var released: LocalDate? = null,
+    var catalog: UUID? = null,
     var cover: ByteArray? = null,
     var kind: Kind? = null,
     var author: Author? = null,
@@ -118,6 +124,8 @@ class Library(private val dsl: () -> DSLContext) {
         .addI32("pages", { it.pages }, { b, v -> b.pages = v }, { it.PAGES })
         .addBit("active", { it.active }, { b, v -> b.active = v }, { it.ACTIVE })
         .addInstantFromLdt("published", { it.published }, { b, v -> b.published = v }, { it.PUBLISHED })
+        .addLocalDate("released", { it.released }, { b, v -> b.released = v }, { it.RELEASED })
+        .addUuid("catalog", { it.catalog }, { b, v -> b.catalog = v }, { it.CATALOG })
         .addBin("cover", { it.cover }, { b, v -> b.cover = v }, { it.COVER })
         .addEnm("kind", { it.kind }, { b, v -> b.kind = v }, Kind.NOVEL, Kind::parse, { it.KIND })
         .lazy { qb ->

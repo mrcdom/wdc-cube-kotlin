@@ -6,7 +6,7 @@ import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.user.UserCriteria
-import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
+import br.com.wdc.shopping.persistence.rest.RepositoryApiRoutes
 import br.com.wdc.shopping.test.util.RestTestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
 import com.google.gson.JsonObject
@@ -48,7 +48,10 @@ class OpenApiSpecTest {
     @AfterEach
     fun signOut() = env.logout()
 
-    private fun spec(): JsonObject = JsonParser.parseString(RepositoryApiDocs.toJson()).asJsonObject
+    /** O documento da API como o servidor do ambiente o monta (com a segurança ligada). */
+    private fun json(): String = RepositoryApiRoutes.create().openApiJson!!
+
+    private fun spec(): JsonObject = JsonParser.parseString(json()).asJsonObject
 
     private fun schemas(): JsonObject = spec().getAsJsonObject("components").getAsJsonObject("schemas")
 
@@ -74,13 +77,13 @@ class OpenApiSpecTest {
         val response = send("GET", "/openapi.json")
         assertEquals(200, response.statusCode())
         assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith("application/json"))
-        assertEquals(JsonParser.parseString(RepositoryApiDocs.toJson()), JsonParser.parseString(response.body()))
+        assertEquals(JsonParser.parseString(json()), JsonParser.parseString(response.body()))
     }
 
     @Test
     fun everyReferencePointsToSomethingThatExists() {
         val components = spec().getAsJsonObject("components")
-        val references = REF.findAll(RepositoryApiDocs.toJson()).map { it.groupValues[1] to it.groupValues[2] }.toSet()
+        val references = REF.findAll(json()).map { it.groupValues[1] to it.groupValues[2] }.toSet()
         assertTrue(references.size > 20, "poucas referências: ${references.size}")
         val broken = references.filterNot { (kind, name) -> components.getAsJsonObject(kind).has(name) }
         assertEquals(emptyList<Pair<String, String>>(), broken)
@@ -198,7 +201,7 @@ class OpenApiSpecTest {
 
     @Test
     fun descriptionsAreFreeOfPlaceholders() {
-        val json = RepositoryApiDocs.toJson()
+        val json = json()
         assertFalse("TODO" in json)
         assertFalse("FIXME" in json)
     }

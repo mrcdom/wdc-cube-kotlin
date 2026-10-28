@@ -1,78 +1,53 @@
 package br.com.wdc.shopping.persistence.rest
 
-import br.com.wdc.framework.domain.exception.InvalidRequestException
-import br.com.wdc.framework.domain.exception.TransactionConflictException
-import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
-import br.com.wdc.shopping.domain.exception.AccessDeniedException
+import br.com.wdc.framework.rest.RestApi
+import br.com.wdc.framework.rest.security.BearerAuthenticator
+import br.com.wdc.framework.rest.transaction.RemoteTransactionRoutes
+import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.security.AuthenticationService
-import br.com.wdc.shopping.domain.security.SecurityContextHolder
 import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
 import io.javalin.config.JavalinConfig
 
 /**
- * Registra todos os endpoints REST da API de repositório no Javalin.
+ * A API REST dos repositórios, montada sobre o `framework-rest`.
  *
- * Se o [AuthenticationService] estiver inicializado (via
- * `ShoppingRepositoryBootstrap.initializeSecurity`), registra automaticamente
- * o filtro de autenticação e os endpoints de login. A permissão e o alcance de cada
- * operação são conferidos pelos controladores ([ApiSecurity]).
+ * Se o [AuthenticationService] estiver inicializado (via `ShoppingRepositoryBootstrap.initializeSecurity`), a API
+ * sobe com segurança: `Authorization: Bearer` em tudo, salvo as rotas de `/api/auth`, a leitura da imagem de
+ * produto e o `/openapi.json`. A permissão e o alcance de cada operação são conferidos pelas rotas
+ * ([ApiSecurity]). Sem o serviço, a API é aberta e `/api/auth` não existe.
+ *
+ * As transações vêm dos holders a cada requisição: [ShoppingTransactions] (uma por requisição de escrita) e
+ * [RemoteTransactions] (as que o cliente abre por `/api/tx`).
  */
 object RepositoryApiRoutes {
 
-    /**
-     * Configura as rotas REST.
-     *
-     * Se `AuthenticationService.BEAN` estiver populado, habilita
-     * segurança (filtro JWT + endpoints de auth). Caso contrário,
-     * registra apenas os controllers de entidade (modo teste/local).
-     */
-    fun configure(config: JavalinConfig) {
+    /** Monta a API com o que estiver registrado nos holders agora (o serviço de autenticação decide a segurança). */
+    fun create(): RestApi {
         val authService = AuthenticationService.BEAN.getOrNull()
+        return RestApi {
+            if (authService != null) {
+                security {
+                    authenticator = BearerAuthenticator { token -> authService.resolveToken(token)?.let(::ShoppingPrincipal) }
+                    permitAll("/api/auth/**", "GET /api/repo/product/{id}/image", "GET /openapi.json")
+                }
+            }
+            transactions {
+                serviceSource = { ShoppingTransactions.BEAN.getOrNull() }
+                coordinatorSource = { RemoteTransactions.COORDINATOR.getOrNull() }
+            }
+            openApi { RepositoryApiDocs.configure(this) }
 
-        if (authService != null) {
-            // Endpoints públicos de autenticação
-            AuthApiController(authService).configure(config)
-
-            // Filtro de segurança para endpoints protegidos
-            val securityFilter = SecurityFilter(authService)
-            config.routes.before("/api/repo/*", securityFilter::handle)
-            config.routes.after("/api/repo/*") { SecurityContextHolder.clear() }
-            // a transação remota é de quem a abriu: os seus endpoints exigem a mesma autenticação
-            config.routes.before("/api/tx/*", securityFilter::handle)
-            config.routes.after("/api/tx/*") { SecurityContextHolder.clear() }
+            if (authService != null) {
+                AuthApiController.register(this, authService)
+            }
+            UserApiController.register(this)
+            ProductApiController.register(this)
+            PurchaseApiController.register(this)
+            PurchaseItemApiController.register(this)
+            RemoteTransactionRoutes.register(this, transactions, doc = RepositoryApiDocs::transactionDoc)
         }
-
-        // Exception handler para AccessDeniedException
-        config.routes.exception(AccessDeniedException::class.java) { e, ctx ->
-            ctx.status(403)
-            ctx.json(mapOf("error" to e.message))
-        }
-
-        // Pedido recusado por validação (ordenação desconhecida, delete sem filtro…) → 400, com o motivo no corpo
-        config.routes.exception(InvalidRequestException::class.java) { e, ctx ->
-            ctx.status(400)
-            ctx.json(mapOf("error" to e.message))
-        }
-
-        // Transação remota: uso indevido (dono errado → 403 acima; desfecho oposto, uso concorrente, escrita sem o
-        // cabeçalho → 409) e tetos de transações abertas → 429
-        config.routes.exception(TransactionConflictException::class.java) { e, ctx ->
-            ctx.status(409)
-            ctx.json(mapOf("error" to e.message))
-        }
-        config.routes.exception(TransactionLimitExceededException::class.java) { e, ctx ->
-            ctx.status(429)
-            ctx.json(mapOf("error" to e.message))
-        }
-
-        // Controllers de entidades
-        UserApiController.configure(config)
-        ProductApiController.configure(config)
-        PurchaseApiController.configure(config)
-        PurchaseItemApiController.configure(config)
-        TxApiController.configure(config)
-
-        // A descrição da API, derivada do domínio. Pública: fica fora de /api/repo e /api/tx.
-        RepositoryApiDocs.configure(config)
     }
+
+    /** Registra a API no Javalin em configuração. É usado pelo backend e pelos testes. */
+    fun configure(config: JavalinConfig): RestApi = create().also { it.install(config) }
 }

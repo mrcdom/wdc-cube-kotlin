@@ -61,7 +61,8 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         dsl.insertInto(BOOK)
             .set(BOOK.ID, id).set(BOOK.AUTHOR_ID, authorId).set(BOOK.TITLE, title)
             .set(BOOK.PRICE, price?.let(::BigDecimal)).set(BOOK.PAGES, pages).set(BOOK.ACTIVE, active)
-            .set(BOOK.PUBLISHED, published?.toUtcLocalDateTime()).set(BOOK.COVER, cover).set(BOOK.KIND, kind?.name)
+            .set(BOOK.PUBLISHED, published?.toUtcLocalDateTime()).set(BOOK.RELEASED, published?.toUtcLocalDateTime()?.toLocalDate())
+            .set(BOOK.CATALOG, java.util.UUID(0x1234L, id)).set(BOOK.COVER, cover).set(BOOK.KIND, kind?.name)
             .execute()
     }
 
@@ -89,6 +90,8 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         assertEquals(256, book.pages)
         assertEquals(true, book.active)
         assertEquals(published1, book.published)
+        assertEquals(java.time.LocalDate.of(2024, 1, 15), book.released)
+        assertEquals(java.util.UUID(0x1234L, 10L), book.catalog)
         assertContentEquals(byteArrayOf(1, 2, 3), book.cover)
         assertEquals(Kind.NOVEL, book.kind)
         // relações não entram na projeção total: ela só marca escalares
@@ -366,6 +369,11 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         assertEquals(listOf<Long?>(10L), booksWhere(BookCriteria().also { it.title.eq("Dom Casmurro") }))
         // curingas fazem parte do valor: sem eles, like é igualdade
         assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.like("Dom") }))
+        // no trecho, curinga e texto: "_" e "%" nao casam com qualquer coisa
+        assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.containing("_") }))
+        assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.containing("%") }))
+        assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.startingWith("D_m") }))
+        assertEquals(listOf<Long?>(10L), booksWhere(BookCriteria().also { it.title.ilike("d_m%") }))
     }
 
     @Test

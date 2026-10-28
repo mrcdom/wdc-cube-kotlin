@@ -71,9 +71,10 @@ Três ideias sustentam o desenho:
 | `:framework-domain` | KMP | `Repository`, `Page`, critérios, projeção, codecs, contrato de transação, exceções |
 | `:framework-persistence` | JVM | `TransactionServiceImpl` (JDBC), `TransactionScope`, coordenador de transações remotas |
 | `:framework-jooq` | JVM | `JsonQueryBuilder`, dialetos H2 e PostgreSQL, `CriterionTranslator` |
+| `:framework-rest` | JVM | APIs REST sobre Javalin: rotas, segurança plugável, mapa de exceções, contexto e transação por requisição, OpenAPI, `RepositoryRpc` |
 | `:shopping-domain` | KMP | Entidades, `XxxCriteria`, `XxxCodec`, `XxxRepository`, `ShoppingTransactions` |
 | `:shopping-persistence` | JVM | `XxxRepositoryImpl`, classes jOOQ geradas, autenticação, bootstrap |
-| `:persistence-rest` | JVM | Controladores Javalin com o controle de acesso, `/api/tx`, `/api/auth`, `/openapi.json` |
+| `:persistence-rest` | JVM | A API do Shopping sobre o `framework-rest`: o RPC de cada entidade com o controle de acesso, `/api/tx`, `/api/auth`, `/openapi.json` |
 | `:shopping-persistence-client` | KMP | `HttpRepository`, transportes por plataforma, `RestTransactionService` |
 | `:shopping-scripts` | JVM | `DBCreate`, `DBReset`, migrações, gerador das classes jOOQ |
 
@@ -298,15 +299,18 @@ Todas as entidades têm as mesmas operações, sob `/api/repo/<entidade>` (`user
 
 Toda escrita é atômica: roda na transação remota indicada por `X-Tx-Id` ou, sem ela, numa transação própria da requisição.
 
+As rotas de entidade são um `RepositoryRpc` do [`framework-rest`](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md), um por entidade, e o `RepositoryApiRoutes.create()` monta a API inteira. Cada controlador configura o RPC da sua entidade: a regra de cada operação, a restrição do critério a quem chama, a retirada da senha e as conferências antes de cada escrita. A ponte de transação e as rotas de `/api/tx` também vêm do framework.
+
 Erros voltam como `{"error": "…"}`:
 
 | Status | Quando |
 |---|---|
 | 400 | Pedido inválido: `orderBy` desconhecido, `delete` sem filtro, `update` sem id |
-| 401 | Token ausente ou inválido (com a segurança ligada) |
+| 401 | Token ausente ou inválido (com a segurança ligada). Um caminho sem rota responde 404, com ou sem token |
 | 403 | Falta permissão, ou a linha está fora do alcance do usuário |
 | 409 | Conflito de transação remota |
 | 429 | Transações remotas abertas demais |
+| 500 | Falha não prevista: `{"error": "Internal server error"}`, com o erro registrado no log |
 
 **A descrição completa está em `GET /openapi.json`** (OpenAPI 3). Os campos de critério, as ordenações e os operadores que ela lista são lidos do domínio em tempo de execução, e o `OpenApiSpecTest` confere que cada rota documentada existe.
 
@@ -333,7 +337,7 @@ O `HttpTransport` tem uma implementação por plataforma — `OkHttpTransport` (
 - **De um cliente** (Compose, nativo), pela API REST. O usuário controla o cliente e pode pedir o que quiser; por isso cada controlador confere o pedido antes de executá-lo.
 - **De dentro do servidor**, pelos presenters da view remota. Ali o usuário não tem como chamar um repositório: só o que a apresentação pedir é executado. A garantia é a apresentação estar correta — pedir sempre os dados de quem está logado.
 
-Com `security.jwt.secret` configurado, o backend exige autenticação em `/api/repo` e `/api/tx`, e cada controlador confere (`ApiSecurity`):
+Com `security.jwt.secret` configurado, o backend exige `Authorization: Bearer` em toda a API, salvo `/api/auth`, a leitura da imagem de produto e `/openapi.json`. Cada rota confere, pela regra de acesso (`ApiSecurity.permission`) e pelos ganchos do `RepositoryRpc`:
 
 - a **permissão** (`<entidade>:read`, `:write`, `:delete`), dada pelos papéis do usuário;
 - o **alcance**: quem não tem `data:all` só lê e escreve o que é seu — o próprio usuário, as próprias compras e os itens delas. Uma compra inserida por um cliente é sempre dele. Buscar pela chave passa pela mesma restrição: o que é de outro "não existe" (404).
@@ -385,11 +389,11 @@ cd fontes
 1. **Domínio** (`:shopping-domain`, pacote `domain.<entidade>`): a entidade (`KeyedEntity`, campos anuláveis), o `XxxCriteria` com os campos de filtro e o `OrderBy`, o `XxxCodec` e a interface `XxxRepository` com `newProjection()`, `fetchById` e o holder `BEAN`.
 2. **Esquema** (`:shopping-scripts`): a tabela, a sequência e os índices das ordenações em `DBCreate`; a migração para os bancos existentes; a carga em `DBReset`, se couber. Regenere as classes jOOQ.
 3. **Servidor** (`:shopping-persistence`): o `XxxRepositoryImpl` com o mapeamento `QUERY`, as condições e a ordenação; o registro em `ShoppingRepositoryBootstrap`.
-4. **REST** (`:persistence-rest`): o `XxxApiController`, **com a conferência de permissão e de alcance** (`ApiSecurity`), e o registro em `RepositoryApiRoutes`; as permissões em `Role`; a entidade em `RepositoryApiDocs`.
+4. **REST** (`:persistence-rest`): o `XxxApiController`, que configura um `RepositoryRpc` **com a conferência de permissão e de alcance** (`rule` com `ApiSecurity.permission`, `scope`, `beforeInsert`/`beforeUpdate`), e a chamada dele em `RepositoryApiRoutes.create()`; as permissões em `Role`; a entidade em `RepositoryApiDocs`.
 5. **Cliente** (`:shopping-persistence-client`): o `HttpXxxRepository` e o registro em `RestRepositoryBootstrap`.
 6. **Apresentação**: o acesso em `ShoppingApplication`. Nos serviços, peça sempre os dados de quem está logado.
 7. **Testes**: um `AbstractXxxRepositoryTest` com as subclasses local e REST, e um teste REST com a segurança ligada.
 
-Para dados de somente leitura (um painel, por exemplo), a interface estende `ReadOnlyRepository`, o cliente estende `HttpReadOnlyRepository`, e o controlador registra só `count`, `fetch`, `fetch-page` e `fetch-by-id`.
+Para dados de somente leitura (um painel, por exemplo), a interface estende `ReadOnlyRepository`, o cliente estende `HttpReadOnlyRepository`, e o controlador registra o RPC com `writes = false` (só `count`, `fetch`, `fetch-page`, `fetch-by-id` e `GET {id}`).
 
 Os quatro repositórios existentes servem de modelo; `Product` é o mais simples e `Purchase`/`PurchaseItem` mostram associações, coleção e relação mútua.

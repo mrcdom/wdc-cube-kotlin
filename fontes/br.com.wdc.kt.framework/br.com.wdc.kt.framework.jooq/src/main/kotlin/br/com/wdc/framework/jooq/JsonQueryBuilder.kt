@@ -8,9 +8,11 @@ import com.google.gson.stream.JsonToken
 import java.io.IOException
 import java.io.StringReader
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.UUID
 import java.time.format.DateTimeParseException
 import java.util.Base64
 import java.util.concurrent.locks.ReentrantLock
@@ -171,6 +173,21 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     ) = scalar(fn, getter, setter, OffsetDateTime.MIN, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
         parseTimestamp(it.nextString())
     }
+
+    /**
+     * Coluna DATE (dia, sem hora) mapeada para [LocalDate]. O banco a escreve no JSON como texto ISO (`2024-01-15`);
+     * o que vier depois do dia (uma hora, se o dialeto a acrescentar) é ignorado.
+     */
+    fun addLocalDate(fn: String, getter: (B) -> LocalDate?, setter: (B, LocalDate) -> Unit, column: (T) -> Field<out LocalDate?>) =
+        scalar(fn, getter, setter, LOCAL_DATE_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
+            LocalDate.parse(it.nextString().take(10))
+        }
+
+    /** Coluna UUID mapeada para [UUID]. O banco a escreve no JSON como texto (`123e4567-e89b-...`). */
+    fun addUuid(fn: String, getter: (B) -> UUID?, setter: (B, UUID) -> Unit, column: (T) -> Field<out UUID?>) =
+        scalar(fn, getter, setter, UUID_SENTINEL, JsonFieldType.STRING, column, { it == JsonToken.STRING }) {
+            UUID.fromString(it.nextString())
+        }
 
     /** Coluna TIMESTAMP WITH TIME ZONE mapeada para [Instant] no domínio. */
     fun addInstantFromOdt(
@@ -495,17 +512,36 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
 
     private companion object {
         val INSTANT_SENTINEL: Instant = Instant.fromEpochMilliseconds(0L)
+        val LOCAL_DATE_SENTINEL: LocalDate = LocalDate.of(1970, 1, 1)
+        val UUID_SENTINEL: UUID = UUID(0L, 0L)
 
         /**
          * Lê o que o banco põe no JSON para uma coluna de data/hora: ISO-8601 com fuso, ou a forma sem fuso
          * (`2024-01-15T10:30:00` ou `2024-01-15 10:30:00[.n]`), assumida em UTC.
          */
-        fun parseTimestamp(text: String): OffsetDateTime =
-            try {
+        fun parseTimestamp(text: String): OffsetDateTime {
+            // Sem fuso (a coluna TIMESTAMP comum) a tentativa com fuso sempre falharia: lida direto, sem a exceção, que
+            // numa coleção grande custava mais que a própria consulta (50 mil datas: 164 ms pela exceção, 23 ms direto).
+            if (!hasOffset(text)) {
+                return LocalDateTime.parse(text.replace(' ', 'T')).atOffset(ZoneOffset.UTC)
+            }
+            return try {
                 OffsetDateTime.parse(text)
             } catch (_: DateTimeParseException) {
                 LocalDateTime.parse(text.replace(' ', 'T')).atOffset(ZoneOffset.UTC)
             }
+        }
+
+        /** Se o texto traz fuso: `Z`, ou `+`/`-` depois da data (a data tem hífens; a hora, não). */
+        fun hasOffset(text: String): Boolean {
+            val time = text.indexOfAny(charArrayOf('T', ' '))
+            if (time < 0) return false
+            for (i in time + 1 until text.length) {
+                val c = text[i]
+                if (c == 'Z' || c == 'z' || c == '+' || c == '-') return true
+            }
+            return false
+        }
 
         fun parseInstant(text: String): Instant {
             val instant = parseTimestamp(text).toInstant()
