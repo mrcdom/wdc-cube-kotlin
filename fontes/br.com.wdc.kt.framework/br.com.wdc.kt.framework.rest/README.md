@@ -94,8 +94,7 @@ Entidades de repositório trafegam pelo `ModelCodec` delas, sem reflexão. O res
 - **Datas**: há um formatador por tipo em `dates` (`localDate`, `localDateTime`, `instant`, `offsetDateTime`, `zonedDateTime`, `localTime` e `java.util.Date`). O padrão é o do Jackson sem timestamps (`2026-09-27T09:00:00`, com fração só quando há nanos). Na leitura, `LocalDateTime` aceita também `…Z` ou um deslocamento, que é convertido para UTC. Para trocar o formato de um único campo, use o `@JsonAdapter` do Gson.
 - **Ajuste livre**: `customize { builder -> … }` roda depois dos adaptadores da biblioteca, e o que ele registra vence.
 - `JsonOptions.springDefaults()` reproduz o Spring Boot sem configuração.
-
-> **Armadilha do Gson com Kotlin:** o Gson cria o objeto sem chamar o construtor quando a classe não tem construtor sem argumentos. Nesse caso os valores padrão dos parâmetros não são aplicados, e um campo não nulo ausente no JSON chega `null`. Dê valor padrão a **todos** os parâmetros dos DTOs de entrada (o Kotlin então gera o construtor sem argumentos), ou declare os campos como anuláveis.
+- **Classes Kotlin são lidas pelo construtor primário**, e não pela gravação de campos do Gson. Campo ausente no JSON usa o valor padrão do parâmetro; um anulável sem padrão fica `null`; um não anulável sem padrão (ausente, ou `null` explícito) recusa o corpo com 400. A validação no `init` vale. Os campos `val` não são gravados por reflexão, o que o JDK 26 avisa que vai bloquear. `@SerializedName` (com os nomes alternativos) e `@JsonAdapter` no campo valem (com `TypeAdapter` ou `TypeAdapterFactory`; `JsonSerializer`/`JsonDeserializer` não); uma `var` declarada fora do construtor é gravada depois, e uma `val` fora do construtor é ignorada. Enum, `object`, registro e classes que não são Kotlin seguem pelo Gson.
 
 ## Erros
 

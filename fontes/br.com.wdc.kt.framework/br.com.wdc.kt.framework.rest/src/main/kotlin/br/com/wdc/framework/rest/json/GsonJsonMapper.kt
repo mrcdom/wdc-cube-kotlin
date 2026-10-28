@@ -40,6 +40,9 @@ import java.util.concurrent.ConcurrentHashMap
  * aplicação o instalar com `config.jsonMapper(…)`.
  *
  * Por campo, o formato de data se troca com `@JsonAdapter` do próprio Gson.
+ *
+ * Classes Kotlin são lidas pelo construtor primário ([KotlinConstructorFactory]): os padrões dos parâmetros valem e
+ * campo `val` não é gravado por reflexão — o que o JDK 26 avisa que vai bloquear.
  */
 class GsonJsonMapper(val options: JsonOptions = JsonOptions()) : JsonMapper {
 
@@ -73,6 +76,8 @@ class GsonJsonMapper(val options: JsonOptions = JsonOptions()) : JsonMapper {
             dates.instant?.let { builder.registerTypeAdapter(Instant::class.java, TemporalAdapter(it, Instant::from).nullSafe()) }
             dates.utilDatePattern?.let { builder.registerTypeAdapter(Date::class.java, UtilDateAdapter(it, dates.utilDateZone).nullSafe()) }
 
+            // a ordem importa: a fábrica registrada depois é consultada antes; a de nulos delega a leitura a esta
+            builder.registerTypeAdapterFactory(KotlinConstructorFactory(options.fieldNaming))
             builder.registerTypeAdapterFactory(NullPolicyFactory(options.nulls, options.fieldNaming))
             options.customizers.forEach { it(builder) }
             return builder.create()

@@ -99,6 +99,10 @@ class RoutingTest {
     @Test
     fun everyVerb_isRouted() {
         assertEquals(5, client.put("/items/5", """{"id":0,"name":"x","tags":[]}""").json().asJsonObject["id"].asInt)
+        // sem "tags": vale o padrão do parâmetro (a leitura é pelo construtor)
+        assertEquals(0, client.put("/items/6", """{"id":0,"name":"y"}""").json().asJsonObject["tags"].asJsonArray.size())
+        // campo obrigatório ausente: 400, e não um objeto com null num campo não anulável
+        assertEquals(400, client.put("/items/6", """{"id":0}""").status)
         assertEquals(9, client.patch("/items/9", "{}").json().asJsonObject["patched"].asInt)
         val deleted = client.delete("/items/1")
         assertEquals(204, deleted.status)
