@@ -46,7 +46,7 @@ dependencies {
 
 | Versão | O que trouxe |
 |---|---|
-| 0.3.0 | `framework-rest` |
+| 0.3.0 | **`framework-rest`**, APIs REST sobre Javalin 7: rotas de recurso e RPC por entidade, segurança plugável, mapa de exceções, contexto e transação por requisição, CORS, gzip, OpenAPI gerado das rotas (também de `@ApiDoc`), servidor de teste; os corpos Kotlin são lidos pelo construtor primário (padrões valem, sem gravar `val` por reflexão, pronto para o JDK 26). **`framework-domain`**: `@ApiDoc`; `containing` e `startingWith` procuram o texto literalmente (`%` e `_` deixam de ser curingas), e o tradutor declara `ESCAPE '\'`. **`framework-jooq`**: um critério sobre várias colunas (`translateAny`); colunas `UUID` e `DATE` (como `LocalDate`) na projeção JSON; leitura de `TIMESTAMP` sem fuso sem lançar exceção por valor. |
 | 0.2.0 | `framework-domain`, `framework-persistence` e `framework-jooq`; compilação com Kotlin 2.3 |
 | 0.1.0 | `framework-commons` e `framework-cube` |
 
