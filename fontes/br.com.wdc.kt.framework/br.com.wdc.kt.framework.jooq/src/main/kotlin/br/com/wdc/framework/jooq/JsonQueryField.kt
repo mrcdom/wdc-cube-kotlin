@@ -6,7 +6,9 @@ import org.jooq.TableField
 
 /**
  * Um campo do mapeamento, como o [JsonQueryBuilder] o conhece: o nome, a coluna, como ler e gravar no bean. É o que
- * o [JsonQuery.insert] usa para montar o `INSERT` sem que o repositório repita o mapeamento.
+ * o [JsonQuery.insert] usa para montar o `INSERT` sem que o repositório repita o mapeamento, e o que um repositório usa
+ * para montar a sua própria escrita (um `UPDATE` pelas colunas que a projeção marca, por exemplo): [projected] diz se o
+ * campo foi pedido, [mark] o pede num bean de projeção e [toColumn] dá o valor no tipo da coluna.
  *
  * As associações declaradas com chave (`addBeanField(…, key = …)`) entram uma vez por parte da chave, com o nome
  * `associação.parte` (`author.id`) e a coluna da chave estrangeira **desta** tabela. Coleções não entram.
@@ -25,10 +27,13 @@ class JsonQueryField<B : Any, T : Table<*>> internal constructor(
     val set: (B, Any?) -> Unit,
     /** Se o bean de projeção pede este campo. */
     val projected: (B) -> Boolean,
-    /** Marca o campo num bean de projeção. */
-    internal val mark: (B) -> Unit,
-    /** O valor do domínio no tipo da coluna (`Instant` → `LocalDateTime` em UTC, enum → nome…). */
-    internal val toColumn: (Any) -> Any?,
+    /** Marca o campo num bean de projeção (numa associação, cria o associado só com a parte da chave marcada). */
+    val mark: (B) -> Unit,
+    /**
+     * O valor do domínio (o que [get] devolve, não nulo) no tipo da coluna: `Instant` → `LocalDateTime` em UTC,
+     * `Double` → `BigDecimal`, enum → nome... Passe o resultado por `column.dataType.convert` para o tipo exato.
+     */
+    val toColumn: (Any) -> Any?,
 ) {
     /** `true` quando [column] é coluna de [table], e não uma expressão sobre ela (campo derivado). */
     fun isColumnOf(table: T): Boolean {

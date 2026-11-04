@@ -527,6 +527,33 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     }
 
     @Test
+    fun fields_markAndToColumn_buildAnUpdateOfTheMarkedColumns() {
+        val coupon = Coupon(code = "U1", status = "OPEN", discount = 1.5, created = Instant.parse("2025-01-01T00:00:00Z"))
+        assertTrue(library.couponQuery.insert(coupon))
+        val projection = Coupon()
+        val fields = library.couponQuery.fields()
+        fields.filter { it.name in setOf("discount", "created", "author.id") }.forEach { it.mark(projection) }
+        assertEquals(listOf("discount", "created", "author.id"), fields.filter { it.projected(projection) }.map { it.name })
+
+        val changed = Coupon(id = coupon.id, code = "ignored", discount = 2.25, created = Instant.parse("2025-06-07T08:09:10.123456Z"), author = Author(id = 2L))
+        val sets = LinkedHashMap<org.jooq.Field<*>, Any?>()
+        for (field in fields) {
+            if (!field.projected(projection) || !field.isColumnOf(COUPON)) continue
+            val column = field.column(COUPON)
+            sets[column] = field.get(changed)?.let { column.dataType.convert(field.toColumn(it)) }
+        }
+        assertEquals(1, dsl.update(COUPON).set(sets).where(COUPON.ID.eq(coupon.id)).execute())
+
+        val stored = library.couponQuery.fetchOne(Coupon(code = "", discount = 0.0, created = Instant.DISTANT_PAST, author = Author(id = 0L))) { t, q ->
+            q.where(t.ID.eq(coupon.id))
+        }!!
+        assertEquals("U1", stored.code)
+        assertEquals(2.25, stored.discount)
+        assertEquals(changed.created, stored.created)
+        assertEquals(2L, stored.author?.id)
+    }
+
+    @Test
     fun fields_listScalarsAndAssociationKeys_andTellColumnsFromExpressions() {
         val fields = library.couponQuery.fields()
         assertEquals(listOf("id", "code", "status", "discount", "created", "label", "author.id"), fields.map { it.name })
