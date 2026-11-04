@@ -6,7 +6,7 @@ Publicado no Maven Central como `io.github.mrcdom.wdc.kt:framework-rest`. Traz j
 
 ```kotlin
 dependencies {
-    implementation("io.github.mrcdom.wdc.kt:framework-rest:0.3.0")
+    implementation("io.github.mrcdom.wdc.kt:framework-rest:0.4.0")
 }
 ```
 
