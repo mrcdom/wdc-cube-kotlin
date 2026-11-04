@@ -59,12 +59,6 @@ class RelationKey<T : Table<*>> internal constructor() {
     /** Campo [UUID] da chave do filho, guardado nesta coluna. */
     fun addUid(fn: String, column: (T) -> Field<out UUID?>) = add(fn, column, JsonFieldType.STRING)
 
-    @Deprecated("Renomeado para addDay; sai na próxima versão", ReplaceWith("addDay(fn, column)"))
-    fun addLocalDate(fn: String, column: (T) -> Field<out LocalDate?>) = addDay(fn, column)
-
-    @Deprecated("Renomeado para addUid; sai na próxima versão", ReplaceWith("addUid(fn, column)"))
-    fun addUuid(fn: String, column: (T) -> Field<out UUID?>) = addUid(fn, column)
-
     /** Campo `ByteArray` da chave do filho, guardado nesta coluna. */
     fun addBin(fn: String, column: (T) -> Field<out ByteArray?>) = add(fn, column, JsonFieldType.BINARY)
 

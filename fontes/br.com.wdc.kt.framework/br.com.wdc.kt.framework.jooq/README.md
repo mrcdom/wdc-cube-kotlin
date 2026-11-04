@@ -19,7 +19,7 @@ Os adicionadores de campo escalar têm três letras depois do `add`, para as dec
 | `addDay` | `LocalDate` | `DATE` |
 | `addUid` | `UUID` | `UUID` |
 
-Na 0.4.0, `addLocalDate`, `addUuid`, `addInstantFromOdt` e `addInstantFromLdt` passaram a `addDay`, `addUid`, `addIzt` e `addIlt` (os nomes antigos ficam obsoletos por esta versão).
+Na 0.4.0, `addLocalDate`, `addUuid`, `addInstantFromOdt` e `addInstantFromLdt` passaram a `addDay`, `addUid`, `addIzt` e `addIlt` (os nomes antigos ficam obsoletos por esta versão). No `RelationKey`, `addLocalDate` e `addUuid` saíram de vez: use `addDay` e `addUid`.
 
 Os testes rodam os mesmos casos em H2 e em PostgreSQL embutido. Publicado no Maven Central como `io.github.mrcdom.wdc.kt:framework-jooq`.
 
