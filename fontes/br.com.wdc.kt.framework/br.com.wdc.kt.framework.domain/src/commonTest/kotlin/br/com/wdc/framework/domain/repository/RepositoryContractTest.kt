@@ -41,7 +41,7 @@ class RepositoryContractTest {
         override suspend fun fetchById(id: Long, projection: Thing?): Thing? =
             fetch(ThingCriteria(id), 0, 1).firstOrNull()
 
-        override fun newProjection(): Thing = Thing(1L, "~")
+        override fun ownFieldsProjection(): Thing = Thing(1L, "~")
 
         private fun select(criteria: ThingCriteria) = rows.filter { criteria.id == null || it.id == criteria.id }
     }

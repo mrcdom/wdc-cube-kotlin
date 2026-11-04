@@ -186,7 +186,7 @@ abstract class AbstractUserRepositoryTest {
             name = "Nome Alterado"
             roles = original.roles
         }
-        assertTrue(repo().update(updated, original, repo().newProjection()))
+        assertTrue(repo().update(updated, original, repo().ownFieldsProjection()))
 
         val fetched = repo().fetchById(admin)!!
         assertEquals("Nome Alterado", fetched.name)

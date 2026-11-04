@@ -94,7 +94,7 @@ interface ReadOnlyRepository<E, C, K> {
     suspend fun fetch(criteria: C, offset: Int = 0, limit: Int = 0): List<E>
     suspend fun fetchPage(criteria: C, page: Int, pageSize: Int): Page<E>
     suspend fun fetchById(id: K, projection: E? = null): E?
-    fun newProjection(): E
+    fun ownFieldsProjection(): E
 }
 
 interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
@@ -179,7 +179,7 @@ val purchases = repo.fetch(PurchaseCriteria().withUserId(userId).withProjection(
 
 - Uma **associação** (`user`) é projetada por outra instância. Quando ela pede só a chave, o valor sai da própria linha, sem subconsulta.
 - Uma **coleção** (`items`) é projetada por uma lista de um elemento — a forma de cada item. Com `pv.singletonList(forma, critério, limit, offset)` a coleção também é filtrada, ordenada e recortada. Isso atravessa o REST: a coleção de projeção trafega como um envelope `{ shape, where, limit, offset }`.
-- Sem projeção, cada repositório usa a sua padrão (`newProjection()`): os campos escalares e as chaves das associações. A imagem do produto e a senha do usuário ficam de fora.
+- Sem projeção, cada repositório usa a sua padrão (`ownFieldsProjection()`): os campos escalares e as chaves das associações. A imagem do produto e a senha do usuário ficam de fora.
 
 ---
 
@@ -388,7 +388,7 @@ cd fontes
 
 ## Como adicionar uma entidade
 
-1. **Domínio** (`:shopping-domain`, pacote `domain.<entidade>`): a entidade (`KeyedEntity`, campos anuláveis), o `XxxCriteria` com os campos de filtro e o `OrderBy`, o `XxxCodec` e a interface `XxxRepository` com `newProjection()`, `fetchById` e o holder `BEAN`.
+1. **Domínio** (`:shopping-domain`, pacote `domain.<entidade>`): a entidade (`KeyedEntity`, campos anuláveis), o `XxxCriteria` com os campos de filtro e o `OrderBy`, o `XxxCodec` e a interface `XxxRepository` com `ownFieldsProjection()`, `fetchById` e o holder `BEAN`.
 2. **Esquema** (`:shopping-scripts`): a tabela, a sequência e os índices das ordenações em `DBCreate`; a migração para os bancos existentes; a carga em `DBReset`, se couber. Regenere as classes jOOQ.
 3. **Servidor** (`:shopping-persistence`): o `XxxRepositoryImpl` com o mapeamento `QUERY`, as condições e a ordenação; o registro em `ShoppingRepositoryBootstrap`.
 4. **REST** (`:persistence-rest`): o `XxxApiController`, que configura um `RepositoryRpc` **com a conferência de permissão e de alcance** (`rule` com `ApiSecurity.permission`, `scope`, `beforeInsert`/`beforeUpdate`), e a chamada dele em `RepositoryApiRoutes.create()`; as permissões em `Role`; a entidade em `RepositoryApiDocs`.

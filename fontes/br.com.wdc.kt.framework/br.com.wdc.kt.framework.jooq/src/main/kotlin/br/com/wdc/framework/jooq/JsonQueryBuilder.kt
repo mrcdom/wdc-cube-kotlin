@@ -285,7 +285,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
      * @param childWhereClause escreve a correlação (e o critério do filho) na consulta filha
      * @param key declara **qual coluna desta tabela guarda a chave** do associado. Com ela, a projeção que
      *            não pede nada além da chave é montada a partir da própria linha, sem subconsulta — o caso
-     *            corrente de `newProjection()`, que traz a associação só para carregar o id. Os nomes
+     *            corrente de `ownFieldsProjection()`, que traz a associação só para carregar o id. Os nomes
      *            declarados são os do **JSON do filho**; as colunas, as **desta** tabela. `null` desliga o atalho.
      */
     fun <C : Any, U : Table<*>> addBeanField(

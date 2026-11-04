@@ -40,11 +40,15 @@ interface ReadOnlyRepository<E, C, K> {
      * `XxxCriteria` com igualdade sobre a chave e delega a [fetch] — assim buscar por id é a mesma
      * consulta das outras, com o mesmo tratamento de projeção, segurança e transação.
      *
-     * @param projection `null` projeta [newProjection]
+     * @param projection `null` projeta [ownFieldsProjection]
      * @return a entidade, ou `null` se não houver linha com essa chave
      */
     suspend fun fetchById(id: K, projection: E? = null): E?
 
-    /** A projeção padrão: o que uma consulta traz quando o critério não diz. */
-    fun newProjection(): E
+    /**
+     * Os campos próprios da entidade; associação só pela chave; sem coleção nem campo derivado.
+     *
+     * É a projeção padrão: o que uma consulta traz quando o critério não diz.
+     */
+    fun ownFieldsProjection(): E
 }

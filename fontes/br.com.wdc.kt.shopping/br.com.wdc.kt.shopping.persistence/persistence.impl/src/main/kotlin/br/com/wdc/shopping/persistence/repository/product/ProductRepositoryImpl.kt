@@ -35,7 +35,7 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
 
     override suspend fun update(newBean: Product, oldBean: Product?, projection: Product?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de produto exige o id")
-        val prj = projection ?: newProjection()
+        val prj = projection ?: ownFieldsProjection()
 
         val step = dsl().update(EN_PRODUCT).set(EN_PRODUCT.ID, id)
         var hasChanges = false
@@ -91,7 +91,7 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
 
     /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
     private fun projectionFrom(criteria: ProductCriteria): Product {
-        val projection = criteria.projection ?: return newProjection()
+        val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
             projection.id = 0L
         }

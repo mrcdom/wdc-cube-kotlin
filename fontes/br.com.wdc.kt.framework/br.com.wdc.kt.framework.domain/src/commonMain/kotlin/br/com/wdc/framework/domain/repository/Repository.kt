@@ -21,7 +21,7 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
      * @param newBean    valores novos
      * @param oldBean    valores antigos, base da comparação (pode ser `null`)
      * @param projection indica quais campos considerar — campo não-nulo na projeção = "atualizar este campo";
-     *                   `null` usa [newProjection]
+     *                   `null` usa [ownFieldsProjection]
      */
     suspend fun update(newBean: E, oldBean: E? = null, projection: E? = null): Boolean
 

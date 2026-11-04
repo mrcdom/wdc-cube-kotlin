@@ -23,7 +23,7 @@ class ReadOnlyRepositoryTest {
 
         override suspend fun fetchById(id: Long, projection: SalesRow?): SalesRow? = rows.firstOrNull { it.productId == id }
 
-        override fun newProjection() = SalesRow(0L, 0.0)
+        override fun ownFieldsProjection() = SalesRow(0L, 0.0)
     }
 
     /** Uma entidade comum, com repositório completo. */
@@ -36,7 +36,7 @@ class ReadOnlyRepositoryTest {
         override suspend fun count(criteria: Unit): Int = rows.size
         override suspend fun fetch(criteria: Unit, offset: Int, limit: Int): List<Note> = rows.drop(offset)
         override suspend fun fetchById(id: Long, projection: Note?): Note? = rows.firstOrNull { it.id == id }
-        override fun newProjection() = Note(0L)
+        override fun ownFieldsProjection() = Note(0L)
     }
 
     /** Código que só lê declara isso pelo tipo — e serve a qualquer repositório. */

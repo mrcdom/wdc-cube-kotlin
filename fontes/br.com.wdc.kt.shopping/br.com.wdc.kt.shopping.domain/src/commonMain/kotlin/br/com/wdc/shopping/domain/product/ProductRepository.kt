@@ -7,7 +7,7 @@ import br.com.wdc.framework.domain.repository.Repository
 interface ProductRepository : Repository<Product, ProductCriteria, Long> {
 
     /** Todos os campos, menos a imagem. */
-    override fun newProjection(): Product {
+    override fun ownFieldsProjection(): Product {
         val pv = ProjectionValues
         return Product().apply {
             id = pv.i64
@@ -18,7 +18,7 @@ interface ProductRepository : Repository<Product, ProductCriteria, Long> {
     }
 
     override suspend fun fetchById(id: Long, projection: Product?): Product? =
-        fetch(ProductCriteria().withProductId(id).withProjection(projection ?: newProjection()), 0, 1).firstOrNull()
+        fetch(ProductCriteria().withProductId(id).withProjection(projection ?: ownFieldsProjection()), 0, 1).firstOrNull()
 
     /** A imagem do produto, ou `null` se ele não tem. Produto inexistente é erro. */
     suspend fun fetchImage(productId: Long): ByteArray?

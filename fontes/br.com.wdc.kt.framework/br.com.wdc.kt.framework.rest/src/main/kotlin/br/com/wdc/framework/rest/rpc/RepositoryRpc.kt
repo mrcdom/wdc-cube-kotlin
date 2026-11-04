@@ -195,7 +195,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     private suspend fun fetchOne(call: RestCall, id: K, projection: E?): E? {
         val criteria = newCriteria()
         restrictToId(criteria, id)
-        val shape = projection ?: repository().newProjection()
+        val shape = projection ?: repository().ownFieldsProjection()
         sanitizeProjection(shape)
         setProjection(criteria, shape)
         scope(criteria, call.request)
@@ -239,7 +239,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             input.endObject()
         }
         // fora da leitura do corpo: falha aqui é do servidor, não do pedido
-        val shape = projection ?: repository().newProjection()
+        val shape = projection ?: repository().ownFieldsProjection()
         sanitizeProjection(shape)
         setProjection(request.criteria, shape)
         return request

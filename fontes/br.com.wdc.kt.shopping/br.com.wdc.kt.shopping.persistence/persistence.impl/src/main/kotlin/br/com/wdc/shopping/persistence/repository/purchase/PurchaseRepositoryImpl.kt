@@ -47,7 +47,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
     /** Atualiza a compra; os itens não são tocados — têm repositório próprio. */
     override suspend fun update(newBean: Purchase, oldBean: Purchase?, projection: Purchase?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de compra exige o id")
-        val prj = projection ?: newProjection()
+        val prj = projection ?: ownFieldsProjection()
 
         val step = dsl().update(EN_PURCHASE).set(EN_PURCHASE.ID, id)
         var hasChanges = false
@@ -94,7 +94,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
 
     /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
     private fun projectionFrom(criteria: PurchaseCriteria): Purchase {
-        val projection = criteria.projection ?: return newProjection()
+        val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
             projection.id = 0L
         }

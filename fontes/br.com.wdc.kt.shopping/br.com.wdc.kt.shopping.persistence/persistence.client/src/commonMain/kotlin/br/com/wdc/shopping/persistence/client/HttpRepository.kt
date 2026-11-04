@@ -41,7 +41,7 @@ abstract class HttpRepository<E, C, K>(
      * senão, a padrão da entidade.
      */
     override suspend fun update(newBean: E, oldBean: E?, projection: E?): Boolean {
-        val effective = projection ?: oldBean?.let { codec.computeProjection(newBean, it) } ?: newProjection()
+        val effective = projection ?: oldBean?.let { codec.computeProjection(newBean, it) } ?: ownFieldsProjection()
         val response = post("update") { codec.writeEntityProjected(it, newBean, effective) }
         var success = false
         response.readObject { name ->

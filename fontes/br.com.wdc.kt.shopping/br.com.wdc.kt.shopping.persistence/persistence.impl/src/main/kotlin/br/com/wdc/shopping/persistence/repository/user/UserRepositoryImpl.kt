@@ -35,7 +35,7 @@ class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
     override suspend fun update(newBean: User, oldBean: User?, projection: User?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de usuário exige o id")
         // a projeção padrão não traz a senha; para regravá-la, marque-a na projeção (ou informe o oldBean)
-        val prj = projection ?: newProjection().apply { if (oldBean != null) password = ProjectionValues.str }
+        val prj = projection ?: ownFieldsProjection().apply { if (oldBean != null) password = ProjectionValues.str }
 
         val step = dsl().update(EN_USER).set(EN_USER.ID, id)
         var hasChanges = false
@@ -81,7 +81,7 @@ class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
 
     /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
     private fun projectionFrom(criteria: UserCriteria): User {
-        val projection = criteria.projection ?: return newProjection()
+        val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
             projection.id = 0L
         }

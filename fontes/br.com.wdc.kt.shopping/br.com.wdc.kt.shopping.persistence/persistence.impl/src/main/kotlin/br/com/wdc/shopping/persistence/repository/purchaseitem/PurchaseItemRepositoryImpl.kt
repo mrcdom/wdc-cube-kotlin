@@ -28,7 +28,7 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
 
     override suspend fun update(newBean: PurchaseItem, oldBean: PurchaseItem?, projection: PurchaseItem?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de item de compra exige o id")
-        val prj = projection ?: newProjection()
+        val prj = projection ?: ownFieldsProjection()
 
         val step = dsl().update(EN_PURCHASEITEM).set(EN_PURCHASEITEM.ID, id)
         var hasChanges = false
@@ -75,7 +75,7 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
 
     /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
     private fun projectionFrom(criteria: PurchaseItemCriteria): PurchaseItem {
-        val projection = criteria.projection ?: return newProjection()
+        val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
             projection.id = 0L
         }
