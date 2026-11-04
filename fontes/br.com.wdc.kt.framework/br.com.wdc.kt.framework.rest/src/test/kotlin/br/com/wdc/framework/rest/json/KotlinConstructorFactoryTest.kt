@@ -36,7 +36,30 @@ class KotlinConstructorFactoryTest {
 
     data class Nested(val order: Order, val due: LocalDate?)
 
+    data class WithTransient(val id: Long, @Transient val tenant: String = "default", @Transient val trace: String? = null)
+
+    class TransientRequired(val id: Long, @Transient val tenant: String)
+
     private val mapper = GsonJsonMapper(JsonOptions.springDefaults())
+
+    @Test
+    fun transientParameters_areNotReadFromJson() {
+        val read = mapper.fromJson<WithTransient>("""{"id":1,"tenant":"forged","trace":"forged"}""")
+        assertEquals("default", read.tenant)
+        assertNull(read.trace)
+        assertEquals(1L, read.id)
+        // a escrita continua omitindo os transientes
+        assertEquals("""{"id":1}""", mapper.toJson(WithTransient(1, "x", "y")))
+    }
+
+    @Test
+    fun transientParameter_withoutDefaultOrNull_isADeclarationError() {
+        // a escrita não depende do leitor
+        assertEquals("""{"id":1}""", mapper.toJson(TransientRequired(1, "x")))
+        val error = assertFailsWith<JsonDeclarationException> { mapper.fromJson<TransientRequired>("""{"id":1}""") }
+        assertTrue(TransientRequired::class.java.name in error.message!!, error.message)
+        assertTrue("'tenant'" in error.message!!, error.message)
+    }
 
     @Test
     fun readsValClasses_throughTheConstructor() {

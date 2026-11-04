@@ -47,6 +47,10 @@ import kotlin.reflect.jvm.javaType
  * construtor são gravadas depois de construir; `val` fora do construtor é ignorada na leitura. A escrita não
  * muda: segue o Gson.
  *
+ * Parâmetro cujo campo é **transiente** (`@Transient` do Kotlin ou o modificador `transient`) não é lido do JSON,
+ * como no Gson: a chave dele, se vier, é ignorada, e o parâmetro recebe o padrão, ou `null`. Sem padrão e sem ser
+ * anulável é erro de declaração: a primeira leitura da classe falha com [JsonDeclarationException], que não é 400.
+ *
  * Fora daqui, e lidas pelo Gson como antes: enum, `object`, classe de valor, registro (`@JvmRecord`), classe
  * abstrata, classe sem parâmetros no construtor primário e classes que não são Kotlin.
  */
@@ -60,7 +64,8 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
             return null
         }
         val delegate = gson.getDelegateAdapter(this, type)
-        val reader = Reader(gson, type)
+        // montado na primeira leitura: um erro de declaração não impede a escrita
+        val reader by lazy { Reader(gson, type) }
         return object : TypeAdapter<T>() {
             override fun write(out: JsonWriter, value: T?) = delegate.write(out, value)
 
@@ -97,17 +102,29 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
         private val elements = gson.getAdapter(JsonElement::class.java)
         private val bindings = bindingsOf(type)
         private val slots: List<Slot>
+        private val transientNulls: List<KParameter> // transientes anuláveis sem padrão: vão `null`
         private val byName = HashMap<String, Slot>()
         private val extras = HashMap<String, Extra>()
 
         init {
             val fields = fieldsOf(type.rawType)
-            slots = constructor.parameters.map { parameter ->
+            val transient = transientNamesOf(type.rawType)
+            slots = constructor.parameters.filter { parameter ->
+                if (parameter.name !in transient) return@filter true
+                if (!parameter.isOptional && !parameter.type.isMarkedNullable) {
+                    throw JsonDeclarationException(
+                        "${type.rawType.name}: o parâmetro '${parameter.name}' é transiente (não vem do JSON) e precisa " +
+                            "de valor padrão ou ser anulável"
+                    )
+                }
+                false
+            }.map { parameter ->
                 val field = fields.firstOrNull { it.name == parameter.name }
                 val names = if (field != null) jsonNames(field) else listOfNotNull(parameter.name)
                 val adapter = field?.let { adapterOf(it) } ?: gson.getAdapter(TypeToken.get(resolve(parameter.type.javaType, bindings)))
                 Slot(parameter, names, adapter).also { slot -> names.forEach { byName.putIfAbsent(it, slot) } }
             }
+            transientNulls = constructor.parameters.filter { it.name in transient && !it.isOptional }
             val inConstructor = constructor.parameters.mapNotNull { it.name }.toSet()
             for (field in fields) {
                 if (field.name in inConstructor || Modifier.isFinal(field.modifiers)) continue
@@ -139,6 +156,7 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
             }
 
             val arguments = HashMap<KParameter, Any?>()
+            transientNulls.forEach { arguments[it] = null }
             for (slot in slots) {
                 val parameter = slot.parameter
                 val value = values[parameter]
@@ -195,6 +213,18 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
         return fields
     }
 
+    /** Nomes dos campos transientes da classe e das superclasses. */
+    private fun transientNamesOf(type: Class<*>): Set<String> {
+        val names = HashSet<String>()
+        var current: Class<*>? = type
+        while (current != null && current != Any::class.java) {
+            current.declaredFields.filterTo(ArrayList()) { !Modifier.isStatic(it.modifiers) && Modifier.isTransient(it.modifiers) }
+                .mapTo(names) { it.name }
+            current = current.superclass
+        }
+        return names
+    }
+
     private fun bindingsOf(type: TypeToken<*>): Map<String, Type> {
         val parameterized = type.type as? ParameterizedType ?: return emptyMap()
         return type.rawType.typeParameters.map { it.name }.zip(parameterized.actualTypeArguments).toMap()
@@ -217,3 +247,9 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
         val NONE = Any()
     }
 }
+
+/**
+ * Classe mal declarada para a leitura JSON (por exemplo, parâmetro transiente sem padrão e não anulável). É defeito do
+ * código, não do pedido: não vira 400.
+ */
+class JsonDeclarationException(message: String) : RuntimeException(message)

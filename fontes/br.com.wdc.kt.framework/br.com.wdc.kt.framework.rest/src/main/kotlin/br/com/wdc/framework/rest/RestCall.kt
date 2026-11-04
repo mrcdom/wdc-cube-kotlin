@@ -126,6 +126,8 @@ class RestCall internal constructor(
         if (text.isBlank()) return null
         return try {
             api.json.fromJsonString<Any>(text, type) as T?
+        } catch (e: br.com.wdc.framework.rest.json.JsonDeclarationException) {
+            throw e // defeito da declaração, não do pedido
         } catch (e: Exception) {
             throw RequestBodyException("JSON parse error: ${e.message}", e)
         }
