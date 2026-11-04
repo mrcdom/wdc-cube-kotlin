@@ -420,8 +420,8 @@ abstract class AbstractPurchaseRepositoryTest {
         val newestFirst = PurchaseItemCriteria().withOrderBy(PurchaseItemCriteria.OrderBy.NEWEST_FIRST)
         assertEquals(listOf<Double?>(2.67, 45.3), itemsOf(pv.singletonList(itemPrj(), newestFirst)))
 
-        assertEquals(listOf<Double?>(45.3), itemsOf(pv.singletonList(itemPrj(), expensiveFirst).withLimit(1)))
-        assertEquals(listOf<Double?>(2.67), itemsOf(pv.singletonList(itemPrj(), expensiveFirst).withLimit(1).withOffset(1)))
+        assertEquals(listOf<Double?>(45.3), itemsOf(pv.singletonList(itemPrj(), expensiveFirst, limit = 1)))
+        assertEquals(listOf<Double?>(2.67), itemsOf(pv.singletonList(itemPrj(), expensiveFirst, limit = 1, offset = 1)))
     }
 
     private suspend fun ids(criteria: PurchaseCriteria): List<Long?> = repo().fetch(criteria).map { it.id }

@@ -27,6 +27,10 @@ object ProjectionValues {
     val localDate: LocalDate = LocalDate(1970, 1, 1)
     val instant: Instant = Instant.fromEpochMilliseconds(0L)
 
-    /** Projeção de coleção: a forma do item mais o critério da entidade filha. */
-    fun <T> singletonList(bean: T, criteria: Any?): ProjectionList<T> = ProjectionList(bean, criteria)
+    /**
+     * Projeção de coleção: a forma do item mais o critério da entidade filha e, opcionalmente, o recorte (ver
+     * [ProjectionList]). Ordene também, ou o recorte é arbitrário.
+     */
+    fun <T> singletonList(bean: T, criteria: Any?, limit: Int? = null, offset: Int? = null): ProjectionList<T> =
+        ProjectionList(bean, criteria, limit, offset)
 }

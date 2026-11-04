@@ -67,7 +67,7 @@ class ProjectionCollectionCodecTest {
     @Test
     fun write_fullEnvelope() {
         val criteria = SampleCriteria().also { it.id.eq(7L); it.orderBy = SampleCriteria.OrderBy.NAME_A_TO_Z }
-        val items = ProjectionValues.singletonList(Item(1L, 1.5), criteria).withOffset(1).withLimit(2)
+        val items = ProjectionValues.singletonList(Item(1L, 1.5), criteria, limit = 2, offset = 1)
 
         val json = jsonObject { ProjectionCollectionCodec.write(it, "items", items, shapeWriter, criteriaWriter) }
 
@@ -96,7 +96,7 @@ class ProjectionCollectionCodecTest {
     @Test
     fun roundTrip_restoresShapeCriteriaAndSlice() {
         val criteria = SampleCriteria().also { it.id.isIn(3L, 4L); it.orderBy = SampleCriteria.OrderBy.OLDEST_FIRST }
-        val source = ProjectionValues.singletonList(Item(1L, 1.0), criteria).withLimit(5).withOffset(10)
+        val source = ProjectionValues.singletonList(Item(1L, 1.0), criteria, limit = 5, offset = 10)
         val json = jsonObject { ProjectionCollectionCodec.write(it, "items", source, shapeWriter, criteriaWriter) }
 
         val reader = readerAtField(json)
@@ -156,14 +156,33 @@ class ProjectionCollectionCodecTest {
         assertEquals(listOf(item), list.toList())
         assertTrue(list == listOf(item))
         assertEquals(listOf(item).hashCode(), list.hashCode())
-        assertTrue(ProjectionList(item, null).withLimit(3) == list)
+        assertTrue(ProjectionList(item, null, limit = 3, offset = 1) == list)
     }
 
     @Test
-    fun slice_canBeCleared() {
-        val list = ProjectionList(Item(1L), null).withLimit(3).withOffset(4)
-        list.withLimit(null).withOffset(null)
-        assertNull(list.limit)
-        assertNull(list.offset)
+    fun slice_isGivenAtConstruction() {
+        val item = Item(1L)
+        val list = ProjectionList(item, "criteria", limit = 3, offset = 4)
+        assertEquals(3, list.limit)
+        assertEquals(4, list.offset)
+        assertEquals("criteria", list.criteria)
+        assertEquals(listOf(item), list.toList())
+        val single = ProjectionValues.singletonList(Item(1L), null, offset = 2)
+        assertNull(single.limit)
+        assertEquals(2, single.offset)
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun deprecatedWithers_stillChain_toTheSameResult() {
+        val item = Item(1L)
+        val list = ProjectionList(item, "criteria").withLimit(3).withOffset(4)
+        assertEquals(3, list.limit)
+        assertEquals(4, list.offset)
+        assertEquals("criteria", list.criteria)
+        assertEquals(listOf(item), list.toList())
+        val cleared = list.withLimit(null).withOffset(null)
+        assertNull(cleared.limit)
+        assertNull(cleared.offset)
     }
 }

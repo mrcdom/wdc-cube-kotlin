@@ -72,7 +72,8 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     private fun authorById(id: Long, projection: Author): Author? =
         library.authorQuery.fetchOne(projection) { t, q -> q.where(t.ID.eq(id)) }
 
-    private fun booksProjection(shape: Book = Book(id = 1L), criteria: BookCriteria? = null) = ProjectionList(shape, criteria)
+    private fun booksProjection(shape: Book = Book(id = 1L), criteria: BookCriteria? = null, limit: Int? = null, offset: Int? = null) =
+        ProjectionList(shape, criteria, limit, offset)
 
     private fun booksWhere(criteria: BookCriteria): List<Long?> =
         library.bookQuery.fetchToList(Book(id = 1L)) { t, q ->
@@ -276,8 +277,11 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
             1,
             Author(
                 id = 1L,
-                books = booksProjection(criteria = BookCriteria().withOrderBy(BookCriteria.OrderBy.MOST_EXPENSIVE_FIRST))
-                    .withLimit(limit).withOffset(offset),
+                books = booksProjection(
+                    criteria = BookCriteria().withOrderBy(BookCriteria.OrderBy.MOST_EXPENSIVE_FIRST),
+                    limit = limit,
+                    offset = offset,
+                ),
             ),
         )!!.books!!.map { it.id }
 
@@ -291,7 +295,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     fun collection_sliceAndFilter_areAppliedPerParent() {
         val criteria = BookCriteria().withOrderBy(BookCriteria.OrderBy.CHEAPEST_FIRST).also { it.active.eq(true) }
         val authors = library.authorQuery.fetchToList(
-            Author(id = 1L, books = booksProjection(criteria = criteria).withLimit(1)),
+            Author(id = 1L, books = booksProjection(criteria = criteria, limit = 1)),
         ) { t, q -> q.orderBy(t.ID.asc()) }
 
         // o mais barato entre os ativos de cada autor — o recorte enxerga a linha do pai
@@ -302,13 +306,13 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
 
     @Test
     fun collection_sliceWithoutOrder_stillLimitsTheCount() {
-        val author = authorById(1, Author(id = 1L, books = booksProjection().withLimit(2)))!!
+        val author = authorById(1, Author(id = 1L, books = booksProjection(limit = 2)))!!
         assertEquals(2, author.books!!.size)
     }
 
     @Test
     fun collection_slice_requiresAPrimaryKey() {
-        val projection = Author(id = 1L, notes = ProjectionList(Note(text = "~"), null).withLimit(1))
+        val projection = Author(id = 1L, notes = ProjectionList(Note(text = "~"), null, limit = 1))
         val e = assertFailsWith<IllegalStateException> { authorById(1, projection) }
         assertTrue("chave primária" in e.message!!, e.message)
 

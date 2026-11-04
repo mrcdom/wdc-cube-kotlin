@@ -170,13 +170,14 @@ val projection = Purchase().apply {
     items = pv.singletonList(
         PurchaseItem().apply { id = pv.i64; price = pv.f64; product = Product().apply { name = pv.str } },
         PurchaseItemCriteria().withOrderBy(PurchaseItemCriteria.OrderBy.MOST_EXPENSIVE_FIRST),
-    ).withLimit(3)
+        limit = 3,
+    )
 }
 val purchases = repo.fetch(PurchaseCriteria().withUserId(userId).withProjection(projection))
 ```
 
 - Uma **associação** (`user`) é projetada por outra instância. Quando ela pede só a chave, o valor sai da própria linha, sem subconsulta.
-- Uma **coleção** (`items`) é projetada por uma lista de um elemento — a forma de cada item. Com `pv.singletonList(forma, critério)` a coleção também é filtrada, ordenada e recortada. Isso atravessa o REST: a coleção de projeção trafega como um envelope `{ shape, where, limit, offset }`.
+- Uma **coleção** (`items`) é projetada por uma lista de um elemento — a forma de cada item. Com `pv.singletonList(forma, critério, limit, offset)` a coleção também é filtrada, ordenada e recortada. Isso atravessa o REST: a coleção de projeção trafega como um envelope `{ shape, where, limit, offset }`.
 - Sem projeção, cada repositório usa a sua padrão (`newProjection()`): os campos escalares e as chaves das associações. A imagem do produto e a senha do usuário ficam de fora.
 
 ---
