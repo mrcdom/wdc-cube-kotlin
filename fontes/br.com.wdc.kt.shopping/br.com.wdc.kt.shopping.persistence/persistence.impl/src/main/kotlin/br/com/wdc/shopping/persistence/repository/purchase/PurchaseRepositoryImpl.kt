@@ -109,7 +109,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
             .setDSLContextSupplier(BaseRepositoryImpl::dsl)
             .setOrdering(::orderingOf)
             .addI64("id", { it.id }, { b, v -> b.id = v }, { it.ID })
-            .addInstantFromLdt("buyDate", { it.buyDate }, { b, v -> b.buyDate = v }, { it.BUYDATE })
+            .addIlt("buyDate", { it.buyDate }, { b, v -> b.buyDate = v }, { it.BUYDATE })
             // as relações são declaradas sob demanda: compra e item referenciam-se mutuamente
             .lazy { qb ->
                 qb.addBeanField(

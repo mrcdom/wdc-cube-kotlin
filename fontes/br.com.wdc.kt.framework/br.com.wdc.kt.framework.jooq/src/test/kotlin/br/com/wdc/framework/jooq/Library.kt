@@ -123,9 +123,9 @@ class Library(private val dsl: () -> DSLContext) {
         .addF64("price", { it.price }, { b, v -> b.price = v }, { it.PRICE })
         .addI32("pages", { it.pages }, { b, v -> b.pages = v }, { it.PAGES })
         .addBit("active", { it.active }, { b, v -> b.active = v }, { it.ACTIVE })
-        .addInstantFromLdt("published", { it.published }, { b, v -> b.published = v }, { it.PUBLISHED })
-        .addLocalDate("released", { it.released }, { b, v -> b.released = v }, { it.RELEASED })
-        .addUuid("catalog", { it.catalog }, { b, v -> b.catalog = v }, { it.CATALOG })
+        .addIlt("published", { it.published }, { b, v -> b.published = v }, { it.PUBLISHED })
+        .addDay("released", { it.released }, { b, v -> b.released = v }, { it.RELEASED })
+        .addUid("catalog", { it.catalog }, { b, v -> b.catalog = v }, { it.CATALOG })
         .addBin("cover", { it.cover }, { b, v -> b.cover = v }, { it.COVER })
         .addEnm("kind", { it.kind }, { b, v -> b.kind = v }, Kind.NOVEL, Kind::parse, { it.KIND })
         .lazy { qb ->

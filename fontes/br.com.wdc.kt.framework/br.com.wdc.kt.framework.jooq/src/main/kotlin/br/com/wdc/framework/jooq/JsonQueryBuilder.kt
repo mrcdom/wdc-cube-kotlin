@@ -178,19 +178,19 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
      * Coluna DATE (dia, sem hora) mapeada para [LocalDate]. O banco a escreve no JSON como texto ISO (`2024-01-15`);
      * o que vier depois do dia (uma hora, se o dialeto a acrescentar) é ignorado.
      */
-    fun addLocalDate(fn: String, getter: (B) -> LocalDate?, setter: (B, LocalDate) -> Unit, column: (T) -> Field<out LocalDate?>) =
+    fun addDay(fn: String, getter: (B) -> LocalDate?, setter: (B, LocalDate) -> Unit, column: (T) -> Field<out LocalDate?>) =
         scalar(fn, getter, setter, LOCAL_DATE_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
             LocalDate.parse(it.nextString().take(10))
         }
 
     /** Coluna UUID mapeada para [UUID]. O banco a escreve no JSON como texto (`123e4567-e89b-...`). */
-    fun addUuid(fn: String, getter: (B) -> UUID?, setter: (B, UUID) -> Unit, column: (T) -> Field<out UUID?>) =
+    fun addUid(fn: String, getter: (B) -> UUID?, setter: (B, UUID) -> Unit, column: (T) -> Field<out UUID?>) =
         scalar(fn, getter, setter, UUID_SENTINEL, JsonFieldType.STRING, column, { it == JsonToken.STRING }) {
             UUID.fromString(it.nextString())
         }
 
     /** Coluna TIMESTAMP WITH TIME ZONE mapeada para [Instant] no domínio. */
-    fun addInstantFromOdt(
+    fun addIzt(
         fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit,
         column: (T) -> Field<out OffsetDateTime?>,
     ) = scalar(fn, getter, setter, INSTANT_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
@@ -201,12 +201,28 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
      * Coluna TIMESTAMP **sem** fuso mapeada para [Instant] no domínio. Convenção: o valor da coluna está em
      * UTC, na leitura e na escrita.
      */
-    fun addInstantFromLdt(
+    fun addIlt(
         fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit,
         column: (T) -> Field<out LocalDateTime?>,
     ) = scalar(fn, getter, setter, INSTANT_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
         parseInstant(it.nextString())
     }
+
+    @Deprecated("Renomeado para addDay; sai na próxima versão", ReplaceWith("addDay(fn, getter, setter, column)"))
+    fun addLocalDate(fn: String, getter: (B) -> LocalDate?, setter: (B, LocalDate) -> Unit, column: (T) -> Field<out LocalDate?>) =
+        addDay(fn, getter, setter, column)
+
+    @Deprecated("Renomeado para addUid; sai na próxima versão", ReplaceWith("addUid(fn, getter, setter, column)"))
+    fun addUuid(fn: String, getter: (B) -> UUID?, setter: (B, UUID) -> Unit, column: (T) -> Field<out UUID?>) =
+        addUid(fn, getter, setter, column)
+
+    @Deprecated("Renomeado para addIzt; sai na próxima versão", ReplaceWith("addIzt(fn, getter, setter, column)"))
+    fun addInstantFromOdt(fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit, column: (T) -> Field<out OffsetDateTime?>) =
+        addIzt(fn, getter, setter, column)
+
+    @Deprecated("Renomeado para addIlt; sai na próxima versão", ReplaceWith("addIlt(fn, getter, setter, column)"))
+    fun addInstantFromLdt(fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit, column: (T) -> Field<out LocalDateTime?>) =
+        addIlt(fn, getter, setter, column)
 
     /** Campo `ByteArray` (BINARY / BLOB), que trafega em Base64 no JSON. */
     fun addBin(fn: String, getter: (B) -> ByteArray?, setter: (B, ByteArray) -> Unit, column: (T) -> Field<out ByteArray?>) =
