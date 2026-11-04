@@ -34,4 +34,19 @@ interface TransactionService {
 
     /** Exige ausência de transação; com ela, [TransactionNotAllowedException]. */
     suspend fun <T> never(work: suspend (TransactionContext) -> T): T
+
+    /**
+     * Agenda [task] para depois do commit da transação corrente: roda só se ela for confirmada, na ordem do agendamento,
+     * já fora dela (a conexão devolvida). Desfeita (exceção ou [TransactionContext.setRollbackOnly]), a tarefa é descartada.
+     * Sem transação corrente, roda na hora. A falha de uma tarefa vai ao log e não afeta o resultado da transação nem as
+     * tarefas seguintes.
+     *
+     * A tarefa pertence à transação **física**: dentro de um [required] ou [supports] que participa de outra, ela
+     * espera o commit da de fora; dentro de um [requiresNew], roda quando ele comita, mesmo que a de fora seja
+     * desfeita depois. Em [notSupported] e [never] não há transação: roda na hora. Ao rodar, a tarefa não está em
+     * transação nenhuma; se precisar de uma, abre a sua.
+     *
+     * [AfterCommitTasks] é o executor comum para as implementações.
+     */
+    suspend fun afterCommit(task: suspend () -> Unit)
 }

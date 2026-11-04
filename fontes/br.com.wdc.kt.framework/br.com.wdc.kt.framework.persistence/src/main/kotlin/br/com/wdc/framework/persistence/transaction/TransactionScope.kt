@@ -1,5 +1,6 @@
 package br.com.wdc.framework.persistence.transaction
 
+import br.com.wdc.framework.domain.transaction.AfterCommitTasks
 import java.sql.Connection
 import java.sql.SQLException
 import javax.sql.DataSource
@@ -47,6 +48,12 @@ class TransactionScope private constructor(
     @Volatile
     private var closed = false
 
+    /** Tarefas para depois do commit; só as do owner valem (os participantes entregam a ele). */
+    private val afterCommitTasks = AfterCommitTasks()
+
+    @Volatile
+    private var committed = false
+
     /**
      * A conexão da transação.
      *
@@ -62,6 +69,25 @@ class TransactionScope private constructor(
     /** Marca a transação para rollback (sem volta). O commit não será executado no [close] do owner. */
     fun setRollbackOnly() {
         root.rollbackOnly = true
+    }
+
+    /**
+     * Agenda [task] para depois do commit desta transação física (a do owner, também quando chamado num
+     * participante). Quem a executa é quem fecha o owner, por [takeAfterCommit].
+     */
+    fun afterCommit(task: suspend () -> Unit) {
+        check(!root.closed) { "TransactionScope already closed" }
+        root.afterCommitTasks.add(task)
+    }
+
+    /**
+     * As tarefas agendadas, se o owner foi fechado com commit; vazio se foi desfeito ou ainda está aberto. Esvazia a
+     * fila: cada tarefa é entregue uma vez só.
+     */
+    fun takeAfterCommit(): List<suspend () -> Unit> {
+        if (!isOwner || !closed) return emptyList()
+        val tasks = afterCommitTasks.drain()
+        return if (committed) tasks else emptyList()
     }
 
     /**
@@ -81,7 +107,12 @@ class TransactionScope private constructor(
             CURRENT.remove()
         }
         try {
-            if (rollbackOnly) connection.rollback() else connection.commit()
+            if (rollbackOnly) {
+                connection.rollback()
+            } else {
+                connection.commit()
+                committed = true
+            }
         } catch (ex: SQLException) {
             try {
                 connection.rollback()

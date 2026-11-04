@@ -72,6 +72,55 @@ class RemoteTransactionRestTest {
         }
     }
 
+    // :: afterCommit
+
+    @Test
+    fun afterCommit_runsAfterTheRemoteCommit_withoutATransaction() = runBlocking {
+        val tx = tx()
+        val p = product("rtx-after-commit")
+        val seen = ArrayList<String>()
+        tx.required {
+            env.productRepo.insert(p)
+            tx.afterCommit {
+                // fora da transação: a leitura vê o que foi comitado, e não há txId corrente
+                seen += "exists=${exists(p)}"
+                tx.mandatory { } // sem transação corrente, mandatory recusa
+            }
+            assertEquals(emptyList<String>(), seen)
+        }
+        assertEquals(listOf("exists=true"), seen, "a falha da tarefa (mandatory recusado) só vai ao log")
+    }
+
+    @Test
+    fun afterCommit_isDiscarded_onExceptionOrRollbackOnly() = runBlocking {
+        val tx = tx()
+        val ran = ArrayList<String>()
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking { tx.required { tx.afterCommit { ran += "x" }; throw IllegalStateException("boom") } }
+        }
+        tx.required { ctx -> tx.afterCommit { ran += "y" }; ctx.setRollbackOnly() }
+        assertEquals(emptyList<String>(), ran)
+    }
+
+    @Test
+    fun afterCommit_nestedRequired_waitsForTheOuter_requiresNewRunsOnItsOwn() = runBlocking {
+        val tx = tx()
+        val ran = ArrayList<String>()
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking {
+                tx.required {
+                    tx.required { tx.afterCommit { ran += "inner" } }
+                    tx.requiresNew { tx.afterCommit { ran += "new" } }
+                    assertEquals(listOf("new"), ran)
+                    throw IllegalStateException("boom")
+                }
+            }
+        }
+        assertEquals(listOf("new"), ran)
+        tx.afterCommit { ran += "now" }
+        assertEquals(listOf("new", "now"), ran)
+    }
+
     // :: Desfecho
 
     @Test

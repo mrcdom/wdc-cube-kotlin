@@ -1,5 +1,6 @@
 package br.com.wdc.framework.persistence.transaction
 
+import br.com.wdc.framework.domain.transaction.AfterCommitTasks
 import br.com.wdc.framework.domain.transaction.TransactionContext
 import br.com.wdc.framework.domain.transaction.TransactionNotAllowedException
 import br.com.wdc.framework.domain.transaction.TransactionRequiredException
@@ -18,6 +19,9 @@ import kotlinx.coroutines.withContext
  * Semântica do `work`: COMMIT em retorno normal (apenas o owner comita), ROLLBACK em **qualquer** exceção
  * (repropagada intacta — inclusive `Error` e cancelamento) ou se [TransactionContext.setRollbackOnly] foi
  * chamado. Falhas ao abrir ou finalizar a transação viram [TransactionSystemException].
+ *
+ * [afterCommit] guarda a tarefa no owner da transação física ([TransactionScope.afterCommit]); quem abriu o owner
+ * a roda depois do commit, já com a conexão devolvida e sem transação corrente.
  *
  * **Corrotinas.** O `work` roda com o escopo no contexto da corrotina ([TransactionScope.asContextElement]):
  * se suspender e retomar em outra thread, a transação corrente vai junto, com a mesma conexão. Ainda assim,
@@ -58,6 +62,11 @@ class TransactionServiceImpl(private val dataSource: () -> DataSource?) : Transa
         return work(HANDLE)
     }
 
+    override suspend fun afterCommit(task: suspend () -> Unit) {
+        val current = TransactionScope.current()
+        if (current != null) current.afterCommit(task) else AfterCommitTasks.runAll(listOf(task))
+    }
+
     // :: Núcleo
 
     /** Abre uma transação owner e executa o `work` nela; a transação ambiente, se houver, volta ao final. */
@@ -68,7 +77,13 @@ class TransactionServiceImpl(private val dataSource: () -> DataSource?) : Transa
         } catch (e: Exception) {
             throw TransactionSystemException(openFailure, e)
         }
-        return withTransaction(scope) { finish(scope, work) }
+        val result = withTransaction(scope) { finish(scope, work) }
+        // comitou e a conexão já voltou ao pool: as tarefas rodam sem transação, para não herdar nenhuma
+        val tasks = scope.takeAfterCommit()
+        if (tasks.isNotEmpty()) {
+            withTransaction(null) { AfterCommitTasks.runAll(tasks) }
+        }
+        return result
     }
 
     /** Executa o `work` como participante da transação ambiente. */

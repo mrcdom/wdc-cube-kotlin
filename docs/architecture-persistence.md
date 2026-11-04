@@ -250,6 +250,7 @@ ShoppingTransactions.BEAN.get().required { tx ->
 - **Retorno normal confirma; qualquer exceção desfaz** e sobe intacta, com o tipo original.
 - O caso de uso deve tolerar a ausência do serviço — `ShoppingTransactions.BEAN.getOrNull()` — e executar direto nesse caso (testes sem persistência).
 - É assim que o checkout funciona: `CartManager.doPurchase` grava a compra e os itens dentro de `required`. Uma falha no meio não deixa compra órfã.
+- `afterCommit { … }` agenda uma tarefa para depois do commit da transação física corrente (avisar um processo em segundo plano, por exemplo): roda só se ela comitar, na ordem do agendamento, já fora dela; desfeita, a tarefa é descartada. Sem transação, roda na hora. A falha da tarefa vai ao log e não muda o resultado da transação. No servidor, uma tarefa agendada dentro de uma transação remota roda no commit dela.
 
 Há duas implementações, e o caso de uso não sabe qual está usando:
 
