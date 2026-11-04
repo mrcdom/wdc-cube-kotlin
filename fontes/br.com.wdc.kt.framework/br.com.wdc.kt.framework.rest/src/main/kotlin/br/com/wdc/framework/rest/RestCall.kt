@@ -51,6 +51,29 @@ class RestCall internal constructor(
      */
     suspend fun <T> inTransaction(block: suspend () -> T): T = api.transactions.run(request, block)
 
+    /**
+     * Registra uma medida para o cabeçalho `Server-Timing` (ver [ServerTimingOptions]): sai antes do `total`, na
+     * ordem do registro. Sem a opção ligada, não faz nada. É uma função simples: a rota pode passá-la adiante
+     * (`call::timing`) a quem mede.
+     *
+     * @param name o nome da medida (um token, sem espaço: `action`, `db`)
+     * @param nanos a duração, em nanossegundos
+     * @param desc a descrição, que só sai com [ServerTimingOptions.names] ligado
+     */
+    fun timing(name: String, nanos: Long, desc: String? = null) {
+        request[ServerTiming.KEY]?.add(name, nanos, desc)
+    }
+
+    /** Executa [block] e registra quanto ele levou como a medida [name] (ver [timing]), mesmo se ele falhar. */
+    inline fun <T> timed(name: String, desc: String? = null, block: () -> T): T {
+        val start = System.nanoTime()
+        try {
+            return block()
+        } finally {
+            timing(name, System.nanoTime() - start, desc)
+        }
+    }
+
     // :: Status e cabeçalhos da resposta
 
     fun status(status: Int): RestCall = apply { http.status(status) }

@@ -56,7 +56,8 @@ typealias AfterFilter = suspend (RequestContext, Throwable?) -> Unit
  * **Pipeline de cada rota**, com o [RequestContext] corrente do começo ao fim — inclusive nas corrotinas:
  * filtros `before` → autenticação → regra de acesso → handler (na transação, se `transactional`) → resposta →
  * filtros `after`. A resposta, de sucesso ou de erro, é serializada **dentro** do contexto: um adaptador JSON
- * que dependa da requisição (fuso do cliente, por exemplo) a enxerga.
+ * que dependa da requisição (fuso do cliente, por exemplo) a enxerga. Com [Builder.serverTiming], o cabeçalho
+ * `Server-Timing` é escrito depois da resposta serializada, antes dos filtros `after`.
  */
 class RestApi private constructor(builder: Builder) {
 
@@ -78,6 +79,7 @@ class RestApi private constructor(builder: Builder) {
     private val maxRequestSize = builder.maxRequestSize
     private val handleUnmatched = builder.handleUnmatched
     private val openApi = builder.openApiConfig
+    private val serverTiming = builder.serverTimingOptions
 
     init {
         security?.let {
@@ -104,6 +106,10 @@ class RestApi private constructor(builder: Builder) {
                     rule.maxAge = options.maxAge
                     rule.path = options.path
                     options.exposedHeaders.forEach(rule::exposeHeader)
+                    // sem expor, o navegador esconde o cabeçalho de quem chama de outra origem
+                    if (serverTiming != null && options.exposedHeaders.none { it.equals(ServerTiming.HEADER, ignoreCase = true) }) {
+                        rule.exposeHeader(ServerTiming.HEADER)
+                    }
                 }
             }
         }
@@ -141,6 +147,7 @@ class RestApi private constructor(builder: Builder) {
 
     private fun handle(route: RestRoute, ctx: Context) {
         val request = RequestContext.of(ctx)
+        startTiming(request)
         RequestContext.withCurrent(request) {
             runBlocking(request.asContextElement()) {
                 var failure: Throwable? = null
@@ -156,6 +163,7 @@ class RestApi private constructor(builder: Builder) {
                     failure = e
                     renderError(ctx, request, e)
                 } finally {
+                    writeTiming(ctx, request)
                     runAfters(request, failure)
                 }
             }
@@ -190,6 +198,7 @@ class RestApi private constructor(builder: Builder) {
             return
         }
         val request = RequestContext.of(ctx)
+        startTiming(request)
         RequestContext.withCurrent(request) {
             runBlocking(request.asContextElement()) {
                 var failure: Throwable = e
@@ -205,9 +214,24 @@ class RestApi private constructor(builder: Builder) {
                     failure = refusal
                     renderError(ctx, request, refusal)
                 } finally {
+                    writeTiming(ctx, request)
                     runAfters(request, failure)
                 }
             }
+        }
+    }
+
+    private fun startTiming(request: RequestContext) {
+        serverTiming?.let { request[ServerTiming.KEY] = ServerTiming(System.nanoTime(), it.names) }
+    }
+
+    /** Depois da resposta serializada (que entra no `total`) e antes de ela sair. */
+    private fun writeTiming(ctx: Context, request: RequestContext) {
+        val timing = request[ServerTiming.KEY] ?: return
+        try {
+            ctx.header(ServerTiming.HEADER, timing.header(System.nanoTime()))
+        } catch (e: Exception) {
+            LOG.error("Falha ao escrever o Server-Timing de ${request.method} ${request.path}", e)
         }
     }
 
@@ -356,6 +380,7 @@ class RestApi private constructor(builder: Builder) {
         internal var corsOptions: CorsOptions? = null
         internal var compressionOptions: CompressionOptions? = null
         internal var openApiConfig: OpenApiConfig? = null
+        internal var serverTimingOptions: ServerTimingOptions? = null
 
         /** O mapeador dos DTOs. Padrão: Gson sem nulos, datas ISO. */
         var json: GsonJsonMapper = GsonJsonMapper()
@@ -384,6 +409,11 @@ class RestApi private constructor(builder: Builder) {
 
         fun compression(block: CompressionOptions.() -> Unit = {}) {
             compressionOptions = (compressionOptions ?: CompressionOptions()).apply(block)
+        }
+
+        /** Liga o cabeçalho `Server-Timing` (ver [ServerTimingOptions]); desligado se não chamado. */
+        fun serverTiming(block: ServerTimingOptions.() -> Unit = {}) {
+            serverTimingOptions = (serverTimingOptions ?: ServerTimingOptions()).apply(block)
         }
 
         fun openApi(block: OpenApiConfig.() -> Unit = {}) {

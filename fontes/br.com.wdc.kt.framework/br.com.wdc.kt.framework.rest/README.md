@@ -158,6 +158,18 @@ O dono de uma transação remota é `user:<principal.id>`, ou `anon:<X-Client-Id
 - `compression { gzipLevel; minSize; mimeTypes }` usa gzip. O padrão de `minSize` é 2 KB, como no Spring Boot.
 - `maxRequestSize = bytes`: um corpo maior recebe 413.
 
+## Server-Timing
+
+`serverTiming()` liga o cabeçalho `Server-Timing`, que o DevTools mostra na aba Timing; desligado se não chamado. Todo pedido que passa pela biblioteca leva `total` (autenticação, regra, handler, commit e serialização), também nas respostas de erro e nos 404/405 tratados por ela. A rota acrescenta medidas próprias, que saem antes do `total`, na ordem do registro:
+
+```kotlin
+serverTiming { names = false }   // names = true acrescenta desc="…"; em produção, não exponha nomes internos
+post("/order") { call -> call.timed("action", "CreateOrderAction") { createOrder(call.body()) } }
+// Server-Timing: action;dur=12.3, total;dur=15.8
+```
+
+`call.timing(name, nanos, desc)` registra uma duração já medida; é uma função simples, que a rota pode passar adiante (`call::timing`). Com `cors { … }`, `Server-Timing` entra sozinho nos `exposedHeaders`.
+
 ## OpenAPI
 
 `openApi { path; title; version; description; tag(…); schemas; parameters; securityScheme; raw }`. O documento sai das rotas registradas: verbo, caminho, parâmetros de caminho e a segurança de cada operação (uma rota pública leva `security: []`). Os esquemas dos DTOs são gerados por reflexão, com os nomes que o Gson usa. Cada rota acrescenta o que tiver em `doc = { summary = …; query("page", Int::class.java); accepts<Req>(); returns<Resp>(200); response(404); raw(mapOf(…)) }`, e `raw` vence o que foi gerado. O documento fica servido em `path`, e também em `api.openApiJson`.
