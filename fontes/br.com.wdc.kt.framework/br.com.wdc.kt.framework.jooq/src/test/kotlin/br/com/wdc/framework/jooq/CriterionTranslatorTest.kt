@@ -48,6 +48,19 @@ class CriterionTranslatorTest {
     }
 
     @Test
+    fun emptyIn_isFalse_alsoOverSeveralColumns() {
+        val empty = Search().term.isIn(emptyList()).term
+        assertEquals(sql(DSL.falseCondition()), sql(CriterionTranslator.translate(name, empty)))
+        assertEquals(
+            sql(DSL.or(DSL.falseCondition(), DSL.falseCondition())),
+            sql(CriterionTranslator.translateAny(listOf(name, code), empty)),
+        )
+        // dentro de um campo disjuntivo, o vazio não esconde os outros pedidos
+        val alternative = Search().term.or().eq("x").term.isIn().term
+        assertEquals(sql(DSL.or(name.eq("x"), DSL.falseCondition())), sql(CriterionTranslator.translate(name, alternative)))
+    }
+
+    @Test
     fun translateAny_withoutRequestOrColumns_isNull() {
         assertNull(CriterionTranslator.translateAny(listOf(name, code), Search().term))
         assertNull(CriterionTranslator.translateAny(emptyList<org.jooq.Field<String?>>(), Search().term.eq("x").term))

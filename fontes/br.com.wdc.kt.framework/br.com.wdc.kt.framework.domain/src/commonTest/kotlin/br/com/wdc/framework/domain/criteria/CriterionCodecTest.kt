@@ -175,6 +175,22 @@ class CriterionCodecTest {
     }
 
     @Test
+    fun emptyIn_travels_andComesBackAsAFilter() {
+        val source = SampleCriteria()
+        source.id.isIn(emptyList())
+        val json = jsonObject { out -> CriterionCodec.write(out, "id", source.id, CriterionCodec.LONG_OUT) }
+        assertEquals("""{"id":{"p":[{"o":"IN"}]}}""", json)
+
+        val target = SampleCriteria()
+        val reader = JsonStreamReader(json)
+        reader.beginObject()
+        reader.nextName()
+        CriterionCodec.read(reader, target.id, CriterionCodec.LONG_IN)
+        assertEquals(Operator.IN, target.id.predicates.single().operator)
+        assertEquals(emptyList(), target.id.predicates.single().values)
+    }
+
+    @Test
     fun wholeCriteria_roundTrip() {
         val source = SampleCriteria()
         source.id.isIn(1L, 2L)

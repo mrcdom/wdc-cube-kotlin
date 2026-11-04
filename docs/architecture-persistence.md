@@ -140,6 +140,7 @@ criteria.name.containing("veda")                   // …com este outro pedido
 
 - Pedidos de **um mesmo campo** combinam com `AND`; depois de `or()`, com `OR`. **Campos diferentes combinam sempre com `AND`.**
 - Um campo sem pedido não filtra. Os atalhos `withXxx(valor)` ignoram `null`.
+- `isIn(null)` não filtra ("não informado"), mas `isIn(listaVazia)` filtra por nenhum: a busca não casa linha, e o `delete` não apaga nada. No fio, sai `{ "o": "IN" }` sem valores.
 - Há três famílias, e o compilador só oferece o que cada uma admite: `Criterion` (igualdade, `ne`, `isIn`, nulidade), `ComparableCriterion` (mais `gt`/`ge`/`lt`/`le`/`between`) e `TextCriterion` (mais `like`/`ilike`/`startingWith`/`containing`).
 - A **ordenação é nomeada pelo efeito** — `NAME_A_TO_Z`, `MOST_RECENT_PURCHASE_FIRST` —, e não por coluna. É o repositório que traduz o nome em colunas e acrescenta o desempate pela chave. Cada ordenação tem um índice que a sustenta, declarado no `DBCreate`.
 - Alguns campos não são coluna da própria tabela: `PurchaseCriteria.productId` (compras que contêm o produto) e `PurchaseItemCriteria.userId` (itens das compras do usuário) viram `EXISTS` sobre a outra tabela. Para quem monta o filtro, são campos como os outros.

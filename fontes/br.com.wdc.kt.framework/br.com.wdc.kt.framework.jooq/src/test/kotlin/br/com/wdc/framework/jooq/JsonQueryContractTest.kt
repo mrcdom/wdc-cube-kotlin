@@ -339,6 +339,8 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     fun criteria_identityOperators() {
         assertEquals(listOf<Long?>(10L), booksWhere(BookCriteria().also { it.id.eq(10L) }))
         assertEquals(listOf<Long?>(10L, 12L), booksWhere(BookCriteria().also { it.id.isIn(10L, 12L, 999L) }))
+        assertEquals(emptyList(), booksWhere(BookCriteria().also { it.id.isIn(emptyList()) }))
+        assertEquals(6, booksWhere(BookCriteria().also { it.id.isIn(null as Collection<Long>?) }).size)
         assertEquals(listOf<Long?>(20L, 21L, 30L), booksWhere(BookCriteria().also { it.id.ne(10L); it.id.ne(11L); it.id.ne(12L) }))
         assertEquals(listOf<Long?>(11L), booksWhere(BookCriteria().also { it.active.eq(false) }))
         assertEquals(listOf<Long?>(30L), booksWhere(BookCriteria().also { it.active.isNull() }))

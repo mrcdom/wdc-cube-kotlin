@@ -124,7 +124,8 @@ object CriterionTranslator {
             Operator.LIKE -> column.like(values[0] as String, TextCriterion.ESCAPE)
             Operator.ILIKE -> column.likeIgnoreCase(values[0] as String, TextCriterion.ESCAPE)
             Operator.BETWEEN -> column.between(values[0], values[1])
-            Operator.IN -> column.`in`(values)
+            // conjunto vazio: nada pertence. Condição falsa explícita, porque o jOOQ varia por dialeto com `in()`
+            Operator.IN -> if (values.isEmpty()) DSL.falseCondition() else column.`in`(values)
             Operator.IS_NULL, Operator.IS_NOT_NULL -> null
         }
     }

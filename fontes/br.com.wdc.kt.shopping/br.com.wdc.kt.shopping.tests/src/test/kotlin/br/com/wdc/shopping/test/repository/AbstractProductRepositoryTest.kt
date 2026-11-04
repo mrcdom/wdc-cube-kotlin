@@ -138,6 +138,18 @@ abstract class AbstractProductRepositoryTest {
     }
 
     @Test
+    fun criteria_isIn_emptySet_matchesNothing() = runBlocking {
+        val none = { ProductCriteria().also { it.productId.isIn(emptyList()) } }
+        assertEquals(emptyList<Long?>(), ids(none()))
+        assertEquals(0, repo().count(none()))
+        assertEquals(0, repo().delete(none()))
+        assertEquals(0, repo().delete(ProductCriteria().also { it.productId.isIn() }))
+        assertEquals(4, repo().count(ProductCriteria()))
+        // nulo é "não informado": não filtra
+        assertEquals(4, repo().count(ProductCriteria().also { it.productId.isIn(null as Collection<Long>?) }))
+    }
+
+    @Test
     fun criteria_comparisons() = runBlocking {
         assertEquals(listOf<Long?>(cafeteira), ids(byIdAsc().also { it.price.gt(45.30) }))
         assertEquals(listOf<Long?>(cafeteira, bola), ids(byIdAsc().also { it.price.ge(45.30) }))
