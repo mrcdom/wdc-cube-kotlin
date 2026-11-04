@@ -12,6 +12,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import org.jooq.InsertReturningStep
 import java.util.UUID
 import java.time.format.DateTimeParseException
 import java.util.Base64
@@ -40,7 +41,8 @@ import org.jooq.impl.DSL
  * - **[lazy]:** adia o registro das relações até o primeiro uso, o que quebra a dependência circular entre
  *   os mapeamentos de duas entidades que se referem.
  *
- * Só para SELECT — escrita é com o jOOQ direto.
+ * Para escrever, [JsonQuery.insert] monta o `INSERT` pelos mesmos campos ([JsonQuery.fields]) e lê a linha
+ * inserida de volta por esta projeção. `UPDATE` e `DELETE` são com o jOOQ direto.
  * ```
  * val QUERY: JsonQuery<User, EnUser> = JsonQueryBuilder<User, EnUser>()
  *     .setAlias("u").setBeanFactory(::User).setTableFactory(EN_USER::`as`).setDSLContextSupplier(::dsl)
@@ -69,6 +71,9 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
 
     /** Como ler cada campo do JSON. */
     private val fieldReaders = HashMap<String, (bean: B, reader: JsonReader) -> Unit>()
+
+    /** Os campos que o insert enxerga ([JsonQuery.fields]), na ordem da declaração. */
+    private val queryFields = ArrayList<JsonQueryField<B, T>>()
 
     /** Como perguntar a um bean de projeção se cada campo foi pedido — escalar ou relação. */
     private val fieldPresence = LinkedHashMap<String, (B) -> Any?>()
@@ -120,7 +125,9 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
 
     /** Campo `Double` (DOUBLE PRECISION / NUMERIC). */
     fun addF64(fn: String, getter: (B) -> Double?, setter: (B, Double) -> Unit, column: (T) -> Field<out Number?>) =
-        scalar(fn, getter, setter, 0.0, JsonFieldType.NUMBER, column, { it == JsonToken.NUMBER }) { it.nextDouble() }
+        scalar(fn, getter, setter, 0.0, JsonFieldType.NUMBER, column, { it == JsonToken.NUMBER }, toColumn = { BigDecimal.valueOf(it) }) {
+            it.nextDouble()
+        }
 
     /** Campo `BigDecimal` (DECIMAL / NUMERIC). */
     fun addDec(fn: String, getter: (B) -> BigDecimal?, setter: (B, BigDecimal) -> Unit, column: (T) -> Field<out Number?>) =
@@ -151,6 +158,11 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         fieldReaders[fn] = { bean, reader ->
             if (reader.peek() != JsonToken.NULL) setter(bean, parser(reader.nextString())) else reader.skipValue()
         }
+        @Suppress("UNCHECKED_CAST")
+        queryFields += JsonQueryField(
+            fn, column, getter, { b, v -> if (v != null) setter(b, v as E) }, { getter(it) != null },
+            { setter(it, sentinel) }, { (it as Enum<*>).name },
+        )
         return this
     }
 
@@ -166,11 +178,14 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         parseTimestamp(it.nextString())
     }
 
-    /** Coluna TIMESTAMP **sem** fuso, lida como `OffsetDateTime` em UTC. */
+    /** Coluna TIMESTAMP **sem** fuso, lida como `OffsetDateTime` em UTC (e gravada em UTC). */
     fun addLdt(
         fn: String, getter: (B) -> OffsetDateTime?, setter: (B, OffsetDateTime) -> Unit,
         column: (T) -> Field<out LocalDateTime?>,
-    ) = scalar(fn, getter, setter, OffsetDateTime.MIN, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
+    ) = scalar(
+        fn, getter, setter, OffsetDateTime.MIN, JsonFieldType.DATETIME, column, { it == JsonToken.STRING },
+        toColumn = { it.withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime() },
+    ) {
         parseTimestamp(it.nextString())
     }
 
@@ -193,7 +208,10 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     fun addIzt(
         fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit,
         column: (T) -> Field<out OffsetDateTime?>,
-    ) = scalar(fn, getter, setter, INSTANT_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
+    ) = scalar(
+        fn, getter, setter, INSTANT_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING },
+        toColumn = { OffsetDateTime.ofInstant(java.time.Instant.ofEpochSecond(it.epochSeconds, it.nanosecondsOfSecond.toLong()), ZoneOffset.UTC) },
+    ) {
         parseInstant(it.nextString())
     }
 
@@ -204,7 +222,10 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     fun addIlt(
         fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit,
         column: (T) -> Field<out LocalDateTime?>,
-    ) = scalar(fn, getter, setter, INSTANT_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
+    ) = scalar(
+        fn, getter, setter, INSTANT_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING },
+        toColumn = { LocalDateTime.ofEpochSecond(it.epochSeconds, it.nanosecondsOfSecond, ZoneOffset.UTC) },
+    ) {
         parseInstant(it.nextString())
     }
 
@@ -239,6 +260,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         type: JsonFieldType,
         column: (T) -> Field<*>,
         accepts: (JsonToken) -> Boolean,
+        toColumn: (V) -> Any? = { it },
         read: (JsonReader) -> V,
     ): JsonQueryBuilder<B, T> {
         projectionFillers.add { setter(it, sentinel) }
@@ -246,6 +268,11 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         fieldReaders[fn] = { bean, reader ->
             if (accepts(reader.peek())) setter(bean, read(reader)) else reader.skipValue()
         }
+        @Suppress("UNCHECKED_CAST")
+        queryFields += JsonQueryField(
+            fn, column, getter, { b, v -> if (v != null) setter(b, v as V) }, { getter(it) != null },
+            { setter(it, sentinel) }, { toColumn(it as V) },
+        )
         return this
     }
 
@@ -298,6 +325,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     ): JsonQueryBuilder<B, T> {
         fieldPresence[fn] = getter
         val relationKey = key?.let { RelationKey<T>().also(it) }
+        relationKey?.columns()?.forEach { (part, partColumn) -> queryFields += keyField(fn, getter, setter, childQuery, part, partColumn) }
         fieldProjections.add { fields, ctx, bean, table ->
             val childPrjBean = getter(bean) ?: return@add
             // A chave já está nesta linha: se a projeção do associado não pede mais nada, montá-la aqui evita uma
@@ -318,6 +346,34 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
             if (reader.peek() == JsonToken.BEGIN_OBJECT) setter(bean, childQuery.parseJson(reader)) else reader.skipValue()
         }
         return this
+    }
+
+    /**
+     * Uma parte da chave de uma associação, como campo deste mapeamento: a coluna da chave estrangeira desta tabela,
+     * lida e gravada no associado. O campo do associado é resolvido no primeiro uso, porque os mapeamentos de duas
+     * entidades podem se referir um ao outro.
+     */
+    private fun <C : Any, U : Table<*>> keyField(
+        fn: String,
+        getter: (B) -> C?,
+        setter: (B, C) -> Unit,
+        childQuery: JsonQuery<C, U>,
+        part: String,
+        partColumn: (T) -> Field<*>,
+    ): JsonQueryField<B, T> {
+        val childField by kotlin.lazy {
+            childQuery.fields().firstOrNull { it.name == part }
+                ?: throw IllegalStateException("a chave de '$fn' declara '$part', que não é campo do associado")
+        }
+        val childOf = { bean: B -> getter(bean) ?: childQuery.newBean().also { setter(bean, it) } }
+        return JsonQueryField(
+            "$fn.$part", partColumn,
+            get = { bean -> getter(bean)?.let { childField.get(it) } },
+            set = { bean, value -> if (value != null) childField.set(childOf(bean), value) },
+            projected = { getter(it) != null },
+            mark = { bean -> childField.mark(childOf(bean)) },
+            toColumn = { childField.toColumn(it) },
+        )
     }
 
     // :: Coleção filha (1:N)
@@ -406,6 +462,57 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         }
 
         override fun newTable(alias: String): T = tables()(alias)
+
+        private val fieldList: List<JsonQueryField<B, T>> by kotlin.lazy {
+            runLazyInit()
+            queryFields.toList()
+        }
+
+        override fun fields(): List<JsonQueryField<B, T>> = fieldList
+
+        override fun insert(bean: B, projection: B?, onConflictDoNothing: Boolean): Boolean {
+            val dsl = dsl()
+            val inserted = tables()(INSERTED_ALIAS)
+            val target = unaliased(inserted)
+            val identity = target.identity?.field?.name
+            val primaryKey = target.primaryKey?.fields.orEmpty().map { it.name }.toSet()
+            val columns = fields().filter { it.isColumnOf(inserted) }
+
+            // O que entra no INSERT: o que a projeção marca (sem ela, o que tem valor) e a chave primária informada.
+            // A identidade nunca: é o banco quem a gera. Duas declarações da mesma coluna: vale a primeira com valor.
+            val values = LinkedHashMap<Field<*>, Any?>()
+            val written = HashSet<JsonQueryField<B, T>>()
+            for (field in columns) {
+                val name = field.column(inserted).name
+                if (name == identity) continue
+                val value = field.get(bean)
+                val wanted = if (projection != null) field.projected(projection) else value != null
+                if (!wanted && !(name in primaryKey && value != null)) continue
+                val column = target.field(name) ?: continue
+                if (values[column] != null) continue
+                values[column] = value?.let { column.dataType.convert(field.toColumn(it)) }
+                written += field
+            }
+
+            // Volta ao bean o que não foi gravado ou foi gravado nulo: padrões da coluna, identidade, gatilhos.
+            val readBack = newBean()
+            val toRead = columns.filter { it !in written || it.get(bean) == null }
+            (toRead.ifEmpty { columns.filter { it.column(inserted).name in primaryKey } }).forEach { it.mark(readBack) }
+
+            @Suppress("UNCHECKED_CAST")
+            val insert = (if (values.isEmpty()) dsl.insertInto(target).defaultValues() else dsl.insertInto(target).set(values as Map<Field<*>, *>))
+                .let { if (onConflictDoNothing) it.onConflictDoNothing() else it } as InsertReturningStep<*>
+            val ctx = QueryContext(dsl)
+            val row = projection(ctx, inserted, readBack)
+            val writtenKey = values.entries.filter { it.key.name in primaryKey }.associate { it.key.name to it.value }
+            val json = JsonDialect.of(dsl.dialect()).insertAndSelect(dsl, insert, inserted, INSERTED_ALIAS, row, writtenKey)
+                ?: return false
+            val stored = parseJson(json)
+            for (field in toRead) {
+                field.set(bean, field.get(stored))
+            }
+            return true
+        }
 
         override fun select(prjBean: B?, whereClause: JsonWhereClause<T>): SelectQuery<Record1<String>> =
             select(QueryContext(dsl()), prjBean, whereClause, false)
@@ -573,6 +680,12 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
          * @throws IllegalStateException se a tabela não declara chave primária, ou se ela é composta — o `IN`
          *         de uma coluna só não a exprime, e SQL aproximado devolveria a coleção errada em silêncio
          */
+        /** O alias da linha inserida, na consulta que a lê de volta. */
+        private const val INSERTED_ALIAS = "inserted"
+
+        /** A tabela por trás de uma instância com alias (o `INSERT` é na tabela, não no alias). */
+        private fun unaliased(table: Table<*>): Table<*> = (table as? org.jooq.impl.TableImpl<*>)?.`$aliased`() ?: table
+
         fun primaryKeyOf(table: Table<*>): Field<Any?> {
             val pk = table.primaryKey
             if (pk == null || pk.fields.isEmpty()) {

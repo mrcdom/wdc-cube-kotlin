@@ -15,4 +15,14 @@ class HttpProductRepository(
 
     override suspend fun updateImage(productId: Long, image: ByteArray): Boolean =
         transport.putBytes("$basePath/$productId/image", image)
+
+    override fun fill(target: Product, stored: Product) = fillProduct(target, stored)
+}
+
+internal fun fillProduct(target: Product, stored: Product) {
+    stored.id?.let { target.id = it }
+    stored.name?.let { target.name = it }
+    stored.price?.let { target.price = it }
+    stored.description?.let { target.description = it }
+    stored.image?.let { target.image = it }
 }

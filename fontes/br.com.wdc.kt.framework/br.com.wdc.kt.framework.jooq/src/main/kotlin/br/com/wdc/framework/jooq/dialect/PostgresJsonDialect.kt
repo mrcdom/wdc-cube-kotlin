@@ -3,6 +3,9 @@ package br.com.wdc.framework.jooq.dialect
 import br.com.wdc.framework.jooq.JsonDialect
 import br.com.wdc.framework.jooq.JsonFieldEntry
 import br.com.wdc.framework.jooq.JsonFieldType
+import org.jooq.DSLContext
+import org.jooq.InsertReturningStep
+import org.jooq.Table
 import org.jooq.Field
 import org.jooq.QueryPart
 import org.jooq.SortField
@@ -66,4 +69,14 @@ object PostgresJsonDialect : JsonDialect {
     }
 
     private fun escapeKey(key: String): String = key.replace("'", "''").replace("\"", "\\\"")
+
+    // Uma instrução só, atômica: WITH inserted AS (INSERT … RETURNING *) SELECT <row> FROM inserted
+    override fun insertAndSelect(
+        dsl: DSLContext,
+        insert: InsertReturningStep<*>,
+        inserted: Table<*>,
+        alias: String,
+        row: Field<String>,
+        writtenKey: Map<String, Any?>,
+    ): String? = dsl.with(alias).`as`(insert.returning()).select(row).from(DSL.table(DSL.name(alias))).fetchOne()?.value1()
 }

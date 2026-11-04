@@ -13,7 +13,16 @@ package br.com.wdc.framework.domain.repository
  */
 interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
 
-    suspend fun insert(bean: E): Boolean
+    /**
+     * Insere [bean]. A [projection] diz quais campos entram no INSERT (campo não nulo nela); o que fica fora recebe o
+     * padrão da coluna. Sem projeção, entram os campos que têm valor no bean (o nulo fica fora e também recebe o
+     * padrão). Volta `true` se a linha entrou, e o próprio [bean] sai completo: a chave gerada e o que o banco
+     * preencheu (padrões, colunas calculadas).
+     *
+     * O mesmo vale para o [update], que já recebe a projeção. A diferença é que, no insert, ficar fora significa
+     * "padrão da coluna", e não "não muda".
+     */
+    suspend fun insert(bean: E, projection: E? = null): Boolean
 
     /**
      * Atualiza uma entidade.
@@ -25,9 +34,9 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
      */
     suspend fun update(newBean: E, oldBean: E? = null, projection: E? = null): Boolean
 
-    /** Insere se [oldBean] for `null`; atualiza caso contrário. */
-    suspend fun insertOrUpdate(newBean: E, oldBean: E?): Boolean =
-        if (oldBean == null) insert(newBean) else update(newBean, oldBean)
+    /** Insere se [oldBean] for `null`; atualiza caso contrário. A [projection] vale para os dois. */
+    suspend fun insertOrUpdate(newBean: E, oldBean: E?, projection: E? = null): Boolean =
+        if (oldBean == null) insert(newBean, projection) else update(newBean, oldBean, projection)
 
     suspend fun delete(criteria: C): Int
 }

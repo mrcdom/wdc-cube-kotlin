@@ -3,7 +3,10 @@ package br.com.wdc.framework.jooq
 import br.com.wdc.framework.jooq.dialect.H2JsonDialect
 import br.com.wdc.framework.jooq.dialect.PostgresJsonDialect
 import java.sql.Connection
+import org.jooq.DSLContext
 import org.jooq.Field
+import org.jooq.InsertReturningStep
+import org.jooq.Table
 import org.jooq.SQLDialect
 import org.jooq.SortField
 
@@ -34,6 +37,21 @@ interface JsonDialect {
 
     /** Se este dialeto sabe ordenar dentro da agregação. */
     fun supportsOrderedAggregation(): Boolean = false
+
+    /**
+     * Executa [insert] e devolve [row] calculado sobre a linha inserida, ou `null` se nenhuma linha entrou (conflito
+     * descartado). Em [row], as colunas são as de [inserted], a tabela sob o alias da leitura.
+     *
+     * @param writtenKey os valores gravados da chave primária, pelo nome da coluna; o que faltar é gerado pelo banco
+     */
+    fun insertAndSelect(
+        dsl: DSLContext,
+        insert: InsertReturningStep<*>,
+        inserted: Table<*>,
+        alias: String,
+        row: Field<String>,
+        writtenKey: Map<String, Any?>,
+    ): String? = throw UnsupportedOperationException("o dialeto ${dsl.dialect()} não sabe ler de volta a linha inserida")
 
     /** Preparação do banco, uma vez no bootstrap (ex.: o H2 registra a função `TO_BASE64`). */
     fun initialize(connection: Connection) {

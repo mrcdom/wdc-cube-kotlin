@@ -362,6 +362,8 @@ abstract class AbstractPurchaseRepositoryTest {
         assertEquals(listOf<Int?>(2, 1), stored.map { it.amount })
         assertEquals(listOf<Double?>(199.5, 16.25), stored.map { it.price })
         assertTrue(stored.all { it.purchaseId == purchase.id })
+        // o bean sai completo: cada item com a chave que recebeu
+        assertEquals(stored.map { it.id }.toSet(), purchase.items!!.map { it.id }.toSet())
     }
 
     @Test

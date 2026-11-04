@@ -27,18 +27,15 @@ import org.jooq.impl.DSL
 class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
 
     /** Grava a compra e, em cascata, os itens que vierem com ela. */
-    override suspend fun insert(bean: Purchase): Boolean {
-        val dsl = dsl()
-        val id = bean.id ?: dsl.nextval(SQ_PURCHASE).also { bean.id = it }
-        val step = dsl.insertInto(EN_PURCHASE).set(EN_PURCHASE.ID, id)
-        bean.userId?.let { step.set(EN_PURCHASE.USERID, it) }
-        bean.buyDate?.let { step.set(EN_PURCHASE.BUYDATE, toColumn(it)) }
-        val inserted = step.execute() > 0
+    /** Insere a compra e, se ela entrou, os itens que traz (cada um com a projeção padrão do item). */
+    override suspend fun insert(bean: Purchase, projection: Purchase?): Boolean {
+        if (bean.id == null) bean.id = dsl().nextval(SQ_PURCHASE)
+        val inserted = QUERY.insert(bean, projection)
 
         if (inserted) {
             bean.items?.forEach { item ->
                 item.purchase = bean
-                PurchaseItemRepositoryImpl.insertRow(dsl, item)
+                PurchaseItemRepositoryImpl.insertRow(item, null)
             }
         }
         return inserted

@@ -21,16 +21,10 @@ import org.jooq.impl.DSL
 
 class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
 
-    override suspend fun insert(bean: Product): Boolean {
-        val dsl = dsl()
+    override suspend fun insert(bean: Product, projection: Product?): Boolean {
         // o id informado é respeitado (a carga de demonstração grava ids fixos)
-        val id = bean.id ?: dsl.nextval(SQ_PRODUCT).also { bean.id = it }
-        val step = dsl.insertInto(EN_PRODUCT).set(EN_PRODUCT.ID, id)
-        bean.name?.let { step.set(EN_PRODUCT.NAME, it) }
-        bean.price?.let { step.set(EN_PRODUCT.PRICE, BigDecimal.valueOf(it)) }
-        bean.description?.let { step.set(EN_PRODUCT.DESCRIPTION, it) }
-        bean.image?.let { step.set(EN_PRODUCT.IMAGE, it) }
-        return step.execute() > 0
+        if (bean.id == null) bean.id = dsl().nextval(SQ_PRODUCT)
+        return QUERY.insert(bean, projection)
     }
 
     override suspend fun update(newBean: Product, oldBean: Product?, projection: Product?): Boolean {

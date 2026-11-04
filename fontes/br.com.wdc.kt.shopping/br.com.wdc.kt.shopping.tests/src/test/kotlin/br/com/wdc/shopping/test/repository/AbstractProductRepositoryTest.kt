@@ -263,6 +263,16 @@ abstract class AbstractProductRepositoryTest {
     // :: insert
 
     @Test
+    fun insert_withProjection_writesOnlyTheMarkedFields() = runBlocking {
+        val product = Product().apply { name = "Com foto"; price = 3.5; description = "d"; image = byteArrayOf(1, 2, 3) }
+        val projection = Product().apply { name = ""; price = 0.0; description = "" }
+        assertTrue(repo().insert(product, projection))
+        assertNotNull(product.id, "a chave volta")
+        assertNull(repo().fetchImage(product.id!!), "fora da projeção: não gravada")
+        assertEquals("Com foto", repo().fetchById(product.id!!)!!.name)
+    }
+
+    @Test
     fun insert_newProduct() = runBlocking {
         val product = Product().apply {
             name = "Teclado USB"

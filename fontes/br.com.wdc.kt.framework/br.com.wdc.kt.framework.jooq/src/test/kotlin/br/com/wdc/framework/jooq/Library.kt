@@ -12,6 +12,7 @@ import java.util.UUID
 import kotlin.time.Instant
 import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.Identity
 import org.jooq.Name
 import org.jooq.Record
 import org.jooq.SortField
@@ -62,6 +63,25 @@ class TNote(alias: Name = DSL.name("NOTE"), aliased: Table<Record>? = null) : Ta
     override fun `as`(alias: String): TNote = TNote(DSL.name(alias), this)
 }
 
+/** Tabela com identidade, padrões de coluna e um código único: o caso do insert por projeção. */
+class TCoupon(alias: Name = DSL.name("COUPON"), aliased: Table<Record>? = null) : TableImpl<Record>(alias, null, aliased) {
+    val ID: TableField<Record, Long?> = createField(DSL.name("ID"), SQLDataType.BIGINT.nullable(false).identity(true), this)
+    val CODE: TableField<Record, String?> = createField(DSL.name("CODE"), SQLDataType.VARCHAR(20).nullable(false), this)
+    val STATUS: TableField<Record, String?> = createField(DSL.name("STATUS"), SQLDataType.VARCHAR(20).nullable(false), this)
+    val DISCOUNT: TableField<Record, BigDecimal?> = createField(DSL.name("DISCOUNT"), SQLDataType.NUMERIC(5, 2), this)
+    val AUTHOR_ID: TableField<Record, Long?> = createField(DSL.name("AUTHOR_ID"), SQLDataType.BIGINT, this)
+    val CREATED: TableField<Record, LocalDateTime?> = createField(DSL.name("CREATED"), SQLDataType.LOCALDATETIME(6), this)
+
+    override fun getIdentity(): Identity<Record, Long?> = Internal.createIdentity(this, ID)
+
+    override fun getPrimaryKey(): UniqueKey<Record> =
+        Internal.createUniqueKey(this, DSL.name("PK_COUPON"), arrayOf<TableField<Record, *>>(ID), true)
+
+    override fun `as`(alias: String): TCoupon = TCoupon(DSL.name(alias), this)
+}
+
+val COUPON = TCoupon()
+
 val AUTHOR = TAuthor()
 val BOOK = TBook()
 val NOTE = TNote()
@@ -93,6 +113,17 @@ class Book(
 )
 
 class Note(var text: String? = null)
+
+class Coupon(
+    var id: Long? = null,
+    var code: String? = null,
+    var status: String? = null,
+    var discount: Double? = null,
+    var created: Instant? = null,
+    /** Derivado: `código:situação`, uma expressão na consulta. */
+    var label: String? = null,
+    var author: Author? = null,
+)
 
 class BookCriteria : Criteria {
     val id = ComparableCriterion<BookCriteria, Long>(this, "id")
@@ -128,6 +159,23 @@ class Library(private val dsl: () -> DSLContext) {
         .addUid("catalog", { it.catalog }, { b, v -> b.catalog = v }, { it.CATALOG })
         .addBin("cover", { it.cover }, { b, v -> b.cover = v }, { it.COVER })
         .addEnm("kind", { it.kind }, { b, v -> b.kind = v }, Kind.NOVEL, Kind::parse, { it.KIND })
+        .lazy { qb ->
+            qb.addBeanField(
+                "author", { it.author }, { b, v -> b.author = v }, authorQuery,
+                { cq -> cq.where().and(cq.childTable.ID.eq(cq.superTable.AUTHOR_ID)) },
+                { key -> key.addI64("id") { it.AUTHOR_ID } },
+            )
+        }
+        .build()
+
+    val couponQuery: JsonQuery<Coupon, TCoupon> = JsonQueryBuilder<Coupon, TCoupon>()
+        .setAlias("c").setBeanFactory(::Coupon).setTableFactory(COUPON::`as`).setDSLContextSupplier(dsl)
+        .addI64("id", { it.id }, { b, v -> b.id = v }, { it.ID })
+        .addStr("code", { it.code }, { b, v -> b.code = v }, { it.CODE })
+        .addStr("status", { it.status }, { b, v -> b.status = v }, { it.STATUS })
+        .addF64("discount", { it.discount }, { b, v -> b.discount = v }, { it.DISCOUNT })
+        .addIlt("created", { it.created }, { b, v -> b.created = v }, { it.CREATED })
+        .addStr("label", { it.label }, { b, v -> b.label = v }, { DSL.concat(it.CODE, DSL.inline(":"), it.STATUS) })
         .lazy { qb ->
             qb.addBeanField(
                 "author", { it.author }, { b, v -> b.author = v }, authorQuery,

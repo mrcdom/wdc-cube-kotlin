@@ -20,16 +20,10 @@ import org.jooq.impl.DSL
 
 class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
 
-    override suspend fun insert(bean: User): Boolean {
-        val dsl = dsl()
+    override suspend fun insert(bean: User, projection: User?): Boolean {
         // o id informado é respeitado (a carga de demonstração grava ids fixos)
-        val id = bean.id ?: dsl.nextval(SQ_USER).also { bean.id = it }
-        val step = dsl.insertInto(EN_USER).set(EN_USER.ID, id)
-        bean.userName?.let { step.set(EN_USER.USERNAME, it) }
-        bean.password?.let { step.set(EN_USER.PASSWORD, it) }
-        bean.name?.let { step.set(EN_USER.NAME, it) }
-        bean.roles?.let { step.set(EN_USER.ROLES, it) }
-        return step.execute() > 0
+        if (bean.id == null) bean.id = dsl().nextval(SQ_USER)
+        return QUERY.insert(bean, projection)
     }
 
     override suspend fun update(newBean: User, oldBean: User?, projection: User?): Boolean {

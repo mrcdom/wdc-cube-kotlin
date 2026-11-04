@@ -98,9 +98,9 @@ interface ReadOnlyRepository<E, C, K> {
 }
 
 interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
-    suspend fun insert(bean: E): Boolean
+    suspend fun insert(bean: E, projection: E? = null): Boolean
     suspend fun update(newBean: E, oldBean: E? = null, projection: E? = null): Boolean
-    suspend fun insertOrUpdate(newBean: E, oldBean: E?): Boolean
+    suspend fun insertOrUpdate(newBean: E, oldBean: E?, projection: E? = null): Boolean
     suspend fun delete(criteria: C): Int
 }
 ```
@@ -113,7 +113,8 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
 As quatro entidades do Shopping têm repositório completo.
 
 - **`update` é parcial.** A `projection` diz quais campos considerar; com `oldBean`, só entram os que mudaram. Sem nenhuma das duas, vale a projeção padrão da entidade.
-- **`insertOrUpdate`** insere quando `oldBean` é `null` e atualiza caso contrário — não consulta o banco para decidir.
+- **`insert` também aceita projeção.** Ela diz quais campos entram no `INSERT`; o que fica fora recebe o padrão da coluna. Sem projeção, entram os campos que têm valor (o nulo fica fora). O bean sai completo: a chave gerada e o que o banco preencheu.
+- **`insertOrUpdate`** insere quando `oldBean` é `null` e atualiza caso contrário — não consulta o banco para decidir. A projeção vale para os dois.
 - **`fetch`**: `0` em `offset` ou `limit` significa "sem salto" e "sem limite". Atenção à ordem posicional: `fetch(c, 10)` pula dez linhas; para limitar, nomeie — `fetch(c, limit = 10)`.
 - **`fetchPage`** devolve `Page(items, page, totalPages, totalItems)`.
 - **`delete` com critério vazio é recusado** (`InvalidRequestException`) nas quatro entidades. Apagar tudo por esquecimento de um filtro não é um caso de uso.
@@ -211,6 +212,7 @@ A partir desse mapeamento e de uma projeção, o `JsonQuery` monta **uma única 
 - O `CriterionTranslator` traduz cada campo do critério numa condição jOOQ; valores são sempre *bind values*.
 - O `DSLContext` do módulo (`ShoppingDSLContext.BEAN`) usa a conexão da transação corrente ou, fora de transação, uma conexão avulsa em autocommit.
 - Os repositórios não embrulham exceções: a real sobe, e a camada REST a traduz em status.
+- **O `insert` também sai do mapeamento:** `QUERY.insert(bean, projection)` monta o `INSERT` pelas colunas do mapeamento (as associações pela chave estrangeira declarada em `key`; campo derivado e coluna de identidade ficam fora) e lê a linha inserida de volta pela mesma projeção JSON do fetch. No PostgreSQL é uma instrução só (`WITH … INSERT … RETURNING`); no H2, um `INSERT` simples seguido do `SELECT` pela chave — o `FINAL TABLE` do H2 2.4 deixa a linha gravada quando a instrução falha numa restrição. O repositório do Shopping só preenche o id pela sequência antes de chamá-lo.
 
 ---
 
@@ -289,7 +291,7 @@ Todas as entidades têm as mesmas operações, sob `/api/repo/<entidade>` (`user
 
 | Rota | Transacional | Corpo | Resposta |
 |---|---|---|---|
-| `POST …/insert` | sim | entidade | `{success, id}` |
+| `POST …/insert` | sim | `{entity, projection?}`, ou a entidade solta | `{success, id, entity}` |
 | `POST …/update` | sim | entidade parcial — as chaves presentes são os campos a atualizar | `{success}` |
 | `POST …/delete` | sim | campos do critério | `{count}` |
 | `POST …/count` | não | campos do critério | `{count}` |

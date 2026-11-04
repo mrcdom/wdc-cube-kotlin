@@ -4,10 +4,15 @@ import br.com.wdc.framework.jooq.JsonDialect
 import br.com.wdc.framework.jooq.JsonFieldEntry
 import br.com.wdc.framework.jooq.JsonFieldType
 import java.sql.Connection
+import java.sql.Statement
 import java.util.Base64
+import org.jooq.DSLContext
 import org.jooq.Field
+import org.jooq.InsertReturningStep
 import org.jooq.QueryPart
 import org.jooq.SortField
+import org.jooq.Table
+import org.jooq.conf.ParamType
 import org.jooq.impl.DSL
 
 /**
@@ -72,4 +77,48 @@ object H2JsonDialect : JsonDialect {
     /** `byte[]` → Base64. Registrada no H2 como `TO_BASE64`. */
     @JvmStatic
     fun toBase64(value: ByteArray?): String? = value?.let { Base64.getEncoder().encodeToString(it) }
+
+    /**
+     * `INSERT` simples, com as chaves geradas pelo JDBC, e depois o `SELECT` da linha pela chave primária: duas idas
+     * ao banco.
+     *
+     * Não é `SELECT … FROM FINAL TABLE (INSERT …)`, que seria uma só: no H2 2.4, quando essa instrução falha numa
+     * restrição (chave estrangeira, por exemplo), a linha inserida fica gravada — em autocommit e também dentro de
+     * uma transação que depois comita. O `INSERT` simples é atômico.
+     */
+    override fun insertAndSelect(
+        dsl: DSLContext,
+        insert: InsertReturningStep<*>,
+        inserted: Table<*>,
+        alias: String,
+        row: Field<String>,
+        writtenKey: Map<String, Any?>,
+    ): String? {
+        val sql = insert.getSQL(ParamType.INDEXED)
+        val binds = insert.bindValues
+        val generated = HashMap<String, Any?>()
+        val count = dsl.connectionResult { connection ->
+            connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).use { statement ->
+                binds.forEachIndexed { i, value -> statement.setObject(i + 1, value) }
+                val count = statement.executeUpdate()
+                if (count > 0) {
+                    statement.generatedKeys.use { keys ->
+                        if (keys.next()) {
+                            for (i in 1..keys.metaData.columnCount) generated[keys.metaData.getColumnName(i).uppercase()] = keys.getObject(i)
+                        }
+                    }
+                }
+                count
+            }
+        }
+        if (count == 0) return null
+        val primaryKey = inserted.primaryKey?.fields
+            ?: throw IllegalStateException("ler de volta a linha inserida exige chave primária, e ${inserted.name} não declara")
+        val byKey = primaryKey.map { pk ->
+            val value = if (pk.name in writtenKey) writtenKey[pk.name] else generated[pk.name.uppercase()]
+            @Suppress("UNCHECKED_CAST")
+            (inserted.field(pk.name) as Field<Any?>).eq(value)
+        }
+        return dsl.select(row).from(inserted).where(byKey).fetchOne()?.value1()
+    }
 }

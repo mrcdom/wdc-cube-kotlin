@@ -30,7 +30,7 @@ class ReadOnlyRepositoryTest {
     private data class Note(var id: Long? = null)
 
     private class NoteRepository(private val rows: MutableList<Note>) : Repository<Note, Unit, Long> {
-        override suspend fun insert(bean: Note): Boolean = rows.add(bean)
+        override suspend fun insert(bean: Note, projection: Note?): Boolean = rows.add(bean)
         override suspend fun update(newBean: Note, oldBean: Note?, projection: Note?): Boolean = true
         override suspend fun delete(criteria: Unit): Int = rows.size.also { rows.clear() }
         override suspend fun count(criteria: Unit): Int = rows.size

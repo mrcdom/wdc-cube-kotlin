@@ -178,6 +178,8 @@ post("/order") { call -> call.timed("action", "CreateOrderAction") { createOrder
 
 `RepositoryRpc(basePath, codec, repository, …)` publica as operações de um repositório: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` e `GET {id}`. É o protocolo que o cliente `HttpRepository` do Shopping fala. O acesso fica com a aplicação, por meio de `rule` (por operação), `scope` (restringe o critério a quem chama), `sanitizeProjection`, `sanitizeOutput`, `beforeInsert` e `beforeUpdate`. Os dois ganchos de escrita rodam dentro da transação. Para um repositório só de leitura, use `writes = false`.
 
+O `insert` recebe `{"entity", "projection"?}` (ou, como antes da 0.4.0, a entidade solta) e responde `{"success", "id", "entity"}`, com a entidade como o repositório a deixou — a chave gerada e os padrões das colunas —, passada por `sanitizeOutput`.
+
 ## Testes
 
 `RestTestServer(api)` sobe a API numa porta livre, com o mesmo pipeline da produção:

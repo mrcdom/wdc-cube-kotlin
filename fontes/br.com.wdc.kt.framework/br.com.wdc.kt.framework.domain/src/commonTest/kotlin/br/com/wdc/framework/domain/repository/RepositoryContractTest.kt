@@ -20,7 +20,7 @@ class RepositoryContractTest {
     private class MemoryRepository(private val rows: MutableList<Thing>) : Repository<Thing, ThingCriteria, Long> {
         val calls = ArrayList<String>()
 
-        override suspend fun insert(bean: Thing): Boolean {
+        override suspend fun insert(bean: Thing, projection: Thing?): Boolean {
             calls.add("insert"); return rows.add(bean)
         }
 

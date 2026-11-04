@@ -73,6 +73,9 @@ class RelationKey<T : Table<*>> internal constructor() {
         return this
     }
 
+    /** Cada parte: o nome no JSON do filho e a coluna desta tabela. */
+    internal fun columns(): List<Pair<String, (T) -> Field<*>>> = parts.values.map { it.name to it.column }
+
     /** Os campos que esta chave cobre — é contra eles que se pergunta se a projeção pediu mais. */
     internal fun names(): Set<String> = parts.keys
 
