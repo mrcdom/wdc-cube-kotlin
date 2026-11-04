@@ -6,6 +6,7 @@ import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.codec.EntityGraph
 import br.com.wdc.framework.domain.codec.ModelCodec
+import br.com.wdc.framework.domain.codec.ref
 import br.com.wdc.framework.domain.criteria.CriterionCodec
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.domain.product.Product
@@ -78,7 +79,7 @@ class PurchaseItemCodec : ModelCodec<PurchaseItem, PurchaseItemCriteria> {
                 "amount" -> item.amount = InputCoerceUtils.asInteger(input)
                 "price" -> item.price = InputCoerceUtils.asDouble(input)
                 "product" -> item.product = readProduct(input)
-                "purchaseId" -> InputCoerceUtils.asLong(input)?.let { purchaseId -> item.purchase = Purchase().apply { id = purchaseId } }
+                "purchaseId" -> item.purchase = ref(::Purchase, InputCoerceUtils.asLong(input)) { id = it }
                 else -> input.skipValue()
             }
         }
@@ -101,7 +102,7 @@ class PurchaseItemCodec : ModelCodec<PurchaseItem, PurchaseItemCriteria> {
                     projection.product = Product().apply { id = pv.i64 }
                 }
                 "purchaseId" -> {
-                    InputCoerceUtils.asLong(input)?.let { purchaseId -> entity.purchase = Purchase().apply { id = purchaseId } }
+                    entity.purchase = ref(::Purchase, InputCoerceUtils.asLong(input)) { id = it }
                     projection.purchase = Purchase().apply { id = pv.i64 }
                 }
                 else -> input.skipValue()
