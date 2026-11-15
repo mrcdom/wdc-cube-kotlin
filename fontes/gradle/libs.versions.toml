@@ -1,6 +1,6 @@
 [versions]
-kotlin = "2.3.21"
-agp = "9.1.1"
+kotlin = "2.4.21"
+agp = "9.5.0"
 androidx-activity-compose = "1.13.0"
 kotlinx-coroutines = "1.11.0"
 kotlinx-datetime = "0.8.0"
@@ -18,7 +18,7 @@ tomcat-dbcp = "6.0.53"
 javalin = "7.2.4"
 swagger-ui = "5.34.1"
 okhttp = "5.4.0"
-compose-multiplatform = "1.10.3"
+compose-multiplatform = "1.11.1"
 maven-publish = "0.37.0"
 
 [libraries]

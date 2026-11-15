@@ -20,7 +20,7 @@ dependencies {
 
 // A mesma suíte, em PostgreSQL. Usa um PostgreSQL embutido, que sobe sozinho (a primeira execução baixa os
 // binários); com SHOPPING_TEST_PG_URL (+ _USER, _PASSWORD) no ambiente, usa esse servidor — e apaga os dados dele.
-val testPostgres by tasks.registering(Test::class) {
+val testPostgres = tasks.register<Test>("testPostgres") {
     description = "Runs the test suite against PostgreSQL."
     group = "verification"
     testClassesDirs = sourceSets["test"].output.classesDirs

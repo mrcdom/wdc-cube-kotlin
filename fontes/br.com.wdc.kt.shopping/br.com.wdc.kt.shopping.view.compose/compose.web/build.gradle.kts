@@ -25,7 +25,7 @@ kotlin {
     }
 
     sourceSets {
-        val wasmJsMain by getting {
+        getByName("wasmJsMain") {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.ui)

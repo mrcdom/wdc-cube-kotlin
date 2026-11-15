@@ -10,12 +10,12 @@ kotlin {
     jvmToolchain(21)
 
     jvm()
-    androidLibrary {
+    android {
         namespace = "br.com.wdc.shopping.domain"
         compileSdk = 36
         minSdk = 26
     }
-    js(IR) {
+    js {
         browser()
     }
     wasmJs {

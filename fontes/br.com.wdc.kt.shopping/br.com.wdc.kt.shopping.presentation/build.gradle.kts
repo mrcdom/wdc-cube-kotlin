@@ -6,12 +6,12 @@ plugins {
 kotlin {
     jvmToolchain(21)
     jvm()
-    androidLibrary {
+    android {
         namespace = "br.com.wdc.shopping.presentation"
         compileSdk = 36
         minSdk = 26
     }
-    js(IR) {
+    js {
         browser()
     }
     wasmJs {
@@ -25,7 +25,7 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
+        getByName("commonMain") {
             dependencies {
                 api(project(":shopping-domain"))
                 api(project(":framework-cube"))

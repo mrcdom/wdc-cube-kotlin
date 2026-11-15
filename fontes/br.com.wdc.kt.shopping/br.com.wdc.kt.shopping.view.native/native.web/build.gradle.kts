@@ -7,7 +7,7 @@ plugins {
 kotlin {
     jvmToolchain(21)
 
-    js(IR) {
+    js {
         browser {
             commonWebpackConfig {
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
@@ -28,7 +28,7 @@ kotlin {
     }
 
     sourceSets {
-        val jsMain by getting {
+        getByName("jsMain") {
             dependencies {
                 implementation(project(":shopping-presentation"))
                 implementation(project(":shopping-persistence-client"))

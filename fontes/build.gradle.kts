@@ -117,7 +117,7 @@ configure(subprojects.filter { it.name in publishedModules }) {
         publishToCentral(
             com.vanniktech.maven.publish.KotlinMultiplatform(
                 javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
-                sourcesJar = true,
+                sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
                 androidVariantsToPublish = listOf("release"),
             )
         )
@@ -128,7 +128,7 @@ configure(subprojects.filter { it.name in publishedModules }) {
         publishToCentral(
             com.vanniktech.maven.publish.KotlinJvm(
                 javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
-                sourcesJar = true,
+                sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
             )
         )
     }
