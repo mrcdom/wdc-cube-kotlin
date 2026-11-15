@@ -7,6 +7,7 @@ import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
 import br.com.wdc.framework.rest.RequestContext
 import br.com.wdc.framework.rest.security.AuthenticationException
+import br.com.wdc.framework.rest.security.RateLimitedException
 import io.javalin.http.HttpResponseException
 
 /** Resposta de erro: status, corpo (serializado como DTO; `null` = vazio) e cabeçalhos extras. */
@@ -30,6 +31,7 @@ fun interface ExceptionHandler<in E : Throwable> {
  * | `AccessDeniedException` | 403 |
  * | `TransactionConflictException` | 409 |
  * | `TransactionLimitExceededException` | 429 |
+ * | `RateLimitedException` (limite por minuto) | 429, com `Retry-After` |
  * | `HttpResponseException` do Javalin | o status dela |
  *
  * Todos com o corpo de [errorBody]. Registrar a mesma classe de novo substitui o handler.
@@ -55,6 +57,9 @@ class ExceptionMapping {
         status(AccessDeniedException::class.java, 403)
         status(TransactionConflictException::class.java, 409)
         status(TransactionLimitExceededException::class.java, 429)
+        on(RateLimitedException::class.java) { e, r ->
+            ErrorResponse(429, errorBody(429, e.message, r), mapOf("Retry-After" to e.retryAfterSeconds.toString()))
+        }
         on(HttpResponseException::class.java) { e, r -> ErrorResponse(e.status, errorBody(e.status, e.message, r)) }
     }
 

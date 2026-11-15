@@ -13,6 +13,7 @@ import br.com.wdc.framework.rest.security.AccessRule
 import br.com.wdc.framework.rest.security.AccessRules
 import br.com.wdc.framework.rest.security.AuthenticationException
 import br.com.wdc.framework.rest.security.AuthenticationRequiredException
+import br.com.wdc.framework.rest.security.RateLimiter
 import br.com.wdc.framework.rest.security.RequestMatcher
 import br.com.wdc.framework.rest.security.SecurityConfig
 import br.com.wdc.framework.rest.transaction.RemoteTransactionRoutes
@@ -55,7 +56,7 @@ typealias AfterFilter = suspend (RequestContext, Throwable?) -> Unit
  * ```
  *
  * **Pipeline de cada rota**, com o [RequestContext] corrente do começo ao fim — inclusive nas corrotinas:
- * filtros `before` → autenticação → regra de acesso → handler (na transação, se `transactional`) → resposta →
+ * filtros `before` → autenticação → limite por minuto → regra de acesso → handler (na transação, se `transactional`) → resposta →
  * filtros `after`. A resposta, de sucesso ou de erro, é serializada **dentro** do contexto: um adaptador JSON
  * que dependa da requisição (fuso do cliente, por exemplo) a enxerga. Com [Builder.securityHeaders] e
  * [Builder.serverTiming], os cabeçalhos deles são escritos depois da resposta serializada, antes dos filtros `after`.
@@ -82,6 +83,7 @@ class RestApi private constructor(builder: Builder) {
     private val openApi = builder.openApiConfig
     private val serverTiming = builder.serverTimingOptions
     private val securityHeaders = builder.securityHeadersOptions
+    private val rateLimiter = builder.securityConfig?.rateLimitOptions?.let(::RateLimiter)
 
     init {
         security?.let {
@@ -163,6 +165,7 @@ class RestApi private constructor(builder: Builder) {
                     befores.forEach { (matcher, filter) -> if (matcher == null || matcher.matches(request.method, request.path)) filter(request) }
                     val urlPublic = route.public || security?.isPublic(request.method, request.path) == true
                     authenticate(request, urlPublic)
+                    request.principal?.let { rateLimiter?.check(it) }
                     authorize(route, request, urlPublic)
                     val call = RestCall(request, this@RestApi)
                     val result = if (route.transactional) transactions.run(request) { route.handler(call) } else route.handler(call)
@@ -217,6 +220,7 @@ class RestApi private constructor(builder: Builder) {
                     if (security?.protectUnmatched == true && !security.isPublic(request.method, request.path)) {
                         authenticate(request, urlPublic = false)
                         if (request.principal == null) throw AuthenticationRequiredException("Authentication required")
+                        rateLimiter?.check(request.principal!!)
                     }
                     renderError(ctx, request, e)
                 } catch (refusal: Throwable) {

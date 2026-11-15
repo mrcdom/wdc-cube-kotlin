@@ -112,6 +112,7 @@ Entidades de repositório trafegam pelo `ModelCodec` delas, sem reflexão. O res
 | `AccessDeniedException` | 403 |
 | `TransactionConflictException` | 409 |
 | `TransactionLimitExceededException` | 429 |
+| `RateLimitedException` (limite por minuto) | 429, com `Retry-After` |
 | `HttpResponseException` do Javalin (`NotFoundResponse`…) | o status dela |
 
 O corpo de todos esses vem de `errorBody(status, mensagem, request)`, que por padrão é `{"error": "<mensagem>"}`. Para que caminhos sem rota (404/405) também passem pelo mapa, ligue `handleUnmatched = true`; sem isso, o corpo é o do Javalin.
@@ -132,6 +133,18 @@ Não há JWT nem login no módulo. A aplicação fornece o `Authenticator` (`Bea
 - Sem credencial numa rota que a exige, a resposta é `unauthenticatedStatus` (401 por padrão). Com credencial mas sem permissão, a resposta é a de `AccessDeniedException` (403). Os corpos dos dois casos podem ser diferentes.
 - Uma credencial recusada numa rota pública é ignorada e a requisição segue anônima. `rejectInvalidCredentialsOnPublicRoutes = true` muda isso.
 - Uma regra que dependa do corpo ou do banco fica no handler, que lança `AccessDeniedException`.
+
+**Limite por minuto.** `rateLimit { key; perMinute; clock }` limita as requisições de cada quem chama. É avaliado depois da autenticação e antes da regra de acesso, e pedido sem principal não conta. A janela é fixa, por minuto do relógio. Acima do limite, `RateLimitedException`, que o mapeamento padrão responde com 429 e `Retry-After` (os segundos até a virada do minuto); um `on<RateLimitedException>` em `errors { }` troca a resposta. A contagem fica em memória, por instância: com N instâncias, o limite efetivo é até N vezes o configurado.
+
+```kotlin
+security {
+    authenticator = …
+    rateLimit {
+        key = { p -> p.id }                                         // o padrão
+        perMinute = { p -> (p as Partner).requestsPerMinute }       // null = sem limite (o padrão)
+    }
+}
+```
 
 ## Contexto por requisição
 

@@ -4,7 +4,8 @@ package br.com.wdc.framework.rest.security
  * A segurança da API. Sem ela ([br.com.wdc.framework.rest.RestApi.Builder.security] não chamado), toda rota
  * é aberta e o principal é sempre `null`.
  *
- * Ordem em cada rota: filtros `before` → [authenticator] → regra da rota (ou [defaultRule]) → handler.
+ * Ordem em cada rota: filtros `before` → [authenticator] → limite por minuto ([rateLimit]) → regra da rota (ou
+ * [defaultRule]) → handler.
  */
 class SecurityConfig {
 
@@ -32,6 +33,13 @@ class SecurityConfig {
      * resposta de "sem credencial".
      */
     var rejectInvalidCredentialsOnPublicRoutes: Boolean = false
+
+    internal var rateLimitOptions: RateLimitOptions? = null
+
+    /** Liga o limite de requisições por minuto de cada quem chama (ver [RateLimitOptions]). */
+    fun rateLimit(block: RateLimitOptions.() -> Unit) {
+        rateLimitOptions = (rateLimitOptions ?: RateLimitOptions()).apply(block)
+    }
 
     internal val publicMatchers = ArrayList<RequestMatcher>()
 
