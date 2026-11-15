@@ -130,7 +130,7 @@ class SwaggerUiTest {
         }
     }
 
-    private fun rawGet(port: Int, path: String): String = Socket("localhost", port).use { socket ->
+    private fun rawGet(port: Int, path: String): String = Socket("127.0.0.1", port).use { socket ->
         socket.getOutputStream().write("GET $path HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".toByteArray())
         socket.getInputStream().bufferedReader().readLine() ?: ""
     }

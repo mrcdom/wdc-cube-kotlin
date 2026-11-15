@@ -58,7 +58,7 @@ class RemoteTransactionRestTest {
     private suspend fun exists(product: Product) = product.id != null && env.productRepo.fetchById(product.id!!) != null
 
     /** Outro cliente, com identidade própria, falando com o mesmo servidor. */
-    private fun anotherClient() = OkHttpTransport("http://localhost:${env.port}")
+    private fun anotherClient() = OkHttpTransport("http://127.0.0.1:${env.port}")
 
     private fun begin(transport: OkHttpTransport): String =
         Regex("\"txId\":\"([^\"]+)\"").find(transport.postJson("/api/tx/begin", "{}"))!!.groupValues[1]
@@ -399,7 +399,7 @@ class RemoteTransactionRestTest {
     fun status_tellsWhatHappenedToATransaction() {
         val client = anotherClient()
         fun status(txId: String): String {
-            val request = HttpRequest.newBuilder(URI("http://localhost:${env.port}/api/tx/status"))
+            val request = HttpRequest.newBuilder(URI("http://127.0.0.1:${env.port}/api/tx/status"))
                 .header("X-Tx-Id", txId).header("X-Client-Id", client.clientId).GET().build()
             return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()).body()
         }

@@ -27,17 +27,23 @@ import java.time.Duration
  */
 class RestTestServer(api: RestApi, configure: (JavalinConfig) -> Unit = {}) : AutoCloseable {
 
-    private val javalin: Javalin = api.createServer(configure).start(0)
+    // Só no loopback: em todas as interfaces, o sistema pode entregar uma porta que outro processo já escuta em
+    // 127.0.0.1 (o macOS deixa, com SO_REUSEADDR), e o cliente, que chama o loopback, cai no outro processo.
+    private val javalin: Javalin = api.createServer(configure).start(HOST, 0)
 
     val port: Int get() = javalin.port()
 
-    val baseUrl: String get() = "http://localhost:$port"
+    val baseUrl: String get() = "http://$HOST:$port"
 
     /** Um cliente novo, sem cabeçalhos. Cada um guarda os seus ([TestClient.header]). */
     fun client(): TestClient = TestClient(baseUrl)
 
     override fun close() {
         javalin.stop()
+    }
+
+    private companion object {
+        const val HOST = "127.0.0.1"
     }
 }
 

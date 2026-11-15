@@ -56,7 +56,7 @@ class OpenApiSpecTest {
     private fun schemas(): JsonObject = spec().getAsJsonObject("components").getAsJsonObject("schemas")
 
     private fun send(method: String, path: String, body: String? = null, token: String? = null): HttpResponse<String> {
-        val builder = HttpRequest.newBuilder(URI("http://localhost:${env.port}$path"))
+        val builder = HttpRequest.newBuilder(URI("http://127.0.0.1:${env.port}$path"))
         token?.let { builder.header("Authorization", "Bearer $it") }
         val publisher = if (body == null) HttpRequest.BodyPublishers.noBody() else HttpRequest.BodyPublishers.ofString(body)
         builder.method(method, publisher)
@@ -192,7 +192,7 @@ class OpenApiSpecTest {
             }
         }
         assertNotNull(openTx, "begin não abriu transação")
-        val rollback = HttpRequest.newBuilder(URI("http://localhost:${env.port}/api/tx/rollback"))
+        val rollback = HttpRequest.newBuilder(URI("http://127.0.0.1:${env.port}/api/tx/rollback"))
             .header("Authorization", "Bearer $token").header("X-Tx-Id", openTx).POST(HttpRequest.BodyPublishers.ofString("{}")).build()
         assertEquals(200, HttpClient.newHttpClient().send(rollback, HttpResponse.BodyHandlers.ofString()).statusCode())
 
