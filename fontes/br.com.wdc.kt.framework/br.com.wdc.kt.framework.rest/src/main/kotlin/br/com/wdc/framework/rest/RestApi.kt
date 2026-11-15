@@ -56,8 +56,8 @@ typealias AfterFilter = suspend (RequestContext, Throwable?) -> Unit
  * **Pipeline de cada rota**, com o [RequestContext] corrente do começo ao fim — inclusive nas corrotinas:
  * filtros `before` → autenticação → regra de acesso → handler (na transação, se `transactional`) → resposta →
  * filtros `after`. A resposta, de sucesso ou de erro, é serializada **dentro** do contexto: um adaptador JSON
- * que dependa da requisição (fuso do cliente, por exemplo) a enxerga. Com [Builder.serverTiming], o cabeçalho
- * `Server-Timing` é escrito depois da resposta serializada, antes dos filtros `after`.
+ * que dependa da requisição (fuso do cliente, por exemplo) a enxerga. Com [Builder.securityHeaders] e
+ * [Builder.serverTiming], os cabeçalhos deles são escritos depois da resposta serializada, antes dos filtros `after`.
  */
 class RestApi private constructor(builder: Builder) {
 
@@ -80,6 +80,7 @@ class RestApi private constructor(builder: Builder) {
     private val handleUnmatched = builder.handleUnmatched
     private val openApi = builder.openApiConfig
     private val serverTiming = builder.serverTimingOptions
+    private val securityHeaders = builder.securityHeadersOptions
 
     init {
         security?.let {
@@ -128,7 +129,13 @@ class RestApi private constructor(builder: Builder) {
             config.routes.get(cfg.path) { ctx ->
                 ctx.contentType("application/json")
                 ctx.result(openApiJson!!)
+                securityHeaders?.writeTo(ctx)
             }
+        }
+        // a pré-requisição do CORS é respondida pelo plugin, sem passar por rota nem por unmatched
+        val corsPath = cors?.path
+        if (securityHeaders != null && corsPath != null) {
+            config.routes.after(corsPath) { ctx -> if (isPreflight(ctx)) securityHeaders.writeTo(ctx) }
         }
         if (handleUnmatched || security?.protectUnmatched == true) {
             config.routes.exception(EndpointNotFound::class.java) { e, ctx -> unmatched(e, ctx) }
@@ -163,6 +170,7 @@ class RestApi private constructor(builder: Builder) {
                     failure = e
                     renderError(ctx, request, e)
                 } finally {
+                    writeSecurityHeaders(ctx, request)
                     writeTiming(ctx, request)
                     runAfters(request, failure)
                 }
@@ -193,7 +201,7 @@ class RestApi private constructor(builder: Builder) {
     private fun unmatched(e: Exception, ctx: Context) {
         // O preflight do CORS não tem rota (o plugin só põe os cabeçalhos) e vem sem credencial: tratado como rota
         // inexistente, o protectUnmatched o recusaria e o navegador bloquearia todo pedido de outra origem.
-        if (cors != null && ctx.method() == HandlerType.OPTIONS && ctx.header("Access-Control-Request-Method") != null) {
+        if (isPreflight(ctx)) {
             ctx.status(200)
             return
         }
@@ -214,10 +222,23 @@ class RestApi private constructor(builder: Builder) {
                     failure = refusal
                     renderError(ctx, request, refusal)
                 } finally {
+                    writeSecurityHeaders(ctx, request)
                     writeTiming(ctx, request)
                     runAfters(request, failure)
                 }
             }
+        }
+    }
+
+    private fun isPreflight(ctx: Context): Boolean =
+        cors != null && ctx.method() == HandlerType.OPTIONS && ctx.header("Access-Control-Request-Method") != null
+
+    private fun writeSecurityHeaders(ctx: Context, request: RequestContext) {
+        val options = securityHeaders ?: return
+        try {
+            options.writeTo(ctx)
+        } catch (e: Exception) {
+            LOG.error("Falha ao escrever os cabeçalhos de segurança de ${request.method} ${request.path}", e)
         }
     }
 
@@ -381,6 +402,7 @@ class RestApi private constructor(builder: Builder) {
         internal var compressionOptions: CompressionOptions? = null
         internal var openApiConfig: OpenApiConfig? = null
         internal var serverTimingOptions: ServerTimingOptions? = null
+        internal var securityHeadersOptions: SecurityHeadersOptions? = null
 
         /** O mapeador dos DTOs. Padrão: Gson sem nulos, datas ISO. */
         var json: GsonJsonMapper = GsonJsonMapper()
@@ -414,6 +436,11 @@ class RestApi private constructor(builder: Builder) {
         /** Liga o cabeçalho `Server-Timing` (ver [ServerTimingOptions]); desligado se não chamado. */
         fun serverTiming(block: ServerTimingOptions.() -> Unit = {}) {
             serverTimingOptions = (serverTimingOptions ?: ServerTimingOptions()).apply(block)
+        }
+
+        /** Liga os cabeçalhos de cache e de segurança em toda resposta (ver [SecurityHeadersOptions]); desligado se não chamado. */
+        fun securityHeaders(block: SecurityHeadersOptions.() -> Unit = {}) {
+            securityHeadersOptions = (securityHeadersOptions ?: SecurityHeadersOptions()).apply(block)
         }
 
         fun openApi(block: OpenApiConfig.() -> Unit = {}) {

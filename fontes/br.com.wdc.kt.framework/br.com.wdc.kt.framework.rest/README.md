@@ -175,6 +175,20 @@ post("/order") { call -> call.timed("action", "CreateOrderAction") { createOrder
 
 `call.timing(name, nanos, desc)` registra uma duração já medida; é uma função simples, que a rota pode passar adiante (`call::timing`). Com `cors { … }`, `Server-Timing` entra sozinho nos `exposedHeaders`.
 
+## Cabeçalhos de cache e de segurança
+
+`securityHeaders()` põe cabeçalhos em toda resposta que passa pela biblioteca: sucesso, erro mapeado, recusa da autenticação ou da regra, 404/405 tratados por ela (`handleUnmatched` ou `protectUnmatched`), o documento OpenAPI e a pré-requisição do CORS. Fica desligado se não for chamado.
+
+- **Cache** (`noCache = true`): `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`, `Pragma: no-cache` e `Expires: 0`, só quando a rota não pôs o próprio `Cache-Control`. A rota que quer cache escreve o seu, e a resposta sai sem `Pragma` nem `Expires`.
+- **Segurança** (`headers`, sempre, vencendo o valor que a rota tiver posto): `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `X-XSS-Protection: 1; mode=block`. O mapa aceita trocar, acrescentar e retirar.
+
+```kotlin
+securityHeaders {
+    headers -= "X-XSS-Protection"                              // obsoleto nos navegadores atuais
+    headers["Strict-Transport-Security"] = "max-age=31536000"  // não vem por padrão: atrás de proxy TLS o pedido chega em HTTP
+}
+```
+
 ## OpenAPI
 
 `openApi { path; title; version; description; tag(…); schemas; parameters; securityScheme; raw }`. O documento sai das rotas registradas: verbo, caminho, parâmetros de caminho e a segurança de cada operação (uma rota pública leva `security: []`). Os esquemas dos DTOs são gerados por reflexão, com os nomes que o Gson usa. Cada rota acrescenta o que tiver em `doc = { summary = …; query("page", Int::class.java); accepts<Req>(); returns<Resp>(200); response(404); raw(mapOf(…)) }`, e `raw` vence o que foi gerado. O documento fica servido em `path`, e também em `api.openApiJson`.
