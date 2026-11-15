@@ -20,7 +20,7 @@ class RepositoryContractTest {
     private class MemoryRepository(private val rows: MutableList<Thing>) : Repository<Thing, ThingCriteria, Long> {
         val calls = ArrayList<String>()
 
-        override suspend fun insert(bean: Thing): Boolean {
+        override suspend fun insert(bean: Thing, projection: Thing?): Boolean {
             calls.add("insert"); return rows.add(bean)
         }
 
@@ -41,7 +41,7 @@ class RepositoryContractTest {
         override suspend fun fetchById(id: Long, projection: Thing?): Thing? =
             fetch(ThingCriteria(id), 0, 1).firstOrNull()
 
-        override fun newProjection(): Thing = Thing(1L, "~")
+        override fun ownFieldsProjection(): Thing = Thing(1L, "~")
 
         private fun select(criteria: ThingCriteria) = rows.filter { criteria.id == null || it.id == criteria.id }
     }

@@ -130,12 +130,12 @@ class RestTestEnvironment(
                 ctx.status(500).json(mapOf("error" to (e.message ?: "Internal error")))
             }
             RepositoryApiRoutes.configure(config)
-        }.start(0)
+        }.start("127.0.0.1", 0)
 
         port = javalin.port()
 
         // Cria REST client instances (NÃO substitui os BEANs — o servidor usa os JDBC repos via BEAN)
-        val transport = OkHttpTransport("http://localhost:$port")
+        val transport = OkHttpTransport("http://127.0.0.1:$port")
         val restConfig = RestConfig(transport)
         this.transport = transport
         this.restConfig = restConfig

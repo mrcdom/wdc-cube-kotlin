@@ -54,11 +54,22 @@ class CriterionTest {
     }
 
     @Test
-    fun isIn_ignoresNullAndEmpty() {
+    fun isIn_ignoresNull_butKeepsTheEmptySet() {
+        val none = SampleCriteria()
+        none.id.isIn(null as Collection<Long>?)
+        assertFalse(none.id.isSet())
+
+        val empty = SampleCriteria()
+        empty.id.isIn(emptyList())
+        assertEquals(Operator.IN, empty.id.predicates.single().operator)
+        assertEquals(emptyList(), empty.id.predicates.single().values)
+
+        val noArgs = SampleCriteria()
+        noArgs.id.isIn()
+        assertEquals(Operator.IN, noArgs.id.predicates.single().operator)
+        assertEquals(emptyList(), noArgs.id.predicates.single().values)
+
         val c = SampleCriteria()
-        c.id.isIn(null as Collection<Long>?)
-        c.id.isIn(emptyList())
-        assertFalse(c.id.isSet())
 
         c.id.isIn(1L, 2L, 3L)
         c.id.isIn(listOf(4L))
@@ -229,7 +240,7 @@ class CriterionTest {
     fun operator_accepts_followsArity() {
         assertTrue(Operator.EQ.accepts(1)); assertFalse(Operator.EQ.accepts(0)); assertFalse(Operator.EQ.accepts(2))
         assertTrue(Operator.BETWEEN.accepts(2)); assertFalse(Operator.BETWEEN.accepts(1))
-        assertTrue(Operator.IN.accepts(1)); assertTrue(Operator.IN.accepts(7)); assertFalse(Operator.IN.accepts(0))
+        assertTrue(Operator.IN.accepts(1)); assertTrue(Operator.IN.accepts(7)); assertTrue(Operator.IN.accepts(0))
         assertTrue(Operator.IS_NULL.accepts(0)); assertFalse(Operator.IS_NULL.accepts(1))
     }
 }

@@ -10,12 +10,12 @@ kotlin {
     jvmToolchain(21)
 
     jvm()
-    androidLibrary {
+    android {
         namespace = "br.com.wdc.framework.commons"
-        compileSdk = 35
+        compileSdk = 36
         minSdk = 26
     }
-    js(IR) {
+    js {
         browser()
     }
     wasmJs {
@@ -46,7 +46,7 @@ kotlin {
             api(libs.bignum)
         }
 
-        val jvmCommonMain by getting {
+        getByName("jvmCommonMain") {
             dependencies {
                 api(libs.gson)
                 compileOnly(libs.slf4j.api)

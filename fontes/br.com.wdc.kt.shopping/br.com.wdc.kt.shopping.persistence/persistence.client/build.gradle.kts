@@ -9,12 +9,12 @@ plugins {
 kotlin {
     jvmToolchain(21)
     jvm()
-    androidLibrary {
+    android {
         namespace = "br.com.wdc.shopping.persistence.client"
-        compileSdk = 35
+        compileSdk = 36
         minSdk = 26
     }
-    js(IR) {
+    js {
         browser()
     }
     wasmJs {
@@ -44,7 +44,7 @@ kotlin {
             api(project(":shopping-domain"))
         }
 
-        val jvmCommonMain by getting {
+        getByName("jvmCommonMain") {
             dependencies {
                 implementation(libs.okhttp)
             }

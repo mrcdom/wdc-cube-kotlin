@@ -362,6 +362,8 @@ abstract class AbstractPurchaseRepositoryTest {
         assertEquals(listOf<Int?>(2, 1), stored.map { it.amount })
         assertEquals(listOf<Double?>(199.5, 16.25), stored.map { it.price })
         assertTrue(stored.all { it.purchaseId == purchase.id })
+        // o bean sai completo: cada item com a chave que recebeu
+        assertEquals(stored.map { it.id }.toSet(), purchase.items!!.map { it.id }.toSet())
     }
 
     @Test
@@ -420,8 +422,8 @@ abstract class AbstractPurchaseRepositoryTest {
         val newestFirst = PurchaseItemCriteria().withOrderBy(PurchaseItemCriteria.OrderBy.NEWEST_FIRST)
         assertEquals(listOf<Double?>(2.67, 45.3), itemsOf(pv.singletonList(itemPrj(), newestFirst)))
 
-        assertEquals(listOf<Double?>(45.3), itemsOf(pv.singletonList(itemPrj(), expensiveFirst).withLimit(1)))
-        assertEquals(listOf<Double?>(2.67), itemsOf(pv.singletonList(itemPrj(), expensiveFirst).withLimit(1).withOffset(1)))
+        assertEquals(listOf<Double?>(45.3), itemsOf(pv.singletonList(itemPrj(), expensiveFirst, limit = 1)))
+        assertEquals(listOf<Double?>(2.67), itemsOf(pv.singletonList(itemPrj(), expensiveFirst, limit = 1, offset = 1)))
     }
 
     private suspend fun ids(criteria: PurchaseCriteria): List<Long?> = repo().fetch(criteria).map { it.id }

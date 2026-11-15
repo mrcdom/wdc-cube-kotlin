@@ -26,10 +26,10 @@ class RestReadOnlyRepositoryTest {
     private class ProductCatalog(transport: HttpTransport) :
         HttpReadOnlyRepository<Product, ProductCriteria, Long>(transport, ProductCodec(), "/api/repo/product") {
 
-        override fun newProjection() = Product().apply { id = ProjectionValues.i64; name = ProjectionValues.str; price = ProjectionValues.f64 }
+        override fun ownFieldsProjection() = Product().apply { id = ProjectionValues.i64; name = ProjectionValues.str; price = ProjectionValues.f64 }
 
         override suspend fun fetchById(id: Long, projection: Product?): Product? =
-            fetch(ProductCriteria().withProductId(id).withProjection(projection ?: newProjection()), limit = 1).firstOrNull()
+            fetch(ProductCriteria().withProductId(id).withProjection(projection ?: ownFieldsProjection()), limit = 1).firstOrNull()
     }
 
     companion object {
@@ -47,7 +47,7 @@ class RestReadOnlyRepositoryTest {
         val catalog = catalog()
         assertEquals(4, catalog.count(ProductCriteria()))
 
-        val cheapestFirst = ProductCriteria().withOrderBy(ProductCriteria.OrderBy.CHEAPEST_FIRST).withProjection(catalog.newProjection())
+        val cheapestFirst = ProductCriteria().withOrderBy(ProductCriteria.OrderBy.CHEAPEST_FIRST).withProjection(catalog.ownFieldsProjection())
         val products = catalog.fetch(cheapestFirst, limit = 2)
         assertEquals(listOf<Long?>(DBReset.FITA_VEDA_ROSCA_ID, DBReset.PEN_DRIVE2GB_ID), products.map { it.id })
         // a projeção do catálogo não pede a descrição

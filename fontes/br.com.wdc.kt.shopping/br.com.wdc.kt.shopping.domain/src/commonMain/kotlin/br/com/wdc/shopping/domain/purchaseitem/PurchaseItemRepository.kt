@@ -9,7 +9,7 @@ import br.com.wdc.shopping.domain.purchase.Purchase
 interface PurchaseItemRepository : Repository<PurchaseItem, PurchaseItemCriteria, Long> {
 
     /** O item e os ids da compra e do produto. */
-    override fun newProjection(): PurchaseItem {
+    override fun ownFieldsProjection(): PurchaseItem {
         val pv = ProjectionValues
         return PurchaseItem().apply {
             id = pv.i64
@@ -21,7 +21,7 @@ interface PurchaseItemRepository : Repository<PurchaseItem, PurchaseItemCriteria
     }
 
     override suspend fun fetchById(id: Long, projection: PurchaseItem?): PurchaseItem? =
-        fetch(PurchaseItemCriteria().withPurchaseItemId(id).withProjection(projection ?: newProjection()), 0, 1).firstOrNull()
+        fetch(PurchaseItemCriteria().withPurchaseItemId(id).withProjection(projection ?: ownFieldsProjection()), 0, 1).firstOrNull()
 
     companion object {
         val BEAN = AtomicRef<PurchaseItemRepository>()

@@ -13,6 +13,8 @@ class RoutingTest {
 
     enum class Kind { DAILY, WEEKLY }
 
+    class BadlyDeclared(val id: Long, @Transient val tenant: String)
+
     private val api = RestApi {
         get("/items/{id}") { call -> Item(call.pathLong("id"), "item") }
         get("/items") { call ->
@@ -29,6 +31,7 @@ class RoutingTest {
             val item = call.body<Item>()
             RestResponse.created(item.copy(id = 7)).withHeader("Location", "/items/7")
         }
+        post("/badly-declared") { call -> call.body<BadlyDeclared>().id }
         post("/batch") { call -> call.body<List<Item>>().size }
         put("/items/{id}") { call -> call.body<Item>().copy(id = call.pathLong("id")) }
         patch("/items/{id}") { call -> mapOf("patched" to call.pathLong("id")) }
@@ -56,6 +59,11 @@ class RoutingTest {
 
     @AfterTest
     fun stop() = server.close()
+
+    @Test
+    fun badlyDeclaredBody_isAServerError_notA400() {
+        assertEquals(500, client.post("/badly-declared", """{"id":1}""").status)
+    }
 
     @Test
     fun pathParameter_isTyped_andMalformedIs400() {

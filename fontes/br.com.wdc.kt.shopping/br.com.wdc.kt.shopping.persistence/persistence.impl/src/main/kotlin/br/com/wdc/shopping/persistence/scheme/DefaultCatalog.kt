@@ -11,7 +11,7 @@ import org.jooq.Schema
 import org.jooq.impl.CatalogImpl
 
 
-@Suppress("UNCHECKED_CAST")
+@Suppress("warnings")
 open class DefaultCatalog : CatalogImpl("") {
     companion object {
 
@@ -24,5 +24,5 @@ open class DefaultCatalog : CatalogImpl("") {
         Public.PUBLIC
     )
 
-    private val REQUIRE_RUNTIME_JOOQ_VERSION = Constants.VERSION_3_19
+    private val REQUIRE_RUNTIME_JOOQ_VERSION = Constants.VERSION_3_21
 }

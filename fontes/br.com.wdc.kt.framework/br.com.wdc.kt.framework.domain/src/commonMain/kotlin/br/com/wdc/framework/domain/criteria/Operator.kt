@@ -6,7 +6,8 @@ package br.com.wdc.framework.domain.criteria
  * É deliberadamente **neutro**: não conhece jOOQ nem SQL, apenas nomeia a comparação. Quem traduz para
  * condição é o `framework-jooq`; o cliente REST serializa o mesmo enum.
  *
- * @property arity quantidade de valores que o operador exige; negativo quando é variável ([IN])
+ * @property arity quantidade de valores que o operador exige; negativo quando é variável ([IN], que aceita também
+ *   nenhum)
  */
 enum class Operator(val arity: Int) {
     /** `= ?` */
@@ -27,7 +28,7 @@ enum class Operator(val arity: Int) {
     ILIKE(1),
     /** `BETWEEN ? AND ?` */
     BETWEEN(2),
-    /** `IN (?, ?, …)` — aridade variável. */
+    /** `IN (?, ?, …)` — aridade variável. Vazio é um conjunto sem membros: não casa linha nenhuma. */
     IN(-1),
     /** `IS NULL` */
     IS_NULL(0),
@@ -35,5 +36,5 @@ enum class Operator(val arity: Int) {
     IS_NOT_NULL(0);
 
     /** `true` quando a quantidade informada satisfaz o operador. */
-    fun accepts(count: Int): Boolean = if (arity < 0) count > 0 else count == arity
+    fun accepts(count: Int): Boolean = if (arity < 0) count >= 0 else count == arity
 }

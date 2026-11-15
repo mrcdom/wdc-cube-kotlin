@@ -99,6 +99,6 @@ object ProjectionCollectionCodec {
             throw InvalidRequestException("coleção projetada sem 'shape'")
         }
         @Suppress("UNCHECKED_CAST")
-        return ProjectionList(shape as E, criteria).withLimit(limit).withOffset(offset)
+        return ProjectionList(shape as E, criteria, limit, offset)
     }
 }

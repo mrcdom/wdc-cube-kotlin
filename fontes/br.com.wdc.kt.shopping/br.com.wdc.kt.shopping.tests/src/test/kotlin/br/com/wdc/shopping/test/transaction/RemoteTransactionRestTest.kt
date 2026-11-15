@@ -58,7 +58,7 @@ class RemoteTransactionRestTest {
     private suspend fun exists(product: Product) = product.id != null && env.productRepo.fetchById(product.id!!) != null
 
     /** Outro cliente, com identidade própria, falando com o mesmo servidor. */
-    private fun anotherClient() = OkHttpTransport("http://localhost:${env.port}")
+    private fun anotherClient() = OkHttpTransport("http://127.0.0.1:${env.port}")
 
     private fun begin(transport: OkHttpTransport): String =
         Regex("\"txId\":\"([^\"]+)\"").find(transport.postJson("/api/tx/begin", "{}"))!!.groupValues[1]
@@ -70,6 +70,55 @@ class RemoteTransactionRestTest {
         } finally {
             transport.transactionIdSupplier = null
         }
+    }
+
+    // :: afterCommit
+
+    @Test
+    fun afterCommit_runsAfterTheRemoteCommit_withoutATransaction() = runBlocking {
+        val tx = tx()
+        val p = product("rtx-after-commit")
+        val seen = ArrayList<String>()
+        tx.required {
+            env.productRepo.insert(p)
+            tx.afterCommit {
+                // fora da transação: a leitura vê o que foi comitado, e não há txId corrente
+                seen += "exists=${exists(p)}"
+                tx.mandatory { } // sem transação corrente, mandatory recusa
+            }
+            assertEquals(emptyList<String>(), seen)
+        }
+        assertEquals(listOf("exists=true"), seen, "a falha da tarefa (mandatory recusado) só vai ao log")
+    }
+
+    @Test
+    fun afterCommit_isDiscarded_onExceptionOrRollbackOnly() = runBlocking {
+        val tx = tx()
+        val ran = ArrayList<String>()
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking { tx.required { tx.afterCommit { ran += "x" }; throw IllegalStateException("boom") } }
+        }
+        tx.required { ctx -> tx.afterCommit { ran += "y" }; ctx.setRollbackOnly() }
+        assertEquals(emptyList<String>(), ran)
+    }
+
+    @Test
+    fun afterCommit_nestedRequired_waitsForTheOuter_requiresNewRunsOnItsOwn() = runBlocking {
+        val tx = tx()
+        val ran = ArrayList<String>()
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking {
+                tx.required {
+                    tx.required { tx.afterCommit { ran += "inner" } }
+                    tx.requiresNew { tx.afterCommit { ran += "new" } }
+                    assertEquals(listOf("new"), ran)
+                    throw IllegalStateException("boom")
+                }
+            }
+        }
+        assertEquals(listOf("new"), ran)
+        tx.afterCommit { ran += "now" }
+        assertEquals(listOf("new", "now"), ran)
     }
 
     // :: Desfecho
@@ -350,7 +399,7 @@ class RemoteTransactionRestTest {
     fun status_tellsWhatHappenedToATransaction() {
         val client = anotherClient()
         fun status(txId: String): String {
-            val request = HttpRequest.newBuilder(URI("http://localhost:${env.port}/api/tx/status"))
+            val request = HttpRequest.newBuilder(URI("http://127.0.0.1:${env.port}/api/tx/status"))
                 .header("X-Tx-Id", txId).header("X-Client-Id", client.clientId).GET().build()
             return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()).body()
         }

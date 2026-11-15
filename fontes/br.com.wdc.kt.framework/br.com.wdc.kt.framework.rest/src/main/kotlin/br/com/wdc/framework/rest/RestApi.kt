@@ -8,10 +8,12 @@ import br.com.wdc.framework.rest.json.GsonJsonMapper
 import br.com.wdc.framework.rest.openapi.OpenApiConfig
 import br.com.wdc.framework.rest.openapi.OpenApiGenerator
 import br.com.wdc.framework.rest.openapi.OperationDoc
+import br.com.wdc.framework.rest.openapi.SwaggerUiRoutes
 import br.com.wdc.framework.rest.security.AccessRule
 import br.com.wdc.framework.rest.security.AccessRules
 import br.com.wdc.framework.rest.security.AuthenticationException
 import br.com.wdc.framework.rest.security.AuthenticationRequiredException
+import br.com.wdc.framework.rest.security.RateLimiter
 import br.com.wdc.framework.rest.security.RequestMatcher
 import br.com.wdc.framework.rest.security.SecurityConfig
 import br.com.wdc.framework.rest.transaction.RemoteTransactionRoutes
@@ -54,9 +56,10 @@ typealias AfterFilter = suspend (RequestContext, Throwable?) -> Unit
  * ```
  *
  * **Pipeline de cada rota**, com o [RequestContext] corrente do começo ao fim — inclusive nas corrotinas:
- * filtros `before` → autenticação → regra de acesso → handler (na transação, se `transactional`) → resposta →
+ * filtros `before` → autenticação → limite por minuto → regra de acesso → handler (na transação, se `transactional`) → resposta →
  * filtros `after`. A resposta, de sucesso ou de erro, é serializada **dentro** do contexto: um adaptador JSON
- * que dependa da requisição (fuso do cliente, por exemplo) a enxerga.
+ * que dependa da requisição (fuso do cliente, por exemplo) a enxerga. Com [Builder.securityHeaders] e
+ * [Builder.serverTiming], os cabeçalhos deles são escritos depois da resposta serializada, antes dos filtros `after`.
  */
 class RestApi private constructor(builder: Builder) {
 
@@ -78,6 +81,9 @@ class RestApi private constructor(builder: Builder) {
     private val maxRequestSize = builder.maxRequestSize
     private val handleUnmatched = builder.handleUnmatched
     private val openApi = builder.openApiConfig
+    private val serverTiming = builder.serverTimingOptions
+    private val securityHeaders = builder.securityHeadersOptions
+    private val rateLimiter = builder.securityConfig?.rateLimitOptions?.let(::RateLimiter)
 
     init {
         security?.let {
@@ -104,6 +110,10 @@ class RestApi private constructor(builder: Builder) {
                     rule.maxAge = options.maxAge
                     rule.path = options.path
                     options.exposedHeaders.forEach(rule::exposeHeader)
+                    // sem expor, o navegador esconde o cabeçalho de quem chama de outra origem
+                    if (serverTiming != null && options.exposedHeaders.none { it.equals(ServerTiming.HEADER, ignoreCase = true) }) {
+                        rule.exposeHeader(ServerTiming.HEADER)
+                    }
                 }
             }
         }
@@ -122,7 +132,13 @@ class RestApi private constructor(builder: Builder) {
             config.routes.get(cfg.path) { ctx ->
                 ctx.contentType("application/json")
                 ctx.result(openApiJson!!)
+                securityHeaders?.writeTo(ctx)
             }
+        }
+        // a pré-requisição do CORS é respondida pelo plugin, sem passar por rota nem por unmatched
+        val corsPath = cors?.path
+        if (securityHeaders != null && corsPath != null) {
+            config.routes.after(corsPath) { ctx -> if (isPreflight(ctx)) securityHeaders.writeTo(ctx) }
         }
         if (handleUnmatched || security?.protectUnmatched == true) {
             config.routes.exception(EndpointNotFound::class.java) { e, ctx -> unmatched(e, ctx) }
@@ -141,6 +157,7 @@ class RestApi private constructor(builder: Builder) {
 
     private fun handle(route: RestRoute, ctx: Context) {
         val request = RequestContext.of(ctx)
+        startTiming(request)
         RequestContext.withCurrent(request) {
             runBlocking(request.asContextElement()) {
                 var failure: Throwable? = null
@@ -148,6 +165,7 @@ class RestApi private constructor(builder: Builder) {
                     befores.forEach { (matcher, filter) -> if (matcher == null || matcher.matches(request.method, request.path)) filter(request) }
                     val urlPublic = route.public || security?.isPublic(request.method, request.path) == true
                     authenticate(request, urlPublic)
+                    request.principal?.let { rateLimiter?.check(it) }
                     authorize(route, request, urlPublic)
                     val call = RestCall(request, this@RestApi)
                     val result = if (route.transactional) transactions.run(request) { route.handler(call) } else route.handler(call)
@@ -156,6 +174,8 @@ class RestApi private constructor(builder: Builder) {
                     failure = e
                     renderError(ctx, request, e)
                 } finally {
+                    writeSecurityHeaders(ctx, request)
+                    writeTiming(ctx, request)
                     runAfters(request, failure)
                 }
             }
@@ -185,11 +205,12 @@ class RestApi private constructor(builder: Builder) {
     private fun unmatched(e: Exception, ctx: Context) {
         // O preflight do CORS não tem rota (o plugin só põe os cabeçalhos) e vem sem credencial: tratado como rota
         // inexistente, o protectUnmatched o recusaria e o navegador bloquearia todo pedido de outra origem.
-        if (cors != null && ctx.method() == HandlerType.OPTIONS && ctx.header("Access-Control-Request-Method") != null) {
+        if (isPreflight(ctx)) {
             ctx.status(200)
             return
         }
         val request = RequestContext.of(ctx)
+        startTiming(request)
         RequestContext.withCurrent(request) {
             runBlocking(request.asContextElement()) {
                 var failure: Throwable = e
@@ -199,15 +220,44 @@ class RestApi private constructor(builder: Builder) {
                     if (security?.protectUnmatched == true && !security.isPublic(request.method, request.path)) {
                         authenticate(request, urlPublic = false)
                         if (request.principal == null) throw AuthenticationRequiredException("Authentication required")
+                        rateLimiter?.check(request.principal!!)
                     }
                     renderError(ctx, request, e)
                 } catch (refusal: Throwable) {
                     failure = refusal
                     renderError(ctx, request, refusal)
                 } finally {
+                    writeSecurityHeaders(ctx, request)
+                    writeTiming(ctx, request)
                     runAfters(request, failure)
                 }
             }
+        }
+    }
+
+    private fun isPreflight(ctx: Context): Boolean =
+        cors != null && ctx.method() == HandlerType.OPTIONS && ctx.header("Access-Control-Request-Method") != null
+
+    private fun writeSecurityHeaders(ctx: Context, request: RequestContext) {
+        val options = securityHeaders ?: return
+        try {
+            options.writeTo(ctx)
+        } catch (e: Exception) {
+            LOG.error("Falha ao escrever os cabeçalhos de segurança de ${request.method} ${request.path}", e)
+        }
+    }
+
+    private fun startTiming(request: RequestContext) {
+        serverTiming?.let { request[ServerTiming.KEY] = ServerTiming(System.nanoTime(), it.names) }
+    }
+
+    /** Depois da resposta serializada (que entra no `total`) e antes de ela sair. */
+    private fun writeTiming(ctx: Context, request: RequestContext) {
+        val timing = request[ServerTiming.KEY] ?: return
+        try {
+            ctx.header(ServerTiming.HEADER, timing.header(System.nanoTime()))
+        } catch (e: Exception) {
+            LOG.error("Falha ao escrever o Server-Timing de ${request.method} ${request.path}", e)
         }
     }
 
@@ -356,6 +406,8 @@ class RestApi private constructor(builder: Builder) {
         internal var corsOptions: CorsOptions? = null
         internal var compressionOptions: CompressionOptions? = null
         internal var openApiConfig: OpenApiConfig? = null
+        internal var serverTimingOptions: ServerTimingOptions? = null
+        internal var securityHeadersOptions: SecurityHeadersOptions? = null
 
         /** O mapeador dos DTOs. Padrão: Gson sem nulos, datas ISO. */
         var json: GsonJsonMapper = GsonJsonMapper()
@@ -386,8 +438,27 @@ class RestApi private constructor(builder: Builder) {
             compressionOptions = (compressionOptions ?: CompressionOptions()).apply(block)
         }
 
+        /** Liga o cabeçalho `Server-Timing` (ver [ServerTimingOptions]); desligado se não chamado. */
+        fun serverTiming(block: ServerTimingOptions.() -> Unit = {}) {
+            serverTimingOptions = (serverTimingOptions ?: ServerTimingOptions()).apply(block)
+        }
+
+        /** Liga os cabeçalhos de cache e de segurança em toda resposta (ver [SecurityHeadersOptions]); desligado se não chamado. */
+        fun securityHeaders(block: SecurityHeadersOptions.() -> Unit = {}) {
+            securityHeadersOptions = (securityHeadersOptions ?: SecurityHeadersOptions()).apply(block)
+        }
+
         fun openApi(block: OpenApiConfig.() -> Unit = {}) {
             openApiConfig = (openApiConfig ?: OpenApiConfig()).apply(block)
+        }
+
+        /** As rotas da página do Swagger, públicas e fora do documento; montadas depois de todas as outras. */
+        internal fun addSwaggerUi() {
+            val config = openApiConfig ?: return
+            val options = config.uiOptions ?: return
+            val ui = SwaggerUiRoutes(options, config)
+            get(ui.root + ".html", public = true, hidden = true, handler = ui.redirect)
+            get(ui.root + "/{file}", public = true, hidden = true, handler = ui.file)
         }
 
         /** Filtro antes de cada rota (ou só das que casam [pattern], no formato de [RequestMatcher]). */
@@ -403,6 +474,6 @@ class RestApi private constructor(builder: Builder) {
     companion object {
         private val LOG = Log.getLogger("RestApi")
 
-        operator fun invoke(block: Builder.() -> Unit): RestApi = RestApi(Builder().apply(block))
+        operator fun invoke(block: Builder.() -> Unit): RestApi = RestApi(Builder().apply(block).apply { addSwaggerUi() })
     }
 }

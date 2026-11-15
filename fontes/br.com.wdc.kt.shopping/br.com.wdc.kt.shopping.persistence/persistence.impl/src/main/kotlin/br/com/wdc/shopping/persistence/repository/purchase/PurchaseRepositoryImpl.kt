@@ -27,18 +27,15 @@ import org.jooq.impl.DSL
 class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
 
     /** Grava a compra e, em cascata, os itens que vierem com ela. */
-    override suspend fun insert(bean: Purchase): Boolean {
-        val dsl = dsl()
-        val id = bean.id ?: dsl.nextval(SQ_PURCHASE).also { bean.id = it }
-        val step = dsl.insertInto(EN_PURCHASE).set(EN_PURCHASE.ID, id)
-        bean.userId?.let { step.set(EN_PURCHASE.USERID, it) }
-        bean.buyDate?.let { step.set(EN_PURCHASE.BUYDATE, toColumn(it)) }
-        val inserted = step.execute() > 0
+    /** Insere a compra e, se ela entrou, os itens que traz (cada um com a projeção padrão do item). */
+    override suspend fun insert(bean: Purchase, projection: Purchase?): Boolean {
+        if (bean.id == null) bean.id = dsl().nextval(SQ_PURCHASE)
+        val inserted = QUERY.insert(bean, projection)
 
         if (inserted) {
             bean.items?.forEach { item ->
                 item.purchase = bean
-                PurchaseItemRepositoryImpl.insertRow(dsl, item)
+                PurchaseItemRepositoryImpl.insertRow(item, null)
             }
         }
         return inserted
@@ -47,7 +44,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
     /** Atualiza a compra; os itens não são tocados — têm repositório próprio. */
     override suspend fun update(newBean: Purchase, oldBean: Purchase?, projection: Purchase?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de compra exige o id")
-        val prj = projection ?: newProjection()
+        val prj = projection ?: ownFieldsProjection()
 
         val step = dsl().update(EN_PURCHASE).set(EN_PURCHASE.ID, id)
         var hasChanges = false
@@ -94,7 +91,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
 
     /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
     private fun projectionFrom(criteria: PurchaseCriteria): Purchase {
-        val projection = criteria.projection ?: return newProjection()
+        val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
             projection.id = 0L
         }
@@ -109,7 +106,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
             .setDSLContextSupplier(BaseRepositoryImpl::dsl)
             .setOrdering(::orderingOf)
             .addI64("id", { it.id }, { b, v -> b.id = v }, { it.ID })
-            .addInstantFromLdt("buyDate", { it.buyDate }, { b, v -> b.buyDate = v }, { it.BUYDATE })
+            .addIlt("buyDate", { it.buyDate }, { b, v -> b.buyDate = v }, { it.BUYDATE })
             // as relações são declaradas sob demanda: compra e item referenciam-se mutuamente
             .lazy { qb ->
                 qb.addBeanField(

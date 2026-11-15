@@ -72,7 +72,8 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     private fun authorById(id: Long, projection: Author): Author? =
         library.authorQuery.fetchOne(projection) { t, q -> q.where(t.ID.eq(id)) }
 
-    private fun booksProjection(shape: Book = Book(id = 1L), criteria: BookCriteria? = null) = ProjectionList(shape, criteria)
+    private fun booksProjection(shape: Book = Book(id = 1L), criteria: BookCriteria? = null, limit: Int? = null, offset: Int? = null) =
+        ProjectionList(shape, criteria, limit, offset)
 
     private fun booksWhere(criteria: BookCriteria): List<Long?> =
         library.bookQuery.fetchToList(Book(id = 1L)) { t, q ->
@@ -276,8 +277,11 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
             1,
             Author(
                 id = 1L,
-                books = booksProjection(criteria = BookCriteria().withOrderBy(BookCriteria.OrderBy.MOST_EXPENSIVE_FIRST))
-                    .withLimit(limit).withOffset(offset),
+                books = booksProjection(
+                    criteria = BookCriteria().withOrderBy(BookCriteria.OrderBy.MOST_EXPENSIVE_FIRST),
+                    limit = limit,
+                    offset = offset,
+                ),
             ),
         )!!.books!!.map { it.id }
 
@@ -291,7 +295,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     fun collection_sliceAndFilter_areAppliedPerParent() {
         val criteria = BookCriteria().withOrderBy(BookCriteria.OrderBy.CHEAPEST_FIRST).also { it.active.eq(true) }
         val authors = library.authorQuery.fetchToList(
-            Author(id = 1L, books = booksProjection(criteria = criteria).withLimit(1)),
+            Author(id = 1L, books = booksProjection(criteria = criteria, limit = 1)),
         ) { t, q -> q.orderBy(t.ID.asc()) }
 
         // o mais barato entre os ativos de cada autor — o recorte enxerga a linha do pai
@@ -302,13 +306,13 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
 
     @Test
     fun collection_sliceWithoutOrder_stillLimitsTheCount() {
-        val author = authorById(1, Author(id = 1L, books = booksProjection().withLimit(2)))!!
+        val author = authorById(1, Author(id = 1L, books = booksProjection(limit = 2)))!!
         assertEquals(2, author.books!!.size)
     }
 
     @Test
     fun collection_slice_requiresAPrimaryKey() {
-        val projection = Author(id = 1L, notes = ProjectionList(Note(text = "~"), null).withLimit(1))
+        val projection = Author(id = 1L, notes = ProjectionList(Note(text = "~"), null, limit = 1))
         val e = assertFailsWith<IllegalStateException> { authorById(1, projection) }
         assertTrue("chave primária" in e.message!!, e.message)
 
@@ -335,6 +339,8 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     fun criteria_identityOperators() {
         assertEquals(listOf<Long?>(10L), booksWhere(BookCriteria().also { it.id.eq(10L) }))
         assertEquals(listOf<Long?>(10L, 12L), booksWhere(BookCriteria().also { it.id.isIn(10L, 12L, 999L) }))
+        assertEquals(emptyList(), booksWhere(BookCriteria().also { it.id.isIn(emptyList()) }))
+        assertEquals(6, booksWhere(BookCriteria().also { it.id.isIn(null as Collection<Long>?) }).size)
         assertEquals(listOf<Long?>(20L, 21L, 30L), booksWhere(BookCriteria().also { it.id.ne(10L); it.id.ne(11L); it.id.ne(12L) }))
         assertEquals(listOf<Long?>(11L), booksWhere(BookCriteria().also { it.active.eq(false) }))
         assertEquals(listOf<Long?>(30L), booksWhere(BookCriteria().also { it.active.isNull() }))
@@ -415,6 +421,148 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
             }
         }
     }
+
+    // :: insert por projeção
+
+    private fun couponByCode(code: String): Coupon? =
+        library.couponQuery.fetchOne(null) { t, q -> q.where(t.CODE.eq(code)) }
+
+    @Test
+    fun insert_withoutProjection_writesWhatHasValue_andFillsDefaultsAndIdentity() {
+        val coupon = Coupon(code = "A1", label = "ignorado")
+        assertTrue(library.couponQuery.insert(coupon))
+        assertNotNull(coupon.id, "a identidade volta")
+        assertEquals("NEW", coupon.status, "o padrão da coluna volta")
+        assertEquals(10.0, coupon.discount)
+        assertNull(coupon.created)
+        assertEquals("ignorado", coupon.label, "o derivado não é coluna: nem entra, nem volta")
+
+        val stored = couponByCode("A1")!!
+        assertEquals(coupon.id, stored.id)
+        assertEquals("A1:NEW", stored.label)
+    }
+
+    @Test
+    fun insert_withProjection_leftOutGetsTheDefault_markedNullIsWrittenNull() {
+        val coupon = Coupon(code = "P1", status = "USED", discount = null)
+        val projection = Coupon(code = "", discount = 0.0)
+        assertTrue(library.couponQuery.insert(coupon, projection))
+        assertEquals("NEW", coupon.status, "fora da projeção: o padrão da coluna, e o bean o recebe")
+        assertNull(coupon.discount, "marcado e nulo: grava NULL, sem o padrão")
+        assertEquals("NEW", couponByCode("P1")!!.status)
+        assertNull(couponByCode("P1")!!.discount)
+    }
+
+    @Test
+    fun insert_failingOnAConstraint_leavesNoRow() {
+        // no H2, SELECT … FROM FINAL TABLE (INSERT …) deixaria a linha gravada; o dialeto não usa essa forma
+        assertFailsWith<org.jooq.exception.DataAccessException> {
+            library.couponQuery.insert(Coupon(code = "F1", author = Author(id = 999L)))
+        }
+        assertNull(couponByCode("F1"))
+    }
+
+    @Test
+    fun insert_neverWritesTheIdentity() {
+        val coupon = Coupon(id = 999_999L, code = "I1")
+        assertTrue(library.couponQuery.insert(coupon))
+        assertTrue(coupon.id != 999_999L, "a identidade é do banco: ${coupon.id}")
+        assertEquals(coupon.id, couponByCode("I1")!!.id)
+    }
+
+    @Test
+    fun insert_associationKey_andConvertedTypes() {
+        val created = Instant.parse("2025-03-04T05:06:07Z")
+        val coupon = Coupon(code = "K1", created = created, author = Author(id = 2L))
+        assertTrue(library.couponQuery.insert(coupon))
+        val stored = library.couponQuery.fetchOne(Coupon(code = "", created = Instant.DISTANT_PAST, author = Author(id = 0L))) { t, q ->
+            q.where(t.CODE.eq("K1"))
+        }!!
+        assertEquals(created, stored.created)
+        assertEquals(2L, stored.author?.id)
+    }
+
+    @Test
+    fun insert_missingAssociation_comesBackAsNothing() {
+        val coupon = Coupon(code = "K2")
+        assertTrue(library.couponQuery.insert(coupon))
+        assertNull(coupon.author)
+    }
+
+    @Test
+    fun insert_conflictOnThePrimaryKeyDiscarded_isFalse_andLeavesTheBeanAlone() {
+        val again = Book(id = 10L, title = "Outro")
+        assertFalse(library.bookQuery.insert(again, onConflictDoNothing = true))
+        assertEquals("Outro", again.title)
+        assertNull(again.price, "nada volta ao bean")
+        assertEquals("Dom Casmurro", bookById(10L)!!.title)
+    }
+
+    @Test
+    fun insert_withoutOnConflict_failsOnConflict() {
+        assertTrue(library.couponQuery.insert(Coupon(code = "C2")))
+        assertFailsWith<org.jooq.exception.DataAccessException> { library.couponQuery.insert(Coupon(code = "C2")) }
+    }
+
+    @Test
+    fun insert_everyScalarType_roundTrips() {
+        val published = Instant.parse("2023-07-08T09:10:11.123456Z")
+        val book = Book(
+            id = 99L, title = "Novo", price = 12.34, pages = 7, active = false, published = published,
+            released = java.time.LocalDate.of(2023, 7, 8), catalog = java.util.UUID(5L, 6L), cover = byteArrayOf(9, 8, 7),
+            kind = Kind.ESSAY, author = Author(id = 1L),
+        )
+        assertTrue(library.bookQuery.insert(book))
+        val stored = bookById(99L, library.bookQuery.newProjectionBean { it.author = Author(id = 0L) })!!
+        assertEquals("Novo", stored.title)
+        assertEquals(12.34, stored.price)
+        assertEquals(7, stored.pages)
+        assertEquals(false, stored.active)
+        assertEquals(published, stored.published)
+        assertEquals(java.time.LocalDate.of(2023, 7, 8), stored.released)
+        assertEquals(java.util.UUID(5L, 6L), stored.catalog)
+        assertContentEquals(byteArrayOf(9, 8, 7), stored.cover)
+        assertEquals(Kind.ESSAY, stored.kind)
+        assertEquals(1L, stored.author?.id)
+    }
+
+    @Test
+    fun fields_markAndToColumn_buildAnUpdateOfTheMarkedColumns() {
+        val coupon = Coupon(code = "U1", status = "OPEN", discount = 1.5, created = Instant.parse("2025-01-01T00:00:00Z"))
+        assertTrue(library.couponQuery.insert(coupon))
+        val projection = Coupon()
+        val fields = library.couponQuery.fields()
+        fields.filter { it.name in setOf("discount", "created", "author.id") }.forEach { it.mark(projection) }
+        assertEquals(listOf("discount", "created", "author.id"), fields.filter { it.projected(projection) }.map { it.name })
+
+        val changed = Coupon(id = coupon.id, code = "ignored", discount = 2.25, created = Instant.parse("2025-06-07T08:09:10.123456Z"), author = Author(id = 2L))
+        val sets = LinkedHashMap<org.jooq.Field<*>, Any?>()
+        for (field in fields) {
+            if (!field.projected(projection) || !field.isColumnOf(COUPON)) continue
+            val column = field.column(COUPON)
+            sets[column] = field.get(changed)?.let { DSL.`val`(field.toColumn(it), column).value }
+        }
+        assertEquals(1, dsl.update(COUPON).set(sets).where(COUPON.ID.eq(coupon.id)).execute())
+
+        val stored = library.couponQuery.fetchOne(Coupon(code = "", discount = 0.0, created = Instant.DISTANT_PAST, author = Author(id = 0L))) { t, q ->
+            q.where(t.ID.eq(coupon.id))
+        }!!
+        assertEquals("U1", stored.code)
+        assertEquals(2.25, stored.discount)
+        assertEquals(changed.created, stored.created)
+        assertEquals(2L, stored.author?.id)
+    }
+
+    @Test
+    fun fields_listScalarsAndAssociationKeys_andTellColumnsFromExpressions() {
+        val fields = library.couponQuery.fields()
+        assertEquals(listOf("id", "code", "status", "discount", "created", "label", "author.id"), fields.map { it.name })
+        val table = COUPON.`as`("x")
+        assertEquals(listOf("label"), fields.filterNot { it.isColumnOf(table) }.map { it.name })
+        val coupon = Coupon()
+        fields.single { it.name == "author.id" }.set(coupon, 3L)
+        assertEquals(3L, coupon.author?.id)
+    }
 }
 
 class H2JsonQueryTest : JsonQueryContractTest(TestDatabase.h2())
@@ -422,8 +570,20 @@ class H2JsonQueryTest : JsonQueryContractTest(TestDatabase.h2())
 class PostgresJsonQueryTest : JsonQueryContractTest(TestDatabase.postgres()) {
 
     @Test
+    fun insert_conflictOnAUniqueColumnDiscarded_isFalse() {
+        // no H2 o jOOQ emula o ON CONFLICT DO NOTHING com um MERGE pela chave primária, que não vê o UNIQUE de CODE
+        assertTrue(library.couponQuery.insert(Coupon(code = "C1")))
+        val again = Coupon(code = "C1")
+        assertFalse(library.couponQuery.insert(again, onConflictDoNothing = true))
+        assertNull(again.id)
+        assertNull(again.status)
+        assertEquals(1, dsl.fetchCount(COUPON, COUPON.CODE.eq("C1")))
+    }
+
+    @Test
     fun runsAgainstARealPostgres() {
         val version = dsl.fetchOne("select version()")!!.get(0, String::class.java)
         assertTrue(version.startsWith("PostgreSQL"), version)
     }
+
 }

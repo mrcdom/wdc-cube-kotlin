@@ -22,7 +22,7 @@ import io.javalin.http.NotFoundResponse
  *
  * | Rota | Corpo | Resposta |
  * |---|---|---|
- * | `POST insert` | entidade | `{"success", "id"}` |
+ * | `POST insert` | `{"entity", "projection"?}`, ou a entidade solta | `{"success", "id", "entity"}` (o bean completo) |
  * | `POST update` | campos a atualizar (os presentes, inclusive `null`) | `{"success"}` |
  * | `POST delete` | critério | `{"count"}` |
  * | `POST count` | critério | `{"count"}` |
@@ -34,6 +34,10 @@ import io.javalin.http.NotFoundResponse
  * As escritas só existem se o repositório for um [Repository], e são `transactional`. O acesso é da aplicação:
  * [rule] por operação, [scope] para restringir o critério ao que é de quem chama, e os ganchos de escrita, que
  * rodam dentro da transação. Buscar pela chave passa pela mesma regra e pelo mesmo alcance das consultas.
+ *
+ * O insert devolve a entidade como o repositório a deixou (a chave gerada, os padrões das colunas), passada por
+ * [sanitizeOutput] como toda entidade lida. O corpo sem `entity` é lido como a entidade solta, a forma anterior à
+ * 0.4.0; por isso, entidade com um campo chamado `entity` precisa do envelope.
  *
  * @param K tipo da chave
  */
@@ -122,14 +126,51 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         ?: throw IllegalStateException("O repositório de $basePath é só de leitura: registre o RPC com writes = false")
 
     private suspend fun insert(call: RestCall): RawJson {
-        val entity = call.entity(codec)
+        val (entity, projection) = readInsert(call)
         beforeInsert(entity, call.request)
-        val success = writable().insert(entity)
+        val success = writable().insert(entity, projection)
+        val id = idOf(entity)
+        if (success) sanitizeOutput(entity)
         return RawJson.write { out ->
             out.beginObject().name("success").value(success).name("id")
-            writeId(out, idOf(entity))
+            writeId(out, id)
+            if (success) {
+                out.name("entity")
+                codec.writeEntity(out, entity)
+            }
             out.endObject()
         }
+    }
+
+    /** `{"entity", "projection"?}`; sem `entity`, o corpo inteiro é a entidade. */
+    private fun readInsert(call: RestCall): Pair<E, E?> {
+        val envelope = call.readingBody {
+            val input = call.bodyInput()
+            var found = false
+            input.beginObject()
+            while (input.hasNext()) {
+                if (input.nextName() == "entity") found = true
+                input.skipValue()
+            }
+            input.endObject()
+            found
+        }
+        if (!envelope) return call.entity(codec) to null
+        var entity: E? = null
+        var projection: E? = null
+        call.readingBody {
+            val input = call.bodyInput()
+            input.beginObject()
+            while (input.hasNext()) {
+                when (input.nextName()) {
+                    "entity" -> entity = codec.readEntity(input)
+                    "projection" -> projection = if (input.peek() == SerializationToken.NULL) input.nextNull() else codec.readEntity(input)
+                    else -> input.skipValue()
+                }
+            }
+            input.endObject()
+        }
+        return (entity ?: throw InvalidRequestException("insert sem a entidade")) to projection
     }
 
     private suspend fun update(call: RestCall): RawJson {
@@ -195,7 +236,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     private suspend fun fetchOne(call: RestCall, id: K, projection: E?): E? {
         val criteria = newCriteria()
         restrictToId(criteria, id)
-        val shape = projection ?: repository().newProjection()
+        val shape = projection ?: repository().ownFieldsProjection()
         sanitizeProjection(shape)
         setProjection(criteria, shape)
         scope(criteria, call.request)
@@ -239,7 +280,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             input.endObject()
         }
         // fora da leitura do corpo: falha aqui é do servidor, não do pedido
-        val shape = projection ?: repository().newProjection()
+        val shape = projection ?: repository().ownFieldsProjection()
         sanitizeProjection(shape)
         setProjection(request.criteria, shape)
         return request

@@ -36,6 +36,13 @@ class OpenApiConfig {
     /** Chaves cruas de `info`, aplicadas por último. */
     val info = LinkedHashMap<String, Any?>()
 
+    internal var uiOptions: SwaggerUiOptions? = null
+
+    /** Serve a página do Swagger UI com este documento (ver [SwaggerUiOptions]). Exige o webjar no classpath. */
+    fun ui(block: SwaggerUiOptions.() -> Unit = {}) {
+        uiOptions = (uiOptions ?: SwaggerUiOptions()).apply(block)
+    }
+
     fun tag(name: String, description: String? = null) {
         tags[name] = description
     }

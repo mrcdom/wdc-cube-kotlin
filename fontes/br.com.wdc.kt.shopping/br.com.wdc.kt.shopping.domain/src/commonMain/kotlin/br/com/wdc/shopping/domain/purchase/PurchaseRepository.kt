@@ -8,7 +8,7 @@ import br.com.wdc.shopping.domain.user.User
 interface PurchaseRepository : Repository<Purchase, PurchaseCriteria, Long> {
 
     /** A compra e o id do usuário; os itens vêm só quando pedidos. */
-    override fun newProjection(): Purchase {
+    override fun ownFieldsProjection(): Purchase {
         val pv = ProjectionValues
         return Purchase().apply {
             id = pv.i64
@@ -18,7 +18,7 @@ interface PurchaseRepository : Repository<Purchase, PurchaseCriteria, Long> {
     }
 
     override suspend fun fetchById(id: Long, projection: Purchase?): Purchase? =
-        fetch(PurchaseCriteria().withPurchaseId(id).withProjection(projection ?: newProjection()), 0, 1).firstOrNull()
+        fetch(PurchaseCriteria().withPurchaseId(id).withProjection(projection ?: ownFieldsProjection()), 0, 1).firstOrNull()
 
     companion object {
         val BEAN = AtomicRef<PurchaseRepository>()

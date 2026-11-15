@@ -6,6 +6,7 @@ import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.codec.EntityGraph
 import br.com.wdc.framework.domain.codec.ModelCodec
+import br.com.wdc.framework.domain.codec.ref
 import br.com.wdc.framework.domain.criteria.CriterionCodec
 import br.com.wdc.framework.domain.projection.HasCriteria
 import br.com.wdc.framework.domain.projection.HasSlice
@@ -135,7 +136,7 @@ class PurchaseCodec : ModelCodec<Purchase, PurchaseCriteria> {
     /** Cada item recebe a referência de volta como stub — só a chave da compra. */
     private fun readItem(input: ExtensibleObjectInput, parent: Purchase): PurchaseItem {
         val item = PurchaseItem()
-        parent.id?.let { parentId -> item.purchase = Purchase().apply { id = parentId } }
+        item.purchase = ref(::Purchase, parent.id) { id = it }
         input.beginObject()
         while (input.hasNext()) {
             when (input.nextName()) {

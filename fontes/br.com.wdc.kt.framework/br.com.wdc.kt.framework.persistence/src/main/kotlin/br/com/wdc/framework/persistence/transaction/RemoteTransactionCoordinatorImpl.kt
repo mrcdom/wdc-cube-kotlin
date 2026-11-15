@@ -4,12 +4,14 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
+import br.com.wdc.framework.domain.transaction.AfterCommitTasks
 import br.com.wdc.framework.domain.transaction.TransactionSystemException
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import javax.sql.DataSource
+import kotlinx.coroutines.runBlocking
 
 /**
  * Coordenador de transação remota (lado servidor), apoiado no [TransactionScope].
@@ -23,6 +25,9 @@ import javax.sql.DataSource
  *
  * **Threads.** [resume] e [suspend] agem na thread que os chama: o host deve executar `resume` → trabalho →
  * `suspend` na mesma thread (é o que acontece quando o handler roda com `runBlocking` na thread do request).
+ *
+ * As tarefas de `afterCommit` agendadas dentro de uma transação remota rodam no [commit] dela, depois de devolvida a
+ * conexão, na thread de quem pediu o commit; desfeita (ou revertida por abandono), são descartadas.
  *
  * @param dataSource DataSource do módulo, resolvido a cada abertura
  * @param clock      relógio em milissegundos (injetável para teste)
@@ -184,6 +189,22 @@ class RemoteTransactionCoordinatorImpl(
         outcomes[txId] = Finalized(!rollback, entry.owner, clock())
         (if (rollback) rolledBackCount else committedCount).incrementAndGet()
         LOG.debug("tx remota finalizada ({}): {} (abertas={})", if (rollback) "rollback" else "commit", txId, registry.size)
+        runAfterCommit(entry.scope)
+    }
+
+    /**
+     * As tarefas de `afterCommit` agendadas dentro da transação remota, se ela comitou. Rodam aqui, já com a
+     * conexão devolvida, e sem transação ligada à thread: uma tarefa que precise de uma abre a sua.
+     */
+    private fun runAfterCommit(scope: TransactionScope) {
+        val tasks = scope.takeAfterCommit()
+        if (tasks.isEmpty()) return
+        val bound = TransactionScope.suspend()
+        try {
+            runBlocking { AfterCommitTasks.runAll(tasks) }
+        } finally {
+            TransactionScope.resume(bound)
+        }
     }
 
     /** Repetição: a transação não está mais aberta. Idempotente se o desfecho anterior bate com o pedido. */

@@ -19,29 +19,48 @@ abstract class HttpRepository<E, C, K>(
     basePath: String,
 ) : HttpReadOnlyRepository<E, C, K>(transport, codec, basePath), Repository<E, C, K> {
 
-    override suspend fun insert(bean: E): Boolean {
-        val response = post("insert") { codec.writeEntity(it, bean) }
+    /** Envia `{"entity", "projection"?}` e completa [bean] com a entidade que o servidor devolve ([fill]). */
+    override suspend fun insert(bean: E, projection: E?): Boolean {
+        val response = post("insert") { out ->
+            out.beginObject()
+            out.name("entity")
+            codec.writeEntity(out, bean)
+            projection?.let {
+                out.name("projection")
+                codec.writeEntity(out, it)
+            }
+            out.endObject()
+        }
         var success = false
         var id = -1L
+        var stored: E? = null
         response.readObject { name ->
             when (name) {
                 "success" -> success = InputCoerceUtils.asBoolean(response) == true
                 "id" -> InputCoerceUtils.asLong(response)?.let { id = it }
+                "entity" -> stored = codec.readEntity(response)
                 else -> response.skipValue()
             }
         }
-        if (success && id >= 0) {
-            codec.setGeneratedId(bean, id)
+        if (success) {
+            val completed = stored
+            if (completed != null) fill(bean, completed) else if (id >= 0) codec.setGeneratedId(bean, id)
         }
         return success
     }
+
+    /**
+     * Copia para [target] o que [stored] traz: cada campo com valor, e a associação que [target] não tinha (ou tinha
+     * sem chave). É como o bean de quem chamou fica completo depois do insert.
+     */
+    protected abstract fun fill(target: E, stored: E)
 
     /**
      * Envia só os campos da projeção efetiva: a informada; senão, o que mudou em relação a [oldBean];
      * senão, a padrão da entidade.
      */
     override suspend fun update(newBean: E, oldBean: E?, projection: E?): Boolean {
-        val effective = projection ?: oldBean?.let { codec.computeProjection(newBean, it) } ?: newProjection()
+        val effective = projection ?: oldBean?.let { codec.computeProjection(newBean, it) } ?: ownFieldsProjection()
         val response = post("update") { codec.writeEntityProjected(it, newBean, effective) }
         var success = false
         response.readObject { name ->

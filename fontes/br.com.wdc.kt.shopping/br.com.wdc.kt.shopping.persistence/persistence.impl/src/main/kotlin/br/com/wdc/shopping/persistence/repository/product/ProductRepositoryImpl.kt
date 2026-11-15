@@ -21,21 +21,15 @@ import org.jooq.impl.DSL
 
 class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
 
-    override suspend fun insert(bean: Product): Boolean {
-        val dsl = dsl()
+    override suspend fun insert(bean: Product, projection: Product?): Boolean {
         // o id informado é respeitado (a carga de demonstração grava ids fixos)
-        val id = bean.id ?: dsl.nextval(SQ_PRODUCT).also { bean.id = it }
-        val step = dsl.insertInto(EN_PRODUCT).set(EN_PRODUCT.ID, id)
-        bean.name?.let { step.set(EN_PRODUCT.NAME, it) }
-        bean.price?.let { step.set(EN_PRODUCT.PRICE, BigDecimal.valueOf(it)) }
-        bean.description?.let { step.set(EN_PRODUCT.DESCRIPTION, it) }
-        bean.image?.let { step.set(EN_PRODUCT.IMAGE, it) }
-        return step.execute() > 0
+        if (bean.id == null) bean.id = dsl().nextval(SQ_PRODUCT)
+        return QUERY.insert(bean, projection)
     }
 
     override suspend fun update(newBean: Product, oldBean: Product?, projection: Product?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de produto exige o id")
-        val prj = projection ?: newProjection()
+        val prj = projection ?: ownFieldsProjection()
 
         val step = dsl().update(EN_PRODUCT).set(EN_PRODUCT.ID, id)
         var hasChanges = false
@@ -91,7 +85,7 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
 
     /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
     private fun projectionFrom(criteria: ProductCriteria): Product {
-        val projection = criteria.projection ?: return newProjection()
+        val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
             projection.id = 0L
         }

@@ -95,18 +95,23 @@ open class Criterion<C, T : Any>(owner: C?, val name: String) {
     fun ne(value: T?): C = if (value == null) owner() else add(Operator.NE, value)
 
     /**
-     * Pertence ao conjunto. Conjunto nulo ou vazio não acrescenta pedido — filtrar por "nenhum" seria inútil.
+     * Pertence ao conjunto. `null` não acrescenta pedido, como em [eq]: "não informado".
+     *
+     * **Conjunto vazio acrescenta o pedido, e nada pertence a ele: a busca não casa linha nenhuma.** É o que
+     * se espera de uma lista de ids que veio vazia (o escopo de acesso de quem não alcança nada, um `delete`
+     * pelos ids de uma seleção vazia). Até a 0.3.0, vazio não filtrava, e devolvia (ou apagava) tudo.
+     *
      * (O operador no fio é `IN`; o nome é `isIn` porque `in` é palavra reservada em Kotlin.)
      */
     fun isIn(values: Collection<T>?): C {
-        if (values.isNullOrEmpty()) {
+        if (values == null) {
             return owner()
         }
         requests.add(Predicate(Operator.IN, values.toList()))
         return owner()
     }
 
-    /** Pertence ao conjunto. */
+    /** Pertence ao conjunto. Sem argumentos, é o conjunto vazio: não casa linha nenhuma. */
     fun isIn(vararg values: T): C = isIn(values.asList())
 
     fun isNull(): C = add(Operator.IS_NULL)

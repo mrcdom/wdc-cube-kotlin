@@ -18,17 +18,16 @@ import br.com.wdc.shopping.persistence.scheme.tables.references.EN_PURCHASE
 import br.com.wdc.shopping.persistence.scheme.tables.references.EN_PURCHASEITEM
 import java.math.BigDecimal
 import org.jooq.Condition
-import org.jooq.DSLContext
 import org.jooq.SortField
 import org.jooq.impl.DSL
 
 class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository {
 
-    override suspend fun insert(bean: PurchaseItem): Boolean = insertRow(dsl(), bean)
+    override suspend fun insert(bean: PurchaseItem, projection: PurchaseItem?): Boolean = insertRow(bean, projection)
 
     override suspend fun update(newBean: PurchaseItem, oldBean: PurchaseItem?, projection: PurchaseItem?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de item de compra exige o id")
-        val prj = projection ?: newProjection()
+        val prj = projection ?: ownFieldsProjection()
 
         val step = dsl().update(EN_PURCHASEITEM).set(EN_PURCHASEITEM.ID, id)
         var hasChanges = false
@@ -75,7 +74,7 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
 
     /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
     private fun projectionFrom(criteria: PurchaseItemCriteria): PurchaseItem {
-        val projection = criteria.projection ?: return newProjection()
+        val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
             projection.id = 0L
         }
@@ -131,15 +130,10 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
             cq.criteriaAs<PurchaseItemCriteria>()?.let { conditions(cq.childTable, it, cq.uniqueName("xp")) } ?: DSL.noCondition()
 
         /** Grava a linha do item — também usado pela cascata do insert da compra. */
-        internal fun insertRow(dsl: DSLContext, bean: PurchaseItem): Boolean {
+        internal fun insertRow(bean: PurchaseItem, projection: PurchaseItem?): Boolean {
             bean.amount?.let(::checkAmount)
-            val id = bean.id ?: dsl.nextval(SQ_PURCHASEITEM).also { bean.id = it }
-            val step = dsl.insertInto(EN_PURCHASEITEM).set(EN_PURCHASEITEM.ID, id)
-            bean.purchaseId?.let { step.set(EN_PURCHASEITEM.PURCHASEID, it) }
-            bean.productId?.let { step.set(EN_PURCHASEITEM.PRODUCTID, it) }
-            bean.amount?.let { step.set(EN_PURCHASEITEM.AMOUNT, it) }
-            bean.price?.let { step.set(EN_PURCHASEITEM.PRICE, BigDecimal.valueOf(it)) }
-            return step.execute() > 0
+            if (bean.id == null) bean.id = BaseRepositoryImpl.dsl().nextval(SQ_PURCHASEITEM)
+            return QUERY.insert(bean, projection)
         }
 
         private fun checkAmount(amount: Int) {

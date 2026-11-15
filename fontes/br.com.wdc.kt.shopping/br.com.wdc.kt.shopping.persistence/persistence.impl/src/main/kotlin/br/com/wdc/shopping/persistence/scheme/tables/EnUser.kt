@@ -19,18 +19,19 @@ import org.jooq.QueryPart
 import org.jooq.Record
 import org.jooq.SQL
 import org.jooq.Schema
-import org.jooq.Select
 import org.jooq.Stringly
 import org.jooq.Table
 import org.jooq.TableField
+import org.jooq.TableLike
 import org.jooq.TableOptions
 import org.jooq.UniqueKey
 import org.jooq.impl.DSL
+import org.jooq.impl.Internal
 import org.jooq.impl.SQLDataType
 import org.jooq.impl.TableImpl
 
 
-@Suppress("UNCHECKED_CAST")
+@Suppress("warnings")
 open class EnUser(
     alias: Name,
     path: Table<out Record>?,
@@ -74,7 +75,7 @@ open class EnUser(
 
     constructor(alias: String): this(DSL.name(alias))
 
-    constructor(alias: Name): this(alias, null)
+    constructor(alias: Name): this(alias, EN_USER)
 
     constructor(): this(DSL.name("EN_USER"), null)
     override fun getSchema(): Schema? = if (aliased()) null else Public.PUBLIC
@@ -89,7 +90,7 @@ open class EnUser(
 
     override fun rename(name: Table<*>): EnUser = EnUser(name.qualifiedName, null)
 
-    override fun where(condition: Condition?): EnUser = EnUser(qualifiedName, if (aliased()) this else null, condition)
+    override fun where(condition: Condition?): EnUser = EnUser(qualifiedName, if (aliased()) this else null, Internal.condition(this, condition))
 
     override fun where(conditions: Collection<Condition>): EnUser = where(DSL.and(conditions))
 
@@ -105,7 +106,7 @@ open class EnUser(
 
     @PlainSQL override fun where(@Stringly.SQL condition: String, vararg parts: QueryPart): EnUser = where(DSL.condition(condition, *parts))
 
-    override fun whereExists(select: Select<*>): EnUser = where(DSL.exists(select))
+    override fun whereExists(select: TableLike<*>): EnUser = where(DSL.exists(select))
 
-    override fun whereNotExists(select: Select<*>): EnUser = where(DSL.notExists(select))
+    override fun whereNotExists(select: TableLike<*>): EnUser = where(DSL.notExists(select))
 }

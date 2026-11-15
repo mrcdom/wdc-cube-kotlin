@@ -94,13 +94,13 @@ interface ReadOnlyRepository<E, C, K> {
     suspend fun fetch(criteria: C, offset: Int = 0, limit: Int = 0): List<E>
     suspend fun fetchPage(criteria: C, page: Int, pageSize: Int): Page<E>
     suspend fun fetchById(id: K, projection: E? = null): E?
-    fun newProjection(): E
+    fun ownFieldsProjection(): E
 }
 
 interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
-    suspend fun insert(bean: E): Boolean
+    suspend fun insert(bean: E, projection: E? = null): Boolean
     suspend fun update(newBean: E, oldBean: E? = null, projection: E? = null): Boolean
-    suspend fun insertOrUpdate(newBean: E, oldBean: E?): Boolean
+    suspend fun insertOrUpdate(newBean: E, oldBean: E?, projection: E? = null): Boolean
     suspend fun delete(criteria: C): Int
 }
 ```
@@ -113,7 +113,8 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
 As quatro entidades do Shopping têm repositório completo.
 
 - **`update` é parcial.** A `projection` diz quais campos considerar; com `oldBean`, só entram os que mudaram. Sem nenhuma das duas, vale a projeção padrão da entidade.
-- **`insertOrUpdate`** insere quando `oldBean` é `null` e atualiza caso contrário — não consulta o banco para decidir.
+- **`insert` também aceita projeção.** Ela diz quais campos entram no `INSERT`; o que fica fora recebe o padrão da coluna. Sem projeção, entram os campos que têm valor (o nulo fica fora). O bean sai completo: a chave gerada e o que o banco preencheu.
+- **`insertOrUpdate`** insere quando `oldBean` é `null` e atualiza caso contrário — não consulta o banco para decidir. A projeção vale para os dois.
 - **`fetch`**: `0` em `offset` ou `limit` significa "sem salto" e "sem limite". Atenção à ordem posicional: `fetch(c, 10)` pula dez linhas; para limitar, nomeie — `fetch(c, limit = 10)`.
 - **`fetchPage`** devolve `Page(items, page, totalPages, totalItems)`.
 - **`delete` com critério vazio é recusado** (`InvalidRequestException`) nas quatro entidades. Apagar tudo por esquecimento de um filtro não é um caso de uso.
@@ -140,6 +141,7 @@ criteria.name.containing("veda")                   // …com este outro pedido
 
 - Pedidos de **um mesmo campo** combinam com `AND`; depois de `or()`, com `OR`. **Campos diferentes combinam sempre com `AND`.**
 - Um campo sem pedido não filtra. Os atalhos `withXxx(valor)` ignoram `null`.
+- `isIn(null)` não filtra ("não informado"), mas `isIn(listaVazia)` filtra por nenhum: a busca não casa linha, e o `delete` não apaga nada. No fio, sai `{ "o": "IN" }` sem valores.
 - Há três famílias, e o compilador só oferece o que cada uma admite: `Criterion` (igualdade, `ne`, `isIn`, nulidade), `ComparableCriterion` (mais `gt`/`ge`/`lt`/`le`/`between`) e `TextCriterion` (mais `like`/`ilike`/`startingWith`/`containing`).
 - A **ordenação é nomeada pelo efeito** — `NAME_A_TO_Z`, `MOST_RECENT_PURCHASE_FIRST` —, e não por coluna. É o repositório que traduz o nome em colunas e acrescenta o desempate pela chave. Cada ordenação tem um índice que a sustenta, declarado no `DBCreate`.
 - Alguns campos não são coluna da própria tabela: `PurchaseCriteria.productId` (compras que contêm o produto) e `PurchaseItemCriteria.userId` (itens das compras do usuário) viram `EXISTS` sobre a outra tabela. Para quem monta o filtro, são campos como os outros.
@@ -170,14 +172,15 @@ val projection = Purchase().apply {
     items = pv.singletonList(
         PurchaseItem().apply { id = pv.i64; price = pv.f64; product = Product().apply { name = pv.str } },
         PurchaseItemCriteria().withOrderBy(PurchaseItemCriteria.OrderBy.MOST_EXPENSIVE_FIRST),
-    ).withLimit(3)
+        limit = 3,
+    )
 }
 val purchases = repo.fetch(PurchaseCriteria().withUserId(userId).withProjection(projection))
 ```
 
 - Uma **associação** (`user`) é projetada por outra instância. Quando ela pede só a chave, o valor sai da própria linha, sem subconsulta.
-- Uma **coleção** (`items`) é projetada por uma lista de um elemento — a forma de cada item. Com `pv.singletonList(forma, critério)` a coleção também é filtrada, ordenada e recortada. Isso atravessa o REST: a coleção de projeção trafega como um envelope `{ shape, where, limit, offset }`.
-- Sem projeção, cada repositório usa a sua padrão (`newProjection()`): os campos escalares e as chaves das associações. A imagem do produto e a senha do usuário ficam de fora.
+- Uma **coleção** (`items`) é projetada por uma lista de um elemento — a forma de cada item. Com `pv.singletonList(forma, critério, limit, offset)` a coleção também é filtrada, ordenada e recortada. Isso atravessa o REST: a coleção de projeção trafega como um envelope `{ shape, where, limit, offset }`.
+- Sem projeção, cada repositório usa a sua padrão (`ownFieldsProjection()`): os campos escalares e as chaves das associações. A imagem do produto e a senha do usuário ficam de fora.
 
 ---
 
@@ -209,6 +212,7 @@ A partir desse mapeamento e de uma projeção, o `JsonQuery` monta **uma única 
 - O `CriterionTranslator` traduz cada campo do critério numa condição jOOQ; valores são sempre *bind values*.
 - O `DSLContext` do módulo (`ShoppingDSLContext.BEAN`) usa a conexão da transação corrente ou, fora de transação, uma conexão avulsa em autocommit.
 - Os repositórios não embrulham exceções: a real sobe, e a camada REST a traduz em status.
+- **O `insert` também sai do mapeamento:** `QUERY.insert(bean, projection)` monta o `INSERT` pelas colunas do mapeamento (as associações pela chave estrangeira declarada em `key`; campo derivado e coluna de identidade ficam fora) e lê a linha inserida de volta pela mesma projeção JSON do fetch. No PostgreSQL é uma instrução só (`WITH … INSERT … RETURNING`); no H2, um `INSERT` simples seguido do `SELECT` pela chave — o `FINAL TABLE` do H2 2.4 deixa a linha gravada quando a instrução falha numa restrição. O repositório do Shopping só preenche o id pela sequência antes de chamá-lo.
 
 ---
 
@@ -248,6 +252,7 @@ ShoppingTransactions.BEAN.get().required { tx ->
 - **Retorno normal confirma; qualquer exceção desfaz** e sobe intacta, com o tipo original.
 - O caso de uso deve tolerar a ausência do serviço — `ShoppingTransactions.BEAN.getOrNull()` — e executar direto nesse caso (testes sem persistência).
 - É assim que o checkout funciona: `CartManager.doPurchase` grava a compra e os itens dentro de `required`. Uma falha no meio não deixa compra órfã.
+- `afterCommit { … }` agenda uma tarefa para depois do commit da transação física corrente (avisar um processo em segundo plano, por exemplo): roda só se ela comitar, na ordem do agendamento, já fora dela; desfeita, a tarefa é descartada. Sem transação, roda na hora. A falha da tarefa vai ao log e não muda o resultado da transação. No servidor, uma tarefa agendada dentro de uma transação remota roda no commit dela.
 
 Há duas implementações, e o caso de uso não sabe qual está usando:
 
@@ -286,7 +291,7 @@ Todas as entidades têm as mesmas operações, sob `/api/repo/<entidade>` (`user
 
 | Rota | Transacional | Corpo | Resposta |
 |---|---|---|---|
-| `POST …/insert` | sim | entidade | `{success, id}` |
+| `POST …/insert` | sim | `{entity, projection?}`, ou a entidade solta | `{success, id, entity}` |
 | `POST …/update` | sim | entidade parcial — as chaves presentes são os campos a atualizar | `{success}` |
 | `POST …/delete` | sim | campos do critério | `{count}` |
 | `POST …/count` | não | campos do critério | `{count}` |
@@ -386,7 +391,7 @@ cd fontes
 
 ## Como adicionar uma entidade
 
-1. **Domínio** (`:shopping-domain`, pacote `domain.<entidade>`): a entidade (`KeyedEntity`, campos anuláveis), o `XxxCriteria` com os campos de filtro e o `OrderBy`, o `XxxCodec` e a interface `XxxRepository` com `newProjection()`, `fetchById` e o holder `BEAN`.
+1. **Domínio** (`:shopping-domain`, pacote `domain.<entidade>`): a entidade (`KeyedEntity`, campos anuláveis), o `XxxCriteria` com os campos de filtro e o `OrderBy`, o `XxxCodec` e a interface `XxxRepository` com `ownFieldsProjection()`, `fetchById` e o holder `BEAN`.
 2. **Esquema** (`:shopping-scripts`): a tabela, a sequência e os índices das ordenações em `DBCreate`; a migração para os bancos existentes; a carga em `DBReset`, se couber. Regenere as classes jOOQ.
 3. **Servidor** (`:shopping-persistence`): o `XxxRepositoryImpl` com o mapeamento `QUERY`, as condições e a ordenação; o registro em `ShoppingRepositoryBootstrap`.
 4. **REST** (`:persistence-rest`): o `XxxApiController`, que configura um `RepositoryRpc` **com a conferência de permissão e de alcance** (`rule` com `ApiSecurity.permission`, `scope`, `beforeInsert`/`beforeUpdate`), e a chamada dele em `RepositoryApiRoutes.create()`; as permissões em `Role`; a entidade em `RepositoryApiDocs`.

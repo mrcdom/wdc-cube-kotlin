@@ -9,9 +9,9 @@ kotlin {
     jvmToolchain(21)
 
     jvm()
-    androidLibrary {
+    android {
         namespace = "br.com.wdc.shopping.view.compose"
-        compileSdk = 35
+        compileSdk = 36
         minSdk = 26
     }
     wasmJs {

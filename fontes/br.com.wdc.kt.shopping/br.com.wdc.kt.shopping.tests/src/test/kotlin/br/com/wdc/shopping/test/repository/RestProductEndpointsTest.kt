@@ -74,9 +74,10 @@ class RestProductEndpointsTest {
 
     @Test
     fun insert_returnsTheGeneratedId_andUpdateTouchesOnlyThePresentKeys() {
+        // a entidade solta, como antes da 0.4.0
         val inserted = post("insert", """{"name":"Teclado","price":80.5,"description":"d"}""")
         val id = Regex(""""id":(\d+)""").find(inserted)!!.groupValues[1]
-        assertEquals("""{"success":true,"id":$id}""", inserted)
+        assertEquals("""{"success":true,"id":$id,"entity":{"id":$id,"name":"Teclado","price":80.5,"description":"d"}}""", inserted)
 
         assertEquals("""{"success":true}""", post("update", """{"id":$id,"name":"Teclado 2"}"""))
         assertEquals(
@@ -84,6 +85,30 @@ class RestProductEndpointsTest {
             post("fetch-by-id", """{"id":$id}"""),
         )
         assertEquals("""{"count":1}""", post("delete", """{"productId":$id}"""))
+    }
+
+    @Test
+    fun insert_inTheEnvelope_withProjection() {
+        val inserted = post(
+            "insert",
+            """{"entity":{"name":"Envelope","price":1.5,"description":"d"},"projection":{"name":"~","price":1.5,"description":"~"}}""",
+        )
+        val id = Regex(""""id":(\d+)""").find(inserted)!!.groupValues[1]
+        assertTrue(inserted.startsWith("""{"success":true,"id":$id,"entity":{"id":$id,"name":"Envelope""""), inserted)
+        post("delete", """{"productId":$id}""")
+    }
+
+    @Test
+    fun insertedUser_comesBackWithoutThePassword() {
+        val inserted = env.transport.postJson(
+            "/api/repo/user/insert",
+            """{"entity":{"userName":"semsenha","password":"0123456789abcdef0123456789abcdef","name":"Sem Senha","roles":"CUSTOMER"}}""",
+        )
+        assertTrue(""""success":true""" in inserted, inserted)
+        assertTrue(""""userName":"semsenha"""" in inserted, inserted)
+        assertFalse("password" in inserted, inserted)
+        val id = Regex(""""id":(\d+)""").find(inserted)!!.groupValues[1]
+        env.transport.postJson("/api/repo/user/delete", """{"userId":$id}""")
     }
 
     @Test

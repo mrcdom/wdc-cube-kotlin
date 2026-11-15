@@ -110,14 +110,14 @@ fun Project.publishToCentral(platform: com.vanniktech.maven.publish.Platform) {
 configure(subprojects.filter { it.name in publishedModules }) {
     // Maven Central namespace verified through the GitHub account; "wdc.kt" mirrors br.com.wdc.kt
     group = "io.github.mrcdom.wdc.kt"
-    version = "0.3.0"
+    version = "0.4.0"
 
     // Multiplatform modules: they apply the Kotlin Multiplatform plugin first, then the Android library one
     pluginManager.withPlugin("com.android.kotlin.multiplatform.library") {
         publishToCentral(
             com.vanniktech.maven.publish.KotlinMultiplatform(
                 javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
-                sourcesJar = true,
+                sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
                 androidVariantsToPublish = listOf("release"),
             )
         )
@@ -128,7 +128,7 @@ configure(subprojects.filter { it.name in publishedModules }) {
         publishToCentral(
             com.vanniktech.maven.publish.KotlinJvm(
                 javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
-                sourcesJar = true,
+                sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
             )
         )
     }

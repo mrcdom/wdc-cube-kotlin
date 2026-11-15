@@ -54,10 +54,10 @@ class RelationKey<T : Table<*>> internal constructor() {
     fun addLdt(fn: String, column: (T) -> Field<out LocalDateTime?>) = add(fn, column, JsonFieldType.DATETIME)
 
     /** Campo de dia (DATE) da chave do filho, guardado nesta coluna. */
-    fun addLocalDate(fn: String, column: (T) -> Field<out LocalDate?>) = add(fn, column, JsonFieldType.DATETIME)
+    fun addDay(fn: String, column: (T) -> Field<out LocalDate?>) = add(fn, column, JsonFieldType.DATETIME)
 
     /** Campo [UUID] da chave do filho, guardado nesta coluna. */
-    fun addUuid(fn: String, column: (T) -> Field<out UUID?>) = add(fn, column, JsonFieldType.STRING)
+    fun addUid(fn: String, column: (T) -> Field<out UUID?>) = add(fn, column, JsonFieldType.STRING)
 
     /** Campo `ByteArray` da chave do filho, guardado nesta coluna. */
     fun addBin(fn: String, column: (T) -> Field<out ByteArray?>) = add(fn, column, JsonFieldType.BINARY)
@@ -66,6 +66,9 @@ class RelationKey<T : Table<*>> internal constructor() {
         parts[fn] = Part(fn, column, type)
         return this
     }
+
+    /** Cada parte: o nome no JSON do filho e a coluna desta tabela. */
+    internal fun columns(): List<Pair<String, (T) -> Field<*>>> = parts.values.map { it.name to it.column }
 
     /** Os campos que esta chave cobre — é contra eles que se pergunta se a projeção pediu mais. */
     internal fun names(): Set<String> = parts.keys

@@ -2,6 +2,7 @@ package br.com.wdc.shopping.persistence.client
 
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.util.AtomicRef
+import br.com.wdc.framework.domain.transaction.AfterCommitTasks
 import br.com.wdc.framework.domain.transaction.TransactionContext
 import br.com.wdc.framework.domain.transaction.TransactionNotAllowedException
 import br.com.wdc.framework.domain.transaction.TransactionRequiredException
@@ -26,6 +27,9 @@ import br.com.wdc.framework.domain.transaction.TransactionSystemException
  * `notSupported` dentro de uma transação remota serve para **ler** fora dela, não para escrever: o servidor
  * não distingue "transação suspensa" de "cabeçalho perdido" e recusa (409) a escrita sem `X-Tx-Id` de quem tem
  * transação aberta. Para escrever por fora, use `requiresNew`.
+ *
+ * [afterCommit] guarda a tarefa na transação remota corrente e a roda depois que o commit remoto volta com sucesso,
+ * já sem transação corrente; sem transação remota, roda na hora.
  */
 class RestTransactionService(private val transport: HttpTransport) : TransactionService {
 
@@ -76,14 +80,19 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         return work(NoTx)
     }
 
+    override suspend fun afterCommit(task: suspend () -> Unit) {
+        val state = current.getOrNull()
+        if (state != null) state.afterCommit.add(task) else AfterCommitTasks.runAll(listOf(task))
+    }
+
     private suspend fun <T> runInNewTx(work: suspend (TransactionContext) -> T): T {
         val state = TxState(remoteBegin())
         current.set(state)
+        val result: T
         try {
-            val result = work(state)
+            result = work(state)
             // o txId ainda é o corrente: vai no cabeçalho do commit/rollback
             transport.postJson(if (state.rollbackOnly) "/api/tx/rollback" else "/api/tx/commit", "{}")
-            return result
         } catch (e: Throwable) {
             // Melhor esforço: a falha do bloco é a que interessa. Se o commit falhou, o rollback do mesmo txId
             // é recusado ou inócuo no servidor.
@@ -95,6 +104,10 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         } finally {
             current.set(null)
         }
+        // o commit remoto voltou com sucesso, e já não há transação corrente: uma tarefa que precise abre a sua
+        val tasks = state.afterCommit.drain()
+        if (!state.rollbackOnly) AfterCommitTasks.runAll(tasks)
+        return result
     }
 
     private fun remoteBegin(): String {
@@ -114,6 +127,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
     /** Uma transação remota ativa. */
     private class TxState(val txId: String) : TransactionContext {
         var rollbackOnly = false
+        val afterCommit = AfterCommitTasks()
 
         override fun setRollbackOnly() {
             rollbackOnly = true
