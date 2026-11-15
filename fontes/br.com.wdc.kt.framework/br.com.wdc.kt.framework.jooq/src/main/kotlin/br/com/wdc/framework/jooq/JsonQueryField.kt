@@ -31,7 +31,7 @@ class JsonQueryField<B : Any, T : Table<*>> internal constructor(
     val mark: (B) -> Unit,
     /**
      * O valor do domínio (o que [get] devolve, não nulo) no tipo da coluna: `Instant` → `LocalDateTime` em UTC,
-     * `Double` → `BigDecimal`, enum → nome... Passe o resultado por `column.dataType.convert` para o tipo exato.
+     * `Double` → `BigDecimal`, enum → nome... Para o tipo exato, `DSL.val(valor, coluna).value` (o `DataType.convert` está obsoleto no jOOQ).
      */
     val toColumn: (Any) -> Any?,
 ) {

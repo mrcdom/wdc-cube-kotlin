@@ -490,7 +490,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
                 if (!wanted && !(name in primaryKey && value != null)) continue
                 val column = target.field(name) ?: continue
                 if (values[column] != null) continue
-                values[column] = value?.let { column.dataType.convert(field.toColumn(it)) }
+                values[column] = value?.let { DSL.`val`(field.toColumn(it), column).value }
                 written += field
             }
 

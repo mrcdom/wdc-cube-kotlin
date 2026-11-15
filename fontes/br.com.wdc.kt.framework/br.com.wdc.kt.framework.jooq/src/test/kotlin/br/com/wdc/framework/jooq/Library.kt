@@ -65,7 +65,7 @@ class TNote(alias: Name = DSL.name("NOTE"), aliased: Table<Record>? = null) : Ta
 
 /** Tabela com identidade, padrões de coluna e um código único: o caso do insert por projeção. */
 class TCoupon(alias: Name = DSL.name("COUPON"), aliased: Table<Record>? = null) : TableImpl<Record>(alias, null, aliased) {
-    val ID: TableField<Record, Long?> = createField(DSL.name("ID"), SQLDataType.BIGINT.nullable(false).identity(true), this)
+    val ID: TableField<Record, Long?> = createField(DSL.name("ID"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this)
     val CODE: TableField<Record, String?> = createField(DSL.name("CODE"), SQLDataType.VARCHAR(20).nullable(false), this)
     val STATUS: TableField<Record, String?> = createField(DSL.name("STATUS"), SQLDataType.VARCHAR(20).nullable(false), this)
     val DISCOUNT: TableField<Record, BigDecimal?> = createField(DSL.name("DISCOUNT"), SQLDataType.NUMERIC(5, 2), this)

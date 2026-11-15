@@ -540,7 +540,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         for (field in fields) {
             if (!field.projected(projection) || !field.isColumnOf(COUPON)) continue
             val column = field.column(COUPON)
-            sets[column] = field.get(changed)?.let { column.dataType.convert(field.toColumn(it)) }
+            sets[column] = field.get(changed)?.let { DSL.`val`(field.toColumn(it), column).value }
         }
         assertEquals(1, dsl.update(COUPON).set(sets).where(COUPON.ID.eq(coupon.id)).execute())
 

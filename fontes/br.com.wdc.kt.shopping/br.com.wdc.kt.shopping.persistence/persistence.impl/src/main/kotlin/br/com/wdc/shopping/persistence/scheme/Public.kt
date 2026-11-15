@@ -20,11 +20,12 @@ import kotlin.collections.List
 import org.jooq.Catalog
 import org.jooq.Sequence
 import org.jooq.Table
+import org.jooq.impl.DSL
 import org.jooq.impl.SchemaImpl
 
 
-@Suppress("UNCHECKED_CAST")
-open class Public : SchemaImpl("PUBLIC", DefaultCatalog.DEFAULT_CATALOG) {
+@Suppress("warnings")
+open class Public : SchemaImpl(DSL.name("PUBLIC"), DefaultCatalog.DEFAULT_CATALOG, DSL.comment("")) {
     companion object {
 
         val PUBLIC: Public = Public()

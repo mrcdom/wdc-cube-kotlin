@@ -19,18 +19,19 @@ import org.jooq.QueryPart
 import org.jooq.Record
 import org.jooq.SQL
 import org.jooq.Schema
-import org.jooq.Select
 import org.jooq.Stringly
 import org.jooq.Table
 import org.jooq.TableField
+import org.jooq.TableLike
 import org.jooq.TableOptions
 import org.jooq.UniqueKey
 import org.jooq.impl.DSL
+import org.jooq.impl.Internal
 import org.jooq.impl.SQLDataType
 import org.jooq.impl.TableImpl
 
 
-@Suppress("UNCHECKED_CAST")
+@Suppress("warnings")
 open class EnUserIntentSecret(
     alias: Name,
     path: Table<out Record>?,
@@ -68,7 +69,7 @@ open class EnUserIntentSecret(
 
     constructor(alias: String): this(DSL.name(alias))
 
-    constructor(alias: Name): this(alias, null)
+    constructor(alias: Name): this(alias, EN_USER_INTENT_SECRET)
 
     constructor(): this(DSL.name("EN_USER_INTENT_SECRET"), null)
     override fun getSchema(): Schema? = if (aliased()) null else Public.PUBLIC
@@ -83,7 +84,7 @@ open class EnUserIntentSecret(
 
     override fun rename(name: Table<*>): EnUserIntentSecret = EnUserIntentSecret(name.qualifiedName, null)
 
-    override fun where(condition: Condition?): EnUserIntentSecret = EnUserIntentSecret(qualifiedName, if (aliased()) this else null, condition)
+    override fun where(condition: Condition?): EnUserIntentSecret = EnUserIntentSecret(qualifiedName, if (aliased()) this else null, Internal.condition(this, condition))
 
     override fun where(conditions: Collection<Condition>): EnUserIntentSecret = where(DSL.and(conditions))
 
@@ -99,7 +100,7 @@ open class EnUserIntentSecret(
 
     @PlainSQL override fun where(@Stringly.SQL condition: String, vararg parts: QueryPart): EnUserIntentSecret = where(DSL.condition(condition, *parts))
 
-    override fun whereExists(select: Select<*>): EnUserIntentSecret = where(DSL.exists(select))
+    override fun whereExists(select: TableLike<*>): EnUserIntentSecret = where(DSL.exists(select))
 
-    override fun whereNotExists(select: Select<*>): EnUserIntentSecret = where(DSL.notExists(select))
+    override fun whereNotExists(select: TableLike<*>): EnUserIntentSecret = where(DSL.notExists(select))
 }
