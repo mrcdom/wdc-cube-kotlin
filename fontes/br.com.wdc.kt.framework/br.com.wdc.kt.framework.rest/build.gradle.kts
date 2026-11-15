@@ -7,6 +7,8 @@ dependencies {
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.h2)
+    // a página do Swagger (openApi { ui { } }) lê o webjar do classpath; quem a liga declara o webjar
+    testRuntimeOnly(libs.swagger.ui)
     testRuntimeOnly(libs.logback.classic)
 }
 

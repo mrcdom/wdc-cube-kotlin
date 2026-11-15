@@ -8,6 +8,7 @@ import br.com.wdc.framework.rest.json.GsonJsonMapper
 import br.com.wdc.framework.rest.openapi.OpenApiConfig
 import br.com.wdc.framework.rest.openapi.OpenApiGenerator
 import br.com.wdc.framework.rest.openapi.OperationDoc
+import br.com.wdc.framework.rest.openapi.SwaggerUiRoutes
 import br.com.wdc.framework.rest.security.AccessRule
 import br.com.wdc.framework.rest.security.AccessRules
 import br.com.wdc.framework.rest.security.AuthenticationException
@@ -447,6 +448,15 @@ class RestApi private constructor(builder: Builder) {
             openApiConfig = (openApiConfig ?: OpenApiConfig()).apply(block)
         }
 
+        /** As rotas da página do Swagger, públicas e fora do documento; montadas depois de todas as outras. */
+        internal fun addSwaggerUi() {
+            val config = openApiConfig ?: return
+            val options = config.uiOptions ?: return
+            val ui = SwaggerUiRoutes(options, config)
+            get(ui.root + ".html", public = true, hidden = true, handler = ui.redirect)
+            get(ui.root + "/{file}", public = true, hidden = true, handler = ui.file)
+        }
+
         /** Filtro antes de cada rota (ou só das que casam [pattern], no formato de [RequestMatcher]). */
         fun before(pattern: String? = null, filter: BeforeFilter) {
             befores += pattern?.let { RequestMatcher.of(it) } to filter
@@ -460,6 +470,6 @@ class RestApi private constructor(builder: Builder) {
     companion object {
         private val LOG = Log.getLogger("RestApi")
 
-        operator fun invoke(block: Builder.() -> Unit): RestApi = RestApi(Builder().apply(block))
+        operator fun invoke(block: Builder.() -> Unit): RestApi = RestApi(Builder().apply(block).apply { addSwaggerUi() })
     }
 }

@@ -193,6 +193,21 @@ securityHeaders {
 
 `openApi { path; title; version; description; tag(…); schemas; parameters; securityScheme; raw }`. O documento sai das rotas registradas: verbo, caminho, parâmetros de caminho e a segurança de cada operação (uma rota pública leva `security: []`). Os esquemas dos DTOs são gerados por reflexão, com os nomes que o Gson usa. Cada rota acrescenta o que tiver em `doc = { summary = …; query("page", Int::class.java); accepts<Req>(); returns<Resp>(200); response(404); raw(mapOf(…)) }`, e `raw` vence o que foi gerado. O documento fica servido em `path`, e também em `api.openApiJson`.
 
+`openApi { ui { } }` serve a página do Swagger UI a partir do webjar oficial no classpath, sem CDN. O webjar não vem com a biblioteca: quem liga a página o declara (`runtimeOnly("org.webjars:swagger-ui:5.34.1")`, ou outra versão 5.x). A versão é lida do próprio webjar, e sem ele a montagem da `RestApi` falha.
+
+```kotlin
+openApi {
+    title = "Orders"
+    ui {
+        path = "/swagger-ui"                               // o padrão
+        document("/partner/openapi.json", "Partner API")   // outro documento: o de outra RestApi, um arquivo estático
+        primary = "Orders"                                 // o aberto quando há vários; padrão, o primeiro
+    }
+}
+```
+
+`GET /swagger-ui.html` redireciona (302) para `/swagger-ui/index.html`, que é a página: com um documento, só ele; com vários, o seletor do topo. `includeOwn = false` tira o documento da própria API da lista. Dos arquivos do webjar, só os que a página carrega são servidos (`swagger-ui.css`, `swagger-ui-bundle.js`, `swagger-ui-standalone-preset.js`, `favicon-32x32.png`), com `Cache-Control: public, max-age=86400`; o resto é 404. As rotas são públicas e ficam fora do documento.
+
 ## RPC genérico por entidade
 
 `RepositoryRpc(basePath, codec, repository, …)` publica as operações de um repositório: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` e `GET {id}`. É o protocolo que o cliente `HttpRepository` do Shopping fala. O acesso fica com a aplicação, por meio de `rule` (por operação), `scope` (restringe o critério a quem chama), `sanitizeProjection`, `sanitizeOutput`, `beforeInsert` e `beforeUpdate`. Os dois ganchos de escrita rodam dentro da transação. Para um repositório só de leitura, use `writes = false`.
