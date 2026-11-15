@@ -144,6 +144,8 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
      *
      * @param sentinel constante qualquer do enum, usada para marcar o campo na projeção
      * @param parser   texto → constante; deve devolver `null` para valor desconhecido, nunca lançar
+     * @param toColumn constante → texto gravado na coluna (o inverso do [parser]); por padrão, o nome da constante.
+     *                 É o que o [JsonQuery.insert] grava e o que [JsonQueryField.toColumn] devolve
      */
     fun <E : Enum<E>> addEnm(
         fn: String,
@@ -152,6 +154,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         sentinel: E,
         parser: (String) -> E?,
         column: (T) -> Field<out String?>,
+        toColumn: (E) -> String = { it.name },
     ): JsonQueryBuilder<B, T> {
         projectionFillers.add { setter(it, sentinel) }
         register(fn, getter, JsonFieldType.STRING, column)
@@ -161,7 +164,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         @Suppress("UNCHECKED_CAST")
         queryFields += JsonQueryField(
             fn, column, getter, { b, v -> if (v != null) setter(b, v as E) }, { getter(it) != null },
-            { setter(it, sentinel) }, { (it as Enum<*>).name },
+            { setter(it, sentinel) }, { toColumn(it as E) },
         )
         return this
     }

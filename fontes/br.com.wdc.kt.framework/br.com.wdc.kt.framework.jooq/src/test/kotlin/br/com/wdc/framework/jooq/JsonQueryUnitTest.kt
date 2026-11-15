@@ -53,6 +53,24 @@ class JsonQueryUnitTest {
         assertEquals("2024-01-15T10:30:00.250Z", published("2024-01-15T12:30:00.25+02:00"))
     }
 
+    // :: Enum com texto próprio na coluna
+
+    @Test
+    fun addEnm_toColumn_writesTheColumnText_andDefaultsToTheName() {
+        fun kindQuery(toColumn: ((Kind) -> String)?): JsonQuery<Book, TBook> {
+            val builder = JsonQueryBuilder<Book, TBook>().setAlias("k").setBeanFactory(::Book).setTableFactory(BOOK::`as`)
+            return if (toColumn == null) {
+                builder.addEnm("kind", { it.kind }, { b, v -> b.kind = v }, Kind.NOVEL, Kind::parse, { it.KIND }).build()
+            } else {
+                builder.addEnm("kind", { it.kind }, { b, v -> b.kind = v }, Kind.NOVEL, Kind::parse, { it.KIND }, toColumn).build()
+            }
+        }
+        val custom = kindQuery { it.name.lowercase() }.fields().single { it.name == "kind" }
+        assertEquals("essay", custom.toColumn(Kind.ESSAY))
+        val plain = kindQuery(null).fields().single { it.name == "kind" }
+        assertEquals("ESSAY", plain.toColumn(Kind.ESSAY))
+    }
+
     // :: Projeção
 
     @Test
