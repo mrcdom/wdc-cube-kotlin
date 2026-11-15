@@ -67,13 +67,18 @@ O handler recebe uma `RestCall`:
 | Leitura | Métodos |
 |---|---|
 | Caminho | `path`, `pathLong`, `pathInt`, `pathUuid` |
-| Query (`null` se ausente) | `query`, `queries`, `queryLong`, `queryInt`, `queryDouble`, `queryBoolean`, `queryEnum<T>`, `queryUuid`, `queryLocalDate`, `queryLocalDateTime`, `requiredQuery` |
-| Cabeçalho | `header`, `requiredHeader` |
-| Corpo DTO | `body<T>()` (exige corpo), `bodyOrNull<T>()`; aceita array na raiz (`body<List<Item>>()`) |
+| Query (`null` se ausente) | `query`, `queries`, `queryLong`, `queryInt`, `queryDouble`, `queryBoolean`, `queryEnum<T>`, `queryUuid`, `queryLocalDate`, `queryLocalDateTime` |
+| Query exigida | `requiredQuery` e os tipados `requiredQueryLong`, `requiredQueryInt`, `requiredQueryDouble`, `requiredQueryBoolean`, `requiredQueryEnum<T>`, `requiredQueryUuid`, `requiredQueryLocalDate`, `requiredQueryLocalDateTime` |
+| Cabeçalho | `header`, `requiredHeader`, `basicCredentials()` (usuário e senha do `Authorization: Basic`, ou `null`) |
+| Corpo DTO | `body<T>()` (exige corpo), `bodyOrNull<T>()`; aceita array na raiz (`body<List<Item>>()`); `explicitNulls()` |
 | Corpo entidade | `entity(codec)`, `entityForUpdate(codec)`, `bodyInput()` |
 | Outros | `bodyText`, `bodyBytes`, `principal`, `requirePrincipal<P>()`, `inTransaction { }`, `http` (o `Context` do Javalin) |
 
 Parâmetro ausente ou malformado lança `RequestParameterException`; corpo ilegível lança `RequestBodyException`. Os dois respondem 400.
+
+`explicitNulls()` devolve os campos de primeiro nível do corpo que vieram com `null` explícito. Um DTO lê ausente e nulo do mesmo jeito; numa atualização parcial, é isso que separa "não mexer" (ausente) de "apagar" (nulo). Não consome o corpo: o `body<T>()` continua valendo antes ou depois.
+
+`basicCredentials()` decodifica o Base64 e depois cada parte como formulário (`%3A`, `+`), como o OAuth manda `client_id` e `client_secret` (RFC 6749, 2.3.1). Só o primeiro `:` separa, então a senha pode conter outros. Sem o cabeçalho, com outro esquema ou com valor inválido, devolve `null`.
 
 **O valor devolvido é a resposta:**
 

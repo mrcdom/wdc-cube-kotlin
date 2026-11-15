@@ -6,11 +6,16 @@ import br.com.wdc.framework.domain.codec.ModelCodec
 import br.com.wdc.framework.rest.error.RequestBodyException
 import br.com.wdc.framework.rest.error.RequestParameterException
 import br.com.wdc.framework.rest.security.RestPrincipal
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
 import io.javalin.http.Context
 import java.lang.reflect.Type
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
+import java.util.Base64
 import java.util.UUID
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
@@ -87,6 +92,28 @@ class RestCall internal constructor(
     fun requiredHeader(name: String): String =
         header(name)?.takeIf { it.isNotBlank() } ?: throw RequestParameterException(name, "Required header '$name' is not present")
 
+    /**
+     * Usuário e senha de `Authorization: Basic …`, o esquema comparado sem diferenciar maiúsculas. Depois do Base64,
+     * cada parte é decodificada como formulário (`%3A`, `+`), que é como o OAuth manda `client_id` e `client_secret`
+     * (RFC 6749, seção 2.3.1). Só o primeiro `:` separa: a senha pode conter outros.
+     *
+     * @return `null` sem o cabeçalho, com outro esquema, com Base64 ou codificação inválidos, ou sem `:`
+     */
+    fun basicCredentials(): Pair<String, String>? {
+        val value = header("Authorization")?.trim() ?: return null
+        val prefix = "Basic "
+        if (!value.regionMatches(0, prefix, 0, prefix.length, ignoreCase = true)) return null
+        return try {
+            val decoded = String(Base64.getDecoder().decode(value.substring(prefix.length).trim()), StandardCharsets.UTF_8)
+            val colon = decoded.indexOf(':')
+            if (colon < 0) return null
+            URLDecoder.decode(decoded.substring(0, colon), StandardCharsets.UTF_8) to
+                URLDecoder.decode(decoded.substring(colon + 1), StandardCharsets.UTF_8)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
+
     // :: Caminho
 
     fun path(name: String): String =
@@ -105,7 +132,7 @@ class RestCall internal constructor(
     fun queries(name: String): List<String> = http.queryParams(name)
 
     fun requiredQuery(name: String): String =
-        query(name) ?: throw RequestParameterException(name, "Required request parameter '$name' is not present")
+        query(name) ?: throw missingQuery(name)
 
     fun queryLong(name: String): Long? = query(name)?.let { convert(name, it, "long") { v -> v.toLong() } }
 
@@ -137,6 +164,24 @@ class RestCall internal constructor(
 
     fun <T> query(name: String, typeName: String, parse: (String) -> T): T? = query(name)?.let { convert(name, it, typeName, parse) }
 
+    // Exigidos: ausente, a mesma falha de [requiredQuery]; malformado, a mesma do `query*` correspondente.
+
+    fun requiredQueryLong(name: String): Long = queryLong(name) ?: throw missingQuery(name)
+
+    fun requiredQueryInt(name: String): Int = queryInt(name) ?: throw missingQuery(name)
+
+    fun requiredQueryDouble(name: String): Double = queryDouble(name) ?: throw missingQuery(name)
+
+    fun requiredQueryBoolean(name: String): Boolean = queryBoolean(name) ?: throw missingQuery(name)
+
+    fun requiredQueryUuid(name: String): UUID = queryUuid(name) ?: throw missingQuery(name)
+
+    fun requiredQueryLocalDate(name: String): LocalDate = queryLocalDate(name) ?: throw missingQuery(name)
+
+    fun requiredQueryLocalDateTime(name: String): LocalDateTime = queryLocalDateTime(name) ?: throw missingQuery(name)
+
+    inline fun <reified T : Enum<T>> requiredQueryEnum(name: String): T = queryEnum<T>(name) ?: throw missingQuery(name)
+
     // :: Corpo
 
     fun bodyText(): String = http.body()
@@ -162,6 +207,27 @@ class RestCall internal constructor(
     @OptIn(ExperimentalStdlibApi::class)
     inline fun <reified T> bodyOrNull(): T? = bodyOrNull<T>(typeOf<T>().javaType)
 
+    /**
+     * Os nomes dos campos de primeiro nível do corpo JSON que vieram com `null` explícito. Um DTO lê ausente e nulo
+     * do mesmo jeito; numa atualização parcial, isto separa "não mexer" (ausente) de "apagar" (nulo):
+     * ```kotlin
+     * val patch = call.body<CustomerPatch>()
+     * if ("phone" in call.explicitNulls()) customer.phone = null else patch.phone?.let { customer.phone = it }
+     * ```
+     * Corpo vazio, malformado ou que não é objeto dá o conjunto vazio. Não consome o corpo: [body] continua valendo.
+     */
+    fun explicitNulls(): Set<String> {
+        val text = http.body()
+        if (text.isBlank()) return emptySet()
+        val root = try {
+            JsonParser.parseString(text)
+        } catch (_: JsonParseException) {
+            return emptySet()
+        }
+        if (!root.isJsonObject) return emptySet()
+        return root.asJsonObject.entrySet().filter { it.value.isJsonNull }.mapTo(LinkedHashSet()) { it.key }
+    }
+
     /** O corpo como leitor de streaming, para os `ModelCodec`. Corpo vazio é lido como `{}`. */
     fun bodyInput(): ExtensibleObjectInput = JsonStreamReader(http.body().ifBlank { "{}" })
 
@@ -183,6 +249,10 @@ class RestCall internal constructor(
     }
 
     // :: Apoio
+
+    @PublishedApi
+    internal fun missingQuery(name: String) =
+        RequestParameterException(name, "Required request parameter '$name' is not present")
 
     @PublishedApi
     internal fun mismatch(name: String, value: String, typeName: String) =
