@@ -11,7 +11,7 @@ kotlin {
     jvm()
     androidLibrary {
         namespace = "br.com.wdc.shopping.persistence.client"
-        compileSdk = 35
+        compileSdk = 36
         minSdk = 26
     }
     js(IR) {

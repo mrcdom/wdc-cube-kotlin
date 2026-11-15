@@ -9,7 +9,7 @@ kotlin {
     jvm()
     androidLibrary {
         namespace = "br.com.wdc.framework.domain"
-        compileSdk = 35
+        compileSdk = 36
         minSdk = 26
     }
     js(IR) {

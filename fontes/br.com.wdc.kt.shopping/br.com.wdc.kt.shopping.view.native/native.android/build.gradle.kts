@@ -6,7 +6,7 @@ val baseUrl = project.findProperty("baseUrl")?.toString() ?: "http://10.0.2.2:80
 
 android {
     namespace = "br.com.wdc.shopping.nativeui.android"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "br.com.wdc.shopping.nativeui.android"
