@@ -4,10 +4,10 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
- * Streaming JSON writer — pure Kotlin, sem dependências de plataforma.
+ * Streaming JSON writer — pure Kotlin, no platform dependencies.
  *
- * Implementa [ExtensibleObjectOutput] escrevendo diretamente num StringBuilder
- * sem construir árvore intermediária (Map/List).
+ * Implements [ExtensibleObjectOutput] writing directly into a StringBuilder
+ * without building an intermediate tree (Map/List).
  */
 class JsonStreamWriter : ExtensibleObjectOutput {
 

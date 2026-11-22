@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * O login pela camada de apresentação **com a segurança ligada**, como o servidor da view remota o executa:
- * desafio, HMAC, JWT e a busca do nome de exibição.
+ * Login through the presentation layer **with security on**, as the remote view server runs it:
+ * challenge, HMAC, JWT and the lookup of the display name.
  */
 class SecuredLoginTest {
 
@@ -41,14 +41,14 @@ class SecuredLoginTest {
     fun admin_logsIn() {
         val subject = login("admin")
         assertEquals(DBReset.ADMIN_ID, subject!!.id)
-        assertEquals("João da Silva", subject.nickName)
+        assertEquals("John Smith", subject.nickName)
     }
 
     @Test
     fun customer_logsIn() {
         val subject = login("fulano")
         assertEquals(DBReset.FULANO_ID, subject!!.id)
-        assertEquals("Fulano de Tal", subject.nickName)
+        assertEquals("John Doe", subject.nickName)
     }
 
     @Test
@@ -69,8 +69,8 @@ class SecuredLoginTest {
 
     @Test
     fun repositoriesInsideTheServer_areNotRestricted_theApiIs() = runBlocking {
-        // Dentro do servidor, quem chama o repositório é a apresentação, e é ela que pede só o que cabe ao
-        // usuário. O controle de acesso fica na fronteira HTTP (ver os testes SecuredRest*).
+        // Inside the server, the caller of the repository is the presentation, and it is the one that asks only for
+        // what belongs to the user. Access control lives at the HTTP boundary (see the SecuredRest* tests).
         login("fulano")
         assertEquals(3, app.getUserRepository().count(UserCriteria()))
         assertNotNull(app.getUserRepository().fetchById(DBReset.ADMIN_ID))
@@ -78,7 +78,7 @@ class SecuredLoginTest {
 
     @Test
     fun wrongPassword_isRefused() {
-        assertNull(login("admin", "senha-errada"))
+        assertNull(login("admin", "wrong-password"))
     }
 
     @Test

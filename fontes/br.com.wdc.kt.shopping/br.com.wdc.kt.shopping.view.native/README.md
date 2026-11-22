@@ -1,30 +1,30 @@
 # view-native
 
-Views implementadas com recursos **nativos de cada plataforma**, sem frameworks de abstração como Compose Multiplatform.
+Views built with each **platform's native toolkit**, without abstraction frameworks such as Compose Multiplatform.
 
-## Motivação
+## Motivation
 
-A principal motivação para o desenvolvimento de interfaces nativas é demonstrar que, mesmo utilizando apenas os recursos nativos de cada plataforma, é possível construir interfaces de qualidade equivalente às versões com frameworks declarativos.
+The main motivation for building native interfaces is to show that, using only each platform's native toolkit, you can build interfaces of the same quality as the versions built with declarative frameworks.
 
-O custo é construir com os recursos disponíveis na plataforma de destino — que pode não oferecer uma solução reativa nativa, ou pode carecer de alguns utilitários que facilitam a montagem de views. Contudo, as versões nativas **sempre terão menor desgaste de bateria** e **estarão alinhadas com as evoluções da plataforma**, sem depender de atualizações de terceiros.
+The cost is building with what the target platform offers — which may have no native reactive solution, or may lack some helpers that make assembling views easier. In return, the native versions **will always drain less battery** and **will stay aligned with the platform's evolution**, without depending on third-party updates.
 
-## Subprojetos
+## Subprojects
 
-| Subprojeto | Plataforma | Tecnologia de UI |
+| Subproject | Platform | UI technology |
 |---|---|---|
 | [native.web/](native.web/) | Web (Kotlin/JS) | DOM API + React/MUI |
-| [native.android/](native.android/) | Android | Android Views (programático) |
-| [native.ios/](native.ios/) | iOS | UIKit via Kotlin/Native |
+| [native.android/](native.android/) | Android | Android Views (programmatic) |
+| [native.ios/](native.ios/) | iOS | UIKit through Kotlin/Native |
 
-## Arquitetura Comum
+## Common Architecture
 
-Os três subprojetos compartilham a mesma camada de **presenters**, **domínio** e **persistência** — apenas a camada de view é específica por plataforma. A arquitetura segue o padrão **Cube MVP**:
+The three subprojects share the same **presenters**, **domain** and **persistence** layers — only the view layer is platform-specific. The architecture follows the **Cube MVP** pattern:
 
 ```mermaid
 graph TD
-    subgraph common["Camada Comum (KMP)"]
-        domain["Domínio"]
-        persistence["Persistência"]
+    subgraph common["Common Layer (KMP)"]
+        domain["Domain"]
+        persistence["Persistence"]
         presenters["Presenters"]
     end
 
@@ -33,32 +33,32 @@ graph TD
     presenters -->|CubeView interface| ios["native.ios<br/>UIKit"]
 ```
 
-### Padrões Transversais
+### Cross-cutting Patterns
 
-- **View Factory**: cada presenter registra uma factory para sua view nativa no bootstrap da aplicação
-- **ViewSlot**: container que gerencia a troca de views filhas por navegação
-- **ListSlot**: sincronização eficiente de listas com reciclagem de views (grow/shrink/update-in-place)
-- **FlowLayout**: grid responsivo que redistribui filhos conforme a largura disponível
-- **Dirty-flag coalescing**: múltiplas chamadas `update()` são consolidadas em um único `doUpdate()` por frame
-- **Layout responsivo**: breakpoints detectam largura disponível e alternam entre layouts compacto (mobile) e wide (tablet/desktop)
+- **View Factory**: each presenter registers a factory for its native view when the application boots
+- **ViewSlot**: container that manages swapping child views on navigation
+- **ListSlot**: efficient list synchronization with view recycling (grow/shrink/update-in-place)
+- **FlowLayout**: responsive grid that redistributes children according to the available width
+- **Dirty-flag coalescing**: several `update()` calls are merged into a single `doUpdate()` per frame
+- **Responsive layout**: breakpoints detect the available width and switch between compact (mobile) and wide (tablet/desktop) layouts
 
-## Telas (versão Native Web como referência)
+## Screens (Native Web version as reference)
 
-| Login | Home (Produtos + Compras) |
+| Login | Home (Products + Purchases) |
 |:---:|:---:|
 | ![Login](screenshots/01-login.png) | ![Home](screenshots/02-home.png) |
 
-| Detalhes do Produto | Carrinho |
+| Product Details | Cart |
 |:---:|:---:|
-| ![Detalhes do Produto](screenshots/03-detalhes-produto.png) | ![Carrinho](screenshots/04-carrinho.png) |
+| ![Product Details](screenshots/03-detalhes-produto.png) | ![Cart](screenshots/04-carrinho.png) |
 
-| Recibo |
+| Receipt |
 |:---:|
-| ![Recibo](screenshots/05-recibo.png) |
+| ![Receipt](screenshots/05-recibo.png) |
 
-> As três plataformas (Web, Android, iOS) produzem telas visualmente equivalentes, com pequenas nuances em função dos recursos nativos disponíveis.
+> The three platforms (Web, Android, iOS) produce visually equivalent screens, with small nuances due to the native toolkits available.
 
-## Referências
+## References
 
-- [Arquitetura Cube](../../../docs/architecture-cube.md) — mecanismo de navegação e ciclo de vida
-- [Visão geral da arquitetura](../../../docs/architecture.md) — contexto do projeto
+- [Cube Architecture](../../../docs/architecture-cube.md) — navigation mechanism and lifecycle
+- [Architecture overview](../../../docs/architecture.md) — project context

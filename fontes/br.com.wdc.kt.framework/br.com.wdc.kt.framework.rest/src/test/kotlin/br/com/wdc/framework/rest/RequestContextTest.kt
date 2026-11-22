@@ -27,11 +27,11 @@ class RequestContextTest {
         val TIMEZONE = RequestKey<ZoneId>("timezone")
         val APP_VERSION = RequestKey<String>("appVersion")
 
-        /** Camada "de baixo": não recebe nada, lê da requisição corrente. */
+        /** A "lower" layer: receives nothing, reads from the current request. */
         fun clientZone(): ZoneId = RequestContext.currentOrNull()?.get(TIMEZONE) ?: ZoneOffset.UTC
     }
 
-    /** Adaptador que depende da requisição: converte UTC para o fuso do cliente na escrita. */
+    /** Adapter that depends on the request: converts UTC to the client's time zone when writing. */
     class ClientZoneAdapter : TypeAdapter<LocalDateTime>() {
         override fun write(out: JsonWriter, value: LocalDateTime?) {
             if (value == null) {
@@ -83,7 +83,7 @@ class RequestContextTest {
     fun contextFollowsTheRequestThroughCoroutines() {
         val response = server.client().header("X-Timezone", "Asia/Tokyo").header("X-App-Version", "2.4.1").get("/zone")
         assertEquals("""{"default":"Asia/Tokyo","io":"2.4.1"}""", response.body)
-        assertNull(RequestContext.currentOrNull(), "fora da requisição não há contexto")
+        assertNull(RequestContext.currentOrNull(), "no context outside a request")
     }
 
     @Test

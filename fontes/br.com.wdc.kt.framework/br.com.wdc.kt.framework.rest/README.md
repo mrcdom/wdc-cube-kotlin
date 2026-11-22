@@ -1,8 +1,8 @@
 # framework-rest
 
-APIs REST sobre **Javalin 7** (JVM, Java 21). O módulo foi escrito para reimplementar um backend que já tem contrato fixo, e por isso controla o que sai na resposta: status, corpo de erro, nulos, datas e a resposta a quem chega sem credencial.
+REST APIs on **Javalin 7** (JVM, Java 21). The module was written to reimplement a backend that already has a fixed contract, so it controls what goes out in the response: status, error body, nulls, dates and the response to callers without credentials.
 
-Publicado no Maven Central como `io.github.mrcdom.wdc.kt:framework-rest`. Traz junto `framework-persistence` (e, por ele, `framework-domain` e `framework-commons`), Javalin e Gson.
+Published on Maven Central as `io.github.mrcdom.wdc.kt:framework-rest`. Brings along `framework-persistence` (and, through it, `framework-domain` and `framework-commons`), Javalin and Gson.
 
 ```kotlin
 dependencies {
@@ -10,21 +10,21 @@ dependencies {
 }
 ```
 
-## Exemplo
+## Example
 
 ```kotlin
 val roles = RoleRules("ROLE_")
 
 val api = RestApi {
-    json = GsonJsonMapper(JsonOptions.springDefaults())        // nulos presentes, datas ISO
+    json = GsonJsonMapper(JsonOptions.springDefaults())        // nulls present, ISO dates
     security {
-        authenticator = BearerAuthenticator { token -> jwt.resolve(token) }   // a aplicação valida o token
-        unauthenticatedStatus = 403                            // o Spring Security sem entry point responde 403
-        protectUnmatched = true                                // anônimo leva 403 até em caminho inexistente
+        authenticator = BearerAuthenticator { token -> jwt.resolve(token) }   // the application validates the token
+        unauthenticatedStatus = 403                            // Spring Security without an entry point answers 403
+        protectUnmatched = true                                // anonymous gets 403 even on a nonexistent path
         permitAll("POST /auth/login", "GET /catalog/featured", "/swagger-ui/**")
     }
     errors {
-        errorBody = { status, _, request -> mapOf("status" to status, "path" to request.path) }   // o corpo de /error
+        errorBody = { status, _, request -> mapOf("status" to status, "path" to request.path) }   // the /error body
         on<AccessDeniedException> { _, _ -> ErrorResponse(403, mapOf("message" to "Access denied.")) }
         on<UniqueException> { e, _ -> ErrorResponse(400, mapOf(e.field to e.message)) }
     }
@@ -42,114 +42,114 @@ val api = RestApi {
     }
 }
 
-api.createServer().start(8080)          // ou api.install(config) dentro de um Javalin.create { … } da aplicação
+api.createServer().start(8080)          // or api.install(config) inside the application's Javalin.create { … }
 ```
 
-## Pipeline de cada rota
+## Pipeline of each route
 
-1. **Filtros `before`**, na ordem de registro (todos, ou só os que casam um padrão). Podem guardar atributos no contexto ou recusar lançando exceção.
-2. **Autenticação**: o `Authenticator` transforma a credencial em `RestPrincipal`.
-3. **Regra de acesso**: a do caminho (pública ou `defaultRule`) somada à da rota.
-4. **Handler**, dentro da transação da requisição se a rota for `transactional`.
-5. **Resposta**: o valor devolvido, ou o mapa de exceções em caso de falha.
-6. **Filtros `after`**: sempre rodam, e recebem a falha se houve uma.
+1. **`before` filters**, in registration order (all of them, or only those matching a pattern). They can store attributes in the context or refuse by throwing an exception.
+2. **Authentication**: the `Authenticator` turns the credential into a `RestPrincipal`.
+3. **Access rule**: the path's rule (public or `defaultRule`) combined with the route's.
+4. **Handler**, inside the request transaction if the route is `transactional`.
+5. **Response**: the returned value, or the exception map on failure.
+6. **`after` filters**: always run, and receive the failure if there was one.
 
-O `RequestContext` é o corrente do primeiro passo ao último, inclusive dentro de corrotinas em outro dispatcher. A resposta, de sucesso ou de erro, é serializada **dentro** desse contexto, e por isso um adaptador JSON que dependa da requisição (o fuso do cliente, por exemplo) enxerga o contexto.
+The `RequestContext` is current from the first step to the last, even inside coroutines on another dispatcher. The response, success or error, is serialized **inside** that context, so a JSON adapter that depends on the request (the client's time zone, for example) sees the context.
 
-## Rotas
+## Routes
 
-`get`, `post`, `put`, `patch`, `delete` e `route(verbo, …)` para qualquer outro verbo. O caminho usa o formato do Javalin: `{x}` casa um segmento, `<x>` casa vários. A barra final é ignorada. `group(prefixo, rule, tags) { … }` agrupa rotas e soma a regra e as tags do grupo às de cada rota.
+`get`, `post`, `put`, `patch`, `delete` and `route(verb, …)` for any other verb. The path uses Javalin's format: `{x}` matches one segment, `<x>` matches several. The trailing slash is ignored. `group(prefix, rule, tags) { … }` groups routes and adds the group's rule and tags to each route's.
 
-Opções de cada rota: `rule` (regra de acesso), `public` (dispensa a credencial), `transactional`, `hidden` (fica fora do OpenAPI) e `doc` (documentação).
+Options of each route: `rule` (access rule), `public` (no credential required), `transactional`, `hidden` (left out of OpenAPI) and `doc` (documentation).
 
-O handler recebe uma `RestCall`:
+The handler receives a `RestCall`:
 
-| Leitura | Métodos |
+| Reading | Methods |
 |---|---|
-| Caminho | `path`, `pathLong`, `pathInt`, `pathUuid` |
-| Query (`null` se ausente) | `query`, `queries`, `queryLong`, `queryInt`, `queryDouble`, `queryBoolean`, `queryEnum<T>`, `queryUuid`, `queryLocalDate`, `queryLocalDateTime` |
-| Query exigida | `requiredQuery` e os tipados `requiredQueryLong`, `requiredQueryInt`, `requiredQueryDouble`, `requiredQueryBoolean`, `requiredQueryEnum<T>`, `requiredQueryUuid`, `requiredQueryLocalDate`, `requiredQueryLocalDateTime` |
-| Cabeçalho | `header`, `requiredHeader`, `basicCredentials()` (usuário e senha do `Authorization: Basic`, ou `null`) |
-| Corpo DTO | `body<T>()` (exige corpo), `bodyOrNull<T>()`; aceita array na raiz (`body<List<Item>>()`); `explicitNulls()` |
-| Corpo entidade | `entity(codec)`, `entityForUpdate(codec)`, `bodyInput()` |
-| Outros | `bodyText`, `bodyBytes`, `principal`, `requirePrincipal<P>()`, `inTransaction { }`, `http` (o `Context` do Javalin) |
+| Path | `path`, `pathLong`, `pathInt`, `pathUuid` |
+| Query (`null` if absent) | `query`, `queries`, `queryLong`, `queryInt`, `queryDouble`, `queryBoolean`, `queryEnum<T>`, `queryUuid`, `queryLocalDate`, `queryLocalDateTime` |
+| Required query | `requiredQuery` and the typed `requiredQueryLong`, `requiredQueryInt`, `requiredQueryDouble`, `requiredQueryBoolean`, `requiredQueryEnum<T>`, `requiredQueryUuid`, `requiredQueryLocalDate`, `requiredQueryLocalDateTime` |
+| Header | `header`, `requiredHeader`, `basicCredentials()` (user and password from `Authorization: Basic`, or `null`) |
+| DTO body | `body<T>()` (requires a body), `bodyOrNull<T>()`; accepts an array at the root (`body<List<Item>>()`); `explicitNulls()` |
+| Entity body | `entity(codec)`, `entityForUpdate(codec)`, `bodyInput()` |
+| Other | `bodyText`, `bodyBytes`, `principal`, `requirePrincipal<P>()`, `inTransaction { }`, `http` (Javalin's `Context`) |
 
-Parâmetro ausente ou malformado lança `RequestParameterException`; corpo ilegível lança `RequestBodyException`. Os dois respondem 400.
+A missing or malformed parameter throws `RequestParameterException`; an unreadable body throws `RequestBodyException`. Both answer 400.
 
-`explicitNulls()` devolve os campos de primeiro nível do corpo que vieram com `null` explícito. Um DTO lê ausente e nulo do mesmo jeito; numa atualização parcial, é isso que separa "não mexer" (ausente) de "apagar" (nulo). Não consome o corpo: o `body<T>()` continua valendo antes ou depois.
+`explicitNulls()` returns the top-level body fields that came with an explicit `null`. A DTO reads absent and null the same way; in a partial update, this is what separates "leave alone" (absent) from "clear" (null). It doesn't consume the body: `body<T>()` still works before or after.
 
-`basicCredentials()` decodifica o Base64 e depois cada parte como formulário (`%3A`, `+`), como o OAuth manda `client_id` e `client_secret` (RFC 6749, 2.3.1). Só o primeiro `:` separa, então a senha pode conter outros. Sem o cabeçalho, com outro esquema ou com valor inválido, devolve `null`.
+`basicCredentials()` decodes the Base64 and then each part as a form (`%3A`, `+`), as OAuth sends `client_id` and `client_secret` (RFC 6749, 2.3.1). Only the first `:` separates, so the password may contain others. Without the header, with another scheme or with an invalid value, it returns `null`.
 
-**O valor devolvido é a resposta:**
+**The returned value is the response:**
 
-| Valor | Resposta |
+| Value | Response |
 |---|---|
-| `Unit` ou `null` | corpo vazio, 200 (salvo `call.status(…)`) |
-| `RestResponse` | status, cabeçalhos, Content-Type e corpo dela: `ok`, `created`, `noContent`, `status` |
-| `RawJson` | o JSON como está (é como as entidades saem pelos `ModelCodec`) |
+| `Unit` or `null` | empty body, 200 (unless `call.status(…)`) |
+| `RestResponse` | its status, headers, Content-Type and body: `ok`, `created`, `noContent`, `status` |
+| `RawJson` | the JSON as is (this is how entities go out through the `ModelCodec`s) |
 | `String` | `text/plain` |
-| `ByteArray`, `InputStream` | `application/octet-stream` (outro tipo de conteúdo: `RestResponse(contentType = …)`) |
-| qualquer outro valor | JSON pelo mapeador de DTOs; `Boolean` sai como `true` |
+| `ByteArray`, `InputStream` | `application/octet-stream` (other content type: `RestResponse(contentType = …)`) |
+| any other value | JSON through the DTO mapper; `Boolean` goes out as `true` |
 
 ## JSON
 
-Entidades de repositório trafegam pelo `ModelCodec` delas, sem reflexão. O resto (DTOs) passa pelo `GsonJsonMapper`, configurado por `JsonOptions`:
+Repository entities travel through their `ModelCodec`, without reflection. The rest (DTOs) goes through the `GsonJsonMapper`, configured by `JsonOptions`:
 
-- **Nulos**: `nulls = INCLUDE` escreve `"campo": null` (como o Jackson e o Spring) e `nulls = OMIT` omite o campo (como o Gson). A anotação `@JsonNulls(…)` numa classe ou num campo vence a política global, e a do campo vence a da classe.
-- **Datas**: há um formatador por tipo em `dates` (`localDate`, `localDateTime`, `instant`, `offsetDateTime`, `zonedDateTime`, `localTime` e `java.util.Date`). O padrão é o do Jackson sem timestamps (`2026-09-27T09:00:00`, com fração só quando há nanos). Na leitura, `LocalDateTime` aceita também `…Z` ou um deslocamento, que é convertido para UTC. Para trocar o formato de um único campo, use o `@JsonAdapter` do Gson.
-- **Ajuste livre**: `customize { builder -> … }` roda depois dos adaptadores da biblioteca, e o que ele registra vence.
-- `JsonOptions.springDefaults()` reproduz o Spring Boot sem configuração.
-- **Classes Kotlin são lidas pelo construtor primário**, e não pela gravação de campos do Gson. Campo ausente no JSON usa o valor padrão do parâmetro; um anulável sem padrão fica `null`; um não anulável sem padrão (ausente, ou `null` explícito) recusa o corpo com 400. A validação no `init` vale. Os campos `val` não são gravados por reflexão, o que o JDK 26 avisa que vai bloquear. `@SerializedName` (com os nomes alternativos) e `@JsonAdapter` no campo valem (com `TypeAdapter` ou `TypeAdapterFactory`; `JsonSerializer`/`JsonDeserializer` não); uma `var` declarada fora do construtor é gravada depois, e uma `val` fora do construtor é ignorada. Parâmetro de campo transiente (`@Transient`) não é lido do JSON, como no Gson: a chave, se vier, é ignorada, e ele recebe o padrão ou `null`; sem padrão e sem ser anulável é erro de declaração (`JsonDeclarationException`, resposta 500 e não 400). Enum, `object`, registro e classes que não são Kotlin seguem pelo Gson.
+- **Nulls**: `nulls = INCLUDE` writes `"field": null` (like Jackson and Spring) and `nulls = OMIT` omits the field (like Gson). The `@JsonNulls(…)` annotation on a class or field overrides the global policy, and the field's overrides the class's.
+- **Dates**: there is one formatter per type in `dates` (`localDate`, `localDateTime`, `instant`, `offsetDateTime`, `zonedDateTime`, `localTime` and `java.util.Date`). The default is Jackson's without timestamps (`2026-09-27T09:00:00`, with a fraction only when there are nanos). On reading, `LocalDateTime` also accepts `…Z` or an offset, which is converted to UTC. To change the format of a single field, use Gson's `@JsonAdapter`.
+- **Free tuning**: `customize { builder -> … }` runs after the library's adapters, and what it registers wins.
+- `JsonOptions.springDefaults()` reproduces Spring Boot without configuration.
+- **Kotlin classes are read through the primary constructor**, not through Gson's field writing. A field absent from the JSON uses the parameter's default value; a nullable without a default becomes `null`; a non-nullable without a default (absent, or explicit `null`) refuses the body with 400. Validation in `init` applies. `val` fields are not written by reflection, which JDK 26 warns it will block. `@SerializedName` (with alternate names) and `@JsonAdapter` on the field apply (with `TypeAdapter` or `TypeAdapterFactory`; not `JsonSerializer`/`JsonDeserializer`); a `var` declared outside the constructor is written afterwards, and a `val` outside the constructor is ignored. A transient field parameter (`@Transient`) is not read from the JSON, as in Gson: the key, if present, is ignored, and it gets the default or `null`; without a default and not nullable, it is a declaration error (`JsonDeclarationException`, response 500, not 400). Enums, `object`s, records and non-Kotlin classes go through Gson.
 
-## Erros
+## Errors
 
-`errors { … }` configura o mapa de exceção para resposta. A busca sobe da classe da exceção para as superclasses e interfaces; um handler que devolve `null` passa a vez para o próximo nível. Exceção sem handler cai no `fallback` (500).
+`errors { … }` configures the exception-to-response map. The lookup climbs from the exception's class to its superclasses and interfaces; a handler that returns `null` passes to the next level. An exception without a handler falls into `fallback` (500).
 
-| Exceção | Status padrão |
+| Exception | Default status |
 |---|---|
-| `InvalidRequestException`, inclusive `RequestParameterException` e `RequestBodyException` | 400 |
-| `AuthenticationException` (sem credencial, ou credencial recusada) | `unauthenticatedStatus` |
+| `InvalidRequestException`, including `RequestParameterException` and `RequestBodyException` | 400 |
+| `AuthenticationException` (no credential, or credential refused) | `unauthenticatedStatus` |
 | `AccessDeniedException` | 403 |
 | `TransactionConflictException` | 409 |
 | `TransactionLimitExceededException` | 429 |
-| `RateLimitedException` (limite por minuto) | 429, com `Retry-After` |
-| `RemoteTransactionNotFoundException` (transação remota desconhecida ou expirada) | 410 |
-| `HttpResponseException` do Javalin (`NotFoundResponse`…) | o status dela |
+| `RateLimitedException` (per-minute limit) | 429, with `Retry-After` |
+| `RemoteTransactionNotFoundException` (unknown or expired remote transaction) | 410 |
+| Javalin's `HttpResponseException` (`NotFoundResponse`…) | its status |
 
-O corpo de todos esses vem de `errorBody(status, mensagem, request)`, que por padrão é `{"error": "<mensagem>"}`. Para que caminhos sem rota (404/405) também passem pelo mapa, ligue `handleUnmatched = true`; sem isso, o corpo é o do Javalin.
+The body of all of these comes from `errorBody(status, message, request)`, which by default is `{"error": "<message>"}`. For paths without a route (404/405) to go through the map too, set `handleUnmatched = true`; without it, the body is Javalin's.
 
-## Segurança
+## Security
 
-Não há JWT nem login no módulo. A aplicação fornece o `Authenticator` (`BearerAuthenticator { token -> … }` lê `Authorization: Bearer`) e um `RestPrincipal` com `id` e `roles`, que lê de volta com `call.requirePrincipal<SeuTipo>()` ou com `request.principalAs<SeuTipo>()`.
+There is no JWT or login in the module. The application provides the `Authenticator` (`BearerAuthenticator { token -> … }` reads `Authorization: Bearer`) and a `RestPrincipal` with `id` and `roles`, which it reads back with `call.requirePrincipal<YourType>()` or `request.principalAs<YourType>()`.
 
 | Spring Security | framework-rest |
 |---|---|
 | `requestMatchers("/x/**").permitAll()` | `permitAll("/x/**")`, `permitAll("POST /auth/login")` |
-| `anyRequest().authenticated()` | `defaultRule = AccessRules.authenticated` (é o padrão) |
-| `@PreAuthorize("hasRole('ADMIN')")` | `rule = RoleRules("ROLE_").hasRole("ADMIN")`, que aceita `ADMIN` e `ROLE_ADMIN` |
-| `hasAnyRole(…)`, SpEL sobre o principal ou os parâmetros | `hasAnyRole(…)`, `AccessRules.principalOf<P> { … }`, `AccessRules.rule { request -> … }`, combinados com `and` e `or` |
+| `anyRequest().authenticated()` | `defaultRule = AccessRules.authenticated` (the default) |
+| `@PreAuthorize("hasRole('ADMIN')")` | `rule = RoleRules("ROLE_").hasRole("ADMIN")`, which accepts `ADMIN` and `ROLE_ADMIN` |
+| `hasAnyRole(…)`, SpEL over the principal or the parameters | `hasAnyRole(…)`, `AccessRules.principalOf<P> { … }`, `AccessRules.rule { request -> … }`, combined with `and` and `or` |
 | `Http403ForbiddenEntryPoint` | `unauthenticatedStatus = 403` |
-| autorização antes do roteamento | `protectUnmatched = true` |
+| authorization before routing | `protectUnmatched = true` |
 
-- Sem credencial numa rota que a exige, a resposta é `unauthenticatedStatus` (401 por padrão). Com credencial mas sem permissão, a resposta é a de `AccessDeniedException` (403). Os corpos dos dois casos podem ser diferentes.
-- Uma credencial recusada numa rota pública é ignorada e a requisição segue anônima. `rejectInvalidCredentialsOnPublicRoutes = true` muda isso.
-- Uma regra que dependa do corpo ou do banco fica no handler, que lança `AccessDeniedException`.
+- Without a credential on a route that requires one, the response is `unauthenticatedStatus` (401 by default). With a credential but no permission, the response is that of `AccessDeniedException` (403). The bodies of the two cases may differ.
+- A refused credential on a public route is ignored and the request proceeds anonymously. `rejectInvalidCredentialsOnPublicRoutes = true` changes that.
+- A rule that depends on the body or the database stays in the handler, which throws `AccessDeniedException`.
 
-**Limite por minuto.** `rateLimit { key; perMinute; clock }` limita as requisições de cada quem chama. É avaliado depois da autenticação e antes da regra de acesso, e pedido sem principal não conta. A janela é fixa, por minuto do relógio. Acima do limite, `RateLimitedException`, que o mapeamento padrão responde com 429 e `Retry-After` (os segundos até a virada do minuto); um `on<RateLimitedException>` em `errors { }` troca a resposta. A contagem fica em memória, por instância: com N instâncias, o limite efetivo é até N vezes o configurado.
+**Per-minute limit.** `rateLimit { key; perMinute; clock }` limits the requests of each caller. It is evaluated after authentication and before the access rule, and a request without a principal doesn't count. The window is fixed, per clock minute. Above the limit, `RateLimitedException`, which the default mapping answers with 429 and `Retry-After` (the seconds until the minute turns); an `on<RateLimitedException>` in `errors { }` changes the response. The count is kept in memory, per instance: with N instances, the effective limit is up to N times the configured one.
 
 ```kotlin
 security {
     authenticator = …
     rateLimit {
-        key = { p -> p.id }                                         // o padrão
-        perMinute = { p -> (p as Partner).requestsPerMinute }       // null = sem limite (o padrão)
+        key = { p -> p.id }                                         // the default
+        perMinute = { p -> (p as Partner).requestsPerMinute }       // null = no limit (the default)
     }
 }
 ```
 
-## Contexto por requisição
+## Per-request context
 
-`RequestContext.current()` funciona de qualquer camada, inclusive dentro de `withContext(Dispatchers.IO)`. Ele dá acesso a `method`, `path`, `header`, `queryParam`, `pathParam`, `principal` e a atributos tipados:
+`RequestContext.current()` works from any layer, even inside `withContext(Dispatchers.IO)`. It gives access to `method`, `path`, `header`, `queryParam`, `pathParam`, `principal` and typed attributes:
 
 ```kotlin
 val TIMEZONE = RequestKey<ZoneId>("timezone")
@@ -159,80 +159,80 @@ before { request -> request[TIMEZONE] = request.header("X-Timezone")?.let(ZoneId
 fun clientZone(): ZoneId = RequestContext.currentOrNull()?.get(TIMEZONE) ?: ZoneOffset.UTC
 ```
 
-Para levar o contexto a uma corrotina lançada fora do pipeline, use `request.asContextElement()`.
+To carry the context into a coroutine launched outside the pipeline, use `request.asContextElement()`.
 
-## Transações
+## Transactions
 
-`transactions { service = …; coordinator = … }`. Numa rota `transactional = true`, tudo o que o handler grava é confirmado junto, ou nada é. O `X-Tx-Id` é opcional:
+`transactions { service = …; coordinator = … }`. On a `transactional = true` route, everything the handler writes is committed together, or nothing is. `X-Tx-Id` is optional:
 
-1. Se veio `X-Tx-Id` e há coordenador, a escrita se junta à transação remota do cliente e só é confirmada no commit dele.
-2. Se não veio o cabeçalho mas o dono tem transação remota aberta, a escrita é recusada com 409, para não ser confirmada fora da transação. `refuseWritesOutsideOpenTransaction = false` desliga isso.
-3. Nos outros casos, há uma transação por requisição (`TransactionService.required`).
+1. If `X-Tx-Id` came and there is a coordinator, the write joins the client's remote transaction and is only committed on its commit.
+2. If the header didn't come but the owner has an open remote transaction, the write is refused with 409, so it isn't committed outside the transaction. `refuseWritesOutsideOpenTransaction = false` turns that off.
+3. Otherwise, there is one transaction per request (`TransactionService.required`).
 
-O dono de uma transação remota é `user:<principal.id>/client:<X-Client-Id>` (ou `user:<principal.id>` sem o cabeçalho), ou `anon:<X-Client-Id>` sem principal (configurável em `ownerKey`): o mesmo usuário em dois clientes não se bloqueia. O teto de abertas por dono é contado por `quotaKey` (`user:<principal.id>`), e trocar o `X-Client-Id` não o contorna. Com `X-Tx-Id`, a requisição roda como participante: se falhar, a transação remota fica condenada, e o commit responde 409. `RemoteTransactionRoutes.register(this, transactions)` publica `begin`, `commit`, `rollback` e `status` em `/api/tx`. `serviceSource` e `coordinatorSource` são consultados a cada requisição, para quem guarda os serviços em holders.
+The owner of a remote transaction is `user:<principal.id>/client:<X-Client-Id>` (or `user:<principal.id>` without the header), or `anon:<X-Client-Id>` without a principal (configurable in `ownerKey`): the same user on two clients doesn't block itself. The cap of open transactions per owner is counted by `quotaKey` (`user:<principal.id>`), and changing the `X-Client-Id` doesn't get around it. With `X-Tx-Id`, the request runs as a participant: if it fails, the remote transaction is doomed, and the commit answers 409. `RemoteTransactionRoutes.register(this, transactions)` publishes `begin`, `commit`, `rollback` and `status` under `/api/tx`. `serviceSource` and `coordinatorSource` are queried on each request, for those who keep the services in holders.
 
-## CORS, compressão e limite de corpo
+## CORS, compression and body limit
 
-- `cors { anyOrigin() | allowOrigins(…); allowCredentials; reflectClientOrigin; maxAge; exposedHeaders }` usa o plugin do Javalin, que responde a pré-requisição antes das rotas.
-- `compression { gzipLevel; minSize; mimeTypes }` usa gzip. O padrão de `minSize` é 2 KB, como no Spring Boot.
-- `maxRequestSize = bytes`: um corpo maior recebe 413.
+- `cors { anyOrigin() | allowOrigins(…); allowCredentials; reflectClientOrigin; maxAge; exposedHeaders }` uses Javalin's plugin, which answers the preflight before the routes.
+- `compression { gzipLevel; minSize; mimeTypes }` uses gzip. The default `minSize` is 2 KB, as in Spring Boot.
+- `maxRequestSize = bytes`: a larger body gets 413.
 
 ## Server-Timing
 
-`serverTiming()` liga o cabeçalho `Server-Timing`, que o DevTools mostra na aba Timing; desligado se não chamado. Todo pedido que passa pela biblioteca leva `total` (autenticação, regra, handler, commit e serialização), também nas respostas de erro e nos 404/405 tratados por ela. A rota acrescenta medidas próprias, que saem antes do `total`, na ordem do registro:
+`serverTiming()` turns on the `Server-Timing` header, which DevTools shows in the Timing tab; off if not called. Every request that goes through the library carries `total` (authentication, rule, handler, commit and serialization), also on error responses and on the 404/405 it handles. The route adds its own measurements, which go out before `total`, in registration order:
 
 ```kotlin
-serverTiming { names = false }   // names = true acrescenta desc="…"; em produção, não exponha nomes internos
+serverTiming { names = false }   // names = true adds desc="…"; in production, don't expose internal names
 post("/order") { call -> call.timed("action", "CreateOrderAction") { createOrder(call.body()) } }
 // Server-Timing: action;dur=12.3, total;dur=15.8
 ```
 
-`call.timing(name, nanos, desc)` registra uma duração já medida; é uma função simples, que a rota pode passar adiante (`call::timing`). Com `cors { … }`, `Server-Timing` entra sozinho nos `exposedHeaders`.
+`call.timing(name, nanos, desc)` records an already measured duration; it is a plain function, which the route can pass along (`call::timing`). With `cors { … }`, `Server-Timing` enters the `exposedHeaders` on its own.
 
-## Cabeçalhos de cache e de segurança
+## Cache and security headers
 
-`securityHeaders()` põe cabeçalhos em toda resposta que passa pela biblioteca: sucesso, erro mapeado, recusa da autenticação ou da regra, 404/405 tratados por ela (`handleUnmatched` ou `protectUnmatched`), o documento OpenAPI e a pré-requisição do CORS. Fica desligado se não for chamado.
+`securityHeaders()` puts headers on every response that goes through the library: success, mapped error, refusal by authentication or rule, the 404/405 it handles (`handleUnmatched` or `protectUnmatched`), the OpenAPI document and the CORS preflight. It is off if not called.
 
-- **Cache** (`noCache = true`): `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`, `Pragma: no-cache` e `Expires: 0`, só quando a rota não pôs o próprio `Cache-Control`. A rota que quer cache escreve o seu, e a resposta sai sem `Pragma` nem `Expires`.
-- **Segurança** (`headers`, sempre, vencendo o valor que a rota tiver posto): `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `X-XSS-Protection: 1; mode=block`. O mapa aceita trocar, acrescentar e retirar.
+- **Cache** (`noCache = true`): `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`, `Pragma: no-cache` and `Expires: 0`, only when the route didn't set its own `Cache-Control`. A route that wants caching writes its own, and the response goes out without `Pragma` or `Expires`.
+- **Security** (`headers`, always, overriding any value the route set): `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `X-XSS-Protection: 1; mode=block`. The map accepts replacing, adding and removing.
 
 ```kotlin
 securityHeaders {
-    headers -= "X-XSS-Protection"                              // obsoleto nos navegadores atuais
-    headers["Strict-Transport-Security"] = "max-age=31536000"  // não vem por padrão: atrás de proxy TLS o pedido chega em HTTP
+    headers -= "X-XSS-Protection"                              // obsolete in current browsers
+    headers["Strict-Transport-Security"] = "max-age=31536000"  // not there by default: behind a TLS proxy the request arrives over HTTP
 }
 ```
 
 ## OpenAPI
 
-`openApi { path; title; version; description; tag(…); schemas; parameters; securityScheme; raw }`. O documento sai das rotas registradas: verbo, caminho, parâmetros de caminho e a segurança de cada operação (uma rota pública leva `security: []`). Os esquemas dos DTOs são gerados por reflexão, com os nomes que o Gson usa. Cada rota acrescenta o que tiver em `doc = { summary = …; query("page", Int::class.java); accepts<Req>(); returns<Resp>(200); response(404); raw(mapOf(…)) }`, e `raw` vence o que foi gerado. O documento fica servido em `path`, e também em `api.openApiJson`.
+`openApi { path; title; version; description; tag(…); schemas; parameters; securityScheme; raw }`. The document comes from the registered routes: verb, path, path parameters and the security of each operation (a public route gets `security: []`). DTO schemas are generated by reflection, with the names Gson uses. Each route adds what it has in `doc = { summary = …; query("page", Int::class.java); accepts<Req>(); returns<Resp>(200); response(404); raw(mapOf(…)) }`, and `raw` overrides what was generated. The document is served at `path`, and also available in `api.openApiJson`.
 
-`openApi { ui { } }` serve a página do Swagger UI a partir do webjar oficial no classpath, sem CDN. O webjar não vem com a biblioteca: quem liga a página o declara (`runtimeOnly("org.webjars:swagger-ui:5.34.1")`, ou outra versão 5.x). A versão é lida do próprio webjar, e sem ele a montagem da `RestApi` falha.
+`openApi { ui { } }` serves the Swagger UI page from the official webjar on the classpath, without a CDN. The webjar doesn't come with the library: whoever turns the page on declares it (`runtimeOnly("org.webjars:swagger-ui:5.34.1")`, or another 5.x version). The version is read from the webjar itself, and without it building the `RestApi` fails.
 
 ```kotlin
 openApi {
     title = "Orders"
     ui {
-        path = "/swagger-ui"                               // o padrão
-        document("/partner/openapi.json", "Partner API")   // outro documento: o de outra RestApi, um arquivo estático
-        primary = "Orders"                                 // o aberto quando há vários; padrão, o primeiro
+        path = "/swagger-ui"                               // the default
+        document("/partner/openapi.json", "Partner API")   // another document: another RestApi's, a static file
+        primary = "Orders"                                 // the one opened when there are several; default, the first
     }
 }
 ```
 
-`GET /swagger-ui.html` redireciona (302) para `/swagger-ui/index.html`, que é a página: com um documento, só ele; com vários, o seletor do topo. `includeOwn = false` tira o documento da própria API da lista. Dos arquivos do webjar, só os que a página carrega são servidos (`swagger-ui.css`, `swagger-ui-bundle.js`, `swagger-ui-standalone-preset.js`, `favicon-32x32.png`), com `Cache-Control: public, max-age=86400`; o resto é 404. As rotas são públicas e ficam fora do documento.
+`GET /swagger-ui.html` redirects (302) to `/swagger-ui/index.html`, which is the page: with one document, just it; with several, the selector at the top. `includeOwn = false` removes the API's own document from the list. Of the webjar's files, only those the page loads are served (`swagger-ui.css`, `swagger-ui-bundle.js`, `swagger-ui-standalone-preset.js`, `favicon-32x32.png`), with `Cache-Control: public, max-age=86400`; the rest is 404. The routes are public and left out of the document.
 
-## RPC genérico por entidade
+## Generic RPC per entity
 
-`RepositoryRpc(basePath, codec, repository, …)` publica as operações de um repositório: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` e `GET {id}`. É o protocolo que o cliente `HttpRepository` do Shopping fala. O acesso fica com a aplicação, por meio de `rule` (por operação), `scope` (restringe o critério a quem chama), `sanitizeProjection`, `sanitizeOutput`, `beforeInsert` e `beforeUpdate`. Os dois ganchos de escrita rodam dentro da transação. Para um repositório só de leitura, use `writes = false`.
+`RepositoryRpc(basePath, codec, repository, …)` publishes a repository's operations: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}`. It is the protocol the Shopping `HttpRepository` client speaks. Access stays with the application, through `rule` (per operation), `scope` (restricts the criteria to the caller), `sanitizeProjection`, `sanitizeOutput`, `beforeInsert` and `beforeUpdate`. The two write hooks run inside the transaction. For a read-only repository, use `writes = false`.
 
-**O `scope` soma o alcance a um critério que veio de quem chama**, com a disjunção que ele escolheu em cada campo. Use o campo conjuntivo, `criteria.ownerId.and().eq(owner)`, e nunca só `eq`: num campo enviado com `"or": true`, `eq` vira mais uma alternativa (`ownerId IS NOT NULL OR ownerId = :owner`) e quem chama alcança tudo.
+**`scope` adds the reach to criteria that came from the caller**, with the disjunction the caller chose on each field. Use the conjunctive field, `criteria.ownerId.and().eq(owner)`, and never just `eq`: on a field sent with `"or": true`, `eq` becomes one more alternative (`ownerId IS NOT NULL OR ownerId = :owner`) and the caller reaches everything.
 
-O `insert` recebe `{"entity", "projection"?}` (ou, como antes da 0.4.0, a entidade solta) e responde `{"success", "id", "entity"}`, com a entidade como o repositório a deixou — a chave gerada e os padrões das colunas —, passada por `sanitizeOutput`.
+`insert` receives `{"entity", "projection"?}` (or, as before 0.4.0, the bare entity) and answers `{"success", "id", "entity"}`, with the entity as the repository left it — the generated key and the column defaults —, passed through `sanitizeOutput`.
 
-## Testes
+## Tests
 
-`RestTestServer(api)` sobe a API numa porta livre, com o mesmo pipeline da produção:
+`RestTestServer(api)` starts the API on a free port, with the same pipeline as production:
 
 ```kotlin
 RestTestServer(api).use { server ->
@@ -242,10 +242,10 @@ RestTestServer(api).use { server ->
 }
 ```
 
-O `TestClient` envia qualquer verbo, com query, cabeçalhos fixos ou por chamada e corpo em texto ou bytes. O `TestResponse` traz `status`, `headers`, `body`, `bytes` e `json()`. Nada é descomprimido: o teste vê o `Content-Encoding` como veio.
+The `TestClient` sends any verb, with query, fixed or per-call headers and a text or byte body. The `TestResponse` carries `status`, `headers`, `body`, `bytes` and `json()`. Nothing is decompressed: the test sees the `Content-Encoding` as it came.
 
-## O que não está coberto
+## What is not covered
 
-- **415 por Content-Type errado** (o `consumes` do Spring): confira no handler, se o contrato exigir.
-- **Validação de bean** (`@Valid`): valide no handler e lance uma exceção da aplicação, com o mapeamento que reproduz o corpo esperado.
-- **`String` devolvida sai como `text/plain`**, como no Spring. Para uma string JSON, devolva `RawJson("\"…\"")`.
+- **415 for a wrong Content-Type** (Spring's `consumes`): check it in the handler, if the contract requires it.
+- **Bean validation** (`@Valid`): validate in the handler and throw an application exception, with the mapping that reproduces the expected body.
+- **A returned `String` goes out as `text/plain`**, as in Spring. For a JSON string, return `RawJson("\"…\"")`.

@@ -14,12 +14,13 @@ import org.jooq.meta.jaxb.Jdbc
 import org.jooq.meta.jaxb.Target
 
 /**
- * Gera as classes jOOQ de `:shopping-persistence` a partir do esquema do próprio projeto.
+ * Generates the jOOQ classes of `:shopping-persistence` from the project's own schema.
  *
- * Estratégia: cria um H2 em memória, aplica todo o DDL por [DBCreate] (com as migrações) e roda o gerador
- * do jOOQ contra esse banco. O resultado é **versionado**, para o build não depender de rodar o gerador.
+ * Strategy: creates an in-memory H2, applies the whole DDL through [DBCreate] (with the migrations) and runs the
+ * jOOQ generator against that database. The result is **versioned**, so the build does not depend on running the
+ * generator.
  *
- * A partir de `fontes/`:
+ * From `fontes/`:
  * ```
  * ./gradlew :shopping-scripts:generateJooqSchema
  * ```
@@ -29,23 +30,23 @@ object GenerateJooqSchema {
     const val PACKAGE_NAME = "br.com.wdc.shopping.persistence.scheme"
 
     private const val JDBC_USER = "sa"
-    private const val JDBC_PASSWORD = "codegen" // H2 efêmero em memória, só para a geração
+    private const val JDBC_PASSWORD = "codegen" // ephemeral in-memory H2, for the generation only
     private val counter = AtomicInteger()
 
-    /** @param args `[0]` = diretório de fontes de destino (o `src/main/kotlin` de `:shopping-persistence`) */
+    /** @param args `[0]` = target source directory (the `src/main/kotlin` of `:shopping-persistence`) */
     @JvmStatic
     fun main(args: Array<String>) {
-        require(args.isNotEmpty()) { "informe o diretório de fontes de destino" }
+        require(args.isNotEmpty()) { "provide the target source directory" }
         val outputDir = Paths.get(args[0]).toAbsolutePath().normalize()
         generate(outputDir)
-        println("jOOQ: classes geradas em $outputDir ($PACKAGE_NAME)")
+        println("jOOQ: classes generated in $outputDir ($PACKAGE_NAME)")
     }
 
-    /** Gera o pacote [PACKAGE_NAME] sob [outputDir], substituindo o que houver nele. */
+    /** Generates the [PACKAGE_NAME] package under [outputDir], replacing whatever is in it. */
     fun generate(outputDir: Path) {
         val url = "jdbc:h2:mem:jooq_codegen_${counter.incrementAndGet()};DB_CLOSE_DELAY=-1"
 
-        // mantém o banco em memória vivo até o fim da geração
+        // keeps the in-memory database alive until the generation ends
         DriverManager.getConnection(url, JDBC_USER, JDBC_PASSWORD).use { connection ->
             DBCreate().withConnection(connection).withSkipReset().run()
 
@@ -59,7 +60,7 @@ object GenerateJooqSchema {
                                 .withName("org.jooq.meta.h2.H2Database")
                                 .withInputSchema("PUBLIC")
                                 .withIncludes(".*")
-                                // o log de migração é assunto dos scripts; TO_BASE64 é a função do dialeto JSON
+                                // the migration log is the scripts' business; TO_BASE64 is the JSON dialect's function
                                 .withExcludes("EN_MIGRATION_LOG|SQ_MIGRATION_LOG|TO_BASE64")
                                 .withIncludeForeignKeys(false)
                                 .withIncludeIndexes(false)
@@ -72,8 +73,8 @@ object GenerateJooqSchema {
                                 .withPojos(false)
                                 .withDaos(false)
                                 .withInterfaces(false)
-                                // Só o essencial: tabelas, colunas, sequências e a chave primária — que o recorte
-                                // de coleção filha usa (JsonQueryBuilder).
+                                // Only the essentials: tables, columns, sequences and the primary key — which the
+                                // child collection slicing uses (JsonQueryBuilder).
                                 .withSequences(true)
                                 .withKeys(true)
                                 .withRelations(true)

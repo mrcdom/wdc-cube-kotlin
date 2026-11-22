@@ -28,7 +28,7 @@ kotlin {
         common {
             group("jvmCommon") {
                 withJvm()
-                // o alvo Android do plugin com.android.kotlin.multiplatform.library
+                // the Android target of the com.android.kotlin.multiplatform.library plugin
                 withCompilations { it.target.platformType == KotlinPlatformType.androidJvm }
             }
         }

@@ -41,7 +41,7 @@ class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) : AbstractView
                     setPadding((16 * density).toInt(), (12 * density).toInt(), (16 * density).toInt(), (4 * density).toInt())
                 }) {
                     textView {
-                        text = "Produtos"
+                        text = "Products"
                         textSize = 17f
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(ShoppingColors.OnSurface)
@@ -99,7 +99,7 @@ class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) : AbstractView
 
             // Empty label (centered)
             emptyLabel = textView {
-                text = "Nenhum produto disponível"
+                text = "No products available"
                 textSize = 16f
                 setTextColor(ShoppingColors.OnSurfaceVariant)
                 gravity = Gravity.CENTER
@@ -126,7 +126,7 @@ class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) : AbstractView
             productsSlot.sync(emptyList())
             if (lastCount != 0) {
                 lastCount = 0
-                headerBadge.text = "0 itens"
+                headerBadge.text = "0 items"
             }
         } else {
             emptyLabel.visibility = View.GONE
@@ -145,7 +145,7 @@ class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) : AbstractView
             val count = products.size
             if (count != lastCount) {
                 lastCount = count
-                headerBadge.text = "$count itens"
+                headerBadge.text = "$count ${if (count == 1) "item" else "items"}"
             }
         }
     }
@@ -248,7 +248,7 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewA
         }
         if (p.price != lastPrice) {
             lastPrice = p.price
-            priceLabel.text = "R$ ${ViewUtils.formatPrice(p.price)}"
+            priceLabel.text = "\$${ViewUtils.formatPrice(p.price)}"
         }
     }
 }

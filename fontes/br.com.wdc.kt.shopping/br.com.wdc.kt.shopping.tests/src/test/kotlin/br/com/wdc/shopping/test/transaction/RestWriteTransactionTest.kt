@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/** Cada escrita REST é uma transação isolada por requisição: ou grava tudo o que o pedido traz, ou nada. */
+/** Each REST write is a transaction isolated per request: either it writes everything the request brings, or nothing. */
 class RestWriteTransactionTest {
 
     companion object {
@@ -37,7 +37,7 @@ class RestWriteTransactionTest {
 
     @Test
     fun insert_commitsThePurchaseAndItsItems() = runBlocking {
-        val purchase = purchaseOf(DBReset.CAFETEIRA_ID, DBReset.PEN_DRIVE2GB_ID)
+        val purchase = purchaseOf(DBReset.COFFEE_MAKER_ID, DBReset.FLASH_DRIVE_2GB_ID)
         assertTrue(env.purchaseRepo.insert(purchase))
         assertEquals(2, env.purchaseItemRepo.count(PurchaseItemCriteria().withPurchaseId(purchase.id)))
     }
@@ -45,7 +45,7 @@ class RestWriteTransactionTest {
     @Test
     fun insertThatFailsOnTheSecondItem_writesNothing() = runBlocking {
         assertThrows(BusinessException::class.java) {
-            runBlocking { env.purchaseRepo.insert(purchaseOf(DBReset.CAFETEIRA_ID, 987_654L)) }
+            runBlocking { env.purchaseRepo.insert(purchaseOf(DBReset.COFFEE_MAKER_ID, 987_654L)) }
         }
         assertEquals(2, env.purchaseRepo.count(PurchaseCriteria()))
         assertEquals(3, env.purchaseItemRepo.count(PurchaseItemCriteria()))
@@ -53,7 +53,7 @@ class RestWriteTransactionTest {
 
     @Test
     fun refusedWrite_keepsItsStatusCode() = runBlocking<Unit> {
-        // a exceção atravessa a transação com o tipo original: continua sendo 400, e não 500
+        // the exception crosses the transaction with its original type: it is still 400, not 500
         val e = assertThrows(BusinessException::class.java) { runBlocking { env.purchaseRepo.delete(PurchaseCriteria()) } }
         assertTrue(e.message!!.startsWith("HTTP 400"), e.message)
     }

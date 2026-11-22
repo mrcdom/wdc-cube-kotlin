@@ -1,7 +1,7 @@
-# Documentação
+# Documentation
 
-- [architecture.md](architecture.md) — Visão geral da arquitetura do projeto (camadas, módulos, multiplataforma, padrões)
-- [architecture-cube.md](architecture-cube.md) — Framework Cube — mecanismo de navegação transacional e ciclo de vida de presenters
-- [architecture-cube-compose.md](architecture-cube-compose.md) — Integração Cube + Compose Multiplatform (ponte, revision counter, safeCall, slots, factories)
-- [architecture-react.md](architecture-react.md) — Arquitetura React com view remota (presenters no servidor)
-- [architecture-persistence.md](architecture-persistence.md) — Arquitetura de persistência: repositórios, critérios, projeção, transações e API REST
+- [architecture.md](architecture.md) — Overview of the project architecture (layers, modules, multiplatform, patterns)
+- [architecture-cube.md](architecture-cube.md) — Cube framework — transactional navigation mechanism and presenter lifecycle
+- [architecture-cube-compose.md](architecture-cube-compose.md) — Cube + Compose Multiplatform integration (bridge, revision counter, safeCall, slots, factories)
+- [architecture-react.md](architecture-react.md) — React architecture with a remote view (presenters on the server)
+- [architecture-persistence.md](architecture-persistence.md) — Persistence architecture: repositories, criteria, projection, transactions and REST API

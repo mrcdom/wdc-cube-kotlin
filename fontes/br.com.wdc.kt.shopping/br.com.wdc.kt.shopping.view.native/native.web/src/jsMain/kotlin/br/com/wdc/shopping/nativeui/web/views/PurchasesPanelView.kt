@@ -86,7 +86,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                 Typography {
                     variant = TypographyVariant.h6
                     sx { fontWeight = FontWeight.bold }
-                    +"Compras"
+                    +"Purchases"
                 }
 
                 if (state.totalCount > 0) {
@@ -101,7 +101,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                             sx {
                                 color = ShoppingColors.OnPrimaryContainer.unsafeCast<Color>()
                             }
-                            +"${state.totalCount} itens"
+                            +"${state.totalCount} ${if (state.totalCount == 1) "item" else "items"}"
                         }
                     }
                 }
@@ -129,7 +129,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                             Typography {
                                 variant = TypographyVariant.body1
                                 sx { marginTop = 8.px; color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>() }
-                                +"Nenhuma compra realizada"
+                                +"No purchases yet"
                             }
                         }
                     }
@@ -181,7 +181,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                                             }
 
                                             Chip {
-                                                label = ReactNode("R$ ${formatPrice(purchase.total)}")
+                                                label = ReactNode("\$${formatPrice(purchase.total)}")
                                                 sx {
                                                     backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
                                                     color = ShoppingColors.PriceColor.unsafeCast<Color>()

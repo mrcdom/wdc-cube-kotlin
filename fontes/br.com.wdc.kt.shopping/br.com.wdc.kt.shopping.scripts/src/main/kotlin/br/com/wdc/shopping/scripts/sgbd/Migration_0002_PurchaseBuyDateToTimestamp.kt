@@ -8,7 +8,7 @@ class Migration_0002_PurchaseBuyDateToTimestamp(private val connection: Connecti
 
     @Throws(SQLException::class)
     fun step01_alterBuyDateToTimestamp() {
-        // só os bancos H2 antigos tiveram a coluna com outro tipo; no PostgreSQL ela já nasce TIMESTAMP
+        // only the old H2 databases had the column with another type; in PostgreSQL it is born TIMESTAMP
         if (DBCreate.detectDialect(connection) != SQLDialect.H2) return
         connection.createStatement().use { stmt ->
             stmt.execute("ALTER TABLE EN_PURCHASE ALTER COLUMN BUYDATE TIMESTAMP NOT NULL")

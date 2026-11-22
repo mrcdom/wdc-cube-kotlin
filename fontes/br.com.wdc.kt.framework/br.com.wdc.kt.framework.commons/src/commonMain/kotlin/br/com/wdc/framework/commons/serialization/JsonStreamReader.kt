@@ -1,10 +1,10 @@
 package br.com.wdc.framework.commons.serialization
 
 /**
- * Streaming JSON reader — pure Kotlin, sem dependências de plataforma.
+ * Streaming JSON reader — pure Kotlin, no platform dependencies.
  *
- * Implementa [ExtensibleObjectInput] lendo diretamente da string JSON
- * sem construir árvore intermediária (Map/List).
+ * Implements [ExtensibleObjectInput] reading directly from the JSON string
+ * without building an intermediate tree (Map/List).
  */
 class JsonStreamReader(private val source: String) : ExtensibleObjectInput {
 

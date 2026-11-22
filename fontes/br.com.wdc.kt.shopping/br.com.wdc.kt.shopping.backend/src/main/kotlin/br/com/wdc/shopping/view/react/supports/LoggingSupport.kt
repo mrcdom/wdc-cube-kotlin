@@ -9,17 +9,17 @@ import java.nio.file.Path
 import org.slf4j.LoggerFactory
 
 /**
- * Configura o log a partir do diretório de trabalho: `config/logback.xml` diz o que registrar e onde, e a
- * pasta `log/` chega a ele pela propriedade `${'$'}{shopping.log.dir}`.
+ * Configures logging from the work directory: `config/logback.xml` says what to log and where, and the
+ * `log/` folder reaches it through the `${'$'}{shopping.log.dir}` property.
  *
- * Sem o arquivo, fica a configuração padrão do Logback (tudo no console).
+ * Without the file, Logback's default configuration stays (everything to the console).
  */
 object LoggingSupport {
 
     const val CONFIG_FILE_NAME = "logback.xml"
     const val LOG_DIR_PROPERTY = "shopping.log.dir"
 
-    /** @return `true` se o log passou a seguir o arquivo de configuração */
+    /** @return `true` if logging now follows the configuration file */
     fun configure(configDir: Path, logDir: Path): Boolean {
         val configFile = configDir.resolve(CONFIG_FILE_NAME)
         if (!Files.isRegularFile(configFile)) {
@@ -31,7 +31,7 @@ object LoggingSupport {
         try {
             JoranConfigurator().apply { setContext(context) }.doConfigure(configFile.toFile())
         } catch (e: JoranException) {
-            // o que houve de errado no arquivo está no status do contexto, impresso abaixo
+            // what went wrong in the file is in the context status, printed below
         }
         StatusPrinter2().printInCaseOfErrorsOrWarnings(context)
         return true

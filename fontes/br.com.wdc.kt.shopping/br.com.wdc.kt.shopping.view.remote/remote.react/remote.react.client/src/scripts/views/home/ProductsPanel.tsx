@@ -43,12 +43,12 @@ class ProductPanelClass extends BaseViewClass<ViewProps, ProductsPanelState> {
         {/* Section header */}
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-            Produtos
+            Products
           </Typography>
           {products && (
             <Box sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: '8px', px: 2, py: 0.75 }}>
               <Typography variant="caption" sx={{ color: Colors.OnPrimaryContainer }}>
-                {products.length} itens
+                {products.length} {products.length === 1 ? 'item' : 'items'}
               </Typography>
             </Box>
           )}
@@ -61,13 +61,13 @@ class ProductPanelClass extends BaseViewClass<ViewProps, ProductsPanelState> {
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 6 }}>
             <CircularProgress />
             <Typography variant="body2" sx={{ mt: 1.5, color: Colors.OnSurfaceVariant }}>
-              Carregando produtos...
+              Loading products...
             </Typography>
           </Box>
         ) : products.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
             <Typography variant="body1" sx={{ color: Colors.OnSurfaceVariant }}>
-              Nenhum produto disponível
+              No products available
             </Typography>
           </Box>
         ) : (
@@ -131,7 +131,7 @@ class CardProdutoClass extends BasePanelClass<CardProdutoProps> {
               {product.name}
             </Typography>
             <Chip
-              label={`R$ ${NumberUtils.format(product.price)}`}
+              label={`$${NumberUtils.format(product.price)}`}
               size="small"
               sx={{
                 mt: 1.5,

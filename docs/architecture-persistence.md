@@ -1,45 +1,45 @@
-# Arquitetura de Persistência
+# Persistence Architecture
 
-Como o Shopping guarda e consulta dados: o contrato de repositório, os critérios, a projeção, as transações e o caminho REST. O mesmo caso de uso roda no servidor, falando com o banco, e num cliente, falando HTTP — é isso que esta arquitetura existe para garantir.
+How Shopping stores and queries data: the repository contract, criteria, projection, transactions, and the REST path. The same use case runs on the server, talking to the database, and on a client, talking HTTP — guaranteeing that is why this architecture exists.
 
-## Sumário
+## Contents
 
-- [Visão geral](#visão-geral)
-- [Módulos](#módulos)
-- [Repositório](#repositório)
-- [Critérios](#critérios)
-- [Projeção](#projeção)
-- [Implementação no servidor (jOOQ)](#implementação-no-servidor-jooq)
-- [Esquema, migrações e codegen](#esquema-migrações-e-codegen)
-- [Transações](#transações)
-- [API REST](#api-rest)
-- [Cliente HTTP](#cliente-http)
-- [Segurança](#segurança)
-- [Configuração e bancos suportados](#configuração-e-bancos-suportados)
-- [Testes](#testes)
-- [Como adicionar uma entidade](#como-adicionar-uma-entidade)
+- [Overview](#overview)
+- [Modules](#modules)
+- [Repository](#repository)
+- [Criteria](#criteria)
+- [Projection](#projection)
+- [Server implementation (jOOQ)](#server-implementation-jooq)
+- [Schema, migrations, and codegen](#schema-migrations-and-codegen)
+- [Transactions](#transactions)
+- [REST API](#rest-api)
+- [HTTP client](#http-client)
+- [Security](#security)
+- [Configuration and supported databases](#configuration-and-supported-databases)
+- [Tests](#tests)
+- [How to add an entity](#how-to-add-an-entity)
 
 ---
 
-## Visão geral
+## Overview
 
 ```mermaid
 graph TB
-    subgraph "Domínio — KMP, commonMain"
-        ENT["Entidade + XxxCriteria"]
+    subgraph "Domain — KMP, commonMain"
+        ENT["Entity + XxxCriteria"]
         REPO["XxxRepository : Repository&lt;E, C, K&gt;"]
         CODEC["XxxCodec (JSON)"]
         TX["ShoppingTransactions.BEAN"]
     end
 
-    subgraph "Servidor — JVM"
+    subgraph "Server — JVM"
         IMPL["XxxRepositoryImpl (jOOQ)"]
-        CTRL["XxxApiController<br/>(controle de acesso)"]
+        CTRL["XxxApiController<br/>(access control)"]
         TXS["TransactionServiceImpl"]
-        DB[("H2 ou PostgreSQL")]
+        DB[("H2 or PostgreSQL")]
     end
 
-    subgraph "Cliente — KMP"
+    subgraph "Client — KMP"
         HTTP["HttpXxxRepository"]
         RTX["RestTransactionService"]
     end
@@ -49,44 +49,44 @@ graph TB
     IMPL --> DB
     CTRL --> IMPL
     HTTP -- "POST /api/repo/…" --> CTRL
-    CODEC -. "mesmo codec" .-> CTRL
-    CODEC -. "mesmo codec" .-> HTTP
+    CODEC -. "same codec" .-> CTRL
+    CODEC -. "same codec" .-> HTTP
     TX --> TXS
     TX --> RTX
     RTX -- "/api/tx/…" --> TXS
 ```
 
-Três ideias sustentam o desenho:
+Three ideas underpin the design:
 
-1. **Um contrato, duas implementações.** `Repository<E, C, K>` é implementado no servidor sobre jOOQ e no cliente sobre HTTP. Quem escreve um presenter ou um serviço não sabe de qual lado está.
-2. **O mesmo codec nos dois lados.** Cada entidade tem um `XxxCodec` que lê e escreve a entidade e o critério em JSON. O controlador REST e o cliente HTTP usam a mesma classe, sem reflexão — o que um escreve, o outro lê.
-3. **A transação é de quem conhece a unidade de trabalho.** Repositórios não abrem nem fecham transação: participam da que estiver aberta. Quem demarca é o caso de uso.
+1. **One contract, two implementations.** `Repository<E, C, K>` is implemented on the server on top of jOOQ and on the client on top of HTTP. Whoever writes a presenter or a service doesn't know which side they are on.
+2. **The same codec on both sides.** Each entity has an `XxxCodec` that reads and writes the entity and the criteria as JSON. The REST controller and the HTTP client use the same class, without reflection — what one writes, the other reads.
+3. **The transaction belongs to whoever knows the unit of work.** Repositories neither open nor close transactions: they join whichever one is open. The use case draws the boundaries.
 
 ---
 
-## Módulos
+## Modules
 
-| Módulo | Plataforma | O que tem |
+| Module | Platform | Contents |
 |---|---|---|
-| `:framework-domain` | KMP | `Repository`, `Page`, critérios, projeção, codecs, contrato de transação, exceções |
-| `:framework-persistence` | JVM | `TransactionServiceImpl` (JDBC), `TransactionScope`, coordenador de transações remotas |
-| `:framework-jooq` | JVM | `JsonQueryBuilder`, dialetos H2 e PostgreSQL, `CriterionTranslator` |
-| `:framework-rest` | JVM | APIs REST sobre Javalin: rotas, segurança plugável, mapa de exceções, contexto e transação por requisição, OpenAPI, `RepositoryRpc` |
-| `:shopping-domain` | KMP | Entidades, `XxxCriteria`, `XxxCodec`, `XxxRepository`, `ShoppingTransactions` |
-| `:shopping-persistence` | JVM | `XxxRepositoryImpl`, classes jOOQ geradas, autenticação, bootstrap |
-| `:persistence-rest` | JVM | A API do Shopping sobre o `framework-rest`: o RPC de cada entidade com o controle de acesso, `/api/tx`, `/api/auth`, `/openapi.json` |
-| `:shopping-persistence-client` | KMP | `HttpRepository`, transportes por plataforma, `RestTransactionService` |
-| `:shopping-scripts` | JVM | `DBCreate`, `DBReset`, migrações, gerador das classes jOOQ |
+| `:framework-domain` | KMP | `Repository`, `Page`, criteria, projection, codecs, transaction contract, exceptions |
+| `:framework-persistence` | JVM | `TransactionServiceImpl` (JDBC), `TransactionScope`, remote transaction coordinator |
+| `:framework-jooq` | JVM | `JsonQueryBuilder`, H2 and PostgreSQL dialects, `CriterionTranslator` |
+| `:framework-rest` | JVM | REST APIs on Javalin: routes, pluggable security, exception map, per-request context and transaction, OpenAPI, `RepositoryRpc` |
+| `:shopping-domain` | KMP | Entities, `XxxCriteria`, `XxxCodec`, `XxxRepository`, `ShoppingTransactions` |
+| `:shopping-persistence` | JVM | `XxxRepositoryImpl`, generated jOOQ classes, authentication, bootstrap |
+| `:persistence-rest` | JVM | The Shopping API on `framework-rest`: each entity's RPC with access control, `/api/tx`, `/api/auth`, `/openapi.json` |
+| `:shopping-persistence-client` | KMP | `HttpRepository`, per-platform transports, `RestTransactionService` |
+| `:shopping-scripts` | JVM | `DBCreate`, `DBReset`, migrations, jOOQ class generator |
 
-Os três módulos de persistência do Shopping ficam agrupados no diretório `br.com.wdc.kt.shopping.persistence/`, como `persistence.impl` (`:shopping-persistence`), `persistence.rest` e `persistence.client`.
+The three Shopping persistence modules are grouped under the `br.com.wdc.kt.shopping.persistence/` directory, as `persistence.impl` (`:shopping-persistence`), `persistence.rest`, and `persistence.client`.
 
-No domínio, cada entidade ocupa um pacote: `domain.product`, `domain.user`, `domain.purchase`, `domain.purchaseitem`.
+In the domain, each entity has its own package: `domain.product`, `domain.user`, `domain.purchase`, `domain.purchaseitem`.
 
 ---
 
-## Repositório
+## Repository
 
-O contrato tem dois níveis: quem só consulta implementa (ou pede) o de leitura; o completo acrescenta a escrita.
+The contract has two levels: code that only queries implements (or asks for) the read-only one; the full one adds writing.
 
 ```kotlin
 interface ReadOnlyRepository<E, C, K> {
@@ -105,63 +105,63 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
 }
 ```
 
-`ReadOnlyRepository` serve a duas situações:
+`ReadOnlyRepository` serves two situations:
 
-- **Dados que não se gravam por aqui** — a visão de um painel, um relatório, um agregado calculado no banco. O repositório implementa só as consultas, sem ter de inventar o que fazer com um `insert`.
-- **Código que só lê** — um serviço que declara depender de `ReadOnlyRepository` diz, pelo tipo, que não altera nada, e aceita tanto um repositório de leitura quanto um completo.
+- **Data that isn't written through here** — a dashboard view, a report, an aggregate computed in the database. The repository implements only the queries, without having to invent what to do with an `insert`.
+- **Code that only reads** — a service that declares a dependency on `ReadOnlyRepository` states, through the type, that it changes nothing, and accepts either a read-only repository or a full one.
 
-As quatro entidades do Shopping têm repositório completo.
+All four Shopping entities have a full repository.
 
-- **`update` é parcial.** A `projection` diz quais campos considerar, e um campo marcado com valor nulo limpa a coluna. Com `oldBean`, só entram os que mudaram. Sem nenhuma das duas, só os campos com valor, como no `insert`: um bean lido com projeção estreita e devolvido não apaga o que não leu. Para limpar uma coluna, marque-a numa projeção.
-- **`insert` também aceita projeção.** Ela diz quais campos entram no `INSERT`; o que fica fora recebe o padrão da coluna. Sem projeção, entram os campos que têm valor (o nulo fica fora). O bean sai completo: a chave gerada e o que o banco preencheu.
-- **`insertOrUpdate`** insere quando `oldBean` é `null` e atualiza caso contrário — não consulta o banco para decidir. A projeção vale para os dois.
-- **`fetch`**: `0` em `offset` ou `limit` significa "sem salto" e "sem limite". Atenção à ordem posicional: `fetch(c, 10)` pula dez linhas; para limitar, nomeie — `fetch(c, limit = 10)`.
-- **`fetchPage`** devolve `Page(items, page, totalPages, totalItems)`.
-- **`delete` com critério vazio é recusado** (`InvalidRequestException`) nas quatro entidades. Apagar tudo por esquecimento de um filtro não é um caso de uso.
-- **`fetchById`** é um default da interface de cada entidade: monta o critério pela chave e chama `fetch`. Buscar por id passa, assim, pelas mesmas regras de projeção, segurança e transação das outras consultas.
+- **`update` is partial.** The `projection` says which fields to consider, and a marked field with a null value clears the column. With `oldBean`, only the fields that changed are included. With neither, only fields with a value, as in `insert`: a bean read with a narrow projection and handed back does not erase what it didn't read. To clear a column, mark it in a projection.
+- **`insert` also accepts a projection.** It says which fields go into the `INSERT`; whatever is left out gets the column default. Without a projection, the fields that have a value go in (null ones are left out). The bean comes back complete: the generated key and whatever the database filled in.
+- **`insertOrUpdate`** inserts when `oldBean` is `null` and updates otherwise — it doesn't query the database to decide. The projection applies to both.
+- **`fetch`**: `0` in `offset` or `limit` means "no skip" and "no limit". Watch the positional order: `fetch(c, 10)` skips ten rows; to limit, name the argument — `fetch(c, limit = 10)`.
+- **`fetchPage`** returns `Page(items, page, totalPages, totalItems)`.
+- **`delete` with empty criteria is refused** (`InvalidRequestException`) for all four entities. Deleting everything because a filter was forgotten is not a use case.
+- **`fetchById`** is a default method on each entity's interface: it builds the criteria from the key and calls `fetch`. Fetching by id thus goes through the same projection, security, and transaction rules as other queries.
 
-Os repositórios são registrados em holders (`ProductRepository.BEAN`, …) pelo composition root: o backend e os testes registram as implementações jOOQ; os clientes, as HTTP.
+Repositories are registered in holders (`ProductRepository.BEAN`, …) by the composition root: the backend and the tests register the jOOQ implementations; the clients, the HTTP ones.
 
 ---
 
-## Critérios
+## Criteria
 
-Cada entidade tem um `XxxCriteria` com um campo por filtro. O campo nasce com o critério e nunca é `null`; ele acumula **pedidos de comparação**.
+Each entity has an `XxxCriteria` with one field per filter. The field is created with the criteria and is never `null`; it accumulates **comparison requests**.
 
 ```kotlin
 val criteria = ProductCriteria()
-    .withName("Bola Wilson")                       // igualdade
+    .withName("Wilson Ball")                       // equality
     .withOrderBy(ProductCriteria.OrderBy.CHEAPEST_FIRST)
 
-criteria.price.between(10.5, 50.5)                 // intervalo
-criteria.productId.isIn(listOf(1L, 2L, 3L))        // conjunto
-criteria.name.or().startingWith("Bola")            // "ou" dentro do campo…
-criteria.name.containing("veda")                   // …com este outro pedido
+criteria.price.between(10.5, 50.5)                 // range
+criteria.productId.isIn(listOf(1L, 2L, 3L))        // set
+criteria.name.or().startingWith("Wilson")            // "or" within the field…
+criteria.name.containing("Tape")                   // …with this other request
 ```
 
-- Pedidos de **um mesmo campo** combinam com `AND`; depois de `or()`, com `OR`. **Campos diferentes combinam sempre com `AND`.**
-- Um campo sem pedido não filtra. Os atalhos `withXxx(valor)` ignoram `null`.
-- `isIn(null)` não filtra ("não informado"), mas `isIn(listaVazia)` filtra por nenhum: a busca não casa linha, e o `delete` não apaga nada. No fio, sai `{ "o": "IN" }` sem valores.
-- Há três famílias, e o compilador só oferece o que cada uma admite: `Criterion` (igualdade, `ne`, `isIn`, nulidade), `ComparableCriterion` (mais `gt`/`ge`/`lt`/`le`/`between`) e `TextCriterion` (mais `like`/`ilike`/`startingWith`/`containing`).
-- A **ordenação é nomeada pelo efeito** — `NAME_A_TO_Z`, `MOST_RECENT_PURCHASE_FIRST` —, e não por coluna. É o repositório que traduz o nome em colunas e acrescenta o desempate pela chave. Cada ordenação tem um índice que a sustenta, declarado no `DBCreate`.
-- Alguns campos não são coluna da própria tabela: `PurchaseCriteria.productId` (compras que contêm o produto) e `PurchaseItemCriteria.userId` (itens das compras do usuário) viram `EXISTS` sobre a outra tabela. Para quem monta o filtro, são campos como os outros.
+- Requests on **the same field** combine with `AND`; after `or()`, with `OR`. **Different fields always combine with `AND`.**
+- A field with no request doesn't filter. The `withXxx(value)` shortcuts ignore `null`.
+- `isIn(null)` doesn't filter ("not provided"), but `isIn(emptyList)` filters by nothing: the query matches no rows, and `delete` deletes nothing. On the wire, it goes out as `{ "o": "IN" }` with no values.
+- There are three families, and the compiler only offers what each one allows: `Criterion` (equality, `ne`, `isIn`, nullness), `ComparableCriterion` (plus `gt`/`ge`/`lt`/`le`/`between`), and `TextCriterion` (plus `like`/`ilike`/`startingWith`/`containing`).
+- **Ordering is named by its effect** — `NAME_A_TO_Z`, `MOST_RECENT_PURCHASE_FIRST` — not by column. The repository translates the name into columns and adds the tie-breaker by key. Each ordering has an index backing it, declared in `DBCreate`.
+- Some fields are not columns of the table itself: `PurchaseCriteria.productId` (purchases that contain the product) and `PurchaseItemCriteria.userId` (items of the user's purchases) become `EXISTS` over the other table. To whoever builds the filter, they are fields like any other.
 
-No JSON, um critério é o objeto com os pedidos, e um valor solto é atalho para igualdade:
+In JSON, a criteria is the object with the requests, and a bare value is a shortcut for equality:
 
 ```json
 { "price": { "p": [ { "o": "GE", "v": [10.5] }, { "o": "LE", "v": [50.5] } ] },
-  "name":  { "or": true, "p": [ { "o": "LIKE", "v": ["Bola%"] }, { "o": "EQ", "v": ["Fita"] } ] },
+  "name":  { "or": true, "p": [ { "o": "LIKE", "v": ["Wilson%"] }, { "o": "EQ", "v": ["Thread Seal Tape"] } ] },
   "productId": 3,
   "orderBy": "CHEAPEST_FIRST" }
 ```
 
-Um operador que o servidor não conhece é ignorado; um `orderBy` desconhecido é recusado com 400, dizendo o valor recebido e os aceitos.
+An operator the server doesn't know is ignored; an unknown `orderBy` is refused with 400, stating the value received and the accepted ones.
 
 ---
 
-## Projeção
+## Projection
 
-A projeção é uma instância da própria entidade: **campo preenchido significa "traga este campo"**. Os valores vêm de `ProjectionValues` e são só marcadores.
+The projection is an instance of the entity itself: **a filled-in field means "bring this field"**. The values come from `ProjectionValues` and are only markers.
 
 ```kotlin
 val pv = ProjectionValues
@@ -178,15 +178,15 @@ val projection = Purchase().apply {
 val purchases = repo.fetch(PurchaseCriteria().withUserId(userId).withProjection(projection))
 ```
 
-- Uma **associação** (`user`) é projetada por outra instância. Quando ela pede só a chave, o valor sai da própria linha, sem subconsulta.
-- Uma **coleção** (`items`) é projetada por uma lista de um elemento — a forma de cada item. Com `pv.singletonList(forma, critério, limit, offset)` a coleção também é filtrada, ordenada e recortada. Isso atravessa o REST: a coleção de projeção trafega como um envelope `{ shape, where, limit, offset }`.
-- Sem projeção, cada repositório usa a sua padrão (`ownFieldsProjection()`): os campos escalares e as chaves das associações. A imagem do produto e a senha do usuário ficam de fora.
+- An **association** (`user`) is projected by another instance. When it asks only for the key, the value comes from the row itself, without a subquery.
+- A **collection** (`items`) is projected by a one-element list — the shape of each item. With `pv.singletonList(shape, criteria, limit, offset)` the collection is also filtered, ordered, and sliced. This crosses REST: the projection collection travels as an envelope `{ shape, where, limit, offset }`.
+- Without a projection, each repository uses its default one (`ownFieldsProjection()`): the scalar fields and the association keys. The product image and the user password are left out.
 
 ---
 
-## Implementação no servidor (jOOQ)
+## Server implementation (jOOQ)
 
-Cada `XxxRepositoryImpl` declara uma vez como a entidade se relaciona com a tabela:
+Each `XxxRepositoryImpl` declares once how the entity relates to the table:
 
 ```kotlin
 val QUERY: JsonQuery<PurchaseItem, EnPurchaseitem> = JsonQueryBuilder<PurchaseItem, EnPurchaseitem>()
@@ -206,202 +206,202 @@ val QUERY: JsonQuery<PurchaseItem, EnPurchaseitem> = JsonQueryBuilder<PurchaseIt
     .build()
 ```
 
-A partir desse mapeamento e de uma projeção, o `JsonQuery` monta **uma única consulta** que devolve o grafo pedido como JSON — associações e coleções entram como subconsultas correlacionadas — e o lê de volta nas entidades. Não há N+1, e só as colunas projetadas são selecionadas.
+From that mapping and a projection, `JsonQuery` builds **a single query** that returns the requested graph as JSON — associations and collections go in as correlated subqueries — and reads it back into the entities. There is no N+1, and only the projected columns are selected.
 
-- As relações ficam dentro de `lazy { }` porque compra e item se referenciam mutuamente.
-- O `CriterionTranslator` traduz cada campo do critério numa condição jOOQ; valores são sempre *bind values*.
-- O `DSLContext` do módulo (`ShoppingDSLContext.BEAN`) usa a conexão da transação corrente ou, fora de transação, uma conexão avulsa em autocommit.
-- Os repositórios não embrulham exceções: a real sobe, e a camada REST a traduz em status.
-- **O `insert` também sai do mapeamento:** `QUERY.insert(bean, projection)` monta o `INSERT` pelas colunas do mapeamento (as associações pela chave estrangeira declarada em `key`; campo derivado e coluna de identidade ficam fora) e lê a linha inserida de volta pela mesma projeção JSON do fetch. No PostgreSQL é uma instrução só (`WITH … INSERT … RETURNING`); no H2, um `INSERT` simples seguido do `SELECT` pela chave — o `FINAL TABLE` do H2 2.4 deixa a linha gravada quando a instrução falha numa restrição. O repositório do Shopping só preenche o id pela sequência antes de chamá-lo.
+- Relations live inside `lazy { }` because purchase and item reference each other.
+- `CriterionTranslator` translates each criteria field into a jOOQ condition; values are always *bind values*.
+- The module's `DSLContext` (`ShoppingDSLContext.BEAN`) uses the current transaction's connection or, outside a transaction, a standalone connection in autocommit.
+- Repositories don't wrap exceptions: the real one propagates, and the REST layer translates it into a status.
+- **`insert` also comes from the mapping:** `QUERY.insert(bean, projection)` builds the `INSERT` from the mapping's columns (associations by the foreign key declared in `key`; derived fields and identity columns are left out) and reads the inserted row back through the same JSON projection as fetch. On PostgreSQL it is a single statement (`WITH … INSERT … RETURNING`); on H2, a plain `INSERT` followed by a `SELECT` by key — H2 2.4's `FINAL TABLE` leaves the row written when the statement fails on a constraint. The Shopping repository only fills in the id from the sequence before calling it.
 
 ---
 
-## Esquema, migrações e codegen
+## Schema, migrations, and codegen
 
-**O DDL de `DBCreate` é a fonte de verdade do esquema.** Ele cria as tabelas que faltam, roda as migrações pendentes e, num banco novo, carrega os dados de demonstração (`DBReset`).
+**The DDL in `DBCreate` is the schema's source of truth.** It creates missing tables, runs pending migrations and, on a new database, loads the demo data (`DBReset`).
 
-Para mudar o esquema:
+To change the schema:
 
-1. Altere o DDL em `DBCreate`.
-2. Escreva uma `Migration_NNNN_…` que leve os bancos existentes ao mesmo resultado e registre-a em `DBCreate.run()`.
-3. Regenere as classes jOOQ e faça commit do que mudar:
+1. Change the DDL in `DBCreate`.
+2. Write a `Migration_NNNN_…` that brings existing databases to the same result and register it in `DBCreate.run()`.
+3. Regenerate the jOOQ classes and commit whatever changes:
    ```bash
    cd fontes && ./gradlew :shopping-scripts:generateJooqSchema
    ```
 
-Dois testes guardam isso: `JooqSchemaTest` falha se as classes geradas divergirem do DDL, e `SchemaMigrationTest` compara um banco antigo migrado com um banco novo.
+Two tests guard this: `JooqSchemaTest` fails if the generated classes diverge from the DDL, and `SchemaMigrationTest` compares a migrated old database with a new one.
 
-**Datas.** As colunas de data/hora são `TIMESTAMP` sem fuso e guardam o instante **em UTC**, na escrita e na leitura. No domínio, a data é `kotlin.time.Instant`.
+**Dates.** Date/time columns are `TIMESTAMP` without time zone and store the instant **in UTC**, on write and on read. In the domain, the date is `kotlin.time.Instant`.
 
-Detalhes das migrações em [shopping-scripts](../fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.scripts/README.md).
+Migration details in [shopping-scripts](../fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.scripts/README.md).
 
 ---
 
-## Transações
+## Transactions
 
-O contrato é `TransactionService`, com as seis propagações usuais (`required`, `requiresNew`, `mandatory`, `supports`, `notSupported`, `never`). O bloco recebe um `TransactionContext`.
+The contract is `TransactionService`, with the six usual propagations (`required`, `requiresNew`, `mandatory`, `supports`, `notSupported`, `never`). The block receives a `TransactionContext`.
 
 ```kotlin
 ShoppingTransactions.BEAN.get().required { tx ->
     purchaseRepo.insert(purchase)
     purchaseItemRepo.insert(item)
-    // tx.setRollbackOnly() desfaz tudo sem lançar exceção
+    // tx.setRollbackOnly() rolls everything back without throwing
 }
 ```
 
-- **Retorno normal confirma; qualquer exceção desfaz** e sobe intacta, com o tipo original.
-- O caso de uso deve tolerar a ausência do serviço — `ShoppingTransactions.BEAN.getOrNull()` — e executar direto nesse caso (testes sem persistência).
-- É assim que o checkout funciona: `CartManager.doPurchase` grava a compra e os itens dentro de `required`. Uma falha no meio não deixa compra órfã.
-- `afterCommit { … }` agenda uma tarefa para depois do commit da transação física corrente (avisar um processo em segundo plano, por exemplo): roda só se ela comitar, na ordem do agendamento, já fora dela; desfeita, a tarefa é descartada. Sem transação, roda na hora. A falha da tarefa vai ao log e não muda o resultado da transação. No servidor, uma tarefa agendada dentro de uma transação remota roda no commit dela.
+- **A normal return commits; any exception rolls back** and propagates intact, with its original type.
+- The use case must tolerate the service being absent — `ShoppingTransactions.BEAN.getOrNull()` — and run directly in that case (tests without persistence).
+- This is how checkout works: `CartManager.doPurchase` writes the purchase and its items inside `required`. A failure halfway doesn't leave an orphan purchase.
+- `afterCommit { … }` schedules a task for after the current physical transaction commits (notifying a background process, for example): it runs only if the transaction commits, in scheduling order, already outside it; if rolled back, the task is discarded. Without a transaction, it runs immediately. A task failure goes to the log and doesn't change the transaction's outcome. On the server, a task scheduled inside a remote transaction runs on its commit.
 
-Há duas implementações, e o caso de uso não sabe qual está usando:
+There are two implementations, and the use case doesn't know which one it is using:
 
-| Onde | Implementação | O que faz |
+| Where | Implementation | What it does |
 |---|---|---|
-| Servidor | `TransactionServiceImpl` | Transação JDBC na conexão do `DataSource` do módulo |
-| Cliente REST | `RestTransactionService` | Abre uma **transação remota** no servidor e a fecha por HTTP |
+| Server | `TransactionServiceImpl` | JDBC transaction on the connection from the module's `DataSource` |
+| REST client | `RestTransactionService` | Opens a **remote transaction** on the server and closes it over HTTP |
 
-### Transação remota
+### Remote transaction
 
-Um cliente REST que precise de várias escritas atômicas abre uma transação no servidor:
+A REST client that needs several atomic writes opens a transaction on the server:
 
 1. `POST /api/tx/begin` → `{ "txId": "…" }`
-2. As escritas seguintes levam o cabeçalho `X-Tx-Id` e se juntam à mesma transação física.
-3. `POST /api/tx/commit` ou `POST /api/tx/rollback` encerra. `GET /api/tx/status` diz o que houve, para quem perdeu a resposta.
+2. Subsequent writes carry the `X-Tx-Id` header and join the same physical transaction.
+3. `POST /api/tx/commit` or `POST /api/tx/rollback` ends it. `GET /api/tx/status` tells what happened, for whoever lost the response.
 
-O `RestTransactionService` faz isso por baixo de `required { }`. No servidor, um coordenador guarda as transações abertas e aplica as defesas:
+`RestTransactionService` does this under `required { }`. On the server, a coordinator keeps the open transactions and applies the safeguards:
 
-- **Dono.** A transação pertence a quem a abriu — o usuário autenticado **e** a instância de cliente (`X-Client-Id`), ou, sem segurança, só o `X-Client-Id` — e ninguém mais a usa (403). O mesmo usuário em dois clientes (desktop e web) não se bloqueia.
-- **Cabeçalho perdido.** Uma escrita **sem** `X-Tx-Id` de quem tem transação aberta é recusada (409), em vez de confirmar sozinha fora da transação.
-- **Requisição que falha.** A escrita roda como participante da transação remota: se falhar no meio, a transação fica condenada, e o commit a desfaz e responde 409, em vez de confirmar a escrita parcial.
-- **Abandono.** Transação ociosa é desfeita pelo servidor; há tetos de transações abertas, no total e por usuário (429). Um `txId` desconhecido ou já revertido responde 410.
-- **Em uso.** Rollback pedido enquanto uma requisição usa a transação vale na hora, mas a conexão só fecha quando ela termina; commit nessa hora é conflito (409).
-- **Repetição.** Repetir o mesmo desfecho é inócuo; pedir o oposto é conflito (409).
-- **Resposta perdida.** Se o commit falhar no transporte (tempo esgotado, conexão caída), o cliente pergunta o `status` antes de decidir: comitou é sucesso, aberta é desfeita.
+- **Owner.** The transaction belongs to whoever opened it — the authenticated user **and** the client instance (`X-Client-Id`), or, without security, just the `X-Client-Id` — and no one else may use it (403). The same user on two clients (desktop and web) doesn't block themselves.
+- **Lost header.** A write **without** `X-Tx-Id` from someone who has an open transaction is refused (409), instead of committing on its own outside the transaction.
+- **Failing request.** The write runs as a participant in the remote transaction: if it fails halfway, the transaction is doomed, and the commit rolls it back and responds 409, instead of committing the partial write.
+- **Abandonment.** An idle transaction is rolled back by the server; there are caps on open transactions, in total and per user (429). An unknown or already rolled-back `txId` responds 410.
+- **In use.** A rollback requested while a request is using the transaction takes effect immediately, but the connection only closes when the request finishes; a commit at that moment is a conflict (409).
+- **Repetition.** Repeating the same outcome is harmless; asking for the opposite is a conflict (409).
+- **Lost response.** If the commit fails in transport (timeout, dropped connection), the client asks for the `status` before deciding: committed is success, open is rolled back.
 
-Dois limites para ter em mente:
+Two limits to keep in mind:
 
-- **Leituras não participam** da transação remota: dentro do bloco, um `fetch` enxerga só o que já foi confirmado.
-- `notSupported` dentro de uma transação remota serve para ler, não para escrever — o servidor não distingue "transação suspensa" de "cabeçalho perdido". Para escrever por fora, use `requiresNew`.
+- **Reads don't participate** in the remote transaction: inside the block, a `fetch` sees only what has already been committed.
+- `notSupported` inside a remote transaction is for reading, not writing — the server can't tell "suspended transaction" from "lost header". To write outside it, use `requiresNew`.
 
-A transação corrente do cliente é guardada por instância do serviço (uma por aplicação). As ações da apresentação rodam em série e o HTTP é bloqueante; por isso, **as chamadas de uma transação remota devem ser sequenciais**.
+The client's current transaction is kept per service instance (one per application). Presentation actions run serially and HTTP is blocking; therefore, **the calls of a remote transaction must be sequential**.
 
 ---
 
-## API REST
+## REST API
 
-Todas as entidades têm as mesmas operações, sob `/api/repo/<entidade>` (`user`, `product`, `purchase`, `purchase-item`):
+All entities have the same operations, under `/api/repo/<entity>` (`user`, `product`, `purchase`, `purchase-item`):
 
-| Rota | Transacional | Corpo | Resposta |
+| Route | Transactional | Body | Response |
 |---|---|---|---|
-| `POST …/insert` | sim | `{entity, projection?}`, ou a entidade solta | `{success, id, entity}` |
-| `POST …/update` | sim | entidade parcial — as chaves presentes são os campos a atualizar | `{success}` |
-| `POST …/delete` | sim | campos do critério | `{count}` |
-| `POST …/count` | não | campos do critério | `{count}` |
-| `POST …/fetch` | não | critério + `projection?` + `offset?` + `limit?` | `{items}` |
-| `POST …/fetch-page` | não | critério + `projection?` + `page` + `pageSize` | `{items, totalItems}` |
-| `POST …/fetch-by-id` | não | `{id, projection?}` | entidade ou 404 |
-| `GET …/{id}` | não | — | entidade ou 404 |
-| `GET product/{id}/image` | não (pública) | — | bytes; 204 sem imagem |
-| `PUT product/{id}/image` | sim | bytes | `{success}` |
+| `POST …/insert` | yes | `{entity, projection?}`, or the bare entity | `{success, id, entity}` |
+| `POST …/update` | yes | partial entity — the keys present are the fields to update | `{success}` |
+| `POST …/delete` | yes | criteria fields | `{count}` |
+| `POST …/count` | no | criteria fields | `{count}` |
+| `POST …/fetch` | no | criteria + `projection?` + `offset?` + `limit?` | `{items}` |
+| `POST …/fetch-page` | no | criteria + `projection?` + `page` + `pageSize` | `{items, totalItems}` |
+| `POST …/fetch-by-id` | no | `{id, projection?}` | entity or 404 |
+| `GET …/{id}` | no | — | entity or 404 |
+| `GET product/{id}/image` | no (public) | — | bytes; 204 if no image |
+| `PUT product/{id}/image` | yes | bytes | `{success}` |
 
-Toda escrita é atômica: roda na transação remota indicada por `X-Tx-Id` ou, sem ela, numa transação própria da requisição.
+Every write is atomic: it runs in the remote transaction given by `X-Tx-Id` or, without it, in a transaction of the request's own.
 
-As rotas de entidade são um `RepositoryRpc` do [`framework-rest`](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md), um por entidade, e o `RepositoryApiRoutes.create()` monta a API inteira. Cada controlador configura o RPC da sua entidade: a regra de cada operação, a restrição do critério a quem chama, a retirada da senha e as conferências antes de cada escrita. A ponte de transação e as rotas de `/api/tx` também vêm do framework.
+Entity routes are a [`framework-rest`](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md) `RepositoryRpc`, one per entity, and `RepositoryApiRoutes.create()` assembles the whole API. Each controller configures its entity's RPC: each operation's rule, restricting the criteria to the caller, stripping the password, and the checks before each write. The transaction bridge and the `/api/tx` routes also come from the framework.
 
-Erros voltam como `{"error": "…"}`:
+Errors come back as `{"error": "…"}`:
 
-| Status | Quando |
+| Status | When |
 |---|---|
-| 400 | Pedido inválido: `orderBy` desconhecido, `delete` sem filtro, `update` sem id |
-| 401 | Token ausente ou inválido (com a segurança ligada). Um caminho sem rota responde 404, com ou sem token |
-| 403 | Falta permissão, ou a linha está fora do alcance do usuário |
-| 409 | Conflito de transação remota |
-| 429 | Transações remotas abertas demais |
-| 500 | Falha não prevista: `{"error": "Internal server error"}`, com o erro registrado no log |
+| 400 | Invalid request: unknown `orderBy`, `delete` without a filter, `update` without an id |
+| 401 | Missing or invalid token (with security enabled). A path with no route responds 404, with or without a token |
+| 403 | Missing permission, or the row is outside the user's scope |
+| 409 | Remote transaction conflict |
+| 429 | Too many open remote transactions |
+| 500 | Unexpected failure: `{"error": "Internal server error"}`, with the error recorded in the log |
 
-**A descrição completa está em `GET /openapi.json`** (OpenAPI 3). Os campos de critério, as ordenações e os operadores que ela lista são lidos do domínio em tempo de execução, e o `OpenApiSpecTest` confere que cada rota documentada existe.
-
----
-
-## Cliente HTTP
-
-`HttpReadOnlyRepository<E, C, K>` implementa as consultas uma vez para todas as entidades, e `HttpRepository<E, C, K>` o estende com a escrita; cada `HttpXxxRepository` só informa o codec e o caminho. Um repositório de somente leitura no cliente estende `HttpReadOnlyRepository` diretamente. O `HttpProductRepository` acrescenta a leitura e a gravação da imagem.
-
-O `HttpTransport` tem uma implementação por plataforma — `OkHttpTransport` (JVM e Android), `JsHttpTransport`, `WasmHttpTransport` e `IosHttpTransport` —, todas bloqueantes. Cada uma:
-
-- envia o token de acesso e, no 401, renova a sessão e repete a chamada uma vez;
-- envia `X-Client-Id` sempre, e `X-Tx-Id` quando há transação remota corrente;
-- transforma a resposta de erro na exceção que o servidor lançou — 400 `InvalidRequestException`, 403 `AccessDeniedException`, 409 `TransactionConflictException`, 429 `TransactionLimitExceededException`; o resto, `BusinessException`. A mensagem é sempre `HTTP <status>: <corpo>`.
-
-`RestRepositoryBootstrap.initialize(config, cryptoProvider)` registra os quatro repositórios HTTP, o serviço de autenticação e o `RestTransactionService`. Todo entry point de cliente o chama.
+**The full description is at `GET /openapi.json`** (OpenAPI 3). The criteria fields, orderings, and operators it lists are read from the domain at runtime, and `OpenApiSpecTest` checks that every documented route exists.
 
 ---
 
-## Segurança
+## HTTP client
 
-**O controle de acesso fica na fronteira HTTP, e só nela.** Os repositórios não conferem permissão nem dono dos dados. Um repositório é chamado de dois lugares:
+`HttpReadOnlyRepository<E, C, K>` implements the queries once for all entities, and `HttpRepository<E, C, K>` extends it with writing; each `HttpXxxRepository` only provides the codec and the path. A read-only repository on the client extends `HttpReadOnlyRepository` directly. `HttpProductRepository` adds reading and writing the image.
 
-- **De um cliente** (Compose, nativo), pela API REST. O usuário controla o cliente e pode pedir o que quiser; por isso cada controlador confere o pedido antes de executá-lo.
-- **De dentro do servidor**, pelos presenters da view remota. Ali o usuário não tem como chamar um repositório: só o que a apresentação pedir é executado. A garantia é a apresentação estar correta — pedir sempre os dados de quem está logado.
+`HttpTransport` has one implementation per platform — `OkHttpTransport` (JVM and Android), `JsHttpTransport`, `WasmHttpTransport`, and `IosHttpTransport` —, all blocking. Each one:
 
-Com `security.jwt.secret` configurado, o backend exige `Authorization: Bearer` em toda a API, salvo `/api/auth`, a leitura da imagem de produto e `/openapi.json`. Cada rota confere, pela regra de acesso (`ApiSecurity.permission`) e pelos ganchos do `RepositoryRpc`:
+- sends the access token and, on 401, renews the session and retries the call once;
+- always sends `X-Client-Id`, and `X-Tx-Id` when there is a current remote transaction;
+- turns the error response into the exception the server threw — 400 `InvalidRequestException`, 403 `AccessDeniedException`, 409 `TransactionConflictException`, 429 `TransactionLimitExceededException`; anything else, `BusinessException`. The message is always `HTTP <status>: <body>`.
 
-- a **permissão** (`<entidade>:read`, `:write`, `:delete`), dada pelos papéis do usuário;
-- o **alcance**: quem não tem `data:all` só lê e escreve o que é seu — o próprio usuário, as próprias compras e os itens delas. Uma compra inserida por um cliente é sempre dele. Buscar pela chave passa pela mesma restrição: o que é de outro "não existe" (404).
-
-**A senha nunca sai pela API.** Ela é aceita na escrita de usuário e retirada de toda projeção e de toda resposta, inclusive quando o usuário vem dentro de uma compra — com a segurança ligada ou não.
-
-Sem o segredo, a API fica aberta e `/api/auth` não existe: é o modo de desenvolvimento e o dos testes que não tratam de segurança.
-
-**Na apresentação**, o cuidado é com o que chega pela navegação: um parâmetro de rota é escolhido pelo usuário. Quando ele identifica um dado — o `purchaseId` do recibo, por exemplo —, o serviço busca restringindo a quem está logado (`ReceiptService.loadReceipt(purchaseId, userId)`), e nunca só pela chave.
+`RestRepositoryBootstrap.initialize(config, cryptoProvider)` registers the four HTTP repositories, the authentication service, and the `RestTransactionService`. Every client entry point calls it.
 
 ---
 
-## Configuração e bancos suportados
+## Security
 
-O backend roda em **H2** (padrão: arquivo no diretório de dados) ou em **PostgreSQL**; o banco é escolhido pela URL. As conexões vêm de um pool Agroal.
+**Access control lives at the HTTP boundary, and only there.** Repositories check neither permission nor data ownership. A repository is called from two places:
 
-As chaves ficam na seção `[database]` do `config/application.toml`, no diretório de trabalho do backend: `url`, `username`, `password`, `schema` (só PostgreSQL), `reset`, `logSql`, `pool.*` e `remoteTransaction.*`. Todas, com os padrões, estão em [`application.example.toml`](../fontes/work/config/application.example.toml).
+- **From a client** (Compose, native), through the REST API. The user controls the client and can request anything; that's why each controller checks the request before executing it.
+- **From inside the server**, by the remote view's presenters. There the user has no way to call a repository: only what the presentation asks for is executed. The guarantee is that the presentation is correct — always asking for the data of whoever is logged in.
 
-A ordem de subida, em `BusinessContext`:
+With `security.jwt.secret` configured, the backend requires `Authorization: Bearer` across the whole API, except `/api/auth`, reading a product image, and `/openapi.json`. Each route checks, through the access rule (`ApiSecurity.permission`) and the `RepositoryRpc` hooks:
 
-1. Diretório de trabalho (obrigatório: `--workdir=<pasta>` ou `SHOPPING_WORKDIR`), log e configuração (`config/application.toml`); depois criptografia e executor.
-2. `SqlDataSourceSupport` monta o pool.
-3. `DBCreate` cria o que falta e roda as migrações.
-4. `ShoppingRepositoryBootstrap.initialize(…)` registra o `DSLContext`, o `TransactionService` e os repositórios.
-5. O coordenador de transações remotas é registrado.
-6. `ShoppingRepositoryBootstrap.initializeSecurity(…)`, se houver segredo JWT: registra o serviço de autenticação.
+- the **permission** (`<entity>:read`, `:write`, `:delete`), granted by the user's roles;
+- the **scope**: whoever lacks `data:all` only reads and writes what is theirs — the user themselves, their own purchases, and those purchases' items. A purchase inserted by a client always belongs to them. Fetching by key goes through the same restriction: what belongs to someone else "doesn't exist" (404).
+
+**The password never leaves through the API.** It is accepted when writing a user and stripped from every projection and every response, including when the user comes inside a purchase — with security enabled or not.
+
+Without the secret, the API is open and `/api/auth` doesn't exist: this is the development mode, and the mode of tests that don't deal with security.
+
+**In the presentation**, the care is with what arrives through navigation: a route parameter is chosen by the user. When it identifies a piece of data — the receipt's `purchaseId`, for example —, the service fetches it restricted to whoever is logged in (`ReceiptService.loadReceipt(purchaseId, userId)`), and never by key alone.
 
 ---
 
-## Testes
+## Configuration and supported databases
 
-Os testes de repositório são escritos uma vez, em classes `AbstractXxxRepositoryTest`, e rodam em dois modos: **local** (repositório jOOQ direto) e **REST** (cliente HTTP → Javalin embutido → repositório). Assim o caminho REST prova que devolve o mesmo que o local.
+The backend runs on **H2** (default: a file in the data directory) or on **PostgreSQL**; the database is chosen by the URL. Connections come from an Agroal pool.
+
+The keys live in the `[database]` section of `config/application.toml`, in the backend's working directory: `url`, `username`, `password`, `schema` (PostgreSQL only), `reset`, `logSql`, `pool.*`, and `remoteTransaction.*`. All of them, with their defaults, are in [`application.example.toml`](../fontes/work/config/application.example.toml).
+
+The startup order, in `BusinessContext`:
+
+1. Working directory (required: `--workdir=<folder>` or `SHOPPING_WORKDIR`), logging, and configuration (`config/application.toml`); then cryptography and executor.
+2. `SqlDataSourceSupport` builds the pool.
+3. `DBCreate` creates what is missing and runs the migrations.
+4. `ShoppingRepositoryBootstrap.initialize(…)` registers the `DSLContext`, the `TransactionService`, and the repositories.
+5. The remote transaction coordinator is registered.
+6. `ShoppingRepositoryBootstrap.initializeSecurity(…)`, if there is a JWT secret: registers the authentication service.
+
+---
+
+## Tests
+
+Repository tests are written once, in `AbstractXxxRepositoryTest` classes, and run in two modes: **local** (jOOQ repository directly) and **REST** (HTTP client → embedded Javalin → repository). That way the REST path proves it returns the same as the local one.
 
 ```bash
 cd fontes
-./gradlew test                              # suíte em H2
-./gradlew :shopping-tests:testPostgres      # a mesma suíte em PostgreSQL embutido
-./gradlew check                             # as duas
+./gradlew test                              # suite on H2
+./gradlew :shopping-tests:testPostgres      # the same suite on embedded PostgreSQL
+./gradlew check                             # both
 ```
 
-- `testPostgres` sobe sozinho um PostgreSQL embutido. Com `SHOPPING_TEST_PG_URL` (e `SHOPPING_TEST_PG_USER`, `SHOPPING_TEST_PG_PASSWORD`) usa esse servidor — **e apaga os dados dele**; aponte para um esquema dedicado com `?currentSchema=…`.
-- `RestTestEnvironment(nome, jwtSecret = "…")` sobe o servidor com a segurança ligada; `env.loginAs("admin")` autentica o cliente.
-- `LiveBackendSmokeTest` exercita um backend no ar como um cliente REST faria (login, catálogo, checkout, extrato). Só roda com `SHOPPING_LIVE_BACKEND_URL` definida, e grava uma compra nesse backend.
+- `testPostgres` starts an embedded PostgreSQL by itself. With `SHOPPING_TEST_PG_URL` (and `SHOPPING_TEST_PG_USER`, `SHOPPING_TEST_PG_PASSWORD`) it uses that server — **and deletes its data**; point it at a dedicated schema with `?currentSchema=…`.
+- `RestTestEnvironment(name, jwtSecret = "…")` starts the server with security enabled; `env.loginAs("admin")` authenticates the client.
+- `LiveBackendSmokeTest` exercises a running backend the way a REST client would (login, catalog, checkout, statement). It only runs with `SHOPPING_LIVE_BACKEND_URL` set, and writes a purchase to that backend.
 
 ---
 
-## Como adicionar uma entidade
+## How to add an entity
 
-1. **Domínio** (`:shopping-domain`, pacote `domain.<entidade>`): a entidade (`KeyedEntity`, campos anuláveis), o `XxxCriteria` com os campos de filtro e o `OrderBy`, o `XxxCodec` e a interface `XxxRepository` com `ownFieldsProjection()`, `fetchById` e o holder `BEAN`.
-2. **Esquema** (`:shopping-scripts`): a tabela, a sequência e os índices das ordenações em `DBCreate`; a migração para os bancos existentes; a carga em `DBReset`, se couber. Regenere as classes jOOQ.
-3. **Servidor** (`:shopping-persistence`): o `XxxRepositoryImpl` com o mapeamento `QUERY`, as condições e a ordenação; o registro em `ShoppingRepositoryBootstrap`.
-4. **REST** (`:persistence-rest`): o `XxxApiController`, que configura um `RepositoryRpc` **com a conferência de permissão e de alcance** (`rule` com `ApiSecurity.permission`, `scope`, `beforeInsert`/`beforeUpdate`), e a chamada dele em `RepositoryApiRoutes.create()`; as permissões em `Role`; a entidade em `RepositoryApiDocs`.
-5. **Cliente** (`:shopping-persistence-client`): o `HttpXxxRepository` e o registro em `RestRepositoryBootstrap`.
-6. **Apresentação**: o acesso em `ShoppingApplication`. Nos serviços, peça sempre os dados de quem está logado.
-7. **Testes**: um `AbstractXxxRepositoryTest` com as subclasses local e REST, e um teste REST com a segurança ligada.
+1. **Domain** (`:shopping-domain`, package `domain.<entity>`): the entity (`KeyedEntity`, nullable fields), the `XxxCriteria` with the filter fields and the `OrderBy`, the `XxxCodec`, and the `XxxRepository` interface with `ownFieldsProjection()`, `fetchById`, and the `BEAN` holder.
+2. **Schema** (`:shopping-scripts`): the table, the sequence, and the ordering indexes in `DBCreate`; the migration for existing databases; the seed data in `DBReset`, if applicable. Regenerate the jOOQ classes.
+3. **Server** (`:shopping-persistence`): the `XxxRepositoryImpl` with the `QUERY` mapping, the conditions, and the ordering; registration in `ShoppingRepositoryBootstrap`.
+4. **REST** (`:persistence-rest`): the `XxxApiController`, which configures a `RepositoryRpc` **with the permission and scope checks** (`rule` with `ApiSecurity.permission`, `scope`, `beforeInsert`/`beforeUpdate`), and its call in `RepositoryApiRoutes.create()`; the permissions in `Role`; the entity in `RepositoryApiDocs`.
+5. **Client** (`:shopping-persistence-client`): the `HttpXxxRepository` and its registration in `RestRepositoryBootstrap`.
+6. **Presentation**: access in `ShoppingApplication`. In services, always ask for the data of whoever is logged in.
+7. **Tests**: an `AbstractXxxRepositoryTest` with the local and REST subclasses, and a REST test with security enabled.
 
-Para dados de somente leitura (um painel, por exemplo), a interface estende `ReadOnlyRepository`, o cliente estende `HttpReadOnlyRepository`, e o controlador registra o RPC com `writes = false` (só `count`, `fetch`, `fetch-page`, `fetch-by-id` e `GET {id}`).
+For read-only data (a dashboard, for example), the interface extends `ReadOnlyRepository`, the client extends `HttpReadOnlyRepository`, and the controller registers the RPC with `writes = false` (only `count`, `fetch`, `fetch-page`, `fetch-by-id`, and `GET {id}`).
 
-Os quatro repositórios existentes servem de modelo; `Product` é o mais simples e `Purchase`/`PurchaseItem` mostram associações, coleção e relação mútua.
+The four existing repositories serve as models; `Product` is the simplest, and `Purchase`/`PurchaseItem` show associations, a collection, and a mutual relation.

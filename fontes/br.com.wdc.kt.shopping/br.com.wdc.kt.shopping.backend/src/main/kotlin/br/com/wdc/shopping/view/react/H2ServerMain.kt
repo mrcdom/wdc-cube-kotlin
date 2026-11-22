@@ -51,6 +51,6 @@ object H2ServerMain {
         Thread.currentThread().join()
     }
 
-    /** A pasta `data/` do diretório de trabalho informado (`--workdir=…` ou `SHOPPING_WORKDIR`). */
+    /** The `data/` folder of the given work directory (`--workdir=…` or `SHOPPING_WORKDIR`). */
     private fun resolveDataDir(args: Array<String>): Path = WorkDirectory.resolve(args).resolve("data")
 }

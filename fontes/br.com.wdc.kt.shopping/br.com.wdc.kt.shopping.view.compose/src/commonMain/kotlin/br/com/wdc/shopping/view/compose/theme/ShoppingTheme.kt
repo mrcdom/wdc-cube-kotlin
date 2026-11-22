@@ -4,7 +4,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Paleta principal - tons de azul-petróleo elegante
+// Main palette - elegant petrol-blue tones
 val Primary = Color(0xFF1B5E7B)
 val OnPrimary = Color(0xFFFFFFFF)
 val PrimaryContainer = Color(0xFFD0E8F2)

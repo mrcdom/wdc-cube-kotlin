@@ -16,8 +16,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * As migrações têm de levar um banco criado antes da adoção do jOOQ ao mesmo esquema que [DBCreate] cria num
- * banco novo — é o que permite gerar as classes jOOQ de um e usá-las no outro.
+ * The migrations must bring a database created before jOOQ was adopted to the same schema that [DBCreate] creates
+ * in a new database — that is what allows generating the jOOQ classes from one and using them on the other.
  */
 class SchemaMigrationTest {
 
@@ -31,7 +31,7 @@ class SchemaMigrationTest {
                 .filter { it.isNotEmpty() }
                 .forEach { stmt.execute(it) }
         }
-        // as três migrações que o banco de origem já tinha aplicado
+        // the three migrations the source database had already applied
         prepareStatement(
             "INSERT INTO EN_MIGRATION_LOG (ID, SCRIPT_NAME, STEP_NAME, EXECUTED_AT) VALUES (NEXT VALUE FOR SQ_MIGRATION_LOG, ?, ?, CURRENT_TIMESTAMP)"
         ).use { ps ->
@@ -116,10 +116,10 @@ class SchemaMigrationTest {
             legacy.createLegacySchema()
             val image = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0, 0, 7, 0x82.toByte())
             legacy.prepareStatement("INSERT INTO EN_PRODUCT (ID, NAME, PRICE, DESCRIPTION, IMAGE) VALUES (?, ?, 1, 'd', ?)").use { ps ->
-                ps.setLong(1, 1); ps.setString(2, "com imagem"); ps.setBytes(3, image); ps.executeUpdate()
-                ps.setLong(1, 2); ps.setString(2, "sem imagem"); ps.setNull(3, java.sql.Types.BINARY); ps.executeUpdate()
+                ps.setLong(1, 1); ps.setString(2, "with image"); ps.setBytes(3, image); ps.executeUpdate()
+                ps.setLong(1, 2); ps.setString(2, "without image"); ps.setNull(3, java.sql.Types.BINARY); ps.executeUpdate()
             }
-            // a coluna BINARY de tamanho fixo completou a imagem com zeros
+            // the fixed-size BINARY column padded the image with zeros
             assertEquals(listOf("1000000"), legacy.rows("SELECT OCTET_LENGTH(IMAGE) FROM EN_PRODUCT WHERE ID = 1"))
 
             DBCreate().withConnection(legacy).run()
@@ -138,11 +138,11 @@ class SchemaMigrationTest {
         newDatabase().use { legacy ->
             legacy.createLegacySchema()
             legacy.prepareStatement("INSERT INTO EN_USER (ID, USERNAME, PASSWORD, NAME, ROLES) VALUES (?, ?, ?, ?, 'CUSTOMER')").use { ps ->
-                // como a carga antiga gravava: MD5 lido com sinal, em base 36
+                // as the old seed stored it: MD5 read as signed, in base 36
                 listOf(
-                    Triple(0L, "admin", "1ymiigxvce4vzea4zp5bsfbgj"),      // bit de sinal 0: já coincide
-                    Triple(2L, "beotrano", "-17msdx5ah76k0tdyvaoieqemg"),   // bit de sinal 1: negativo
-                    Triple(7L, "externo", "senha-gravada-sem-resumo"),      // gravada pela API, sem resumo: fica como está
+                    Triple(0L, "admin", "1ymiigxvce4vzea4zp5bsfbgj"),      // sign bit 0: already matches
+                    Triple(2L, "beotrano", "-17msdx5ah76k0tdyvaoieqemg"),   // sign bit 1: negative
+                    Triple(7L, "external", "password-stored-without-digest"), // stored by the API, without digest: stays as is
                 ).forEach { (id, user, digest) ->
                     ps.setLong(1, id); ps.setString(2, user); ps.setString(3, digest); ps.setString(4, user); ps.executeUpdate()
                 }
@@ -151,7 +151,7 @@ class SchemaMigrationTest {
             DBCreate().withConnection(legacy).run()
 
             assertEquals(
-                listOf("admin | 1ymiigxvce4vzea4zp5bsfbgj", "beotrano | dxz5j4uooih4r59rlath82ago", "externo | senha-gravada-sem-resumo"),
+                listOf("admin | 1ymiigxvce4vzea4zp5bsfbgj", "beotrano | dxz5j4uooih4r59rlath82ago", "external | password-stored-without-digest"),
                 legacy.rows("SELECT USERNAME, TRIM(PASSWORD) FROM EN_USER ORDER BY ID"),
             )
             assertEquals(DBReset.passwordDigest("beotrano"), "dxz5j4uooih4r59rlath82ago")
@@ -164,7 +164,7 @@ class SchemaMigrationTest {
             legacy.createLegacySchema()
             legacy.createStatement().use { stmt ->
                 stmt.execute("INSERT INTO EN_USER (ID, USERNAME, PASSWORD, NAME, ROLES) VALUES (0, 'admin', 'x', 'Admin', 'ADMIN')")
-                // como a persistência antiga gravava: a hora local da máquina
+                // as the old persistence stored it: the machine's local time
                 stmt.execute("INSERT INTO EN_PURCHASE (ID, USERID, BUYDATE) VALUES (0, 0, TIMESTAMP '2024-01-15 10:30:00')")
                 stmt.execute("INSERT INTO EN_PURCHASE (ID, USERID, BUYDATE) VALUES (1, 0, TIMESTAMP '2024-07-15 10:30:00')")
             }
@@ -191,7 +191,7 @@ class SchemaMigrationTest {
             }
             Migration_0006_PurchaseBuyDateToUtc(legacy, ZoneId.of("Europe/Paris")).step01_localWallTimeToUtc()
 
-            // inverno: UTC+1; verão: UTC+2
+            // winter: UTC+1; summer: UTC+2
             assertEquals(
                 listOf("2024-01-15 09:30", "2024-07-15 08:30"),
                 legacy.rows("SELECT FORMATDATETIME(BUYDATE, 'yyyy-MM-dd HH:mm') FROM EN_PURCHASE ORDER BY ID"),

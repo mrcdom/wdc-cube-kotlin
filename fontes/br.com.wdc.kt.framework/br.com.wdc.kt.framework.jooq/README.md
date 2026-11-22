@@ -1,27 +1,27 @@
 # framework-jooq
 
-Consultas declarativas sobre jOOQ (JVM).
+Declarative queries over jOOQ (JVM).
 
-- `JsonQueryBuilder` / `JsonQuery` — declara uma vez como uma entidade se relaciona com a tabela; dada uma projeção, monta uma única consulta que devolve o grafo pedido como JSON e o lê de volta.
-- `JsonQuery.insert(bean, projection)` — o `INSERT` pelos mesmos campos (`JsonQuery.fields()`), e a linha inserida lida de volta pela projeção do fetch: o bean sai com a identidade, os padrões das colunas e o que mais o banco preencheu. Ficam fora o campo derivado (expressão, e não coluna) e a coluna de identidade; a chave primária informada entra sempre. `onConflictDoNothing = true` devolve `false` no conflito (no H2, o jOOQ o emula pela chave primária).
-- `JsonQuery.fields()` para a escrita própria do repositório (um `UPDATE` pelas colunas marcadas, por exemplo): `projected` diz se a projeção pede o campo, `mark` o pede, `get` lê do bean e `toColumn` converte o valor ao tipo da coluna (`Instant` em UTC, `Double` em `BigDecimal`, enum pelo nome), sem repetir o mapeamento.
-- `CriterionTranslator` — traduz um critério em condições jOOQ.
-- `JsonDialect` — o que muda de um banco para outro. Há dialetos para H2 e PostgreSQL.
-- `TransactionAwareConnectionProvider` — faz o jOOQ usar a conexão da transação corrente.
+- `JsonQueryBuilder` / `JsonQuery` — declares once how an entity maps to the table; given a projection, builds a single query that returns the requested graph as JSON and reads it back.
+- `JsonQuery.insert(bean, projection)` — the `INSERT` by the same fields (`JsonQuery.fields()`), with the inserted row read back through the fetch projection: the bean comes out with the identity, the column defaults and whatever else the database filled in. The derived field (an expression, not a column) and the identity column are left out; a given primary key always goes in. `onConflictDoNothing = true` returns `false` on conflict (on H2, jOOQ emulates it by the primary key).
+- `JsonQuery.fields()` for the repository's own writes (an `UPDATE` by the marked columns, for example): `projected` says whether the projection asks for the field, `mark` asks for it, `get` reads from the bean and `toColumn` converts the value to the column type (`Instant` in UTC, `Double` to `BigDecimal`, enum by name), without repeating the mapping.
+- `CriterionTranslator` — translates a criterion into jOOQ conditions.
+- `JsonDialect` — what changes from one database to another. There are dialects for H2 and PostgreSQL.
+- `TransactionAwareConnectionProvider` — makes jOOQ use the current transaction's connection.
 
-Os adicionadores de campo escalar têm três letras depois do `add`, para as declarações ficarem alinhadas:
+The scalar field adders have three letters after `add`, so declarations line up:
 
-| Adicionador | Domínio | Coluna |
+| Adder | Domain | Column |
 |---|---|---|
-| `addI64`, `addI32`, `addF64`, `addDec` | `Long`, `Int`, `Double`, `BigDecimal` | numérica |
-| `addStr`, `addBit`, `addBin` | `String`, `Boolean`, `ByteArray` | texto, booleana, binária |
-| `addOdt`, `addLdt` | `OffsetDateTime` | `TIMESTAMP WITH TIME ZONE`, `TIMESTAMP` (em UTC) |
-| `addIzt`, `addIlt` | `Instant` | `TIMESTAMP WITH TIME ZONE`, `TIMESTAMP` (em UTC) |
+| `addI64`, `addI32`, `addF64`, `addDec` | `Long`, `Int`, `Double`, `BigDecimal` | numeric |
+| `addStr`, `addBit`, `addBin` | `String`, `Boolean`, `ByteArray` | text, boolean, binary |
+| `addOdt`, `addLdt` | `OffsetDateTime` | `TIMESTAMP WITH TIME ZONE`, `TIMESTAMP` (in UTC) |
+| `addIzt`, `addIlt` | `Instant` | `TIMESTAMP WITH TIME ZONE`, `TIMESTAMP` (in UTC) |
 | `addDay` | `LocalDate` | `DATE` |
 | `addUid` | `UUID` | `UUID` |
 
-Na 0.4.0, `addLocalDate`, `addUuid`, `addInstantFromOdt` e `addInstantFromLdt` passaram a `addDay`, `addUid`, `addIzt` e `addIlt` (os nomes antigos ficam obsoletos por esta versão). No `RelationKey`, `addLocalDate` e `addUuid` saíram de vez: use `addDay` e `addUid`.
+In 0.4.0, `addLocalDate`, `addUuid`, `addInstantFromOdt` and `addInstantFromLdt` became `addDay`, `addUid`, `addIzt` and `addIlt` (the old names stay deprecated for this version). In `RelationKey`, `addLocalDate` and `addUuid` are gone for good: use `addDay` and `addUid`.
 
-Os testes rodam os mesmos casos em H2 e em PostgreSQL embutido. Publicado no Maven Central como `io.github.mrcdom.wdc.kt:framework-jooq`.
+The tests run the same cases on H2 and on embedded PostgreSQL. Published on Maven Central as `io.github.mrcdom.wdc.kt:framework-jooq`.
 
-Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).
+See the [persistence architecture](../../../docs/architecture-persistence.md).

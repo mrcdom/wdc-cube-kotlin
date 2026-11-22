@@ -7,13 +7,13 @@ dependencies {
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.h2)
-    // a página do Swagger (openApi { ui { } }) lê o webjar do classpath; quem a liga declara o webjar
+    // the Swagger page (openApi { ui { } }) reads the webjar from the classpath; whoever turns it on declares the webjar
     testRuntimeOnly(libs.swagger.ui)
     testRuntimeOnly(libs.logback.classic)
 }
 
-// A leitura dos corpos não pode gravar campo final por reflexão: o JDK 26 avisa que vai bloquear isso (JEP 500).
-// Esta tarefa roda a mesma suíte no JDK 26 com o bloqueio já ligado. O JDK vem da toolchain (baixado se faltar).
+// Reading bodies must not write final fields by reflection: JDK 26 warns it will block that (JEP 500).
+// This task runs the same suite on JDK 26 with the block already on. The JDK comes from the toolchain (downloaded if missing).
 val testFinalFields = tasks.register<Test>("testFinalFields") {
     description = "Runs the tests on JDK 26 with reflective mutation of final fields denied."
     group = "verification"

@@ -4,14 +4,14 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.JsonStreamWriter
 
 /**
- * Resposta com status e cabeçalhos — o `ResponseEntity`. O corpo segue as mesmas regras do valor devolvido
- * pelo handler (ver [RestCall]); `null` = corpo vazio.
+ * Response with status and headers — the `ResponseEntity`. The body follows the same rules as the value returned
+ * by the handler (see [RestCall]); `null` = empty body.
  */
 class RestResponse(
     val status: Int,
     val body: Any? = null,
     val headers: Map<String, String> = emptyMap(),
-    /** Content-Type explícito; `null` = deduzido do corpo. */
+    /** Explicit Content-Type; `null` = inferred from the body. */
     val contentType: String? = null,
 ) {
     fun withHeader(name: String, value: String) = RestResponse(status, body, headers + (name to value), contentType)
@@ -25,8 +25,8 @@ class RestResponse(
 }
 
 /**
- * JSON já pronto, escrito com a API de streaming — é como as entidades saem pelos `ModelCodec`, sem reflexão.
- * O handler devolve um destes e a biblioteca não o passa pelo mapeador de DTO.
+ * Ready-made JSON, written with the streaming API — this is how entities go out through the `ModelCodec`s, without
+ * reflection. The handler returns one of these and the library doesn't pass it through the DTO mapper.
  */
 class RawJson(val json: String) {
     companion object {

@@ -3,12 +3,12 @@ package br.com.wdc.framework.rest
 import io.javalin.http.Context
 
 /**
- * Cabeçalhos de cache e de segurança em toda resposta da API ([RestApi.Builder.securityHeaders]): sucesso, erro
- * mapeado, recusa da autenticação ou da regra, 404/405 tratados pela biblioteca e a pré-requisição do CORS.
+ * Cache and security headers on every API response ([RestApi.Builder.securityHeaders]): success, mapped error,
+ * refusal by authentication or rule, 404/405 handled by the library and the CORS preflight.
  *
  * ```kotlin
  * securityHeaders {
- *     headers -= "X-XSS-Protection"                     // obsoleto nos navegadores atuais
+ *     headers -= "X-XSS-Protection"                     // obsolete in current browsers
  *     headers["Strict-Transport-Security"] = "max-age=31536000"
  * }
  * ```
@@ -16,16 +16,16 @@ import io.javalin.http.Context
 class SecurityHeadersOptions {
 
     /**
-     * Escreve `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`, `Pragma: no-cache` e `Expires: 0` nas
-     * respostas cuja rota não pôs o próprio `Cache-Control`. A rota que quer cache escreve o seu (`call.header(…)` ou
-     * nos cabeçalhos da [RestResponse]), e a resposta sai sem `Pragma` nem `Expires`.
+     * Writes `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`, `Pragma: no-cache` and `Expires: 0` on
+     * responses whose route didn't set its own `Cache-Control`. A route that wants caching writes its own
+     * (`call.header(…)` or in the [RestResponse] headers), and the response goes out without `Pragma` or `Expires`.
      */
     var noCache: Boolean = true
 
     /**
-     * Escritos sempre, substituindo o que a rota tiver posto com o mesmo nome. Troque um valor, acrescente ou retire
-     * cabeçalhos à vontade. Sem `Strict-Transport-Security` por padrão: atrás de um proxy que termina o TLS, o pedido
-     * chega em HTTP.
+     * Always written, replacing whatever the route set under the same name. Change a value, add or remove headers
+     * freely. No `Strict-Transport-Security` by default: behind a proxy that terminates TLS, the request arrives
+     * over HTTP.
      */
     val headers: MutableMap<String, String> = linkedMapOf(
         "X-Content-Type-Options" to "nosniff",

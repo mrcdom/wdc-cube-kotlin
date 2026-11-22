@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/** O logout do cliente revoga a sessão no servidor: o refresh token deixa de valer. */
+/** The client logout revokes the session on the server: the refresh token stops being valid. */
 class RestAuthLogoutTest {
 
     companion object {
@@ -43,7 +43,7 @@ class RestAuthLogoutTest {
         val refreshToken = client.refreshToken!!
         client.logout()
         assertNull(client.refreshToken)
-        assertEquals(401, refreshStatus(refreshToken), "depois do logout, o refresh token não vale mais")
+        assertEquals(401, refreshStatus(refreshToken), "after logout, the refresh token is no longer valid")
         env.logout()
     }
 }

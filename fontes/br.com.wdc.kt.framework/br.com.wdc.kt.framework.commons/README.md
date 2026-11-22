@@ -1,7 +1,7 @@
 # framework-commons
 
-Biblioteca KMP de utilitários compartilhados: codecs, logging, serialização, tipos numéricos e data/hora.
+KMP library of shared utilities: codecs, logging, serialization, numeric types and date/time.
 
-**Plataformas:** JVM, Android, iOS, wasmJs
+**Platforms:** JVM, Android, iOS, wasmJs
 
-**Dependências principais:** `kotlinx-datetime`, `bignum`, `Gson` (JVM), `SLF4J` (JVM)
+**Main dependencies:** `kotlinx-datetime`, `bignum`, `Gson` (JVM), `SLF4J` (JVM)

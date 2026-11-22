@@ -90,12 +90,12 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
         {/* Section header */}
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-            Compras
+            Purchases
           </Typography>
           {state.totalCount > 0 && (
             <Box sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: '8px', px: 2, py: 0.75 }}>
               <Typography variant="caption" sx={{ color: Colors.OnPrimaryContainer }}>
-                {state.totalCount} itens
+                {state.totalCount} {state.totalCount === 1 ? 'item' : 'items'}
               </Typography>
             </Box>
           )}
@@ -110,7 +110,7 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 6 }}>
                 <Inventory2Icon sx={{ fontSize: 48, color: Colors.OnSurfaceVariant }} />
                 <Typography variant="body1" sx={{ mt: 1, color: Colors.OnSurfaceVariant }}>
-                  Nenhuma compra realizada
+                  No purchases yet
                 </Typography>
               </Box>
             )
@@ -199,7 +199,7 @@ class PurchaseItemRowClass extends BasePanelClass<PurchaseItemRowProps> {
                 </Typography>
               </Box>
               <Chip
-                label={`R$ ${NumberUtils.format(purchase.total)}`}
+                label={`$${NumberUtils.format(purchase.total)}`}
                 size="small"
                 sx={{
                   bgcolor: Colors.PriceBackground,

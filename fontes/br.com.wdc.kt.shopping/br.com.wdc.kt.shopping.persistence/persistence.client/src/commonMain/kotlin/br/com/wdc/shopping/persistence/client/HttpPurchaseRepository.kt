@@ -14,7 +14,7 @@ class HttpPurchaseRepository(
     override fun fill(target: Purchase, stored: Purchase) = fillPurchase(target, stored)
 }
 
-/** Os itens são completados pela posição: o servidor os devolve na ordem em que vieram. */
+/** Items are filled by position: the server returns them in the order they were sent. */
 internal fun fillPurchase(target: Purchase, stored: Purchase) {
     stored.id?.let { target.id = it }
     stored.buyDate?.let { target.buyDate = it }

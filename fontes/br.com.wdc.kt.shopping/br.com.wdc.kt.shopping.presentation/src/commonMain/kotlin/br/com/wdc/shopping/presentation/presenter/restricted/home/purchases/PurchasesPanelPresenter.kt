@@ -66,8 +66,8 @@ class PurchasesPanelPresenter(
 
             val totalPages = max(1, ceil(state.totalCount.toDouble() / state.pageSize).toInt())
             if (state.page >= totalPages) {
-                // a página pedida passou do fim (a capacidade da view mudou, ou compras sumiram): mostra a última,
-                // com os itens dela — o resultado acima é o da página que não existe
+                // the requested page is past the end (the view capacity changed, or purchases disappeared): show the
+                // last one, with its items — the result above is the one of the page that does not exist
                 state.page = totalPages - 1
                 page = purchasesPanelService.fetchPageOfUser(subject.id!!, state.page, state.pageSize)
                 state.totalCount = page.totalItems

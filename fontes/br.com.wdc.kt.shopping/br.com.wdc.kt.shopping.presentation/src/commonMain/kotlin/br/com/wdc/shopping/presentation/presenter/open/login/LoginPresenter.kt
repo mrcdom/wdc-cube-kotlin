@@ -46,19 +46,19 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     private fun alertUserOrPasswordNotRecognize() {
         state.errorCode = 1
-        state.errorMessage = "Usuário ou senha não reconhecido!"
+        state.errorMessage = "Username or password not recognized!"
         update()
     }
 
     private fun alertDatabaseIsOffline() {
         state.errorCode = 4
-        state.errorMessage = "Banco de dados esta fora do ar!"
+        state.errorMessage = "The database is offline!"
         update()
     }
 
     private fun alertConnectionError(caught: Throwable) {
         state.errorCode = 5
-        state.errorMessage = "Falha de comunicação com o servidor. Verifique sua conexão."
+        state.errorMessage = "Failed to communicate with the server. Check your connection."
         update()
     }
 

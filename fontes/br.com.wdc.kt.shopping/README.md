@@ -1,29 +1,29 @@
 # Shopping
 
-Módulos da aplicação Shopping, organizada em camadas: domínio, persistência, apresentação e views.
+Modules of the Shopping application, organized in layers: domain, persistence, presentation and views.
 
-## Módulos
+## Modules
 
-### Domínio e Dados
+### Domain and Data
 
-- [br.com.wdc.kt.shopping.domain/](br.com.wdc.kt.shopping.domain/) — Entidades e interfaces de repositório (KMP)
-- [br.com.wdc.kt.shopping.persistence/](br.com.wdc.kt.shopping.persistence/) — Camada de persistência, em três subprojetos:
-  - [persistence.impl/](br.com.wdc.kt.shopping.persistence/persistence.impl/) — Repositórios sobre jOOQ, para H2 e PostgreSQL (JVM)
-  - [persistence.rest/](br.com.wdc.kt.shopping.persistence/persistence.rest/) — API REST dos repositórios (JVM)
-  - [persistence.client/](br.com.wdc.kt.shopping.persistence/persistence.client/) — Cliente REST dos repositórios (KMP)
-- [br.com.wdc.kt.shopping.scripts/](br.com.wdc.kt.shopping.scripts/) — Scripts de criação/migração do banco (JVM)
+- [br.com.wdc.kt.shopping.domain/](br.com.wdc.kt.shopping.domain/) — Entities and repository interfaces (KMP)
+- [br.com.wdc.kt.shopping.persistence/](br.com.wdc.kt.shopping.persistence/) — Persistence layer, in three subprojects:
+  - [persistence.impl/](br.com.wdc.kt.shopping.persistence/persistence.impl/) — Repositories on jOOQ, for H2 and PostgreSQL (JVM)
+  - [persistence.rest/](br.com.wdc.kt.shopping.persistence/persistence.rest/) — REST API of the repositories (JVM)
+  - [persistence.client/](br.com.wdc.kt.shopping.persistence/persistence.client/) — REST client of the repositories (KMP)
+- [br.com.wdc.kt.shopping.scripts/](br.com.wdc.kt.shopping.scripts/) — Database creation and migration scripts (JVM)
 
-### Apresentação
+### Presentation
 
-- [br.com.wdc.kt.shopping.presentation/](br.com.wdc.kt.shopping.presentation/) — Presenters compartilhados (KMP)
+- [br.com.wdc.kt.shopping.presentation/](br.com.wdc.kt.shopping.presentation/) — Shared presenters (KMP)
 
 ### Views
 
-- [br.com.wdc.kt.shopping.view.compose/](br.com.wdc.kt.shopping.view.compose/) — View Compose Multiplatform (local) — [arquitetura](../../docs/architecture.md)
-- [br.com.wdc.kt.shopping.view.remote/](br.com.wdc.kt.shopping.view.remote/) — Views remotas (server-side) — React, Vaadin, ZK
-- [br.com.wdc.kt.shopping.view.native/](br.com.wdc.kt.shopping.view.native/) — Views nativas por plataforma (Android Views, UIKit, React/MUI)
+- [br.com.wdc.kt.shopping.view.compose/](br.com.wdc.kt.shopping.view.compose/) — Compose Multiplatform view (local) — [architecture](../../docs/architecture.md)
+- [br.com.wdc.kt.shopping.view.remote/](br.com.wdc.kt.shopping.view.remote/) — Remote (server-side) views — React, Vaadin, ZK
+- [br.com.wdc.kt.shopping.view.native/](br.com.wdc.kt.shopping.view.native/) — Native views per platform (Android Views, UIKit, React/MUI)
 
-### Servidor e Testes
+### Server and Tests
 
-- [br.com.wdc.kt.shopping.backend/](br.com.wdc.kt.shopping.backend/) — Servidor Javalin (HTTP + WebSocket)
-- [br.com.wdc.kt.shopping.tests/](br.com.wdc.kt.shopping.tests/) — Testes de integração
+- [br.com.wdc.kt.shopping.backend/](br.com.wdc.kt.shopping.backend/) — Javalin server (HTTP + WebSocket)
+- [br.com.wdc.kt.shopping.tests/](br.com.wdc.kt.shopping.tests/) — Integration tests

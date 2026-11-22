@@ -1,81 +1,81 @@
 # compose.ios
 
-Ponto de entrada **iOS**. Produz o framework estático `ShoppingApp` consumido pelo projeto Xcode em `iosApp/`.
+**iOS** entry point. Produces the static `ShoppingApp` framework consumed by the Xcode project in `iosApp/`.
 
-## Pré-requisitos
+## Prerequisites
 
-- **Xcode** instalado (com Command Line Tools)
-- **JDK 21** — o build script localiza via `/usr/libexec/java_home -v 21`
-- **Backend rodando** na porta 8080 (o app conecta em `http://localhost:8080`)
+- **Xcode** installed (with Command Line Tools)
+- **JDK 21** — the build script finds it through `/usr/libexec/java_home -v 21`
+- **Backend running** on port 8080 (the app connects to `http://localhost:8080`)
 
-## Deploy no Simulador
+## Deploying to the Simulator
 
-1. Gere o projeto Xcode (se ainda não existir o `.xcodeproj`):
+1. Generate the Xcode project (if the `.xcodeproj` does not exist yet):
 
    ```bash
    cd iosApp && xcodegen generate
    ```
 
-2. Abra o projeto no Xcode:
+2. Open the project in Xcode:
 
    ```bash
    open iosApp/ShoppingiOS.xcodeproj
    ```
 
-3. Selecione o simulador desejado (ex: **iPhone 17 Pro**) no seletor de destino.
+3. Select the simulator you want (e.g. **iPhone 17 Pro**) in the destination picker.
 
-4. Rode com **▶️ (Cmd+R)**.
+4. Run with **▶️ (Cmd+R)**.
 
-   O *pre-build script* do Xcode executa automaticamente:
+   The Xcode *pre-build script* automatically runs:
    ```bash
    ./gradlew :view-compose-ios:linkDebugFrameworkIosSimulatorArm64 --no-daemon
    ```
 
-Ou, se preferir compilar e instalar **via terminal** sem abrir o Xcode:
+Or, if you prefer to build and install **from the terminal** without opening Xcode:
 
 ```bash
-# 1. Compilar o framework Kotlin
+# 1. Build the Kotlin framework
 cd fontes && ./gradlew :view-compose-ios:linkDebugFrameworkIosSimulatorArm64 --no-daemon
 
-# 2. Compilar o app Xcode para o simulador
+# 2. Build the Xcode app for the simulator
 cd ../iosApp
 xcodebuild -project ShoppingiOS.xcodeproj \
   -scheme ShoppingiOS \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   build
 
-# 3. Localizar o .app gerado
+# 3. Find the generated .app
 APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "ShoppingiOS.app" -path "*/Debug-iphonesimulator/*" | head -1)
 
-# 4. Bootar o simulador (se não estiver rodando)
+# 4. Boot the simulator (if it is not running)
 xcrun simctl boot "iPhone 17 Pro" 2>/dev/null || true
 
-# 5. Instalar e abrir no simulador
+# 5. Install and launch on the simulator
 xcrun simctl install booted "$APP_PATH"
 xcrun simctl launch booted br.com.wdc.shopping.ios
 ```
 
-## Deploy em Dispositivo Real
+## Deploying to a Real Device
 
-> **Nota:** requer uma conta Apple Developer (gratuita ou paga) e um *Signing Certificate* configurado no Xcode.
+> **Note:** requires an Apple Developer account (free or paid) and a *Signing Certificate* set up in Xcode.
 
-### Configuração única
+### One-time setup
 
-1. No Xcode, abra **ShoppingiOS.xcodeproj**.
-2. Vá em **Signing & Capabilities** do target **ShoppingiOS**.
-3. Marque **Automatically manage signing** e selecione seu **Team**.
-4. O Xcode criará um provisioning profile automaticamente.
+1. In Xcode, open **ShoppingiOS.xcodeproj**.
+2. Go to **Signing & Capabilities** of the **ShoppingiOS** target.
+3. Check **Automatically manage signing** and select your **Team**.
+4. Xcode will create a provisioning profile automatically.
 
-### Ajustar o framework para a arquitetura do dispositivo
+### Point the framework at the device architecture
 
-O `project.yml` está configurado para o simulador (`iosSimulatorArm64`). Para dispositivo real, é necessário o framework compilado para `iosArm64`. Altere temporariamente em `iosApp/project.yml`:
+`project.yml` is set up for the simulator (`iosSimulatorArm64`). A real device needs the framework built for `iosArm64`. Change it temporarily in `iosApp/project.yml`:
 
 ```yaml
 FRAMEWORK_SEARCH_PATHS:
   - "$(SRCROOT)/../fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/compose.ios/build/bin/iosArm64/debugFramework"
 ```
 
-E atualize o pre-build script para compilar o target correto:
+And update the pre-build script to build the right target:
 
 ```yaml
 script: |
@@ -84,38 +84,38 @@ script: |
   ./gradlew :view-compose-ios:linkDebugFrameworkIosArm64 --no-daemon
 ```
 
-Depois regenere o projeto: `cd iosApp && xcodegen generate`.
+Then regenerate the project: `cd iosApp && xcodegen generate`.
 
-### Rodar no dispositivo
+### Running on the device
 
-1. Conecte o iPhone via **USB** ou configure **Wi-Fi debugging** (Xcode → Window → Devices and Simulators).
-2. No seletor de destino do Xcode, escolha o dispositivo conectado.
-3. Rode com **▶️ (Cmd+R)**.
-4. Na primeira vez, o iPhone pedirá para confiar no certificado do desenvolvedor em **Ajustes → Geral → Gerenciamento de Dispositivo**.
+1. Connect the iPhone through **USB** or set up **Wi-Fi debugging** (Xcode → Window → Devices and Simulators).
+2. In the Xcode destination picker, choose the connected device.
+3. Run with **▶️ (Cmd+R)**.
+4. The first time, the iPhone will ask you to trust the developer certificate in **Settings → General → VPN & Device Management**.
 
-### URL do backend no dispositivo
+### Backend URL on the device
 
-No simulador, `localhost` aponta para o Mac. No dispositivo real, é necessário usar o **IP da máquina** onde o backend roda. Altere a URL em `iosApp/ShoppingApp/ContentView.swift`:
+On the simulator, `localhost` points to the Mac. On a real device you need the **IP address of the machine** running the backend. Change the URL in `iosApp/ShoppingApp/ContentView.swift`:
 
 ```swift
 MainViewControllerKt.MainViewController(baseUrl: "http://192.168.x.x:8080")
 ```
 
-## Compilação via terminal (sem Xcode UI)
+## Building from the terminal (without the Xcode UI)
 
 ```bash
-# Simulador
+# Simulator
 cd fontes && ./gradlew :view-compose-ios:linkDebugFrameworkIosSimulatorArm64 --no-daemon
 
-# Dispositivo real
+# Real device
 cd fontes && ./gradlew :view-compose-ios:linkDebugFrameworkIosArm64 --no-daemon
 
-# Release (dispositivo real)
+# Release (real device)
 cd fontes && ./gradlew :view-compose-ios:linkReleaseFrameworkIosArm64 --no-daemon
 ```
 
-## APIs nativas do dispositivo
+## Native device APIs
 
-Por ser compilado como framework nativo via Kotlin/Native, o módulo tem acesso completo às APIs Apple — incluindo CoreBluetooth, CoreLocation, AVFoundation, HealthKit, etc. No source set `iosMain`, importe diretamente os frameworks da plataforma (ex: `import platform.CoreBluetooth.*`). Use o mecanismo `expect`/`actual` do Kotlin Multiplatform ou o service locator (`AtomicRef`) já usado na arquitetura do projeto para injetar implementações específicas de plataforma.
+Since it is compiled as a native framework through Kotlin/Native, the module has full access to the Apple APIs — including CoreBluetooth, CoreLocation, AVFoundation, HealthKit, etc. In the `iosMain` source set, import the platform frameworks directly (e.g. `import platform.CoreBluetooth.*`). Use Kotlin Multiplatform's `expect`/`actual` mechanism or the service locator (`AtomicRef`) already used in the project's architecture to inject platform-specific implementations.
 
-Veja a documentação oficial: [Use platform-specific APIs (Kotlin Multiplatform)](https://kotlinlang.org/docs/multiplatform/multiplatform-connect-to-apis.html)
+See the official documentation: [Use platform-specific APIs (Kotlin Multiplatform)](https://kotlinlang.org/docs/multiplatform/multiplatform-connect-to-apis.html)

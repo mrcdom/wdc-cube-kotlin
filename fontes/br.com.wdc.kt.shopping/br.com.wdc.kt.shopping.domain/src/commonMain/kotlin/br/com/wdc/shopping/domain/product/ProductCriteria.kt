@@ -6,10 +6,10 @@ import br.com.wdc.framework.domain.criteria.Criterion
 import br.com.wdc.framework.domain.criteria.TextCriterion
 
 /**
- * Critério de pesquisa de [Product].
+ * Search criteria for [Product].
  *
- * Os campos nascem com o critério e nunca são `null`: para saber se um deles filtra, use `hasXxx()` —
- * `criteria.productId == null` compila e é sempre falso.
+ * The fields are created with the criteria and are never `null`: to know whether one filters, use `hasXxx()` —
+ * `criteria.productId == null` compiles and is always false.
  */
 class ProductCriteria : Criteria {
 
@@ -41,7 +41,7 @@ class ProductCriteria : Criteria {
 
     fun withOrderBy(orderBy: OrderBy?) = apply { this.orderBy = orderBy }
 
-    /** Cada ordenação nomeia um efeito e tem um índice que a sustenta (ver `DBCreate`). */
+    /** Each ordering names an effect and has an index backing it (see `DBCreate`). */
     enum class OrderBy {
         OLDEST_FIRST,
         NEWEST_FIRST,

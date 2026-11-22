@@ -1,12 +1,12 @@
 # shopping-presentation
 
-Presenters (Cubes) da aplicação Shopping — lógica de apresentação independente de plataforma.
+Presenters (Cubes) of the Shopping application — platform-independent presentation logic.
 
-**Plataformas:** JVM, Android, iOS, wasmJs
+**Platforms:** JVM, Android, iOS, wasmJs
 
-Os mesmos presenters são reutilizados nas três arquiteturas:
-- [Compose Multiplatform (view local)](../../../docs/architecture.md) — presenters no cliente
-- [Native (view local)](../../../docs/architecture.md) — presenters no cliente com UI nativa por plataforma
-- [React (view remota)](../../../docs/architecture-react.md) — presenters no servidor
+The same presenters are reused in the three architectures:
+- [Compose Multiplatform (view local)](../../../docs/architecture.md) — presenters on the client
+- [Native (view local)](../../../docs/architecture.md) — presenters on the client with a native UI per platform
+- [React (view remota)](../../../docs/architecture-react.md) — presenters on the server
 
-Contém: `LoginPresenter`, `HomePresenter`, `ProductPresenter`, `CartPresenter`, `ReceiptPresenter`, entre outros.
+Contains: `LoginPresenter`, `HomePresenter`, `ProductPresenter`, `CartPresenter`, `ReceiptPresenter`, among others.

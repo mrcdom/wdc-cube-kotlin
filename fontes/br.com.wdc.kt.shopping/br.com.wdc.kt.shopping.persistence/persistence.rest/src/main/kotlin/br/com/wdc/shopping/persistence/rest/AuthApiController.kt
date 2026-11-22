@@ -7,12 +7,12 @@ import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
 
 /**
- * Adaptador HTTP para o [AuthenticationService]. Rotas públicas:
+ * HTTP adapter for the [AuthenticationService]. Public routes:
  *
- * - `GET /api/auth/challenge` — gera nonce para login
- * - `POST /api/auth/login` — autentica via HMAC challenge-response
- * - `POST /api/auth/refresh` — renova access token
- * - `POST /api/auth/logout` — encerra sessão
+ * - `GET /api/auth/challenge` — generates a nonce for login
+ * - `POST /api/auth/login` — authenticates via HMAC challenge-response
+ * - `POST /api/auth/refresh` — renews the access token
+ * - `POST /api/auth/logout` — ends the session
  */
 internal object AuthApiController {
 

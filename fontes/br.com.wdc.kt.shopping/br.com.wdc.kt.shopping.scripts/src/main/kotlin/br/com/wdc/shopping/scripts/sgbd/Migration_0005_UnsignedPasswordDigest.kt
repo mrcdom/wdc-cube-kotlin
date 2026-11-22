@@ -5,11 +5,11 @@ import java.sql.Connection
 import java.sql.SQLException
 
 /**
- * Regrava os resumos de senha que a carga de demonstração antiga gravou com sinal.
+ * Rewrites the password digests that the old demo seed stored as signed.
  *
- * O resumo é o MD5 da senha em base 36. A carga o lia como inteiro **com sinal**; a aplicação
- * (`PasswordUtil.hashPassword`) o calcula **sem sinal**. Os dois coincidem quando o primeiro bit do MD5 é 0;
- * quando é 1, a carga gravava um número negativo e o usuário nunca conseguia autenticar.
+ * The digest is the MD5 of the password in base 36. The seed read it as a **signed** integer; the application
+ * (`PasswordUtil.hashPassword`) computes it **unsigned**. Both match when the first bit of the MD5 is 0;
+ * when it is 1, the seed stored a negative number and the user could never authenticate.
  */
 class Migration_0005_UnsignedPasswordDigest(private val connection: Connection) {
 
@@ -20,7 +20,7 @@ class Migration_0005_UnsignedPasswordDigest(private val connection: Connection) 
             stmt.executeQuery("SELECT ID, PASSWORD FROM EN_USER").use { rs ->
                 while (rs.next()) {
                     val digest = rs.getString(2)?.trim() ?: continue
-                    // só o que tem a forma de um resumo com sinal: '-' seguido de dígitos de base 36
+                    // only what has the shape of a signed digest: '-' followed by base-36 digits
                     if (SIGNED_DIGEST.matches(digest)) {
                         signed[rs.getLong(1)] = digest
                     }
@@ -29,7 +29,7 @@ class Migration_0005_UnsignedPasswordDigest(private val connection: Connection) 
         }
         connection.prepareStatement("UPDATE EN_USER SET PASSWORD = ? WHERE ID = ?").use { ps ->
             for ((id, digest) in signed) {
-                // o mesmo padrão de 128 bits, lido sem sinal
+                // the same 128-bit pattern, read as unsigned
                 ps.setString(1, BigInteger(digest, 36).add(TWO_POW_128).toString(36))
                 ps.setLong(2, id)
                 ps.executeUpdate()

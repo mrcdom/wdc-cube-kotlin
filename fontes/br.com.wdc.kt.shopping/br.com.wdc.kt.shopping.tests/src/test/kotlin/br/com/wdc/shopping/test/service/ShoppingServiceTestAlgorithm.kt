@@ -21,9 +21,9 @@ import kotlin.time.Clock
 import org.junit.jupiter.api.Assertions.*
 
 /**
- * Algoritmos de teste compartilhados entre [ShoppingServiceTest] e
- * [ShoppingServiceRestTest]. Recebe os repositórios explicitamente
- * via [ShoppingTestEnvironment].
+ * Test algorithms shared between [ShoppingServiceTest] and
+ * [ShoppingServiceRestTest]. Receives the repositories explicitly
+ * through [ShoppingTestEnvironment].
  */
 object ShoppingServiceTestAlgorithm {
 
@@ -59,7 +59,7 @@ object ShoppingServiceTestAlgorithm {
     }
 
     suspend fun testFullShoppingWorkflow(env: ShoppingTestEnvironment) {
-        // Autentica via repositório
+        // Authenticates through the repository
         val users = env.userRepo.fetch(
             UserCriteria().withUserName("admin").withProjection(Subject.projection()),
             limit = 1,
@@ -73,48 +73,48 @@ object ShoppingServiceTestAlgorithm {
 
         assertEquals(DBReset.ADMIN_ID, userId, "UserId must be administrator")
 
-        assertEquals("João da Silva", subject.nickName, "User name did not match")
+        assertEquals("John Smith", subject.nickName, "User name did not match")
 
-        val produtos = env.productRepo.fetch(ProductCriteria())
+        val products = env.productRepo.fetch(ProductCriteria())
             .mapNotNull { ProductInfo.create(it) }
 
-        assertNotNull(produtos)
-        assertEquals(4, produtos.size)
-        assertEquals(DBReset.CAFETEIRA_ID, produtos[0].id)
-        assertEquals(DBReset.BOLA_WILSON_ID, produtos[1].id)
-        assertEquals(DBReset.FITA_VEDA_ROSCA_ID, produtos[2].id)
-        assertEquals(DBReset.PEN_DRIVE2GB_ID, produtos[3].id)
+        assertNotNull(products)
+        assertEquals(4, products.size)
+        assertEquals(DBReset.COFFEE_MAKER_ID, products[0].id)
+        assertEquals(DBReset.WILSON_BALL_ID, products[1].id)
+        assertEquals(DBReset.THREAD_SEAL_TAPE_ID, products[2].id)
+        assertEquals(DBReset.FLASH_DRIVE_2GB_ID, products[3].id)
 
-        for (produto in produtos) {
-            assertTrue(!produto.name.isNullOrBlank(), "Product name can not be empty")
-            assertTrue(produto.image!!.endsWith(".png"), "Product image name can not end differently than .png")
-            assertTrue(produto.price >= 0.0, "Product price must be grater than or equal to 0.0")
-            assertTrue(!produto.description.isNullOrBlank(), "Product description can not be empty")
+        for (product in products) {
+            assertTrue(!product.name.isNullOrBlank(), "Product name can not be empty")
+            assertTrue(product.image!!.endsWith(".png"), "Product image name can not end differently than .png")
+            assertTrue(product.price >= 0.0, "Product price must be grater than or equal to 0.0")
+            assertTrue(!product.description.isNullOrBlank(), "Product description can not be empty")
 
-            val mesmoProduto = ProductService(env.productRepo).loadProductById(produto.id)
-            assertEquals(produto.id, mesmoProduto.id)
-            assertEquals(produto.name, mesmoProduto.name)
-            assertEquals(produto.image, mesmoProduto.image)
-            assertEquals(produto.price, mesmoProduto.price, 0.001)
-            assertEquals(produto.description, mesmoProduto.description)
+            val sameProduct = ProductService(env.productRepo).loadProductById(product.id)
+            assertEquals(product.id, sameProduct.id)
+            assertEquals(product.name, sameProduct.name)
+            assertEquals(product.image, sameProduct.image)
+            assertEquals(product.price, sameProduct.price, 0.001)
+            assertEquals(product.description, sameProduct.description)
         }
 
         val homeService = PurchasesPanelService(env.purchaseRepo)
 
-        var compras: List<PurchaseInfo> = homeService.loadPurchases(
+        var purchases: List<PurchaseInfo> = homeService.loadPurchases(
             PurchaseCriteria().withOrderBy(PurchaseCriteria.OrderBy.OLDEST_FIRST)
         )
 
-        assertNotNull(compras)
-        assertEquals(2, compras.size)
+        assertNotNull(purchases)
+        assertEquals(2, purchases.size)
 
-        assertEquals(DBReset.ADMIN_FIRST_PURCHASE_ID, compras[0].id)
-        assertNotNull(compras[0].items)
-        assertEquals(1, compras[0].items.size)
+        assertEquals(DBReset.ADMIN_FIRST_PURCHASE_ID, purchases[0].id)
+        assertNotNull(purchases[0].items)
+        assertEquals(1, purchases[0].items.size)
 
-        assertEquals(DBReset.ADMIN_SECOND_PURCHASE_ID, compras[1].id)
-        assertNotNull(compras[1].items)
-        assertEquals(2, compras[1].items.size)
+        assertEquals(DBReset.ADMIN_SECOND_PURCHASE_ID, purchases[1].id)
+        assertNotNull(purchases[1].items)
+        assertEquals(2, purchases[1].items.size)
 
         val purchase = Purchase()
         purchase.user = User()
@@ -123,48 +123,48 @@ object ShoppingServiceTestAlgorithm {
         purchase.items = mutableListOf()
         purchase.items!!.add(PurchaseItem().also { item ->
             item.product = Product()
-            item.product!!.id = DBReset.PEN_DRIVE2GB_ID
+            item.product!!.id = DBReset.FLASH_DRIVE_2GB_ID
             item.price = 55.0
             item.amount = 1
         })
         purchase.items!!.add(PurchaseItem().also { item ->
             item.product = Product()
-            item.product!!.id = DBReset.FITA_VEDA_ROSCA_ID
+            item.product!!.id = DBReset.THREAD_SEAL_TAPE_ID
             item.price = 5.0
             item.amount = 2
         })
 
         env.purchaseRepo.insert(purchase)
-        val idCompra = purchase.id!!
-        assertEquals(DBReset.ADMIN_SECOND_PURCHASE_ID + 1, idCompra)
+        val purchaseId = purchase.id!!
+        assertEquals(DBReset.ADMIN_SECOND_PURCHASE_ID + 1, purchaseId)
 
-        compras = homeService.loadPurchasesOfUser(userId)
+        purchases = homeService.loadPurchasesOfUser(userId)
 
-        assertNotNull(compras)
-        assertEquals(3, compras.size)
+        assertNotNull(purchases)
+        assertEquals(3, purchases.size)
 
-        val ultimaCompra = compras[0]
-        assertEquals(idCompra, ultimaCompra.id)
-        assertEquals(2, ultimaCompra.items.size)
-        assertEquals(65.0, ultimaCompra.total)
+        val lastPurchase = purchases[0]
+        assertEquals(purchaseId, lastPurchase.id)
+        assertEquals(2, lastPurchase.items.size)
+        assertEquals(65.0, lastPurchase.total)
 
-        val recibo = ReceiptService(env.purchaseRepo).loadReceipt(idCompra, userId)
-        assertNotNull(recibo)
-        assertEquals(65.0, recibo!!.total)
-        assertEquals(2, recibo.items.size)
+        val receipt = ReceiptService(env.purchaseRepo).loadReceipt(purchaseId, userId)
+        assertNotNull(receipt)
+        assertEquals(65.0, receipt!!.total)
+        assertEquals(2, receipt.items.size)
 
-        // o recibo é de quem comprou: para outro usuário, a compra não existe
-        val outroUsuario = if (userId == DBReset.FULANO_ID) DBReset.BEOTRANO_ID else DBReset.FULANO_ID
-        assertNull(ReceiptService(env.purchaseRepo).loadReceipt(idCompra, outroUsuario))
+        // the receipt belongs to the buyer: for another user, the purchase does not exist
+        val otherUser = if (userId == DBReset.FULANO_ID) DBReset.BEOTRANO_ID else DBReset.FULANO_ID
+        assertNull(ReceiptService(env.purchaseRepo).loadReceipt(purchaseId, otherUser))
 
-        val pedido0 = purchase.items!![0]
-        assertEquals(pedido0.price, recibo.items[0].value)
-        assertEquals(pedido0.amount, recibo.items[0].quantity)
-        assertEquals("Pen Drive 2GB", recibo.items[0].description)
+        val item0 = purchase.items!![0]
+        assertEquals(item0.price, receipt.items[0].value)
+        assertEquals(item0.amount, receipt.items[0].quantity)
+        assertEquals("USB Flash Drive 2GB", receipt.items[0].description)
 
-        val pedido1 = purchase.items!![1]
-        assertEquals(pedido1.price, recibo.items[1].value)
-        assertEquals(pedido1.amount, recibo.items[1].quantity)
-        assertEquals("Fita veda rosca", recibo.items[1].description)
+        val item1 = purchase.items!![1]
+        assertEquals(item1.price, receipt.items[1].value)
+        assertEquals(item1.amount, receipt.items[1].quantity)
+        assertEquals("Thread Seal Tape", receipt.items[1].description)
     }
 }

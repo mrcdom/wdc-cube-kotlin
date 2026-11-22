@@ -16,7 +16,7 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
 
     internal var reflowCount: Int = 1
 
-    /** O lugar do último presenter aceito: é o lugar corrente depois do commit. */
+    /** The place of the last accepted presenter: it is the current place after the commit. */
     private var acceptedPlace: CubePlace? = null
     private var sourceIntent: CubeIntent = app.newIntent()
     private val steps: MutableList<CubePlace> = ArrayList()
@@ -58,7 +58,7 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
                 }
 
                 nextPresenters.add(holder)
-                // false = o presenter foi aceito, mas a composição para nele: ele é o lugar corrente
+                // false = the presenter was accepted, but the composition stops at it: it is the current place
                 acceptedPlace = place
 
                 val goAhead = applyIn(holder.presenter!!, targetIntent, holder.initialize, holder.deepest)
@@ -85,15 +85,15 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
     }
 
     /**
-     * Ocupa o lugar de navegação corrente.
+     * Takes the current navigation slot.
      *
-     * - Nenhuma em curso: começa.
-     * - Pedida de dentro da corrente (o contexto da corrotina a marca: é um presenter no `applyParameters`): é um
-     *   redirecionamento — interrompe a corrente e herda os presenters que ela criou.
-     * - Pedida de fora: espera a corrente terminar. Só o último pedido espera; um anterior desiste (`false`), e o
-     *   que espera também desiste se a corrente falhar.
+     * - None running: starts.
+     * - Requested from inside the current one (the coroutine context marks it: it is a presenter in
+     *   `applyParameters`): it is a redirect — interrupts the current one and inherits the presenters it created.
+     * - Requested from outside: waits for the current one to finish. Only the last request waits; an earlier one
+     *   gives up (`false`), and the waiting one also gives up if the current one fails.
      *
-     * @return `false` quando desistiu e não deve navegar
+     * @return `false` when it gave up and must not navigate
      */
     private suspend fun join(): Boolean {
         val current = app.navigation
@@ -115,11 +115,11 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
         while (app.navigation != null) {
             val committed = app.awaitNavigation()
             if (app.waitingNavigation !== this) {
-                return false // um pedido mais novo tomou o lugar
+                return false // a newer request took the slot
             }
             if (!committed) {
                 app.waitingNavigation = null
-                return false // a navegação de que este pedido dependia falhou
+                return false // the navigation this request depended on failed
             }
         }
         app.waitingNavigation = null
@@ -128,9 +128,9 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
     }
 
     /**
-     * O `applyParameters` com esta navegação marcada no contexto: o `navigate` feito lá dentro é redirecionamento.
-     * A falha é capturada dentro do `withContext` e relançada fora, para chegar como a mesma instância (com `-ea`,
-     * a exceção que atravessa o `withContext` é trocada por uma cópia).
+     * `applyParameters` with this navigation marked in the context: a `navigate` made in there is a redirect.
+     * The failure is caught inside `withContext` and rethrown outside, so it arrives as the same instance (with
+     * `-ea`, the exception that crosses `withContext` is replaced by a copy).
      */
     private suspend fun applyIn(presenter: CubePresenter, intent: CubeIntent, initialize: Boolean, deepest: Boolean): Boolean {
         var failure: Throwable? = null
@@ -146,7 +146,7 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
         return result
     }
 
-    /** Marca, no contexto da corrotina, a navegação cujo `applyParameters` está rodando. */
+    /** Marks, in the coroutine context, the navigation whose `applyParameters` is running. */
     private class Marker(val navigation: CubeNavigation<*>) : AbstractCoroutineContextElement(Marker) {
         companion object Key : CoroutineContext.Key<Marker>
     }

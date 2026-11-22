@@ -1,53 +1,53 @@
 # WDC Cube Kotlin — Shopping Demo
 
-Aplicação de demonstração do framework **Cube MVP** em Kotlin Multiplatform, com três modalidades de view:
+Demo application for the **Cube MVP** framework in Kotlin Multiplatform, with three view modalities:
 
-- **Compose Multiplatform** — presenters no cliente (Desktop, Android, iOS, Web/WASM)
-- **Native** — presenters no cliente com UI nativa por plataforma (Android Views, UIKit, React/MUI)
-- **React (View Remota)** — presenters no servidor via WebSocket
+- **Compose Multiplatform** — presenters on the client (Desktop, Android, iOS, Web/WASM)
+- **Native** — presenters on the client with native UI per platform (Android Views, UIKit, React/MUI)
+- **React (Remote View)** — presenters on the server over WebSocket
 
-**Documentação:** [Visão geral](docs/architecture.md) · [Framework Cube](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [View React](docs/architecture-react.md) · [Persistência](docs/architecture-persistence.md)
+**Documentation:** [Overview](docs/architecture.md) · [Cube Framework](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [React View](docs/architecture-react.md) · [Persistence](docs/architecture-persistence.md)
 
-## Estrutura
+## Structure
 
 ```
 wdc-cube-kotlin/
-├── docs/                  ← Documentação de arquitetura
-├── fontes/                ← Código-fonte (projeto Gradle)
-└── iosApp/                ← Projeto Xcode (host iOS nativo)
+├── docs/                  ← Architecture documentation
+├── fontes/                ← Source code (Gradle project)
+└── iosApp/                ← Xcode project (native iOS host)
 ```
 
-- [fontes/](fontes/) — Projeto Gradle com todos os módulos
-- [docs/](docs/) — Documentação de arquitetura
-- [iosApp/](iosApp/) — Projeto Xcode para rodar no iOS
+- [fontes/](fontes/) — Gradle project with all modules
+- [docs/](docs/) — Architecture documentation
+- [iosApp/](iosApp/) — Xcode project to run on iOS
 
-## Pré-requisitos
+## Prerequisites
 
 - JDK 21
 - Gradle 9.3 (via wrapper)
-- Android Studio (para Android e Compose Web)
-- Xcode 16+ (para iOS)
-- Node.js (para o cliente React)
+- Android Studio (for Android and Compose Web)
+- Xcode 16+ (for iOS)
+- Node.js (for the React client)
 
-## Como rodar
+## How to run
 
 ```bash
 cd fontes
 
-# Backend (porta 8080)
+# Backend (port 8080)
 ./gradlew :backend:run
 
 # Desktop
 ./gradlew :view-compose-desktop:run
 
-# Web (porta 8082)
+# Web (port 8082)
 ./gradlew :view-compose-web:wasmJsBrowserDevelopmentRun
 
 # Android
 ./gradlew :view-compose-android:assembleDebug
 
-# Testes
+# Tests
 ./gradlew test
 ```
 
-Para **iOS**, abra `iosApp/ShoppingiOS.xcodeproj` no Xcode e rode no simulador.
+For **iOS**, open `iosApp/ShoppingiOS.xcodeproj` in Xcode and run it on the simulator.

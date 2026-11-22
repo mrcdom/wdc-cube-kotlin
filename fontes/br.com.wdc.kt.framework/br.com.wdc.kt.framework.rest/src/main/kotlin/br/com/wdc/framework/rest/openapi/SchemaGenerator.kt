@@ -22,15 +22,15 @@ import java.util.Date
 import java.util.UUID
 
 /**
- * Esquema OpenAPI de um tipo, lido por reflexão dos campos — os mesmos que o Gson serializa, com os mesmos
- * nomes. Classe de DTO vira componente (`$ref`), registrado uma vez com o nome simples da classe.
+ * OpenAPI schema of a type, read by reflection from the fields — the same ones Gson serializes, with the same
+ * names. A DTO class becomes a component (`$ref`), registered once with the class's simple name.
  *
- * Tipos genéricos (`Page<UserDto>`) viram componentes nomeados pelos argumentos (`PageUserDto`).
+ * Generic types (`Page<UserDto>`) become components named by their arguments (`PageUserDto`).
  *
- * Dois tipos diferentes com o mesmo nome simples (o `Request` e o `Response` aninhados em cada operação, por
- * exemplo) não se sobrepõem: os dois passam a levar o nome das classes que os contêm (`CreateOrder.Response` vira
- * `CreateOrderAction.Response`), e, se ainda assim coincidirem, o pacote. O nome depende só do conjunto de tipos do
- * documento, não da ordem em que foram vistos; por isso as referências só ganham o nome em [components].
+ * Two different types with the same simple name (the `Request` and `Response` nested in each operation, for
+ * example) don't overwrite each other: both take the name of their enclosing classes (`CreateOrder.Response` becomes
+ * `CreateOrderAction.Response`), and, if they still clash, the package. The name depends only on the document's set
+ * of types, not on the order they were seen; that is why references only get their name in [components].
  */
 class SchemaGenerator(private val naming: FieldNamingStrategy) {
 
@@ -41,7 +41,7 @@ class SchemaGenerator(private val naming: FieldNamingStrategy) {
 
     private val entries = LinkedHashMap<List<Any>, Entry>()
 
-    /** Os componentes, por nome; as referências entregues por [schemaOf] recebem o nome aqui. */
+    /** The components, by name; the references handed out by [schemaOf] get their name here. */
     val components: Map<String, Any?>
         get() {
             val names = componentNames()
@@ -68,7 +68,7 @@ class SchemaGenerator(private val naming: FieldNamingStrategy) {
         return result
     }
 
-    /** O nome com as classes que o contêm: `CreateOrderAction.Response`. */
+    /** The name with its enclosing classes: `CreateOrderAction.Response`. */
     private fun nestedName(type: Class<*>): String = generateSequence(type) { it.enclosingClass }.toList().reversed().joinToString(".") { it.simpleName }
 
     private fun argName(type: Type, level: (Class<*>) -> String): String = when (type) {
@@ -111,7 +111,7 @@ class SchemaGenerator(private val naming: FieldNamingStrategy) {
 
         val key = listOf<Any>(type) + args
         val entry = entries[key] ?: Entry(type, args).also { created ->
-            entries[key] = created // reserva: tipos recursivos param aqui
+            entries[key] = created // placeholder: recursive types stop here
             val bindings = type.typeParameters.map { it.name }.zip(args).toMap()
             val properties = LinkedHashMap<String, Any?>()
             for (field in fieldsOf(type)) {
@@ -122,13 +122,13 @@ class SchemaGenerator(private val naming: FieldNamingStrategy) {
                 put("properties", properties)
             }
         }
-        // O nome so e decidido em [components]: ate la, a referencia fica a espera dele.
+        // The name is only decided in [components]: until then, the reference waits for it.
         return linkedMapOf<String, Any?>("\$ref" to null).also { entry.refs += it }
     }
 
     /**
-     * A propriedade com o `@ApiDoc` do campo. Uma referência a outro esquema vai num `allOf`: no OpenAPI 3.0, o que
-     * fica ao lado de um `$ref` é ignorado.
+     * The property with the field's `@ApiDoc`. A reference to another schema goes in an `allOf`: in OpenAPI 3.0,
+     * whatever sits next to a `$ref` is ignored.
      */
     private fun documented(schema: Map<String, Any?>, doc: ApiDoc?): Map<String, Any?> {
         if (doc == null) return schema
@@ -138,7 +138,7 @@ class SchemaGenerator(private val naming: FieldNamingStrategy) {
         return base
     }
 
-    /** O exemplo no tipo do esquema: `4021` e numero num campo inteiro, e nao o texto "4021". */
+    /** The example in the schema's type: `4021` is a number in an integer field, not the text "4021". */
     private fun typedExample(example: String, type: Any?): Any = when (type) {
         "integer" -> example.toLongOrNull() ?: example
         "number" -> example.toBigDecimalOrNull() ?: example

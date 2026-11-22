@@ -66,6 +66,6 @@ data class ServerMetrics(
     val avgResponseMs: Double,
 ) {
     fun print() {
-        println("  [Server] Sessions: $activeSessions | Heap: ${heapUsedMb}/${heapMaxMb}MB | Threads: $threadCount | Requests: $totalRequests | AvgResp: ${"%.1f".format(avgResponseMs)}ms")
+        println("  [Server] Sessions: $activeSessions | Heap: ${heapUsedMb}/${heapMaxMb}MB | Threads: $threadCount | Requests: $totalRequests | AvgResp: ${"%.1f".format(java.util.Locale.US, avgResponseMs)}ms")
     }
 }

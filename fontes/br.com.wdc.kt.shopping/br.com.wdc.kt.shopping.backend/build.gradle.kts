@@ -6,8 +6,8 @@ application {
     mainClass.set("br.com.wdc.shopping.view.react.JavalinApplication")
 }
 
-// O backend exige o diretório de trabalho; em desenvolvimento é fontes/work (configuração, banco, logs e os
-// frontends publicados). Outro pode ser dado com -Pworkdir=/caminho.
+// The backend requires the work directory; in development it is fontes/work (configuration, database, logs and
+// the published frontends). Another one can be given with -Pworkdir=/path.
 tasks.named<JavaExec>("run") {
     val workDir = providers.gradleProperty("workdir").orElse(rootProject.projectDir.resolve("work").absolutePath)
     args("--workdir=${workDir.get()}")

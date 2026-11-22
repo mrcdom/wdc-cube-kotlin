@@ -58,14 +58,14 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     fun onModifyQuantity(productId: Long?, quantity: Int?) {
         try {
             if (productId == null) {
-                errorCodigoDeProdutoMalFormatado()
-                LOG.warn("onModifyQuantity.errorCodigoDeProdutoMalFormatado: {}", state.errorMessage)
+                errorMalformedProductId()
+                LOG.warn("onModifyQuantity.errorMalformedProductId: {}", state.errorMessage)
                 return
             }
 
             if (quantity == null) {
-                errorValorQuantidadeMalFormatado()
-                LOG.warn("onModifyQuantity.errorValorQuantidadeMalFormatado: {}", state.errorMessage)
+                errorMalformedQuantity()
+                LOG.warn("onModifyQuantity.errorMalformedQuantity: {}", state.errorMessage)
                 return
             }
 
@@ -91,7 +91,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     suspend fun onRemoveProduct(productId: Long?) {
         try {
             if (productId == null) {
-                errorCodigoDeProdutoMalFormatado()
+                errorMalformedProductId()
                 LOG.warn("onRemoveProduct: {}", state.errorMessage)
                 return
             }
@@ -162,42 +162,42 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     private fun alertThereIsItemWhichValueIsLessThanOne() {
         state.errorCode = 1
-        state.errorMessage = "Existem produtos com menos de um item na quantidade. Impossível comprar."
+        state.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
         update()
         clearErrorAfterDelay()
     }
 
     private fun alertProductNotFound() {
         state.errorCode = 2
-        state.errorMessage = "Produto não localizado na base de dados."
+        state.errorMessage = "Product not found in the database."
         update()
         clearErrorAfterDelay()
     }
 
     private fun alertPurchaseOfEmptyCart() {
         state.errorCode = 3
-        state.errorMessage = "Deve existir pelo menos um item no carrinho para se efetivar uma compra."
+        state.errorMessage = "There must be at least one item in the cart to complete a purchase."
         update()
         clearErrorAfterDelay()
     }
 
     private fun alertDatabaseOffline() {
         state.errorCode = 4
-        state.errorMessage = "O banco de dados encontra-se fora do ar no momento. Aguarde alguns instantes e tente novamente."
+        state.errorMessage = "The database is currently offline. Please wait a moment and try again."
         update()
         clearErrorAfterDelay()
     }
 
-    private fun errorCodigoDeProdutoMalFormatado() {
+    private fun errorMalformedProductId() {
         state.errorCode = 5
-        state.errorMessage = "Código do produto mal formado."
+        state.errorMessage = "Malformed product code."
         update()
         clearErrorAfterDelay()
     }
 
-    private fun errorValorQuantidadeMalFormatado() {
+    private fun errorMalformedQuantity() {
         state.errorCode = 6
-        state.errorMessage = "Valor da quantidade está mal formado."
+        state.errorMessage = "Malformed quantity value."
         update()
         clearErrorAfterDelay()
     }

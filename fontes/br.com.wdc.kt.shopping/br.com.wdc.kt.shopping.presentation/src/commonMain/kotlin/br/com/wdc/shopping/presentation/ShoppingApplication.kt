@@ -48,8 +48,8 @@ abstract class ShoppingApplication : CubeApplication() {
         this.securityContext = ctx
     }
 
-    // Os repositórios são os registrados pelo composition root: no servidor, os que falam com o banco; num
-    // cliente, os que falam com a API REST — que é onde o acesso é conferido.
+    // The repositories are the ones registered by the composition root: on the server, the ones that talk to the
+    // database; on a client, the ones that talk to the REST API — which is where access is checked.
 
     fun getUserRepository(): UserRepository = UserRepository.BEAN.get()
 

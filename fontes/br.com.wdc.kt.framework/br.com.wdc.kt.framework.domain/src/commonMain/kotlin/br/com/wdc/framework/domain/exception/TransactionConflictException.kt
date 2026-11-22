@@ -1,7 +1,7 @@
 package br.com.wdc.framework.domain.exception
 
-/** A operação conflita com o estado de uma transação remota — a camada REST devolve 409. */
+/** The operation conflicts with the state of a remote transaction — the REST layer returns 409. */
 open class TransactionConflictException(message: String) : RuntimeException(message)
 
-/** Teto de transações remotas abertas atingido — a camada REST devolve 429. */
+/** Cap of open remote transactions reached — the REST layer returns 429. */
 open class TransactionLimitExceededException(message: String) : RuntimeException(message)

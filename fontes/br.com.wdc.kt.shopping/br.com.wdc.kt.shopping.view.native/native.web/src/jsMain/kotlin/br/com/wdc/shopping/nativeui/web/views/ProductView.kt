@@ -126,7 +126,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
 
                                 // Price
                                 Chip {
-                                    label = ReactNode("R$ ${formatPrice(product.price)}")
+                                    label = ReactNode("\$${formatPrice(product.price)}")
                                     sx {
                                         backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
                                         color = ShoppingColors.PriceColor.unsafeCast<Color>()
@@ -144,7 +144,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                                     Typography {
                                         variant = TypographyVariant.body1
                                         sx { fontWeight = FontWeight.bold }
-                                        +"Qtd:"
+                                        +"Qty:"
                                     }
 
                                     Paper {
@@ -207,7 +207,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                                 onClick = { safeCall { presenter.onOpenProducts() } }
                                 sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                                 ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
-                                +"Voltar"
+                                +"Back"
                             }
 
                             Button {
@@ -215,7 +215,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                                 onClick = { safeCall { presenter.onAddToCart(quantity) } }
                                 sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                                 AddShoppingCart { sx { marginRight = 6.px; fontSize = 18.px } }
-                                +"Adicionar ao Carrinho"
+                                +"Add to Cart"
                             }
                         }
                     }
@@ -231,7 +231,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                     Typography {
                         variant = TypographyVariant.body2
                         sx { color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>() }
-                        +"Carregando produto..."
+                        +"Loading product..."
                     }
                 }
             }

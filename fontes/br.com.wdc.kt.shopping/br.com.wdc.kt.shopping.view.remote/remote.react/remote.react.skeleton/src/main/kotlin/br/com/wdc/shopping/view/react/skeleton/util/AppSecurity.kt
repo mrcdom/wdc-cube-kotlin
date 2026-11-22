@@ -123,7 +123,7 @@ object AppSecurity {
         val b64Enc = Base64.getUrlEncoder()
         val out = System.out
 
-        // :: Exemplo de como gerar chaves para a cifragem
+        // :: Example of how to generate the encryption keys
         run {
             val rsa = RSA.generate(256, SecureRandom())
             val pk = rsa.publicExponent.toString(36) + ":" + rsa.publicKey.toString(36)
@@ -134,7 +134,7 @@ object AppSecurity {
 
         out.println()
 
-        // :: Exemplo de como gerar as Chaves
+        // :: Example of how to generate the keys
         run {
             val keyGen = KeyPairGenerator.getInstance("RSA")
             keyGen.initialize(512)

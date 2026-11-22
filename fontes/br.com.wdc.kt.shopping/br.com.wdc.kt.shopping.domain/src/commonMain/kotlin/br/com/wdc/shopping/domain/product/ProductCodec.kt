@@ -9,9 +9,9 @@ import br.com.wdc.framework.domain.criteria.CriterionCodec
 import br.com.wdc.framework.domain.projection.ProjectionValues
 
 /**
- * Como [Product] e [ProductCriteria] trafegam — o mesmo codec no cliente e no servidor.
+ * How [Product] and [ProductCriteria] travel — the same codec on client and server.
  *
- * A imagem não entra: tem endpoint próprio.
+ * The image is left out: it has its own endpoint.
  */
 class ProductCodec : ModelCodec<Product, ProductCriteria> {
 

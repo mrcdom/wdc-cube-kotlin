@@ -4,33 +4,36 @@ import br.com.wdc.framework.commons.log.Log
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * A fila de tarefas de [TransactionService.afterCommit] de uma transação física, e o jeito comum de rodá-las.
+ * The queue of [TransactionService.afterCommit] tasks of a physical transaction, and the common way to run them.
  *
- * As implementações guardam uma fila por transação física, chamam [add] enquanto ela está aberta e, depois do commit
- * (com a conexão devolvida e fora da transação), [run]. Desfeita a transação, basta descartar a fila.
+ * Implementations keep one queue per physical transaction, call [add] while it is open and, after the commit
+ * (with the connection returned and outside the transaction), [run]. If the transaction is rolled back, just
+ * discard the queue.
  *
- * Não é segura para uso concorrente, nem precisa: uma transação é usada por uma corrotina por vez, e a passagem
- * de uma thread a outra já é ordenada por quem a faz (o despachante da corrotina, o registro de transações remotas).
+ * It is not safe for concurrent use, nor does it need to be: a transaction is used by one coroutine at a time, and
+ * the handoff from one thread to another is already ordered by whoever does it (the coroutine dispatcher, the
+ * remote transaction registry).
  */
 class AfterCommitTasks {
 
     private val tasks = ArrayList<suspend () -> Unit>()
 
-    /** Acrescenta uma tarefa ao fim da fila. */
+    /** Appends a task to the end of the queue. */
     fun add(task: suspend () -> Unit) {
         tasks.add(task)
     }
 
-    /** Esvazia a fila e devolve o que havia, na ordem do agendamento. */
+    /** Empties the queue and returns what was there, in scheduling order. */
     fun drain(): List<suspend () -> Unit> = tasks.toList().also { tasks.clear() }
 
-    /** Esvazia a fila e roda o que havia (ver [runAll]). */
+    /** Empties the queue and runs what was there (see [runAll]). */
     suspend fun run() = runAll(drain())
 
     companion object {
         /**
-         * Roda as tarefas na ordem. A falha de uma vai ao log e não impede as seguintes: o commit já aconteceu, e
-         * relançar faria o chamador achar que a gravação falhou. Cancelamento da corrotina é relançado.
+         * Runs the tasks in order. A failure goes to the log and doesn't stop the following ones: the commit has
+         * already happened, and rethrowing would make the caller think the write failed. Coroutine cancellation is
+         * rethrown.
          */
         suspend fun runAll(tasks: List<suspend () -> Unit>) {
             for (task in tasks) {
@@ -39,7 +42,7 @@ class AfterCommitTasks {
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Log.getLogger("AfterCommitTasks").error("Falha numa tarefa agendada para depois do commit", e)
+                    Log.getLogger("AfterCommitTasks").error("A task scheduled for after the commit failed", e)
                 }
             }
         }

@@ -7,29 +7,29 @@ import br.com.wdc.framework.rest.security.AccessRules
 import br.com.wdc.framework.rest.security.RestPrincipal
 import br.com.wdc.shopping.domain.security.SecurityContext
 
-/** Quem chama a API, autenticado: o [SecurityContext] que o token resolve. */
+/** The authenticated API caller: the [SecurityContext] the token resolves to. */
 class ShoppingPrincipal(val context: SecurityContext) : RestPrincipal {
     override val id: String = context.userId.toString()
     override val roles: Set<String> get() = context.permissions
 }
 
 /**
- * O controle de acesso da API REST: a permissão de quem chama e o alcance dos dados dele.
+ * Access control of the REST API: the caller's permission and the reach of their data.
  *
- * **É aqui, na fronteira HTTP, que o acesso é conferido** — e só aqui. Os repositórios não conferem nada: quem
- * os chama de dentro do servidor é a camada de apresentação, que o usuário não tem como adulterar; quem os
- * chama de fora passa obrigatoriamente por estas rotas.
+ * **Access is checked here, at the HTTP boundary** — and only here. The repositories check nothing: inside the
+ * server their caller is the presentation layer, which the user cannot tamper with; callers from outside must
+ * go through these routes.
  *
- * Com a segurança desligada (sem serviço de autenticação registrado), a API sobe sem segurança: as regras não
- * são consultadas e não há principal.
+ * With security off (no authentication service registered), the API starts unsecured: the rules are not
+ * consulted and there is no principal.
  */
 internal object ApiSecurity {
 
-    /** Exige que quem chama possa executar [operation] em [entity]. */
+    /** Requires the caller to be allowed to perform [operation] on [entity]. */
     fun permission(entity: String, operation: String): AccessRule =
         AccessRules.principalOf<ShoppingPrincipal> { it.context.hasPermission(entity, operation) }
 
-    /** A permissão que cada operação do RPC exige: as escritas `write`, o delete `delete`, as consultas `read`. */
+    /** The permission each RPC operation requires: writes `write`, delete `delete`, queries `read`. */
     fun permission(entity: String, operation: RepositoryRpc.Operation): AccessRule = permission(
         entity,
         when (operation) {
@@ -39,12 +39,12 @@ internal object ApiSecurity {
         },
     )
 
-    /** O contexto de quem chama, ou `null` com a segurança desligada. */
+    /** The caller's context, or `null` with security off. */
     fun context(request: RequestContext): SecurityContext? = request.principalAs<ShoppingPrincipal>()?.context
 
     /**
-     * O usuário a que os dados de quem chama estão restritos, ou `null` se ele alcança os de todos (`data:all`,
-     * ou segurança desligada).
+     * The user the caller's data is restricted to, or `null` if the caller reaches everyone's (`data:all`,
+     * or security off).
      */
     fun ownerScope(request: RequestContext): Long? = context(request)?.takeIf { !it.hasDataAll() }?.userId
 }

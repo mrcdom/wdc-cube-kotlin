@@ -9,7 +9,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlinx.coroutines.runBlocking
 
-/** [TransactionServiceImpl.afterCommit] e o commit de transação remota. */
+/** [TransactionServiceImpl.afterCommit] and the commit of a remote transaction. */
 class AfterCommitTest {
 
     private lateinit var db: TestDatabase
@@ -24,8 +24,8 @@ class AfterCommitTest {
 
     @AfterTest
     fun tearDown() {
-        assertNull(TransactionScope.current(), "transação vazou para a thread")
-        assertEquals(0, db.openConnections.get(), "conexão não devolvida")
+        assertNull(TransactionScope.current(), "transaction leaked to the thread")
+        assertEquals(0, db.openConnections.get(), "connection not returned")
         db.close()
     }
 
@@ -41,11 +41,11 @@ class AfterCommitTest {
                 openDuringTask = db.openConnections.get()
                 transactionDuringTask = TransactionScope.current()
             }
-            assertNull(seen, "a tarefa não roda dentro da transação")
+            assertNull(seen, "the task does not run inside the transaction")
         }
-        assertEquals(listOf(1), seen, "a tarefa vê o que foi comitado")
-        assertEquals(0, openDuringTask, "a conexão já foi devolvida")
-        assertNull(transactionDuringTask, "a tarefa não herda a transação")
+        assertEquals(listOf(1), seen, "the task sees what was committed")
+        assertEquals(0, openDuringTask, "the connection was already returned")
+        assertNull(transactionDuringTask, "the task does not inherit the transaction")
     }
 
     @Test
@@ -84,7 +84,7 @@ class AfterCommitTest {
     fun nestedRequired_handsTheTaskToTheOuterTransaction() = runBlocking {
         tx.required {
             tx.required { tx.afterCommit { ran += "inner" } }
-            assertEquals(emptyList(), ran, "só roda quando a de fora comita")
+            assertEquals(emptyList(), ran, "runs only when the outer one commits")
             tx.supports { tx.afterCommit { ran += "supports" } }
             assertEquals(emptyList(), ran)
         }
@@ -111,7 +111,7 @@ class AfterCommitTest {
                     db.insertInCurrentTx(2)
                     tx.afterCommit { ran += "new:${db.ids()}" }
                 }
-                assertEquals(listOf("new:[2]"), ran, "roda no fim da nova, antes de a de fora terminar")
+                assertEquals(listOf("new:[2]"), ran, "runs at the end of the new one, before the outer one ends")
                 throw IllegalStateException("boom")
             }
         }
@@ -137,19 +137,19 @@ class AfterCommitTest {
         Log.setFactory { name -> Log(name).also { it.errorOut = { _, t -> logged += t } } }
         try {
             val result = tx.required {
-                tx.afterCommit { throw IllegalStateException("tarefa falhou") }
+                tx.afterCommit { throw IllegalStateException("task failed") }
                 tx.afterCommit { ran += "next" }
                 "ok"
             }
-            assertEquals("ok", result, "a falha da tarefa não muda o resultado")
+            assertEquals("ok", result, "the task failure does not change the result")
             assertEquals(listOf("next"), ran)
-            assertEquals("tarefa falhou", logged.single()?.message)
+            assertEquals("task failed", logged.single()?.message)
         } finally {
             Log.setFactory(null)
         }
     }
 
-    // :: transação remota
+    // :: remote transaction
 
     @Test
     fun remoteTransaction_runsTasksOnCommit_andDiscardsOnRollback() {
@@ -162,7 +162,7 @@ class AfterCommitTest {
         } finally {
             coordinator.suspend(committed)
         }
-        assertEquals(emptyList(), ran, "espera o commit da transação remota")
+        assertEquals(emptyList(), ran, "waits for the remote transaction commit")
         coordinator.commit(committed, null)
         assertEquals(listOf("commit:[1]"), ran)
 

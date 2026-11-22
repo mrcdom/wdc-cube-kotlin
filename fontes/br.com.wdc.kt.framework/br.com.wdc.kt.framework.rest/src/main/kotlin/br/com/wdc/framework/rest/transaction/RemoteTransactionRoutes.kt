@@ -8,14 +8,14 @@ import br.com.wdc.framework.rest.RestCall
 import br.com.wdc.framework.rest.openapi.OperationDoc
 
 /**
- * As rotas da transação remota dirigida pelo cliente, sobre o coordenador de [transactions]:
+ * The routes of the client-driven remote transaction, over the coordinator of [transactions]:
  *
  * - `POST <base>/begin` → `{"txId"}`;
  * - `POST <base>/commit`, `POST <base>/rollback` → `{"status": "committed" | "rolledback"}`;
  * - `GET <base>/status` → `{"status": "open" | "committed" | "rolledback" | "unknown"}`.
  *
- * O `txId` volta no cabeçalho `txHeader`; sem ele, 403. O dono é o `ownerKey` de [transactions], conferido pelo
- * coordenador em toda operação. Sem coordenador, as rotas respondem 500.
+ * The `txId` comes back in the `txHeader` header; without it, 403. The owner is the `ownerKey` of [transactions],
+ * checked by the coordinator on every operation. Without a coordinator, the routes answer 500.
  */
 object RemoteTransactionRoutes {
 
@@ -26,10 +26,10 @@ object RemoteTransactionRoutes {
         doc: (operation: String) -> (OperationDoc.() -> Unit)? = { null },
     ) {
         fun coordinator(): RemoteTransactionCoordinator =
-            transactions.coordinator ?: throw IllegalStateException("Coordenador de transação remota não inicializado")
+            transactions.coordinator ?: throw IllegalStateException("Remote transaction coordinator not initialized")
 
         fun txId(call: RestCall): String =
-            call.header(transactions.txHeader)?.takeIf { it.isNotBlank() } ?: throw AccessDeniedException("Cabeçalho ${transactions.txHeader} ausente")
+            call.header(transactions.txHeader)?.takeIf { it.isNotBlank() } ?: throw AccessDeniedException("Missing ${transactions.txHeader} header")
 
         routes.post("$basePath/begin", doc = doc("begin")) { call ->
             RawJson.field("txId", coordinator().begin(transactions.ownerKey(call.request), transactions.quotaKey(call.request)))

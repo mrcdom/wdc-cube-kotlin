@@ -7,29 +7,29 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-/** O que fazer com campo `null` de um DTO na resposta. */
+/** What to do with a DTO's `null` field in the response. */
 enum class NullPolicy {
-    /** Escreve `"campo": null` — o padrão do Jackson e do Spring Boot. */
+    /** Writes `"field": null` — the Jackson and Spring Boot default. */
     INCLUDE,
 
-    /** Omite o campo — o padrão do Gson. */
+    /** Omits the field — the Gson default. */
     OMIT,
 }
 
 /**
- * Política de nulos de uma classe ou de um campo, sobrepondo a de [JsonOptions.nulls]. A do campo vence a da
- * classe. Em Kotlin, num parâmetro de construtor, vale para o campo sem `@field:`.
+ * Null policy of a class or field, overriding [JsonOptions.nulls]. The field's wins over the class's. In Kotlin,
+ * on a constructor parameter, it applies to the field without `@field:`.
  */
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class JsonNulls(val value: NullPolicy)
 
 /**
- * Formatos das datas e horas. Cada formatador escreve e lê; `null` = o tipo não tem adaptador (o Gson o trata
- * por reflexão, o que quase nunca é o desejado).
+ * Date and time formats. Each formatter writes and reads; `null` = the type has no adapter (Gson handles it
+ * by reflection, which is almost never what you want).
  *
- * O padrão reproduz o Jackson com `WRITE_DATES_AS_TIMESTAMPS` desligado: ISO-8601, fração de segundo só quando
- * há nanos (`2026-09-27T09:00:00`).
+ * The default reproduces Jackson with `WRITE_DATES_AS_TIMESTAMPS` off: ISO-8601, fraction of a second only when
+ * there are nanos (`2026-09-27T09:00:00`).
  */
 class DateFormats {
     var localDate: DateTimeFormatter? = DateTimeFormatter.ISO_LOCAL_DATE
@@ -39,28 +39,28 @@ class DateFormats {
     var zonedDateTime: DateTimeFormatter? = DateTimeFormatter.ISO_OFFSET_DATE_TIME
     var instant: DateTimeFormatter? = DateTimeFormatter.ISO_INSTANT
 
-    /** `java.util.Date`: o padrão (de `DateTimeFormatter`) e o fuso em que é escrito. O padrão é o do Jackson (`…SSS+00:00`, UTC). */
+    /** `java.util.Date`: the pattern (of `DateTimeFormatter`) and the zone it is written in. The default is Jackson's (`…SSS+00:00`, UTC). */
     var utilDatePattern: String? = "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"
     var utilDateZone: ZoneId = ZoneOffset.UTC
 
     /**
-     * Na leitura de `LocalDateTime`, aceita também o instante com `Z` ou deslocamento (`…T12:00:00Z`),
-     * convertido para UTC — como o desserializador do Jackson.
+     * When reading `LocalDateTime`, also accepts an instant with `Z` or an offset (`…T12:00:00Z`),
+     * converted to UTC — like Jackson's deserializer.
      */
     var lenientLocalDateTime: Boolean = true
 }
 
-/** Configuração do [GsonJsonMapper]. */
+/** Configuration of the [GsonJsonMapper]. */
 class JsonOptions {
 
     var nulls: NullPolicy = NullPolicy.OMIT
 
     val dates = DateFormats()
 
-    /** Nome dos campos no JSON. `@SerializedName` vence. */
+    /** Field names in the JSON. `@SerializedName` wins. */
     var fieldNaming: FieldNamingStrategy = FieldNamingPolicy.IDENTITY
 
-    /** O Gson escapa `<`, `>`, `&` e `=` por padrão; o Jackson não. */
+    /** Gson escapes `<`, `>`, `&` and `=` by default; Jackson doesn't. */
     var htmlEscaping: Boolean = false
 
     var prettyPrinting: Boolean = false
@@ -68,15 +68,15 @@ class JsonOptions {
     internal val customizers = ArrayList<(GsonBuilder) -> Unit>()
 
     /**
-     * Ajuste livre do Gson: adaptadores de tipo, fábricas, exclusões. Roda depois dos adaptadores da biblioteca,
-     * e o que registrar vence o dela para o mesmo tipo.
+     * Free Gson tuning: type adapters, factories, exclusions. Runs after the library's adapters, and what it
+     * registers wins over the library's for the same type.
      */
     fun customize(block: (GsonBuilder) -> Unit) {
         customizers += block
     }
 
     companion object {
-        /** O que o Spring Boot 2/3 escreve sem configuração: nulos presentes, datas ISO. */
+        /** What Spring Boot 2/3 writes without configuration: nulls present, ISO dates. */
         fun springDefaults(): JsonOptions = JsonOptions().apply { nulls = NullPolicy.INCLUDE }
     }
 }

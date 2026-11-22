@@ -29,15 +29,15 @@ import io.javalin.router.EndpointNotFound
 import java.io.InputStream
 import kotlinx.coroutines.runBlocking
 
-/** Filtro antes do handler. Pode lançar (a resposta é a da exceção) ou guardar atributos no contexto. */
+/** Filter before the handler. It may throw (the response is the exception's) or store attributes in the context. */
 typealias BeforeFilter = suspend (RequestContext) -> Unit
 
-/** Filtro depois da resposta pronta: sempre roda, com a falha, se houve. Exceção aqui é registrada e ignorada. */
+/** Filter after the response is ready: always runs, with the failure, if any. An exception here is logged and ignored. */
 typealias AfterFilter = suspend (RequestContext, Throwable?) -> Unit
 
 /**
- * Uma API REST: rotas, segurança, mapa de exceções, JSON, transação, CORS, compressão e OpenAPI — montada uma vez
- * e instalada num Javalin ([install]) ou servida sozinha ([createServer]).
+ * A REST API: routes, security, exception map, JSON, transaction, CORS, compression and OpenAPI — built once
+ * and installed into a Javalin ([install]) or served on its own ([createServer]).
  *
  * ```kotlin
  * val api = RestApi {
@@ -55,15 +55,15 @@ typealias AfterFilter = suspend (RequestContext, Throwable?) -> Unit
  * }
  * ```
  *
- * **Pipeline de cada rota**, com o [RequestContext] corrente do começo ao fim — inclusive nas corrotinas:
- * filtros `before` → autenticação → limite por minuto → regra de acesso → handler (na transação, se `transactional`) → resposta →
- * filtros `after`. A resposta, de sucesso ou de erro, é serializada **dentro** do contexto: um adaptador JSON
- * que dependa da requisição (fuso do cliente, por exemplo) a enxerga. Com [Builder.securityHeaders] e
- * [Builder.serverTiming], os cabeçalhos deles são escritos depois da resposta serializada, antes dos filtros `after`.
+ * **Pipeline of each route**, with the [RequestContext] current from start to end — coroutines included:
+ * `before` filters → authentication → per-minute limit → access rule → handler (in the transaction, if `transactional`) → response →
+ * `after` filters. The response, success or error, is serialized **inside** the context: a JSON adapter
+ * that depends on the request (the client's time zone, for example) sees it. With [Builder.securityHeaders] and
+ * [Builder.serverTiming], their headers are written after the response is serialized, before the `after` filters.
  */
 class RestApi private constructor(builder: Builder) {
 
-    /** O mapeador dos DTOs. */
+    /** The DTO mapper. */
     val json: GsonJsonMapper = builder.json
 
     val security: SecurityConfig? = builder.securityConfig
@@ -87,18 +87,18 @@ class RestApi private constructor(builder: Builder) {
 
     init {
         security?.let {
-            requireNotNull(it.authenticator) { "security { authenticator = … } é obrigatório" }
+            requireNotNull(it.authenticator) { "security { authenticator = … } is required" }
             errors.unauthenticatedStatus = it.unauthenticatedStatus
         }
     }
 
-    /** O documento OpenAPI das rotas registradas, ou `null` sem [Builder.openApi]. */
+    /** The OpenAPI document of the registered routes, or `null` without [Builder.openApi]. */
     val openApiDocument: Map<String, Any?>? by lazy { openApi?.let { OpenApiGenerator(this, it).document() } }
 
-    /** O documento OpenAPI serializado, como é servido. */
+    /** The serialized OpenAPI document, as served. */
     val openApiJson: String? by lazy { openApiDocument?.let { OpenApiGenerator.toJson(it) } }
 
-    /** Registra rotas, filtros, CORS, compressão e limites no Javalin em configuração. */
+    /** Registers routes, filters, CORS, compression and limits on the Javalin being configured. */
     fun install(config: JavalinConfig) {
         cors?.let { options ->
             config.bundledPlugins.enableCors { plugin ->
@@ -110,7 +110,7 @@ class RestApi private constructor(builder: Builder) {
                     rule.maxAge = options.maxAge
                     rule.path = options.path
                     options.exposedHeaders.forEach(rule::exposeHeader)
-                    // sem expor, o navegador esconde o cabeçalho de quem chama de outra origem
+                    // unless exposed, the browser hides the header from callers on another origin
                     if (serverTiming != null && options.exposedHeaders.none { it.equals(ServerTiming.HEADER, ignoreCase = true) }) {
                         rule.exposeHeader(ServerTiming.HEADER)
                     }
@@ -135,7 +135,7 @@ class RestApi private constructor(builder: Builder) {
                 securityHeaders?.writeTo(ctx)
             }
         }
-        // a pré-requisição do CORS é respondida pelo plugin, sem passar por rota nem por unmatched
+        // the CORS preflight is answered by the plugin, without going through a route or unmatched
         val corsPath = cors?.path
         if (securityHeaders != null && corsPath != null) {
             config.routes.after(corsPath) { ctx -> if (isPreflight(ctx)) securityHeaders.writeTo(ctx) }
@@ -146,7 +146,7 @@ class RestApi private constructor(builder: Builder) {
         }
     }
 
-    /** Um Javalin só com esta API, em threads virtuais. Para subir: `.start(porta)`. */
+    /** A Javalin with only this API, on virtual threads. To start it: `.start(port)`. */
     fun createServer(configure: (JavalinConfig) -> Unit = {}): Javalin = Javalin.create { config ->
         config.concurrency.useVirtualThreads = true
         install(config)
@@ -203,8 +203,8 @@ class RestApi private constructor(builder: Builder) {
     }
 
     private fun unmatched(e: Exception, ctx: Context) {
-        // O preflight do CORS não tem rota (o plugin só põe os cabeçalhos) e vem sem credencial: tratado como rota
-        // inexistente, o protectUnmatched o recusaria e o navegador bloquearia todo pedido de outra origem.
+        // The CORS preflight has no route (the plugin only sets the headers) and comes without a credential: treated as
+        // a nonexistent route, protectUnmatched would refuse it and the browser would block every cross-origin request.
         if (isPreflight(ctx)) {
             ctx.status(200)
             return
@@ -243,7 +243,7 @@ class RestApi private constructor(builder: Builder) {
         try {
             options.writeTo(ctx)
         } catch (e: Exception) {
-            LOG.error("Falha ao escrever os cabeçalhos de segurança de ${request.method} ${request.path}", e)
+            LOG.error("Failed to write the security headers of ${request.method} ${request.path}", e)
         }
     }
 
@@ -251,13 +251,13 @@ class RestApi private constructor(builder: Builder) {
         serverTiming?.let { request[ServerTiming.KEY] = ServerTiming(System.nanoTime(), it.names) }
     }
 
-    /** Depois da resposta serializada (que entra no `total`) e antes de ela sair. */
+    /** After the response is serialized (which counts in `total`) and before it goes out. */
     private fun writeTiming(ctx: Context, request: RequestContext) {
         val timing = request[ServerTiming.KEY] ?: return
         try {
             ctx.header(ServerTiming.HEADER, timing.header(System.nanoTime()))
         } catch (e: Exception) {
-            LOG.error("Falha ao escrever o Server-Timing de ${request.method} ${request.path}", e)
+            LOG.error("Failed to write the Server-Timing of ${request.method} ${request.path}", e)
         }
     }
 
@@ -267,7 +267,7 @@ class RestApi private constructor(builder: Builder) {
             try {
                 filter(request, failure)
             } catch (e: Exception) {
-                LOG.error("Falha no filtro after de ${request.method} ${request.path}", e)
+                LOG.error("After filter failed on ${request.method} ${request.path}", e)
             }
         }
     }
@@ -317,14 +317,14 @@ class RestApi private constructor(builder: Builder) {
         try {
             if (response.body == null) ctx.result("") else render(ctx, response.body)
         } catch (failure: Exception) {
-            LOG.error("Falha ao escrever a resposta de erro", failure)
+            LOG.error("Failed to write the error response", failure)
             ctx.result("")
         }
     }
 
-    // :: Montagem
+    // :: Assembly
 
-    /** Montagem das rotas e da configuração. Um grupo ([group]) prefixa o caminho e soma regra e tags. */
+    /** Assembly of the routes and configuration. A group ([group]) prefixes the path and adds rule and tags. */
     open class Routes internal constructor(
         private val rootRef: Builder?,
         private val prefix: String,
@@ -348,7 +348,7 @@ class RestApi private constructor(builder: Builder) {
         fun delete(path: String, rule: AccessRule? = null, public: Boolean = false, transactional: Boolean = false, hidden: Boolean = false, doc: (OperationDoc.() -> Unit)? = null, handler: RestHandler) =
             route("DELETE", path, rule, public, transactional, hidden, doc, handler)
 
-        /** Rota com qualquer verbo. [path] no formato do Javalin: `{x}` um segmento, `<x>` vários. */
+        /** Route with any verb. [path] in Javalin's format: `{x}` one segment, `<x>` several. */
         fun route(
             method: String,
             path: String,
@@ -370,12 +370,12 @@ class RestApi private constructor(builder: Builder) {
                 doc?.invoke(op)
             } else null
             val route = RestRoute(method.uppercase(), fullPath, effectiveRule, public, transactional, operation, hidden, handler)
-            require(root.routes.none { it.method == route.method && it.path == route.path }) { "Rota repetida: $route" }
+            require(root.routes.none { it.method == route.method && it.path == route.path }) { "Duplicate route: $route" }
             root.routes += route
             return route
         }
 
-        /** Rotas sob [prefix], com a regra e as tags somadas às de cada uma. */
+        /** Routes under [prefix], with the rule and tags added to each one's. */
         fun group(prefix: String, rule: AccessRule? = null, tags: List<String> = emptyList(), block: Routes.() -> Unit) {
             val combined = when {
                 groupRule == null -> rule
@@ -400,7 +400,7 @@ class RestApi private constructor(builder: Builder) {
         internal var securityConfig: SecurityConfig? = null
         internal val errors = ExceptionMapping()
 
-        /** A ponte de transação; as rotas de transação remota ([RemoteTransactionRoutes]) a recebem. */
+        /** The transaction bridge; the remote transaction routes ([RemoteTransactionRoutes]) receive it. */
         val transactions = RestTransactions()
 
         internal var corsOptions: CorsOptions? = null
@@ -409,13 +409,13 @@ class RestApi private constructor(builder: Builder) {
         internal var serverTimingOptions: ServerTimingOptions? = null
         internal var securityHeadersOptions: SecurityHeadersOptions? = null
 
-        /** O mapeador dos DTOs. Padrão: Gson sem nulos, datas ISO. */
+        /** The DTO mapper. Default: Gson without nulls, ISO dates. */
         var json: GsonJsonMapper = GsonJsonMapper()
 
-        /** Limite do corpo da requisição, em bytes; acima dele, 413. `null` = o do Javalin (1 MB). */
+        /** Request body limit, in bytes; above it, 413. `null` = Javalin's (1 MB). */
         var maxRequestSize: Long? = null
 
-        /** Os 404/405 de caminho sem rota passam pelo mapa de exceções (o corpo de [ExceptionMapping.errorBody]). */
+        /** The 404/405 of paths without a route go through the exception map (the body of [ExceptionMapping.errorBody]). */
         var handleUnmatched: Boolean = false
 
         fun security(block: SecurityConfig.() -> Unit) {
@@ -438,12 +438,12 @@ class RestApi private constructor(builder: Builder) {
             compressionOptions = (compressionOptions ?: CompressionOptions()).apply(block)
         }
 
-        /** Liga o cabeçalho `Server-Timing` (ver [ServerTimingOptions]); desligado se não chamado. */
+        /** Turns on the `Server-Timing` header (see [ServerTimingOptions]); off if not called. */
         fun serverTiming(block: ServerTimingOptions.() -> Unit = {}) {
             serverTimingOptions = (serverTimingOptions ?: ServerTimingOptions()).apply(block)
         }
 
-        /** Liga os cabeçalhos de cache e de segurança em toda resposta (ver [SecurityHeadersOptions]); desligado se não chamado. */
+        /** Turns on the cache and security headers on every response (see [SecurityHeadersOptions]); off if not called. */
         fun securityHeaders(block: SecurityHeadersOptions.() -> Unit = {}) {
             securityHeadersOptions = (securityHeadersOptions ?: SecurityHeadersOptions()).apply(block)
         }
@@ -452,7 +452,7 @@ class RestApi private constructor(builder: Builder) {
             openApiConfig = (openApiConfig ?: OpenApiConfig()).apply(block)
         }
 
-        /** As rotas da página do Swagger, públicas e fora do documento; montadas depois de todas as outras. */
+        /** The Swagger page routes, public and left out of the document; mounted after all the others. */
         internal fun addSwaggerUi() {
             val config = openApiConfig ?: return
             val options = config.uiOptions ?: return
@@ -461,7 +461,7 @@ class RestApi private constructor(builder: Builder) {
             get(ui.root + "/{file}", public = true, hidden = true, handler = ui.file)
         }
 
-        /** Filtro antes de cada rota (ou só das que casam [pattern], no formato de [RequestMatcher]). */
+        /** Filter before each route (or only those matching [pattern], in [RequestMatcher]'s format). */
         fun before(pattern: String? = null, filter: BeforeFilter) {
             befores += pattern?.let { RequestMatcher.of(it) } to filter
         }

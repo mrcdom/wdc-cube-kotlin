@@ -5,8 +5,8 @@ import java.sql.SQLException
 import org.jooq.SQLDialect
 
 /**
- * Leva os bancos criados antes da adoção do jOOQ ao esquema atual de [DBCreate]:
- * a imagem do produto deixa de ser `BINARY` de tamanho fixo e entram os índices das ordenações.
+ * Brings the databases created before jOOQ was adopted to the current schema of [DBCreate]:
+ * the product image stops being a fixed-size `BINARY`, and the ordering indexes are added.
  */
 class Migration_0004_ImageVarbinaryAndOrderingIndexes(private val connection: Connection) {
 
@@ -14,7 +14,7 @@ class Migration_0004_ImageVarbinaryAndOrderingIndexes(private val connection: Co
 
     @Throws(SQLException::class)
     fun step01_imageToVarbinary() {
-        // só o H2 teve a coluna como BINARY; no PostgreSQL ela já nasce BYTEA
+        // only H2 had the column as BINARY; in PostgreSQL it is born BYTEA
         if (!h2) return
         connection.createStatement().use { stmt ->
             stmt.execute("ALTER TABLE EN_PRODUCT ALTER COLUMN IMAGE SET DATA TYPE VARBINARY($LEGACY_IMAGE_SIZE)")
@@ -22,8 +22,8 @@ class Migration_0004_ImageVarbinaryAndOrderingIndexes(private val connection: Co
     }
 
     /**
-     * Enquanto a coluna era `BINARY(1000000)`, o H2 completava cada imagem com zeros até o tamanho da coluna.
-     * Remove esse preenchimento das linhas que o têm (reconhecidas por terem exatamente o tamanho da coluna).
+     * While the column was `BINARY(1000000)`, H2 padded each image with zeros up to the column size.
+     * Removes that padding from the rows that have it (recognized by having exactly the column size).
      */
     @Throws(SQLException::class)
     fun step02_trimPaddedImages() {

@@ -105,7 +105,7 @@ class CriterionTest {
         c.name.or()
         assertTrue(c.name.disjunctive)
         assertEquals(2, c.name.predicates.size)
-        // a disjunção é do campo; os outros campos não são afetados
+        // the disjunction belongs to the field; the other fields are not affected
         assertFalse(c.id.disjunctive)
     }
 
@@ -119,7 +119,7 @@ class CriterionTest {
     @Test
     fun or_keepsTheSubclassOperatorsInTheChain() {
         val c = SampleCriteria()
-        // só compila se or() devolver o tipo mais específico
+        // only compiles if or() returns the most specific type
         assertSame(c, c.price.or().between(1.0, 2.0))
         assertSame(c, c.name.or().like("A%"))
         assertSame(c, c.name.and().ilike("a%"))
@@ -181,7 +181,7 @@ class CriterionTest {
         c.name.containing("50%_a\\b")
         c.name.startingWith("1_2")
         assertEquals(listOf<String?>("%50\\%\\_a\\\\b%", "1\\_2%"), c.name.predicates.map { it.value })
-        assertEquals("sem curinga", TextCriterion.escape("sem curinga"))
+        assertEquals("no wildcard", TextCriterion.escape("no wildcard"))
     }
 
     @Test

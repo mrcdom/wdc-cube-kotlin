@@ -59,7 +59,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                 Typography {
                     variant = TypographyVariant.h6
                     sx { fontWeight = FontWeight.bold }
-                    +"Produtos"
+                    +"Products"
                 }
 
                 if (products != null) {
@@ -74,7 +74,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                             sx {
                                 color = ShoppingColors.OnPrimaryContainer.unsafeCast<Color>()
                             }
-                            +"${products.size} itens"
+                            +"${products.size} ${if (products.size == 1) "item" else "items"}"
                         }
                     }
                 }
@@ -96,7 +96,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                     Typography {
                         variant = TypographyVariant.body2
                         sx { marginTop = 12.px; color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>() }
-                        +"Carregando produtos..."
+                        +"Loading products..."
                     }
                 }
             } else if (products.isEmpty()) {
@@ -109,7 +109,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                     Typography {
                         variant = TypographyVariant.body1
                         sx { color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>() }
-                        +"Nenhum produto disponível"
+                        +"No products available"
                     }
                 }
             } else {
@@ -164,7 +164,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                                     }
 
                                     Chip {
-                                        label = ReactNode("R$ ${formatPrice(product.price)}")
+                                        label = ReactNode("\$${formatPrice(product.price)}")
                                         sx {
                                             marginTop = 12.px
                                             backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()

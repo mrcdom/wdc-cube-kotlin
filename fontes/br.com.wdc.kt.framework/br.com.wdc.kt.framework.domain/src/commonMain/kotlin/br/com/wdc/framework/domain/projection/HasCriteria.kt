@@ -1,23 +1,23 @@
 package br.com.wdc.framework.domain.projection
 
 /**
- * Coleção de projeção que carrega um critério de filtragem adicional, propagado à consulta da relação.
+ * Projection collection that carries an additional filtering criteria, propagated to the relation's query.
  */
 interface HasCriteria {
     val criteria: Any?
 }
 
 /**
- * Coleção de projeção que recorta quantas linhas filhas trazer.
+ * Projection collection that slices how many child rows to bring.
  *
- * **Recortar sem ordenar devolve linhas em ordem indefinida** — o banco não promete ordem nenhuma sem
- * `ORDER BY`. A ordem vem do critério que a coleção carrega, via [HasCriteria]: é lá que mora o `OrderBy`
- * da entidade filha.
+ * **Slicing without ordering returns rows in undefined order** — the database promises no order at all without
+ * `ORDER BY`. The order comes from the criteria the collection carries, via [HasCriteria]: that is where the
+ * child entity's `OrderBy` lives.
  */
 interface HasSlice {
-    /** Máximo de linhas filhas, ou `null` para trazer todas. */
+    /** Maximum child rows, or `null` to bring all. */
     val limit: Int?
 
-    /** Quantas linhas pular antes de começar, ou `null` para começar da primeira. */
+    /** How many rows to skip before starting, or `null` to start from the first. */
     val offset: Int?
 }

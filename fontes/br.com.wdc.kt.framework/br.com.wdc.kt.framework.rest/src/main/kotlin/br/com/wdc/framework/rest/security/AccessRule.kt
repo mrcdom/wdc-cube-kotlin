@@ -3,16 +3,16 @@ package br.com.wdc.framework.rest.security
 import br.com.wdc.framework.rest.RequestContext
 
 /**
- * Regra de acesso de uma rota — o equivalente ao `@PreAuthorize`. Decide com o que já se sabe da requisição:
- * o principal, os parâmetros de caminho e de query, os cabeçalhos. Regra que depende do corpo ou de dados do
- * banco fica no handler, que lança `AccessDeniedException`.
+ * Access rule of a route — the equivalent of `@PreAuthorize`. It decides with what is already known about the
+ * request: the principal, the path and query parameters, the headers. A rule that depends on the body or on database
+ * data stays in the handler, which throws `AccessDeniedException`.
  *
- * [requiresAuthentication] diz se o anônimo é recusado como "sem credencial" antes de a regra ser consultada —
- * os dois casos podem ter status e corpo diferentes ([SecurityConfig]).
+ * [requiresAuthentication] says whether an anonymous caller is refused as "no credential" before the rule is
+ * consulted — the two cases may have different status and body ([SecurityConfig]).
  */
 interface AccessRule {
 
-    /** `true` se a rota exige principal. O anônimo recebe a resposta de "sem credencial", e não a de "proibido". */
+    /** `true` if the route requires a principal. An anonymous caller gets the "no credential" response, not "forbidden". */
     val requiresAuthentication: Boolean
 
     fun allows(request: RequestContext): Boolean
@@ -31,8 +31,8 @@ interface AccessRule {
 }
 
 /**
- * Regras de papel com um prefixo, como o Spring Security: `hasRole("ADMIN")` e `hasRole("ROLE_ADMIN")` aceitam
- * o papel `ROLE_ADMIN` quando o prefixo é `ROLE_`. Com prefixo vazio, a comparação é exata.
+ * Role rules with a prefix, like Spring Security: `hasRole("ADMIN")` and `hasRole("ROLE_ADMIN")` accept
+ * the role `ROLE_ADMIN` when the prefix is `ROLE_`. With an empty prefix, the comparison is exact.
  */
 class RoleRules(private val prefix: String) {
 
@@ -47,34 +47,34 @@ class RoleRules(private val prefix: String) {
         AccessRules.rule { r -> r.principal?.let { p -> roles.any { matches(p, it) } } == true }
 }
 
-/** As regras de uso comum. */
+/** The commonly used rules. */
 object AccessRules {
 
     private val exactRoles = RoleRules("")
 
-    /** Qualquer um, autenticado ou não (`permitAll`). */
+    /** Anyone, authenticated or not (`permitAll`). */
     val permitAll: AccessRule = rule(requiresAuthentication = false) { true }
 
-    /** Qualquer autenticado (`isAuthenticated()`). */
+    /** Anyone authenticated (`isAuthenticated()`). */
     val authenticated: AccessRule = rule { it.principal != null }
 
-    /** Ninguém (`denyAll`). */
+    /** No one (`denyAll`). */
     val denyAll: AccessRule = rule(requiresAuthentication = false) { false }
 
-    /** `hasRole('X')`, com comparação exata. Para o prefixo do Spring, [RoleRules]. */
+    /** `hasRole('X')`, with exact comparison. For Spring's prefix, [RoleRules]. */
     fun hasRole(role: String): AccessRule = exactRoles.hasRole(role)
 
-    /** `hasAnyRole('X', 'Y')`, com comparação exata. */
+    /** `hasAnyRole('X', 'Y')`, with exact comparison. */
     fun hasAnyRole(vararg roles: String): AccessRule = exactRoles.hasAnyRole(*roles)
 
-    /** Regra livre sobre um principal já autenticado. */
+    /** Free rule over an already authenticated principal. */
     fun principal(test: (RestPrincipal) -> Boolean): AccessRule = rule { r -> r.principal?.let(test) == true }
 
-    /** Regra livre sobre o principal tipado da aplicação; principal de outro tipo é recusado. */
+    /** Free rule over the application's typed principal; a principal of another type is refused. */
     inline fun <reified P : RestPrincipal> principalOf(crossinline test: (P) -> Boolean): AccessRule =
         rule { r -> (r.principal as? P)?.let { test(it) } == true }
 
-    /** Regra livre sobre a requisição. */
+    /** Free rule over the request. */
     fun rule(requiresAuthentication: Boolean = true, test: (RequestContext) -> Boolean): AccessRule = object : AccessRule {
         override val requiresAuthentication: Boolean = requiresAuthentication
         override fun allows(request: RequestContext): Boolean = test(request)

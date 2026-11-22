@@ -14,8 +14,8 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 
 /**
- * Sobe uma [RestApi] em processo, numa porta livre, e bate nela por HTTP de verdade — com o mesmo pipeline,
- * segurança, CORS e compressão da produção.
+ * Starts a [RestApi] in process, on a free port, and hits it over real HTTP — with the same pipeline,
+ * security, CORS and compression as production.
  *
  * ```kotlin
  * RestTestServer(api).use { server ->
@@ -27,15 +27,15 @@ import java.time.Duration
  */
 class RestTestServer(api: RestApi, configure: (JavalinConfig) -> Unit = {}) : AutoCloseable {
 
-    // Só no loopback: em todas as interfaces, o sistema pode entregar uma porta que outro processo já escuta em
-    // 127.0.0.1 (o macOS deixa, com SO_REUSEADDR), e o cliente, que chama o loopback, cai no outro processo.
+    // Loopback only: on all interfaces, the system may hand out a port another process already listens on at
+    // 127.0.0.1 (macOS allows it, with SO_REUSEADDR), and the client, which calls loopback, lands on the other process.
     private val javalin: Javalin = api.createServer(configure).start(HOST, 0)
 
     val port: Int get() = javalin.port()
 
     val baseUrl: String get() = "http://$HOST:$port"
 
-    /** Um cliente novo, sem cabeçalhos. Cada um guarda os seus ([TestClient.header]). */
+    /** A new client, without headers. Each one keeps its own ([TestClient.header]). */
     fun client(): TestClient = TestClient(baseUrl)
 
     override fun close() {
@@ -47,12 +47,12 @@ class RestTestServer(api: RestApi, configure: (JavalinConfig) -> Unit = {}) : Au
     }
 }
 
-/** Cliente HTTP mínimo para os testes. Os cabeçalhos fixados valem para todas as chamadas dele. */
+/** Minimal HTTP client for tests. The headers set apply to all of its calls. */
 class TestClient(private val baseUrl: String) {
 
     private val headers = LinkedHashMap<String, String>()
 
-    /** Sem descompressão automática: o teste vê o `Content-Encoding` como veio. */
+    /** No automatic decompression: the test sees the `Content-Encoding` as it came. */
     private val http: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
     fun header(name: String, value: String?): TestClient = apply { if (value == null) headers.remove(name) else headers[name] = value }
@@ -69,7 +69,7 @@ class TestClient(private val baseUrl: String) {
 
     fun patch(path: String, json: String? = null) = send("PATCH", path, json)
 
-    /** Qualquer verbo. Corpo de texto vai como `application/json`, salvo `Content-Type` em [extraHeaders]. */
+    /** Any verb. A text body goes as `application/json`, unless `Content-Type` is in [extraHeaders]. */
     fun send(
         method: String,
         path: String,
@@ -100,7 +100,7 @@ class TestClient(private val baseUrl: String) {
     }
 }
 
-/** Resposta lida inteira. */
+/** A fully read response. */
 class TestResponse(val status: Int, val headers: Map<String, List<String>>, val bytes: ByteArray) {
 
     val body: String get() = String(bytes, StandardCharsets.UTF_8)

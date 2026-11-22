@@ -79,13 +79,13 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                   variant="body2"
                   sx={{ color: Colors.OnSurfaceVariant, textAlign: 'center' }}
                 >
-                  Entre com suas credenciais para continuar
+                  Sign in to continue
                 </Typography>
 
                 {/* Username */}
                 <TextField
                   inputRef={this.usrInputRef}
-                  label="Usuário"
+                  label="Username"
                   type="text"
                   name="login-usr"
                   autoComplete="off"
@@ -97,7 +97,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                 {/* Password */}
                 <TextField
                   inputRef={this.pwdInputRef}
-                  label="Senha"
+                  label="Password"
                   name="login-pwd"
                   autoComplete="off"
                   defaultValue={state.password ?? ''}
@@ -136,7 +136,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                   {state.loading ? (
                     <CircularProgress size={24} sx={{ color: '#fff' }} />
                   ) : (
-                    'Entrar'
+                    'Sign in'
                   )}
                 </Button>
               </Stack>

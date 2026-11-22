@@ -3,29 +3,29 @@ package br.com.wdc.framework.rest.security
 import br.com.wdc.framework.rest.RequestContext
 
 /**
- * Transforma a credencial da requisição em [RestPrincipal]. A biblioteca não sabe o que é um token: a aplicação
- * valida (JWT, sessão, chave de API…) e devolve quem chama.
+ * Turns the request's credential into a [RestPrincipal]. The library doesn't know what a token is: the application
+ * validates it (JWT, session, API key…) and returns the caller.
  *
- * - sem credencial → `null`;
- * - credencial recusada (expirada, assinatura inválida…) → [AuthenticationException].
+ * - no credential → `null`;
+ * - credential refused (expired, invalid signature…) → [AuthenticationException].
  *
- * Roda em toda rota da API, pública ou não; numa rota pública a credencial recusada é ignorada, a menos que
- * [SecurityConfig.rejectInvalidCredentialsOnPublicRoutes] diga o contrário.
+ * Runs on every API route, public or not; on a public route a refused credential is ignored, unless
+ * [SecurityConfig.rejectInvalidCredentialsOnPublicRoutes] says otherwise.
  */
 fun interface Authenticator {
     suspend fun authenticate(request: RequestContext): RestPrincipal?
 }
 
-/** A credencial veio, mas não vale. A resposta usa o status de requisição sem credencial válida. */
+/** The credential came, but isn't valid. The response uses the status for a request without a valid credential. */
 open class AuthenticationException(message: String) : RuntimeException(message)
 
-/** Sem credencial, numa rota que a exige. */
+/** No credential, on a route that requires one. */
 open class AuthenticationRequiredException(message: String) : AuthenticationException(message)
 
 /**
- * Lê `Authorization: Bearer <token>` e entrega o token a [resolve]. `null` de [resolve] = token recusado.
+ * Reads `Authorization: Bearer <token>` and hands the token to [resolve]. `null` from [resolve] = token refused.
  *
- * @param scheme o esquema esperado no cabeçalho, comparado sem diferenciar maiúsculas
+ * @param scheme the scheme expected in the header, compared case-insensitively
  */
 class BearerAuthenticator(
     private val scheme: String = "Bearer",

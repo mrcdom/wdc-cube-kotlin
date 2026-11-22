@@ -114,13 +114,13 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                         Typography {
                             variant = TypographyVariant.body2
                             sx { color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>(); textAlign = TextAlign.center }
-                            +"Entre com suas credenciais para continuar"
+                            +"Sign in to continue"
                         }
 
                         // Username
                         TextField {
                             fullWidth = true
-                            label = ReactNode("Usuário")
+                            label = ReactNode("Username")
                             value = userName
                             disabled = loading
                             asDynamic().autoComplete = "off"
@@ -134,7 +134,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                         // Password
                         TextField {
                             fullWidth = true
-                            label = ReactNode("Senha")
+                            label = ReactNode("Password")
                             value = password
                             asDynamic().type = "text"
                             asDynamic().autoComplete = "off"
@@ -187,7 +187,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                                     sx { color = NamedColor.white.unsafeCast<Color>() }
                                 }
                             } else {
-                                +"Entrar"
+                                +"Sign in"
                             }
                         }
                     }

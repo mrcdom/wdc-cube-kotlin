@@ -1,4 +1,4 @@
 package br.com.wdc.shopping.domain.exception
 
-/** O chamador não tem permissão para a operação — a exceção do framework, que a camada REST devolve como 403. */
+/** The caller lacks permission for the operation — the framework's exception, which the REST layer returns as 403. */
 typealias AccessDeniedException = br.com.wdc.framework.domain.exception.AccessDeniedException

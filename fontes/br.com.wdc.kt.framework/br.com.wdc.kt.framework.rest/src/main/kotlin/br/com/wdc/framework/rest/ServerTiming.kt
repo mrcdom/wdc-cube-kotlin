@@ -3,12 +3,12 @@ package br.com.wdc.framework.rest
 import java.util.Locale
 
 /**
- * Opções do cabeçalho `Server-Timing` ([RestApi.Builder.serverTiming]), que o DevTools do navegador mostra na aba
- * Timing de cada pedido.
+ * Options of the `Server-Timing` header ([RestApi.Builder.serverTiming]), which the browser's DevTools shows in the
+ * Timing tab of each request.
  *
- * Ligado, todo pedido que passa pela biblioteca sai com `total` (o pedido inteiro no servidor: autenticação, regra,
- * handler, commit e serialização), também nas respostas de erro, precedido das medidas que a rota registrar
- * ([RestCall.timing], [RestCall.timed]):
+ * When on, every request that goes through the library goes out with `total` (the whole request on the server:
+ * authentication, rule, handler, commit and serialization), also on error responses, preceded by the measurements
+ * the route records ([RestCall.timing], [RestCall.timed]):
  * ```
  * Server-Timing: action;dur=12.3, total;dur=15.8
  * ```
@@ -16,13 +16,13 @@ import java.util.Locale
 class ServerTimingOptions {
 
     /**
-     * Inclui a descrição de cada medida (`desc="…"`). Desligado por padrão: em produção o cabeçalho não deve expor
-     * nome interno de classe ou operação.
+     * Includes each measurement's description (`desc="…"`). Off by default: in production the header must not
+     * expose internal class or operation names.
      */
     var names: Boolean = false
 }
 
-/** As medidas de um pedido, na ordem em que foram registradas. */
+/** A request's measurements, in the order they were recorded. */
 internal class ServerTiming(private val startNanos: Long, private val names: Boolean) {
 
     private class Entry(val name: String, val nanos: Long, val desc: String?)
@@ -33,7 +33,7 @@ internal class ServerTiming(private val startNanos: Long, private val names: Boo
         synchronized(entries) { entries += Entry(name, nanos, desc) }
     }
 
-    /** O valor do cabeçalho, com `total` medido agora. */
+    /** The header value, with `total` measured now. */
     fun header(nowNanos: Long): String {
         val parts = synchronized(entries) { entries.map { metric(it.name, it.nanos, it.desc) } }
         return (parts + metric("total", nowNanos - startNanos, null)).joinToString(", ")

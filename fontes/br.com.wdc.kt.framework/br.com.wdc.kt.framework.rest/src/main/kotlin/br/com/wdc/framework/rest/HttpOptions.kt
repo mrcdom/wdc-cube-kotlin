@@ -1,23 +1,23 @@
 package br.com.wdc.framework.rest
 
 /**
- * CORS, pelo plugin do Javalin. A pré-requisição (`OPTIONS`) é respondida pelo plugin, antes das rotas e da
- * segurança. Os métodos e cabeçalhos pedidos pelo navegador são aceitos (o `allowedMethods("*")` do Spring).
+ * CORS, through Javalin's plugin. The preflight (`OPTIONS`) is answered by the plugin, before the routes and
+ * security. The methods and headers requested by the browser are accepted (Spring's `allowedMethods("*")`).
  */
 class CorsOptions {
     internal val origins = ArrayList<String>()
     internal var anyOrigin = false
 
-    /** `Access-Control-Allow-Credentials`. Não combina com qualquer origem: use [reflectClientOrigin]. */
+    /** `Access-Control-Allow-Credentials`. Doesn't combine with any origin: use [reflectClientOrigin]. */
     var allowCredentials: Boolean = false
 
-    /** Devolve a origem do pedido como permitida — "qualquer origem" com credenciais. */
+    /** Returns the request's origin as allowed — "any origin" with credentials. */
     var reflectClientOrigin: Boolean = false
 
-    /** `Access-Control-Max-Age`, em segundos; negativo = não envia. */
+    /** `Access-Control-Max-Age`, in seconds; negative = not sent. */
     var maxAge: Int = -1
 
-    /** Caminhos a que a regra se aplica, no formato do Javalin. */
+    /** Paths the rule applies to, in Javalin's format. */
     var path: String = "*"
 
     val exposedHeaders = ArrayList<String>()
@@ -31,19 +31,19 @@ class CorsOptions {
     }
 }
 
-/** Compressão das respostas. */
+/** Response compression. */
 class CompressionOptions {
-    /** Nível do gzip, de 1 a 9. */
+    /** Gzip level, from 1 to 9. */
     var gzipLevel: Int = 6
 
-    /** Respostas menores que isto saem sem compressão. O padrão é o do Spring Boot (2 KB). */
+    /** Responses smaller than this go out uncompressed. The default is Spring Boot's (2 KB). */
     var minSize: Int = 2048
 
-    /** Só estes tipos são comprimidos; vazio = os do Javalin (todos, salvo imagens, vídeo e compactados). */
+    /** Only these types are compressed; empty = Javalin's (all except images, video and archives). */
     val mimeTypes = ArrayList<String>()
 
     companion object {
-        /** Os tipos que o Spring Boot comprime por padrão. */
+        /** The types Spring Boot compresses by default. */
         val SPRING_MIME_TYPES = listOf(
             "text/html", "text/xml", "text/plain", "text/css", "text/javascript", "application/javascript",
             "application/json", "application/xml",

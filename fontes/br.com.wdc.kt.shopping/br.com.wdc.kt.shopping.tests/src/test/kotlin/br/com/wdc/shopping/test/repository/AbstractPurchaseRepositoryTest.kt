@@ -237,7 +237,7 @@ abstract class AbstractPurchaseRepositoryTest {
 
     @Test
     fun deleteByProductId_resolvesThePurchasesBeforeRemovingTheItems() = runBlocking {
-        val deleted = repo().delete(PurchaseCriteria().withProductId(DBReset.FITA_VEDA_ROSCA_ID))
+        val deleted = repo().delete(PurchaseCriteria().withProductId(DBReset.THREAD_SEAL_TAPE_ID))
         assertEquals(1, deleted)
         assertEquals(listOf<Long?>(DBReset.ADMIN_FIRST_PURCHASE_ID), repo().fetch(PurchaseCriteria()).map { it.id })
         assertEquals(1, purchaseItemRepo().count(PurchaseItemCriteria()))
@@ -265,11 +265,11 @@ abstract class AbstractPurchaseRepositoryTest {
         }
     }
 
-    // :: A data da compra
+    // :: The purchase date
 
     @Test
     fun buyDate_isTheSameInstantOnTheWayInAndOut() = runBlocking {
-        // a carga grava 2010-01-01 14:30 e 2011-04-03 09:15, em UTC
+        // the seed writes 2010-01-01 14:30 and 2011-04-03 09:15, in UTC
         val seeded = repo().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ID)!!
         assertEquals(Instant.parse("2010-01-01T14:30:00Z"), seeded.buyDate)
 
@@ -294,7 +294,7 @@ abstract class AbstractPurchaseRepositoryTest {
         )
     }
 
-    // :: Critério expressivo e ordenação
+    // :: Expressive criteria and ordering
 
     @Test
     fun criteria_productId_reachesThePurchaseThroughItsItems() = runBlocking {
@@ -302,16 +302,16 @@ abstract class AbstractPurchaseRepositoryTest {
         val second = DBReset.ADMIN_SECOND_PURCHASE_ID
         fun byId() = PurchaseCriteria().withOrderBy(PurchaseCriteria.OrderBy.OLDEST_FIRST)
 
-        assertEquals(listOf<Long?>(first), ids(byId().withProductId(DBReset.CAFETEIRA_ID)))
-        assertEquals(listOf<Long?>(second), ids(byId().withProductId(DBReset.BOLA_WILSON_ID)))
-        assertEquals(emptyList<Long?>(), ids(byId().withProductId(DBReset.PEN_DRIVE2GB_ID)))
+        assertEquals(listOf<Long?>(first), ids(byId().withProductId(DBReset.COFFEE_MAKER_ID)))
+        assertEquals(listOf<Long?>(second), ids(byId().withProductId(DBReset.WILSON_BALL_ID)))
+        assertEquals(emptyList<Long?>(), ids(byId().withProductId(DBReset.FLASH_DRIVE_2GB_ID)))
         assertEquals(
             listOf<Long?>(first, second),
-            ids(byId().also { it.productId.isIn(listOf(DBReset.CAFETEIRA_ID, DBReset.FITA_VEDA_ROSCA_ID)) }),
+            ids(byId().also { it.productId.isIn(listOf(DBReset.COFFEE_MAKER_ID, DBReset.THREAD_SEAL_TAPE_ID)) }),
         )
-        assertEquals(1, repo().count(PurchaseCriteria().withProductId(DBReset.CAFETEIRA_ID)))
-        // os campos acumulam em AND
-        assertEquals(emptyList<Long?>(), ids(byId().withProductId(DBReset.CAFETEIRA_ID).withPurchaseId(second)))
+        assertEquals(1, repo().count(PurchaseCriteria().withProductId(DBReset.COFFEE_MAKER_ID)))
+        // the fields accumulate with AND
+        assertEquals(emptyList<Long?>(), ids(byId().withProductId(DBReset.COFFEE_MAKER_ID).withPurchaseId(second)))
     }
 
     @Test
@@ -341,7 +341,7 @@ abstract class AbstractPurchaseRepositoryTest {
         assertEquals(1, page.page)
     }
 
-    // :: Itens da compra
+    // :: Purchase items
 
     @Test
     fun insert_cascadesTheItems() = runBlocking {
@@ -349,8 +349,8 @@ abstract class AbstractPurchaseRepositoryTest {
             buyDate = Clock.System.now()
             user = User().apply { id = DBReset.FULANO_ID }
             items = mutableListOf(
-                PurchaseItem().apply { product = Product().apply { id = DBReset.CAFETEIRA_ID }; amount = 2; price = 199.5 },
-                PurchaseItem().apply { product = Product().apply { id = DBReset.PEN_DRIVE2GB_ID }; amount = 1; price = 16.25 },
+                PurchaseItem().apply { product = Product().apply { id = DBReset.COFFEE_MAKER_ID }; amount = 2; price = 199.5 },
+                PurchaseItem().apply { product = Product().apply { id = DBReset.FLASH_DRIVE_2GB_ID }; amount = 1; price = 16.25 },
             )
         }
         assertTrue(repo().insert(purchase))
@@ -358,11 +358,11 @@ abstract class AbstractPurchaseRepositoryTest {
         val stored = purchaseItemRepo().fetch(
             PurchaseItemCriteria().withPurchaseId(purchase.id).withOrderBy(PurchaseItemCriteria.OrderBy.MOST_EXPENSIVE_FIRST)
         )
-        assertEquals(listOf<Long?>(DBReset.CAFETEIRA_ID, DBReset.PEN_DRIVE2GB_ID), stored.map { it.productId })
+        assertEquals(listOf<Long?>(DBReset.COFFEE_MAKER_ID, DBReset.FLASH_DRIVE_2GB_ID), stored.map { it.productId })
         assertEquals(listOf<Int?>(2, 1), stored.map { it.amount })
         assertEquals(listOf<Double?>(199.5, 16.25), stored.map { it.price })
         assertTrue(stored.all { it.purchaseId == purchase.id })
-        // o bean sai completo: cada item com a chave que recebeu
+        // the bean comes out complete: each item with the key it received
         assertEquals(stored.map { it.id }.toSet(), purchase.items!!.map { it.id }.toSet())
     }
 
@@ -377,9 +377,9 @@ abstract class AbstractPurchaseRepositoryTest {
             )
         }
         val purchase = repo().fetchById(DBReset.ADMIN_SECOND_PURCHASE_ID, projection)!!
-        assertEquals("João da Silva", purchase.user!!.name)
+        assertEquals("John Smith", purchase.user!!.name)
         assertNull(purchase.buyDate)
-        assertEquals(setOf<String?>("Bola Wilson", "Fita veda rosca"), purchase.items!!.map { it.product!!.name }.toSet())
+        assertEquals(setOf<String?>("Wilson Ball", "Thread Seal Tape"), purchase.items!!.map { it.product!!.name }.toSet())
         assertTrue(purchase.items!!.all { it.amount == null })
     }
 
@@ -394,7 +394,7 @@ abstract class AbstractPurchaseRepositoryTest {
         itemPrj.product!!.id = pv.i64
 
         val itemCriteria = PurchaseItemCriteria()
-            .withProductId(DBReset.BOLA_WILSON_ID)
+            .withProductId(DBReset.WILSON_BALL_ID)
 
         val projection = Purchase()
         projection.id = pv.i64
@@ -404,7 +404,7 @@ abstract class AbstractPurchaseRepositoryTest {
         assertNotNull(purchase)
         assertNotNull(purchase!!.items)
         assertEquals(1, purchase.items!!.size)
-        assertEquals(DBReset.BOLA_WILSON_ID, purchase.items!![0].product!!.id)
+        assertEquals(DBReset.WILSON_BALL_ID, purchase.items!![0].product!!.id)
     }
 
     @Test

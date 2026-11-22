@@ -2,32 +2,32 @@ package br.com.wdc.framework.jooq
 
 import org.jooq.Field
 
-/** Tipo lógico de um campo no mapeamento JSON. */
+/** Logical type of a field in the JSON mapping. */
 enum class JsonFieldType {
-    /** BIGINT, INT, DOUBLE, DECIMAL — sem aspas no JSON. */
+    /** BIGINT, INT, DOUBLE, DECIMAL — unquoted in JSON. */
     NUMBER,
 
-    /** VARCHAR, CHAR, enum — com aspas e escape no JSON. */
+    /** VARCHAR, CHAR, enum — quoted and escaped in JSON. */
     STRING,
 
-    /** BOOLEAN — true/false no JSON. */
+    /** BOOLEAN — true/false in JSON. */
     BOOLEAN,
 
-    /** TIMESTAMP, TIMESTAMPTZ — serializado como string ISO-8601. */
+    /** TIMESTAMP, TIMESTAMPTZ — serialized as an ISO-8601 string. */
     DATETIME,
 
-    /** BINARY/BLOB — serializado como string Base64. */
+    /** BINARY/BLOB — serialized as a Base64 string. */
     BINARY,
 
-    /** Já é JSON válido (subconsultas de relações). Incluído sem formatação adicional. */
+    /** Already valid JSON (relation subqueries). Included without further formatting. */
     RAW_JSON,
 }
 
 /**
- * Entrada de campo para montagem de um objeto JSON pelo [JsonDialect].
+ * Field entry for building a JSON object through the [JsonDialect].
  *
- * @property key   nome da chave JSON
- * @property field campo jOOQ cru (não pré-formatado)
- * @property type  tipo lógico para serialização
+ * @property key   JSON key name
+ * @property field raw jOOQ field (not preformatted)
+ * @property type  logical type for serialization
  */
 data class JsonFieldEntry(val key: String, val field: Field<*>, val type: JsonFieldType)

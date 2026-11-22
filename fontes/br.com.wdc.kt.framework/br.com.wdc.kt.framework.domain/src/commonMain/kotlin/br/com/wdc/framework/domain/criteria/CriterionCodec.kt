@@ -7,26 +7,26 @@ import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import kotlin.time.Instant
 
-/** Como escrever um valor do tipo do campo. */
+/** How to write a value of the field's type. */
 typealias CriterionValueWriter<T> = (out: ExtensibleObjectOutput, value: T) -> Unit
 
-/** Como ler um valor do tipo do campo. */
+/** How to read a value of the field's type. */
 typealias CriterionValueReader<T> = (input: ExtensibleObjectInput) -> T?
 
 /**
- * Como um campo de critério trafega.
+ * How a criterion field travels.
  *
- * Escrito uma vez, aqui, em vez de repetido em cada codec de entidade: o que muda de campo para campo é o
- * tipo do valor, e não a forma. Cada codec só diz qual leitor/escritor de valor usar.
+ * Written once, here, instead of repeated in each entity codec: what changes from field to field is the
+ * value type, not the shape. Each codec only says which value reader/writer to use.
  *
- * A forma é um objeto com os pedidos — **é contrato com os outros clientes; não altere**:
+ * The shape is an object with the requests — **it is a contract with the other clients; don't change it**:
  * ```
  * "price": { "or": true, "p": [ { "o": "GE", "v": [10.0] }, { "o": "IS_NULL" } ] }
  * ```
  *
- * **O valor solto não bastaria.** Um campo carrega vários pedidos, cada um com seu operador e sua aridade,
- * e a disjunção é do campo, não do pedido. Reduzir isso a `"price": 10.0` descartaria tudo menos a
- * igualdade, e em silêncio: o outro lado receberia um filtro mais frouxo do que o pedido.
+ * **The bare value wouldn't be enough.** A field carries several requests, each with its operator and its
+ * arity, and the disjunction belongs to the field, not to the request. Reducing that to `"price": 10.0` would
+ * discard everything but equality, and silently: the other side would receive a looser filter than requested.
  */
 object CriterionCodec {
 
@@ -46,36 +46,36 @@ object CriterionCodec {
     val BOOL_IN: CriterionValueReader<Boolean> = { input -> InputCoerceUtils.asBoolean(input) }
 
     /**
-     * Instante como texto ISO-8601. Escreve em UTC (`…Z`); lê também com offset (`…+03:00`), que é como
-     * os clientes Java o enviam.
+     * Instant as ISO-8601 text. Writes in UTC (`…Z`); also reads with offset (`…+03:00`), which is how Java
+     * clients send it.
      */
     val INSTANT_OUT: CriterionValueWriter<Instant> = { out, v -> out.value(v.toString()) }
     val INSTANT_IN: CriterionValueReader<Instant> = { input -> InputCoerceUtils.asString(input)?.let(Instant::parse) }
 
     /**
-     * Lê o nome da ordenação, recusando o que não reconhece.
+     * Reads the ordering name, rejecting what it doesn't recognize.
      *
-     * **Ao contrário do operador desconhecido, que é descartado**, aqui a leitura falha. A diferença é o que
-     * cada descarte produziria: sem um pedido, o filtro fica mais frouxo e o campo continua listado — o
-     * descompasso aparece; sem a ordenação, a lista volta numa ordem qualquer, e quem a exibe a apresenta
-     * como se fosse a ordem pedida.
+     * **Unlike an unknown operator, which is discarded**, here reading fails. The difference is what each
+     * discard would produce: without a request, the filter gets looser and the field is still listed — the
+     * mismatch shows; without the ordering, the list comes back in some arbitrary order, and whoever displays
+     * it presents it as if it were the requested order.
      *
-     * Recebe os valores aceitos (`XxxCriteria.OrderBy.entries`) em vez da classe: sem reflexão.
+     * Takes the accepted values (`XxxCriteria.OrderBy.entries`) instead of the class: no reflection.
      *
-     * @throws InvalidRequestException se o nome não estiver entre os aceitos — a camada REST devolve 400,
-     *         nomeando o valor recebido e os aceitos
+     * @throws InvalidRequestException if the name is not among the accepted ones — the REST layer returns 400,
+     *         naming the received value and the accepted ones
      */
     fun <E : Enum<E>> readOrderBy(input: ExtensibleObjectInput, accepted: List<E>): E? {
         val name = InputCoerceUtils.asString(input) ?: return null
         return accepted.firstOrNull { it.name == name }
             ?: throw InvalidRequestException(
-                "ordenação desconhecida: '$name' — aceitas: ${accepted.joinToString(", ") { it.name }}"
+                "unknown ordering: '$name' — accepted: ${accepted.joinToString(", ") { it.name }}"
             )
     }
 
     /**
-     * Escreve o campo, se houver o que escrever. Campo não informado não gera chave alguma — é o que
-     * mantém curto o critério que filtra por um campo só, o caso corrente.
+     * Writes the field, if there is something to write. A field not provided produces no key at all — this
+     * keeps short the criteria that filters by a single field, the common case.
      */
     fun <T : Any> write(
         out: ExtensibleObjectOutput,
@@ -108,13 +108,13 @@ object CriterionCodec {
     }
 
     /**
-     * Lê o campo no formato acima, repondo os pedidos no [criterion].
+     * Reads the field in the shape above, restoring the requests into [criterion].
      *
-     * Repõe por [Criterion.restore], e não pelos métodos fluentes: `eq(null)` não acrescenta pedido — o certo
-     * para quem monta filtro de tela — e apagaria em silêncio o que o outro lado enviou.
+     * Restores through [Criterion.restore], not through the fluent methods: `eq(null)` adds no request — right
+     * for whoever builds a screen filter — and would silently erase what the other side sent.
      *
-     * **Aceita também o valor solto** (`"price": 10.0`), lendo-o como igualdade — a forma mínima de um
-     * filtro de igualdade, e a que os clientes anteriores a este formato enviam. `null` solto é descartado.
+     * **Also accepts the bare value** (`"price": 10.0`), reading it as equality — the minimal shape of an
+     * equality filter, and the one clients older than this format send. A bare `null` is discarded.
      */
     fun <T : Any> read(input: ExtensibleObjectInput, criterion: Criterion<*, T>, valueReader: CriterionValueReader<T>) {
         if (input.peek() != SerializationToken.BEGIN_OBJECT) {
@@ -169,11 +169,12 @@ object CriterionCodec {
     }
 
     /**
-     * Operador desconhecido é descartado, e não traduzido por aproximação.
+     * An unknown operator is discarded, not translated by approximation.
      *
-     * Acontece quando um lado é mais novo que o outro e envia um operador que este ainda não conhece.
-     * Escolher o "mais parecido" produziria um filtro diferente do pedido, sem nada assinalar; deixar o
-     * pedido de fora produz um filtro mais frouxo — mas o campo continua listado, e o descompasso aparece.
+     * It happens when one side is newer than the other and sends an operator this one doesn't know yet.
+     * Picking the "closest" one would produce a filter different from the requested one, flagging nothing;
+     * leaving the request out produces a looser filter — but the field is still listed, and the mismatch
+     * shows.
      */
     private fun parseOperator(name: String?): Operator? =
         if (name == null) null else Operator.entries.firstOrNull { it.name == name }

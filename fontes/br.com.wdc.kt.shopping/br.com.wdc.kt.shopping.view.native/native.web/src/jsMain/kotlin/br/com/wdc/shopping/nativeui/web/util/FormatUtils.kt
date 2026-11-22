@@ -7,9 +7,11 @@ fun productImageUrl(productId: Long): String {
 }
 
 fun formatPrice(value: Double): String {
-    val intPart = value.toLong()
-    val fracPart = ((value - intPart) * 100 + 0.5).toLong()
-    return "$intPart,${fracPart.toString().padStart(2, '0')}"
+    val cents = kotlin.math.round(value * 100).toLong()
+    val sign = if (cents < 0) "-" else ""
+    val abs = kotlin.math.abs(cents)
+    val whole = (abs / 100).toString().reversed().chunked(3).joinToString(",").reversed()
+    return "$sign$whole.${(abs % 100).toString().padStart(2, '0')}"
 }
 
 fun stripHtml(html: String): String {
@@ -32,5 +34,5 @@ fun formatDate(epochMs: Long): String {
     val year = 1970 + (days / 365).toInt()
     val month = ((days % 365) / 30 + 1).toInt().coerceIn(1, 12)
     val day = ((days % 365) % 30 + 1).toInt().coerceIn(1, 31)
-    return "${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/$year"
+    return "${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/$year"
 }

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/** A fronteira de transação do checkout: a compra e os seus itens confirmam juntos, ou nada confirma. */
+/** The checkout transaction boundary: the purchase and its items commit together, or nothing commits. */
 class CheckoutTransactionTest {
 
     companion object {
@@ -41,9 +41,9 @@ class CheckoutTransactionTest {
 
     private suspend fun items() = env.purchaseItemRepo.count(PurchaseItemCriteria())
 
-    /** Um carrinho cujo segundo item viola a chave estrangeira do produto: o primeiro grava, o segundo falha. */
+    /** A cart whose second item violates the product foreign key: the first is written, the second fails. */
     private fun cartThatFailsOnTheSecondItem() = CartManager(env.purchaseRepo).apply {
-        addProduct(product(DBReset.CAFETEIRA_ID, 200.5), 1)
+        addProduct(product(DBReset.COFFEE_MAKER_ID, 200.5), 1)
         addProduct(product(NO_SUCH_PRODUCT, 10.5), 2)
     }
 
@@ -52,9 +52,9 @@ class CheckoutTransactionTest {
         val cart = CartManager(env.purchaseRepo)
         var changes = 0
         cart.addChangeListener { changes++ }
-        cart.addProduct(product(DBReset.CAFETEIRA_ID, 200.5), 1)
-        cart.addProduct(product(DBReset.CAFETEIRA_ID, 200.5), 2)
-        assertEquals(2, changes, "o contador do cabeçalho depende do aviso nos dois casos")
+        cart.addProduct(product(DBReset.COFFEE_MAKER_ID, 200.5), 1)
+        cart.addProduct(product(DBReset.COFFEE_MAKER_ID, 200.5), 2)
+        assertEquals(2, changes, "the header counter depends on the notice in both cases")
         assertEquals(3, cart.getCartItems().single().quantity)
     }
 
@@ -62,9 +62,9 @@ class CheckoutTransactionTest {
     fun checkout_withAZeroQuantity_isRefusedByTheCart_andWritesNothing() = runBlocking {
         val before = purchases()
         val cart = CartManager(env.purchaseRepo).apply {
-            addProduct(product(DBReset.CAFETEIRA_ID, 200.5), 1)
-            addProduct(product(DBReset.PEN_DRIVE2GB_ID, 16.25), 1)
-            modifyProductQuantity(DBReset.PEN_DRIVE2GB_ID, 0)
+            addProduct(product(DBReset.COFFEE_MAKER_ID, 200.5), 1)
+            addProduct(product(DBReset.FLASH_DRIVE_2GB_ID, 16.25), 1)
+            modifyProductQuantity(DBReset.FLASH_DRIVE_2GB_ID, 0)
         }
         assertThrows(InvalidCartItemException::class.java) { runBlocking { cart.commit(fulano()) } }
         assertEquals(before, purchases())
@@ -73,8 +73,8 @@ class CheckoutTransactionTest {
     @Test
     fun checkout_commitsThePurchaseAndItsItems() = runBlocking {
         val cart = CartManager(env.purchaseRepo).apply {
-            addProduct(product(DBReset.CAFETEIRA_ID, 200.5), 1)
-            addProduct(product(DBReset.PEN_DRIVE2GB_ID, 16.25), 3)
+            addProduct(product(DBReset.COFFEE_MAKER_ID, 200.5), 1)
+            addProduct(product(DBReset.FLASH_DRIVE_2GB_ID, 16.25), 3)
         }
         val purchaseId = cart.commit(fulano())
 
@@ -90,14 +90,14 @@ class CheckoutTransactionTest {
 
         assertThrows(Exception::class.java) { runBlocking { cart.commit(fulano()) } }
 
-        assertEquals(2, purchases(), "a compra ficou gravada sem os itens")
-        assertEquals(3, items(), "ficou item de uma compra que não se completou")
-        assertEquals(2, cart.getSize(), "o carrinho foi esvaziado sem a compra ter acontecido")
+        assertEquals(2, purchases(), "the purchase was stored without its items")
+        assertEquals(3, items(), "an item of a purchase that did not complete was left behind")
+        assertEquals(2, cart.getSize(), "the cart was emptied without the purchase having happened")
     }
 
     @Test
     fun withoutTheTransactionBoundary_theSameFailureWouldLeaveAnOrphan() = runBlocking {
-        // prova de que o teste acima discrimina: sem o serviço de transação, cada escrita confirma sozinha
+        // proof that the test above discriminates: without the transaction service, each write commits on its own
         val transactions = ShoppingTransactions.BEAN.get()
         ShoppingTransactions.BEAN.set(null)
         try {
@@ -121,13 +121,13 @@ class CheckoutTransactionTest {
                         env.purchaseItemRepo.insert(
                             PurchaseItem().apply {
                                 this.purchase = purchase
-                                product = Product().apply { id = DBReset.CAFETEIRA_ID }
+                                product = Product().apply { id = DBReset.COFFEE_MAKER_ID }
                                 amount = 1
                                 price = 200.5
                             }
                         )
                     )
-                    // quem está na transação vê o que ela gravou
+                    // whoever is in the transaction sees what it wrote
                     assertEquals(3, purchases())
                     assertEquals(4, items())
                     error("desiste")

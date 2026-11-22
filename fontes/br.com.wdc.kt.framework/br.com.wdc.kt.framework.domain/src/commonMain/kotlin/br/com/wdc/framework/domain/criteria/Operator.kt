@@ -1,13 +1,13 @@
 package br.com.wdc.framework.domain.criteria
 
 /**
- * Operador de comparação de um [Criterion], com a mesma semântica do SQL.
+ * Comparison operator of a [Criterion], with the same semantics as SQL.
  *
- * É deliberadamente **neutro**: não conhece jOOQ nem SQL, apenas nomeia a comparação. Quem traduz para
- * condição é o `framework-jooq`; o cliente REST serializa o mesmo enum.
+ * It is deliberately **neutral**: it knows neither jOOQ nor SQL, it only names the comparison. The translation
+ * into a condition belongs to `framework-jooq`; the REST client serializes the same enum.
  *
- * @property arity quantidade de valores que o operador exige; negativo quando é variável ([IN], que aceita também
- *   nenhum)
+ * @property arity number of values the operator requires; negative when variable ([IN], which also accepts
+ *   none)
  */
 enum class Operator(val arity: Int) {
     /** `= ?` */
@@ -22,19 +22,19 @@ enum class Operator(val arity: Int) {
     LT(1),
     /** `<= ?` */
     LE(1),
-    /** `LIKE ?` — sensível a maiúsculas; os curingas fazem parte do valor. */
+    /** `LIKE ?` — case-sensitive; wildcards are part of the value. */
     LIKE(1),
-    /** `ILIKE ?` — insensível a maiúsculas. */
+    /** `ILIKE ?` — case-insensitive. */
     ILIKE(1),
     /** `BETWEEN ? AND ?` */
     BETWEEN(2),
-    /** `IN (?, ?, …)` — aridade variável. Vazio é um conjunto sem membros: não casa linha nenhuma. */
+    /** `IN (?, ?, …)` — variable arity. Empty is a set with no members: matches no row. */
     IN(-1),
     /** `IS NULL` */
     IS_NULL(0),
     /** `IS NOT NULL` */
     IS_NOT_NULL(0);
 
-    /** `true` quando a quantidade informada satisfaz o operador. */
+    /** `true` when the given count satisfies the operator. */
     fun accepts(count: Int): Boolean = if (arity < 0) count >= 0 else count == arity
 }

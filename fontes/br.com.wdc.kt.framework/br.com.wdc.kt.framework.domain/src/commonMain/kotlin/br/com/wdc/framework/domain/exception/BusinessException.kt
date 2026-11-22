@@ -1,6 +1,6 @@
 package br.com.wdc.framework.domain.exception
 
-/** Falha de regra de negócio. Base das exceções que o chamador deve tratar como erro do pedido. */
+/** Business rule failure. Base of the exceptions the caller must treat as a request error. */
 open class BusinessException : RuntimeException {
 
     constructor() : super()
@@ -9,7 +9,7 @@ open class BusinessException : RuntimeException {
     constructor(cause: Throwable?) : super(cause)
 
     companion object {
-        /** Devolve [e] se já for [BusinessException]; senão cria uma nova, com [e] como *suppressed*. */
+        /** Returns [e] if it already is a [BusinessException]; otherwise creates a new one, with [e] as *suppressed*. */
         fun wrap(message: String, e: Exception): BusinessException {
             if (e is BusinessException) {
                 return e
@@ -21,8 +21,8 @@ open class BusinessException : RuntimeException {
     }
 }
 
-/** Pedido malformado ou recusado por validação — a camada REST devolve 400. */
+/** Malformed request or one rejected by validation — the REST layer returns 400. */
 open class InvalidRequestException(message: String) : BusinessException(message)
 
-/** A operação exigia o servidor e ele não está acessível. */
+/** The operation required the server and it is not reachable. */
 open class OfflineException(cause: Throwable?) : BusinessException(cause)

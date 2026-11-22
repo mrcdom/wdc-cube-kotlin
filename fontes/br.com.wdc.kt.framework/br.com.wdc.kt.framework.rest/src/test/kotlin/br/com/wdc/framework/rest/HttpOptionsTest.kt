@@ -35,7 +35,7 @@ class HttpOptionsTest {
 
     @Test
     fun cors_preflightPassesProtectUnmatched() {
-        // O navegador manda o preflight sem credencial; com protectUnmatched ele caía como rota inexistente e levava 403.
+        // The browser sends the preflight without a credential; with protectUnmatched it used to fall as a nonexistent route and get 403.
         val secured = api {
             cors { anyOrigin() }
             security {
@@ -52,7 +52,7 @@ class HttpOptionsTest {
             assertEquals(200, preflight.status)
             assertEquals("*", preflight.header("Access-Control-Allow-Origin"))
 
-            // OPTIONS sem cara de preflight continua protegido, e a rota continua exigindo credencial.
+            // An OPTIONS that doesn't look like a preflight stays protected, and the route still requires a credential.
             assertEquals(403, server.client().send("OPTIONS", "/small").status)
             assertEquals(403, server.client().header("Origin", "https://app.example").get("/small").status)
         }

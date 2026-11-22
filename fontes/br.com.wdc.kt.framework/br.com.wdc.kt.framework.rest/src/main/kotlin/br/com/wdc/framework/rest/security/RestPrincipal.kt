@@ -1,15 +1,15 @@
 package br.com.wdc.framework.rest.security
 
 /**
- * Quem chama, autenticado. A aplicação implementa com o que o seu token carrega (usuário, empresa, chaves…) e
- * lê de volta com `RequestContext.principalAs<SeuTipo>()`.
+ * The authenticated caller. The application implements it with what its token carries (user, company, keys…) and
+ * reads it back with `RequestContext.principalAs<YourType>()`.
  */
 interface RestPrincipal {
 
-    /** Identificador estável de quem chama. É o que distingue o dono de uma transação remota. */
+    /** Stable identifier of the caller. It is what distinguishes the owner of a remote transaction. */
     val id: String
 
-    /** Os papéis, como a aplicação os escreve (`ADMIN`, `ROLE_ADMIN`…): a biblioteca só compara strings. */
+    /** The roles, as the application writes them (`ADMIN`, `ROLE_ADMIN`…): the library only compares strings. */
     val roles: Set<String>
 
     fun hasRole(role: String): Boolean = role in roles
@@ -17,5 +17,5 @@ interface RestPrincipal {
     fun hasAnyRole(vararg roles: String): Boolean = roles.any { it in this.roles }
 }
 
-/** Principal simples, para quem não precisa de mais que o id e os papéis. */
+/** Simple principal, for those who need nothing more than the id and the roles. */
 data class SimplePrincipal(override val id: String, override val roles: Set<String> = emptySet()) : RestPrincipal

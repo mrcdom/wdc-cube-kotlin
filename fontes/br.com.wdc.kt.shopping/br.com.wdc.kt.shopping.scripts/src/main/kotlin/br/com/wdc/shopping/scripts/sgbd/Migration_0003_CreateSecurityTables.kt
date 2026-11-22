@@ -4,8 +4,8 @@ import java.sql.Connection
 import java.sql.SQLException
 
 /**
- * As tabelas de segurança, para os bancos criados antes de elas existirem. Hoje o `DBCreate` já as cria, e
- * estes passos não encontram o que fazer.
+ * The security tables, for the databases created before they existed. Today `DBCreate` already creates them, and
+ * these steps find nothing to do.
  */
 class Migration_0003_CreateSecurityTables(private val connection: Connection) {
 

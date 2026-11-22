@@ -1,52 +1,52 @@
 package br.com.wdc.framework.domain.transaction
 
 /**
- * Demarcação de transação no estilo CMT: o caso de uso declara a propagação e o serviço cuida de
- * abrir, confirmar e desfazer.
+ * CMT-style transaction demarcation: the use case declares the propagation and the service takes care of
+ * opening, committing and rolling back.
  *
- * Em todas as propagações: **retorno normal → commit** (salvo [TransactionContext.setRollbackOnly]);
- * **qualquer exceção → rollback, e a exceção original é repropagada intacta**; falha ao finalizar →
+ * In every propagation: **normal return → commit** (unless [TransactionContext.setRollbackOnly]);
+ * **any exception → rollback, and the original exception is rethrown intact**; failure while finishing →
  * [TransactionSystemException].
  *
- * O contrato vale igual no servidor (transação JDBC) e no cliente (transação remota via REST).
+ * The contract is the same on the server (JDBC transaction) and on the client (remote transaction via REST).
  *
- * **O bloco transacional não deve fazer suspensão real** — `delay`, troca de dispatcher, espera de rede
- * alheia à transação. No servidor a transação segura uma conexão do pool durante a espera; no cliente, as
- * chamadas de uma transação remota precisam ser serializadas. As implementações `suspend` dos repositórios
- * respeitam isso.
+ * **The transactional block must not really suspend** — `delay`, dispatcher switch, waiting on network
+ * unrelated to the transaction. On the server the transaction holds a pool connection during the wait; on the
+ * client, the calls of a remote transaction must be serialized. The `suspend` implementations of the
+ * repositories respect this.
  */
 interface TransactionService {
 
-    /** Participa da transação corrente; se não houver, abre uma. */
+    /** Joins the current transaction; if there is none, opens one. */
     suspend fun <T> required(work: suspend (TransactionContext) -> T): T
 
-    /** Suspende a transação corrente, se houver, e executa numa transação nova. */
+    /** Suspends the current transaction, if any, and runs in a new transaction. */
     suspend fun <T> requiresNew(work: suspend (TransactionContext) -> T): T
 
-    /** Exige transação corrente; sem ela, [TransactionRequiredException]. */
+    /** Requires a current transaction; without one, [TransactionRequiredException]. */
     suspend fun <T> mandatory(work: suspend (TransactionContext) -> T): T
 
-    /** Participa da transação corrente se houver; senão executa sem transação. */
+    /** Joins the current transaction if there is one; otherwise runs without a transaction. */
     suspend fun <T> supports(work: suspend (TransactionContext) -> T): T
 
-    /** Suspende a transação corrente, se houver, e executa sem transação. */
+    /** Suspends the current transaction, if any, and runs without a transaction. */
     suspend fun <T> notSupported(work: suspend (TransactionContext) -> T): T
 
-    /** Exige ausência de transação; com ela, [TransactionNotAllowedException]. */
+    /** Requires no transaction; with one, [TransactionNotAllowedException]. */
     suspend fun <T> never(work: suspend (TransactionContext) -> T): T
 
     /**
-     * Agenda [task] para depois do commit da transação corrente: roda só se ela for confirmada, na ordem do agendamento,
-     * já fora dela (a conexão devolvida). Desfeita (exceção ou [TransactionContext.setRollbackOnly]), a tarefa é descartada.
-     * Sem transação corrente, roda na hora. A falha de uma tarefa vai ao log e não afeta o resultado da transação nem as
-     * tarefas seguintes.
+     * Schedules [task] for after the commit of the current transaction: it runs only if the transaction commits, in
+     * scheduling order, already outside it (the connection returned). Rolled back (exception or
+     * [TransactionContext.setRollbackOnly]), the task is discarded. Without a current transaction, it runs right away.
+     * A task failure goes to the log and affects neither the transaction result nor the following tasks.
      *
-     * A tarefa pertence à transação **física**: dentro de um [required] ou [supports] que participa de outra, ela
-     * espera o commit da de fora; dentro de um [requiresNew], roda quando ele comita, mesmo que a de fora seja
-     * desfeita depois. Em [notSupported] e [never] não há transação: roda na hora. Ao rodar, a tarefa não está em
-     * transação nenhuma; se precisar de uma, abre a sua.
+     * The task belongs to the **physical** transaction: inside a [required] or [supports] that joins another, it
+     * waits for the outer one's commit; inside a [requiresNew], it runs when that one commits, even if the outer one
+     * is rolled back later. In [notSupported] and [never] there is no transaction: it runs right away. When it runs,
+     * the task is in no transaction at all; if it needs one, it opens its own.
      *
-     * [AfterCommitTasks] é o executor comum para as implementações.
+     * [AfterCommitTasks] is the common executor for the implementations.
      */
     suspend fun afterCommit(task: suspend () -> Unit)
 }

@@ -1,25 +1,25 @@
 # persistence
 
-A camada de persistência do Shopping: como os dados são guardados no servidor, expostos por HTTP e consumidos pelos clientes.
+The Shopping persistence layer: how data is stored on the server, exposed over HTTP and consumed by the clients.
 
-Os três subprojetos implementam, cada um do seu lado, os contratos de [shopping-domain](../br.com.wdc.kt.shopping.domain/) — os mesmos repositórios e o mesmo serviço de transação valem no servidor e no cliente.
+Each of the three subprojects implements, on its own side, the contracts of [shopping-domain](../br.com.wdc.kt.shopping.domain/) — the same repositories and the same transaction service hold on server and client.
 
-## Subprojetos
+## Subprojects
 
-| Subprojeto | Projeto Gradle | Plataforma | Papel |
+| Subproject | Gradle project | Platform | Role |
 |---|---|---|---|
-| [persistence.impl/](persistence.impl/) | `:shopping-persistence` | JVM | Repositórios sobre jOOQ (H2 e PostgreSQL), classes do esquema, autenticação |
-| [persistence.rest/](persistence.rest/) | `:persistence-rest` | JVM | API REST dos repositórios, com o controle de acesso; transação remota; OpenAPI |
-| [persistence.client/](persistence.client/) | `:shopping-persistence-client` | KMP | Repositórios e serviço de transação sobre HTTP, com um transporte por plataforma |
+| [persistence.impl/](persistence.impl/) | `:shopping-persistence` | JVM | Repositories over jOOQ (H2 and PostgreSQL), schema classes, authentication |
+| [persistence.rest/](persistence.rest/) | `:persistence-rest` | JVM | REST API of the repositories, with access control; remote transaction; OpenAPI |
+| [persistence.client/](persistence.client/) | `:shopping-persistence-client` | KMP | Repositories and transaction service over HTTP, with one transport per platform |
 
 ```mermaid
 graph LR
-    CLI["persistence.client<br/>(Compose, nativo)"] -- "HTTP" --> REST["persistence.rest"]
+    CLI["persistence.client<br/>(Compose, native)"] -- "HTTP" --> REST["persistence.rest"]
     REST --> IMPL["persistence.impl"]
-    PRES["apresentação no servidor<br/>(view remota)"] --> IMPL
+    PRES["presentation on the server<br/>(remote view)"] --> IMPL
     IMPL --> DB[("H2 / PostgreSQL")]
 ```
 
-O esquema do banco e as migrações ficam em [shopping-scripts](../br.com.wdc.kt.shopping.scripts/).
+The database schema and migrations live in [shopping-scripts](../br.com.wdc.kt.shopping.scripts/).
 
-Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).
+See the [persistence architecture](../../../docs/architecture-persistence.md).

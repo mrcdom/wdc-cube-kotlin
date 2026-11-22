@@ -1,19 +1,19 @@
 # view-compose
 
-UI compartilhada em **Compose Multiplatform** com Material 3. Contém todas as telas e componentes comuns, consumidos pelos módulos de plataforma.
+Shared UI in **Compose Multiplatform** with Material 3. Holds all the screens and common components, consumed by the platform modules.
 
-**Plataformas:** JVM, Android, iOS, wasmJs
+**Platforms:** JVM, Android, iOS, wasmJs
 
-Veja a [arquitetura Cube + Compose](../../../docs/architecture-cube-compose.md) para detalhes sobre a integração (ComposeCubeView, revision counter, safeCall, slots, view factories, inicialização por plataforma) e a [visão geral da arquitetura](../../../docs/architecture.md) para o contexto do projeto.
+See the [Cube + Compose architecture](../../../docs/architecture-cube-compose.md) for details on the integration (ComposeCubeView, revision counter, safeCall, slots, view factories, per-platform startup) and the [architecture overview](../../../docs/architecture.md) for the project context.
 
-## Subprojetos por Plataforma
+## Platform Subprojects
 
-- [compose.web/](compose.web/) — Entrada Web (wasmJs/browser)
-- [compose.ios/](compose.ios/) — Entrada iOS (framework nativo)
-- [compose.android/](compose.android/) — Entrada Android (app)
-- [compose.desktop/](compose.desktop/) — Entrada Desktop (JVM)
+- [compose.web/](compose.web/) — Web entry point (wasmJs/browser)
+- [compose.ios/](compose.ios/) — iOS entry point (native framework)
+- [compose.android/](compose.android/) — Android entry point (app)
+- [compose.desktop/](compose.desktop/) — Desktop entry point (JVM)
 
-## Como rodar
+## How to run
 
 ```bash
 cd fontes
@@ -21,26 +21,26 @@ cd fontes
 # Desktop
 ./gradlew :view-compose-desktop:run
 
-# Web (porta 8082)
+# Web (port 8082)
 ./gradlew :view-compose-web:wasmJsBrowserDevelopmentRun
 
 # Android
 ./gradlew :view-compose-android:assembleDebug
 
-# iOS (via Xcode)
+# iOS (through Xcode)
 ./gradlew :view-compose-ios:linkDebugFrameworkIosSimulatorArm64
 ```
 
-## Telas
+## Screens
 
-| Login | Produtos |
+| Login | Products |
 |:---:|:---:|
-| ![Login](screenshots/01-login.png) | ![Produtos](screenshots/02-produtos.png) |
+| ![Login](screenshots/01-login.png) | ![Products](screenshots/02-produtos.png) |
 
-| Detalhes do Produto | Compras |
+| Product Details | Purchases |
 |:---:|:---:|
-| ![Detalhes do Produto](screenshots/03-detalhes-produto.png) | ![Compras](screenshots/04-compras.png) |
+| ![Product Details](screenshots/03-detalhes-produto.png) | ![Purchases](screenshots/04-compras.png) |
 
-| Carrinho | Recibo |
+| Cart | Receipt |
 |:---:|:---:|
-| ![Carrinho](screenshots/05-carrinho.png) | ![Recibo](screenshots/06-recibo.png) |
+| ![Cart](screenshots/05-carrinho.png) | ![Receipt](screenshots/06-recibo.png) |

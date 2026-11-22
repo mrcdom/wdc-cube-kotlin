@@ -6,10 +6,10 @@ import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 
 /**
- * Valores-sentinela para montar projeções.
+ * Sentinel values for building projections.
  *
- * Uma projeção é uma instância da própria entidade onde campo não-nulo significa "traga este campo".
- * O valor em si é irrelevante; importa ser não-nulo.
+ * A projection is an instance of the entity itself where a non-null field means "bring this field".
+ * The value itself is irrelevant; what matters is being non-null.
  */
 object ProjectionValues {
     val bool: Boolean = true
@@ -28,8 +28,8 @@ object ProjectionValues {
     val instant: Instant = Instant.fromEpochMilliseconds(0L)
 
     /**
-     * Projeção de coleção: a forma do item mais o critério da entidade filha e, opcionalmente, o recorte (ver
-     * [ProjectionList]). Ordene também, ou o recorte é arbitrário.
+     * Collection projection: the item shape plus the child entity's criteria and, optionally, the slice (see
+     * [ProjectionList]). Order too, or the slice is arbitrary.
      */
     fun <T> singletonList(bean: T, criteria: Any?, limit: Int? = null, offset: Int? = null): ProjectionList<T> =
         ProjectionList(bean, criteria, limit, offset)

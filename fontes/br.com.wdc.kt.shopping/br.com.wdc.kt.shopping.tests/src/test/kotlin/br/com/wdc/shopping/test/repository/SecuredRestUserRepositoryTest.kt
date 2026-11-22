@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/** Usuário pelo caminho REST com a segurança ligada: permissão, escopo e a senha que nunca sai do servidor. */
+/** User over the REST path with security on: permission, scope and the password that never leaves the server. */
 class SecuredRestUserRepositoryTest {
 
     companion object {
@@ -32,7 +32,7 @@ class SecuredRestUserRepositoryTest {
 
     private fun assertHttp(status: Int, block: suspend () -> Unit) {
         val e = assertThrows(RuntimeException::class.java) { runBlocking { block() } }
-        assertTrue(e.message!!.startsWith("HTTP $status"), "esperava HTTP $status, veio: ${e.message}")
+        assertTrue(e.message!!.startsWith("HTTP $status"), "expected HTTP $status, got: ${e.message}")
     }
 
     private fun withPassword() = User().apply { id = ProjectionValues.i64; userName = ProjectionValues.str; password = ProjectionValues.str }
@@ -49,7 +49,7 @@ class SecuredRestUserRepositoryTest {
 
         val users = repo().fetch(UserCriteria().withOrderBy(UserCriteria.OrderBy.LOGIN_A_TO_Z).withProjection(withPassword()))
         assertEquals(listOf<String?>("admin", "beotrano", "fulano"), users.map { it.userName })
-        assertTrue(users.all { it.password == null }, "a senha saiu do servidor")
+        assertTrue(users.all { it.password == null }, "the password left the server")
 
         assertNull(repo().fetchById(DBReset.FULANO_ID, withPassword())!!.password)
         assertTrue(repo().fetchPage(UserCriteria().withProjection(withPassword()), 0, 10).items.all { it.password == null })
@@ -59,10 +59,10 @@ class SecuredRestUserRepositoryTest {
     fun admin_writesUsers() = runBlocking {
         env.loginAs("admin")
 
-        val user = User().apply { userName = "novo"; password = "digest"; name = "Novo"; roles = "CUSTOMER" }
+        val user = User().apply { userName = "newbie"; password = "digest"; name = "Newbie"; roles = "CUSTOMER" }
         assertTrue(repo().insert(user))
-        assertTrue(repo().update(User().apply { id = user.id; name = "Novo Nome" }, null, User().apply { name = ProjectionValues.str }))
-        assertEquals("Novo Nome", repo().fetchById(user.id!!)!!.name)
+        assertTrue(repo().update(User().apply { id = user.id; name = "New Name" }, null, User().apply { name = ProjectionValues.str }))
+        assertEquals("New Name", repo().fetchById(user.id!!)!!.name)
         assertEquals(1, repo().delete(UserCriteria().withUserId(user.id)))
     }
 
@@ -70,12 +70,12 @@ class SecuredRestUserRepositoryTest {
     fun customer_readsOnlyTheirOwnUser_andCannotWrite() = runBlocking {
         env.loginAs("fulano")
 
-        // o escopo restringe ao próprio usuário, peça o que pedir
+        // the scope restricts to the user themselves, whatever is asked
         assertEquals(listOf<String?>("fulano"), repo().fetch(UserCriteria().withProjection(withPassword())).map { it.userName })
         assertEquals(1, repo().count(UserCriteria()))
         assertEquals(emptyList<User>(), repo().fetch(UserCriteria().withUserName("admin")))
         assertNull(repo().fetchById(DBReset.ADMIN_ID))
-        assertEquals("Fulano de Tal", repo().fetchById(DBReset.FULANO_ID)!!.name)
+        assertEquals("John Doe", repo().fetchById(DBReset.FULANO_ID)!!.name)
         assertNull(repo().fetchById(DBReset.FULANO_ID, withPassword())!!.password)
 
         assertHttp(403) { repo().insert(User().apply { userName = "x"; password = "p"; name = "X" }) }
@@ -95,8 +95,8 @@ class SecuredRestUserRepositoryTest {
     @Test
     fun passwordIsNotACriteriaField() {
         env.loginAs("admin")
-        // um cliente antigo que ainda mande "password" no critério não filtra por ela: o campo é ignorado
-        val response = env.transport.postJson("/api/repo/user/count", """{"userName":"admin","password":"qualquer"}""")
+        // an old client that still sends "password" in the criteria does not filter by it: the field is ignored
+        val response = env.transport.postJson("/api/repo/user/count", """{"userName":"admin","password":"anything"}""")
         assertEquals("""{"count":1}""", response)
     }
 

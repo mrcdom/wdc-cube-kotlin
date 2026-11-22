@@ -8,7 +8,7 @@ import org.jooq.SQLDialect
 import org.jooq.conf.RenderNameCase
 import org.jooq.conf.Settings
 
-/** Um banco de teste: o DataSource, o dialeto e como criar o esquema de exemplo nele. */
+/** A test database: the DataSource, the dialect and how to create the sample schema in it. */
 class TestDatabase(val dialect: SQLDialect, val dataSource: DataSource, val settings: Settings, private val binaryType: String) {
 
     val ddl: List<String>
@@ -28,7 +28,7 @@ class TestDatabase(val dialect: SQLDialect, val dataSource: DataSource, val sett
     companion object {
         private val h2Counter = AtomicInteger()
 
-        /** H2 em memória, um banco novo a cada chamada. */
+        /** In-memory H2, a new database on each call. */
         fun h2(): TestDatabase {
             val ds = JdbcDataSource().apply {
                 setURL("jdbc:h2:mem:jooq-${h2Counter.incrementAndGet()};DB_CLOSE_DELAY=-1")
@@ -38,13 +38,13 @@ class TestDatabase(val dialect: SQLDialect, val dataSource: DataSource, val sett
             return TestDatabase(SQLDialect.H2, ds, Settings(), "VARBINARY(100000)")
         }
 
-        /** PostgreSQL embutido, iniciado uma vez por JVM e encerrado no fim dela. */
+        /** Embedded PostgreSQL, started once per JVM and shut down at its end. */
         private val embeddedPostgres: EmbeddedPostgres by lazy {
             EmbeddedPostgres.builder().start().also { pg -> Runtime.getRuntime().addShutdownHook(Thread { pg.close() }) }
         }
 
         fun postgres(): TestDatabase {
-            // o esquema é declarado em maiúsculas (como sai do codegen em H2); no PostgreSQL os nomes são minúsculos
+            // the schema is declared in uppercase (as the H2 codegen outputs it); in PostgreSQL the names are lowercase
             val settings = Settings().withRenderSchema(false).withRenderNameCase(RenderNameCase.LOWER)
             return TestDatabase(SQLDialect.POSTGRES, embeddedPostgres.postgresDatabase, settings, "BYTEA")
         }

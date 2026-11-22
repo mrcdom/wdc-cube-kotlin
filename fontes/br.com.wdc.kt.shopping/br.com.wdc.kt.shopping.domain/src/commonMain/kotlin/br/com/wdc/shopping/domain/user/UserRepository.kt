@@ -6,7 +6,7 @@ import br.com.wdc.framework.domain.repository.Repository
 
 interface UserRepository : Repository<User, UserCriteria, Long> {
 
-    /** Todos os campos, **menos a senha** — quem precisa do resumo o pede explicitamente. */
+    /** All fields **except the password** — whoever needs the digest asks for it explicitly. */
     override fun ownFieldsProjection(): User {
         val pv = ProjectionValues
         return User().apply {

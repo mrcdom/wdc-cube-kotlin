@@ -65,7 +65,7 @@ class SqlDataSourceSupportTest {
             val dataSource = h2(
                 "pool-bounded",
                 "database.pool.maxSize" to "1",
-                "database.pool.minIdle" to "5", // maior que o máximo: é contido
+                "database.pool.minIdle" to "5", // greater than the maximum: it is capped
                 "database.pool.connectionTimeoutSeconds" to "1",
             ).init(cleanUp)
 
@@ -73,9 +73,9 @@ class SqlDataSourceSupportTest {
                 val started = System.nanoTime()
                 assertFailsWith<SQLException> { dataSource.connection }
                 val waitedMs = (System.nanoTime() - started) / 1_000_000
-                assertTrue(waitedMs in 800..5_000, "esperou $waitedMs ms")
+                assertTrue(waitedMs in 800..5_000, "waited $waitedMs ms")
             }
-            // devolvida, a conexão volta a servir
+            // once returned, the connection serves again
             dataSource.connection.use { assertTrue(it.isValid(1)) }
         } finally {
             cleanUp.run()
@@ -103,7 +103,7 @@ class SqlDataSourceSupportTest {
                     assertEquals("shopping_test", c.schema)
                     c.createStatement().use { it.execute("CREATE TABLE en_probe (id INT)") }
                 }
-                // outra conexão do pool chega no mesmo esquema
+                // another pool connection lands in the same schema
                 dataSource.connection.use { c ->
                     c.createStatement().use { stmt ->
                         stmt.executeQuery("SELECT table_schema FROM information_schema.tables WHERE table_name = 'en_probe'").use { rs ->

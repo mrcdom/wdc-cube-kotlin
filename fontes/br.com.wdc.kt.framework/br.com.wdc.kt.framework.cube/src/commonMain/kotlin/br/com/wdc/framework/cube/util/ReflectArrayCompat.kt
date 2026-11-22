@@ -1,8 +1,8 @@
 package br.com.wdc.framework.cube.util
 
 /**
- * Emulação dos métodos de `java.lang.reflect.Array` sem uso de reflection.
- * Compatível com TeaVM e outros AOT compilers que não suportam reflection.
+ * Emulation of the `java.lang.reflect.Array` methods without reflection.
+ * Compatible with TeaVM and other AOT compilers that don't support reflection.
  */
 object ReflectArrayCompat {
 

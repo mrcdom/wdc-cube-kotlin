@@ -1,57 +1,57 @@
-# Arquitetura React — View Remota com Presenters no Servidor
+# React Architecture — Remote View with Server-Side Presenters
 
-## Sumário
+## Contents
 
-- [Visão Geral](#visão-geral)
-- [Comparação: View Local vs View Remota](#comparação-view-local-vs-view-remota)
-- [Estrutura de Módulos](#estrutura-de-módulos)
-- [Ciclo de Comunicação](#ciclo-de-comunicação)
-- [Estabelecimento de Sessão](#estabelecimento-de-sessão)
-- [Protocolo WebSocket](#protocolo-websocket)
-- [Skeleton — A Ponte entre Presenter e Cliente](#skeleton--a-ponte-entre-presenter-e-cliente)
-- [Sincronização de Estado](#sincronização-de-estado)
-- [Segurança](#segurança)
-- [Gerenciamento de Sessão e Ciclo de Vida](#gerenciamento-de-sessão-e-ciclo-de-vida)
-- [Vantagens da View Remota](#vantagens-da-view-remota)
-- [Casos de Uso Ideais](#casos-de-uso-ideais)
-- [Exemplo Completo: Fluxo de Login](#exemplo-completo-fluxo-de-login)
+- [Overview](#overview)
+- [Comparison: Local View vs Remote View](#comparison-local-view-vs-remote-view)
+- [Module Structure](#module-structure)
+- [Communication Cycle](#communication-cycle)
+- [Session Establishment](#session-establishment)
+- [WebSocket Protocol](#websocket-protocol)
+- [Skeleton — The Bridge Between Presenter and Client](#skeleton--the-bridge-between-presenter-and-client)
+- [State Synchronization](#state-synchronization)
+- [Security](#security)
+- [Session Management and Lifecycle](#session-management-and-lifecycle)
+- [Advantages of the Remote View](#advantages-of-the-remote-view)
+- [Ideal Use Cases](#ideal-use-cases)
+- [Complete Example: Login Flow](#complete-example-login-flow)
 
 ---
 
-## Visão Geral
+## Overview
 
-A arquitetura React implementa uma **view remota** onde a camada de apresentação (presenters) executa inteiramente no servidor. O cliente React é responsável apenas pela **renderização da interface**, sem conter lógica de negócio ou de apresentação. Toda a interação do usuário é transmitida ao servidor via WebSocket, e o servidor responde com o novo estado serializado em JSON.
+The React architecture implements a **remote view** in which the presentation layer (presenters) runs entirely on the server. The React client is responsible only for **rendering the interface**, with no business or presentation logic. All user interaction is sent to the server over WebSocket, and the server responds with the new state serialized as JSON.
 
 ```mermaid
 graph LR
-    subgraph "Navegador (Cliente)"
-        REACT["React + MUI<br/>(renderização pura)"]
+    subgraph "Browser (Client)"
+        REACT["React + MUI<br/>(pure rendering)"]
     end
 
-    subgraph "Servidor (JVM)"
+    subgraph "Server (JVM)"
         SKEL["Skeleton<br/>(bridge view)"]
-        PRES["Presenters<br/>(lógica de apresentação)"]
-        REPO["Repositories<br/>(acesso a dados JDBC)"]
+        PRES["Presenters<br/>(presentation logic)"]
+        REPO["Repositories<br/>(JDBC data access)"]
         DB[(H2 Database)]
     end
 
-    REACT <-->|"WebSocket<br/>JSON bidirecional"| SKEL
+    REACT <-->|"WebSocket<br/>bidirectional JSON"| SKEL
     SKEL <--> PRES
     PRES <--> REPO
     REPO <--> DB
 ```
 
-Isso contrasta com a arquitetura Compose Multiplatform, onde os presenters executam no cliente e acessam dados via REST:
+This contrasts with the Compose Multiplatform architecture, where the presenters run on the client and access data over REST:
 
 ```mermaid
 graph LR
-    subgraph "Cliente (Desktop/iOS/Web/Android)"
+    subgraph "Client (Desktop/iOS/Web/Android)"
         COMP["Compose UI"]
         PRES2["Presenters"]
         REST_C["REST Client"]
     end
 
-    subgraph "Servidor (JVM)"
+    subgraph "Server (JVM)"
         REST_S["REST API"]
         REPO2["Repositories"]
         DB2[(H2 Database)]
@@ -66,38 +66,38 @@ graph LR
 
 ---
 
-## Comparação: View Local vs View Remota
+## Comparison: Local View vs Remote View
 
-| Aspecto | Compose (View Local) | React (View Remota) |
+| Aspect | Compose (Local View) | React (Remote View) |
 |---------|---------------------|---------------------|
-| **Execução dos Presenters** | No cliente | No servidor |
-| **Acesso a dados** | Via REST (rede) | Direto JDBC (in-process) |
-| **Latência de dados** | HTTP round-trip | Zero (mesma JVM) |
-| **Estado da sessão** | No dispositivo | No servidor |
-| **Lógica no cliente** | Presenters + UI | Apenas UI |
-| **Protocolo** | HTTP/REST | WebSocket |
-| **Segurança de dados** | API exposta | Dados nunca saem do servidor |
-| **Escalabilidade** | Processamento no cliente | Processamento no servidor |
-| **Funcionamento offline** | Possível | Requer conexão |
+| **Presenter execution** | On the client | On the server |
+| **Data access** | Via REST (network) | Direct JDBC (in-process) |
+| **Data latency** | HTTP round trip | Zero (same JVM) |
+| **Session state** | On the device | On the server |
+| **Client logic** | Presenters + UI | UI only |
+| **Protocol** | HTTP/REST | WebSocket |
+| **Data security** | Exposed API | Data never leaves the server |
+| **Scalability** | Processing on the client | Processing on the server |
+| **Offline operation** | Possible | Requires a connection |
 
 ---
 
-## Estrutura de Módulos
+## Module Structure
 
 ```mermaid
 graph TB
-    subgraph "Cliente (TypeScript)"
+    subgraph "Client (TypeScript)"
         RC["react.client<br/>React + MUI + Parcel"]
     end
 
-    subgraph "Servidor (Kotlin/JVM)"
+    subgraph "Server (Kotlin/JVM)"
         BACK["backend<br/>Javalin HTTP/WS"]
         SKEL["react.skeleton<br/>View Impls + Dispatcher"]
         PRES["presentation<br/>Presenters (KMP commonMain)"]
         PERS["persistence<br/>Repositories jOOQ"]
-        PERSR["persistence.rest<br/>REST API (para Compose)"]
-        DOM["domain<br/>Entidades + Interfaces"]
-        CUBE["framework-cube<br/>Engine MVP"]
+        PERSR["persistence.rest<br/>REST API (for Compose)"]
+        DOM["domain<br/>Entities + Interfaces"]
+        CUBE["framework-cube<br/>MVP Engine"]
     end
 
     RC <-->|WebSocket| BACK
@@ -111,18 +111,18 @@ graph TB
     PRES --> CUBE
 ```
 
-| Módulo | Papel |
+| Module | Role |
 |--------|-------|
-| **react.client** | Renderização pura em React/TypeScript com Material UI. Recebe estados JSON e envia eventos do usuário. Empacotado com Parcel. |
-| **react.skeleton** | Bridge server-side: cada `*ReactViewImpl` traduz eventos do cliente para chamadas no presenter e serializa o ViewState para JSON. |
-| **backend** | Servidor Javalin que hospeda o WebSocket (`/dispatcher/{id}`), serve arquivos estáticos do React e expõe a REST API para clientes Compose. |
-| **presentation** | Presenters compartilhados (KMP commonMain) — o mesmo código usado tanto pelo React quanto pelo Compose. |
-| **persistence** | Implementação jOOQ dos repositórios (H2 ou PostgreSQL) — usada diretamente pelos presenters na arquitetura React. |
-| **persistence.rest** | Endpoints REST — usados pelos clientes Compose via `persistence.client`. |
+| **react.client** | Pure rendering in React/TypeScript with Material UI. Receives JSON states and sends user events. Bundled with Parcel. |
+| **react.skeleton** | Server-side bridge: each `*ReactViewImpl` translates client events into presenter calls and serializes the ViewState to JSON. |
+| **backend** | Javalin server that hosts the WebSocket (`/dispatcher/{id}`), serves the React static files, and exposes the REST API for Compose clients. |
+| **presentation** | Shared presenters (KMP commonMain) — the same code used by both React and Compose. |
+| **persistence** | jOOQ implementation of the repositories (H2 or PostgreSQL) — used directly by the presenters in the React architecture. |
+| **persistence.rest** | REST endpoints — used by Compose clients via `persistence.client`. |
 
 ---
 
-## Ciclo de Comunicação
+## Communication Cycle
 
 ```mermaid
 sequenceDiagram
@@ -134,59 +134,59 @@ sequenceDiagram
     participant Repo as UserRepository (JDBC)
     participant Response as ResponsePhaseBhv
 
-    Browser->>WS: JSON com evento e formData
-    WS->>Dispatch: parseia request
+    Browser->>WS: JSON with event and formData
+    WS->>Dispatch: parses request
     Dispatch->>ViewImpl: syncClientToServer(formData)
     ViewImpl->>Presenter: state.userName = formData.userName
     Dispatch->>ViewImpl: submit(eventCode=1, ...)
     ViewImpl->>Presenter: onEnter()
     Presenter->>Repo: findByCredentials(user, pass)
-    Note over Repo: Acesso JDBC direto<br/>sem round-trip de rede
+    Note over Repo: Direct JDBC access<br/>no network round trip
     Repo-->>Presenter: Subject
     Presenter->>ViewImpl: update() via markDirty
     Response->>Presenter: commitComputedState()
     Response->>ViewImpl: writeState(json)
-    ViewImpl-->>WS: JSON com estados atualizados
-    WS-->>Browser: estados das views sujas
-    Browser->>Browser: aplica estados e re-renderiza
+    ViewImpl-->>WS: JSON with updated states
+    WS-->>Browser: states of the dirty views
+    Browser->>Browser: applies states and re-renders
 ```
 
-O ciclo completo acontece em uma única troca WebSocket — o cliente envia o evento, o servidor processa e responde com o novo estado. Não há chamadas REST intermediárias.
+The whole cycle happens in a single WebSocket exchange — the client sends the event, the server processes it and responds with the new state. There are no intermediate REST calls.
 
 ---
 
-## Estabelecimento de Sessão
+## Session Establishment
 
-A sessão é estabelecida em duas etapas com troca de chaves criptográficas:
+The session is established in two steps with a cryptographic key exchange:
 
 ```mermaid
 sequenceDiagram
-    participant Browser as Navegador
-    participant Server as Servidor
+    participant Browser as Browser
+    participant Server as Server
 
     Browser->>Server: GET /index.html
-    Server->>Server: Gera appId = random.HMAC(random)
-    Server->>Server: Gera par RSA (pub/priv)
+    Server->>Server: Generates appId = random.HMAC(random)
+    Server->>Server: Generates RSA key pair (pub/priv)
     Server-->>Browser: Cookies: app_id, app_skey (RSA pub)
 
-    Browser->>Browser: Gera senha AES-256-GCM aleatória
-    Browser->>Browser: Cifra senha AES com RSA pub
-    Browser->>Browser: Seta cookie app_signature
+    Browser->>Browser: Generates random AES-256-GCM password
+    Browser->>Browser: Encrypts AES password with RSA pub
+    Browser->>Browser: Sets app_signature cookie
 
     Browser->>Server: WebSocket /dispatcher/appId
-    Browser->>Server: ping com secret=app_signature
-    Server->>Server: Decifra senha AES com RSA priv
-    Server->>Server: Cria ApplicationReactImpl
-    Server-->>Browser: Estado inicial (views)
+    Browser->>Server: ping with secret=app_signature
+    Server->>Server: Decrypts AES password with RSA priv
+    Server->>Server: Creates ApplicationReactImpl
+    Server-->>Browser: Initial state (views)
 ```
 
-O `appId` é auto-assinado: `{random}.{HMAC(random)}` — isso impede a fabricação de IDs de sessão.
+The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging session IDs.
 
 ---
 
-## Protocolo WebSocket
+## WebSocket Protocol
 
-### Cliente → Servidor (Evento do Usuário)
+### Client → Server (User Event)
 
 ```json
 {
@@ -194,16 +194,16 @@ O `appId` é auto-assinado: `{random}.{HMAC(random)}` — isso impede a fabrica�
   "event": ["c677cda52d14:1:1"],
   "c677cda52d14:1": {
     "userName": "admin",
-    "password": "<cifrado AES-GCM em Base64>"
+    "password": "<AES-GCM encrypted, Base64>"
   }
 }
 ```
 
-- **`event`**: lista de `vsid:eventCode` (qual view e qual ação)
-- **`vsid`**: identificador da instância da view (`hexVID:instanceNumber`)
-- **Dados do formulário**: indexados pelo `vsid`, campos sensíveis cifrados
+- **`event`**: list of `vsid:eventCode` (which view and which action)
+- **`vsid`**: view instance identifier (`hexVID:instanceNumber`)
+- **Form data**: indexed by `vsid`, sensitive fields encrypted
 
-### Servidor → Cliente (Resposta de Estado)
+### Server → Client (State Response)
 
 ```json
 {
@@ -225,17 +225,17 @@ O `appId` é auto-assinado: `{random}.{HMAC(random)}` — isso impede a fabrica�
 }
 ```
 
-- **`states`**: apenas as views que mudaram (dirty tracking)
-- **`uri`**: novo fragmento de navegação (para o browser history)
-- **Referências entre views**: campos `*ViewId` apontam para outras views
+- **`states`**: only the views that changed (dirty tracking)
+- **`uri`**: new navigation fragment (for the browser history)
+- **References between views**: `*ViewId` fields point to other views
 
 ---
 
-## Skeleton — A Ponte entre Presenter e Cliente
+## Skeleton — The Bridge Between Presenter and Client
 
-Cada presenter tem um `*ReactViewImpl` correspondente no módulo skeleton. Essa classe implementa `GenericViewImpl` e faz três coisas:
+Each presenter has a matching `*ReactViewImpl` in the skeleton module. This class implements `GenericViewImpl` and does three things:
 
-### 1. Sincroniza dados do formulário (cliente → servidor)
+### 1. Synchronizes form data (client → server)
 
 ```kotlin
 override fun syncClientToServer(formData: Map<String, Any?>) {
@@ -244,24 +244,24 @@ override fun syncClientToServer(formData: Map<String, Any?>) {
         state.userName = CoerceUtils.asString(formData["userName"])
     }
     if (formData.containsKey("password")) {
-        // Dados sensíveis são decifrados com AES
+        // Sensitive data is decrypted with AES
         state.password = app.getDataSecurity()
             .b64Decipher(CoerceUtils.asString(formData["password"]) ?: "")
     }
 }
 ```
 
-### 2. Despacha eventos para o presenter
+### 2. Dispatches events to the presenter
 
 ```kotlin
 override fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
     if (eventCode == 1) {
-        presenter.onEnter()  // Mapeia código inteiro para método do presenter
+        presenter.onEnter()  // Maps the integer code to a presenter method
     }
 }
 ```
 
-### 3. Serializa o estado para JSON
+### 3. Serializes the state to JSON
 
 ```kotlin
 override fun writeState(json: ExtensibleObjectOutput) {
@@ -269,9 +269,9 @@ override fun writeState(json: ExtensibleObjectOutput) {
 }
 ```
 
-O mapeamento entre View IDs hexadecimais e views é fixo e compartilhado entre cliente e servidor:
+The mapping between hexadecimal View IDs and views is fixed and shared between client and server:
 
-| View | Hex VID | Cliente (TSX) | Servidor (Kotlin) |
+| View | Hex VID | Client (TSX) | Server (Kotlin) |
 |------|---------|---------------|-------------------|
 | Browser | `7b32e816a191` | BrowserView.tsx | BrowserReactViewImpl.kt |
 | Root | `f2d345c4a610` | RootView.tsx | RootReactViewImpl.kt |
@@ -285,176 +285,176 @@ O mapeamento entre View IDs hexadecimais e views é fixo e compartilhado entre c
 
 ---
 
-## Sincronização de Estado
+## State Synchronization
 
 ### Dirty Tracking
 
-Quando um presenter chama `view.update()`, a view é marcada como "dirty" no `ApplicationReactImpl`. Na resposta, apenas views dirty são serializadas:
+When a presenter calls `view.update()`, the view is marked "dirty" in `ApplicationReactImpl`. In the response, only dirty views are serialized:
 
 ```mermaid
 graph TB
-    P["Presenter chama update()"]
+    P["Presenter calls update()"]
     P --> MD["app.markDirty(view)"]
-    MD --> DM["dirtyViewMap armazena view"]
+    MD --> DM["dirtyViewMap stores view"]
 
-    subgraph "Na resposta"
-        DM --> IT["Itera dirtyViewMap"]
-        IT --> WS["writeState(json) para cada view"]
-        WS --> CL["Remove da dirtyViewMap"]
+    subgraph "In the response"
+        DM --> IT["Iterates dirtyViewMap"]
+        IT --> WS["writeState(json) for each view"]
+        WS --> CL["Removes from dirtyViewMap"]
     end
 ```
 
 ### Server Push
 
-Quando uma view é marcada dirty fora do ciclo de request/response (por exemplo, por uma operação assíncrona), o servidor agenda um push automático via WebSocket após 200ms:
+When a view is marked dirty outside the request/response cycle (for example, by an asynchronous operation), the server schedules an automatic push over WebSocket after 200ms:
 
 ```kotlin
 fun markDirty(view: GenericViewImpl) {
     dirtyViewMap[view.instanceId()] = view
     if (!requestInProgress && wsSession != null) {
-        schedulePush()  // Push com 200ms de delay
+        schedulePush()  // Push with a 200ms delay
     }
 }
 ```
 
-### Garbage Collection de Views
+### View Garbage Collection
 
-O cliente mantém um sistema de referência para views. Quando um campo `*ViewId` muda no estado de uma view pai, a view filha anterior é liberada automaticamente após 4 segundos de inatividade.
+The client keeps a reference system for views. When a `*ViewId` field changes in a parent view's state, the previous child view is released automatically after 4 seconds of inactivity.
 
 ---
 
-## Segurança
+## Security
 
-### Camada de Transporte
+### Transport Layer
 
 ```mermaid
 graph LR
     subgraph "Handshake"
-        A["Servidor gera par RSA"] --> B["Envia pub key via cookie"]
-        B --> C["Cliente gera senha AES-256-GCM"]
-        C --> D["Cifra senha com RSA pub"]
-        D --> E["Envia via cookie app_signature"]
-        E --> F["Servidor decifra com RSA priv"]
+        A["Server generates RSA key pair"] --> B["Sends pub key via cookie"]
+        B --> C["Client generates AES-256-GCM password"]
+        C --> D["Encrypts password with RSA pub"]
+        D --> E["Sends via app_signature cookie"]
+        E --> F["Server decrypts with RSA priv"]
     end
 
-    subgraph "Sessão"
-        F --> G["Dados sensíveis cifrados<br/>com AES-GCM compartilhado"]
+    subgraph "Session"
+        F --> G["Sensitive data encrypted<br/>with shared AES-GCM"]
     end
 ```
 
-- **Sessão ID**: auto-assinada com HMAC — impede fabricação
-- **Campos sensíveis**: cifrados end-to-end com AES-256-GCM (ex: passwords)
-- **Navegação**: URLs assinadas com hash para prevenir manipulação de parâmetros
+- **Session ID**: self-signed with HMAC — prevents forging
+- **Sensitive fields**: encrypted end to end with AES-256-GCM (e.g., passwords)
+- **Navigation**: URLs signed with a hash to prevent parameter tampering
 
-### Segurança Inerente da Arquitetura
+### Security Inherent to the Architecture
 
-Na view remota, os dados do repositório **nunca trafegam diretamente para o cliente**. O presenter no servidor decide exatamente quais campos expor no ViewState. Isso elimina classes inteiras de vulnerabilidades:
+In the remote view, repository data **never travels directly to the client**. The presenter on the server decides exactly which fields to expose in the ViewState. This eliminates entire classes of vulnerabilities:
 
-- Não há API REST exposta para o cliente React — nenhum endpoint para atacar
-- Não há tokens JWT no cliente — a autenticação é gerenciada na sessão do servidor
-- Os dados sensíveis nunca saem da JVM — o presenter filtra antes de serializar
+- There is no REST API exposed to the React client — no endpoint to attack
+- There are no JWT tokens on the client — authentication is managed in the server session
+- Sensitive data never leaves the JVM — the presenter filters it before serializing
 
 ---
 
-## Gerenciamento de Sessão e Ciclo de Vida
+## Session Management and Lifecycle
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Criada: GET /index.html
-    Criada --> Conectada: WebSocket aberto
-    Conectada --> Ativa: Ping inicial
-    Ativa --> Ativa: Eventos do usuário
-    Ativa --> Desconectada: WebSocket fechado
-    Desconectada --> Conectada: Reconexão
-    Desconectada --> Expirada: Timeout 3 minutos
-    Ativa --> Expirada: Timeout 3 minutos sem WS
-    Expirada --> [*]: release()
+    [*] --> Created: GET /index.html
+    Created --> Connected: WebSocket opened
+    Connected --> Active: Initial ping
+    Active --> Active: User events
+    Active --> Disconnected: WebSocket closed
+    Disconnected --> Connected: Reconnection
+    Disconnected --> Expired: 3-minute timeout
+    Active --> Expired: 3-minute timeout without WS
+    Expired --> [*]: release()
 ```
 
-- **Criação**: ao acessar `/index.html`, cookies de sessão são definidos
-- **Vida útil**: 3 minutos (`DEFAULT_TIME_SPAN`) — estendida a cada interação
-- **Reconexão**: se o WebSocket cair, o cliente reconecta e encontra a mesma sessão (se não expirou)
-- **Limpeza**: sessões expiradas sem WebSocket ativo são removidas periodicamente
-- **Logout/Desconexão**: sessão não autenticada é liberada imediatamente ao fechar o WebSocket
+- **Creation**: when `/index.html` is accessed, session cookies are set
+- **Lifetime**: 3 minutes (`DEFAULT_TIME_SPAN`) — extended on every interaction
+- **Reconnection**: if the WebSocket drops, the client reconnects and finds the same session (if it has not expired)
+- **Cleanup**: expired sessions without an active WebSocket are removed periodically
+- **Logout/Disconnection**: an unauthenticated session is released immediately when the WebSocket closes
 
 ---
 
-## Vantagens da View Remota
+## Advantages of the Remote View
 
-### 1. Zero Latência de Dados
+### 1. Zero Data Latency
 
-Os presenters acessam repositórios JDBC diretamente na mesma JVM. Não há serialização HTTP, parsing de JSON, ou round-trips de rede para cada consulta ao banco. Uma operação que no modelo Compose requer:
+The presenters access JDBC repositories directly in the same JVM. There is no HTTP serialization, JSON parsing, or network round trip for each database query. An operation that in the Compose model requires:
 
 ```
-Cliente → HTTP Request → REST Endpoint → Repository → DB → Response → HTTP Response → Cliente
+Client → HTTP Request → REST Endpoint → Repository → DB → Response → HTTP Response → Client
 ```
 
-No modelo React se reduz a:
+In the React model is reduced to:
 
 ```
 Presenter → Repository → DB → Presenter
 ```
 
-### 2. Superfície de Ataque Mínima
+### 2. Minimal Attack Surface
 
-- **Sem API REST exposta** ao cliente (os endpoints REST existem apenas para clientes Compose)
-- **Sem dados sensíveis no cliente** — passwords, tokens, dados de pagamento nunca chegam ao browser
-- **Sem lógica de negócio no cliente** — impossível fazer engenharia reversa da lógica
-- **Sessão server-side** — sem JWT ou cookies de autenticação expostos
+- **No REST API exposed** to the client (the REST endpoints exist only for Compose clients)
+- **No sensitive data on the client** — passwords, tokens, and payment data never reach the browser
+- **No business logic on the client** — reverse engineering the logic is impossible
+- **Server-side session** — no exposed JWT or authentication cookies
 
-### 3. Cliente Ultraleve
+### 3. Ultra-Light Client
 
-O cliente React contém apenas:
-- Componentes de renderização (TSX)
-- Lógica de comunicação WebSocket
-- Criptografia de campos sensíveis
+The React client contains only:
+- Rendering components (TSX)
+- WebSocket communication logic
+- Encryption of sensitive fields
 
-Não contém: validações de negócio, acesso a dados, gerenciamento de estado complexo, rotas, ou lógica de navegação.
+It does not contain: business validations, data access, complex state management, routes, or navigation logic.
 
-### 4. Consistência Transacional
+### 4. Transactional Consistency
 
-Como presenters e repositórios compartilham a mesma JVM, é possível usar transações JDBC normais que abrangem múltiplas operações de dados — algo difícil de coordenar quando os dados trafegam via REST.
+Because presenters and repositories share the same JVM, regular JDBC transactions spanning multiple data operations can be used — something hard to coordinate when data travels over REST.
 
-### 5. Atualização Instantânea
+### 5. Instant Updates
 
-Mudanças na lógica de apresentação entram em vigor imediatamente no deploy do servidor, sem necessidade de atualizar clientes. O cliente React é cache-friendly e raramente muda.
+Changes to the presentation logic take effect immediately on server deployment, with no need to update clients. The React client is cache-friendly and rarely changes.
 
-### 6. Server Push Nativo
+### 6. Native Server Push
 
-O WebSocket bidirecional permite que o servidor envie atualizações de estado ao cliente sem que ele precise pedir. Isso habilita notificações em tempo real, atualização de dashboards, e sincronização entre abas/usuários.
+The bidirectional WebSocket lets the server send state updates to the client without the client having to ask. This enables real-time notifications, dashboard updates, and synchronization across tabs/users.
 
 ---
 
-## Casos de Uso Ideais
+## Ideal Use Cases
 
-A arquitetura de view remota é especialmente indicada para:
+The remote view architecture is especially suited for:
 
-| Caso de Uso | Por quê |
+| Use Case | Why |
 |-------------|---------|
-| **Aplicações corporativas/internas** | Rede controlada, segurança crítica, dados sensíveis |
-| **Sistemas administrativos (backoffice)** | Muitas telas CRUD, lógica complexa, poucos usuários simultâneos |
-| **Aplicações financeiras** | Dados nunca saem do servidor, auditoria simplificada |
-| **Sistemas com dados regulamentados (LGPD/GDPR)** | Dados pessoais permanecem no servidor, client é stateless |
-| **Dashboards em tempo real** | Server push via WebSocket é nativo |
-| **Aplicações que exigem consistência forte** | Transações JDBC coordenadas no servidor |
-| **Ambientes com baixa largura de banda** | Trafega apenas JSON de estado, não dados brutos |
+| **Corporate/internal applications** | Controlled network, critical security, sensitive data |
+| **Administrative systems (back office)** | Many CRUD screens, complex logic, few concurrent users |
+| **Financial applications** | Data never leaves the server, simplified auditing |
+| **Systems with regulated data (LGPD/GDPR)** | Personal data stays on the server, client is stateless |
+| **Real-time dashboards** | Server push over WebSocket is native |
+| **Applications that require strong consistency** | JDBC transactions coordinated on the server |
+| **Low-bandwidth environments** | Only state JSON is transferred, not raw data |
 
-### Quando NÃO usar
+### When NOT to use it
 
-| Cenário | Motivo |
+| Scenario | Reason |
 |---------|--------|
-| **Funcionamento offline** | Requer conexão WebSocket permanente |
-| **Escala massiva (milhões de usuários)** | Cada sessão consome memória no servidor |
-| **Apps mobile nativos** | Compose Multiplatform é mais adequado |
-| **Jogos ou animações complexas** | Latência do WebSocket pode ser perceptível |
+| **Offline operation** | Requires a permanent WebSocket connection |
+| **Massive scale (millions of users)** | Each session consumes server memory |
+| **Native mobile apps** | Compose Multiplatform is a better fit |
+| **Games or complex animations** | WebSocket latency may be noticeable |
 
 ---
 
-## Exemplo Completo: Fluxo de Login
+## Complete Example: Login Flow
 
 ```mermaid
 sequenceDiagram
-    participant User as Usuário
+    participant User as User
     participant React as React Client
     participant WS as WebSocket
     participant Disp as DispatchPhaseBhv
@@ -463,45 +463,45 @@ sequenceDiagram
     participant URepo as UserRepository (JDBC)
     participant Resp as ResponsePhaseBhv
 
-    User->>React: Preenche usuário e senha e clica Entrar
+    User->>React: Fills in user name and password and clicks Sign in
 
-    Note over React: Cifra password com AES-GCM
+    Note over React: Encrypts password with AES-GCM
 
-    React->>WS: event=c677cda52d14:1:1<br/>formData userName=admin<br/>password=AES(senha)
+    React->>WS: event=c677cda52d14:1:1<br/>formData userName=admin<br/>password=AES(password)
 
-    WS->>Disp: parseia JSON do request
+    WS->>Disp: parses request JSON
 
     Disp->>LView: syncClientToServer(formData)
     LView->>LPres: state.userName = admin
     LView->>LView: state.password = decipher(AES)
-    LView->>LPres: state.password = senha_real
+    LView->>LPres: state.password = real_password
 
     Disp->>LView: submit(eventCode=1, ...)
     LView->>LPres: onEnter()
 
-    LPres->>URepo: findByCredentials(admin, senha)
-    Note over URepo: SQL direto no H2<br/>sem REST intermediário
+    LPres->>URepo: findByCredentials(admin, password)
+    Note over URepo: Direct SQL on H2<br/>no intermediate REST
     URepo-->>LPres: Subject(id=1, nick=Admin)
 
     LPres->>LPres: app.subject = subject
-    LPres->>LPres: Navega para /home
+    LPres->>LPres: Navigates to /home
 
-    Note over LPres: Cria HomePresenter<br/>ProductsPanelPresenter<br/>PurchasesPanelPresenter
+    Note over LPres: Creates HomePresenter<br/>ProductsPanelPresenter<br/>PurchasesPanelPresenter
 
     Resp->>LPres: commitComputedState()
-    Resp->>Resp: Coleta views dirty
+    Resp->>Resp: Collects dirty views
 
-    Resp-->>WS: JSON com estados de Home,<br/>ProductsPanel, PurchasesPanel
+    Resp-->>WS: JSON with states of Home,<br/>ProductsPanel, PurchasesPanel
 
     WS-->>React: uri=/home + states=[...]
-    React->>React: Atualiza browser history
-    React->>React: Renderiza tela Home
+    React->>React: Updates browser history
+    React->>React: Renders Home screen
 
-    User->>User: Vê a tela principal com produtos
+    User->>User: Sees the main screen with products
 ```
 
-Observe que no fluxo inteiro:
-1. O **password nunca trafega em texto claro** — é cifrado com AES-GCM no cliente e decifrado no servidor
-2. O **acesso ao banco é direto** — `UserRepository` faz SQL na mesma JVM do presenter
-3. O **cliente não sabe navegar** — o servidor decide que a próxima tela é Home e envia os estados correspondentes
-4. Apenas **views que mudaram** são incluídas na resposta (dirty tracking)
+Note that throughout the flow:
+1. The **password never travels in clear text** — it is encrypted with AES-GCM on the client and decrypted on the server
+2. **Database access is direct** — `UserRepository` runs SQL in the same JVM as the presenter
+3. The **client does not know how to navigate** — the server decides that the next screen is Home and sends the corresponding states
+4. Only **views that changed** are included in the response (dirty tracking)

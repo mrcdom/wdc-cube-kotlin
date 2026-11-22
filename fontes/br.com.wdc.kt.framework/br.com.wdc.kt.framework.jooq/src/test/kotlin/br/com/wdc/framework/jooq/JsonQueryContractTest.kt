@@ -19,8 +19,8 @@ import org.jooq.DSLContext
 import org.jooq.impl.DSL
 
 /**
- * O contrato do mapeamento JSON, verificado contra um banco real. As subclasses escolhem o banco: o mesmo
- * conjunto roda em H2 e em PostgreSQL.
+ * The JSON mapping contract, checked against a real database. Subclasses pick the database: the same
+ * suite runs on H2 and on PostgreSQL.
  */
 abstract class JsonQueryContractTest(private val database: TestDatabase) {
 
@@ -40,14 +40,14 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
 
         author(1, "Machado")
         author(2, "Clarice")
-        author(3, "Sem Livros")
+        author(3, "No Books")
         book(10, 1, "Dom Casmurro", "39.90", 256, true, published1, byteArrayOf(1, 2, 3), Kind.NOVEL)
-        book(11, 1, "Quincas \"Borba\"\n— edição", "19.90", 300, false, published2, bigCover, Kind.NOVEL)
+        book(11, 1, "Quincas \"Borba\"\n— edition", "19.90", 300, false, published2, bigCover, Kind.NOVEL)
         book(12, 1, "Esaú e Jacó", "59.90", 320, true, null, null, null)
         book(20, 2, "A Hora da Estrela", "29.90", 88, true, published2, null, Kind.NOVEL)
         book(21, 2, "A Descoberta do Mundo", "89.90", 500, true, published1, null, Kind.ESSAY)
-        book(30, null, "Órfão", null, null, null, null, null, null)
-        dsl.insertInto(NOTE).set(NOTE.AUTHOR_ID, 1L).set(NOTE.TEXT, "nota").execute()
+        book(30, null, "Orphan", null, null, null, null, null, null)
+        dsl.insertInto(NOTE).set(NOTE.AUTHOR_ID, 1L).set(NOTE.TEXT, "note").execute()
     }
 
     private fun author(id: Long, name: String) {
@@ -80,7 +80,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
             q.where(Library.bookConditions(t, criteria)).orderBy(t.ID.asc())
         }.map { it.id }
 
-    // :: Escalares e projeção
+    // :: Scalars and projection
 
     @Test
     fun fullProjection_readsEveryScalarType() {
@@ -95,7 +95,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         assertEquals(java.util.UUID(0x1234L, 10L), book.catalog)
         assertContentEquals(byteArrayOf(1, 2, 3), book.cover)
         assertEquals(Kind.NOVEL, book.kind)
-        // relações não entram na projeção total: ela só marca escalares
+        // relations are not in the full projection: it only marks scalars
         assertNull(book.author)
     }
 
@@ -103,7 +103,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     fun nullColumns_becomeNullFields() {
         val book = bookById(30)!!
         assertEquals(30L, book.id)
-        assertEquals("Órfão", book.title)
+        assertEquals("Orphan", book.title)
         assertNull(book.price)
         assertNull(book.pages)
         assertNull(book.active)
@@ -146,7 +146,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
 
     @Test
     fun text_withQuotesNewlinesAndAccents_survivesTheJsonRoundTrip() {
-        assertEquals("Quincas \"Borba\"\n— edição", bookById(11)!!.title)
+        assertEquals("Quincas \"Borba\"\n— edition", bookById(11)!!.title)
     }
 
     @Test
@@ -181,7 +181,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         assertEquals(listOf<Long?>(12L, 10L), ids)
     }
 
-    // :: Relação 1:1
+    // :: 1:1 relation
 
     @Test
     fun association_projectingOnlyTheKey_usesTheForeignKeyColumn_withoutSubselect() {
@@ -213,12 +213,12 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
 
     @Test
     fun association_withNullForeignKey_carriesNoId_whenResolvedByTheKey() {
-        // pelo atalho não há subconsulta que possa "não achar": o objeto vem, sem id
+        // through the shortcut there is no subquery that could "not find": the object comes, without id
         val book = bookById(30, Book(id = 1L, author = Author(id = 1L)))!!
         assertNull(book.author?.id)
     }
 
-    // :: Coleção filha (1:N)
+    // :: Child collection (1:N)
 
     @Test
     fun collection_withoutOrderNorSlice_bringsEveryChild() {
@@ -241,7 +241,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
 
     @Test
     fun collection_criteria_filtersTheChildren_keepingBindValues() {
-        // o valor do filtro é bind value dentro de uma subconsulta: se o dialeto concatenasse texto, ele se perderia
+        // the filter value is a bind value inside a subquery: if the dialect concatenated text, it would be lost
         val criteria = BookCriteria().also { it.price.ge(39.90) }
         val author = authorById(1, Author(id = 1L, books = booksProjection(criteria = criteria)))!!
         assertEquals(setOf<Long?>(10L, 12L), author.books!!.map { it.id }.toSet())
@@ -298,7 +298,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
             Author(id = 1L, books = booksProjection(criteria = criteria, limit = 1)),
         ) { t, q -> q.orderBy(t.ID.asc()) }
 
-        // o mais barato entre os ativos de cada autor — o recorte enxerga a linha do pai
+        // the cheapest among each author's active ones — the slice sees the parent row
         assertEquals(listOf<Long?>(10L), authors[0].books!!.map { it.id })
         assertEquals(listOf<Long?>(20L), authors[1].books!!.map { it.id })
         assertEquals(emptyList(), authors[2].books)
@@ -314,10 +314,10 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     fun collection_slice_requiresAPrimaryKey() {
         val projection = Author(id = 1L, notes = ProjectionList(Note(text = "~"), null, limit = 1))
         val e = assertFailsWith<IllegalStateException> { authorById(1, projection) }
-        assertTrue("chave primária" in e.message!!, e.message)
+        assertTrue("primary key" in e.message!!, e.message)
 
-        // sem recorte, a mesma coleção funciona
-        assertEquals(listOf<String?>("nota"), authorById(1, Author(id = 1L, notes = ProjectionList(Note(text = "~"), null)))!!.notes!!.map { it.text })
+        // without a slice, the same collection works
+        assertEquals(listOf<String?>("note"), authorById(1, Author(id = 1L, notes = ProjectionList(Note(text = "~"), null)))!!.notes!!.map { it.text })
     }
 
     @Test
@@ -328,7 +328,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         assertTrue(author.books!!.all { it.author!!.name == "Clarice" })
     }
 
-    // :: Critérios na raiz
+    // :: Criteria at the root
 
     @Test
     fun criteria_empty_filtersNothing() {
@@ -361,7 +361,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     fun criteria_successiveRequests_areAnd_andOrIsPerField() {
         assertEquals(listOf<Long?>(10L, 20L), booksWhere(BookCriteria().also { it.price.ge(29.90); it.price.le(39.90) }))
         assertEquals(listOf<Long?>(11L, 21L), booksWhere(BookCriteria().also { it.price.or().lt(29.90); it.price.gt(59.90) }))
-        // entre campos é sempre AND, mesmo com um deles disjuntivo
+        // between fields it is always AND, even with one of them disjunctive
         assertEquals(listOf<Long?>(21L), booksWhere(BookCriteria().also { it.price.or().lt(29.90); it.price.gt(59.90); it.active.eq(true) }))
     }
 
@@ -373,9 +373,9 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.like("dom%") }))
         assertEquals(listOf<Long?>(10L), booksWhere(BookCriteria().also { it.title.ilike("dom%") }))
         assertEquals(listOf<Long?>(10L), booksWhere(BookCriteria().also { it.title.eq("Dom Casmurro") }))
-        // curingas fazem parte do valor: sem eles, like é igualdade
+        // wildcards are part of the value: without them, like is equality
         assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.like("Dom") }))
-        // no trecho, curinga e texto: "_" e "%" nao casam com qualquer coisa
+        // in the fragment, wildcard is text: "_" and "%" do not match anything
         assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.containing("_") }))
         assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.containing("%") }))
         assertEquals(emptyList(), booksWhere(BookCriteria().also { it.title.startingWith("D_m") }))
@@ -391,21 +391,21 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
             listOf<Long?>(10L, 21L),
             booksWhere(BookCriteria().also { it.published.between(Instant.parse("2024-01-15T10:30:00Z"), Instant.parse("2024-01-15T10:30:00Z")) }),
         )
-        // o mesmo instante escrito com outro offset filtra igual
+        // the same instant written with another offset filters the same
         assertEquals(listOf<Long?>(11L, 20L), booksWhere(BookCriteria().also { it.published.ge(Instant.parse("2024-12-31T20:59:59-03:00")) }))
     }
 
-    // :: Transação
+    // :: Transaction
 
     @Test
     fun queriesInsideATransaction_shareItsConnection_andSeeItsWrites() = runBlocking {
         val tx = TransactionServiceImpl { database.dataSource }
         assertFailsWith<IllegalStateException> {
             tx.required {
-                author(9, "Provisório")
-                // a leitura enxerga a escrita não comitada: mesma conexão
-                assertEquals("Provisório", authorById(9, Author(id = 1L, name = "~"))!!.name)
-                throw IllegalStateException("desiste")
+                author(9, "Provisional")
+                // the read sees the uncommitted write: same connection
+                assertEquals("Provisional", authorById(9, Author(id = 1L, name = "~"))!!.name)
+                throw IllegalStateException("give up")
             }
         }
         assertNull(TransactionScope.current())
@@ -414,7 +414,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
 
     @Test
     fun writesOutsideATransaction_areAutoCommitted() {
-        author(8, "Avulso")
+        author(8, "Standalone")
         database.dataSource.connection.use { c ->
             c.createStatement().use { st ->
                 st.executeQuery("SELECT COUNT(*) FROM AUTHOR WHERE ID = 8").use { rs -> rs.next(); assertEquals(1, rs.getInt(1)) }
@@ -422,20 +422,20 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         }
     }
 
-    // :: insert por projeção
+    // :: insert by projection
 
     private fun couponByCode(code: String): Coupon? =
         library.couponQuery.fetchOne(null) { t, q -> q.where(t.CODE.eq(code)) }
 
     @Test
     fun insert_withoutProjection_writesWhatHasValue_andFillsDefaultsAndIdentity() {
-        val coupon = Coupon(code = "A1", label = "ignorado")
+        val coupon = Coupon(code = "A1", label = "ignored")
         assertTrue(library.couponQuery.insert(coupon))
-        assertNotNull(coupon.id, "a identidade volta")
-        assertEquals("NEW", coupon.status, "o padrão da coluna volta")
+        assertNotNull(coupon.id, "the identity comes back")
+        assertEquals("NEW", coupon.status, "the column default comes back")
         assertEquals(10.0, coupon.discount)
         assertNull(coupon.created)
-        assertEquals("ignorado", coupon.label, "o derivado não é coluna: nem entra, nem volta")
+        assertEquals("ignored", coupon.label, "the derived field is not a column: it neither goes in nor comes back")
 
         val stored = couponByCode("A1")!!
         assertEquals(coupon.id, stored.id)
@@ -447,15 +447,15 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
         val coupon = Coupon(code = "P1", status = "USED", discount = null)
         val projection = Coupon(code = "", discount = 0.0)
         assertTrue(library.couponQuery.insert(coupon, projection))
-        assertEquals("NEW", coupon.status, "fora da projeção: o padrão da coluna, e o bean o recebe")
-        assertNull(coupon.discount, "marcado e nulo: grava NULL, sem o padrão")
+        assertEquals("NEW", coupon.status, "outside the projection: the column default, and the bean gets it")
+        assertNull(coupon.discount, "marked and null: writes NULL, not the default")
         assertEquals("NEW", couponByCode("P1")!!.status)
         assertNull(couponByCode("P1")!!.discount)
     }
 
     @Test
     fun insert_failingOnAConstraint_leavesNoRow() {
-        // no H2, SELECT … FROM FINAL TABLE (INSERT …) deixaria a linha gravada; o dialeto não usa essa forma
+        // on H2, SELECT … FROM FINAL TABLE (INSERT …) would leave the row written; the dialect does not use that form
         assertFailsWith<org.jooq.exception.DataAccessException> {
             library.couponQuery.insert(Coupon(code = "F1", author = Author(id = 999L)))
         }
@@ -466,7 +466,7 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     fun insert_neverWritesTheIdentity() {
         val coupon = Coupon(id = 999_999L, code = "I1")
         assertTrue(library.couponQuery.insert(coupon))
-        assertTrue(coupon.id != 999_999L, "a identidade é do banco: ${coupon.id}")
+        assertTrue(coupon.id != 999_999L, "the identity belongs to the database: ${coupon.id}")
         assertEquals(coupon.id, couponByCode("I1")!!.id)
     }
 
@@ -491,10 +491,10 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
 
     @Test
     fun insert_conflictOnThePrimaryKeyDiscarded_isFalse_andLeavesTheBeanAlone() {
-        val again = Book(id = 10L, title = "Outro")
+        val again = Book(id = 10L, title = "Other")
         assertFalse(library.bookQuery.insert(again, onConflictDoNothing = true))
-        assertEquals("Outro", again.title)
-        assertNull(again.price, "nada volta ao bean")
+        assertEquals("Other", again.title)
+        assertNull(again.price, "nothing comes back to the bean")
         assertEquals("Dom Casmurro", bookById(10L)!!.title)
     }
 
@@ -508,13 +508,13 @@ abstract class JsonQueryContractTest(private val database: TestDatabase) {
     fun insert_everyScalarType_roundTrips() {
         val published = Instant.parse("2023-07-08T09:10:11.123456Z")
         val book = Book(
-            id = 99L, title = "Novo", price = 12.34, pages = 7, active = false, published = published,
+            id = 99L, title = "New", price = 12.34, pages = 7, active = false, published = published,
             released = java.time.LocalDate.of(2023, 7, 8), catalog = java.util.UUID(5L, 6L), cover = byteArrayOf(9, 8, 7),
             kind = Kind.ESSAY, author = Author(id = 1L),
         )
         assertTrue(library.bookQuery.insert(book))
         val stored = bookById(99L, library.bookQuery.newProjectionBean { it.author = Author(id = 0L) })!!
-        assertEquals("Novo", stored.title)
+        assertEquals("New", stored.title)
         assertEquals(12.34, stored.price)
         assertEquals(7, stored.pages)
         assertEquals(false, stored.active)
@@ -571,7 +571,7 @@ class PostgresJsonQueryTest : JsonQueryContractTest(TestDatabase.postgres()) {
 
     @Test
     fun insert_conflictOnAUniqueColumnDiscarded_isFalse() {
-        // no H2 o jOOQ emula o ON CONFLICT DO NOTHING com um MERGE pela chave primária, que não vê o UNIQUE de CODE
+        // on H2 jOOQ emulates ON CONFLICT DO NOTHING with a MERGE by the primary key, which does not see CODE's UNIQUE
         assertTrue(library.couponQuery.insert(Coupon(code = "C1")))
         val again = Coupon(code = "C1")
         assertFalse(library.couponQuery.insert(again, onConflictDoNothing = true))

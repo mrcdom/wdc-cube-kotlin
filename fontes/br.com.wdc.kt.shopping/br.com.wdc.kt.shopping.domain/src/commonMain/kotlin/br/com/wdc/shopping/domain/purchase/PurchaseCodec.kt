@@ -21,11 +21,11 @@ import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.user.UserCodec
 
 /**
- * Como [Purchase] e [PurchaseCriteria] trafegam — o mesmo codec no cliente e no servidor.
+ * How [Purchase] and [PurchaseCriteria] travel — the same codec on client and server.
  *
- * Em `items`, a forma no fio distingue projeção de resultado: uma coleção de projeção que carrega critério ou
- * recorte vai como envelope (`{ shape, where?, limit?, offset? }`), e é assim que o filtro e a ordem dos itens
- * chegam ao servidor; o resultado é o array de sempre. A data trafega em ISO-8601.
+ * In `items`, the wire form tells projection from result: a projection collection carrying criteria or slicing
+ * goes as an envelope (`{ shape, where?, limit?, offset? }`), which is how the items' filter and order reach the
+ * server; the result is the usual array. The date travels as ISO-8601.
  */
 class PurchaseCodec : ModelCodec<Purchase, PurchaseCriteria> {
 
@@ -65,7 +65,7 @@ class PurchaseCodec : ModelCodec<Purchase, PurchaseCriteria> {
         }
     }
 
-    /** O item dentro da compra: sem a referência de volta, que é a própria compra. */
+    /** The item inside the purchase: without the back reference, which is the purchase itself. */
     private fun writeItem(out: ExtensibleObjectOutput, item: PurchaseItem, graph: EntityGraph) {
         out.beginObject()
         item.id?.let { out.name("id").value(it) }
@@ -133,7 +133,7 @@ class PurchaseCodec : ModelCodec<Purchase, PurchaseCriteria> {
         }
     }
 
-    /** Cada item recebe a referência de volta como stub — só a chave da compra. */
+    /** Each item gets the back reference as a stub — only the purchase key. */
     private fun readItem(input: ExtensibleObjectInput, parent: Purchase): PurchaseItem {
         val item = PurchaseItem()
         item.purchase = ref(::Purchase, parent.id) { id = it }

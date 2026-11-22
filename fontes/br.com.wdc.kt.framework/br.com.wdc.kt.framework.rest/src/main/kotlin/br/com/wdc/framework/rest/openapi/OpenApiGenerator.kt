@@ -6,11 +6,11 @@ import com.google.gson.GsonBuilder
 import java.lang.reflect.Type
 
 /**
- * Monta o documento OpenAPI a partir das rotas registradas. Uma rota sem [OperationDoc] também entra, com o
- * verbo, o caminho, os parâmetros de caminho e a segurança — o documento nunca deixa de listar uma rota servida.
+ * Builds the OpenAPI document from the registered routes. A route without [OperationDoc] is included too, with the
+ * verb, the path, the path parameters and the security — the document never fails to list a served route.
  *
- * A segurança de cada operação sai do registro: rota pública (lista de `permitAll` ou `public = true`) leva
- * `security: []`; as outras herdam a do documento.
+ * Each operation's security comes from the registration: a public route (`permitAll` list or `public = true`) gets
+ * `security: []`; the others inherit the document's.
  */
 internal class OpenApiGenerator(private val api: RestApi, private val config: OpenApiConfig) {
 
@@ -100,7 +100,7 @@ internal class OpenApiGenerator(private val api: RestApi, private val config: Op
 
     private fun isPublic(route: RestRoute): Boolean {
         val security = api.security ?: return true
-        // o modelo do caminho casa como caminho concreto: `{id}` é um segmento qualquer
+        // the path template is matched as a concrete path: `{id}` is any segment
         return route.public || security.isPublic(route.method, route.path.replace(Regex("\\{[^}]+}"), "x").replace(Regex("<[^>]+>"), "x"))
     }
 
@@ -113,7 +113,7 @@ internal class OpenApiGenerator(private val api: RestApi, private val config: Op
         is Map<*, *> -> value
         is Type -> schemas.schemaOf(value)
         is kotlin.reflect.KClass<*> -> schemas.schemaOf(value.java)
-        else -> throw IllegalArgumentException("Esquema não reconhecido: $value")
+        else -> throw IllegalArgumentException("Unrecognized schema: $value")
     }
 
     companion object {

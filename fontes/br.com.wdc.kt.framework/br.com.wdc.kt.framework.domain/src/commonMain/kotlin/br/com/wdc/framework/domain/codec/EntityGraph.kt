@@ -1,30 +1,30 @@
 package br.com.wdc.framework.domain.codec
 
 /**
- * Rastreia entidades já processadas numa operação de serialização, usando **identidade de instância**
- * (`===`) para detectar referências cíclicas.
+ * Tracks entities already processed in a serialization operation, using **instance identity** (`===`) to
+ * detect cyclic references.
  *
- * Duas instâncias distintas com a mesma chave são independentes — só a mesma instância é detectada como
- * repetição. Quando detectada, o codec escreve um stub (só a chave).
+ * Two distinct instances with the same key are independent — only the same instance is detected as a
+ * repetition. When detected, the codec writes a stub (key only).
  *
- * Escopo: uma instância por operação de topo (um `writeEntity` raiz).
+ * Scope: one instance per top-level operation (a root `writeEntity`).
  * ```
  * val graph = EntityGraph()
- * graph.track(purchase)        // primeira vez → true
- * graph.track(purchase)        // mesma instância → false
+ * graph.track(purchase)        // first time → true
+ * graph.track(purchase)        // same instance → false
  *
  * val other = Purchase().apply { id = purchase.id }
- * graph.track(other)           // outra instância, mesma chave → true
+ * graph.track(other)           // another instance, same key → true
  * ```
  */
 class EntityGraph {
 
-    // Não há IdentityHashMap em commonMain: agrupa pela chave (estável durante a operação) e compara por ===.
+    // There is no IdentityHashMap in commonMain: groups by key (stable during the operation) and compares with ===.
     private val seen = HashMap<Any?, MutableList<KeyedEntity>>()
 
     /**
-     * Rastreia a entidade. Devolve `true` se é a primeira ocorrência, `false` se esta mesma instância já foi
-     * rastreada (ciclo — use um stub com [KeyedEntity.key]). `null` devolve sempre `true`.
+     * Tracks the entity. Returns `true` if it is the first occurrence, `false` if this same instance was already
+     * tracked (cycle — use a stub with [KeyedEntity.key]). `null` always returns `true`.
      */
     fun track(entity: KeyedEntity?): Boolean {
         if (entity == null) return true
@@ -34,7 +34,7 @@ class EntityGraph {
         return true
     }
 
-    /** Verifica se esta mesma instância já foi rastreada. */
+    /** Checks whether this same instance was already tracked. */
     fun isSeen(entity: KeyedEntity?): Boolean {
         if (entity == null) return false
         return seen[entity.key()]?.any { it === entity } == true

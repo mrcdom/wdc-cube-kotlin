@@ -1,119 +1,119 @@
 # native.android
 
-Implementação da view usando **Android Views programáticas** — sem XML layouts, sem Compose, sem ViewBinding.
+View implementation using **programmatic Android Views** — no XML layouts, no Compose, no ViewBinding.
 
-## Arquitetura
+## Architecture
 
 ### Base Class: `AbstractViewAndroid<P>`
 
-Toda view estende `AbstractViewAndroid<P>`, que implementa a interface `CubeView` do framework:
+Every view extends `AbstractViewAndroid<P>`, which implements the framework's `CubeView` interface:
 
 ```kotlin
 class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) 
     : AbstractViewAndroid<ProductsPanelPresenter>("products-panel", presenter) {
 
     override fun createView(): View = AndroidDom.build(ctx) {
-        // DSL para construção programática da UI
+        // DSL for building the UI programmatically
     }
 
     override fun doUpdate() {
-        // Atualização eficiente com guards (comparação com estado anterior)
+        // Efficient update with guards (comparison with the previous state)
     }
 }
 ```
 
-O ciclo de vida é:
-1. `createView()` — constrói a árvore de views programaticamente via `AndroidDom`
-2. `doUpdate()` — chamado pelo scheduler quando o presenter sinaliza mudança de estado
-3. Guards (`lastX != newX`) evitam recálculos desnecessários
+The lifecycle is:
+1. `createView()` — builds the view tree programmatically via `AndroidDom`
+2. `doUpdate()` — called by the scheduler when the presenter signals a state change
+3. Guards (`lastX != newX`) avoid unnecessary recomputation
 
 ### DSL: `AndroidDom`
 
-DSL Kotlin que substitui XML/Compose com chamadas programáticas:
+Kotlin DSL that replaces XML/Compose with programmatic calls:
 
 ```kotlin
 AndroidDom.build(ctx) {
     vStack(spacing = 8.dp) {
         hStack { 
-            label { text = "Título"; textSize = 17f }
+            label { text = "Title"; textSize = 17f }
             spacer()
         }
         scrollView {
             flowLayout(minChildWidth = 160.dp) {
-                // cards de produto
+                // product cards
             }
         }
     }
 }
 ```
 
-Componentes disponíveis: `vStack`, `hStack`, `frame`, `scrollView`, `flowLayout`, `spacer`, `label`/`textView`, `button`, `imageView`, `editText`.
+Available components: `vStack`, `hStack`, `frame`, `scrollView`, `flowLayout`, `spacer`, `label`/`textView`, `button`, `imageView`, `editText`.
 
-### Atualização de Views: `ViewUpdateScheduler`
+### View Updates: `ViewUpdateScheduler`
 
-O scheduler opera via `Handler(Looper.getMainLooper())`:
+The scheduler works via `Handler(Looper.getMainLooper())`:
 
-1. Presenter chama `update()` → marca a view como dirty
-2. No próximo VSYNC, o scheduler faz flush de todas as views dirty
-3. Antes do flush, `app.commitComputedState()` garante consistência do estado
-4. Cada view executa `doUpdate()` uma única vez por frame
+1. The presenter calls `update()` → marks the view as dirty
+2. On the next VSYNC, the scheduler flushes all dirty views
+3. Before the flush, `app.commitComputedState()` ensures state consistency
+4. Each view runs `doUpdate()` only once per frame
 
-### Padrões de Implementação
+### Implementation Patterns
 
-| Padrão | Descrição |
+| Pattern | Description |
 |--------|-----------|
-| **ListSlot** | Reciclagem de views em listas — grows, shrinks e updates in-place |
-| **FlowLayout** | ViewGroup customizado que distribui filhos em grid responsivo baseado na largura disponível |
-| **StateListDrawable** | Feedback visual de toque (background muda de cor no estado `pressed`) |
-| **Guards** | Variáveis `lastX` que evitam reprocessamento quando o estado não mudou |
-| **Density-aware** | Todas as dimensões usam `* density` para independência de densidade |
+| **ListSlot** | View recycling in lists — grows, shrinks and updates in place |
+| **FlowLayout** | Custom ViewGroup that lays out children in a responsive grid based on the available width |
+| **StateListDrawable** | Visual touch feedback (the background changes color in the `pressed` state) |
+| **Guards** | `lastX` variables that avoid reprocessing when the state has not changed |
+| **Density-aware** | All dimensions use `* density` for density independence |
 
-### Navegação e Slots
+### Navigation and Slots
 
-Views-pai declaram `ViewSlot` (um `FrameLayout`) que recebe views-filhas por navegação:
+Parent views declare a `ViewSlot` (a `FrameLayout`) that receives child views through navigation:
 
 ```kotlin
-// No HomeViewAndroid
+// In HomeViewAndroid
 val contentSlot = newViewSlot(contentContainer)
 
-// Quando o presenter navega para "product-details"
-// O slot automaticamente troca a view visível
+// When the presenter navigates to "product-details"
+// the slot swaps the visible view automatically
 ```
 
-## Como compilar e executar
+## Building and running
 
 ```bash
 cd fontes
 
-# Compilar APK debug
+# Build the debug APK
 ./gradlew :view-native-android:assembleDebug
 
-# Deploy no emulador
+# Deploy to the emulator
 cd br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.native/native.android
 ./deploy.sh emulator --emulator-name Pixel_10
 ```
 
-## Estrutura de Arquivos
+## File Structure
 
 ```
 src/androidMain/kotlin/br/com/wdc/shopping/nativeui/android/
 ├── theme/
-│   ├── Colors.kt          # Paleta Material Design
-│   ├── Dimens.kt          # Dimensões padrão
-│   └── Styles.kt          # Helpers de estilo (cards, buttons)
+│   ├── Colors.kt          # Material Design palette
+│   ├── Dimens.kt          # Default dimensions
+│   └── Styles.kt          # Style helpers (cards, buttons)
 ├── toolkit/
 │   ├── AbstractViewAndroid.kt   # Base class + ListSlot
-│   ├── AndroidDom.kt           # DSL de construção de views
-│   ├── FlowLayout.kt           # ViewGroup grid responsivo
-│   ├── ViewUpdateScheduler.kt  # Coalescing de updates
-│   └── ViewUtils.kt            # Formatação, loading de imagens
+│   ├── AndroidDom.kt           # DSL for building views
+│   ├── FlowLayout.kt           # Responsive grid ViewGroup
+│   ├── ViewUpdateScheduler.kt  # Update coalescing
+│   └── ViewUtils.kt            # Formatting, image loading
 └── views/
-    ├── RootViewAndroid.kt       # Entry point + registro de factories
-    ├── LoginViewAndroid.kt      # Tela de login
-    ├── HomeViewAndroid.kt       # Layout responsivo com panels/tabs
-    ├── ProductsPanelViewAndroid.kt  # Grid de produtos
-    ├── PurchasesPanelViewAndroid.kt # Lista de compras paginada
-    ├── ProductViewAndroid.kt    # Detalhe do produto
-    ├── CartViewAndroid.kt       # Carrinho de compras
-    └── ReceiptViewAndroid.kt    # Recibo de compra
+    ├── RootViewAndroid.kt       # Entry point + factory registration
+    ├── LoginViewAndroid.kt      # Login screen
+    ├── HomeViewAndroid.kt       # Responsive layout with panels/tabs
+    ├── ProductsPanelViewAndroid.kt  # Product grid
+    ├── PurchasesPanelViewAndroid.kt # Paginated purchase list
+    ├── ProductViewAndroid.kt    # Product details
+    ├── CartViewAndroid.kt       # Shopping cart
+    └── ReceiptViewAndroid.kt    # Purchase receipt
 ```

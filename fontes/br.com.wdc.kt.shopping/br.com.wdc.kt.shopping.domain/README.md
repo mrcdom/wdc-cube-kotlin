@@ -1,18 +1,18 @@
 # shopping-domain
 
-O domínio da aplicação Shopping: entidades, critérios, contratos de repositório e os codecs com que tudo isso trafega.
+The Shopping application domain: entities, criteria, repository contracts and the codecs all of it travels with.
 
-**Plataformas:** JVM, Android, iOS, JS, wasmJs
+**Platforms:** JVM, Android, iOS, JS, wasmJs
 
-Cada entidade ocupa um pacote — `product`, `user`, `purchase`, `purchaseitem` — com quatro classes:
+Each entity has its own package — `product`, `user`, `purchase`, `purchaseitem` — with four classes:
 
-| Classe | Papel |
+| Class | Role |
 |---|---|
-| `Xxx` | A entidade. Também serve de projeção: campo preenchido = "traga este campo" |
-| `XxxCriteria` | Os filtros e a ordenação de uma consulta |
-| `XxxRepository` | O contrato, implementado no servidor (jOOQ) e no cliente (HTTP) |
-| `XxxCodec` | Leitura e escrita em JSON — o mesmo no cliente e no servidor |
+| `Xxx` | The entity. Also serves as a projection: field set = "fetch this field" |
+| `XxxCriteria` | The filters and ordering of a query |
+| `XxxRepository` | The contract, implemented on the server (jOOQ) and on the client (HTTP) |
+| `XxxCodec` | JSON reading and writing — the same on client and server |
 
-Também ficam aqui `ShoppingTransactions` (o serviço de transação da aplicação), a segurança (`SecurityContext`, `Role`, `AuthenticationService`) e a configuração.
+Also here: `ShoppingTransactions` (the application's transaction service), security (`SecurityContext`, `Role`, `AuthenticationService`) and configuration.
 
-Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).
+See the [persistence architecture](../../../docs/architecture-persistence.md).

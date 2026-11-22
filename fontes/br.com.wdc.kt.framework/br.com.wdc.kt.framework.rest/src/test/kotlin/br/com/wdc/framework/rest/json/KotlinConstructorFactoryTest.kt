@@ -10,8 +10,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Leitura de classes Kotlin pelo construtor primário. A tarefa `testFinalFields` roda esta classe no JDK 26 com a
- * gravação de campo final por reflexão bloqueada: se a leitura voltar a gravar `val` por reflexão, ela falha.
+ * Reading Kotlin classes through the primary constructor. The `testFinalFields` task runs this class on JDK 26 with
+ * reflective writing of final fields blocked: if reading goes back to writing `val` by reflection, it fails.
  */
 class KotlinConstructorFactoryTest {
 
@@ -25,13 +25,13 @@ class KotlinConstructorFactoryTest {
 
     data class Validated(val quantity: Int) {
         init {
-            require(quantity > 0) { "quantity deve ser positiva" }
+            require(quantity > 0) { "quantity must be positive" }
         }
     }
 
     class WithBody(val id: Long) {
         var label: String? = null
-        val fixed: String = "fixo"
+        val fixed: String = "fixed"
     }
 
     data class Nested(val order: Order, val due: LocalDate?)
@@ -48,13 +48,13 @@ class KotlinConstructorFactoryTest {
         assertEquals("default", read.tenant)
         assertNull(read.trace)
         assertEquals(1L, read.id)
-        // a escrita continua omitindo os transientes
+        // writing still omits the transients
         assertEquals("""{"id":1}""", mapper.toJson(WithTransient(1, "x", "y")))
     }
 
     @Test
     fun transientParameter_withoutDefaultOrNull_isADeclarationError() {
-        // a escrita não depende do leitor
+        // writing doesn't depend on the reader
         assertEquals("""{"id":1}""", mapper.toJson(TransientRequired(1, "x")))
         val error = assertFailsWith<JsonDeclarationException> { mapper.fromJson<TransientRequired>("""{"id":1}""") }
         assertTrue(TransientRequired::class.java.name in error.message!!, error.message)
@@ -71,7 +71,7 @@ class KotlinConstructorFactoryTest {
     fun defaults_applyToAbsentFields_andToExplicitNullInNonNullableOnes() {
         assertEquals(WithDefaults(), mapper.fromJson<WithDefaults>("{}"))
         assertEquals(WithDefaults(id = 3, status = "open"), mapper.fromJson<WithDefaults>("""{"id":3,"status":null}"""))
-        // num anulável, o null explícito vence o padrão
+        // on a nullable, the explicit null wins over the default
         assertNull(mapper.fromJson<WithDefaults>("""{"note":null}""").note)
         assertEquals(listOf("a"), mapper.fromJson<WithDefaults>("""{"tags":["a"]}""").tags)
     }
@@ -102,14 +102,14 @@ class KotlinConstructorFactoryTest {
     @Test
     fun validationInInit_surfacesAsItsOwnException() {
         val e = assertFailsWith<IllegalArgumentException> { mapper.fromJson<Validated>("""{"quantity":0}""") }
-        assertEquals("quantity deve ser positiva", e.message)
+        assertEquals("quantity must be positive", e.message)
     }
 
     @Test
     fun bodyVar_isWrittenAfterConstruction_bodyVal_isLeftAlone() {
-        val value = mapper.fromJson<WithBody>("""{"id":1,"label":"x","fixed":"outro"}""")
+        val value = mapper.fromJson<WithBody>("""{"id":1,"label":"x","fixed":"other"}""")
         assertEquals("x", value.label)
-        assertEquals("fixo", value.fixed)
+        assertEquals("fixed", value.fixed)
     }
 
     @Test

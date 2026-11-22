@@ -1,16 +1,16 @@
 package br.com.wdc.framework.persistence.transaction
 
 /**
- * Parâmetros operacionais do [RemoteTransactionCoordinatorImpl], externalizáveis via configuração.
+ * Operational parameters of [RemoteTransactionCoordinatorImpl], configurable externally.
  *
- * @property idleTimeoutMs      tempo máximo ocioso antes de uma transação remota ser revertida e removida
- * @property maxLifetimeMs      tempo de vida **absoluto** desde a abertura: além disto a transação é revertida
- *                              mesmo que ativa, impedindo um cliente que "pinga" antes de cada idle-timeout de
- *                              segurar uma conexão indefinidamente
- * @property outcomeRetentionMs janela em que o desfecho de uma transação finalizada é lembrado, para tornar
- *                              commit/rollback idempotentes
- * @property maxOpen            teto global de transações remotas abertas (cada uma segura uma conexão)
- * @property maxOpenPerOwner    teto de transações remotas abertas por dono
+ * @property idleTimeoutMs      maximum idle time before a remote transaction is rolled back and removed
+ * @property maxLifetimeMs      **absolute** lifetime since opening: past it the transaction is rolled back even
+ *                              if active, preventing a client that "pings" before each idle timeout from
+ *                              holding a connection indefinitely
+ * @property outcomeRetentionMs window in which the outcome of a finished transaction is remembered, to make
+ *                              commit/rollback idempotent
+ * @property maxOpen            global cap of open remote transactions (each one holds a connection)
+ * @property maxOpenPerOwner    cap of open remote transactions per owner
  */
 data class RemoteTransactionOptions(
     val idleTimeoutMs: Long = DEFAULT_IDLE_TIMEOUT_MS,
@@ -26,14 +26,14 @@ data class RemoteTransactionOptions(
         const val DEFAULT_MAX_OPEN = 128
         const val DEFAULT_MAX_OPEN_PER_OWNER = 16
 
-        /** Todos os parâmetros nos defaults. */
+        /** All parameters at their defaults. */
         fun defaults(): RemoteTransactionOptions = RemoteTransactionOptions()
 
         /**
-         * Lê da configuração sob `<prefix>database.remoteTransaction.*`; durações em **segundos** (como
-         * `database.pool.connectionTimeoutSeconds`). Chave ausente → default.
+         * Reads from the configuration under `<prefix>database.remoteTransaction.*`; durations in **seconds**
+         * (like `database.pool.connectionTimeoutSeconds`). Missing key → default.
          *
-         * @param getInt leitura de inteiro da configuração: `(chave, default) -> valor`
+         * @param getInt integer read from the configuration: `(key, default) -> value`
          */
         fun fromConfig(prefix: String, getInt: (key: String, defaultValue: Int) -> Int): RemoteTransactionOptions {
             val d = defaults()

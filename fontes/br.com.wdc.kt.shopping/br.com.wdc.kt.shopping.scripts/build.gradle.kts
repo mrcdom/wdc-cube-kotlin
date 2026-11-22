@@ -5,8 +5,8 @@ dependencies {
     implementation(libs.logback.classic)
 }
 
-// Regenera as classes jOOQ de :shopping-persistence a partir do esquema de DBCreate.
-// O resultado é versionado: rode depois de mudar o DDL e faça commit do que mudar.
+// Regenerates the jOOQ classes of :shopping-persistence from the DBCreate schema.
+// The result is versioned: run it after changing the DDL and commit what changes.
 tasks.register<JavaExec>("generateJooqSchema") {
     group = "codegen"
     description = "Generates the jOOQ classes of :shopping-persistence from the DBCreate schema"

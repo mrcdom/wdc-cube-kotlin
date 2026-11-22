@@ -32,9 +32,9 @@ class TransactionServiceImplTest {
 
     @AfterTest
     fun tearDown() {
-        // nenhum teste pode deixar transação presa à thread nem conexão aberta
-        assertNull(TransactionScope.current(), "transação vazou para a thread")
-        assertEquals(0, db.openConnections.get(), "conexão não devolvida")
+        // no test may leave a transaction stuck to the thread or a connection open
+        assertNull(TransactionScope.current(), "transaction leaked to the thread")
+        assertEquals(0, db.openConnections.get(), "connection not returned")
         db.close()
     }
 
@@ -64,9 +64,9 @@ class TransactionServiceImplTest {
 
     @Test
     fun required_error_alsoRollsBack() = runBlocking {
-        // AssertionError é Error, não Exception — e é o que os presenters do app lançam
+        // AssertionError is an Error, not an Exception — and it is what the app's presenters throw
         assertFailsWith<AssertionError> {
-            tx.required { db.insertInCurrentTx(1); throw AssertionError("invariante") }
+            tx.required { db.insertInCurrentTx(1); throw AssertionError("invariant") }
         }
         assertEquals(emptyList(), db.ids())
     }
@@ -92,7 +92,7 @@ class TransactionServiceImplTest {
                 assertSame(outer, TransactionScope.current()!!.connection())
                 db.insertInCurrentTx(2)
             }
-            // o participante não comita: ainda nada visível de fora
+            // the participant does not commit: still nothing visible from outside
             assertEquals(emptyList(), db.ids())
         }
         assertEquals(listOf(1, 2), db.ids())
@@ -115,7 +115,7 @@ class TransactionServiceImplTest {
     fun required_commitFailure_becomesTransactionSystemException() = runBlocking {
         db.failNextCommit = true
         val e = assertFailsWith<TransactionSystemException> { tx.required { db.insertInCurrentTx(1) } }
-        assertEquals("commit recusado (teste)", e.cause?.message)
+        assertEquals("commit refused (test)", e.cause?.message)
         assertEquals(emptyList(), db.ids())
     }
 
@@ -137,7 +137,7 @@ class TransactionServiceImplTest {
                     assertNotSame(outer, TransactionScope.current()!!.connection())
                     db.insertInCurrentTx(2)
                 }
-                // a interna já comitou; a externa volta a ser a corrente
+                // the inner one already committed; the outer one is current again
                 assertEquals(listOf(2), db.ids())
                 assertSame(outer, TransactionScope.current()!!.connection())
                 throw IllegalStateException("outer fails")
@@ -223,7 +223,7 @@ class TransactionServiceImplTest {
                 throw IllegalStateException("outer fails")
             }
         }
-        // o que foi escrito fora da transação sobrevive ao rollback dela
+        // what was written outside the transaction survives its rollback
         assertEquals(listOf(2), db.ids())
     }
 
@@ -235,7 +235,7 @@ class TransactionServiceImplTest {
         }
     }
 
-    // :: Corrotinas
+    // :: Coroutines
 
     @Test
     fun block_thatResumesOnAnotherThread_keepsTheSameConnection() {
@@ -254,7 +254,7 @@ class TransactionServiceImplTest {
                         db.insertInCurrentTx(2)
                     }
 
-                    delay(10) // suspensão real, só para provar a retomada
+                    delay(10) // real suspension, just to prove the resumption
                     assertSame(startThread, Thread.currentThread())
                     assertSame(connection, TransactionScope.current()!!.connection())
                     db.insertInCurrentTx(3)
@@ -263,7 +263,7 @@ class TransactionServiceImplTest {
             }
             assertEquals(listOf(1, 2, 3), db.ids())
             assertEquals(1, db.acquired.get())
-            // nenhuma das duas threads ficou com a transação presa
+            // neither thread kept the transaction stuck
             assertNull(first.submit<TransactionScope?> { TransactionScope.current() }.get())
             assertNull(second.submit<TransactionScope?> { TransactionScope.current() }.get())
         } finally {

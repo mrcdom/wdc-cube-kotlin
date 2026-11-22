@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Configuração do log do backend. O serviço a lê de <diretório de trabalho>/config/logback.xml e informa a
-  pasta de log em ${shopping.log.dir} (<diretório de trabalho>/log).
+  Backend log configuration. The service reads it from <work directory>/config/logback.xml and passes the
+  log folder in ${shopping.log.dir} (<work directory>/log).
 
-  Este é o padrão versionado: console e arquivo, com rotação diária. Ajuste os níveis à vontade.
+  This is the versioned default: console and file, with daily rotation. Adjust the levels as you like.
 -->
 <configuration>
 
@@ -15,7 +15,7 @@
         </encoder>
     </appender>
 
-    <!-- Um arquivo por dia (e por 20 MB, dentro do dia), guardando 30 dias e no máximo 500 MB. -->
+    <!-- One file per day (and per 20 MB within the day), keeping 30 days and at most 500 MB. -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${shopping.log.dir}/shopping.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -29,7 +29,7 @@
         </encoder>
     </appender>
 
-    <!-- Bibliotecas: só o que merece atenção. -->
+    <!-- Libraries: only what deserves attention. -->
     <logger name="org.eclipse.jetty" level="WARN"/>
     <logger name="io.javalin" level="INFO"/>
     <logger name="org.jooq" level="WARN"/>

@@ -28,7 +28,7 @@ class SwaggerUiTest {
         more()
     }
 
-    /** O objeto de configuração passado ao `SwaggerUIBundle`. */
+    /** The configuration object passed to `SwaggerUIBundle`. */
     private fun config(html: String): JsonObject {
         val json = Regex("""Object\.assign\((\{.*?\}), \{""", RegexOption.DOT_MATCHES_ALL).find(html)!!.groupValues[1]
         return JsonParser.parseString(json).asJsonObject
@@ -47,7 +47,7 @@ class SwaggerUiTest {
     fun page_withTheOwnDocument_isPublic() {
         RestTestServer(api()).use { server ->
             val page = server.client().get("/swagger-ui/index.html")
-            assertEquals(200, page.status, "pública, mesmo com protectUnmatched")
+            assertEquals(200, page.status, "public, even with protectUnmatched")
             assertTrue(page.contentType!!.startsWith("text/html"), page.contentType)
             assertTrue("<title>Orders</title>" in page.body)
             assertTrue("""src="swagger-ui-bundle.js"""" in page.body)
@@ -66,8 +66,8 @@ class SwaggerUiTest {
         }
         RestTestServer(api(ui)).use { server ->
             val body = server.client().get("/swagger-ui/index.html").body
-            assertTrue("<title>Docs &lt;/title&gt;&lt;script&gt;</title>" in body, "título escapado")
-            assertFalse("Partner's" in body, "o JSON não traz aspas simples cruas")
+            assertTrue("<title>Docs &lt;/title&gt;&lt;script&gt;</title>" in body, "title escaped")
+            assertFalse("Partner's" in body, "the JSON carries no raw single quotes")
             val config = config(body)
             assertEquals(
                 listOf("/openapi.json" to "Orders", "/partner/openapi.json" to "Partner's API"),
@@ -90,8 +90,8 @@ class SwaggerUiTest {
             assertEquals("/docs/index.html", server.client().get("/docs.html").header("Location"))
             val config = config(server.client().get("/docs/index.html").body)
             assertEquals(listOf("A", "B"), config["urls"].asJsonArray.map { it.asJsonObject["name"].asString })
-            assertEquals("A", config["urls.primaryName"].asString, "sem primary, o primeiro")
-            assertEquals(401, server.client().get("/swagger-ui/index.html").status, "o caminho padrão não existe (e é protegido)")
+            assertEquals("A", config["urls.primaryName"].asString, "without primary, the first")
+            assertEquals(401, server.client().get("/swagger-ui/index.html").status, "the default path doesn't exist (and is protected)")
         }
     }
 
@@ -117,7 +117,7 @@ class SwaggerUiTest {
     @Test
     fun otherFiles_andTraversal_areNotServed() {
         RestTestServer(api()).use { server ->
-            // existem no webjar, mas a página não os carrega
+            // they exist in the webjar, but the page doesn't load them
             for (file in listOf("index.css", "swagger-initializer.js", "swagger-ui.js", "oauth2-redirect.html")) {
                 assertEquals(404, server.client().get("/swagger-ui/$file").status, file)
             }
@@ -125,7 +125,7 @@ class SwaggerUiTest {
                 val status = server.client().get(path).status
                 assertTrue(status == 404 || status == 400, "$path: $status")
             }
-            // sem normalizar no cliente: o caminho chega ao servidor como foi escrito
+            // without normalizing on the client: the path reaches the server as written
             assertFalse(rawGet(server.port, "/swagger-ui/../../META-INF/MANIFEST.MF").startsWith("HTTP/1.1 200"))
         }
     }

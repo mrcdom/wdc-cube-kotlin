@@ -23,7 +23,7 @@ class RestTransactionsTest {
     private val coordinator = RemoteTransactionCoordinatorImpl({ dataSource }, RemoteTransactionOptions.defaults())
 
     private fun insert(id: Int) {
-        val connection = TransactionScope.current()?.connection() ?: error("sem transação")
+        val connection = TransactionScope.current()?.connection() ?: error("no transaction")
         connection.prepareStatement("INSERT INTO T (ID) VALUES (?)").use {
             it.setInt(1, id)
             it.executeUpdate()
@@ -42,7 +42,7 @@ class RestTransactionsTest {
         post("/rows/{id}", transactional = true) { call ->
             insert(call.pathInt("id"))
             insert(call.pathInt("id") + 1000)
-            if (call.query("fail") != null) throw IllegalStateException("falhou depois de gravar")
+            if (call.query("fail") != null) throw IllegalStateException("failed after writing")
             mapOf("ok" to true)
         }
         RemoteTransactionRoutes.register(this, transactions)
@@ -69,11 +69,11 @@ class RestTransactionsTest {
         client.header("X-Tx-Id", txId)
         assertEquals(200, client.post("/rows/5").status)
         assertEquals(200, client.post("/rows/6").status)
-        assertEquals(emptyList(), ids(), "nada confirmado antes do commit")
+        assertEquals(emptyList(), ids(), "nothing committed before the commit")
 
-        // o mesmo dono, sem o cabeçalho, com a transação aberta: recusado
+        // the same owner, without the header, with the transaction open: refused
         assertEquals(409, server.client().header("X-Client-Id", "c1").post("/rows/7").status)
-        // outro dono não é afetado
+        // another owner is not affected
         assertEquals(200, server.client().header("X-Client-Id", "c2").post("/rows/8").status)
 
         assertEquals("""{"status":"open"}""", client.get("/api/tx/status").body)
@@ -88,7 +88,7 @@ class RestTransactionsTest {
         client.header("X-Tx-Id", txId)
         client.post("/rows/9")
         assertEquals(403, server.client().header("X-Client-Id", "intruso").header("X-Tx-Id", txId).post("/api/tx/commit").status)
-        assertEquals(403, server.client().post("/api/tx/commit").status, "sem X-Tx-Id")
+        assertEquals(403, server.client().post("/api/tx/commit").status, "without X-Tx-Id")
         assertEquals("""{"status":"rolledback"}""", client.post("/api/tx/rollback").body)
         assertEquals(emptyList(), ids())
     }

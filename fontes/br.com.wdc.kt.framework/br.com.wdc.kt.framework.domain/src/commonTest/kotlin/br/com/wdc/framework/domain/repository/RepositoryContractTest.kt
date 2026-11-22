@@ -16,7 +16,7 @@ class RepositoryContractTest {
 
     private class ThingCriteria(var id: Long? = null)
 
-    /** Repositório em memória: só o necessário para exercitar os defaults da interface. */
+    /** In-memory repository: only what is needed to exercise the interface defaults. */
     private class MemoryRepository(private val rows: MutableList<Thing>) : Repository<Thing, ThingCriteria, Long> {
         val calls = ArrayList<String>()
 
@@ -108,12 +108,12 @@ class RepositoryContractTest {
 
     @Test
     fun businessException_wrap_keepsBusinessExceptions() {
-        val business = InvalidRequestException("recusado")
-        assertSame(business, BusinessException.wrap("contexto", business))
+        val business = InvalidRequestException("refused")
+        assertSame(business, BusinessException.wrap("context", business))
 
         val other = IllegalStateException("boom")
-        val wrapped = BusinessException.wrap("contexto", other)
-        assertEquals("contexto", wrapped.message)
+        val wrapped = BusinessException.wrap("context", other)
+        assertEquals("context", wrapped.message)
         assertSame(other, wrapped.suppressedExceptions.single())
     }
 }

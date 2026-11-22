@@ -21,7 +21,7 @@ import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.util.formatPrice
 
-// Altura estimada de cada card de compra
+// Estimated height of each purchase card
 private val ITEM_HEIGHT_DP = 76.dp
 
 class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ComposeCubeView("purchases-panel-view", presenter) {
@@ -54,7 +54,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "Compras",
+                    "Purchases",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -65,7 +65,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                         color = MaterialTheme.colorScheme.secondaryContainer
                     ) {
                         Text(
-                            "${state.totalCount} itens",
+                            "${state.totalCount} ${if (state.totalCount == 1) "item" else "items"}",
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -79,7 +79,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            // Lista de compras
+            // Purchase list
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -99,7 +99,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Nenhuma compra realizada",
+                                    "No purchases yet",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -148,7 +148,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                                         color = PriceColor.copy(alpha = 0.1f)
                                     ) {
                                         Text(
-                                            "R$ ${formatPrice(purchase.total)}",
+                                            "\$${formatPrice(purchase.total)}",
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.Bold,
@@ -162,7 +162,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                 }
             }
 
-            // Paginação
+            // Pagination
             if (state.totalCount > state.pageSize && state.pageSize > 0) {
                 val totalPages = (state.totalCount + state.pageSize - 1) / state.pageSize
                 Spacer(Modifier.height(8.dp))
@@ -202,5 +202,5 @@ private fun formatDate(epochMs: Long): String {
     val year = 1970 + (days / 365).toInt()
     val month = ((days % 365) / 30 + 1).toInt().coerceIn(1, 12)
     val day = ((days % 365) % 30 + 1).toInt().coerceIn(1, 31)
-    return "${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/$year"
+    return "${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/$year"
 }

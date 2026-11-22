@@ -1,45 +1,45 @@
-# Arquitetura Cube + Compose — Integração com Compose Multiplatform
+# Cube + Compose Architecture — Integration with Compose Multiplatform
 
-## Sumário
+## Contents
 
-- [Visão Geral](#visão-geral)
-- [Camada de Ponte — ComposeCubeView](#camada-de-ponte--composecubeview)
+- [Overview](#overview)
+- [Bridge Layer — ComposeCubeView](#bridge-layer--composecubeview)
   - [Revision Counter](#revision-counter)
-  - [safeCall — Execução Assíncrona Serializada](#safecall--execução-assíncrona-serializada)
-  - [RenderSlot — Composição de Views](#renderslot--composição-de-views)
-- [Registro de View Factories](#registro-de-view-factories)
-- [Fluxo Completo: Da Ação ao Pixel](#fluxo-completo-da-ação-ao-pixel)
-- [Padrão de Implementação de uma View](#padrão-de-implementação-de-uma-view)
-- [Mecanismo de Slots no Compose](#mecanismo-de-slots-no-compose)
-- [Inicialização por Plataforma](#inicialização-por-plataforma)
+  - [safeCall — Serialized Asynchronous Execution](#safecall--serialized-asynchronous-execution)
+  - [RenderSlot — View Composition](#renderslot--view-composition)
+- [Registering View Factories](#registering-view-factories)
+- [Complete Flow: From Action to Pixel](#complete-flow-from-action-to-pixel)
+- [View Implementation Pattern](#view-implementation-pattern)
+- [Slot Mechanism in Compose](#slot-mechanism-in-compose)
+- [Per-Platform Initialization](#per-platform-initialization)
   - [Desktop (JVM)](#desktop-jvm)
   - [Web (wasmJs)](#web-wasmjs)
   - [Android](#android)
   - [iOS](#ios)
-- [Deep-Linking e Histórico (Web)](#deep-linking-e-histórico-web)
-- [Padrão de Loading](#padrão-de-loading)
+- [Deep-Linking and History (Web)](#deep-linking-and-history-web)
+- [Loading Pattern](#loading-pattern)
 
 ---
 
-## Visão Geral
+## Overview
 
-A integração do Cube com Compose Multiplatform é feita por uma **camada de ponte** mínima — a classe `ComposeCubeView`. Essa camada resolve três problemas:
+Cube integrates with Compose Multiplatform through a minimal **bridge layer** — the `ComposeCubeView` class. This layer solves three problems:
 
-1. **Recomposição** — como notificar o Compose que o estado mudou, sem depender de `MutableState` nos presenters
-2. **Threading** — como executar lógica de presenter fora da UI thread, mantendo a UI responsiva
-3. **Composição hierárquica** — como renderizar views filhas dentro de views pais, sem acoplamento
+1. **Recomposition** — how to notify Compose that state has changed, without relying on `MutableState` in presenters
+2. **Threading** — how to run presenter logic off the UI thread, keeping the UI responsive
+3. **Hierarchical composition** — how to render child views inside parent views, without coupling
 
-O presenter permanece **Kotlin puro** — não conhece Compose, não importa nenhum pacote `androidx`. Toda a dependência do Compose fica concentrada na view.
+The presenter stays **pure Kotlin** — it knows nothing about Compose and imports no `androidx` package. The whole Compose dependency is concentrated in the view.
 
 ```mermaid
 graph LR
-    subgraph "Kotlin Puro (commonMain)"
+    subgraph "Pure Kotlin (commonMain)"
         P[Presenter] --> S[ViewState]
         P --> CV[CubeView interface]
     end
 
     subgraph "Compose (view module)"
-        CCV[ComposeCubeView] -.->|implementa| CV
+        CCV[ComposeCubeView] -.->|implements| CV
         CCV --> REV["revision: MutableState&lt;Int&gt;"]
         CCV --> SC[safeCall]
         CCV --> RND["@Composable Render()"]
@@ -47,17 +47,17 @@ graph LR
 
     P -->|"update()"| CCV
     CCV -->|"revision++"| REV
-    REV -->|"recomposição"| RND
-    RND -->|"lê"| S
+    REV -->|"recomposition"| RND
+    RND -->|"reads"| S
 ```
 
 ---
 
-## Camada de Ponte — ComposeCubeView
+## Bridge Layer — ComposeCubeView
 
 ### Revision Counter
 
-O `ComposeCubeView` implementa `CubeView` e expõe um `MutableState<Int>` chamado `revision`. O presenter chama `update()`, que incrementa `revision.value`. Como o `@Composable Render()` lê esse valor, o Compose detecta a mudança e agenda uma recomposição.
+`ComposeCubeView` implements `CubeView` and exposes a `MutableState<Int>` named `revision`. The presenter calls `update()`, which increments `revision.value`. Because `@Composable Render()` reads that value, Compose detects the change and schedules a recomposition.
 
 ```kotlin
 abstract class ComposeCubeView(
@@ -68,7 +68,7 @@ abstract class ComposeCubeView(
     val revision: MutableState<Int> = mutableIntStateOf(0)
 
     override fun update() {
-        revision.value++  // Thread-safe, dispara recomposição
+        revision.value++  // Thread-safe, triggers recomposition
     }
 
     @Composable
@@ -76,7 +76,7 @@ abstract class ComposeCubeView(
 }
 ```
 
-**Por que funciona:**
+**Why it works:**
 
 ```mermaid
 sequenceDiagram
@@ -88,24 +88,24 @@ sequenceDiagram
     participant UI as UI Thread
 
     BG->>P: action() via safeCall
-    P->>P: state.campo = novoValor
+    P->>P: state.field = newValue
     P->>V: update()
     V->>REV: revision.value++
     REV->>C: Snapshot change detected
     C->>UI: Schedule recomposition
     UI->>V: Render()
     V->>REV: val rev = revision.value
-    Note over UI: Lê state atualizado e renderiza
+    Note over UI: Reads updated state and renders
 ```
 
-1. O `MutableState` do Compose é **thread-safe** — mudanças em qualquer thread são detectadas pelo snapshot system
-2. A leitura de `revision.value` no `@Composable` cria uma **subscrição** automática
-3. Quando o valor muda, o Compose agenda uma **recomposição** na UI thread
-4. Múltiplas chamadas a `update()` no mesmo frame são **coalescidas** em uma única recomposição
+1. Compose's `MutableState` is **thread-safe** — changes on any thread are detected by the snapshot system
+2. Reading `revision.value` inside the `@Composable` creates an automatic **subscription**
+3. When the value changes, Compose schedules a **recomposition** on the UI thread
+4. Multiple calls to `update()` in the same frame are **coalesced** into a single recomposition
 
-### safeCall — Execução Assíncrona Serializada
+### safeCall — Serialized Asynchronous Execution
 
-O `safeCall` despacha a ação do presenter para uma **coroutine com paralelismo limitado a 1**:
+`safeCall` dispatches the presenter action to a **coroutine with parallelism limited to 1**:
 
 ```kotlin
 protected fun safeCall(action: () -> Unit) {
@@ -113,7 +113,7 @@ protected fun safeCall(action: () -> Unit) {
         try {
             action()
         } catch (e: Exception) {
-            app.alertUnexpectedError(LOG, "Erro inesperado em $id", e)
+            app.alertUnexpectedError(LOG, "Unexpected error in $id", e)
         }
     }
 }
@@ -125,37 +125,37 @@ companion object {
 }
 ```
 
-Isso garante:
+This guarantees:
 
-| Propriedade | Como |
-|-------------|------|
-| **UI thread livre** | A ação roda em background — a interface permanece responsiva |
-| **Execução serial** | `limitedParallelism(1)` — as mutações de estado nunca concorrem entre si |
-| **Código síncrono no presenter** | O presenter escreve código linear, sem callbacks ou suspending functions |
-| **Erros capturados** | Exceções não tratadas são delegadas ao `RootPresenter.alertUnexpectedError()` |
+| Property | How |
+|----------|-----|
+| **Free UI thread** | The action runs in the background — the interface stays responsive |
+| **Serial execution** | `limitedParallelism(1)` — state mutations never run concurrently |
+| **Synchronous code in the presenter** | The presenter writes linear code, with no callbacks or suspending functions |
+| **Captured errors** | Unhandled exceptions are delegated to `RootPresenter.alertUnexpectedError()` |
 
 ```mermaid
 sequenceDiagram
     participant UI as UI Thread
-    participant Q as Fila (limitedParallelism=1)
+    participant Q as Queue (limitedParallelism=1)
     participant BG as Background Thread
 
     UI->>Q: safeCall { onAddToCart() }
     UI->>Q: safeCall { onBuy() }
-    Note over UI: UI livre, ambas enfileiradas
+    Note over UI: UI free, both queued
 
     Q->>BG: onAddToCart()
-    Note over BG: Executa até completar
+    Note over BG: Runs to completion
     BG-->>Q: done
 
     Q->>BG: onBuy()
-    Note over BG: Executa sequencialmente
+    Note over BG: Runs sequentially
     BG-->>Q: done
 ```
 
-### RenderSlot — Composição de Views
+### RenderSlot — View Composition
 
-A função `RenderSlot` converte um `CubeView` genérico em uma chamada `@Composable`:
+The `RenderSlot` function turns a generic `CubeView` into a `@Composable` call:
 
 ```kotlin
 @Composable
@@ -164,10 +164,10 @@ fun RenderSlot(view: CubeView) {
 }
 ```
 
-É usada nas views pai para renderizar views filhas sem conhecer seu tipo concreto. A view pai apenas sabe que o `ViewState` contém um `CubeView`:
+Parent views use it to render child views without knowing their concrete type. The parent view only knows that the `ViewState` holds a `CubeView`:
 
 ```kotlin
-// Dentro de RootView.Render():
+// Inside RootView.Render():
 val contentView = state.contentView
 if (contentView != null) {
     RenderSlot(contentView)
@@ -176,12 +176,12 @@ if (contentView != null) {
 
 ---
 
-## Registro de View Factories
+## Registering View Factories
 
-Cada presenter declara uma variável estática `createView` que aceita uma factory function:
+Each presenter declares a static `createView` variable that accepts a factory function:
 
 ```kotlin
-// No presenter (Kotlin puro — sem dependência de Compose):
+// In the presenter (pure Kotlin — no Compose dependency):
 class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
     companion object {
@@ -190,17 +190,17 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (initialization) {
-            view = createView?.invoke(this)  // ← chama a factory
+            view = createView?.invoke(this)  // ← calls the factory
         }
         // ...
     }
 }
 ```
 
-No **entry point** de cada plataforma, as factories são registradas ligando presenters a views concretas:
+In each platform's **entry point**, the factories are registered, binding presenters to concrete views:
 
 ```kotlin
-// Na inicialização (ex: Desktop Main.kt):
+// At startup (e.g. Desktop Main.kt):
 RootPresenter.createView     = { p -> RootView(p) }
 LoginPresenter.createView    = { p -> LoginView(p) }
 HomePresenter.createView     = { p -> HomeView(p) }
@@ -217,7 +217,7 @@ graph TD
         LP["LoginPresenter<br/>companion: createView"]
     end
 
-    subgraph "Entry Point (plataforma)"
+    subgraph "Entry Point (platform)"
         EP["Main.kt<br/>LoginPresenter.createView = { p → LoginView(p) }"]
     end
 
@@ -225,61 +225,61 @@ graph TD
         LV["LoginView(presenter)<br/>extends ComposeCubeView"]
     end
 
-    EP -->|registra factory| LP
+    EP -->|registers factory| LP
     LP -->|"createView?.invoke(this)"| LV
-    LV -->|"lê state"| LP
+    LV -->|"reads state"| LP
 ```
 
-Esse mecanismo permite que:
+This mechanism lets:
 
-- O presenter **não conheça** a classe da view concreta
-- Diferentes plataformas possam registrar **views diferentes** para o mesmo presenter
-- Em testes, a factory pode ser `null` — o presenter funciona sem view
-- Na modalidade React, as factories não são registradas — os Skeletons assumem o papel da view
+- The presenter **not know** the concrete view class
+- Different platforms register **different views** for the same presenter
+- Tests leave the factory `null` — the presenter works without a view
+- The React modality skip registering factories — the Skeletons take the role of the view
 
 ---
 
-## Fluxo Completo: Da Ação ao Pixel
+## Complete Flow: From Action to Pixel
 
-O diagrama abaixo mostra o fluxo completo desde uma ação do usuário até a renderização:
+The diagram below shows the complete flow from a user action to rendering:
 
 ```mermaid
 sequenceDiagram
-    actor User as Usuário
+    actor User as User
     participant View as LoginView (Compose)
     participant SC as safeCall (BG thread)
     participant P as LoginPresenter
     participant S as LoginViewState
-    participant API as Backend REST
+    participant API as REST Backend
     participant Rev as revision MutableState
     participant CR as Compose Runtime
 
-    User->>View: Clica "Entrar"
+    User->>View: Clicks "Sign in"
     View->>SC: safeCall { presenter.onEnter() }
-    Note over View: UI thread liberada
+    Note over View: UI thread released
 
     SC->>P: onEnter()
     P->>S: state.loading = true
     P->>View: update()
     View->>Rev: revision.value++
-    Rev->>CR: Snapshot change → recomposição
-    Note over View: Renderiza: spinner + campos desabilitados
+    Rev->>CR: Snapshot change → recomposition
+    Note over View: Renders: spinner + disabled fields
 
     P->>API: loginService.fetchSubject()
     API-->>P: Subject(id=1, nick=Admin)
 
     P->>S: state.loading = false
     P->>S: app.subject = subject
-    P->>P: Routes.home(app) → navegação
-    Note over P: CubeNavigation commit → HomePresenter criado
-    Note over View: Root slot atualizado → HomeView renderizada
+    P->>P: Routes.home(app) → navigation
+    Note over P: CubeNavigation commit → HomePresenter created
+    Note over View: Root slot updated → HomeView rendered
 ```
 
 ---
 
-## Padrão de Implementação de uma View
+## View Implementation Pattern
 
-Toda view Compose segue o mesmo padrão:
+Every Compose view follows the same pattern:
 
 ```kotlin
 class LoginView(private val presenter: LoginPresenter)
@@ -287,28 +287,28 @@ class LoginView(private val presenter: LoginPresenter)
 
     @Composable
     override fun Render() {
-        // (1) Subscreve para recomposição
+        // (1) Subscribes to recomposition
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        // (2) Lê o estado do presenter
+        // (2) Reads the presenter state
         val state = presenter.state
         val loading = state.loading
 
-        // (3) Usa remember para estado local de UI (campos de texto)
+        // (3) Uses remember for local UI state (text fields)
         var userName by remember { mutableStateOf(state.userName ?: "") }
 
-        // (4) Renderiza UI lendo o ViewState
+        // (4) Renders the UI by reading the ViewState
         OutlinedTextField(
             value = userName,
             onValueChange = {
                 userName = it
-                state.userName = it  // ← mutação direta no ViewState
+                state.userName = it  // ← direct mutation of the ViewState
             },
             enabled = !loading,
         )
 
-        // (5) Ações delegam ao presenter via safeCall
+        // (5) Actions delegate to the presenter via safeCall
         Button(
             onClick = { safeCall { presenter.onEnter() } },
             enabled = !loading,
@@ -316,28 +316,28 @@ class LoginView(private val presenter: LoginPresenter)
             if (loading) {
                 CircularProgressIndicator()
             } else {
-                Text("Entrar")
+                Text("Sign in")
             }
         }
     }
 }
 ```
 
-**Pontos-chave:**
+**Key points:**
 
-| Passo | O que faz | Por que |
-|-------|-----------|---------|
-| `revision.value` | Cria subscrição Compose | Sem isso, a view não recompõe quando `update()` é chamado |
-| `presenter.state` | Acessa o ViewState mutável | O estado é lido diretamente — sem cópias, sem mapping |
-| `remember` | Mantém estado local de UI | Campos de texto precisam de estado local para digitação fluida |
-| `state.userName = it` | Mutação direta | O ViewState é mutável por design — simplicidade > cerimônia |
-| `safeCall { ... }` | Despacha ação para background | UI thread livre, execução serial garantida |
+| Step | What it does | Why |
+|------|--------------|-----|
+| `revision.value` | Creates a Compose subscription | Without it, the view does not recompose when `update()` is called |
+| `presenter.state` | Accesses the mutable ViewState | The state is read directly — no copies, no mapping |
+| `remember` | Keeps local UI state | Text fields need local state for smooth typing |
+| `state.userName = it` | Direct mutation | The ViewState is mutable by design — simplicity > ceremony |
+| `safeCall { ... }` | Dispatches the action to the background | Free UI thread, guaranteed serial execution |
 
 ---
 
-## Mecanismo de Slots no Compose
+## Slot Mechanism in Compose
 
-O slot conecta views pai e filho sem acoplamento direto. O fluxo:
+The slot connects parent and child views without direct coupling. The flow:
 
 ```mermaid
 sequenceDiagram
@@ -358,24 +358,24 @@ sequenceDiagram
     Home->>Root: contentSlot.setView(homeView)
     Root->>RootState: state.contentView = homeView
     Root->>RootView: update() revision++
-    Note over RootView: Recompoe e renderiza:<br/>RenderSlot(state.contentView)
+    Note over RootView: Recomposes and renders:<br/>RenderSlot(state.contentView)
 ```
 
-**No código do RootPresenter:**
+**In the RootPresenter code:**
 
 ```kotlin
 class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
     val state = RootViewState()
 
-    // Callback que recebe a view filha e a armazena no state
+    // Callback that receives the child view and stores it in the state
     private val contentSlot = CubeViewSlot { v -> setContentView(v) }
 
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (initialization) {
             view = createView?.invoke(this)
         }
-        // Publica o slot no intent para que o próximo step o use
+        // Publishes the slot in the intent so the next step can use it
         intent.setViewSlot(PlaceAttributes.SLOT_OWNER, contentSlot)
         return true
     }
@@ -383,13 +383,13 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     private fun setContentView(view: CubeView) {
         if (state.contentView !== view) {
             state.contentView = view
-            update()  // ← dispara recomposição do RootView
+            update()  // ← triggers RootView recomposition
         }
     }
 }
 ```
 
-**No código do RootView (Compose):**
+**In the RootView code (Compose):**
 
 ```kotlin
 class RootView(private val presenter: RootPresenter)
@@ -401,19 +401,19 @@ class RootView(private val presenter: RootPresenter)
 
         val contentView = presenter.state.contentView
         if (contentView != null) {
-            RenderSlot(contentView)  // ← renderiza a view filha
+            RenderSlot(contentView)  // ← renders the child view
         }
     }
 }
 ```
 
-O `RootViewState.contentView` é do tipo `CubeView` — a view pai não sabe se é `HomeView`, `LoginView` ou outra. Apenas chama `RenderSlot` e o Compose renderiza o conteúdo correto.
+`RootViewState.contentView` has type `CubeView` — the parent view does not know whether it is `HomeView`, `LoginView` or another one. It just calls `RenderSlot`, and Compose renders the right content.
 
 ---
 
-## Inicialização por Plataforma
+## Per-Platform Initialization
 
-Cada plataforma possui um entry point que segue o mesmo padrão:
+Each platform has an entry point that follows the same pattern:
 
 ```mermaid
 sequenceDiagram
@@ -423,11 +423,11 @@ sequenceDiagram
     participant App as ShoppingApplication
     participant Compose as Compose Runtime
 
-    Main->>Plat: Configura JSON, HTTP, Crypto, Scheduler
-    Main->>Factories: Registra createView para cada presenter
-    Main->>App: Cria instância da aplicação
-    Main->>App: app.go("public") → navegação inicial
-    Main->>Compose: Renderiza RootView
+    Main->>Plat: Configures JSON, HTTP, Crypto, Scheduler
+    Main->>Factories: Registers createView for each presenter
+    Main->>App: Creates the application instance
+    Main->>App: app.go("public") → initial navigation
+    Main->>Compose: Renders RootView
 ```
 
 ### Desktop (JVM)
@@ -452,7 +452,7 @@ fun main() {
 
 - `ScheduledExecutor`: Swing `javax.swing.Timer`
 - `SessionStorage`: `java.util.prefs.Preferences`
-- `updateHistory()`: no-op (sem navegador)
+- `updateHistory()`: no-op (no browser)
 
 ### Web (wasmJs)
 
@@ -482,7 +482,7 @@ fun main() {
 
 - `ScheduledExecutor`: `setTimeout` / `setInterval`
 - `SessionStorage`: `window.sessionStorage`
-- `updateHistory()`: atualiza `window.location.hash` com intent assinado via HMAC
+- `updateHistory()`: updates `window.location.hash` with an HMAC-signed intent
 
 ### Android
 
@@ -530,69 +530,69 @@ fun MainViewController() = ComposeUIViewController {
 
 ---
 
-## Deep-Linking e Histórico (Web)
+## Deep-Linking and History (Web)
 
-Na plataforma Web, a navegação Cube é sincronizada com o `location.hash` do navegador, permitindo deep-linking e botões back/forward.
+On the Web platform, Cube navigation is synchronized with the browser's `location.hash`, enabling deep-linking and the back/forward buttons.
 
 ```mermaid
 sequenceDiagram
-    participant User as Usuário
-    participant Browser as Navegador
+    participant User as User
+    participant Browser as Browser
     participant App as ShoppingApplication
     participant Nav as CubeNavigation
 
-    Note over App: Navegação interna
+    Note over App: Internal navigation
     App->>Nav: navigate().step(ROOT).step(HOME).step(PRODUCT).execute(intent)
     Nav->>Nav: commit() → updateHistory()
     App->>App: publishParameters(intent)
     App->>App: signIntent(intentStr) → HMAC-SHA256
     App->>Browser: window.location.hash = "product?productId=42&sign=..."
 
-    Note over User: Clica "Back" no navegador
+    Note over User: Clicks "Back" in the browser
     Browser->>App: hashchange event
     App->>App: safeGo(hash)
     App->>App: verifyIntent(intentStr, signature) → OK
     App->>Nav: navigate from parsed intent
 ```
 
-A assinatura HMAC garante que URLs manipulados manualmente sejam rejeitados. O segredo de assinatura é:
-- **Antes do login:** chave fixa anônima
-- **Após o login:** segredo por sessão recebido do servidor
+The HMAC signature ensures that manually tampered URLs are rejected. The signing secret is:
+- **Before login:** a fixed anonymous key
+- **After login:** a per-session secret received from the server
 
 ---
 
-## Padrão de Loading
+## Loading Pattern
 
-Com o `safeCall` executando fora da UI thread, indicadores de carregamento são naturais:
+With `safeCall` running off the UI thread, loading indicators come naturally:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Idle: Tela renderizada
-    Idle --> Loading: Usuário clica ação
-    Loading --> Idle: Resposta recebida
-    Loading --> Error: Exceção capturada
-    Error --> Idle: Usuário corrige e tenta
+    [*] --> Idle: Screen rendered
+    Idle --> Loading: User clicks action
+    Loading --> Idle: Response received
+    Loading --> Error: Exception captured
+    Error --> Idle: User corrects and retries
 
     state Idle {
-        [*] --> CamposHabilitados
+        [*] --> FieldsEnabled
     }
 
     state Loading {
-        [*] --> CamposDesabilitados
-        CamposDesabilitados --> SpinnerNoBotão
+        [*] --> FieldsDisabled
+        FieldsDisabled --> SpinnerOnButton
     }
 
     state Error {
-        [*] --> MensagemDeErro
+        [*] --> ErrorMessage
     }
 ```
 
-**No presenter** (código síncrono, linear):
+**In the presenter** (synchronous, linear code):
 
 ```kotlin
 fun onEnter() {
     state.loading = true
-    update()  // → UI mostra spinner
+    update()  // → UI shows spinner
 
     try {
         val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")
@@ -602,26 +602,26 @@ fun onEnter() {
             app.subject = subject
             Routes.home(app)
         } else {
-            state.errorMessage = "Usuário ou senha não reconhecido!"
+            state.errorMessage = "Username or password not recognized!"
             update()
         }
     } catch (caught: Exception) {
         state.loading = false
-        state.errorMessage = "Falha de comunicação."
+        state.errorMessage = "Failed to communicate with the server. Check your connection."
         update()
     }
 }
 ```
 
-**Na view** (Compose reage automaticamente):
+**In the view** (Compose reacts automatically):
 
 ```kotlin
 Button(
     onClick = { safeCall { presenter.onEnter() } },
     enabled = !loading,
 ) {
-    if (loading) CircularProgressIndicator() else Text("Entrar")
+    if (loading) CircularProgressIndicator() else Text("Sign in")
 }
 ```
 
-O presenter muda `state.loading`, chama `update()`, e o Compose recompõe automaticamente. Sem callbacks, sem observers, sem bindings explícitos.
+The presenter changes `state.loading`, calls `update()`, and Compose recomposes automatically. No callbacks, no observers, no explicit bindings.

@@ -24,7 +24,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":framework-commons"))
-            // a navegação marca o próprio contexto e faz o pedido de fora esperar a navegação em curso
+            // navigation marks its own context and makes an outside request wait for the running navigation
             implementation(libs.kotlinx.coroutines.core)
         }
         jvmMain.dependencies {

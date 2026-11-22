@@ -11,12 +11,12 @@ import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
 
 /**
- * Endpoints REST de compra: o RPC do repositório, lido e escrito com o [PurchaseCodec] — o mesmo que o cliente
- * usa. O acesso é conferido aqui ([ApiSecurity]): permissão e, para quem não alcança os dados de todos,
- * restrição às próprias compras — na leitura e na escrita.
+ * Purchase REST endpoints: the repository RPC, read and written with the [PurchaseCodec] — the same one the
+ * client uses. Access is checked here ([ApiSecurity]): permission and, for callers who don't reach everyone's
+ * data, restriction to their own purchases — on reads and writes.
  *
- * **A senha do usuário da compra nunca sai por aqui**: é retirada da projeção pedida e de toda entidade
- * escrita, esteja a segurança ligada ou não.
+ * **The password of the purchase's user never leaves through here**: it is stripped from the requested
+ * projection and from every written entity, whether security is on or not.
  */
 internal object PurchaseApiController {
 
@@ -41,12 +41,12 @@ internal object PurchaseApiController {
         )
         rpc.rule = { op -> ApiSecurity.permission(ENTITY, op) }
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("purchase", op) }
-        // quem não alcança os dados de todos só alcança as próprias compras, peça o que pedir
+        // callers who don't reach everyone's data only reach their own purchases, whatever they ask for
         rpc.scope = { criteria, request -> ApiSecurity.ownerScope(request)?.let { criteria.userId.and().eq(it) } }
         rpc.sanitizeProjection = ::dropPassword
         rpc.sanitizeOutput = ::dropPassword
         rpc.beforeInsert = { purchase, request ->
-            // a compra é sempre de quem a faz
+            // a purchase always belongs to whoever makes it
             ApiSecurity.ownerScope(request)?.let { owner -> purchase.user = User().apply { id = owner } }
         }
         rpc.beforeUpdate = { data, request ->

@@ -27,7 +27,7 @@ const ON_MODIFY_QUANTITY = 4
 
 // :: Types
 
-type ItemCarrinho = {
+type CartItem = {
   id: number
   name: string
   price: number
@@ -37,7 +37,7 @@ type ItemCarrinho = {
 // :: View
 
 export type CartViewState = {
-  items: ItemCarrinho[]
+  items: CartItem[]
   errorMessage?: string
 }
 
@@ -45,9 +45,9 @@ class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
   override render({ className }: ViewProps) {
     const { vsid, state } = this
     const items = state.items ?? []
-    let valorTotal = 0
+    let totalValue = 0
     items.forEach((prod) => {
-      valorTotal += prod.price * prod.quantity
+      totalValue += prod.price * prod.quantity
     })
 
     return (
@@ -57,7 +57,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1.5 }}>
             <ShoppingCartIcon sx={{ fontSize: 28 }} />
             <Typography variant="h5" sx={{ fontWeight: 500, fontSize: 28 }}>
-              Carrinho de Compras
+              Shopping Cart
             </Typography>
           </Stack>
 
@@ -84,10 +84,10 @@ class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
             >
               <ShoppingCartIcon sx={{ fontSize: 48, color: Colors.OnSurfaceVariant }} />
               <Typography variant="h6" sx={{ mt: 2, color: Colors.OnSurfaceVariant }}>
-                Seu carrinho está vazio
+                Your cart is empty
               </Typography>
               <Typography variant="body2" sx={{ mt: 1, color: Colors.OnSurfaceVariant, opacity: 0.7 }}>
-                Adicione produtos para começar suas compras
+                Add products to start shopping
               </Typography>
             </Box>
           ) : (
@@ -111,7 +111,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
                 </Typography>
                 <Box sx={{ bgcolor: Colors.PriceBackground, borderRadius: '10px', px: 1.75, py: 0.75 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: 22, color: Colors.PriceColor }}>
-                    R$ {NumberUtils.format(valorTotal)}
+                    ${NumberUtils.format(totalValue)}
                   </Typography>
                 </Box>
               </Stack>
@@ -126,7 +126,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
               sx={{ borderRadius: '12px', height: 48, textTransform: 'none' }}
               startIcon={<ArrowBackIcon />}
             >
-              Continuar Comprando
+              Continue Shopping
             </Button>
             {items.length > 0 && (
               <Button
@@ -141,7 +141,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
                   bgcolor: Colors.PriceColor,
                 }}
               >
-                Comprar
+                Buy
               </Button>
             )}
           </Stack>
@@ -169,12 +169,12 @@ export default BaseViewClass.FC(CartViewClass, '7eb485e5f843')
 
 type CartItemCardProps = {
   vsid: string
-  item: ItemCarrinho
+  item: CartItem
 }
 
 class CartItemCardClass extends BasePanelClass<CartItemCardProps> {
   vsid!: string
-  item!: ItemCarrinho
+  item!: CartItem
 
   override render({ vsid, item }: CartItemCardProps) {
     this.vsid = vsid
@@ -190,7 +190,7 @@ class CartItemCardClass extends BasePanelClass<CartItemCardProps> {
                 {item.name}
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 500, color: Colors.PriceColor }}>
-                R$ {NumberUtils.format(item.price)}
+                ${NumberUtils.format(item.price)}
               </Typography>
             </Box>
 
@@ -231,7 +231,7 @@ class CartItemCardClass extends BasePanelClass<CartItemCardProps> {
               onClick={this.emitRemoveProduct}
               sx={{ fontWeight: 'normal', fontSize: 12, textTransform: 'none' }}
             >
-              Remover
+              Remove
             </Button>
           </Stack>
         </CardContent>

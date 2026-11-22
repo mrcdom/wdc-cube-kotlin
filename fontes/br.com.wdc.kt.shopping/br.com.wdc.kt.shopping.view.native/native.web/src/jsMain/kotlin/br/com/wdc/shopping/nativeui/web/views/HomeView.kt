@@ -147,7 +147,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                             Typography {
                                 variant = TypographyVariant.body2
                                 sx { color = ShoppingColors.WhiteOverlay85.unsafeCast<Color>() }
-                                +"Olá, ${state.nickName ?: ""}"
+                                +"Hello, ${state.nickName ?: ""}"
                             }
 
                             Badge {
@@ -166,7 +166,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                                         fontSize = 13.px
                                     }
                                     ShoppingCart { sx { marginRight = 6.px; fontSize = 16.px } }
-                                    +"Carrinho"
+                                    +"Cart"
                                 }
                             }
                         }
@@ -240,7 +240,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                             Typography {
                                 variant = TypographyVariant.body2
                                 sx { color = NamedColor.white.unsafeCast<Color>() }
-                                +"Olá, ${state.nickName ?: ""}"
+                                +"Hello, ${state.nickName ?: ""}"
                             }
                         }
 
@@ -261,7 +261,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                                     padding = Padding(5.px, 12.px)
                                 }
                                 ShoppingCart { sx { marginRight = 6.px; fontSize = 16.px } }
-                                +"Carrinho"
+                                +"Cart"
                             }
                         }
                     }
@@ -318,7 +318,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                         }
 
                         Tab {
-                            label = ReactNode("Produtos")
+                            label = ReactNode("Products")
                             asDynamic().icon = ShoppingBag.create()
                             iconPosition = mui.material.IconPosition.start
                             sx {
@@ -329,7 +329,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                             }
                         }
                         Tab {
-                            label = ReactNode("Compras")
+                            label = ReactNode("Purchases")
                             asDynamic().icon = Inventory2.create()
                             iconPosition = mui.material.IconPosition.start
                             sx {

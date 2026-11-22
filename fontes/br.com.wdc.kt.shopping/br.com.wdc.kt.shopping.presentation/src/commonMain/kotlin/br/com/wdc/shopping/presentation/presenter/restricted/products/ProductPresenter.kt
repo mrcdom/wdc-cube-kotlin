@@ -108,19 +108,19 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     private fun alertDatabaseNotAvailable() {
         state.errorCode = 1
-        state.errorMessage = "Carrinho não acessível. Aguarde alguns instantes e tente novamente."
+        state.errorMessage = "The cart is not available. Please wait a moment and try again."
         update()
     }
 
     private fun alertCartItemWidthLessThanOneItem() {
         state.errorCode = 2
-        state.errorMessage = "A quantidade de itens no carrinho deve ser maior ou igual a 1 (um)."
+        state.errorMessage = "The quantity of items in the cart must be at least 1 (one)."
         update()
     }
 
     private fun errorInvalidQuantity() {
         state.errorCode = 3
-        state.errorMessage = "Codificação errada da quantidade."
+        state.errorMessage = "Invalid quantity format."
         update()
     }
 }

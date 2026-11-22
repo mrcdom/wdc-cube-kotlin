@@ -5,10 +5,10 @@ import org.junit.jupiter.api.extension.ExecutionCondition
 import org.junit.jupiter.api.extension.ExtensionContext
 
 /**
- * Desabilita, numa subclasse concreta, testes herdados de uma classe abstrata —
- * equivalente a `@Disabled("motivo")`, que não pode ser aplicado a um método herdado.
+ * Disables, in a concrete subclass, tests inherited from an abstract class —
+ * equivalent to `@Disabled("reason")`, which cannot be applied to an inherited method.
  *
- * @param reasons nome do método de teste → motivo
+ * @param reasons test method name → reason
  */
 class DisabledTests(private val reasons: Map<String, String>) : ExecutionCondition {
 

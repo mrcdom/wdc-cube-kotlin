@@ -55,7 +55,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
             ))
         }) {
             label {
-                text = "Compras"
+                text = "Purchases"
                 font = UIFont.boldSystemFontOfSize(17.0)
                 textColor = ShoppingColors.OnSurface
                 NSLayoutConstraint.activateConstraints(listOf(
@@ -158,7 +158,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
         }
 
         emptyLabel = label {
-            text = "Nenhuma compra realizada"
+            text = "No purchases yet"
             font = UIFont.systemFontOfSize(16.0)
             textColor = ShoppingColors.OnSurfaceVariant
             textAlignment = UIK.TextAlignCenter
@@ -222,7 +222,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
             pageLabel.text = "${page + 1} / $totalPages"
             prevButton.enabled = page > 0
             nextButton.enabled = page < totalPages - 1
-            headerBadge.text = "$totalCount itens"
+            headerBadge.text = "$totalCount ${if (totalCount == 1) "item" else "items"}"
         }
     }
 
@@ -330,7 +330,7 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
 
         if (p.total != lastTotal) {
             lastTotal = p.total
-            totalLabel.text = "R$ ${ViewUtils.formatPrice(p.total)}"
+            totalLabel.text = "\$${ViewUtils.formatPrice(p.total)}"
         }
 
         val itemsText = p.items.take(3).joinToString(", ")

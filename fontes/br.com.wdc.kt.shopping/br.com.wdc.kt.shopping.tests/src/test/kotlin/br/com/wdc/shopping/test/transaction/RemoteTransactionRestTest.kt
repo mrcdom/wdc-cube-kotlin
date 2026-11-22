@@ -36,8 +36,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * A transação remota dirigida pelo cliente: várias escritas HTTP participam da mesma transação física no
- * servidor (o mesmo `txId`) e confirmam ou se desfazem juntas.
+ * The client-driven remote transaction: several HTTP writes take part in the same physical transaction on the
+ * server (the same `txId`) and commit or roll back together.
  */
 class RemoteTransactionRestTest {
 
@@ -58,7 +58,7 @@ class RemoteTransactionRestTest {
 
     private suspend fun exists(product: Product) = product.id != null && env.productRepo.fetchById(product.id!!) != null
 
-    /** Outro cliente, com identidade própria, falando com o mesmo servidor. */
+    /** Another client, with its own identity, talking to the same server. */
     private fun anotherClient() = OkHttpTransport("http://127.0.0.1:${env.port}")
 
     private fun begin(transport: OkHttpTransport): String =
@@ -83,13 +83,13 @@ class RemoteTransactionRestTest {
         tx.required {
             env.productRepo.insert(p)
             tx.afterCommit {
-                // fora da transação: a leitura vê o que foi comitado, e não há txId corrente
+                // outside the transaction: the read sees what was committed, and there is no current txId
                 seen += "exists=${exists(p)}"
-                tx.mandatory { } // sem transação corrente, mandatory recusa
+                tx.mandatory { } // without a current transaction, mandatory refuses
             }
             assertEquals(emptyList<String>(), seen)
         }
-        assertEquals(listOf("exists=true"), seen, "a falha da tarefa (mandatory recusado) só vai ao log")
+        assertEquals(listOf("exists=true"), seen, "the task failure (mandatory refused) only goes to the log")
     }
 
     @Test
@@ -122,7 +122,7 @@ class RemoteTransactionRestTest {
         assertEquals(listOf("new", "now"), ran)
     }
 
-    // :: Desfecho
+    // :: Outcome
 
     @Test
     fun commit_persistsAllWrites() = runBlocking {
@@ -167,7 +167,7 @@ class RemoteTransactionRestTest {
 
     @Test
     fun writeRefusedByTheServer_rollsBackWhatCameBefore() = runBlocking {
-        // a compra grava; o item, de produto inexistente, falha no servidor — nada fica
+        // the purchase is written; the item, of a nonexistent product, fails on the server — nothing stays
         assertThrows(RuntimeException::class.java) {
             runBlocking {
                 tx().required {
@@ -191,12 +191,12 @@ class RemoteTransactionRestTest {
     @Test
     fun requestThatFailsMidway_condemnsTheRemoteTransaction_evenIfTheClientCarriesOn() = runBlocking {
         val before = env.purchaseRepo.count(PurchaseCriteria())
-        // uma requisição só: a compra grava, o segundo item (produto inexistente) falha no servidor
+        // a single request: the purchase is written, the second item (nonexistent product) fails on the server
         val purchase = Purchase().apply {
             buyDate = Clock.System.now()
             user = User().apply { id = DBReset.FULANO_ID }
             items = arrayListOf(
-                PurchaseItem().apply { product = Product().apply { id = DBReset.CAFETEIRA_ID }; amount = 1; price = 10.5 },
+                PurchaseItem().apply { product = Product().apply { id = DBReset.COFFEE_MAKER_ID }; amount = 1; price = 10.5 },
                 PurchaseItem().apply { product = Product().apply { id = 987_654L }; amount = 1; price = 10.5 },
             )
         }
@@ -206,24 +206,24 @@ class RemoteTransactionRestTest {
                     try {
                         env.purchaseRepo.insert(purchase)
                     } catch (_: RuntimeException) {
-                        // o cliente captura e segue: a atomicidade da requisição não pode depender disso
+                        // the client catches and carries on: the request's atomicity cannot depend on that
                     }
                 }
             }
         }
         assertTrue(e.message!!.startsWith("HTTP 409"), e.message)
-        assertEquals(before, env.purchaseRepo.count(PurchaseCriteria()), "a compra gravada antes da falha não fica")
-        assertTrue(env.productRepo.insert(product("rtx-after-condemned")), "a transação foi encerrada")
+        assertEquals(before, env.purchaseRepo.count(PurchaseCriteria()), "the purchase written before the failure does not stay")
+        assertTrue(env.productRepo.insert(product("rtx-after-condemned")), "the transaction was closed")
     }
 
-    /** O transporte do ambiente, mas o commit se perde no caminho: antes de chegar ao servidor, ou na volta. */
+    /** The environment's transport, but the commit gets lost on the way: before reaching the server, or on the way back. */
     private class LossyCommit(private val target: br.com.wdc.shopping.persistence.client.HttpTransport, private val loseRequest: Boolean) :
         br.com.wdc.shopping.persistence.client.HttpTransport by target {
         override fun postJson(path: String, body: String): String {
             if (path != "/api/tx/commit") return target.postJson(path, body)
             if (loseRequest) throw IllegalStateException("connection refused")
             target.postJson(path, body)
-            throw IllegalStateException("read timed out") // comitou no servidor, mas a resposta não voltou
+            throw IllegalStateException("read timed out") // committed on the server, but the response did not come back
         }
     }
 
@@ -236,8 +236,8 @@ class RemoteTransactionRestTest {
             env.productRepo.insert(p)
             service.afterCommit { afterCommitRan = true }
         }
-        assertTrue(exists(p), "gravado no servidor")
-        assertTrue(afterCommitRan, "o cliente sabe que comitou: as tarefas de afterCommit rodam")
+        assertTrue(exists(p), "stored on the server")
+        assertTrue(afterCommitRan, "the client knows it committed: the afterCommit tasks run")
     }
 
     @Test
@@ -246,20 +246,20 @@ class RemoteTransactionRestTest {
         val service = RestTransactionService(LossyCommit(env.transport, loseRequest = true))
         assertThrows(IllegalStateException::class.java) { runBlocking { service.required { env.productRepo.insert(p) } } }
         assertFalse(exists(p))
-        assertTrue(env.productRepo.insert(product("rtx-after-lost-request")), "a transação foi desfeita, não ficou aberta")
+        assertTrue(env.productRepo.insert(product("rtx-after-lost-request")), "the transaction was rolled back, it did not stay open")
     }
 
     @Test
     fun everyKindOfWrite_joinsTheTransaction_includingTheImageUpload() = runBlocking {
-        val id = DBReset.CAFETEIRA_ID
+        val id = DBReset.COFFEE_MAKER_ID
         val original = env.productRepo.fetchImage(id)!!
         tx().required { t ->
-            assertTrue(env.productRepo.update(Product().apply { this.id = id; name = "outro nome" }, null, Product().apply { name = "~" }))
+            assertTrue(env.productRepo.update(Product().apply { this.id = id; name = "another name" }, null, Product().apply { name = "~" }))
             assertTrue(env.productRepo.updateImage(id, byteArrayOf(1, 2, 3)))
             assertEquals(1, env.purchaseItemRepo.delete(PurchaseItemCriteria().withPurchaseItemId(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID)))
             t.setRollbackOnly()
         }
-        assertEquals("Cafeteira", env.productRepo.fetchById(id)!!.name!!.substringBefore(' '))
+        assertEquals("Italian", env.productRepo.fetchById(id)!!.name!!.substringBefore(' '))
         assertArrayEquals(original, env.productRepo.fetchImage(id))
         assertEquals(3, env.purchaseItemRepo.count(PurchaseItemCriteria()))
     }
@@ -272,8 +272,8 @@ class RemoteTransactionRestTest {
 
     @Test
     fun imageUploadInATransaction_isServedOnlyAfterTheCommit_andCachesRevalidate() = runBlocking {
-        // id fixo, fora da faixa da sequência: o cache de imagens do servidor é estático e sobrevive aos outros
-        // ambientes de teste da mesma JVM, que reusariam um id gerado (ver as armadilhas no CLAUDE.md)
+        // fixed id, outside the sequence range: the server's image cache is static and survives the other
+        // test environments of the same JVM, which would reuse a generated id (see the pitfalls in CLAUDE.md)
         val p = product("rtx-image").apply { id = 9_000_001L }
         assertTrue(env.productRepo.insert(p))
         val id = p.id!!
@@ -283,20 +283,20 @@ class RemoteTransactionRestTest {
         assertEquals(200, first.statusCode())
         assertArrayEquals(byteArrayOf(1, 1, 1), first.body())
         val etag = first.headers().firstValue("ETag").orElse(null)
-        assertNotNull(etag, "a imagem sai com ETag")
-        assertFalse(first.headers().firstValue("Cache-Control").orElse("").contains("immutable"), "a URL é mutável")
-        assertEquals(304, getImage(id, etag).statusCode(), "a mesma imagem revalida com 304")
+        assertNotNull(etag, "the image comes with an ETag")
+        assertFalse(first.headers().firstValue("Cache-Control").orElse("").contains("immutable"), "the URL is mutable")
+        assertEquals(304, getImage(id, etag).statusCode(), "the same image revalidates with 304")
 
         tx().required {
             assertTrue(env.productRepo.updateImage(id, byteArrayOf(2, 2, 2)))
-            // antes do commit, quem lê vê a confirmada — e ela não pode ficar no cache depois do commit
+            // before the commit, readers see the committed one — and it must not stay in the cache after the commit
             assertArrayEquals(byteArrayOf(1, 1, 1), getImage(id).body())
         }
 
         val after = getImage(id)
-        assertArrayEquals(byteArrayOf(2, 2, 2), after.body(), "depois do commit, a imagem nova")
+        assertArrayEquals(byteArrayOf(2, 2, 2), after.body(), "after the commit, the new image")
         assertNotEquals(etag, after.headers().firstValue("ETag").orElse(null))
-        assertEquals(200, getImage(id, etag).statusCode(), "o ETag antigo não revalida mais")
+        assertEquals(200, getImage(id, etag).statusCode(), "the old ETag no longer revalidates")
     }
 
     @Test
@@ -304,15 +304,15 @@ class RemoteTransactionRestTest {
         val before = env.productRepo.count(ProductCriteria())
         tx().required {
             env.productRepo.insert(product("rtx-not-yet-visible"))
-            // a leitura não participa da transação remota
+            // the read does not take part in the remote transaction
             assertEquals(before, env.productRepo.count(ProductCriteria()))
         }
         assertEquals(before + 1, env.productRepo.count(ProductCriteria()))
     }
 
-    // :: O checkout, como o cliente o executa
+    // :: The checkout, as the client runs it
 
-    /** Roda o bloco com o serviço de transação que um cliente REST registra (`RestRepositoryBootstrap`). */
+    /** Runs the block with the transaction service that a REST client registers (`RestRepositoryBootstrap`). */
     private suspend fun <T> asAClientApplication(block: suspend () -> T): T {
         val serverSide = ShoppingTransactions.BEAN.get()
         ShoppingTransactions.BEAN.set(tx())
@@ -328,8 +328,8 @@ class RemoteTransactionRestTest {
     @Test
     fun checkoutOverRest_commitsThePurchaseAndItsItems() = runBlocking {
         val cart = CartManager(env.purchaseRepo).apply {
-            addProduct(productInfo(DBReset.CAFETEIRA_ID), 1)
-            addProduct(productInfo(DBReset.PEN_DRIVE2GB_ID), 2)
+            addProduct(productInfo(DBReset.COFFEE_MAKER_ID), 1)
+            addProduct(productInfo(DBReset.FLASH_DRIVE_2GB_ID), 2)
         }
         val purchaseId = asAClientApplication { cart.commit(Subject().apply { id = DBReset.FULANO_ID }) }
 
@@ -339,7 +339,7 @@ class RemoteTransactionRestTest {
     @Test
     fun checkoutOverRest_thatFailsInTheMiddle_leavesNoOrphanPurchase() = runBlocking {
         val cart = CartManager(env.purchaseRepo).apply {
-            addProduct(productInfo(DBReset.CAFETEIRA_ID), 1)
+            addProduct(productInfo(DBReset.COFFEE_MAKER_ID), 1)
             addProduct(productInfo(987_654L), 1)
         }
         assertThrows(RuntimeException::class.java) {
@@ -347,11 +347,11 @@ class RemoteTransactionRestTest {
         }
         assertEquals(2, env.purchaseRepo.count(PurchaseCriteria()))
         assertEquals(3, env.purchaseItemRepo.count(PurchaseItemCriteria()))
-        // a transação remota foi encerrada: o cliente continua podendo escrever
+        // the remote transaction was closed: the client can still write
         assertTrue(env.productRepo.insert(product("rtx-after-failed-checkout")))
     }
 
-    // :: Propagação
+    // :: Propagation
 
     @Test
     fun nestedRequired_participatesInTheSameTransaction() = runBlocking {
@@ -385,13 +385,13 @@ class RemoteTransactionRestTest {
             service.required { outer ->
                 env.productRepo.insert(before)
                 try {
-                    join { env.productRepo.insert(inside); throw IllegalStateException("falha no participante") }
+                    join { env.productRepo.insert(inside); throw IllegalStateException("participant failure") }
                 } catch (_: IllegalStateException) {
-                    // quem chamou captura e segue: a transação já está condenada, como no servidor
+                    // the caller catches and carries on: the transaction is already doomed, as on the server
                 }
                 condemned = outer.isRollbackOnly()
             }
-            assertTrue(condemned, "o participante que falhou marca rollback-only")
+            assertTrue(condemned, "the participant that failed marks rollback-only")
             assertFalse(exists(before))
             assertFalse(exists(inside))
         }
@@ -405,7 +405,7 @@ class RemoteTransactionRestTest {
         service.required { t ->
             env.productRepo.insert(outer)
             service.requiresNew { env.productRepo.insert(independent) }
-            // a externa continua valendo depois do bloco
+            // the outer one is still in effect after the block
             service.mandatory { assertSame(t, it) }
             t.setRollbackOnly()
         }
@@ -415,8 +415,8 @@ class RemoteTransactionRestTest {
 
     @Test
     fun notSupported_insideARemoteTransaction_readsButCannotWrite() = runBlocking {
-        // Para o servidor, uma escrita sem o X-Tx-Id de quem tem transação aberta é um cabeçalho perdido: ele a
-        // recusa. Suspender a transação remota serve, portanto, para ler — não para escrever por fora dela.
+        // For the server, a write without the X-Tx-Id from someone with an open transaction is a lost header: it
+        // refuses it. Suspending the remote transaction is therefore for reading — not for writing outside it.
         val service = tx()
         val loose = product("rtx-loose")
         service.required { t ->
@@ -428,7 +428,7 @@ class RemoteTransactionRestTest {
             service.mandatory { assertSame(t, it) }
         }
         assertFalse(exists(loose))
-        // fora de qualquer transação remota, notSupported escreve normalmente
+        // outside any remote transaction, notSupported writes normally
         service.notSupported { env.productRepo.insert(loose) }
         assertTrue(exists(loose))
     }
@@ -446,12 +446,12 @@ class RemoteTransactionRestTest {
         }
     }
 
-    // :: Defesas do servidor
+    // :: Server defenses
 
     @Test
     fun headerlessWrite_whileRemoteTxOpen_isRefusedWith409() = runBlocking {
-        // O cliente abriu a transação mas, por falha de propagação, a escrita vai sem o X-Tx-Id. O servidor a
-        // recusa em vez de confirmá-la sozinha, fora da transação.
+        // The client opened the transaction but, due to a propagation failure, the write goes without the X-Tx-Id.
+        // The server refuses it instead of committing it alone, outside the transaction.
         val client = anotherClient()
         val repo = HttpProductRepository(client)
         val txId = begin(client)
@@ -460,12 +460,12 @@ class RemoteTransactionRestTest {
             val e = assertThrows(TransactionConflictException::class.java) { runBlocking { repo.insert(p) } }
             assertTrue(e.message!!.startsWith("HTTP 409"), e.message)
             assertEquals(0, env.productRepo.count(ProductCriteria().withName("rtx-guard-orphan")))
-            // outro cliente não é afetado
+            // another client is not affected
             assertTrue(env.productRepo.insert(product("rtx-guard-other-client")))
         } finally {
             finish(client, txId, "rollback")
         }
-        // encerrada a transação, o cliente volta a escrever
+        // once the transaction is closed, the client writes again
         assertTrue(repo.insert(product("rtx-guard-after")))
     }
 
@@ -509,7 +509,7 @@ class RemoteTransactionRestTest {
             finish(client, first, "rollback")
             finish(client, second, "rollback")
         }
-        // liberadas as vagas, abre de novo
+        // once the slots are freed, it opens again
         finish(client, begin(client), "rollback")
     }
 
@@ -538,7 +538,7 @@ class RemoteTransactionRestTest {
         assertEquals("""{"status":"unknown"}""", status("no-such-transaction"))
     }
 
-    // :: Erros tipados no cliente
+    // :: Typed errors on the client
 
     @Test
     fun unknownOrExpiredTransaction_is410_andArrivesTyped() {
@@ -547,7 +547,7 @@ class RemoteTransactionRestTest {
             val e = assertThrows(RemoteTransactionNotFoundException::class.java) { finish(client, "no-such-transaction", outcome) }
             assertTrue(e.message!!.startsWith("HTTP 410"), e.message)
         }
-        // uma escrita levando o txId de uma transação que não existe mais
+        // a write carrying the txId of a transaction that no longer exists
         client.transactionIdSupplier = { "no-such-transaction" }
         try {
             assertThrows(RemoteTransactionNotFoundException::class.java) {

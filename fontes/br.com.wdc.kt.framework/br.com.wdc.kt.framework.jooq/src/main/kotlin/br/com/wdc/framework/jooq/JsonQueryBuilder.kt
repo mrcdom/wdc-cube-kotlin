@@ -29,20 +29,20 @@ import org.jooq.Table
 import org.jooq.impl.DSL
 
 /**
- * Mapeamento declarativo bean ↔ tabela jOOQ, com projeção em JSON.
+ * Declarative bean ↔ jOOQ table mapping, with JSON projection.
  *
- * Gera `SELECT <objeto JSON> FROM <tabela> WHERE …` — **uma coluna de texto por linha**, com o objeto
- * completo, inclusive as relações aninhadas, que entram como subconsulta escalar correlacionada (sem N+1).
+ * Generates `SELECT <JSON object> FROM <table> WHERE …` — **one text column per row**, with the complete
+ * object, including nested relations, which go in as a correlated scalar subquery (no N+1).
  *
- * - **Projeção:** o bean de projeção diz o que trazer — campo não-nulo = "inclua esta coluna". O id não é
- *   forçado aqui; quem o garante é o repositório.
- * - **Leitura sem reflexão:** cada campo registra como se lê do JSON; nome desconhecido, tipo inesperado ou
- *   `null` são pulados (o campo fica `null`).
- * - **[lazy]:** adia o registro das relações até o primeiro uso, o que quebra a dependência circular entre
- *   os mapeamentos de duas entidades que se referem.
+ * - **Projection:** the projection bean says what to bring — non-null field = "include this column". The id is
+ *   not forced here; the repository guarantees it.
+ * - **Reflection-free reading:** each field registers how it is read from JSON; an unknown name, unexpected type
+ *   or `null` is skipped (the field stays `null`).
+ * - **[lazy]:** defers registering relations until first use, which breaks the circular dependency between
+ *   the mappings of two entities that refer to each other.
  *
- * Para escrever, [JsonQuery.insert] monta o `INSERT` pelos mesmos campos ([JsonQuery.fields]) e lê a linha
- * inserida de volta por esta projeção. `UPDATE` e `DELETE` são com o jOOQ direto.
+ * For writing, [JsonQuery.insert] builds the `INSERT` from the same fields ([JsonQuery.fields]) and reads the
+ * inserted row back through this projection. `UPDATE` and `DELETE` use jOOQ directly.
  * ```
  * val QUERY: JsonQuery<User, EnUser> = JsonQueryBuilder<User, EnUser>()
  *     .setAlias("u").setBeanFactory(::User).setTableFactory(EN_USER::`as`).setDSLContextSupplier(::dsl)
@@ -53,8 +53,8 @@ import org.jooq.impl.DSL
  * val users = QUERY.fetchToList(projection) { t, q -> q.where(t.NAME.like("A%")) }
  * ```
  *
- * @param B tipo do bean de domínio
- * @param T tipo da tabela jOOQ
+ * @param B domain bean type
+ * @param T jOOQ table type
  */
 class JsonQueryBuilder<B : Any, T : Table<*>> {
 
@@ -63,22 +63,22 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     private var tableFactory: ((String) -> T)? = null
     private var dslContextSupplier: (() -> DSLContext)? = null
 
-    /** Marca os campos escalares num bean de projeção. */
+    /** Marks the scalar fields on a projection bean. */
     private val projectionFillers = ArrayList<(B) -> Unit>()
 
-    /** Acrescenta ao objeto JSON os campos que a projeção pede. */
+    /** Adds to the JSON object the fields the projection asks for. */
     private val fieldProjections = ArrayList<(fields: MutableList<JsonFieldEntry>, ctx: QueryContext, bean: B, table: T) -> Unit>()
 
-    /** Como ler cada campo do JSON. */
+    /** How to read each field from JSON. */
     private val fieldReaders = HashMap<String, (bean: B, reader: JsonReader) -> Unit>()
 
-    /** Os campos que o insert enxerga ([JsonQuery.fields]), na ordem da declaração. */
+    /** The fields the insert sees ([JsonQuery.fields]), in declaration order. */
     private val queryFields = ArrayList<JsonQueryField<B, T>>()
 
-    /** Como perguntar a um bean de projeção se cada campo foi pedido — escalar ou relação. */
+    /** How to ask a projection bean whether each field was requested — scalar or relation. */
     private val fieldPresence = LinkedHashMap<String, (B) -> Any?>()
 
-    /** Tradução do `OrderBy` do critério desta entidade; `null` quando a entidade não a registrou. */
+    /** Translation of this entity's criterion `OrderBy`; `null` when the entity did not register one. */
     private var ordering: ((T, Any?) -> List<SortField<*>>?)? = null
 
     private val lazyInits = ArrayList<(JsonQueryBuilder<B, T>) -> Unit>()
@@ -87,65 +87,66 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     @Volatile
     private var lazyDone = false
 
-    // :: Configuração
+    // :: Configuration
 
-    /** Alias base da tabela principal (ex.: `"u"`). */
+    /** Base alias of the main table (e.g. `"u"`). */
     fun setAlias(name: String) = apply { tableName = name }
 
-    /** Fábrica do bean de domínio (ex.: `::User`). */
+    /** Domain bean factory (e.g. `::User`). */
     fun setBeanFactory(beanFactory: () -> B) = apply { this.beanFactory = beanFactory }
 
-    /** Fábrica da tabela com alias (ex.: `` EN_USER::`as` ``). */
+    /** Aliased table factory (e.g. `` EN_USER::`as` ``). */
     fun setTableFactory(tableFactory: (alias: String) -> T) = apply { this.tableFactory = tableFactory }
 
     /**
-     * Fornecedor do [DSLContext], resolvido **a cada execução** — cada módulo injeta o seu, e o framework não
-     * depende de holder global.
+     * [DSLContext] supplier, resolved **on each execution** — each module injects its own, and the framework
+     * does not depend on a global holder.
      */
     fun setDSLContextSupplier(dslContextSupplier: () -> DSLContext) = apply { this.dslContextSupplier = dslContextSupplier }
 
     /**
-     * Como traduzir o `OrderBy` do critério desta entidade em `ORDER BY`.
+     * How to translate this entity's criterion `OrderBy` into `ORDER BY`.
      *
-     * Registrando-a aqui, a coleção filha passa a poder ser ordenada pelo mesmo vocabulário da consulta de
-     * raiz. Recebe o critério como `Any?` porque a coleção filha carrega o critério da **sua** entidade, que
-     * o chamador não conhece estaticamente: a função confere o tipo e devolve lista vazia se não reconhecer.
+     * Registered here, the child collection can be ordered with the same vocabulary as the root query. It
+     * receives the criterion as `Any?` because the child collection carries the criterion of **its** entity,
+     * which the caller does not know statically: the function checks the type and returns an empty list if it
+     * does not recognize it.
      */
     fun setOrdering(ordering: (table: T, criteria: Any?) -> List<SortField<*>>?) = apply { this.ordering = ordering }
 
-    // :: Campos escalares
+    // :: Scalar fields
 
-    /** Campo `Long` (BIGINT). */
+    /** `Long` field (BIGINT). */
     fun addI64(fn: String, getter: (B) -> Long?, setter: (B, Long) -> Unit, column: (T) -> Field<out Number?>) =
         scalar(fn, getter, setter, 0L, JsonFieldType.NUMBER, column, { it == JsonToken.NUMBER }) { it.nextLong() }
 
-    /** Campo `Int` (INT). */
+    /** `Int` field (INT). */
     fun addI32(fn: String, getter: (B) -> Int?, setter: (B, Int) -> Unit, column: (T) -> Field<out Number?>) =
         scalar(fn, getter, setter, 0, JsonFieldType.NUMBER, column, { it == JsonToken.NUMBER }) { it.nextInt() }
 
-    /** Campo `Double` (DOUBLE PRECISION / NUMERIC). */
+    /** `Double` field (DOUBLE PRECISION / NUMERIC). */
     fun addF64(fn: String, getter: (B) -> Double?, setter: (B, Double) -> Unit, column: (T) -> Field<out Number?>) =
         scalar(fn, getter, setter, 0.0, JsonFieldType.NUMBER, column, { it == JsonToken.NUMBER }, toColumn = { BigDecimal.valueOf(it) }) {
             it.nextDouble()
         }
 
-    /** Campo `BigDecimal` (DECIMAL / NUMERIC). */
+    /** `BigDecimal` field (DECIMAL / NUMERIC). */
     fun addDec(fn: String, getter: (B) -> BigDecimal?, setter: (B, BigDecimal) -> Unit, column: (T) -> Field<out Number?>) =
         scalar(fn, getter, setter, BigDecimal.ZERO, JsonFieldType.NUMBER, column, { it == JsonToken.NUMBER }) {
             BigDecimal(it.nextString())
         }
 
-    /** Campo `String` (VARCHAR). */
+    /** `String` field (VARCHAR). */
     fun addStr(fn: String, getter: (B) -> String?, setter: (B, String) -> Unit, column: (T) -> Field<out String?>) =
         scalar(fn, getter, setter, "", JsonFieldType.STRING, column, { it != JsonToken.NULL }) { it.nextString() }
 
     /**
-     * Campo enum (VARCHAR no banco, enum na aplicação).
+     * Enum field (VARCHAR in the database, enum in the application).
      *
-     * @param sentinel constante qualquer do enum, usada para marcar o campo na projeção
-     * @param parser   texto → constante; deve devolver `null` para valor desconhecido, nunca lançar
-     * @param toColumn constante → texto gravado na coluna (o inverso do [parser]); por padrão, o nome da constante.
-     *                 É o que o [JsonQuery.insert] grava e o que [JsonQueryField.toColumn] devolve
+     * @param sentinel any constant of the enum, used to mark the field in the projection
+     * @param parser   text → constant; must return `null` for an unknown value, never throw
+     * @param toColumn constant → text written to the column (the inverse of [parser]); by default, the constant's name.
+     *                 It is what [JsonQuery.insert] writes and what [JsonQueryField.toColumn] returns
      */
     fun <E : Enum<E>> addEnm(
         fn: String,
@@ -169,11 +170,11 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         return this
     }
 
-    /** Campo `Boolean`. */
+    /** `Boolean` field. */
     fun addBit(fn: String, getter: (B) -> Boolean?, setter: (B, Boolean) -> Unit, column: (T) -> Field<out Boolean?>) =
         scalar(fn, getter, setter, false, JsonFieldType.BOOLEAN, column, { it == JsonToken.BOOLEAN }) { it.nextBoolean() }
 
-    /** Campo `OffsetDateTime` (TIMESTAMP WITH TIME ZONE). */
+    /** `OffsetDateTime` field (TIMESTAMP WITH TIME ZONE). */
     fun addOdt(
         fn: String, getter: (B) -> OffsetDateTime?, setter: (B, OffsetDateTime) -> Unit,
         column: (T) -> Field<out OffsetDateTime?>,
@@ -181,7 +182,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         parseTimestamp(it.nextString())
     }
 
-    /** Coluna TIMESTAMP **sem** fuso, lida como `OffsetDateTime` em UTC (e gravada em UTC). */
+    /** TIMESTAMP column **without** time zone, read as `OffsetDateTime` in UTC (and written in UTC). */
     fun addLdt(
         fn: String, getter: (B) -> OffsetDateTime?, setter: (B, OffsetDateTime) -> Unit,
         column: (T) -> Field<out LocalDateTime?>,
@@ -193,21 +194,21 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     }
 
     /**
-     * Coluna DATE (dia, sem hora) mapeada para [LocalDate]. O banco a escreve no JSON como texto ISO (`2024-01-15`);
-     * o que vier depois do dia (uma hora, se o dialeto a acrescentar) é ignorado.
+     * DATE column (day, no time) mapped to [LocalDate]. The database writes it in JSON as ISO text (`2024-01-15`);
+     * whatever comes after the day (a time, if the dialect adds one) is ignored.
      */
     fun addDay(fn: String, getter: (B) -> LocalDate?, setter: (B, LocalDate) -> Unit, column: (T) -> Field<out LocalDate?>) =
         scalar(fn, getter, setter, LOCAL_DATE_SENTINEL, JsonFieldType.DATETIME, column, { it == JsonToken.STRING }) {
             LocalDate.parse(it.nextString().take(10))
         }
 
-    /** Coluna UUID mapeada para [UUID]. O banco a escreve no JSON como texto (`123e4567-e89b-...`). */
+    /** UUID column mapped to [UUID]. The database writes it in JSON as text (`123e4567-e89b-...`). */
     fun addUid(fn: String, getter: (B) -> UUID?, setter: (B, UUID) -> Unit, column: (T) -> Field<out UUID?>) =
         scalar(fn, getter, setter, UUID_SENTINEL, JsonFieldType.STRING, column, { it == JsonToken.STRING }) {
             UUID.fromString(it.nextString())
         }
 
-    /** Coluna TIMESTAMP WITH TIME ZONE mapeada para [Instant] no domínio. */
+    /** TIMESTAMP WITH TIME ZONE column mapped to [Instant] in the domain. */
     fun addIzt(
         fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit,
         column: (T) -> Field<out OffsetDateTime?>,
@@ -219,8 +220,8 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     }
 
     /**
-     * Coluna TIMESTAMP **sem** fuso mapeada para [Instant] no domínio. Convenção: o valor da coluna está em
-     * UTC, na leitura e na escrita.
+     * TIMESTAMP column **without** time zone mapped to [Instant] in the domain. Convention: the column value is
+     * in UTC, on read and on write.
      */
     fun addIlt(
         fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit,
@@ -232,26 +233,26 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         parseInstant(it.nextString())
     }
 
-    @Deprecated("Renomeado para addDay; sai na próxima versão", ReplaceWith("addDay(fn, getter, setter, column)"))
+    @Deprecated("Renamed to addDay; removed in the next version", ReplaceWith("addDay(fn, getter, setter, column)"))
     fun addLocalDate(fn: String, getter: (B) -> LocalDate?, setter: (B, LocalDate) -> Unit, column: (T) -> Field<out LocalDate?>) =
         addDay(fn, getter, setter, column)
 
-    @Deprecated("Renomeado para addUid; sai na próxima versão", ReplaceWith("addUid(fn, getter, setter, column)"))
+    @Deprecated("Renamed to addUid; removed in the next version", ReplaceWith("addUid(fn, getter, setter, column)"))
     fun addUuid(fn: String, getter: (B) -> UUID?, setter: (B, UUID) -> Unit, column: (T) -> Field<out UUID?>) =
         addUid(fn, getter, setter, column)
 
-    @Deprecated("Renomeado para addIzt; sai na próxima versão", ReplaceWith("addIzt(fn, getter, setter, column)"))
+    @Deprecated("Renamed to addIzt; removed in the next version", ReplaceWith("addIzt(fn, getter, setter, column)"))
     fun addInstantFromOdt(fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit, column: (T) -> Field<out OffsetDateTime?>) =
         addIzt(fn, getter, setter, column)
 
-    @Deprecated("Renomeado para addIlt; sai na próxima versão", ReplaceWith("addIlt(fn, getter, setter, column)"))
+    @Deprecated("Renamed to addIlt; removed in the next version", ReplaceWith("addIlt(fn, getter, setter, column)"))
     fun addInstantFromLdt(fn: String, getter: (B) -> Instant?, setter: (B, Instant) -> Unit, column: (T) -> Field<out LocalDateTime?>) =
         addIlt(fn, getter, setter, column)
 
-    /** Campo `ByteArray` (BINARY / BLOB), que trafega em Base64 no JSON. */
+    /** `ByteArray` field (BINARY / BLOB), carried as Base64 in JSON. */
     fun addBin(fn: String, getter: (B) -> ByteArray?, setter: (B, ByteArray) -> Unit, column: (T) -> Field<out ByteArray?>) =
         scalar(fn, getter, setter, ByteArray(0), JsonFieldType.BINARY, column, { it == JsonToken.STRING }) {
-            // decoder MIME: tolera as quebras de linha que o encode() do PostgreSQL insere
+            // MIME decoder: tolerates the line breaks PostgreSQL's encode() inserts
             Base64.getMimeDecoder().decode(it.nextString())
         }
 
@@ -291,8 +292,8 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     // :: Lazy
 
     /**
-     * Adia o registro de campos (tipicamente relações) até o primeiro uso, executado uma única vez. Use para
-     * **todas** as relações: é o que permite dois mapeamentos se referirem um ao outro.
+     * Defers registering fields (typically relations) until first use, run only once. Use it for **all**
+     * relations: it is what lets two mappings refer to each other.
      */
     fun lazy(init: (JsonQueryBuilder<B, T>) -> Unit) = apply { lazyInits.add(init) }
 
@@ -307,16 +308,17 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         }
     }
 
-    // :: Relação 1:1
+    // :: 1:1 relation
 
     /**
-     * Registra um bean associado (relação 1:1), carregado por subconsulta correlacionada.
+     * Registers an associated bean (1:1 relation), loaded by a correlated subquery.
      *
-     * @param childWhereClause escreve a correlação (e o critério do filho) na consulta filha
-     * @param key declara **qual coluna desta tabela guarda a chave** do associado. Com ela, a projeção que
-     *            não pede nada além da chave é montada a partir da própria linha, sem subconsulta — o caso
-     *            corrente de `ownFieldsProjection()`, que traz a associação só para carregar o id. Os nomes
-     *            declarados são os do **JSON do filho**; as colunas, as **desta** tabela. `null` desliga o atalho.
+     * @param childWhereClause writes the correlation (and the child's criterion) into the child query
+     * @param key declares **which column of this table holds the key** of the associated entity. With it, a
+     *            projection that asks for nothing beyond the key is built from the row itself, without a subquery —
+     *            the common case of `ownFieldsProjection()`, which brings the association only to load the id. The
+     *            declared names are those of the **child's JSON**; the columns, those of **this** table. `null`
+     *            turns the shortcut off.
      */
     fun <C : Any, U : Table<*>> addBeanField(
         fn: String,
@@ -331,8 +333,8 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         relationKey?.columns()?.forEach { (part, partColumn) -> queryFields += keyField(fn, getter, setter, childQuery, part, partColumn) }
         fieldProjections.add { fields, ctx, bean, table ->
             val childPrjBean = getter(bean) ?: return@add
-            // A chave já está nesta linha: se a projeção do associado não pede mais nada, montá-la aqui evita uma
-            // subconsulta que só redescobriria a coluna da chave estrangeira.
+            // The key is already in this row: if the associated projection asks for nothing else, building it here
+            // avoids a subquery that would only rediscover the foreign key column.
             if (relationKey != null && !relationKey.isEmpty() && !childQuery.projectsBeyond(childPrjBean, relationKey.names())) {
                 val dialect = JsonDialect.of(ctx.dsl().dialect())
                 fields.add(JsonFieldEntry(fn, dialect.jsonObject(relationKey.entries(table)), JsonFieldType.RAW_JSON))
@@ -352,9 +354,9 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     }
 
     /**
-     * Uma parte da chave de uma associação, como campo deste mapeamento: a coluna da chave estrangeira desta tabela,
-     * lida e gravada no associado. O campo do associado é resolvido no primeiro uso, porque os mapeamentos de duas
-     * entidades podem se referir um ao outro.
+     * A part of an association's key, as a field of this mapping: this table's foreign key column, read and
+     * written on the associated entity. The associated entity's field is resolved on first use, because the
+     * mappings of two entities may refer to each other.
      */
     private fun <C : Any, U : Table<*>> keyField(
         fn: String,
@@ -366,7 +368,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
     ): JsonQueryField<B, T> {
         val childField by kotlin.lazy {
             childQuery.fields().firstOrNull { it.name == part }
-                ?: throw IllegalStateException("a chave de '$fn' declara '$part', que não é campo do associado")
+                ?: throw IllegalStateException("the key of '$fn' declares '$part', which is not a field of the associated entity")
         }
         val childOf = { bean: B -> getter(bean) ?: childQuery.newBean().also { setter(bean, it) } }
         return JsonQueryField(
@@ -379,14 +381,14 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         )
     }
 
-    // :: Coleção filha (1:N)
+    // :: Child collection (1:N)
 
     /**
-     * Registra uma lista de beans filhos (relação 1:N), carregada por subconsulta correlacionada agregada.
+     * Registers a list of child beans (1:N relation), loaded by an aggregated correlated subquery.
      *
-     * A coleção de projeção deve ter ao menos um elemento — o primeiro dá a forma do item. Se ela for
-     * `HasCriteria`, o critério chega à [childWhereClause] e dá a ordem (pelo `setOrdering` do filho); se for
-     * `HasSlice`, dá o recorte.
+     * The projection collection must have at least one element — the first one gives the item's shape. If it is
+     * `HasCriteria`, the criterion reaches [childWhereClause] and gives the order (through the child's
+     * `setOrdering`); if it is `HasSlice`, it gives the slice.
      */
     fun <C : Any, U : Table<*>> addBeanListField(
         fn: String,
@@ -415,7 +417,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         return this
     }
 
-    /** A entrada JSON de uma coleção filha, com a ordem e o recorte que a própria coleção declara. */
+    /** The JSON entry of a child collection, with the order and slice the collection itself declares. */
     private fun <C : Any, U : Table<*>> childCollectionEntry(
         fn: String,
         childPrjBeans: Collection<C>?,
@@ -432,8 +434,8 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
             childBuilder.bind(tbChild, q)
             childWhereClause(childBuilder)
         }
-        // Ordem e recorte vêm do que a própria coleção declara: o critério que ela carrega traz o OrderBy da
-        // entidade filha, e HasSlice traz o limite e o deslocamento. Sem nenhum dos dois, a consulta sai como sempre.
+        // Order and slice come from what the collection itself declares: the criterion it carries brings the child
+        // entity's OrderBy, and HasSlice brings the limit and offset. With neither, the query comes out as always.
         val order: ((U) -> List<SortField<*>>)? =
             if (listCriteria != null && childQuery.hasOrdering()) ({ tb -> childQuery.orderingOf(tb, listCriteria) }) else null
         val slice = childPrjBeans as? HasSlice
@@ -446,14 +448,14 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
 
     // :: Build
 
-    /** Constrói o mapeamento pronto para execução. */
+    /** Builds the mapping, ready to run. */
     fun build(): JsonQuery<B, T> = Built()
 
     private inner class Built : JsonQuery<B, T> {
 
-        private fun beans() = beanFactory ?: error("JsonQueryBuilder: setBeanFactory(...) não foi configurado")
-        private fun tables() = tableFactory ?: error("JsonQueryBuilder: setTableFactory(...) não foi configurado")
-        private fun dsl() = (dslContextSupplier ?: error("JsonQueryBuilder: setDSLContextSupplier(...) não foi configurado"))()
+        private fun beans() = beanFactory ?: error("JsonQueryBuilder: setBeanFactory(...) was not configured")
+        private fun tables() = tableFactory ?: error("JsonQueryBuilder: setTableFactory(...) was not configured")
+        private fun dsl() = (dslContextSupplier ?: error("JsonQueryBuilder: setDSLContextSupplier(...) was not configured"))()
 
         override fun newBean(): B = beans()()
 
@@ -481,8 +483,8 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
             val primaryKey = target.primaryKey?.fields.orEmpty().map { it.name }.toSet()
             val columns = fields().filter { it.isColumnOf(inserted) }
 
-            // O que entra no INSERT: o que a projeção marca (sem ela, o que tem valor) e a chave primária informada.
-            // A identidade nunca: é o banco quem a gera. Duas declarações da mesma coluna: vale a primeira com valor.
+            // What goes into the INSERT: what the projection marks (without one, what has a value) and the given primary key.
+            // Never the identity: the database generates it. Two declarations of the same column: the first with a value wins.
             val values = LinkedHashMap<Field<*>, Any?>()
             val written = HashSet<JsonQueryField<B, T>>()
             for (field in columns) {
@@ -497,7 +499,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
                 written += field
             }
 
-            // Volta ao bean o que não foi gravado ou foi gravado nulo: padrões da coluna, identidade, gatilhos.
+            // Back to the bean goes what was not written or was written null: column defaults, identity, triggers.
             val readBack = newBean()
             val toRead = columns.filter { it !in written || it.get(bean) == null }
             (toRead.ifEmpty { columns.filter { it.column(inserted).name in primaryKey } }).forEach { it.mark(readBack) }
@@ -554,35 +556,35 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         ): SelectQuery<Record1<String>> {
             runLazyInit()
             if (order == null && limit == null && offset == null) {
-                // Sem ordem nem recorte, a forma de sempre: quem não pede nada continua vendo o mesmo SQL e o mesmo plano.
+                // No order and no slice, the usual shape: whoever asks for nothing keeps seeing the same SQL and the same plan.
                 return select(ctx, prjBean, whereClause, true)
             }
             val tbRoot = tables()(tableName + ctx.nextUniqueInt())
             val dialect = JsonDialect.of(ctx.dsl().dialect())
             val sort = order?.invoke(tbRoot)
             if (!sort.isNullOrEmpty() && !dialect.supportsOrderedAggregation()) {
-                // Recusa em vez de devolver a coleção fora da ordem pedida: um resultado ordenado errado passa por certo.
+                // Refuse instead of returning the collection out of the requested order: a wrongly ordered result passes for right.
                 throw UnsupportedOperationException(
-                    "o dialeto ${ctx.dsl().dialect()} não sabe ordenar dentro da agregação; ordene a coleção do lado da aplicação"
+                    "dialect ${ctx.dsl().dialect()} cannot order inside the aggregation; order the collection on the application side"
                 )
             }
-            // A ordem entra DENTRO da agregação. Envolver esta consulta numa tabela derivada — onde caberia um
-            // ORDER BY comum — poria a correlação com a linha do pai fora de alcance: derivada não enxerga o
-            // escopo externo, e o banco responde "column pai.id not found".
+            // The order goes INSIDE the aggregation. Wrapping this query in a derived table — where a plain
+            // ORDER BY would fit — would put the correlation with the parent row out of reach: a derived table does
+            // not see the outer scope, and the database answers "column parent.id not found".
             val agg = ctx.dsl()
                 .select(dialect.jsonArrayAgg(projection(ctx, tbRoot, prjBean), sort).`as`(tableName + "_json"))
                 .from(tbRoot)
             whereClause(tbRoot, agg)
             val aggQuery = agg.query
 
-            // O recorte não cabe na agregação, e pelo mesmo motivo não cabe numa derivada. Sai como um IN sobre a
-            // chave primária: uma subconsulta correlacionada — essa, sim, enxerga o pai — que repete o mesmo
-            // filtro, ordena e corta, devolvendo as chaves das linhas que ficam.
+            // The slice does not fit in the aggregation, and for the same reason not in a derived table. It comes out
+            // as an IN over the primary key: a correlated subquery — this one does see the parent — that repeats the
+            // same filter, orders and cuts, returning the keys of the rows that stay.
             if (limit != null || offset != null) {
                 val tbSlice = tables()(tableName + ctx.nextUniqueInt())
                 val keep = ctx.dsl().select(primaryKeyOf(tbSlice)).from(tbSlice)
-                // A cláusula é tipada na coluna da projeção porque é assim que o resto da API a usa; aqui ela só
-                // acrescenta condições, e o tipo da coluna selecionada não a alcança.
+                // The clause is typed on the projection column because that is how the rest of the API uses it; here
+                // it only adds conditions, and the type of the selected column does not reach it.
                 @Suppress("UNCHECKED_CAST")
                 whereClause(tbSlice, keep as SelectJoinStep<Record1<String>>)
                 val keepQuery = keep.query
@@ -642,12 +644,12 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         val UUID_SENTINEL: UUID = UUID(0L, 0L)
 
         /**
-         * Lê o que o banco põe no JSON para uma coluna de data/hora: ISO-8601 com fuso, ou a forma sem fuso
-         * (`2024-01-15T10:30:00` ou `2024-01-15 10:30:00[.n]`), assumida em UTC.
+         * Reads what the database puts in JSON for a date/time column: ISO-8601 with offset, or the form without
+         * offset (`2024-01-15T10:30:00` or `2024-01-15 10:30:00[.n]`), assumed in UTC.
          */
         fun parseTimestamp(text: String): OffsetDateTime {
-            // Sem fuso (a coluna TIMESTAMP comum) a tentativa com fuso sempre falharia: lida direto, sem a exceção, que
-            // numa coleção grande custava mais que a própria consulta (50 mil datas: 164 ms pela exceção, 23 ms direto).
+            // Without offset (the plain TIMESTAMP column) the attempt with offset would always fail: read directly, without
+            // the exception, which in a large collection cost more than the query itself (50k dates: 164 ms via exception, 23 ms direct).
             if (!hasOffset(text)) {
                 return LocalDateTime.parse(text.replace(' ', 'T')).atOffset(ZoneOffset.UTC)
             }
@@ -658,7 +660,7 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
             }
         }
 
-        /** Se o texto traz fuso: `Z`, ou `+`/`-` depois da data (a data tem hífens; a hora, não). */
+        /** Whether the text carries an offset: `Z`, or `+`/`-` after the date (the date has hyphens; the time does not). */
         fun hasOffset(text: String): Boolean {
             val time = text.indexOfAny(charArrayOf('T', ' '))
             if (time < 0) return false
@@ -675,28 +677,28 @@ class JsonQueryBuilder<B : Any, T : Table<*>> {
         }
 
         /**
-         * A chave primária da tabela, resolvida na instância informada (que tem alias próprio).
+         * The table's primary key, resolved on the given instance (which has its own alias).
          *
-         * Vem da tabela gerada pelo jOOQ, e não de declaração. Serve ao recorte de coleção filha, que precisa
-         * de algo por onde dizer "estas linhas, e não as outras".
+         * It comes from the jOOQ-generated table, not from a declaration. Serves the child collection slice, which
+         * needs something to say "these rows, and not the others" by.
          *
-         * @throws IllegalStateException se a tabela não declara chave primária, ou se ela é composta — o `IN`
-         *         de uma coluna só não a exprime, e SQL aproximado devolveria a coleção errada em silêncio
+         * @throws IllegalStateException if the table declares no primary key, or if it is composite — a
+         *         single-column `IN` cannot express it, and approximate SQL would silently return the wrong collection
          */
-        /** O alias da linha inserida, na consulta que a lê de volta. */
+        /** The alias of the inserted row, in the query that reads it back. */
         private const val INSERTED_ALIAS = "inserted"
 
-        /** A tabela por trás de uma instância com alias (o `INSERT` é na tabela, não no alias). */
+        /** The table behind an aliased instance (the `INSERT` goes to the table, not the alias). */
         private fun unaliased(table: Table<*>): Table<*> = (table as? org.jooq.impl.TableImpl<*>)?.`$aliased`() ?: table
 
         fun primaryKeyOf(table: Table<*>): Field<Any?> {
             val pk = table.primaryKey
             if (pk == null || pk.fields.isEmpty()) {
-                throw IllegalStateException("recorte de coleção exige chave primária, e ${table.name} não declara nenhuma")
+                throw IllegalStateException("collection slice requires a primary key, and ${table.name} declares none")
             }
             if (pk.fields.size > 1) {
                 throw IllegalStateException(
-                    "recorte de coleção não suporta chave primária composta: ${table.name} tem ${pk.fields.size} colunas na chave"
+                    "collection slice does not support a composite primary key: ${table.name} has ${pk.fields.size} key columns"
                 )
             }
             val column = pk.fields[0]

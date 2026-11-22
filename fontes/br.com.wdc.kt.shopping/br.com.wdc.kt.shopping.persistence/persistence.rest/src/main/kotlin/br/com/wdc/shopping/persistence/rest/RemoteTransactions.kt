@@ -4,10 +4,10 @@ import br.com.wdc.framework.commons.util.AtomicRef
 import br.com.wdc.framework.persistence.transaction.RemoteTransactionCoordinator
 
 /**
- * Holder do coordenador das transações remotas — as que o cliente abre e fecha por REST.
+ * Holder of the remote transaction coordinator — for the transactions the client opens and closes over REST.
  *
- * Populado pelo composition root (backend, testes). Vazio, a API não oferece transação remota: `/api/tx/…`
- * responde erro e toda escrita é uma transação isolada por requisição.
+ * Populated by the composition root (backend, tests). When empty, the API offers no remote transaction: `/api/tx/…`
+ * answers with an error and every write is a transaction of its own, per request.
  */
 object RemoteTransactions {
     val COORDINATOR = AtomicRef<RemoteTransactionCoordinator>()

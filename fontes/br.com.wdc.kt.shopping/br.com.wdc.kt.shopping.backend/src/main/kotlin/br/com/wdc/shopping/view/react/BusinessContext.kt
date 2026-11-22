@@ -18,7 +18,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 
 /**
- * @param config a configuração do serviço, já carregada do diretório de trabalho
+ * @param config the service configuration, already loaded from the work directory
  */
 class BusinessContext(private val config: AppConfig) {
 
@@ -54,7 +54,7 @@ class BusinessContext(private val config: AppConfig) {
 
             ShoppingRepositoryBootstrap.initialize(dataSource, dataSourceSupport.logSql, dataSourceSupport.dialect, cleanUp)
 
-            // as transações que os clientes REST abrem e fecham por conta própria
+            // the transactions the REST clients open and close on their own
             RemoteTransactions.COORDINATOR.set(
                 RemoteTransactionCoordinatorImpl({ dataSource }, RemoteTransactionOptions.fromConfig("", config::getInt))
             )

@@ -69,7 +69,7 @@ abstract class ComposeCubeView(
             try {
                 action()
             } catch (e: Exception) {
-                app.alertUnexpectedError(LOG, "Erro inesperado em $id", e)
+                app.alertUnexpectedError(LOG, "Unexpected error in $id", e)
             } finally {
                 ViewUpdateScheduler.flush()
             }

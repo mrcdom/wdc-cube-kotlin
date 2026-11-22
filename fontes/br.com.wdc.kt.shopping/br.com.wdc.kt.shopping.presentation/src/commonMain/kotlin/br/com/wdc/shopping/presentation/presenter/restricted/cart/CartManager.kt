@@ -48,7 +48,7 @@ class CartManager(private val repo: PurchaseRepository) {
         if (isNew) {
             cart.add(CartItem.create(product, quantity))
         }
-        // nos dois casos o carrinho mudou: o contador do cabeçalho depende deste aviso
+        // in both cases the cart changed: the header counter depends on this notice
         for (listener in ArrayList(changeListenerMap.values)) {
             listener()
         }
@@ -131,8 +131,8 @@ class CartManager(private val repo: PurchaseRepository) {
             purchase.items!!.add(purchaseItem)
         }
 
-        // A compra e os seus itens confirmam juntos, ou nada confirma. Sem serviço de transação (testes sem
-        // persistência), executa direto.
+        // The purchase and its items commit together, or nothing commits. Without a transaction service (tests
+        // without persistence), runs directly.
         val transactions = ShoppingTransactions.BEAN.getOrNull()
         if (transactions == null) insert(purchase) else transactions.required { insert(purchase) }
 

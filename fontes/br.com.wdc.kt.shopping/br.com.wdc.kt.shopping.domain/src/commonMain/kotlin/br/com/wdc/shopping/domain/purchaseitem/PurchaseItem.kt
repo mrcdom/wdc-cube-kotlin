@@ -5,9 +5,9 @@ import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.purchase.Purchase
 
 /**
- * Item de uma compra: o produto, a quantidade e o preço praticado.
+ * A purchase item: the product, the quantity and the price charged.
  *
- * Os campos são anuláveis porque `null` tem dois papéis: dado ausente e, numa projeção, "não traga este campo".
+ * The fields are nullable because `null` has two roles: missing data and, in a projection, "do not fetch this field".
  */
 class PurchaseItem : KeyedEntity {
     var id: Long? = null

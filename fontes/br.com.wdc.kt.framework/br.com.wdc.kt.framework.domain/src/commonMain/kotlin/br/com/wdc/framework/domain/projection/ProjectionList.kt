@@ -1,17 +1,17 @@
 package br.com.wdc.framework.domain.projection
 
 /**
- * Coleção de projeção de uma relação 1:N — carrega o bean projetado (exatamente um elemento, a forma do
- * item), o critério da entidade filha e, opcionalmente, o recorte a aplicar.
+ * Projection collection of a 1:N relation — carries the projected bean (exactly one element, the item shape),
+ * the child entity's criteria and, optionally, the slice to apply.
  *
- * O critério traz também o `OrderBy`, e é dele que sai a ordem. Sem ordem, [limit] e [offset]
- * cortam linhas em ordem indefinida — ver [HasSlice].
+ * The criteria also carries the `OrderBy`, and the order comes from it. Without an order, [limit] and [offset]
+ * cut rows in undefined order — see [HasSlice].
  *
- * @param bean a forma do item.
- * @param criteria o critério da entidade filha (com a ordem).
- * @param limit máximo de linhas filhas a trazer, ou `null` para todas. Ordene também, ou o corte é arbitrário.
- * @param offset linhas filhas a pular antes de começar, ou `null` para nenhuma. Ordene também, ou o salto é
- *   arbitrário.
+ * @param bean the item shape.
+ * @param criteria the child entity's criteria (with the order).
+ * @param limit maximum child rows to bring, or `null` for all. Order too, or the cut is arbitrary.
+ * @param offset child rows to skip before starting, or `null` for none. Order too, or the skip is
+ *   arbitrary.
  */
 class ProjectionList<E> private constructor(
     private val delegate: MutableList<E>,
@@ -25,21 +25,21 @@ class ProjectionList<E> private constructor(
         add(bean)
     }
 
-    /** Cópia com outro máximo de linhas filhas. */
+    /** Copy with another maximum of child rows. */
     @Deprecated(
-        "Passe o recorte ao construtor; sai na próxima versão",
+        "Pass the slice to the constructor; removed in the next version",
         ReplaceWith("ProjectionList(first(), criteria, limit = limit, offset = offset)"),
     )
     fun withLimit(limit: Int?): ProjectionList<E> = ProjectionList(ArrayList(delegate), criteria, limit, offset)
 
-    /** Cópia com outro salto de linhas filhas. */
+    /** Copy with another skip of child rows. */
     @Deprecated(
-        "Passe o recorte ao construtor; sai na próxima versão",
+        "Pass the slice to the constructor; removed in the next version",
         ReplaceWith("ProjectionList(first(), criteria, limit = limit, offset = offset)"),
     )
     fun withOffset(offset: Int?): ProjectionList<E> = ProjectionList(ArrayList(delegate), criteria, limit, offset)
 
-    // Igualdade de lista: critério e recorte não participam.
+    // List equality: criteria and slice don't take part.
     override fun equals(other: Any?): Boolean = delegate == other
 
     override fun hashCode(): Int = delegate.hashCode()

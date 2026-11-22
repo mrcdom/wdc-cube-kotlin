@@ -1,13 +1,13 @@
 package br.com.wdc.framework.domain.transaction
 
-/** Controle da transação corrente, entregue ao bloco transacional. */
+/** Control of the current transaction, handed to the transactional block. */
 interface TransactionContext {
 
-    /** Marca a transação para rollback (sem volta). [IllegalStateException] se não há transação ativa. */
+    /** Marks the transaction for rollback (irreversibly). [IllegalStateException] if there is no active transaction. */
     fun setRollbackOnly()
 
     fun isRollbackOnly(): Boolean
 
-    /** `true` quando o bloco está executando dentro de uma transação. */
+    /** `true` when the block is running inside a transaction. */
     fun isActive(): Boolean
 }

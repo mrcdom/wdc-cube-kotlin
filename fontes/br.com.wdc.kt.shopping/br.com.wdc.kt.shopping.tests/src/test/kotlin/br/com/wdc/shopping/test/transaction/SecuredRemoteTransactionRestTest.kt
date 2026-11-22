@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/** A transação remota com a segurança ligada: exige autenticação, e o dono é o usuário. */
+/** The remote transaction with security on: it requires authentication, and the owner is the user. */
 class SecuredRemoteTransactionRestTest {
 
     companion object {
@@ -51,9 +51,9 @@ class SecuredRemoteTransactionRestTest {
         val purchase = Purchase().apply { buyDate = Clock.System.now() }
         RestTransactionService(env.transport).required {
             assertTrue(env.purchaseRepo.insert(purchase))
-            // a conferência de que a compra é do usuário enxerga a compra aberta nesta mesma transação
-            assertTrue(env.purchaseItemRepo.insert(item(DBReset.CAFETEIRA_ID, purchase)))
-            assertTrue(env.purchaseItemRepo.insert(item(DBReset.PEN_DRIVE2GB_ID, purchase)))
+            // the check that the purchase belongs to the user sees the purchase opened in this same transaction
+            assertTrue(env.purchaseItemRepo.insert(item(DBReset.COFFEE_MAKER_ID, purchase)))
+            assertTrue(env.purchaseItemRepo.insert(item(DBReset.FLASH_DRIVE_2GB_ID, purchase)))
         }
         assertEquals(DBReset.FULANO_ID, env.purchaseRepo.fetchById(purchase.id!!)!!.userId)
         assertEquals(2, env.purchaseItemRepo.count(PurchaseItemCriteria().withPurchaseId(purchase.id)))
@@ -67,8 +67,8 @@ class SecuredRemoteTransactionRestTest {
                 RestTransactionService(env.transport).required {
                     val purchase = Purchase().apply { buyDate = Clock.System.now() }
                     assertTrue(env.purchaseRepo.insert(purchase))
-                    // item numa compra do admin: 403
-                    env.purchaseItemRepo.insert(item(DBReset.CAFETEIRA_ID, Purchase().apply { id = DBReset.ADMIN_FIRST_PURCHASE_ID }))
+                    // item in an admin purchase: 403
+                    env.purchaseItemRepo.insert(item(DBReset.COFFEE_MAKER_ID, Purchase().apply { id = DBReset.ADMIN_FIRST_PURCHASE_ID }))
                 }
             }
         }

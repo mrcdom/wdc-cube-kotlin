@@ -37,16 +37,16 @@ import java.lang.reflect.Type
 import java.nio.file.Paths
 
 /**
- * Ambiente de teste que sobe um Javalin in-process com a camada de
- * persistência (H2 + repos JDBC) e configura os BEANs com
- * implementações REST client que comunicam via HTTP.
+ * Test environment that starts an in-process Javalin with the
+ * persistence layer (H2 + JDBC repos) and configures the BEANs with
+ * REST client implementations that communicate over HTTP.
  *
- * Valida o round-trip completo: REST client → HTTP → Javalin →
- * repos de persistência → H2, sem segurança/auth.
+ * Validates the full round trip: REST client → HTTP → Javalin →
+ * persistence repos → H2, without security/auth.
  */
 class RestTestEnvironment(
     private val dbName: String = "wedocode-shopping-rest-test",
-    /** Com segredo, o servidor sobe com a segurança ligada (JWT + controle de acesso); `null` = sem segurança. */
+    /** With a secret, the server starts with security on (JWT + access control); `null` = no security. */
     private val jwtSecret: String? = null,
     private val remoteTransactionOptions: RemoteTransactionOptions = RemoteTransactionOptions.defaults(),
 ) : ShoppingTestEnvironment {
@@ -64,22 +64,22 @@ class RestTestEnvironment(
     var port: Int = 0
         private set
 
-    /** O transporte do cliente, para testes que falam com a API sem passar pelos repositórios. */
+    /** The client transport, for tests that talk to the API without going through the repositories. */
     lateinit var transport: OkHttpTransport; private set
 
     private lateinit var restConfig: RestConfig
 
-    /** Autentica o cliente como o usuário informado (a senha da carga de demonstração é o próprio login). */
+    /** Authenticates the client as the given user (the demo seed password is the login itself). */
     fun loginAs(userName: String, password: String = userName) {
         val authClient = RestAuthClient(restConfig)
         restConfig.setAuthClientInstance(authClient)
         authClient.login(userName, PasswordUtil.hashPassword(password))
     }
 
-    /** O cliente de autenticação da sessão corrente, ou `null` sem login. */
+    /** The authentication client of the current session, or `null` without login. */
     val authClient: RestAuthClient? get() = restConfig.authClient
 
-    /** Volta o cliente ao estado sem autenticação. */
+    /** Returns the client to the unauthenticated state. */
     fun logout() {
         restConfig.setAuthClientInstance(null)
     }
@@ -108,7 +108,7 @@ class RestTestEnvironment(
             ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, cleanUp = cleanUp)
         }
 
-        // Inicia Javalin em porta aleatória
+        // Starts Javalin on a random port
         val gson = Gson()
         val gsonMapper = object : JsonMapper {
             override fun <T : Any> fromJsonString(json: String, targetType: Type): T {
@@ -134,7 +134,7 @@ class RestTestEnvironment(
 
         port = javalin.port()
 
-        // Cria REST client instances (NÃO substitui os BEANs — o servidor usa os JDBC repos via BEAN)
+        // Creates REST client instances (does NOT replace the BEANs — the server uses the JDBC repos through BEAN)
         val transport = OkHttpTransport("http://127.0.0.1:$port")
         val restConfig = RestConfig(transport)
         this.transport = transport

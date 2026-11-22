@@ -10,14 +10,14 @@ import br.com.wdc.framework.domain.pagination.Page
 import br.com.wdc.framework.domain.repository.ReadOnlyRepository
 
 /**
- * Repositório **de somente leitura** sobre HTTP, genérico: `count`, `fetch` e `fetch-page` têm a mesma forma
- * em todas as entidades, e o que muda — como a entidade e o critério trafegam — está no [ModelCodec], o mesmo
- * que o servidor usa.
+ * Generic **read-only** repository over HTTP: `count`, `fetch` and `fetch-page` have the same shape for
+ * every entity, and what differs — how the entity and the criteria travel — is in the [ModelCodec], the same
+ * one the server uses.
  *
- * É a base de um repositório que só consulta (uma visão de painel, por exemplo): a subclasse fixa o caminho
- * base e o `fetchById`. [HttpRepository] acrescenta as operações de escrita.
+ * It is the base of a repository that only queries (a dashboard view, for example): the subclass sets the base
+ * path and `fetchById`. [HttpRepository] adds the write operations.
  *
- * @param basePath caminho da entidade na API (ex.: `/api/repo/product`)
+ * @param basePath the entity's path in the API (e.g. `/api/repo/product`)
  */
 abstract class HttpReadOnlyRepository<E, C, K>(
     protected val transport: HttpTransport,
@@ -56,7 +56,7 @@ abstract class HttpReadOnlyRepository<E, C, K>(
         return Page.of(items, page, pageSize, totalItems)
     }
 
-    // :: Apoio
+    // :: Support
 
     protected inline fun post(operation: String, write: (ExtensibleObjectOutput) -> Unit): ExtensibleObjectInput {
         val writer = JsonStreamWriter()
@@ -65,8 +65,8 @@ abstract class HttpReadOnlyRepository<E, C, K>(
     }
 
     /**
-     * Envia `{ <campos do critério>, "projection": {…}?, <extra> }`. A projeção vai escrita como entidade, e é
-     * assim que uma coleção de projeção leva o seu critério e o seu recorte ao servidor.
+     * Sends `{ <criteria fields>, "projection": {…}?, <extra> }`. The projection is written as an entity, and
+     * that is how a projection collection carries its criteria and its subset to the server.
      */
     protected inline fun postCriteria(
         operation: String,

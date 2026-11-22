@@ -12,13 +12,13 @@ import kotlin.test.assertTrue
 import org.jooq.SQLDialect
 import org.jooq.impl.DSL
 
-/** O que não precisa de banco: leitura do JSON, perguntas sobre a projeção e as recusas. */
+/** What needs no database: JSON reading, questions about the projection and the refusals. */
 class JsonQueryUnitTest {
 
     private val dsl = DSL.using(SQLDialect.H2)
     private val library = Library { dsl }
 
-    // :: Leitura do JSON
+    // :: JSON reading
 
     @Test
     fun parseJson_skipsUnknownNames_andUnexpectedTokens() {
@@ -54,7 +54,7 @@ class JsonQueryUnitTest {
         assertEquals("2024-01-15T10:30:00.250Z", published("2024-01-15T12:30:00.25+02:00"))
     }
 
-    // :: Enum com texto próprio na coluna
+    // :: Enum with its own text in the column
 
     @Test
     fun addEnm_toColumn_writesTheColumnText_andDefaultsToTheName() {
@@ -72,7 +72,7 @@ class JsonQueryUnitTest {
         assertEquals("ESSAY", plain.toColumn(Kind.ESSAY))
     }
 
-    // :: Projeção
+    // :: Projection
 
     @Test
     fun projectsBeyond_asksAboutScalarsAndRelations() {
@@ -115,7 +115,7 @@ class JsonQueryUnitTest {
         assertEquals(1, runs.get())
     }
 
-    // :: Recusas
+    // :: Refusals
 
     @Test
     fun unconfiguredBuilder_failsNamingWhatIsMissing() {
@@ -137,7 +137,7 @@ class JsonQueryUnitTest {
 
     @Test
     fun dialectDefaults_ignoreTheOrder_andSayTheyDoNotSupportIt() {
-        // o padrão da interface ignora a ordem — e é por isso que quem monta a consulta pergunta antes
+        // the interface default ignores the order — which is why whoever builds the query asks first
         val element = DSL.inline("{}")
         val defaults = object : JsonDialect {
             override fun jsonObject(entries: List<JsonFieldEntry>) = element
@@ -162,10 +162,10 @@ class JsonQueryUnitTest {
     @Test
     fun malformedPredicates_areRefused_neverDropped() {
         val c = BookCriteria()
-        // do transporte: recusado na leitura (400), antes de chegar ao tradutor
+        // from the wire: refused on read (400), before reaching the translator
         assertFailsWith<InvalidRequestException> { c.id.restore(Operator.BETWEEN, listOf(1L)) }
         assertFailsWith<InvalidRequestException> { c.id.restore(Operator.EQ, emptyList()) }
-        assertFalse(c.id.isSet(), "o pedido recusado não fica no critério")
+        assertFalse(c.id.isSet(), "the refused predicate does not stay in the criterion")
 
         c.id.restore(Operator.GT, listOf(5L))
         val sql = dsl.renderInlined(CriterionTranslator.translate(BOOK.ID, c.id)!!)
@@ -196,6 +196,6 @@ class JsonQueryUnitTest {
     @Test
     fun translator_refusesAColumnThatIsNotInTheTable() {
         val e = assertFailsWith<IllegalArgumentException> { CriterionTranslator.column(AUTHOR, BOOK.TITLE) }
-        assertEquals("a coluna TITLE não existe em AUTHOR", e.message)
+        assertEquals("column TITLE does not exist in AUTHOR", e.message)
     }
 }

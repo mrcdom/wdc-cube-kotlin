@@ -6,12 +6,12 @@ import br.com.wdc.framework.domain.criteria.Criterion
 import br.com.wdc.framework.domain.criteria.TextCriterion
 
 /**
- * Critério de pesquisa de [User].
+ * Search criteria for [User].
  *
- * **A senha não é campo de critério**: não se pesquisa por ela, e tê-la aqui a exporia também na API. Quem
- * autentica projeta o resumo e o confere.
+ * **The password is not a criteria field**: nobody searches by it, and having it here would also expose it in
+ * the API. Whoever authenticates projects the digest and checks it.
  *
- * Os campos nascem com o critério e nunca são `null`: para saber se um deles filtra, use `hasXxx()`.
+ * The fields are created with the criteria and are never `null`: to know whether one filters, use `hasXxx()`.
  */
 class UserCriteria : Criteria {
 
@@ -43,7 +43,7 @@ class UserCriteria : Criteria {
 
     fun withOrderBy(orderBy: OrderBy?) = apply { this.orderBy = orderBy }
 
-    /** Cada ordenação nomeia um efeito e tem um índice que a sustenta (ver `DBCreate`). */
+    /** Each ordering names an effect and has an index backing it (see `DBCreate`). */
     enum class OrderBy {
         OLDEST_FIRST,
         NEWEST_FIRST,

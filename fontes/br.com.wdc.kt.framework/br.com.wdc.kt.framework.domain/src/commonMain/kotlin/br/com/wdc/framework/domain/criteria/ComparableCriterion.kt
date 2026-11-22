@@ -1,18 +1,18 @@
 package br.com.wdc.framework.domain.criteria
 
 /**
- * Critério de campo ordenável — número, data, timestamp.
+ * Criterion on an orderable field — number, date, timestamp.
  *
- * Acrescenta à igualdade o que só faz sentido onde existe ordem. A separação em subclasse é o que impede
- * `criteria.roles.between(...)` de compilar: quem declara o campo conhece o tipo da coluna e escolhe a
- * classe, então a restrição não custa nada a quem escreve o critério e evita o erro na origem.
+ * Adds to equality what only makes sense where there is order. The split into a subclass is what keeps
+ * `criteria.roles.between(...)` from compiling: whoever declares the field knows the column type and picks the
+ * class, so the restriction costs nothing to whoever writes the criteria and prevents the error at the source.
  *
- * @param C tipo do `XxxCriteria` que contém este campo
- * @param T tipo do valor comparado
+ * @param C type of the `XxxCriteria` that contains this field
+ * @param T type of the compared value
  */
 open class ComparableCriterion<C, T : Any>(owner: C?, name: String) : Criterion<C, T>(owner, name) {
 
-    // Retorno covariante: sem isto, or() devolveria Criterion e o encadeamento perderia between e as comparações.
+    // Covariant return: without this, or() would return Criterion and chaining would lose between and the comparisons.
     override fun or(): ComparableCriterion<C, T> {
         super.or()
         return this
@@ -23,23 +23,23 @@ open class ComparableCriterion<C, T : Any>(owner: C?, name: String) : Criterion<
         return this
     }
 
-    /** Maior que. `null` não acrescenta pedido. */
+    /** Greater than. `null` adds no request. */
     fun gt(value: T?): C = if (value == null) owner() else add(Operator.GT, value)
 
-    /** Maior ou igual a. `null` não acrescenta pedido. */
+    /** Greater than or equal to. `null` adds no request. */
     fun ge(value: T?): C = if (value == null) owner() else add(Operator.GE, value)
 
-    /** Menor que. `null` não acrescenta pedido. */
+    /** Less than. `null` adds no request. */
     fun lt(value: T?): C = if (value == null) owner() else add(Operator.LT, value)
 
-    /** Menor ou igual a. `null` não acrescenta pedido. */
+    /** Less than or equal to. `null` adds no request. */
     fun le(value: T?): C = if (value == null) owner() else add(Operator.LE, value)
 
     /**
-     * Intervalo fechado nos dois extremos.
+     * Range closed at both ends.
      *
-     * **Aceita limite aberto.** Só o início vira `>=`; só o fim vira `<=`; nenhum dos dois não acrescenta
-     * pedido. É o caso corrente de filtro por período em tela, onde costuma-se preencher uma data só.
+     * **Accepts an open bound.** Only the start becomes `>=`; only the end becomes `<=`; with neither, no
+     * request is added. It is the common case of a period filter on screen, where usually only one date is filled.
      */
     fun between(start: T?, end: T?): C = when {
         start == null && end == null -> owner()

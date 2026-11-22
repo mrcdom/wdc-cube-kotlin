@@ -3,29 +3,30 @@ package br.com.wdc.framework.domain.repository
 import br.com.wdc.framework.domain.pagination.Page
 
 /**
- * Contrato de um repositório **de somente leitura**: consultar, contar e paginar.
+ * Contract of a **read-only** repository: query, count and paginate.
  *
- * Serve a duas situações:
+ * It serves two situations:
  *
- * - **dados que não se gravam por aqui** — uma visão de painel, um relatório, um agregado calculado no banco.
- *   Quem os expõe implementa só este contrato, sem ter de inventar o que fazer com um `insert`;
- * - **código que só lê** — um serviço que declara depender de `ReadOnlyRepository` diz, pelo tipo, que não
- *   altera nada, e aceita tanto um repositório de leitura quanto um completo.
+ * - **data that isn't written through here** — a dashboard view, a report, an aggregate computed in the
+ *   database. Whoever exposes it implements only this contract, without having to invent what to do with an
+ *   `insert`;
+ * - **code that only reads** — a service that declares a dependency on `ReadOnlyRepository` says, through the
+ *   type, that it changes nothing, and accepts both a read-only repository and a full one.
  *
- * [Repository] estende este contrato com as operações de escrita.
+ * [Repository] extends this contract with the write operations.
  *
- * @param E tipo da entidade (ou da linha da visão)
- * @param C tipo do critério de pesquisa
- * @param K tipo da chave
+ * @param E entity type (or view row type)
+ * @param C search criteria type
+ * @param K key type
  */
 interface ReadOnlyRepository<E, C, K> {
 
     suspend fun count(criteria: C): Int
 
     /**
-     * Busca pelo critério. `0` em [offset] ou [limit] significa "sem salto" / "sem limite".
+     * Fetches by the criteria. `0` in [offset] or [limit] means "no skip" / "no limit".
      *
-     * Atenção à ordem posicional: `fetch(c, 10)` pula 10 linhas. Para limitar, nomeie: `fetch(c, limit = 10)`.
+     * Mind the positional order: `fetch(c, 10)` skips 10 rows. To limit, name it: `fetch(c, limit = 10)`.
      */
     suspend fun fetch(criteria: C, offset: Int = 0, limit: Int = 0): List<E>
 
@@ -36,19 +37,19 @@ interface ReadOnlyRepository<E, C, K> {
     }
 
     /**
-     * Busca pela chave. Implementada na interface de cada entidade, como um default que monta o
-     * `XxxCriteria` com igualdade sobre a chave e delega a [fetch] — assim buscar por id é a mesma
-     * consulta das outras, com o mesmo tratamento de projeção, segurança e transação.
+     * Fetches by key. Implemented in each entity's interface, as a default that builds the `XxxCriteria` with
+     * equality on the key and delegates to [fetch] — so fetching by id is the same query as the others, with the
+     * same handling of projection, security and transaction.
      *
-     * @param projection `null` projeta [ownFieldsProjection]
-     * @return a entidade, ou `null` se não houver linha com essa chave
+     * @param projection `null` projects [ownFieldsProjection]
+     * @return the entity, or `null` if there is no row with that key
      */
     suspend fun fetchById(id: K, projection: E? = null): E?
 
     /**
-     * Os campos próprios da entidade; associação só pela chave; sem coleção nem campo derivado.
+     * The entity's own fields; associations by key only; no collection nor derived field.
      *
-     * É a projeção padrão: o que uma consulta traz quando o critério não diz.
+     * It is the default projection: what a query brings when the criteria doesn't say.
      */
     fun ownFieldsProjection(): E
 }

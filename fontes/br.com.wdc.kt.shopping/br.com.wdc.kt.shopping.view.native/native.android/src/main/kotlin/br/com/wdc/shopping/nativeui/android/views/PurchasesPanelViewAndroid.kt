@@ -94,7 +94,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                     setPadding((16 * density).toInt(), (12 * density).toInt(), (16 * density).toInt(), (4 * density).toInt())
                 }) {
                     textView {
-                        text = "Compras"
+                        text = "Purchases"
                         textSize = 20f
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(ShoppingColors.OnSurface)
@@ -192,7 +192,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
 
             // Empty label
             emptyLabel = textView {
-                text = "Nenhuma compra realizada"
+                text = "No purchases yet"
                 textSize = 16f
                 setTextColor(ShoppingColors.OnSurfaceVariant)
                 gravity = Gravity.CENTER
@@ -272,7 +272,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
 
         if (totalCount != lastTotalCount) {
             lastTotalCount = totalCount
-            headerBadge.text = "$totalCount itens"
+            headerBadge.text = "$totalCount ${if (totalCount == 1) "item" else "items"}"
         }
 
         if (page != lastPage || totalCount != lastTotalCount) {
@@ -382,7 +382,7 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
         lastPurchaseId = p.id
 
         dateLabel.text = ViewUtils.formatDate(p.date)
-        totalLabel.text = "R$ ${ViewUtils.formatPrice(p.total)}"
+        totalLabel.text = "\$${ViewUtils.formatPrice(p.total)}"
         itemsLabel.text = p.items.joinToString(", ")
     }
 }

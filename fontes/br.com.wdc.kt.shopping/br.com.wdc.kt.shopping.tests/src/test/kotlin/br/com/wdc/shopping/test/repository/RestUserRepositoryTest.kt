@@ -13,8 +13,8 @@ import br.com.wdc.shopping.test.util.TestEnvironmentExtension
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * Executa os mesmos testes de [UserRepositoryTest], porém pelo caminho REST:
- * client HTTP → Javalin in-process → repositórios de persistência → H2.
+ * Runs the same tests as [UserRepositoryTest], but over the REST path:
+ * HTTP client → in-process Javalin → persistence repositories → H2.
  */
 class RestUserRepositoryTest : AbstractUserRepositoryTest() {
 
@@ -28,7 +28,7 @@ class RestUserRepositoryTest : AbstractUserRepositoryTest() {
 
     override fun repo(): UserRepository = env.userRepo
 
-    // -- Só no modo REST --
+    // -- REST mode only --
 
     @Test
     fun password_isNeverReturned_evenWithoutSecurity_evenWhenProjected() = runBlocking {
@@ -46,7 +46,7 @@ class RestUserRepositoryTest : AbstractUserRepositoryTest() {
     fun password_isWriteOnly() = runBlocking {
         val user = User().apply { userName = "gravado"; password = "resumo"; name = "Gravado" }
         assertTrue(repo().insert(user))
-        assertTrue(repo().update(User().apply { id = user.id; password = "outro" }, null, User().apply { password = ProjectionValues.str }))
+        assertTrue(repo().update(User().apply { id = user.id; password = "other" }, null, User().apply { password = ProjectionValues.str }))
         assertNull(repo().fetchById(user.id!!)!!.password)
     }
 }

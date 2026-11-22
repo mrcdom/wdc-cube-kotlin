@@ -12,7 +12,7 @@ class LoggingSupportTest {
 
     @AfterTest
     fun restoreTheDefaultLogging() {
-        // volta ao que o Logback faria sozinho, para não afetar os outros testes
+        // back to what Logback would do by itself, so the other tests are not affected
         val context = LoggerFactory.getILoggerFactory() as LoggerContext
         context.reset()
         ch.qos.logback.classic.util.ContextInitializer(context).autoConfig()
@@ -44,11 +44,11 @@ class LoggingSupportTest {
 
         assertTrue(LoggingSupport.configure(config, log))
         val logger = LoggerFactory.getLogger("probe")
-        logger.info("abaixo do nível configurado")
-        logger.warn("registrado no arquivo")
+        logger.info("below the configured level")
+        logger.warn("written to the file")
 
         val written = Files.readString(log.resolve("probe.log"))
-        assertTrue("WARN probe - registrado no arquivo" in written, written)
-        assertFalse("abaixo do nível" in written, written)
+        assertTrue("WARN probe - written to the file" in written, written)
+        assertFalse("below the configured level" in written, written)
     }
 }

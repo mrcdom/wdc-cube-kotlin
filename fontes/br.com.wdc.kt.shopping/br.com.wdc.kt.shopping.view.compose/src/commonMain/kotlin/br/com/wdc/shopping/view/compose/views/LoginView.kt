@@ -61,7 +61,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                     ShoppingLogoLarge()
 
                     Text(
-                        "Entre com suas credenciais para continuar",
+                        "Sign in to continue",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -75,7 +75,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                             userName = it
                             state.userName = it
                         },
-                        label = { Text("Usuário") },
+                        label = { Text("Username") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -89,7 +89,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                             password = it
                             state.password = it
                         },
-                        label = { Text("Senha") },
+                        label = { Text("Password") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -134,7 +134,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                             )
                         } else {
                             Text(
-                                "Entrar",
+                                "Sign in",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold
                             )

@@ -1,74 +1,74 @@
 package br.com.wdc.framework.persistence.transaction
 
 /**
- * Coordenador de transações **dirigidas pelo cliente sobre REST** (lado servidor).
+ * Coordinator of **client-driven transactions over REST** (server side).
  *
- * Permite que o cliente demarque uma transação que atravessa **várias requisições HTTP** contra o mesmo
- * backend: o servidor mantém a transação física aberta entre as chamadas, identificada por um `txId`, e a
- * religa à thread que atende cada requisição.
+ * Lets the client demarcate a transaction that spans **several HTTP requests** against the same backend: the
+ * server keeps the physical transaction open between calls, identified by a `txId`, and rebinds it to the
+ * thread serving each request.
  *
- * - [begin] — abre uma transação, mantém-na suspensa e devolve seu `txId`;
- * - [resume] / [suspend] — religa/desliga a transação na thread corrente (em torno de cada requisição que
- *   carrega o `txId`);
- * - [commit] / [rollback] — finalizam e removem do registro.
+ * - [begin] — opens a transaction, keeps it suspended and returns its `txId`;
+ * - [resume] / [suspend] — bind/unbind the transaction on the current thread (around each request that
+ *   carries the `txId`);
+ * - [commit] / [rollback] — finish and remove from the registry.
  *
- * **Dono (`ownerKey`):** uma chave **opaca** informada no [begin] e revalidada em todas as operações
- * seguintes — o coordenador apenas compara strings, sem conhecer o conceito de usuário. Quem traduz
- * identidade → chave (e o que fazer com `null`) é a camada chamadora.
+ * **Owner (`ownerKey`):** an **opaque** key given at [begin] and revalidated on every following operation —
+ * the coordinator only compares strings, without knowing the concept of user. The calling layer translates
+ * identity → key (and decides what to do with `null`).
  *
- * SPI **server-side de persistência**: consumido apenas pelo host REST, e por isso fora do domínio. Cada
- * `txId` mantém uma conexão viva até commit/rollback — daí a limpeza de transações abandonadas.
+ * **Server-side persistence** SPI: consumed only by the REST host, hence outside the domain. Each `txId`
+ * keeps a connection alive until commit/rollback — hence the cleanup of abandoned transactions.
  */
 interface RemoteTransactionCoordinator {
 
     /**
-     * Abre uma transação (suspensa) e devolve seu identificador opaco.
+     * Opens a (suspended) transaction and returns its opaque identifier.
      *
-     * @param ownerKey chave opaca do dono (revalidada nas operações seguintes); `null` = sem dono
+     * @param ownerKey opaque owner key (revalidated on following operations); `null` = no owner
      */
     fun begin(ownerKey: String?): String
 
     /**
-     * Como [begin], com o teto de abertas por dono contado por [quotaKey], e não por [ownerKey]. Serve quando o
-     * dono é mais fino que quem responde pelo teto: dono = usuário + instância de cliente, teto = usuário. Sem
-     * suporte na implementação, cai em [begin] (o teto fica por dono).
+     * Like [begin], with the per-owner open cap counted by [quotaKey] instead of [ownerKey]. Useful when the
+     * owner is finer than whoever answers for the cap: owner = user + client instance, cap = user. Without
+     * support in the implementation, falls back to [begin] (the cap stays per owner).
      */
     fun begin(ownerKey: String?, quotaKey: String?): String = begin(ownerKey)
 
-    /** Religa a transação à thread corrente. Falha se desconhecida, já em uso, ou se [ownerKey] divergir. */
+    /** Rebinds the transaction to the current thread. Fails if unknown, already in use, or if [ownerKey] differs. */
     fun resume(txId: String, ownerKey: String?)
 
-    /** Desliga a transação da thread corrente, mantendo-a viva para a próxima requisição. */
+    /** Unbinds the transaction from the current thread, keeping it alive for the next request. */
     fun suspend(txId: String)
 
     /**
-     * Finaliza com COMMIT e remove do registro (valida [ownerKey]). **Idempotente**: repetir o commit de uma
-     * transação já comitada (resposta anterior perdida) é um no-op de sucesso, dentro da janela de retenção
-     * do desfecho. Repetir como rollback algo já comitado conflita.
+     * Finishes with COMMIT and removes from the registry (validates [ownerKey]). **Idempotent**: repeating the
+     * commit of an already committed transaction (previous response lost) is a successful no-op, within the
+     * outcome retention window. Repeating as rollback something already committed conflicts.
      */
     fun commit(txId: String, ownerKey: String?)
 
-    /** Finaliza com ROLLBACK e remove do registro (valida [ownerKey]). **Idempotente**, simétrico ao [commit]. */
+    /** Finishes with ROLLBACK and removes from the registry (validates [ownerKey]). **Idempotent**, symmetric to [commit]. */
     fun rollback(txId: String, ownerKey: String?)
 
     /**
-     * Estado da transação para o solicitante, desambiguando uma resposta de finalização perdida.
+     * State of the transaction for the caller, disambiguating a lost finish response.
      *
-     * @return `"open"` (registrada e viva), `"committed"`/`"rolledback"` (finalizada, dentro da retenção) ou
-     *         `"unknown"` (nunca existiu ou a retenção expirou). Valida [ownerKey].
+     * @return `"open"` (registered and alive), `"committed"`/`"rolledback"` (finished, within retention) or
+     *         `"unknown"` (never existed or retention expired). Validates [ownerKey].
      */
     fun status(txId: String, ownerKey: String?): String
 
-    /** `true` se há transação registrada para [txId]. */
+    /** `true` if there is a transaction registered for [txId]. */
     fun exists(txId: String?): Boolean
 
-    /** Snapshot de métricas (gauges atuais + contadores acumulados). */
+    /** Metrics snapshot (current gauges + accumulated counters). */
     fun stats(): RemoteTransactionStats
 
     /**
-     * `true` se há alguma transação remota aberta para este [ownerKey] (não-nulo). Permite ao host detectar
-     * uma escrita que chegou **sem** o `txId` embora o solicitante tenha transação remota em aberto — sinal
-     * de propagação quebrada do cabeçalho, que de outro modo autocommitaria fora da transação.
+     * `true` if there is any remote transaction open for this (non-null) [ownerKey]. Lets the host detect a
+     * write that arrived **without** the `txId` although the caller has an open remote transaction — a sign
+     * of broken header propagation, which would otherwise autocommit outside the transaction.
      */
     fun hasOpenTransactionForOwner(ownerKey: String?): Boolean
 }

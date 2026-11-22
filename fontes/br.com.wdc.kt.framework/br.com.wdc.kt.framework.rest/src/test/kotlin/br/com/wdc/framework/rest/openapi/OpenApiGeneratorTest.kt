@@ -22,25 +22,25 @@ class OpenApiGeneratorTest {
 
     data class SearchResponse<T>(val count: Int, val elements: List<T>)
 
-    /** Duas operacoes com os tipos aninhados de mesmo nome simples. */
+    /** Two operations with nested types of the same simple name. */
     class CreateOrder { data class Response(val orderId: Long) }
 
     class CancelOrder { data class Response(val cancelled: Boolean) }
 
-    /** Uma operacao documentada pelos proprios tipos. */
-    @ApiDoc("Lista as faturas\nSó as do cliente da sessão.")
+    /** An operation documented by its own types. */
+    @ApiDoc("Lists the invoices\nOnly the session customer's.")
     class ListInvoices {
         data class Request(
-            @ApiDoc("Cliente das faturas") val customerId: Long? = null,
-            @ApiDoc("Situação da fatura") val status: String? = null,
-            @ApiDoc("Página, a partir de 0") val page: Int? = null,
+            @ApiDoc("Customer of the invoices") val customerId: Long? = null,
+            @ApiDoc("Invoice status") val status: String? = null,
+            @ApiDoc("Page, starting at 0") val page: Int? = null,
         )
 
-        @ApiDoc("Uma fatura")
+        @ApiDoc("An invoice")
         data class Response(
-            @ApiDoc("Número da fatura", example = "2024-0001") val number: String,
-            @ApiDoc("Parcelas", example = "3") val installments: Int,
-            @ApiDoc("Quem paga") val customer: Customer,
+            @ApiDoc("Invoice number", example = "2024-0001") val number: String,
+            @ApiDoc("Installments", example = "3") val installments: Int,
+            @ApiDoc("Who pays") val customer: Customer,
         )
     }
 
@@ -52,11 +52,11 @@ class OpenApiGeneratorTest {
         openApi {
             path = "/v3/api-docs"
             title = "Orders"
-            tag("Customer", "Clientes")
+            tag("Customer", "Customers")
         }
         group("/customer", tags = listOf("Customer")) {
             get("/{id}", doc = {
-                summary = "Busca o cliente"
+                summary = "Fetches the customer"
                 path("id", Long::class.java)
                 query("full", Boolean::class.java)
                 returns<Customer>(200)
@@ -77,7 +77,7 @@ class OpenApiGeneratorTest {
         }) { _ -> null }
         get("/catalog/featured") { _ -> null }
         get("/hidden", hidden = true) { _ -> null }
-        get("/files/<path>", doc = { raw(mapOf("summary" to "à mão", "x-custom" to true)) }) { _ -> null }
+        get("/files/<path>", doc = { raw(mapOf("summary" to "by hand", "x-custom" to true)) }) { _ -> null }
     }
 
     private fun spec(): JsonObject = JsonParser.parseString(api.openApiJson).asJsonObject
@@ -99,7 +99,7 @@ class OpenApiGeneratorTest {
 
         val files = spec().getAsJsonObject("paths").getAsJsonObject("/files/{path}").getAsJsonObject("get")
         assertEquals("path", files.getAsJsonArray("parameters")[0].asJsonObject["name"].asString)
-        assertEquals("à mão", files["summary"].asString)
+        assertEquals("by hand", files["summary"].asString)
         assertTrue(files["x-custom"].asBoolean)
     }
 
@@ -124,7 +124,7 @@ class OpenApiGeneratorTest {
         assertTrue(schemas.getAsJsonObject(create).getAsJsonObject("properties").has("orderId"))
         assertTrue(schemas.getAsJsonObject(cancel).getAsJsonObject("properties").has("cancelled"))
         assertTrue(!schemas.has("Response"))
-        // Quem nao colide segue com o nome simples.
+        // Whoever doesn't clash keeps the simple name.
         assertTrue(schemas.has("Customer"))
         val ref = spec.getAsJsonObject("paths").getAsJsonObject("/orders").getAsJsonObject("post").getAsJsonObject("responses")
             .getAsJsonObject("200").getAsJsonObject("content").getAsJsonObject("application/json").getAsJsonObject("schema")["\$ref"].asString
@@ -135,27 +135,27 @@ class OpenApiGeneratorTest {
     fun apiDoc_onTheTypes_documentsSchemasParametersAndSummary() {
         val spec = spec()
         val invoice = spec.getAsJsonObject("components").getAsJsonObject("schemas").getAsJsonObject("OpenApiGeneratorTest.ListInvoices.Response")
-        assertEquals("Uma fatura", invoice["description"].asString)
+        assertEquals("An invoice", invoice["description"].asString)
         val number = invoice.getAsJsonObject("properties").getAsJsonObject("number")
         assertEquals("string", number["type"].asString)
-        assertEquals("Número da fatura", number["description"].asString)
+        assertEquals("Invoice number", number["description"].asString)
         assertEquals("2024-0001", number["example"].asString)
-        // O exemplo segue o tipo: numero num campo inteiro.
+        // The example follows the type: a number in an integer field.
         assertTrue(invoice.getAsJsonObject("properties").getAsJsonObject("installments")["example"].asJsonPrimitive.isNumber)
-        // Referencia a outro esquema: a descricao vai ao lado de um allOf (no 3.0, ao lado de $ref e ignorada).
+        // Reference to another schema: the description goes next to an allOf (in 3.0, next to $ref it is ignored).
         val customer = invoice.getAsJsonObject("properties").getAsJsonObject("customer")
-        assertEquals("Quem paga", customer["description"].asString)
+        assertEquals("Who pays", customer["description"].asString)
         assertEquals("#/components/schemas/Customer", customer.getAsJsonArray("allOf")[0].asJsonObject["\$ref"].asString)
 
         val op = spec.getAsJsonObject("paths").getAsJsonObject("/customers/{customerId}/invoices").getAsJsonObject("get")
-        assertEquals("Lista as faturas", op["summary"].asString)
-        assertEquals("Só as do cliente da sessão.", op["description"].asString)
+        assertEquals("Lists the invoices", op["summary"].asString)
+        assertEquals("Only the session customer's.", op["description"].asString)
         val params = op.getAsJsonArray("parameters").map { it.asJsonObject }
         assertEquals(listOf("customerId", "status", "page"), params.map { it["name"].asString })
         assertEquals("path", params[0]["in"].asString)
-        assertEquals("Cliente das faturas", params[0]["description"].asString)
+        assertEquals("Customer of the invoices", params[0]["description"].asString)
         assertEquals("integer", params[0].getAsJsonObject("schema")["type"].asString)
-        assertEquals("Situação da fatura", params[1]["description"].asString)
+        assertEquals("Invoice status", params[1]["description"].asString)
         assertEquals("integer", params[2].getAsJsonObject("schema")["type"].asString)
     }
 

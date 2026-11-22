@@ -101,7 +101,7 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
 
                 // Subtitle
                 label {
-                    text = "Entre com suas credenciais para continuar"
+                    text = "Sign in to continue"
                     font = UIFont.systemFontOfSize(14.0)
                     textColor = ShoppingColors.OnSurfaceVariant
                     textAlignment = UIK.TextAlignCenter
@@ -109,7 +109,7 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
                 }
 
                 // Username field
-                userField = textField("Usu\u00E1rio") {
+                userField = textField("Username") {
                     autocorrectionType = UIK.AutocorrectionNo
                     autocapitalizationType = UIK.AutocapNone
                     textContentType = null
@@ -117,7 +117,7 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
                 }
 
                 // Password field
-                passwordField = textField("Senha") {
+                passwordField = textField("Password") {
                     secureTextEntry = true
                     autocorrectionType = UIK.AutocorrectionNo
                     autocapitalizationType = UIK.AutocapNone
@@ -137,7 +137,7 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
                 }
 
                 // Login button
-                loginButton = button("Entrar") {
+                loginButton = button("Sign in") {
                     setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                     backgroundColor = ShoppingColors.Primary
                     layer.cornerRadius = 12.0

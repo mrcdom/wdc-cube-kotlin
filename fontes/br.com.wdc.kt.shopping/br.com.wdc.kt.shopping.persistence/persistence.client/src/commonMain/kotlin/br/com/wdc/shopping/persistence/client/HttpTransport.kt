@@ -11,14 +11,14 @@ interface HttpTransport {
     var onAuthFailure: (() -> Unit)?
 
     /**
-     * A transação remota corrente. Quando devolve não-nulo, **todas** as chamadas autenticadas levam o
-     * cabeçalho `X-Tx-Id` — inclusive `putBytes` —, e as escritas se juntam a essa transação no servidor.
+     * The current remote transaction. When it returns non-null, **all** authenticated calls carry the
+     * `X-Tx-Id` header — including `putBytes` —, and writes join that transaction on the server.
      */
     var transactionIdSupplier: (() -> String?)?
 
     /**
-     * Identificador desta instância de cliente, enviado em **todas** as chamadas (`X-Client-Id`). É o dono
-     * das transações remotas quando não há usuário autenticado.
+     * Identifier of this client instance, sent on **all** calls (`X-Client-Id`). It owns the remote
+     * transactions when there is no authenticated user.
      */
     val clientId: String
 

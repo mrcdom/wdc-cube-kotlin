@@ -41,7 +41,7 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
                         visibility = View.GONE
                     }) {
                         textView {
-                            text = "✅ Compra realizada com sucesso!"
+                            text = "✅ Purchase completed successfully!"
                             textSize = 15f
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(ShoppingColors.SuccessColor)
@@ -49,7 +49,7 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
                         }
                     }
 
-                    // Header: icon + "Recibo" + date badge
+                    // Header: icon + "Receipt" + date badge
                     hStack(configure = {
                         gravity = Gravity.CENTER_VERTICAL
                     }) {
@@ -62,7 +62,7 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
                             }
                         }
                         textView {
-                            text = "Recibo"
+                            text = "Receipt"
                             textSize = 24f
                             setTextColor(ShoppingColors.OnSurface)
                             (layoutParams as LinearLayout.LayoutParams).apply {
@@ -102,14 +102,14 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
                             }
                         }
                         textView {
-                            text = "Qtd"
+                            text = "Qty"
                             textSize = 12f
                             setTextColor(ShoppingColors.OnSurfaceVariant)
                             gravity = Gravity.CENTER
                             (layoutParams as LinearLayout.LayoutParams).width = (50 * density).toInt()
                         }
                         textView {
-                            text = "Valor"
+                            text = "Amount"
                             textSize = 12f
                             setTextColor(ShoppingColors.OnSurfaceVariant)
                             gravity = Gravity.END
@@ -157,7 +157,7 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
                     // Back button (right-aligned)
                     hStack {
                         flexSpacer()
-                        button("Continuar Comprando") {
+                        button("Continue Shopping") {
                             textSize = 15f
                             setTextColor(android.graphics.Color.WHITE)
                             background = ShoppingStyles.roundedBackground(ShoppingColors.Primary, 12 * density)
@@ -201,7 +201,7 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
             }
 
             val total = receipt.total ?: receipt.items.sumOf { it.value * it.quantity }
-            totalLabel.text = "R$ ${ViewUtils.formatPrice(total)}"
+            totalLabel.text = "\$${ViewUtils.formatPrice(total)}"
         }
     }
 
@@ -238,7 +238,7 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
 
         // Value
         val valueTv = TextView(ctx).apply {
-            text = "R$ ${ViewUtils.formatPrice(item.value)}"
+            text = "\$${ViewUtils.formatPrice(item.value)}"
             textSize = 14f
             setTypeface(null, Typeface.BOLD)
             setTextColor(ShoppingColors.PriceColor)

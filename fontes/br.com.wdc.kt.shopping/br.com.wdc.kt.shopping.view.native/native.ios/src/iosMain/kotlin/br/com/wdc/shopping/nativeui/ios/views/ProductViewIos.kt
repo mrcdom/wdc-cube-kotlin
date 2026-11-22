@@ -104,7 +104,7 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
                         // Quantity selector
                         hStack(spacing = 4.0, configure = { alignment = UIK.StackAlignCenter }) {
                             label {
-                                text = "Qtd:"
+                                text = "Qty:"
                                 font = UIFont.systemFontOfSize(14.0)
                                 textColor = ShoppingColors.OnSurfaceVariant
                             }
@@ -161,7 +161,7 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
                 // Action buttons row
                 hStack(spacing = 12.0, configure = { alignment = UIK.StackAlignCenter }) {
                     flexSpacer()
-                    backButton = button("Voltar") {
+                    backButton = button("Back") {
                         setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
                         titleLabel?.font = UIFont.systemFontOfSize(15.0)
                         setImage(ShoppingIcons.arrowBack(18.0, ShoppingColors.Primary), forState = UIControlStateNormal)
@@ -175,7 +175,7 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
                             widthAnchor.constraintEqualToConstant(110.0)
                         ))
                     }
-                    addToCartButton = button("Adicionar") {
+                    addToCartButton = button("Add") {
                         setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                         backgroundColor = ShoppingColors.Primary
                         layer.cornerRadius = 12.0
@@ -216,7 +216,7 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
         if (product != null) {
             nameLabel.text = product.name ?: ""
             descriptionLabel.text = ViewUtils.stripHtml(product.description)
-            priceLabel.text = "R$ ${ViewUtils.formatPrice(product.price)}"
+            priceLabel.text = "\$${ViewUtils.formatPrice(product.price)}"
 
             val imageUrl = ViewUtils.productImageUrl(product.id)
             ViewUtils.loadImageAsync(imageView, imageUrl)

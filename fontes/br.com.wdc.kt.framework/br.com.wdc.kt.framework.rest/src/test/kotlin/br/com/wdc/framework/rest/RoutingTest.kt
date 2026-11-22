@@ -86,7 +86,7 @@ class RoutingTest {
         assertEquals("WEEKLY", response["kind"].asString)
         assertEquals(listOf("a", "b"), response["tags"].asJsonArray.map { it.asString })
 
-        assertEquals(400, client.get("/items?kind=weekly").status, "enum é pelo nome exato")
+        assertEquals(400, client.get("/items?kind=weekly").status, "enum is by exact name")
         assertEquals(400, client.get("/items?page=x").status)
         assertEquals(400, client.get("/required").status)
         assertEquals("v", client.get("/required?q=v").body)
@@ -107,9 +107,9 @@ class RoutingTest {
     @Test
     fun everyVerb_isRouted() {
         assertEquals(5, client.put("/items/5", """{"id":0,"name":"x","tags":[]}""").json().asJsonObject["id"].asInt)
-        // sem "tags": vale o padrão do parâmetro (a leitura é pelo construtor)
+        // without "tags": the parameter default applies (reading is through the constructor)
         assertEquals(0, client.put("/items/6", """{"id":0,"name":"y"}""").json().asJsonObject["tags"].asJsonArray.size())
-        // campo obrigatório ausente: 400, e não um objeto com null num campo não anulável
+        // required field absent: 400, not an object with null in a non-nullable field
         assertEquals(400, client.put("/items/6", """{"id":0}""").status)
         assertEquals(9, client.patch("/items/9", "{}").json().asJsonObject["patched"].asInt)
         val deleted = client.delete("/items/1")
@@ -143,7 +143,7 @@ class RoutingTest {
     fun multiSegmentPath_groups_andTrailingSlash() {
         assertEquals("a/b/c.txt", client.get("/files/a/b/c.txt").body)
         assertEquals("hi", client.get("/v1/nested/hello").body)
-        assertEquals("hi", client.get("/v1/nested/hello/").body, "barra final é ignorada")
+        assertEquals("hi", client.get("/v1/nested/hello/").body, "trailing slash is ignored")
         assertEquals(404, client.get("/nope").status)
     }
 }

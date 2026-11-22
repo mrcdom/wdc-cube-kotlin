@@ -22,7 +22,7 @@ class EntityGraphTest {
         override fun key(): Any? = id
     }
 
-    /** Codec mínimo, só com o que o ciclo Order ↔ Line exige. */
+    /** Minimal codec, with only what the Order ↔ Line cycle requires. */
     private object OrderCodec : ModelCodec<Order, Unit> {
 
         override fun writeEntity(out: ExtensibleObjectOutput, entity: Order, graph: EntityGraph) {
@@ -64,7 +64,7 @@ class EntityGraphTest {
                                 }
                             }
                             input.endObject()
-                            // back-reference em stub: só a chave do pai
+                            // back-reference as a stub: only the parent's key
                             line.order = Order(order.id)
                             lines.add(line)
                         }
@@ -132,7 +132,7 @@ class EntityGraphTest {
         val writer = JsonStreamWriter()
         OrderCodec.writeEntity(writer, order)
 
-        // sem o rastreamento, isto não terminaria
+        // without tracking, this would never end
         assertEquals("""{"id":1,"lines":[{"id":10,"order":{"id":1}},{"id":11,"order":{"id":1}}]}""", writer.result())
     }
 

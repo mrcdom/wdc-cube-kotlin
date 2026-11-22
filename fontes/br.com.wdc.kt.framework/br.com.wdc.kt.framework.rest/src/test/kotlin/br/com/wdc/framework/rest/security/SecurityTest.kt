@@ -11,7 +11,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** A segurança no formato do Spring Security: 403 sem credencial, papéis `ROLE_`, `@PreAuthorize`. */
+/** Security in the Spring Security shape: 403 without a credential, `ROLE_` roles, `@PreAuthorize`. */
 class SecurityTest {
 
     class User(override val id: String, override val roles: Set<String>, val storeId: Long) : RestPrincipal
@@ -31,11 +31,11 @@ class SecurityTest {
             permitAll("POST /auth/login", "GET /catalog/featured", "/swagger-ui/**")
         }
         errors {
-            // o corpo padrão do Spring Boot para quem não tem credencial…
+            // Spring Boot's default body for a caller without a credential…
             errorBody = { status, _, request ->
                 linkedMapOf("status" to status, "error" to if (status == 403) "Forbidden" else "Not Found", "path" to request.path)
             }
-            // …e o do @RestControllerAdvice para a recusa do @PreAuthorize
+            // …and the @RestControllerAdvice one for the @PreAuthorize refusal
             on<AccessDeniedException> { _, _ -> ErrorResponse(403, mapOf("message" to "Access denied.")) }
         }
         post("/auth/login") { call -> mapOf("principal" to call.principal?.id) }
@@ -90,7 +90,7 @@ class SecurityTest {
         assertEquals(200, admin().get("/admin-prefixed").status)
         assertEquals(200, customer().get("/orders").status)
         assertEquals(200, admin().get("/orders").status)
-        assertFalse(AccessRules.hasRole("ADMIN").allows(fakeRequestless()), "sem prefixo, comparação exata")
+        assertFalse(AccessRules.hasRole("ADMIN").allows(fakeRequestless()), "without a prefix, exact comparison")
     }
 
     @Test
@@ -106,9 +106,9 @@ class SecurityTest {
         assertEquals("""{"principal":"1"}""", admin().get("/catalog/featured").body)
         assertEquals("docs", anonymous().get("/swagger-ui/index.html").body)
         assertEquals("open", anonymous().get("/open").body)
-        // credencial recusada numa rota pública: segue anônimo
+        // a refused credential on a public route: proceeds anonymously
         assertEquals("""{}""", server.client().bearer("bogus").get("/catalog/featured").body)
-        // o verbo conta
+        // the verb matters
         assertEquals(403, anonymous().send("GET", "/auth/login").status)
     }
 

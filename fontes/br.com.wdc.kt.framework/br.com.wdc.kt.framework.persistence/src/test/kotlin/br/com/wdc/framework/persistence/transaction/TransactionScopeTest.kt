@@ -22,8 +22,8 @@ class TransactionScopeTest {
 
     @AfterTest
     fun tearDown() {
-        assertNull(TransactionScope.current(), "transação vazou para a thread")
-        assertEquals(0, db.openConnections.get(), "conexão não devolvida")
+        assertNull(TransactionScope.current(), "transaction leaked to the thread")
+        assertEquals(0, db.openConnections.get(), "connection not returned")
         db.close()
     }
 
@@ -48,7 +48,7 @@ class TransactionScopeTest {
 
         db.insertInCurrentTx(1)
         participant.close()
-        // fechar o participante não comita nem tira o owner da thread
+        // closing the participant neither commits nor removes the owner from the thread
         assertSame(owner, TransactionScope.current())
         assertEquals(emptyList(), db.ids())
 
