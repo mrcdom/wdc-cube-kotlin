@@ -28,6 +28,16 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     }
 
     @Test
+    fun unexpectedError_showsTheDetail_onlyWhenThereIsOne() = runBlocking {
+        gotoRestricted()
+        val log = br.com.wdc.framework.commons.log.Log.getLogger("ShoppingWorkflowTest")
+        app.alertUnexpectedError(log, "Erro inesperado", IllegalStateException("conexão recusada"))
+        assertEquals("Erro inesperado: conexão recusada", app.getRootView()!!.state.errorMessage)
+        app.alertUnexpectedError(log, "Erro inesperado", IllegalStateException())
+        assertEquals("Erro inesperado", app.getRootView()!!.state.errorMessage)
+    }
+
+    @Test
     fun testVisualizaProdutoInexistente() = runBlocking {
         var restrictedView = gotoRestricted()
         val rootView = app.getRootView()!!

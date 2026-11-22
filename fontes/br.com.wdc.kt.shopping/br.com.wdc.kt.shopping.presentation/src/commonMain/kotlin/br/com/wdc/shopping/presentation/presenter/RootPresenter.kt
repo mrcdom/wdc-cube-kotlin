@@ -71,11 +71,7 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     }
 
     fun alertUnexpectedError(logger: Log, message: String, caught: Throwable) {
-        state.errorMessage = if (!caught.message.isNullOrBlank()) {
-            message
-        } else {
-            "$message: ${caught.message}"
-        }
+        state.errorMessage = if (caught.message.isNullOrBlank()) message else "$message: ${caught.message}"
         update()
         logger.error(state.errorMessage!!, caught)
     }
