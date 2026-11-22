@@ -144,12 +144,13 @@ A new view needs no `update()` either: every view layer paints the current state
 
 ### Keys classes
 
-The names a place reads from and writes to the `CubeIntent` live in **one keys class per module** (`MainKeys`, `HomeKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties; presenters never use a literal name.
+The names a place reads from and writes to the `CubeIntent` live in **one keys class per place**, named after it (`RootKeys`, `LoginKeys`, `HomeKeys`, `CartKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties; presenters never use a literal name, nor call `Routes` to navigate. A place with no names of its own still has its keys (`LoginKeys`, `CartKeys`): it reads its slot and is navigated to through them, and it is where its names will go. `PlaceKeysTest` fails when a place has none.
 
 - **A two-letter prefix per class, unique in the application.** Every name the class declares starts with it (`pr-id`), in a private table: `P` for parameters, which go in the address, and `A` for attributes, which don't. To create a name, look only at your own file. `PlaceKeysTest` checks that the prefixes are unique.
-- **Inheritance follows the place tree:** `MainKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.
+- **Inheritance follows the place tree:** `RootKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.
 - **The one name reused on purpose is the composition slot, `parentSlot`.** Each level reads the slot it got and republishes, under the same name, the slot of its content for the level below. A reused presenter reads it on every `applyParameters`, because the parent may now offer another slot.
 - **Validation is in the getter, which never throws.** The address is input from outside, so a getter returns a usable value or `null`: an id must be positive. A setter given the default or `null` removes the name from the address.
+- **The address follows the state through `publishParameters`.** Each presenter publishes what it shows — the product publishes `pr-id`, the home publishes the purchases page (`hm-page`, left out when it is the first page) — and the address is rebuilt from them at the end of every navigation. A change that is not a navigation, such as turning a page, calls `app.updateHistory()` so the address follows it; `applyParameters` reads the value back from the address.
 - **Navigating starts from the state.** Without an intent, the keys start from `app.newIntent()`, which asks every live presenter what it shows: `ProductKeys(app).apply { productId = id }.go()`.
 - **Redirecting from inside `applyParameters` uses the intent in transit**, as in `HomeKeys(app, intent).go(); return false`, not a new intent: the presenter is not accepted yet, and a new intent would lose what the address brought. The Storefront does this when an address has no usable id: it goes to the home.
 

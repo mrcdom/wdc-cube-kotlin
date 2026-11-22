@@ -7,7 +7,7 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.presentation.ShoppingApplication
-import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
 class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
@@ -82,8 +82,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
             app.cart!!.addProduct(state.product!!, quantity)
 
-            val intent = app.newIntent()
-            Routes.cart(app, intent)
+            CartKeys(app).go()
         } catch (caught: Exception) {
             if (caught is OfflineException) {
                 alertDatabaseNotAvailable()
@@ -97,7 +96,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     suspend fun onOpenProducts() {
         try {
-            Routes.home(app)
+            HomeKeys(app).go()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Going to home of restricted place", caught)
         }

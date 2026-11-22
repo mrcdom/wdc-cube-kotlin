@@ -8,7 +8,8 @@ import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
-import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
@@ -70,7 +71,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (app.subject == null) {
-            Routes.login(app, intent)
+            LoginKeys(app, intent).go() // redirect, with the intent in transit
             return false
         }
 
@@ -99,6 +100,9 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
         ownerSlot!!.setView(view!!)
 
+        // the page the address asks for; the panel loads it now, or once its view tells its capacity
+        purchasesPanel?.restorePage(HomeKeys(app, intent).purchasesPage)
+
         if (deepest) {
             setContentView(null)
             reloadPurchasesIfNeeded()
@@ -110,7 +114,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     }
 
     override fun publishParameters(intent: CubeIntent) {
-        // NOOP
+        HomeKeys(app, intent).purchasesPage = purchasesPanel?.state?.page ?: 0
     }
 
     // :: User Actions
@@ -174,7 +178,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     suspend fun onOpenCart() {
         try {
-            Routes.cart(app)
+            CartKeys(app).go()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Trying to go to cart place", caught)
         }
@@ -189,7 +193,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             setContentView(null)
             reloadPurchasesIfNeeded()
 
-            Routes.login(app)
+            LoginKeys(app).go()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Trying to go to login place", caught)
         }

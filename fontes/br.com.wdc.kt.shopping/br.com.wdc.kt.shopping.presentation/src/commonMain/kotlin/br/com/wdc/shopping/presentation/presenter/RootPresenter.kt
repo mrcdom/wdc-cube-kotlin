@@ -48,7 +48,7 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             HomeKeys(app, intent).go()
             return false
         }
-        MainKeys(app, intent).parentSlot = contentSlot
+        RootKeys(app, intent).parentSlot = contentSlot
 
         return true
     }

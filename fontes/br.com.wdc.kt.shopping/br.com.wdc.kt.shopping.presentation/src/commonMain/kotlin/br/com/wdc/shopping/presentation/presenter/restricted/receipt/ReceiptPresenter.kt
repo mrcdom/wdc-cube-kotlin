@@ -7,7 +7,6 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
-import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptForm
 
@@ -73,7 +72,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     suspend fun onOpenProducts() {
         try {
-            Routes.home(app)
+            HomeKeys(app).go()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Going to restricted home place", caught)
         }

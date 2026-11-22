@@ -37,17 +37,32 @@ class PurchasesPanelPresenter(
 
     // :: User Actions
 
+    /**
+     * The page the address asks for (the home reads it). Loaded now if it changed and the view already told its
+     * capacity; otherwise with the first capacity.
+     */
+    suspend fun restorePage(page: Int) {
+        val requested = max(0, page)
+        if (requested == state.page) return
+        state.page = requested
+        if (state.pageSize > 0) loadPurchases()
+    }
+
     suspend fun onPageChange(page: Int) {
         state.page = max(0, page)
         loadPurchases()
+        // not a navigation: the address follows the page here
+        app.updateHistory()
     }
 
     suspend fun onItemSizeCapacityChanged(capacity: Int) {
         val newPageSize = max(1, capacity)
         if (newPageSize != state.pageSize) {
+            // the first capacity keeps the page the address asked for; a later change goes back to the first page
+            if (state.pageSize > 0) state.page = 0
             state.pageSize = newPageSize
-            state.page = 0
             loadPurchases()
+            app.updateHistory()
         }
     }
 

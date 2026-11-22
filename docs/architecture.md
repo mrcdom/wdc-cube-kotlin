@@ -286,7 +286,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         // read on every call: a reused presenter goes where its parent puts it now
-        ownerSlot = MainKeys(app, intent).parentSlot
+        ownerSlot = LoginKeys(app, intent).parentSlot
         if (initialization) {
             view = createView?.invoke(this)
         }
@@ -358,7 +358,7 @@ sequenceDiagram
     participant RootView as RootView
 
     Note over Root: applyParameters(deepest=false)
-    Root->>Intent: parentSlot = contentSlot (MainKeys)
+    Root->>Intent: parentSlot = contentSlot (RootKeys)
 
     Note over Home: applyParameters(deepest=true)
     Home->>Intent: parentSlot (HomeKeys)
