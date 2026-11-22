@@ -142,6 +142,31 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
 A new view needs no `update()` either: every view layer paints the current state when the view is created. Keep in the state what the view shows — the Storefront home keeps the cart count as a field, set by the cart's change listener — and the presenter never calls `update()`. It is still there for state the view reads from somewhere else.
 
+### Keys classes
+
+The names a place reads from and writes to the `CubeIntent` live in **one keys class per module** (`MainKeys`, `HomeKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties; presenters never use a literal name.
+
+- **A two-letter prefix per class, unique in the application.** Every name the class declares starts with it (`pr-id`), in a private table: `P` for parameters, which go in the address, and `A` for attributes, which don't. To create a name, look only at your own file. `PlaceKeysTest` checks that the prefixes are unique.
+- **Inheritance follows the place tree:** `MainKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.
+- **The one name reused on purpose is the composition slot, `parentSlot`.** Each level reads the slot it got and republishes, under the same name, the slot of its content for the level below. A reused presenter reads it on every `applyParameters`, because the parent may now offer another slot.
+- **Validation is in the getter, which never throws.** The address is input from outside, so a getter returns a usable value or `null`: an id must be positive. A setter given the default or `null` removes the name from the address.
+- **Navigating starts from the state.** Without an intent, the keys start from `app.newIntent()`, which asks every live presenter what it shows: `ProductKeys(app).apply { productId = id }.go()`.
+- **Redirecting from inside `applyParameters` uses the intent in transit**, as in `HomeKeys(app, intent).go(); return false`, not a new intent: the presenter is not accepted yet, and a new intent would lose what the address brought. The Storefront does this when an address has no usable id: it goes to the home.
+
+```kotlin
+class ProductKeys(app: ShoppingApplication, intent: CubeIntent? = null) : HomeKeys(app, intent) {
+    companion object { const val PREFIX = "pr" }
+
+    private object P { const val PRODUCT_ID = "$PREFIX-id" }
+
+    override suspend fun go(): Boolean = Routes.product(app, intent)
+
+    var productId: Long?
+        get() = intent.getParameterAsLong(P.PRODUCT_ID)?.takeIf { it > 0 }
+        set(value) = intent.setParameter(P.PRODUCT_ID, value?.takeIf { it > 0 })
+}
+```
+
 ### CubeView
 
 Interface for the rendering layer. Each UI technology (Compose, React, etc.) implements this interface:
@@ -778,8 +803,11 @@ flowchart TD
 
 ```kotlin
 override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
-    val pPurchaseId = intent.getParameterAsLong(PlaceParameters.PURCHASE_ID, purchaseId)
-        ?: throw AssertionError("Missing PURCHASE_ID")
+    val keys = ReceiptKeys(app, intent)
+    val pPurchaseId = keys.purchaseId ?: purchaseId ?: run {
+        HomeKeys(app, intent).go()  // no usable id in the address: redirect, with the intent in transit
+        return false
+    }
 
     // (1) Load data from the server — SUSPEND (I/O)
     if (state.receipt == null || pPurchaseId != purchaseId) {
@@ -790,7 +818,7 @@ override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean
 
     // (2) Create view and connect slot — SYNC. The slot is read on every call: a reused presenter goes where its
     // parent puts it now, which may differ from where it was first put.
-    ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
+    ownerSlot = keys.parentSlot
     if (initialization) {
         view = createView?.invoke(this)
     }
@@ -900,9 +928,7 @@ suspend fun onRemoveProduct(productId: Long?) {
 // ✅ suspend — does I/O (cart.commit) and navigates (Routes.receipt)
 suspend fun onBuy() {
     val purchaseId = cart.commit(app.subject!!)  // ← suspend: persists the purchase
-    val intent = app.newIntent()
-    intent.setParameter(PlaceParameters.PURCHASE_ID, purchaseId)
-    Routes.receipt(app, intent)                  // ← suspend: navigates
+    ReceiptKeys(app).apply { this.purchaseId = purchaseId }.go()  // ← suspend: navigates
 }
 ```
 

@@ -5,8 +5,6 @@ import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.PlaceAttributes
-import br.com.wdc.shopping.presentation.PlaceParameters
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
@@ -14,6 +12,8 @@ import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 
 class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
@@ -75,7 +75,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         }
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
-        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
+        ownerSlot = HomeKeys(app, intent).parentSlot
         if (initialization || view == null) {
             view = createView?.invoke(this)
 
@@ -103,7 +103,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             setContentView(null)
             reloadPurchasesIfNeeded()
         } else {
-            intent.setViewSlot(PlaceAttributes.SLOT_OWNER, contentSlot)
+            HomeKeys(app, intent).parentSlot = contentSlot
         }
 
         return true
@@ -126,15 +126,13 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     suspend fun onOpenReceipt(purchaseId: Long?) {
         try {
-            if (purchaseId == null) {
+            if (purchaseId == null || purchaseId <= 0) {
                 alertPurchaseIdRequired()
                 LOG.warn("onOpenReceipt: {}", state.errorMessage)
                 return
             }
 
-            val intent = app.newIntent()
-            intent.setParameter(PlaceParameters.PURCHASE_ID, purchaseId)
-            Routes.receipt(app, intent)
+            ReceiptKeys(app).apply { this.purchaseId = purchaseId }.go()
         } catch (caught: Exception) {
             if (caught is PurchaseNotFoundException) {
                 alertPurchaseNotFound()
@@ -152,15 +150,13 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     suspend fun onOpenProduct(productId: Long?) {
         try {
-            if (productId == null) {
+            if (productId == null || productId <= 0) {
                 alertProductIdRequired()
                 LOG.warn("onOpenProduct: {}", state.errorMessage)
                 return
             }
 
-            val intent = app.newIntent()
-            intent.setParameter(PlaceParameters.PRODUCT_ID, productId)
-            Routes.product(app, intent)
+            ProductKeys(app).apply { this.productId = productId }.go()
         } catch (caught: Exception) {
             if (caught is ProductNotFoundException) {
                 alertProductNotFound()

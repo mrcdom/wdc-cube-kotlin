@@ -286,7 +286,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         // read on every call: a reused presenter goes where its parent puts it now
-        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
+        ownerSlot = MainKeys(app, intent).parentSlot
         if (initialization) {
             view = createView?.invoke(this)
         }
@@ -358,10 +358,10 @@ sequenceDiagram
     participant RootView as RootView
 
     Note over Root: applyParameters(deepest=false)
-    Root->>Intent: setViewSlot(SLOT_OWNER, contentSlot)
+    Root->>Intent: parentSlot = contentSlot (MainKeys)
 
     Note over Home: applyParameters(deepest=true)
-    Home->>Intent: getViewSlot(SLOT_OWNER)
+    Home->>Intent: parentSlot (HomeKeys)
     Intent-->>Home: contentSlot
     Home->>Root: contentSlot.setView(homeView)
     Note over RootView: Recomposes and renders HomeView
@@ -433,7 +433,6 @@ graph TB
     EX --> BE[BusinessException<br/>Business rule violated]
     EX --> PNF[ProductNotFoundException<br/>Product not found]
     EX --> PUNF[PurchaseNotFoundException<br/>Purchase not found]
-    EX --> WP[WrongPlace<br/>Invalid navigation]
     EX --> WPE[WrongParametersException<br/>Invalid parameters]
 
     style OE fill:#ef5350,color:#fff

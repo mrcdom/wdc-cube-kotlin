@@ -9,10 +9,10 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
 import br.com.wdc.shopping.domain.exception.OfflineException
-import br.com.wdc.shopping.presentation.PlaceAttributes
-import br.com.wdc.shopping.presentation.PlaceParameters
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 import kotlin.time.Duration.Companion.seconds
 
 class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
@@ -43,7 +43,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         state.items = cart.getCartItems()
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
-        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
+        ownerSlot = HomeKeys(app, intent).parentSlot
         if (initialization) {
             view = createView?.invoke(this)
         }
@@ -118,10 +118,10 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
             val purchaseId = cart.commit(app.subject!!)
 
-            val intent = app.newIntent()
-            intent.setParameter(PlaceParameters.PURCHASE_ID, purchaseId)
-            intent.setAttribute(PlaceAttributes.ATTR_PURCHASE_MADE, true)
-            Routes.receipt(app, intent)
+            ReceiptKeys(app).apply {
+                this.purchaseId = purchaseId
+                purchaseMade = true
+            }.go()
         } catch (caught: Exception) {
             if (caught is InvalidCartItemException) {
                 alertThereIsItemWhichValueIsLessThanOne()
