@@ -328,6 +328,9 @@ class CubeNavigationTest {
         // HOME released (replaced), PRODUCT_DETAIL never created
         assertTrue(home.released, "HOME should be released")
         assertNull(presenterOf(TestPlace.PRODUCT_DETAIL.id), "PRODUCT_DETAIL should not exist")
+
+        // the current place is the last accepted presenter, not the route's last step (never visited)
+        assertEquals(TestPlace.PRODUCTS.id, app.newIntent().place?.id, "current place = last accepted step")
     }
 
     // ---------------------------------------------------------------

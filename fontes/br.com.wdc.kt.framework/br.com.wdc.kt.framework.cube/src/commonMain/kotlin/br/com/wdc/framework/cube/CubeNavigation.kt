@@ -12,7 +12,8 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
 
     internal var reflowCount: Int = 1
 
-    private var targetPlace: CubePlace? = null
+    /** O lugar do último presenter aceito: é o lugar corrente depois do commit. */
+    private var acceptedPlace: CubePlace? = null
     private var sourceIntent: CubeIntent = app.newIntent()
     private val steps: MutableList<CubePlace> = ArrayList()
     private var notInterrupted: Boolean = true
@@ -24,8 +25,6 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
 
     suspend fun execute(targetIntent: CubeIntent): Boolean {
         try {
-            targetPlace = steps[steps.size - 1]
-
             var result = true
             val nextPresenters = ArrayList<PresenterHolder>()
 
@@ -52,6 +51,8 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
                 }
 
                 nextPresenters.add(holder)
+                // false = o presenter foi aceito, mas a composição para nele: ele é o lugar corrente
+                acceptedPlace = place
 
                 val goAhead = holder.presenter!!.applyParameters(targetIntent, holder.initialize, holder.deepest)
                 if (!goAhead || !notInterrupted) {
@@ -125,7 +126,7 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
             app.presenterMap.clear()
             app.presenterMap.putAll(finalMap)
         } finally {
-            app.lastPlace = targetPlace
+            app.lastPlace = acceptedPlace
             app.navigation = null
             app.updateHistory()
         }
