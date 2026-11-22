@@ -26,7 +26,7 @@ wdc-cube-kotlin/
 ## Prerequisites
 
 - JDK 21
-- Gradle 9.3 (via wrapper)
+- Gradle 9.8 (via wrapper)
 - Android Studio (for Android and Compose Web)
 - Xcode 16+ (for iOS)
 - Node.js (for the React client)
@@ -35,6 +35,9 @@ wdc-cube-kotlin/
 
 ```bash
 cd fontes
+
+# React client bundle, served by the backend (not versioned: build it once, and again after changing the client)
+(cd br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.remote/remote.react/remote.react.client && npm install && npm run build)
 
 # Backend (port 8080)
 ./gradlew :backend:run

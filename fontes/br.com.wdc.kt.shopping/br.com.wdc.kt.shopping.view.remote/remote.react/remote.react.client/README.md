@@ -116,10 +116,10 @@ Configured in `package.json` (Parcel) and `tsconfig.json` (TypeScript/IDE).
 The compiled assets are written straight into the `skeleton` module:
 
 ```
-../br.com.wdc.shopping.view.react.skeleton/src/main/resources/META-INF/resources/
+../remote.react.skeleton/src/main/resources/META-INF/resources/
 ```
 
-This lets the Javalin server serve the static files automatically from the classpath.
+This lets the Javalin server serve the static files automatically from the classpath. The bundle is generated, not versioned (the skeleton's `.gitignore` excludes it): run `npm run build` after cloning and after changing the client, before starting the backend; without it, the backend starts without the React view.
 
 ## Commands
 
