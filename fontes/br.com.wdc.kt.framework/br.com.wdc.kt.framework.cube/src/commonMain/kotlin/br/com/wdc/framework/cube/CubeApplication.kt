@@ -21,7 +21,21 @@ abstract class CubeApplication {
     /** The outside request waiting for the running navigation. Only the last one waits; the earlier ones give up. */
     internal var waitingNavigation: CubeNavigation<*>? = null
 
+    /** Whether the application has had its first [applyParameters]. */
+    internal var applied: Boolean = false
+
     fun getPresenter(placeId: Int): CubePresenter? = presenterMap[placeId]
+
+    /**
+     * The application's own part in every navigation, run before the first step: the application is the root of the
+     * place tree ([CubeTreePlace.ROOT]) — it may own the page frame (alerts, the slot of the first level) and hand it
+     * down through the intent, as a presenter does. A navigation requested from in here is a redirect.
+     *
+     * @param initialization `true` only the first time
+     * @param deepest `true` when the navigation goes to the root itself (no steps)
+     * @return `false` to stop the navigation at the root
+     */
+    open suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean = true
 
     open fun release() {
         val presenterIds = presenterMap.keys.sortedDescending().toList()
@@ -64,7 +78,8 @@ abstract class CubeApplication {
 
     /**
      * Navigates to [place], stepping through its [path][CubeTreePlace.path] from the root, with [intent] (by default
-     * a new one, from the current state). Applications usually call it through their keys ([CubeKeys.flip]).
+     * a new one, from the current state). Applications usually call it through their keys ([CubeKeys.flip]). To
+     * [CubeTreePlace.ROOT], only the application's [applyParameters] runs.
      *
      * @return `true` if the whole path was accepted
      */

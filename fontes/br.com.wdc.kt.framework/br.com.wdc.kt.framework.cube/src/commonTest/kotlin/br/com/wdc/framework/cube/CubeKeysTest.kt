@@ -12,7 +12,15 @@ import kotlinx.coroutines.test.runTest
 
 class CubeKeysTest {
 
-    private class TestApp : CubeApplication()
+    private class TestApp : CubeApplication() {
+        val calls = mutableListOf<String>()
+        var stopHere = false
+
+        override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+            calls += "init=$initialization deepest=$deepest"
+            return !stopHere
+        }
+    }
 
     private class TestPresenter(app: TestApp) : AbstractCubePresenter<TestApp>(app)
 
@@ -22,7 +30,7 @@ class CubeKeysTest {
         constructor(app: TestApp, intent: CubeIntent? = null) : this(app, intent, PLACE)
 
         companion object {
-            val PLACE = CubeTreePlace.root("top") { app: TestApp -> TestPresenter(app) }
+            val PLACE = CubeTreePlace.ROOT.child("top") { app: TestApp -> TestPresenter(app) }
         }
 
         var page: Int
@@ -39,8 +47,11 @@ class CubeKeysTest {
     @Test
     fun aChild_knowsItsPath_andHasALargerIdThanItsParent() {
         assertSame(TopKeys.PLACE, LeafKeys.PLACE.parent)
-        assertNull(TopKeys.PLACE.parent)
-        assertEquals(listOf(TopKeys.PLACE, LeafKeys.PLACE), LeafKeys.PLACE.path)
+        assertSame(CubeTreePlace.ROOT, TopKeys.PLACE.parent)
+        assertNull(CubeTreePlace.ROOT.parent)
+        assertEquals(listOf(TopKeys.PLACE, LeafKeys.PLACE), LeafKeys.PLACE.path, "the root is not a step")
+        assertEquals(emptyList(), CubeTreePlace.ROOT.path)
+        assertTrue(TopKeys.PLACE in CubeTreePlace.ROOT)
         assertTrue(LeafKeys.PLACE.id > TopKeys.PLACE.id)
         assertTrue(LeafKeys.PLACE in TopKeys.PLACE)
         assertFalse(TopKeys.PLACE in LeafKeys.PLACE)
@@ -68,5 +79,23 @@ class CubeKeysTest {
         assertTrue(TopKeys(app).flip())
         assertNull(app.getPresenter(LeafKeys.PLACE.id), "leaving the leaf releases its presenter")
         assertNotNull(app.getPresenter(TopKeys.PLACE.id))
+    }
+
+    @Test
+    fun theApplication_isTheRoot_beforeEveryStep() = runTest {
+        val app = TestApp()
+        LeafKeys(app).flip()
+        LeafKeys(app).flip()
+        assertEquals(listOf("init=true deepest=false", "init=false deepest=false"), app.calls, "initialized once")
+
+        // to the root itself: only the application, as the deepest
+        assertTrue(app.flip(CubeTreePlace.ROOT))
+        assertEquals("init=false deepest=true", app.calls.last())
+        assertNull(app.getPresenter(TopKeys.PLACE.id), "the root alone keeps no presenter")
+
+        // the application can stop the navigation at the root
+        app.stopHere = true
+        assertFalse(LeafKeys(app).flip())
+        assertNull(app.getPresenter(TopKeys.PLACE.id))
     }
 }
