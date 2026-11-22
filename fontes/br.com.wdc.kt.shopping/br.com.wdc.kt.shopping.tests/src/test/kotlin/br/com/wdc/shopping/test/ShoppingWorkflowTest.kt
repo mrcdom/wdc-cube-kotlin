@@ -47,6 +47,17 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     }
 
     @Test
+    fun buyingWithAnEmptyCart_saysTheCartIsEmpty() = runBlocking {
+        gotoRestricted()
+        Routes.cart(app)
+        val home = RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
+        val cartView = CartViewMock.cast(home.state.contentView)
+        cartView.presenter.onBuy()
+        assertEquals(3, cartView.state.errorCode)
+        assertEquals("Deve existir pelo menos um item no carrinho para se efetivar uma compra.", cartView.state.errorMessage)
+    }
+
+    @Test
     fun testVisualizaProdutoInexistente() = runBlocking {
         var restrictedView = gotoRestricted()
         val rootView = app.getRootView()!!
@@ -109,6 +120,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
         carrinhoView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(carrinhoView.state.errorCode == 1, "Indicação de quantidade inválida")
+        assertEquals("Existem produtos com menos de um item na quantidade. Impossível comprar.", carrinhoView.state.errorMessage)
         carrinhoView.state.errorCode = 0
 
         carrinhoView.presenter.onModifyQuantity(DBReset.PEN_DRIVE2GB_ID, 2)
