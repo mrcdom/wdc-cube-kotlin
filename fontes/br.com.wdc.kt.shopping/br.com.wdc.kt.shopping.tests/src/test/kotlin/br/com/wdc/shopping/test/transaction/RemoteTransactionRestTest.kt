@@ -6,6 +6,7 @@ import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
 import br.com.wdc.framework.domain.transaction.TransactionNotAllowedException
 import br.com.wdc.framework.domain.transaction.TransactionRequiredException
+import br.com.wdc.framework.domain.transaction.TransactionSystemException
 import br.com.wdc.framework.persistence.transaction.RemoteTransactionOptions
 import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.product.Product
@@ -372,7 +373,7 @@ class RemoteTransactionRestTest {
     }
 
     @Test
-    fun participantThatThrows_condemnsTheTransaction_evenIfTheCallerCarriesOn() = runBlocking {
+    fun participantThatThrows_rollsBackAndTheOwnerThrows_evenIfTheCallerCarriesOn() = runBlocking {
         val service = tx()
         for (join in listOf<suspend (suspend () -> Unit) -> Unit>(
             { block -> service.required { block() } },
@@ -382,18 +383,26 @@ class RemoteTransactionRestTest {
             val before = product("rtx-participant-before")
             val inside = product("rtx-participant-inside")
             var condemned = false
-            service.required { outer ->
-                env.productRepo.insert(before)
-                try {
-                    join { env.productRepo.insert(inside); throw IllegalStateException("participant failure") }
-                } catch (_: IllegalStateException) {
-                    // the caller catches and carries on: the transaction is already doomed, as on the server
+            var afterCommitRan = false
+            val e = assertThrows(TransactionSystemException::class.java) {
+                runBlocking {
+                    service.required { outer ->
+                        env.productRepo.insert(before)
+                        service.afterCommit { afterCommitRan = true }
+                        try {
+                            join { env.productRepo.insert(inside); throw IllegalStateException("participant failure") }
+                        } catch (_: IllegalStateException) {
+                            // the caller catches and carries on: the transaction is already doomed, as on the server
+                        }
+                        condemned = outer.isRollbackOnly()
+                    }
                 }
-                condemned = outer.isRollbackOnly()
             }
+            assertEquals("The transaction was rolled back: a call inside it failed.", e.message)
             assertTrue(condemned, "the participant that failed marks rollback-only")
             assertFalse(exists(before))
             assertFalse(exists(inside))
+            assertFalse(afterCommitRan, "a rolled-back transaction runs no afterCommit task")
         }
     }
 
