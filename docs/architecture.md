@@ -322,7 +322,7 @@ class LoginViewState : ObservableViewState() {
 }
 ```
 
-Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps:
+Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps. `ROOT` (`CubeTreePlace.ROOT`) is the application itself: it is not a step, but `ShoppingApplication.applyParameters` runs before the first step of every navigation (a navigation to the root alone goes on to the home):
 
 | Route                     | Steps                            |
 |---------------------------|----------------------------------|
@@ -352,7 +352,7 @@ The mechanism that connects parent and child views uses **ViewSlots** — functi
 
 ```mermaid
 sequenceDiagram
-    participant Root as RootPresenter
+    participant Root as ShoppingApplication
     participant Intent as CubeIntent
     participant Home as HomePresenter
     participant RootView as RootView
@@ -449,7 +449,7 @@ graph TB
 Errors are handled at **two levels**:
 
 1. **In the Presenter** — expected errors (failed login, database offline) are handled with friendly messages in the ViewState
-2. **In safeCall** — unexpected errors are caught and delegated to `RootPresenter.alertUnexpectedError()`
+2. **In safeCall** — unexpected errors are caught and delegated to `ShoppingApplication.alertUnexpectedError()`, which sets the root view's `state.errorMessage`
 
 ```kotlin
 // Level 1: Specific handling in the Presenter
@@ -485,7 +485,7 @@ protected fun safeCall(action: () -> Unit) {
 Each platform has an entry point that:
 
 1. **Configures** platform-specific **dependencies** (JSON, HTTP, Crypto, Scheduler)
-2. **Registers view factories** (binding Presenters to Compose Views)
+2. **Registers view factories** (binding Presenters to Compose Views; the root view's is `ShoppingApplication.createView`)
 3. **Creates the application** and triggers the initial navigation
 4. **Renders** using Compose
 
@@ -495,7 +495,7 @@ sequenceDiagram
     participant Platform as Platform Config
     participant App as ShoppingApplication
     participant Keys as RootKeys
-    participant Root as RootPresenter
+    participant Home as HomePresenter
     participant Compose as Compose Runtime
 
     Main->>Platform: initializePlatform(baseUrl)
@@ -503,13 +503,14 @@ sequenceDiagram
 
     Main->>App: create ShoppingApplication()
     Main->>Keys: RootKeys(app).flip()
-    Keys->>App: app.flip(RootKeys.PLACE, intent)
-    App->>Root: navigate().step(ROOT).execute()
-    Root->>Root: Checks subject
-    Root->>Keys: LoginKeys(app, intent).flip() or HomeKeys(app, intent).flip()
+    Keys->>App: app.flip(CubeTreePlace.ROOT, intent) — no steps
+    App->>App: applyParameters(init=true, deepest=true):<br/>creates the root view, restores the session
+    App->>Home: HomeKeys(app, intent).flip() (redirect)
+    Home->>Home: Checks subject
+    Home->>Keys: LoginKeys(app, intent).flip() when there is none
 
-    Main->>Compose: Renders RootView
-    Compose->>Root: rootView.Render()
+    Main->>Compose: Renders (app.view as? RootView)
+    Compose->>App: rootView.Render()
 ```
 
 ---
@@ -548,8 +549,9 @@ sequenceDiagram
     LP->>LP: app.subject = subject
 
     LP->>Keys: HomeKeys(app).flip()
-    Keys->>Nav: navigate().step(ROOT).step(HOME).execute()
+    Keys->>Nav: navigate().step(HOME).execute()
 
+    Nav->>Nav: app.applyParameters() — offers the content slot
     Nav->>HP: applyParameters(init=true, deepest=true)
     Note over HP: Creates CartManager,<br/>ProductsPanel, PurchasesPanel
     HP->>HP: Injects view into the Root slot

@@ -3,7 +3,6 @@ package br.com.wdc.shopping.test.mock
 import br.com.wdc.framework.commons.storage.JvmSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.shopping.presentation.ShoppingApplication
-import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
@@ -23,7 +22,7 @@ import br.com.wdc.shopping.test.mock.viewimpl.RootViewMock
 class ShoppingApplicationMock : ShoppingApplication() {
 
     init {
-        RootPresenter.createView = { p -> RootViewMock(p.app as ShoppingApplicationMock, p) }
+        ShoppingApplication.createView = { p -> RootViewMock(p.app as ShoppingApplicationMock, p) }
         LoginPresenter.createView = { p -> LoginViewMock(p.app as ShoppingApplicationMock, p) }
         HomePresenter.createView = { p -> RestrictedViewMock(p.app as ShoppingApplicationMock, p) }
         CartPresenter.createView = { p -> CartViewMock(p.app as ShoppingApplicationMock, p) }
@@ -36,8 +35,7 @@ class ShoppingApplicationMock : ShoppingApplication() {
     override fun createSessionStorage(): SessionStorage = JvmSessionStorage()
 
     fun getRootView(): RootViewMock? {
-        val rootPresenter = getRootPresenter()
-        val v = rootPresenter?.view()
+        val v = view
         return if (v is RootViewMock) v else null
     }
 

@@ -4,7 +4,8 @@ package br.com.wdc.framework.cube
  * The base of an application's keys classes: typed properties over a [CubeIntent], one class per place.
  *
  * - **Each keys class declares its place**, in its companion, from the place of the keys it extends
- *   (`val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`; the root keys use [CubeTreePlace.root]). So
+ *   (`val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`; the root keys use [CubeTreePlace.ROOT], the
+ *   application itself). So
  *   the class tree is the place tree, and a deeper presenter reads, through inherited properties, what the levels
  *   above hand down. Every place has its keys, even one with no names of its own: the keys declare it and navigate
  *   to it.

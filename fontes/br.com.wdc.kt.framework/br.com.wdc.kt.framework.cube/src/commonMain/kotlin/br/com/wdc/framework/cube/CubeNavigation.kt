@@ -35,7 +35,17 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
             var result = true
             val nextPresenters = ArrayList<PresenterHolder>()
 
+            // the application first: it is the root of the tree, before every step
+            val initialization = !app.applied
+            val appGoesOn = applyIn { app.applyParameters(targetIntent, initialization, steps.isEmpty()) }
+            app.applied = true
+            if (!appGoesOn || !notInterrupted) {
+                result = false
+            }
+
             for (i in steps.indices) {
+                if (!result) break
+
                 val place = steps[i]
                 val deepest = i == steps.size - 1
 
@@ -61,7 +71,8 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
                 // false = the presenter was accepted, but the composition stops at it: it is the current place
                 acceptedPlace = place
 
-                val goAhead = applyIn(holder.presenter!!, targetIntent, holder.initialize, holder.deepest)
+                val presenterInStep = holder.presenter!!
+                val goAhead = applyIn { presenterInStep.applyParameters(targetIntent, holder.initialize, holder.deepest) }
                 if (!goAhead || !notInterrupted) {
                     result = false
                     break
@@ -132,11 +143,11 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
      * The failure is caught inside `withContext` and rethrown outside, so it arrives as the same instance (with
      * `-ea`, the exception that crosses `withContext` is replaced by a copy).
      */
-    private suspend fun applyIn(presenter: CubePresenter, intent: CubeIntent, initialize: Boolean, deepest: Boolean): Boolean {
+    private suspend fun applyIn(apply: suspend () -> Boolean): Boolean {
         var failure: Throwable? = null
         val result = withContext(Marker(this)) {
             try {
-                presenter.applyParameters(intent, initialize, deepest)
+                apply()
             } catch (e: Throwable) {
                 failure = e
                 false
@@ -153,7 +164,13 @@ class CubeNavigation<T : CubeApplication> internal constructor(app: CubeApplicat
 
     private suspend fun rollback(caught: Exception) {
         try {
-            // Restore original presenters
+            // Restore the application, then the original presenters
+            try {
+                app.applyParameters(sourceIntent, false, false)
+            } catch (otherCaught: Exception) {
+                LOG.debug("Restoring source state of the application: ${caught.message}")
+                caught.addSuppressed(otherCaught)
+            }
             val presenterIds = curPresenterMap.keys.sorted().toList()
             for (i in presenterIds.indices) {
                 val presenterId = presenterIds[i]

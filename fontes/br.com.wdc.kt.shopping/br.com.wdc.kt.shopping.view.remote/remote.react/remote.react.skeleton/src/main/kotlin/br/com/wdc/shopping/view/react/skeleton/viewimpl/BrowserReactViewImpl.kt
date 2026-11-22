@@ -119,7 +119,7 @@ class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl<Applicat
                 json.endObject()
             }
 
-            val rootView = app.getRootPresenter()?.view()
+            val rootView = app.view
             if (rootView is GenericViewImpl<*>) {
                 json.name("contentViewId").value(rootView.instanceId)
             }

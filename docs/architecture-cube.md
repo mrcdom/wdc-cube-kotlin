@@ -74,7 +74,7 @@ interface CubePlace {
 
 IDs follow a **hierarchical convention**: lower IDs represent nodes closer to the root, and higher IDs represent leaves. The release order relies on this convention (leaf-first, i.e. higher IDs first).
 
-**`CubeTreePlace`** is the implementation applications use: a place that knows its `parent`, so its `path` from the root is the navigation that reaches it. `CubeTreePlace.root(name, factory)` creates a root and `place.child(name, factory)` a place nested in it. Ids grow in creation order and a child is always created after its parent, so the convention above holds by construction. `placeName` is what the address carries, given as is. `app.flip(place, intent)` steps through the path: it is what the keys classes call (next section).
+**`CubeTreePlace`** is the implementation applications use: a place that knows its `parent`, so its `path` from the root is the navigation that reaches it. The tree hangs from `CubeTreePlace.ROOT`, which stands for the application itself: it has no presenter, its id is -1, its name is empty, and it is not a step of any path (`path` leaves it out). Top-level places are `CubeTreePlace.ROOT.child(name, factory)`, and `place.child(name, factory)` nests a place in another. Ids grow in creation order and a child is always created after its parent, so the convention above holds by construction. `placeName` is what the address carries, given as is. `app.flip(place, intent)` steps through the path: it is what the keys classes call (next section).
 
 ### CubePresenter
 
@@ -100,7 +100,7 @@ interface CubePresenter {
 
 Data container that travels through the navigation hierarchy. It carries two kinds of data:
 
-- **Parameters** (`MutableMap<String, Any?>`): serializable route data, used for deep-linking and browser history (e.g. `productId=42`)
+- **Parameters** (`MutableMap<String, Any?>`): serializable route data, used for deep-linking and browser history (e.g. `pr-id=42`)
 - **Attributes** (`MutableMap<String, Any?>`): ephemeral transaction data, such as `CubeViewSlot`s for parent-child wiring
 
 ```kotlin
@@ -148,7 +148,7 @@ A new view needs no `update()` either: every view layer paints the current state
 
 The names a place reads from and writes to the `CubeIntent` live in **one keys class per place**, named after it (`RootKeys`, `LoginKeys`, `HomeKeys`, `CartKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties, on the framework's `CubeKeys` (the application, the intent and `flip()`). **The keys class declares its place**: presenters never use a literal name, and navigate through the keys of the destination (`CartKeys(app).flip()`). A place with no names of its own still has its keys (`LoginKeys`, `CartKeys`): they declare the place, read its slot and navigate to it, and they are where its names will go.
 
-- **Each keys class declares its place**, in its companion, from the place of the keys it extends: `val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`; the root keys use `CubeTreePlace.root("public", ::RootPresenter)`. So the class tree is the place tree, by construction, and there is no separate table of places to keep in step. The application lists every place an address can name, by hand, in `ShoppingApplication.PLACES` (a place is created when its keys are first used; the list creates them all before the first navigation), and `ShoppingApplication.flip(address)` resolves an address to its place, or to the root. `PlaceKeysTest` checks that each place is declared by one keys class, child of the place of the keys it extends, and that they are the places of the list.
+- **Each keys class declares its place**, in its companion, from the place of the keys it extends: `val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`; the root keys use `CubeTreePlace.ROOT` (the application itself, so `LoginKeys` and `HomeKeys` declare `RootKeys.PLACE.child(...)`). So the class tree is the place tree, by construction, and there is no separate table of places to keep in step. The application lists every place an address can name, by hand, in `ShoppingApplication.PLACES` (a place is created when its keys are first used; the list creates them all before the first navigation), and `ShoppingApplication.flip(address)` resolves an address to its place, or to the root (the root is not in the list: an address that names no place goes to the root, which goes on to the home). `PlaceKeysTest` checks that each place is declared by one keys class, child of the place of the keys it extends, and that they are the places of the list.
 
 - **A two-letter prefix per class, unique in the application.** Every name the class declares starts with it (`pr-id`), in a private table: `P` for parameters, which go in the address, and `A` for attributes, which don't. To create a name, look only at your own file. `PlaceKeysTest` checks that the prefixes are unique.
 - **Inheritance is the place tree:** `RootKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.
@@ -193,6 +193,7 @@ Abstract base class that holds the global application state:
 - **`lastPlace`**: last place navigated to (for deep-linking)
 - **`navigation`**: reference to the navigation in progress (or `null` if none)
 - **`navigate()`**: entry point for starting a navigation
+- **`applyParameters(intent, initialization, deepest)`**: the application's own part in every navigation (below)
 
 ```kotlin
 abstract class CubeApplication {
@@ -201,12 +202,16 @@ abstract class CubeApplication {
     internal var navigation: CubeNavigation<*>?
 
     fun <T : CubeApplication> navigate(): CubeNavigation<T>
+    suspend fun flip(place: CubeTreePlace, intent: CubeIntent = newIntent()): Boolean
+    open suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean = true
     fun newIntent(): CubeIntent
     fun getPresenter(placeId: Int): CubePresenter?
     fun release()
-    abstract fun updateHistory()
+    open fun updateHistory()
 }
 ```
+
+**The application is the root of the place tree** (`CubeTreePlace.ROOT`) and takes part in every navigation, before the first step: `execute()` calls its `applyParameters`, in the same redirect-marked context as a presenter's (a navigation requested from in there is a redirect). `initialization` is `true` only the first time; `deepest` is `true` when there are no steps, that is, a flip to the root itself (`app.flip(CubeTreePlace.ROOT)` runs only this); `false` stops the navigation at the root. On rollback the application is restored first, with the source intent (`false, false`), then the presenters. The Storefront's `ShoppingApplication` uses it to own the page frame — it is the presenter of the root view: it creates that view and restores the session on initialization, goes on to the home when the root itself is the target, and otherwise offers the slot of the first level (`RootKeys(this, intent).parentSlot`).
 
 ### CubeNavigation
 
@@ -255,17 +260,16 @@ Navigation starts by building the route through a fluent API:
 
 ```kotlin
 app.navigate<ShoppingApp>()
-    .step(Place.ROOT)       // id=0
-    .step(Place.HOME)       // id=2
-    .step(Place.PRODUCT)    // id=4
+    .step(HomeKeys.PLACE)       // id=1
+    .step(ProductKeys.PLACE)    // id=3
     .execute(intent)
 ```
 
-The `step()` calls register the sequence of Places that make up the hierarchical route, from the root node to the leaf.
+The `step()` calls register the sequence of Places that make up the hierarchical route, from the top level to the leaf; `app.flip(place)` does this with `place.path`. The root (`CubeTreePlace.ROOT`, the application) is never a step: the application's `applyParameters` runs before the first one.
 
 ### 2. Executing the Steps
 
-`execute(intent)` iterates over the steps in the declared order. For each step:
+`execute(intent)` first calls `app.applyParameters(intent, initialization, steps.isEmpty())`; if it returns `false` the navigation stops at the root. Then it iterates over the steps in the declared order. For each step:
 
 ```mermaid
 flowchart TD
@@ -304,6 +308,7 @@ If an exception occurs in `applyParameters()`:
 
 ```mermaid
 flowchart TD
+    R0["0 — Restore the application\napp.applyParameters(sourceIntent, false, false)\nErrors added as suppressed"] --> R1
     R1["1 — Restore original presenters\nFor each presenter in curPresenterMap\n(ascending ID order):\napplyParameters(sourceIntent, false, ...)\nErrors added as suppressed"] --> R2["2 — Release ALL created ones (leaf-first)\nreleasePresenters(newPresenterMap)\n(created only — originals are not affected)"]
     R2 --> R3["3 — Finish\napp.updateHistory()\napp.navigation = null\nOriginal exception is rethrown"]
 ```
@@ -383,27 +388,26 @@ route, which was never visited.
 
 ### Detailed Flow of an Interruption
 
-Consider the scenario: navigate to `ROOT → HOME → PRODUCT`, but `HOME` redirects to `ROOT → LOGIN`.
+Consider the scenario: navigate to `HOME → PRODUCT`, but `HOME` redirects to `LOGIN`. The application (the root) takes part in both, before the first step.
 
 ```mermaid
 sequenceDiagram
-    box rgb(220,235,250) Navigation A: ROOT → HOME → PRODUCT
+    box rgb(220,235,250) Navigation A: HOME → PRODUCT
         participant NavA as Nav A (execute)
     end
-    participant App as CubeApplication
-    participant Root as RootPresenter
+    participant App as ShoppingApplication (root)
     participant Home as HomePresenter
-    box rgb(235,250,220) Navigation B: ROOT → LOGIN
+    box rgb(235,250,220) Navigation B: LOGIN
         participant NavB as Nav B (execute)
     end
     participant Login as LoginPresenter
 
-    Note over NavA: Step ROOT (id=0)
-    NavA->>Root: applyParameters(init=false)
-    Root-->>NavA: true ✓ (reused)
+    Note over NavA: The application first
+    NavA->>App: applyParameters(init=false, deepest=false)
+    App-->>NavA: true ✓ (offers the content slot)
 
-    Note over NavA: Step HOME (id=2) — does not exist, create
-    NavA->>NavA: newPresenterMap[2] = new HomePresenter
+    Note over NavA: Step HOME (id=1) — does not exist, create
+    NavA->>NavA: newPresenterMap[1] = new HomePresenter
     NavA->>Home: applyParameters(init=true)
 
     Note over Home: subject == null → redirect!
@@ -411,20 +415,20 @@ sequenceDiagram
     App->>NavA: interrupt() → notInterrupted = false
     App->>NavB: creates Nav B (reflowCount = 2)
     App->>NavB: newPresenterMap.putAll(NavA.newPresenterMap)
-    Note over NavB: Inherits {2: HomePresenter}
+    Note over NavB: Inherits {1: HomePresenter}
 
-    Note over NavB: Step ROOT (id=0)
-    NavB->>Root: applyParameters(init=false)
-    Root-->>NavB: true ✓ (reused)
+    Note over NavB: The application first
+    NavB->>App: applyParameters(init=false, deepest=false)
+    App-->>NavB: true ✓
 
-    Note over NavB: Step LOGIN (id=1) — does not exist, create
-    NavB->>NavB: newPresenterMap[1] = new LoginPresenter
+    Note over NavB: Step LOGIN (id=0) — does not exist, create
+    NavB->>NavB: newPresenterMap[0] = new LoginPresenter
     NavB->>Login: applyParameters(init=true)
     Login-->>NavB: true ✓
 
     Note over NavB: commit()
-    NavB->>NavB: finalMap = {0: Root, 1: Login}
-    NavB->>NavB: Remaining: newPresenterMap = {2: Home}
+    NavB->>NavB: finalMap = {0: Login}
+    NavB->>NavB: Remaining: newPresenterMap = {1: Home}
     NavB->>Home: release() ← inherited, not accepted
     NavB->>App: presenterMap = finalMap
     NavB->>App: updateHistory()
@@ -482,7 +486,7 @@ private fun releasePresenters(presenterMap: MutableMap<Int, CubePresenter>) {
 
 This guarantees that children (leaves, higher IDs) are released before parents (root, lower IDs), respecting the dependency hierarchy. A child presenter may depend on the parent's resources, so the parent must be the last to be released.
 
-**Example:** If the active route was `ROOT(0) → HOME(2) → PRODUCT(4)` and a new navigation goes to `ROOT(0) → LOGIN(1)`, the `HOME(2)` and `PRODUCT(4)` presenters must be released. The order is: `PRODUCT(4)` first, then `HOME(2)`.
+**Example:** If the active route was `HOME(1) → PRODUCT(3)` and a new navigation goes to `LOGIN(0)`, the `HOME(1)` and `PRODUCT(3)` presenters must be released. The order is: `PRODUCT(3)` first, then `HOME(1)`.
 
 ---
 
@@ -509,70 +513,68 @@ This 10-level limit is enough for legitimate chained-redirect scenarios, but it 
 
 ### Normal Navigation with Reuse
 
-Initial state: `presenterMap = {0: RootPresenter, 2: HomePresenter}`
-Navigation: `ROOT(0) → HOME(2) → PRODUCT(4)`
+Initial state: `presenterMap = {1: HomePresenter}`
+Navigation: `HOME(1) → PRODUCT(3)`
 
 ```mermaid
 sequenceDiagram
     participant Nav as CubeNavigation
-    participant Root as Root (id=0)
-    participant Home as Home (id=2)
-    participant Prod as Product (id=4)
-    participant App as CubeApplication
+    participant App as ShoppingApplication (root)
+    participant Home as Home (id=1)
+    participant Prod as Product (id=3)
 
-    Note over Nav: Initial state: {0: Root, 2: Home}
+    Note over Nav: Initial state: {1: Home}
 
-    Nav->>Root: applyParameters() — reused
-    Root-->>Nav: true ✓
+    Nav->>App: applyParameters(init=false, deepest=false)
+    App-->>Nav: true ✓
 
     Nav->>Home: applyParameters() — reused
     Home-->>Nav: true ✓
 
-    Note over Nav: Product(4) does not exist → create
+    Note over Nav: Product(3) does not exist → create
     Nav->>Prod: applyParameters(init=true, deepest=true)
     Prod-->>Nav: true ✓
 
     Note over Nav: commit()
-    Nav->>App: presenterMap = {0: Root, 2: Home, 4: Product}
+    Nav->>App: presenterMap = {1: Home, 3: Product}
     Note over Nav: Nothing to release (all accepted)
     Nav->>App: updateHistory()
 ```
 
 ### Redirect during Navigation
 
-Initial state: `presenterMap = {0: RootPresenter, 1: LoginPresenter}`
-Navigation A: `ROOT(0) → HOME(2)`, but HOME redirects to `ROOT(0) → LOGIN(1)`
+Initial state: `presenterMap = {0: LoginPresenter}`
+Navigation A: `HOME(1)`, but HOME redirects to `LOGIN(0)`
 
 ```mermaid
 sequenceDiagram
     participant NavA as Nav A
     participant NavB as Nav B
-    participant Root as Root (id=0)
-    participant Login as Login (id=1)
-    participant Home as Home (id=2)
-    participant App as CubeApplication
+    participant App as ShoppingApplication (root)
+    participant Login as Login (id=0)
+    participant Home as Home (id=1)
 
-    Note over NavA: Initial state: {0: Root, 1: Login}
+    Note over NavA: Initial state: {0: Login}
 
-    NavA->>Root: applyParameters() — reused
-    Root-->>NavA: true ✓
+    NavA->>App: applyParameters(init=false, deepest=false)
+    App-->>NavA: true ✓
 
-    Note over NavA: Home(2) does not exist → create
+    Note over NavA: Home(1) does not exist → create
     NavA->>Home: applyParameters(init=true)
     Note over Home: subject == null → redirect!
     Home->>App: navigate() → interruption
     App->>NavA: interrupt()
-    App->>NavB: creates Nav B + migrates {2: Home}
+    App->>NavB: creates Nav B + migrates {1: Home}
 
-    NavB->>Root: applyParameters() — reused
-    Root-->>NavB: true ✓
+    NavB->>App: applyParameters(init=false, deepest=false)
+    App-->>NavB: true ✓
     NavB->>Login: applyParameters() — reused
     Login-->>NavB: true ✓
 
     Note over NavB: commit()
-    NavB->>NavB: finalMap = {0: Root, 1: Login}
+    NavB->>NavB: finalMap = {0: Login}
     NavB->>Home: release() ← inherited, not accepted ✓
-    NavB->>App: presenterMap = {0: Root, 1: Login}
+    NavB->>App: presenterMap = {0: Login}
     NavB->>App: updateHistory()
 
     Note over NavA: notInterrupted=false → STOP
@@ -580,36 +582,35 @@ sequenceDiagram
 
 ### Rollback after an Exception
 
-Initial state: `presenterMap = {0: RootPresenter, 2: HomePresenter}`
-Navigation: `ROOT(0) → HOME(2) → CART(5)`, but CART throws an exception
+Initial state: `presenterMap = {1: HomePresenter}`
+Navigation: `HOME(1) → CART(2)`, but CART throws an exception
 
 ```mermaid
 sequenceDiagram
     participant Nav as CubeNavigation
-    participant Root as Root (id=0)
-    participant Home as Home (id=2)
-    participant Cart as Cart (id=5)
-    participant App as CubeApplication
+    participant App as ShoppingApplication (root)
+    participant Home as Home (id=1)
+    participant Cart as Cart (id=2)
 
-    Note over Nav: Initial state: {0: Root, 2: Home}
+    Note over Nav: Initial state: {1: Home}
 
-    Nav->>Root: applyParameters() — reused
-    Root-->>Nav: true ✓
+    Nav->>App: applyParameters(init=false, deepest=false)
+    App-->>Nav: true ✓
     Nav->>Home: applyParameters() — reused
     Home-->>Nav: true ✓
 
-    Note over Nav: Cart(5) does not exist → create
+    Note over Nav: Cart(2) does not exist → create
     Nav->>Cart: applyParameters(init=true, deepest=true)
     Cart--xNav: RuntimeException!
 
     Note over Nav: rollback()
-    Nav->>Root: applyParameters(sourceIntent) — restore
+    Nav->>App: applyParameters(sourceIntent, false, false) — restore
     Nav->>Home: applyParameters(sourceIntent) — restore
     Nav->>Cart: release() ✓
     Nav->>App: updateHistory()
     Nav->>App: navigation = null
     Note over Nav: RuntimeException rethrown
-    Note over App: presenterMap unchanged = {0: Root, 2: Home}
+    Note over App: presenterMap unchanged = {1: Home}
 ```
 
 ---

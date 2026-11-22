@@ -132,7 +132,7 @@ This guarantees:
 | **Free UI thread** | The action runs in the background — the interface stays responsive |
 | **Serial execution** | `limitedParallelism(1)` — state mutations never run concurrently |
 | **Synchronous code in the presenter** | The presenter writes linear code, with no callbacks or suspending functions |
-| **Captured errors** | Unhandled exceptions are delegated to `RootPresenter.alertUnexpectedError()` |
+| **Captured errors** | Unhandled exceptions are delegated to `ShoppingApplication.alertUnexpectedError()` |
 
 ```mermaid
 sequenceDiagram
@@ -201,7 +201,7 @@ In each platform's **entry point**, the factories are registered, binding presen
 
 ```kotlin
 // At startup (e.g. Desktop Main.kt):
-RootPresenter.createView     = { p -> RootView(p) }
+ShoppingApplication.createView = { p -> RootView(p) }  // the root view's presenter is the application
 LoginPresenter.createView    = { p -> LoginView(p) }
 HomePresenter.createView     = { p -> HomeView(p) }
 CartPresenter.createView     = { p -> CartView(p) }
@@ -341,7 +341,7 @@ The slot connects parent and child views without direct coupling. The flow:
 
 ```mermaid
 sequenceDiagram
-    participant Root as RootPresenter
+    participant Root as ShoppingApplication
     participant Intent as CubeIntent
     participant Home as HomePresenter
     participant RootState as RootViewState
@@ -361,30 +361,40 @@ sequenceDiagram
     Note over RootView: Recomposes and renders:<br/>RenderSlot(state.contentView)
 ```
 
-**In the RootPresenter code:**
+**In the ShoppingApplication code** (the application is the root of the place tree and the presenter of the root view; there is no root presenter):
 
 ```kotlin
-class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+abstract class ShoppingApplication : CubeApplication(), PresenterBase {
 
-    val state = observed(RootViewState())
+    val state = RootViewState().also { it.observe(::update) }
 
-    // Callback that receives the child view and stores it in the state
-    private val contentSlot = CubeViewSlot { v -> setContentView(v) }
+    var view: CubeView? = null
+        private set
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+    // Callback that receives the child view and stores it in the state (observed: the root view repaints)
+    private val contentSlot = CubeViewSlot { v -> if (state.contentView !== v) state.contentView = v }
+
+    fun update() {
+        view?.update()
+    }
+
+    // Runs in every navigation, before the first step
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (initialization) {
             view = createView?.invoke(this)
+            restoreSubjectFromSession()
         }
-        // Publishes the slot in the intent so the next step can use it
-        RootKeys(app, intent).parentSlot = contentSlot
+        if (deepest) {                       // navigation to the root itself: go on to the home
+            HomeKeys(this, intent).flip()
+            return false
+        }
+        // Publishes the slot in the intent so the first step can use it
+        RootKeys(this, intent).parentSlot = contentSlot
         return true
     }
 
-    private fun setContentView(view: CubeView) {
-        if (state.contentView !== view) {
-            state.contentView = view
-            update()  // ← triggers RootView recomposition
-        }
+    companion object {
+        var createView: ((ShoppingApplication) -> CubeView)? = null
     }
 }
 ```
@@ -392,16 +402,20 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 **In the RootView code (Compose):**
 
 ```kotlin
-class RootView(private val presenter: RootPresenter)
-    : ComposeCubeView("root-view", presenter.app) {
+class RootView(private val presenter: ShoppingApplication)
+    : ComposeCubeView("root-view", presenter) {
 
     @Composable
     override fun Render() {
         val rev = revision.value
 
-        val contentView = presenter.state.contentView
-        if (contentView != null) {
-            RenderSlot(contentView)  // ← renders the child view
+        val state = presenter.state
+        Box(modifier = Modifier.fillMaxSize()) {
+            val contentView = state.contentView
+            if (contentView != null) {
+                RenderSlot(contentView)  // ← renders the child view
+            }
+            // state.errorMessage → Snackbar (the unexpected-error alert)
         }
     }
 }
@@ -424,7 +438,7 @@ sequenceDiagram
     participant Compose as Compose Runtime
 
     Main->>Plat: Configures JSON, HTTP, Crypto, Scheduler
-    Main->>Factories: Registers createView for each presenter
+    Main->>Factories: Registers createView for the application (root view) and each presenter
     Main->>App: Creates the application instance
     Main->>App: RootKeys(app).flip() → initial navigation
     Main->>Compose: Renders RootView
@@ -442,8 +456,7 @@ fun main() {
     application {
         Window(title = "Storefront", ...) {
             ShoppingTheme {
-                val rootView = app.getRootPresenter()?.view() as? RootView
-                rootView?.Render()
+                (app.view as? RootView)?.Render()
             }
         }
     }
@@ -473,8 +486,7 @@ fun main() {
 
     ComposeViewport(document.getElementById("ComposeTarget")!!) {
         ShoppingTheme {
-            val rootView = app.getRootPresenter()?.view() as? RootView
-            rootView?.Render()
+            (app.view as? RootView)?.Render()
         }
     }
 }
@@ -496,8 +508,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ShoppingTheme {
-                val rootView = app.getRootPresenter()?.view() as? RootView
-                rootView?.Render()
+                (app.view as? RootView)?.Render()
             }
         }
     }
@@ -518,8 +529,7 @@ fun MainViewController() = ComposeUIViewController {
     RootKeys(app).flip()
 
     ShoppingTheme {
-        val rootView = app.getRootPresenter()?.view() as? RootView
-        rootView?.Render()
+        (app.view as? RootView)?.Render()
     }
 }
 ```
@@ -542,11 +552,11 @@ sequenceDiagram
     participant Nav as CubeNavigation
 
     Note over App: Internal navigation
-    App->>Nav: navigate().step(ROOT).step(HOME).step(PRODUCT).execute(intent)
+    App->>Nav: navigate().step(HOME).step(PRODUCT).execute(intent)
     Nav->>Nav: commit() → updateHistory()
     App->>App: publishParameters(intent)
     App->>App: signIntent(intentStr) → HMAC-SHA256
-    App->>Browser: window.location.hash = "product?productId=42&sign=..."
+    App->>Browser: window.location.hash = "product?pr-id=42&sign=..."
 
     Note over User: Clicks "Back" in the browser
     Browser->>App: hashchange event

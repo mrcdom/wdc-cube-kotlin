@@ -12,7 +12,6 @@ import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.presentation.ShoppingApplication
-import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
@@ -46,7 +45,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
         private val instanceMap = ConcurrentHashMap<String, ApplicationReactImpl>()
 
         init {
-            RootPresenter.createView = ::RootReactViewImpl
+            ShoppingApplication.createView = ::RootReactViewImpl
             LoginPresenter.createView = ::LoginReactViewImpl
             HomePresenter.createView = ::HomeReactViewImpl
             ProductPresenter.createView = ::ProductReactViewImpl
@@ -123,7 +122,6 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
 
     private var removeInstanceAction: (() -> Unit) = {}
 
-    private var rootPresenterField: RootPresenter? = null
     private val dirtyViewMap = ConcurrentHashMap<String, GenericViewImpl<*>>()
     private val viewMap = HashMap<String, GenericViewImpl<*>>()
     private var lastRequestId: Long = 0L
@@ -173,12 +171,6 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
     fun isAuthenticated(): Boolean = subject != null
 
     fun getDataSecurity(): DataSecurity = dataSecurity
-
-    override fun getRootPresenter(): RootPresenter? = rootPresenterField
-
-    fun setRootPresenter(presenter: RootPresenter?) {
-        this.rootPresenterField = presenter
-    }
 
     override fun updateHistory() {
         this.historyDirty = true

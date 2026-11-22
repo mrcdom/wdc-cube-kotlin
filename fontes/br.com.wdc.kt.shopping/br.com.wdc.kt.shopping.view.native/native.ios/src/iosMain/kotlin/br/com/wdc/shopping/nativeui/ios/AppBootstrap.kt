@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.nativeui.ios
 
+import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.framework.commons.concurrent.IosScheduledExecutor
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
@@ -14,7 +15,6 @@ import br.com.wdc.shopping.persistence.client.IosHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
@@ -67,8 +67,7 @@ fun createRootViewController(baseUrl: String): UIViewController {
     kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
     // Mount root view
-    val rootPresenter = app.getRootPresenter()
-    val rootView = rootPresenter?.view() as? AbstractViewIos<*>
+    val rootView = app.view as? AbstractViewIos<*>
 
     if (rootView != null) {
         val rv = rootView.rootView
@@ -102,7 +101,7 @@ private fun <T> onMainThread(block: () -> T): T {
  * Registers CubeView factory lambdas for all presenters.
  */
 private fun registerViewFactories() {
-    RootPresenter.createView = { presenter ->
+    ShoppingApplication.createView = { presenter ->
         onMainThread { RootViewIos(presenter).initialize() }
     }
 

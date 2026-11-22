@@ -9,13 +9,13 @@ Engine of the **Cube MVP** pattern — state management, hierarchical navigation
 | Component | Responsibility |
 |------------|-----------------|
 | `CubePlace` | Navigation destination with ID, name and presenter factory |
-| `CubeTreePlace` | A place in a tree (`root`, `child`): its path from the root is the navigation that reaches it; ids grow from the root to the leaves |
+| `CubeTreePlace` | A place in a tree (`child`), hanging from `ROOT` — the application itself, with no presenter and not a step of any path: the path of a place is the navigation that reaches it; ids grow from the top to the leaves |
 | `CubeKeys` | Base of an application's keys classes, one per place: the application, the intent (a new one from the current state when none is given) and `flip()`, which navigates to the place |
 | `CubePresenter` | Lifecycle: `applyParameters` → `publishParameters` → `commitComputedState` → `release` |
 | `CubeIntent` | Container of parameters (serializable) and attributes (ephemeral, such as `ViewSlot`) |
 | `CubeViewSlot` | Parent-child composition mechanism between views |
 | `CubeView` | Rendering interface (Compose, React, etc.) |
-| `CubeApplication` | Global state — map of active presenters, the `navigate()` entry point and `flip(place, intent)`, which steps through the path of a `CubeTreePlace` |
+| `CubeApplication` | Global state — map of active presenters, the `navigate()` entry point and `flip(place, intent)`, which steps through the path of a `CubeTreePlace`; the root of the tree: its `applyParameters(intent, initialization, deepest)` runs in every navigation before the first step (and first on rollback) |
 | `CubeNavigation` | Transactional engine — orchestrates execute → commit/rollback with support for interruptions |
 
 ## Documentation
