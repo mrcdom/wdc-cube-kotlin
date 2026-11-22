@@ -202,6 +202,41 @@ class RemoteTransactionRestTest {
         assertEquals(3, env.purchaseItemRepo.count(PurchaseItemCriteria()))
     }
 
+    private fun getImage(id: Long, ifNoneMatch: String? = null): java.net.http.HttpResponse<ByteArray> {
+        val builder = java.net.http.HttpRequest.newBuilder(java.net.URI("http://127.0.0.1:${env.port}/api/repo/product/$id/image"))
+        ifNoneMatch?.let { builder.header("If-None-Match", it) }
+        return java.net.http.HttpClient.newHttpClient().send(builder.GET().build(), java.net.http.HttpResponse.BodyHandlers.ofByteArray())
+    }
+
+    @Test
+    fun imageUploadInATransaction_isServedOnlyAfterTheCommit_andCachesRevalidate() = runBlocking {
+        // id fixo, fora da faixa da sequência: o cache de imagens do servidor é estático e sobrevive aos outros
+        // ambientes de teste da mesma JVM, que reusariam um id gerado (ver as armadilhas no CLAUDE.md)
+        val p = product("rtx-image").apply { id = 9_000_001L }
+        assertTrue(env.productRepo.insert(p))
+        val id = p.id!!
+        assertTrue(env.productRepo.updateImage(id, byteArrayOf(1, 1, 1)))
+
+        val first = getImage(id)
+        assertEquals(200, first.statusCode())
+        assertArrayEquals(byteArrayOf(1, 1, 1), first.body())
+        val etag = first.headers().firstValue("ETag").orElse(null)
+        assertNotNull(etag, "a imagem sai com ETag")
+        assertFalse(first.headers().firstValue("Cache-Control").orElse("").contains("immutable"), "a URL é mutável")
+        assertEquals(304, getImage(id, etag).statusCode(), "a mesma imagem revalida com 304")
+
+        tx().required {
+            assertTrue(env.productRepo.updateImage(id, byteArrayOf(2, 2, 2)))
+            // antes do commit, quem lê vê a confirmada — e ela não pode ficar no cache depois do commit
+            assertArrayEquals(byteArrayOf(1, 1, 1), getImage(id).body())
+        }
+
+        val after = getImage(id)
+        assertArrayEquals(byteArrayOf(2, 2, 2), after.body(), "depois do commit, a imagem nova")
+        assertNotEquals(etag, after.headers().firstValue("ETag").orElse(null))
+        assertEquals(200, getImage(id, etag).statusCode(), "o ETag antigo não revalida mais")
+    }
+
     @Test
     fun readsInsideTheBlock_seeOnlyWhatIsCommitted() = runBlocking {
         val before = env.productRepo.count(ProductCriteria())
