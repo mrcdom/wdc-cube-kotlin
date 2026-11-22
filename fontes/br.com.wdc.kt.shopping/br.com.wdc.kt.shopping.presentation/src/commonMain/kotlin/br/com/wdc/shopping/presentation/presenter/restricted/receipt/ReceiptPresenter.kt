@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.receipt
 
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
@@ -24,7 +25,7 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     // :: Internal Instance Fields
 
-    private val receiptService = ReceiptService(app)
+    private val receiptService = ReceiptService(PurchaseRepository.BEAN.get())
     private var purchaseId: Long? = null
     private var ownerSlot: CubeViewSlot? = null
 

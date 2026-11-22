@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.products
 
+import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractChildPresenter
 import br.com.wdc.framework.cube.CubeView
@@ -24,7 +25,7 @@ class ProductsPanelPresenter(
 
     // :: Internal Instance Fields
 
-    private val productService = ProductService(app.getProductRepository())
+    private val productService = ProductService(ProductRepository.BEAN.get())
 
     // :: Life cycle
 

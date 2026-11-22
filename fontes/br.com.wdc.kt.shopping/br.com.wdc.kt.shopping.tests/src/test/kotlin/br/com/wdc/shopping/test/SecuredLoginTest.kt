@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.test
 
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
 import br.com.wdc.shopping.domain.user.UserCriteria
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginService
@@ -72,8 +73,8 @@ class SecuredLoginTest {
         // Inside the server, the caller of the repository is the presentation, and it is the one that asks only for
         // what belongs to the user. Access control lives at the HTTP boundary (see the SecuredRest* tests).
         login("fulano")
-        assertEquals(3, app.getUserRepository().count(UserCriteria()))
-        assertNotNull(app.getUserRepository().fetchById(DBReset.ADMIN_ID))
+        assertEquals(3, UserRepository.BEAN.get().count(UserCriteria()))
+        assertNotNull(UserRepository.BEAN.get().fetchById(DBReset.ADMIN_ID))
     }
 
     @Test

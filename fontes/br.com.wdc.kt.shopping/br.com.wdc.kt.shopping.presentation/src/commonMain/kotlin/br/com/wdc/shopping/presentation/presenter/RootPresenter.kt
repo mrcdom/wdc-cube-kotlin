@@ -18,10 +18,6 @@ import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKey
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import br.com.wdc.shopping.domain.product.ProductRepository
-import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
-import br.com.wdc.shopping.domain.purchase.PurchaseRepository
-import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
@@ -79,17 +75,6 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
     fun setSecurityContext(ctx: SecurityContext?) {
         this.securityContext = ctx
     }
-
-    // The repositories are the ones registered by the composition root: on the server, the ones that talk to the
-    // database; on a client, the ones that talk to the REST API — which is where access is checked.
-
-    fun getUserRepository(): UserRepository = UserRepository.BEAN.get()
-
-    fun getProductRepository(): ProductRepository = ProductRepository.BEAN.get()
-
-    fun getPurchaseRepository(): PurchaseRepository = PurchaseRepository.BEAN.get()
-
-    fun getPurchaseItemRepository(): PurchaseItemRepository = PurchaseItemRepository.BEAN.get()
 
     // :: API
 

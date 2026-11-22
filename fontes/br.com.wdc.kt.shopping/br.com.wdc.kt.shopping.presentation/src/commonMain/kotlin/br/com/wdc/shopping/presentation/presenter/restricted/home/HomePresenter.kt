@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home
 
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
@@ -88,7 +89,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
             purchasesPanel = PurchasesPanelPresenter(app, this)
             state.purchasesPanelView = purchasesPanel!!.initialize()
 
-            cart = CartManager(app.getPurchaseRepository())
+            cart = CartManager(PurchaseRepository.BEAN.get())
             onCartCommitListenerRemover = cart!!.addCommitListener(::onCartCommited)
             onCartChangeListenerRemover = cart!!.addChangeListener(::onCartChanged)
             app.cart = cart

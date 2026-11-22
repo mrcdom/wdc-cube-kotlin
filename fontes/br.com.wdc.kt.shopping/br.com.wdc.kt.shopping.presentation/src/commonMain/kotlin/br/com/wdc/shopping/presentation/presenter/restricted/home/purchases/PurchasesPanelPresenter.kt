@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.purchases
 
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractChildPresenter
 import br.com.wdc.framework.cube.CubeView
@@ -25,7 +26,7 @@ class PurchasesPanelPresenter(
 
     // :: Internal Instance Fields
 
-    private val purchasesPanelService = PurchasesPanelService(app.getPurchaseRepository())
+    private val purchasesPanelService = PurchasesPanelService(PurchaseRepository.BEAN.get())
 
     // :: Life cycle
 

@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.products
 
+import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
@@ -24,7 +25,7 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     // :: Internal Instance Fields
 
-    private val productService = ProductService(app.getProductRepository())
+    private val productService = ProductService(ProductRepository.BEAN.get())
     private var ownerSlot: CubeViewSlot? = null
 
     // :: Cube API

@@ -39,7 +39,7 @@ class LoginService(private val app: RootPresenter?) {
         app!!.setSecurityContext(authService.resolveToken(authResult.accessToken))
 
         // 6. Fetch the user's display name
-        val users = app!!.getUserRepository().fetch(
+        val users = UserRepository.BEAN.get().fetch(
             UserCriteria().withUserId(authResult.userId).withProjection(Subject.projection()),
             limit = 1,
         )
