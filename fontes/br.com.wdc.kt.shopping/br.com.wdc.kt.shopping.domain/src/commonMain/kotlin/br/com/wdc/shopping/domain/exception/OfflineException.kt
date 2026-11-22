@@ -1,4 +1,4 @@
 package br.com.wdc.shopping.domain.exception
 
-/** A operação exigia o servidor e ele não está acessível — a exceção do framework. */
+/** The operation needed the server and it is unreachable — the framework's exception. */
 typealias OfflineException = br.com.wdc.framework.domain.exception.OfflineException

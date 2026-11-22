@@ -1,34 +1,34 @@
 # backend
 
-Servidor da aplicação, em **Javalin** (porta 8080).
+The application server, on **Javalin** (port 8080).
 
-Reúne três responsabilidades:
-- **API REST** (`/api/repo`, `/api/tx`, `/api/auth`, `/openapi.json`) — para os clientes Compose e nativos — [arquitetura](../../../docs/architecture-persistence.md#api-rest)
-- **WebSocket** (`/dispatcher/{id}`) — para o cliente React (view remota) — [arquitetura](../../../docs/architecture-react.md)
-- **Arquivos estáticos** — serve os clientes web
+It has three responsibilities:
+- **REST API** (`/api/repo`, `/api/tx`, `/api/auth`, `/openapi.json`) — for the Compose and native clients — [architecture](../../../docs/architecture-persistence.md#rest-api)
+- **WebSocket** (`/dispatcher/{id}`) — for the React client (remote view) — [architecture](../../../docs/architecture-react.md)
+- **Static files** — serves the web clients
 
-Na subida, monta o pool de conexões, cria as tabelas que faltam e roda as migrações.
+On startup, it builds the connection pool, creates the missing tables and runs the migrations.
 
 ```bash
 cd fontes && ./gradlew :backend:run
 ```
 
-## Diretório de trabalho
+## Work directory
 
-O backend **exige** um diretório de trabalho: é dele que vêm a configuração e o log, e é nele que ficam o banco, os temporários e os frontends publicados. Informe-o com o argumento `--workdir=<pasta>` ou com a variável de ambiente `SHOPPING_WORKDIR`; sem isso o serviço não sobe.
+The backend **requires** a work directory: the configuration and the log come from it, and the database, the temporary files and the published frontends live in it. Pass it with the `--workdir=<folder>` argument or the `SHOPPING_WORKDIR` environment variable; without it the service does not start.
 
-- `./gradlew :backend:run` usa [`fontes/work`](../../work/) (outro: `-Pworkdir=/caminho`).
-- Pela IDE: acrescente `--workdir=$PROJECT_DIR$/work` aos *Program arguments* da configuração de execução.
-- Pela distribuição (`installDist`): `bin/backend --workdir=/caminho/work`.
+- `./gradlew :backend:run` uses [`fontes/work`](../../work/) (another one: `-Pworkdir=/path`).
+- From the IDE: add `--workdir=$PROJECT_DIR$/work` to the run configuration's *Program arguments*.
+- From the distribution (`installDist`): `bin/backend --workdir=/path/work`.
 
-A estrutura da pasta está descrita em [`fontes/work/README.md`](../../work/README.md).
+The folder layout is described in [`fontes/work/README.md`](../../work/README.md).
 
-## Configuração
+## Configuration
 
-O backend lê `config/application.toml` no diretório de trabalho. Sem o arquivo, sobe com os padrões: H2 em `data/` e **sem segurança**. [`work/config/application.example.toml`](../../work/config/application.example.toml) lista todas as chaves, com os padrões:
+The backend reads `config/application.toml` in the work directory. Without the file, it starts with the defaults: H2 in `data/` and **no security**. [`work/config/application.example.toml`](../../work/config/application.example.toml) lists every key, with the defaults:
 
-- **Banco** — H2 (padrão) ou PostgreSQL, escolhido pela `url`; pool de conexões; transações remotas.
-- **Segurança** — com `security.jwt.secret`, a API exige autenticação. Sem ele, fica aberta: só para desenvolvimento.
-- **Servidor** — porta e CORS.
+- **Database** — H2 (default) or PostgreSQL, chosen by the `url`; connection pool; remote transactions.
+- **Security** — with `security.jwt.secret`, the API requires authentication. Without it, it stays open: development only.
+- **Server** — port and CORS.
 
-O log é configurado por `config/logback.xml` e gravado em `log/`, com rotação.
+The log is configured by `config/logback.xml` and written to `log/`, with rotation.

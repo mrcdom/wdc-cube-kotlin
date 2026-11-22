@@ -17,44 +17,44 @@ import javax.sql.DataSource
 import org.jooq.SQLDialect
 
 /**
- * Monta o `DataSource` do backend: um pool Agroal sobre H2 ou PostgreSQL, conforme a URL configurada.
+ * Builds the backend's `DataSource`: an Agroal pool over H2 or PostgreSQL, according to the configured URL.
  *
- * Chaves lidas, todas sob `database.`:
+ * Keys read, all under `database.`:
  *
- * | Chave | Padrão |
+ * | Key | Default |
  * |---|---|
- * | `url` | H2 em arquivo, no diretório de dados |
+ * | `url` | file-based H2, in the data directory |
  * | `username`, `password` | `sa` / `sa` |
- * | `schema` | — (só PostgreSQL: vira o `search_path` de cada conexão; é criado se não existir) |
+ * | `schema` | — (PostgreSQL only: becomes each connection's `search_path`; created if missing) |
  * | `logSql` | `false` |
  * | `pool.maxSize` | 20 |
  * | `pool.minIdle` | 5 |
  * | `pool.connectionTimeoutSeconds` | 30 |
- * | `pool.maxLifetimeMinutes` | 30 (`0` desliga) |
+ * | `pool.maxLifetimeMinutes` | 30 (`0` turns it off) |
  *
- * O pool valida as conexões que ficaram ociosas e descarta as que deram erro fatal: firewall e banco derrubam
- * conexões paradas sem avisar, e sem isso o pool devolveria sockets mortos.
+ * The pool validates connections that sat idle and discards those that hit a fatal error: firewalls and the
+ * database drop idle connections without notice, and without this the pool would hand out dead sockets.
  */
 class SqlDataSourceSupport(private val config: AppConfig, private val dataDir: Path?) {
 
     val jdbcUrl: String = resolveJdbcUrl()
 
-    /** O banco, pela URL: PostgreSQL ou, por padrão, H2. */
+    /** The database, by URL: PostgreSQL or, by default, H2. */
     val dialect: SQLDialect = detectDialect(jdbcUrl)
 
     val logSql: Boolean get() = config.getBoolean("database.logSql", false)
 
     /**
-     * Cria o pool.
+     * Creates the pool.
      *
-     * @param cleanUp recebe a ação que o encerra
+     * @param cleanUp receives the action that closes it
      */
     fun init(cleanUp: Defer): DataSource {
         val username = config.get("database.username", "sa")
         val password = config.get("database.password", "sa")
         val schema = config.get("database.schema")?.trim()?.takeIf { it.isNotEmpty() }
         val maxSize = config.getInt("database.pool.maxSize", 20)
-        // o mínimo não pode passar do máximo
+        // the minimum cannot exceed the maximum
         val minIdle = config.getInt("database.pool.minIdle", 5).coerceIn(0, maxSize)
         val connectionTimeout = config.getInt("database.pool.connectionTimeoutSeconds", 30)
         val maxLifetimeMinutes = config.getInt("database.pool.maxLifetimeMinutes", 30)
@@ -66,7 +66,7 @@ class SqlDataSourceSupport(private val config: AppConfig, private val dataDir: P
             .credential(SimplePassword(password))
 
         if (dialect == SQLDialect.POSTGRES && schema != null) {
-            require(SCHEMA_NAME.matches(schema)) { "database.schema inválido: '$schema'" }
+            require(SCHEMA_NAME.matches(schema)) { "invalid database.schema: '$schema'" }
             createSchemaIfMissing(username, password, schema)
             factory.initialSql("SET search_path TO $schema")
         }
@@ -89,9 +89,9 @@ class SqlDataSourceSupport(private val config: AppConfig, private val dataDir: P
         cleanUp.push {
             try {
                 dataSource.close()
-                LOG.info("DataSource encerrado.")
+                LOG.info("DataSource closed.")
             } catch (e: Exception) {
-                LOG.warn("Falha ao encerrar o DataSource", e)
+                LOG.warn("Failed to close the DataSource", e)
             }
         }
 
@@ -105,11 +105,11 @@ class SqlDataSourceSupport(private val config: AppConfig, private val dataDir: P
         if (!configured.isNullOrBlank()) {
             return configured.trim()
         }
-        val dir = dataDir ?: throw IllegalStateException("Sem database.url e sem diretório de dados para o banco padrão")
+        val dir = dataDir ?: throw IllegalStateException("No database.url and no data directory for the default database")
         return "jdbc:h2:file:${dir.resolve(DEFAULT_DB_NAME).toAbsolutePath()};DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
     }
 
-    /** O esquema precisa existir antes da primeira conexão do pool, que já chega com o `search_path` nele. */
+    /** The schema must exist before the pool's first connection, which already arrives with the `search_path` on it. */
     private fun createSchemaIfMissing(username: String, password: String, schema: String) {
         java.sql.DriverManager.getConnection(jdbcUrl, username, password).use { connection ->
             connection.createStatement().use { it.execute("CREATE SCHEMA IF NOT EXISTS $schema") }

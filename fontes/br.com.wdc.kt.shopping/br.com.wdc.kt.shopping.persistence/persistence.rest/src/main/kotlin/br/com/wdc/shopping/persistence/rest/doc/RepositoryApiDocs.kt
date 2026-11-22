@@ -14,14 +14,14 @@ import br.com.wdc.framework.rest.openapi.OperationDoc
 import br.com.wdc.framework.rest.rpc.RepositoryRpc
 
 /**
- * O conteúdo da descrição OpenAPI da API de repositório, servida em `GET /openapi.json`.
+ * The content of the repository API's OpenAPI description, served at `GET /openapi.json`.
  *
- * O documento é montado pelo `framework-rest` a partir das rotas registradas — uma rota servida nunca fica de
- * fora. Daqui saem as operações escritas à mão (aplicadas sobre as geradas), os esquemas e o texto de abertura.
+ * The document is built by `framework-rest` from the registered routes — a served route is never left out.
+ * From here come the hand-written operations (applied over the generated ones), the schemas and the intro text.
  *
- * O que pode ser lido do domínio não é escrito aqui: os campos de cada `XxxCriteria` saem de
- * `Criteria.criterions()`, as ordenações do `OrderBy` da entidade e os operadores de [Operator]. Assim a
- * documentação não envelhece à parte do código — e o `OpenApiSpecTest` confere que continua assim.
+ * What can be read from the domain is not written here: the fields of each `XxxCriteria` come from
+ * `Criteria.criterions()`, the orderings from the entity's `OrderBy` and the operators from [Operator]. So the
+ * documentation does not age apart from the code — and `OpenApiSpecTest` checks that it stays so.
  */
 object RepositoryApiDocs {
 
@@ -57,7 +57,7 @@ object RepositoryApiDocs {
         val scope: String,
     )
 
-    /** As operações escritas à mão, por caminho e verbo. */
+    /** The hand-written operations, by path and verb. */
     private val operations: Map<String, Any> by lazy {
         val paths = LinkedHashMap<String, Any>()
         entities().forEach { paths.putAll(entityPaths(it)) }
@@ -73,7 +73,7 @@ object RepositoryApiDocs {
         return { raw(op) }
     }
 
-    /** A documentação de uma operação do RPC de [route]. */
+    /** The documentation of one RPC operation of [route]. */
     fun rpcDoc(route: String, op: RepositoryRpc.Operation): (OperationDoc.() -> Unit)? =
         operation("/api/repo/$route/${op.route}", if (op == RepositoryRpc.Operation.GET_BY_ID) "get" else "post")
 
@@ -83,7 +83,7 @@ object RepositoryApiDocs {
 
     fun authDoc(name: String) = operation("/api/auth/$name", if (name == "challenge") "get" else "post")
 
-    /** O que não sai das rotas: abertura, tags, esquemas e parâmetros reutilizáveis. */
+    /** What does not come from the routes: intro, tags, schemas and reusable parameters. */
     fun configure(config: OpenApiConfig) {
         val entities = entities()
         config.title = "WeDoCode Shopping — Repository API"
@@ -94,7 +94,7 @@ object RepositoryApiDocs {
         config.tag("Auth", "Challenge–response login. Only served when security is on.")
         config.schemas.putAll(schemas(entities))
         config.parameters.putAll(parameters())
-        // a segurança é opcional no documento: vale para os dois modos do servidor
+        // security is optional in the document: it covers both server modes
         config.raw["security"] = listOf(mapOf("bearerAuth" to emptyList<String>()), emptyMap<String, Any>())
     }
 
@@ -212,7 +212,7 @@ object RepositoryApiDocs {
         ),
     )
 
-    // :: Critério
+    // :: Criterion
 
     private fun criterionPredicate(): Map<String, Any> = mapOf(
         "type" to "object",
@@ -245,14 +245,14 @@ object RepositoryApiDocs {
             ),
             mapOf("type" to "string"), mapOf("type" to "number"), mapOf("type" to "boolean"),
         ),
-        // as propriedades também ficam no nível de cima, para quem lê o esquema sem resolver o oneOf
+        // the properties also sit at the top level, for readers that don't resolve the oneOf
         "properties" to mapOf(
             "or" to mapOf("type" to "boolean"),
             "p" to mapOf("type" to "array", "items" to schemaRef("CriterionPredicate")),
         ),
     )
 
-    /** Os campos saem de `criterions()` e as ordenações do `OrderBy` da entidade. */
+    /** The fields come from `criterions()` and the orderings from the entity's `OrderBy`. */
     private fun criteriaSchema(entity: Entity): Map<String, Any> {
         val properties = LinkedHashMap<String, Any>()
         for (criterion in entity.criteria.criterions()) {
@@ -273,7 +273,7 @@ object RepositoryApiDocs {
         )
     }
 
-    /** A família do critério, lida da classe — a mesma distinção que o compilador impõe a quem monta o filtro. */
+    /** The criterion's family, read from its class — the same distinction the compiler imposes on whoever builds the filter. */
     private fun family(criterion: Criterion<*, *>): String = when (criterion) {
         is TextCriterion<*> -> "Text field: equality, comparison, `LIKE`/`ILIKE` (wildcards are part of the value), `IN`, null tests."
         is ComparableCriterion<*, *> -> "Ordered field: equality, `GT`/`GE`/`LT`/`LE`, `BETWEEN`, `IN`, null tests."
@@ -460,7 +460,7 @@ object RepositoryApiDocs {
         )
     }
 
-    // :: Peças
+    // :: Pieces
 
     private fun operation(tags: List<String>, summary: String, description: String): Map<String, Any> =
         linkedMapOf<String, Any>("tags" to tags, "summary" to summary).apply { if (description.isNotEmpty()) put("description", description) }

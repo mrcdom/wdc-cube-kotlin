@@ -38,9 +38,9 @@ class WorkDirectoryTest {
 
     @Test
     fun mustExist() {
-        val missing = Files.createTempDirectory("work").resolve("nao-existe")
+        val missing = Files.createTempDirectory("work").resolve("missing")
         val e = assertFailsWith<IllegalArgumentException> { WorkDirectory.resolve(arrayOf("--workdir=$missing"), none) }
-        assertTrue("não existe" in e.message!!, e.message)
+        assertTrue("does not exist" in e.message!!, e.message)
         assertTrue(Files.notExists(missing))
     }
 }

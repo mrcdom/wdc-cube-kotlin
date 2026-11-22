@@ -92,11 +92,11 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         }
 
     /**
-     * Executa uma chamada autenticada. Se o servidor recusar o token (401), renova a sessão pelo
-     * [refreshHandler] e repete a chamada **uma vez**, já com o token novo; se não houver como renovar, avisa
-     * o [onAuthFailure] e a recusa sobe para o chamador.
+     * Runs an authenticated call. If the server rejects the token (401), renews the session through
+     * [refreshHandler] and repeats the call **once**, with the new token; if it cannot renew, notifies
+     * [onAuthFailure] and the rejection propagates to the caller.
      *
-     * @param request monta a requisição sem os cabeçalhos de autenticação — é chamada de novo na repetição
+     * @param request builds the request without the authentication headers — it is called again on the retry
      */
     private fun <T> authenticated(label: String, request: () -> Request.Builder, read: (Response) -> T): T {
         try {
@@ -139,9 +139,9 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
     }
 
     /**
-     * Os cabeçalhos de uma chamada autenticada: o token, o cliente e a transação remota corrente.
+     * The headers of an authenticated call: the token, the client and the current remote transaction.
      *
-     * @return se havia token para enviar
+     * @return whether there was a token to send
      */
     private fun addAuthHeader(builder: Request.Builder): Boolean {
         builder.header(CLIENT_HEADER, clientId)

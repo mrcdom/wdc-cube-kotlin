@@ -10,33 +10,33 @@ import br.com.wdc.framework.domain.transaction.TransactionService
 import br.com.wdc.framework.domain.transaction.TransactionSystemException
 
 /**
- * O [TransactionService] do cliente: demarca, por REST, uma transação que vive no servidor.
+ * The client's [TransactionService]: demarcates, over REST, a transaction that lives on the server.
  *
- * `required` abre a transação remota (`POST /api/tx/begin` → `txId`); enquanto o bloco roda, o transporte
- * envia o `txId` em `X-Tx-Id` e as escritas se juntam à mesma transação física no servidor; ao fim, `commit`
- * (retorno normal, salvo `setRollbackOnly`) ou `rollback` (exceção). É o que torna atômicas várias escritas REST.
+ * `required` opens the remote transaction (`POST /api/tx/begin` → `txId`); while the block runs, the transport
+ * sends the `txId` in `X-Tx-Id` and writes join the same physical transaction on the server; at the end, `commit`
+ * (normal return, unless `setRollbackOnly`) or `rollback` (exception). This is what makes several REST writes atomic.
  *
- * **A transação corrente é uma por instância** — isto é, por aplicação cliente —, e não por thread: as ações
- * da apresentação rodam em série e o HTTP é bloqueante, de modo que não há duas correndo ao mesmo tempo. Daí
- * a regra para quem usa: **as chamadas de uma transação remota são serializadas**; um bloco que suspenda
- * esperando outra coisa que não o próprio HTTP abre espaço para outra ação herdar o `txId` (o servidor, de
- * todo modo, recusa o uso concorrente do mesmo `txId`).
+ * **The current transaction is one per instance** — that is, per client application —, not per thread: the
+ * presentation's actions run serially and HTTP is blocking, so no two run at the same time. Hence the rule for
+ * users: **the calls of a remote transaction are serialized**; a block that suspends waiting for something
+ * other than its own HTTP leaves room for another action to inherit the `txId` (the server refuses concurrent
+ * use of the same `txId` anyway).
  *
- * As leituras feitas dentro do bloco não participam da transação: enxergam só o que já foi confirmado.
+ * Reads made inside the block do not take part in the transaction: they only see what is already committed.
  *
- * `notSupported` dentro de uma transação remota serve para **ler** fora dela, não para escrever: o servidor
- * não distingue "transação suspensa" de "cabeçalho perdido" e recusa (409) a escrita sem `X-Tx-Id` de quem tem
- * transação aberta. Para escrever por fora, use `requiresNew`.
+ * `notSupported` inside a remote transaction is for **reading** outside it, not for writing: the server cannot
+ * tell "suspended transaction" from "lost header" and refuses (409) a write without `X-Tx-Id` from someone who
+ * has an open transaction. To write outside it, use `requiresNew`.
  *
- * [afterCommit] guarda a tarefa na transação remota corrente e a roda depois que o commit remoto volta com sucesso,
- * já sem transação corrente; sem transação remota, roda na hora.
+ * [afterCommit] stores the task in the current remote transaction and runs it after the remote commit returns
+ * successfully, with no current transaction; without a remote transaction, it runs right away.
  */
 class RestTransactionService(private val transport: HttpTransport) : TransactionService {
 
     private val current = AtomicRef<TxState>()
 
     init {
-        // o transporte envia X-Tx-Id sempre que houver transação remota corrente
+        // the transport sends X-Tx-Id whenever there is a current remote transaction
         transport.transactionIdSupplier = { current.getOrNull()?.txId }
     }
 
@@ -46,7 +46,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
     }
 
     override suspend fun <T> requiresNew(work: suspend (TransactionContext) -> T): T {
-        // suspende a externa: as chamadas do bloco não levam o txId dela
+        // suspends the outer one: the block's calls do not carry its txId
         val outer = current.getOrNull()
         current.set(null)
         try {
@@ -57,7 +57,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
     }
 
     override suspend fun <T> mandatory(work: suspend (TransactionContext) -> T): T {
-        val state = current.getOrNull() ?: throw TransactionRequiredException("mandatory: nenhuma transação remota ativa")
+        val state = current.getOrNull() ?: throw TransactionRequiredException("mandatory: no active remote transaction")
         return participate(state, work)
     }
 
@@ -78,7 +78,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
 
     override suspend fun <T> never(work: suspend (TransactionContext) -> T): T {
         if (current.getOrNull() != null) {
-            throw TransactionNotAllowedException("never: há transação remota ativa")
+            throw TransactionNotAllowedException("never: a remote transaction is active")
         }
         return work(NoTx)
     }
@@ -89,9 +89,9 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
     }
 
     /**
-     * Executa [work] como participante da transação remota corrente. A falha condena a transação, mesmo que quem
-     * chamou a capture e siga: é o que faz a transação local (`TransactionServiceImpl`), e sem isso o commit
-     * confirmaria no servidor o que o participante gravou antes de falhar.
+     * Runs [work] as a participant of the current remote transaction. A failure dooms the transaction, even if
+     * the caller catches it and goes on: that is what the local transaction does (`TransactionServiceImpl`), and
+     * without it the commit would confirm on the server what the participant wrote before failing.
      */
     private suspend fun <T> participate(state: TxState, work: suspend (TransactionContext) -> T): T {
         try {
@@ -110,33 +110,33 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
             result = try {
                 work(state)
             } catch (e: Throwable) {
-                // a falha do bloco é a que interessa
+                // the block's failure is the one that matters
                 rollbackQuietly()
                 throw e
             }
-            // o txId ainda é o corrente: vai no cabeçalho do commit/rollback
+            // the txId is still the current one: it goes in the commit/rollback header
             if (state.rollbackOnly) transport.postJson("/api/tx/rollback", "{}") else commit()
         } finally {
             current.set(null)
         }
-        // o commit remoto voltou com sucesso, e já não há transação corrente: uma tarefa que precise abre a sua
+        // the remote commit returned successfully, and there is no current transaction anymore: a task that needs one opens its own
         val tasks = state.afterCommit.drain()
         if (!state.rollbackOnly) AfterCommitTasks.runAll(tasks)
         return result
     }
 
     /**
-     * Pede o commit. Resposta do servidor (sucesso ou recusa) é definitiva. Falha de transporte não diz o que
-     * aconteceu — o commit pode ter chegado e a resposta se perdido —: o cliente pergunta o desfecho
-     * (`GET /api/tx/status`) antes de decidir. Comitou: sucesso. Ainda aberta: desfaz e falha. Desfeita, desconhecida
-     * ou sem resposta: falha.
+     * Requests the commit. A server response (success or refusal) is final. A transport failure does not tell
+     * what happened — the commit may have arrived and the response been lost —: the client asks for the outcome
+     * (`GET /api/tx/status`) before deciding. Committed: success. Still open: roll back and fail. Rolled back,
+     * unknown or no answer: fail.
      */
     private fun commit() {
         try {
             transport.postJson("/api/tx/commit", "{}")
         } catch (e: Throwable) {
             if (e.isHttpAnswer()) {
-                rollbackQuietly() // recusado: o rollback do mesmo txId é aceito ou inócuo
+                rollbackQuietly() // refused: a rollback of the same txId is accepted or harmless
                 throw e
             }
             when (remoteStatus()) {
@@ -147,9 +147,9 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         }
     }
 
-    /** O desfecho da transação corrente no servidor, ou `null` se nem isso se pôde saber. */
+    /** The outcome of the current transaction on the server, or `null` if not even that could be learned. */
     private fun remoteStatus(): String? = try {
-        // getBytes é autenticado e leva o X-Tx-Id em todos os transportes
+        // getBytes is authenticated and carries X-Tx-Id in every transport
         val text = transport.getBytes("/api/tx/status")?.decodeToString() ?: return null
         val input = JsonInputFactory.createStringInput(text).input
         var status: String? = null
@@ -167,7 +167,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         try {
             transport.postJson("/api/tx/rollback", "{}")
         } catch (_: Exception) {
-            // melhor esforço: recusado (já finalizada) ou sem rede; a transação abandonada é revertida pelo servidor
+            // best effort: refused (already finished) or no network; the server rolls back the abandoned transaction
         }
     }
 
@@ -180,12 +180,12 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         }
         input.endObject()
         if (txId.isNullOrBlank()) {
-            throw TransactionSystemException("Resposta de begin sem txId")
+            throw TransactionSystemException("begin response without txId")
         }
         return txId
     }
 
-    /** Uma transação remota ativa. */
+    /** An active remote transaction. */
     private class TxState(val txId: String) : TransactionContext {
         var rollbackOnly = false
         val afterCommit = AfterCommitTasks()
@@ -199,10 +199,10 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         override fun isActive(): Boolean = true
     }
 
-    /** O contexto entregue quando não há transação (`supports`, `notSupported`, `never`). */
+    /** The context handed over when there is no transaction (`supports`, `notSupported`, `never`). */
     private object NoTx : TransactionContext {
         override fun setRollbackOnly(): Unit =
-            throw IllegalStateException("setRollbackOnly: nenhuma transação remota ativa neste escopo")
+            throw IllegalStateException("setRollbackOnly: no active remote transaction in this scope")
 
         override fun isRollbackOnly(): Boolean = false
 

@@ -7,7 +7,7 @@ import br.com.wdc.shopping.domain.user.User
 
 interface PurchaseRepository : Repository<Purchase, PurchaseCriteria, Long> {
 
-    /** A compra e o id do usuário; os itens vêm só quando pedidos. */
+    /** The purchase and the user id; items come only when asked for. */
     override fun ownFieldsProjection(): Purchase {
         val pv = ProjectionValues
         return Purchase().apply {

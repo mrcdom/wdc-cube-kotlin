@@ -16,12 +16,12 @@ import java.util.Base64
 import javax.crypto.Cipher
 
 /**
- * Endpoints REST de usuário: o RPC do repositório, lido e escrito com o [UserCodec] — o mesmo que o cliente usa.
- * O acesso é conferido aqui ([ApiSecurity]): permissão e, para quem não alcança os dados de todos, restrição ao
- * próprio usuário.
+ * User REST endpoints: the repository RPC, read and written with the [UserCodec] — the same one the client uses.
+ * Access is checked here ([ApiSecurity]): permission and, for callers who don't reach everyone's data,
+ * restriction to their own user.
  *
- * **A senha é só de escrita nesta API**: entra no insert e no update, e nunca é devolvida — nem o resumo, nem
- * com a segurança desligada, nem quando pedida na projeção.
+ * **The password is write-only in this API**: it goes in on insert and update, and is never returned — not the
+ * digest, not with security off, not when requested in the projection.
  */
 internal object UserApiController {
 
@@ -43,9 +43,9 @@ internal object UserApiController {
         )
         rpc.rule = { op -> ApiSecurity.permission(ENTITY, op) }
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("user", op) }
-        // quem não alcança os dados de todos só alcança o próprio usuário, peça o que pedir
+        // callers who don't reach everyone's data only reach their own user, whatever they ask for
         rpc.scope = { criteria, request -> ApiSecurity.ownerScope(request)?.let { criteria.userId.and().eq(it) } }
-        // a senha nunca é projetada, e é retirada de tudo o que sai
+        // the password is never projected, and is stripped from everything that goes out
         rpc.sanitizeProjection = { it.password = null }
         rpc.sanitizeOutput = { it.password = null }
         rpc.beforeInsert = { user, request -> decryptPasswordIfPresent(user, request) }
@@ -59,7 +59,7 @@ internal object UserApiController {
         rpc.register(routes)
     }
 
-    /** Decifra a senha, se veio cifrada com a chave RSA da sessão; senão, fica como veio. */
+    /** Decrypts the password if it came encrypted with the session's RSA key; otherwise it stays as it came. */
     private fun decryptPasswordIfPresent(user: User, request: RequestContext) {
         val sc = ApiSecurity.context(request)
         if (sc != null && !user.password.isNullOrBlank()) {

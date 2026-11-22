@@ -14,7 +14,7 @@ class HttpUserRepository(
     override fun fill(target: User, stored: User) = fillUser(target, stored)
 }
 
-/** A senha nunca vem do servidor: a do bean fica como estava. */
+/** The password never comes from the server: the bean's stays as it was. */
 internal fun fillUser(target: User, stored: User) {
     stored.id?.let { target.id = it }
     stored.userName?.let { target.userName = it }

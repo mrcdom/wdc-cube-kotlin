@@ -9,19 +9,19 @@ import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
 import io.javalin.config.JavalinConfig
 
 /**
- * A API REST dos repositórios, montada sobre o `framework-rest`.
+ * The repositories' REST API, built on `framework-rest`.
  *
- * Se o [AuthenticationService] estiver inicializado (via `ShoppingRepositoryBootstrap.initializeSecurity`), a API
- * sobe com segurança: `Authorization: Bearer` em tudo, salvo as rotas de `/api/auth`, a leitura da imagem de
- * produto e o `/openapi.json`. A permissão e o alcance de cada operação são conferidos pelas rotas
- * ([ApiSecurity]). Sem o serviço, a API é aberta e `/api/auth` não existe.
+ * If the [AuthenticationService] is initialized (via `ShoppingRepositoryBootstrap.initializeSecurity`), the API
+ * starts secured: `Authorization: Bearer` on everything, except the `/api/auth` routes, reading a product image
+ * and `/openapi.json`. The permission and reach of each operation are checked by the routes ([ApiSecurity]).
+ * Without the service, the API is open and `/api/auth` does not exist.
  *
- * As transações vêm dos holders a cada requisição: [ShoppingTransactions] (uma por requisição de escrita) e
- * [RemoteTransactions] (as que o cliente abre por `/api/tx`).
+ * Transactions come from the holders on each request: [ShoppingTransactions] (one per write request) and
+ * [RemoteTransactions] (the ones the client opens through `/api/tx`).
  */
 object RepositoryApiRoutes {
 
-    /** Monta a API com o que estiver registrado nos holders agora (o serviço de autenticação decide a segurança). */
+    /** Builds the API from what is registered in the holders now (the authentication service decides security). */
     fun create(): RestApi {
         val authService = AuthenticationService.BEAN.getOrNull()
         return RestApi {
@@ -48,6 +48,6 @@ object RepositoryApiRoutes {
         }
     }
 
-    /** Registra a API no Javalin em configuração. É usado pelo backend e pelos testes. */
+    /** Registers the API on the Javalin being configured. Used by the backend and the tests. */
     fun configure(config: JavalinConfig): RestApi = create().also { it.install(config) }
 }

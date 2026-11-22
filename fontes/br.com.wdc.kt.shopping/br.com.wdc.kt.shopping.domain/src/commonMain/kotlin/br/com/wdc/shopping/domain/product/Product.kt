@@ -3,9 +3,9 @@ package br.com.wdc.shopping.domain.product
 import br.com.wdc.framework.domain.codec.KeyedEntity
 
 /**
- * Produto do catálogo.
+ * Catalog product.
  *
- * Os campos são anuláveis porque `null` tem dois papéis: dado ausente e, numa projeção, "não traga este campo".
+ * The fields are nullable because `null` has two roles: missing data and, in a projection, "do not fetch this field".
  */
 class Product : KeyedEntity {
     var id: Long? = null
@@ -13,7 +13,7 @@ class Product : KeyedEntity {
     var price: Double? = null
     var description: String? = null
 
-    /** Não trafega com a entidade: tem endpoint e métodos próprios no repositório. */
+    /** Does not travel with the entity: it has its own endpoint and repository methods. */
     var image: ByteArray? = null
 
     override fun key(): Any? = id

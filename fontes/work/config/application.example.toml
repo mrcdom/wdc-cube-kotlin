@@ -1,66 +1,66 @@
-# WeDoCode Shopping — configuração do backend (exemplo)
+# WeDoCode Shopping — backend configuration (example)
 #
-# Copie para application.toml, nesta mesma pasta, e ajuste: esse arquivo é local e não é versionado.
+# Copy to application.toml, in this same folder, and adjust it: that file is local and not versioned.
 #
-# O backend lê sempre <diretório de trabalho>/config/application.toml. O diretório de trabalho é informado ao
-# subir o serviço (--workdir=<pasta> ou a variável SHOPPING_WORKDIR); em desenvolvimento é fontes/work.
+# The backend always reads <work directory>/config/application.toml. The work directory is given when
+# starting the service (--workdir=<folder> or the SHOPPING_WORKDIR variable); in development it is fontes/work.
 #
-# Toda chave é opcional: comentada, vale o padrão indicado. O leitor aceita seções e pares chave = valor;
-# não aceita listas nem comentário no fim da linha.
+# Every key is optional: commented out, the indicated default applies. The reader accepts sections and
+# key = value pairs; it does not accept lists or end-of-line comments.
 #
-# A configuração do log fica ao lado, em logback.xml.
+# The log configuration sits next to it, in logback.xml.
 
 [database]
-# --- H2 (padrão) -----------------------------------------------------------------------------------------
-# Sem url, o banco é um H2 em arquivo na pasta de dados: <diretório de trabalho>/data/wedocode-shopping.
-# url = "jdbc:h2:file:/caminho/wedocode-shopping;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+# --- H2 (default) ----------------------------------------------------------------------------------------
+# Without url, the database is a file-based H2 in the data folder: <work directory>/data/wedocode-shopping.
+# url = "jdbc:h2:file:/path/wedocode-shopping;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 # username = "sa"
 # password = "sa"
 
 # --- PostgreSQL ------------------------------------------------------------------------------------------
-# O banco é escolhido pela url. A base precisa existir; as tabelas são criadas na subida.
+# The database is chosen by the url. The database must exist; the tables are created on startup.
 # url = "jdbc:postgresql://localhost:5432/shopping"
 # username = "postgres"
-# password = "troque-me"
-# Esquema da aplicação (só PostgreSQL). É criado se não existir; sem ele, vale o esquema padrão do usuário.
+# password = "change-me"
+# Application schema (PostgreSQL only). Created if missing; without it, the user's default schema applies.
 # schema = "shopping"
 
-# Apaga os dados e recarrega a carga de demonstração a cada subida.
+# Erases the data and reloads the demo data on every startup.
 # reset = false
 
-# Registra no log (nível DEBUG) os SQLs executados.
+# Logs the executed SQL (DEBUG level).
 # logSql = false
 
-# --- Pool de conexões ------------------------------------------------------------------------------------
+# --- Connection pool -------------------------------------------------------------------------------------
 # pool.maxSize = 20
 # pool.minIdle = 5
-# Quanto esperar por uma conexão livre antes de desistir.
+# How long to wait for a free connection before giving up.
 # pool.connectionTimeoutSeconds = 30
-# Idade máxima de uma conexão; 0 desliga a reciclagem por idade.
+# Maximum age of a connection; 0 turns off recycling by age.
 # pool.maxLifetimeMinutes = 30
 
-# --- Transações remotas (as que um cliente REST abre em /api/tx/begin) -------------------------------------
-# Tempo sem uso até a transação ser desfeita.
+# --- Remote transactions (the ones a REST client opens at /api/tx/begin) ----------------------------------
+# Idle time until the transaction is rolled back.
 # remoteTransaction.idleTimeoutSeconds = 60
-# Tempo máximo de vida, mesmo em uso.
+# Maximum lifetime, even while in use.
 # remoteTransaction.maxLifetimeSeconds = 600
-# Por quanto tempo o desfecho fica guardado, para repetir commit/rollback sem erro.
+# How long the outcome is kept, so commit/rollback can be repeated without error.
 # remoteTransaction.outcomeRetentionSeconds = 300
-# Tetos de transações abertas: no total e por cliente.
+# Caps on open transactions: in total and per client.
 # remoteTransaction.maxOpen = 128
 # remoteTransaction.maxOpenPerOwner = 16
 
 [server]
-# Porta HTTP.
+# HTTP port.
 # port = 8080
 
-# Aceita qualquer origem no CORS (desenvolvimento).
+# Accepts any origin in CORS (development).
 # cors.allowAll = false
 
 [security]
-# Segredo do JWT. Com ele, /api/repo e /api/tx exigem autenticação e /api/auth passa a existir.
-# Sem ele, a API fica ABERTA — só para desenvolvimento.
-# jwt.secret = "um-segredo-longo-e-aleatorio"
+# JWT secret. With it, /api/repo and /api/tx require authentication and /api/auth exists.
+# Without it, the API is OPEN — development only.
+# jwt.secret = "a-long-random-secret"
 
-# Validade do refresh token, em dias.
+# Refresh token validity, in days.
 # refresh.token.ttl.days = 7

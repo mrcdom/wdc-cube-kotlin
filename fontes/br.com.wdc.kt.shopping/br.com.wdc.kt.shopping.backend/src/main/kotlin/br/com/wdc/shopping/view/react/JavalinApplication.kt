@@ -98,7 +98,7 @@ class JavalinApplication(
             JsonOutputFactory.installCommon()
             JsonInputFactory.installCommon()
 
-            // O diretório de trabalho é obrigatório: dele vêm a configuração, o log e as pastas de execução.
+            // The work directory is mandatory: the configuration, the log and the runtime folders come from it.
             ShoppingConfig.Internals.useWorkDir(WorkDirectory.resolve(args))
             if (LoggingSupport.configure(ShoppingConfig.configDir!!, ShoppingConfig.logDir!!)) {
                 LOG.info("Logging configured from {}", ShoppingConfig.configDir!!.resolve(LoggingSupport.CONFIG_FILE_NAME))

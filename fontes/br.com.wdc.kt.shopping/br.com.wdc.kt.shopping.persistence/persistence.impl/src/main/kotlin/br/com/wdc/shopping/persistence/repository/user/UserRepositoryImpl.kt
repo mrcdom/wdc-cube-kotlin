@@ -21,16 +21,16 @@ import org.jooq.impl.DSL
 class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
 
     override suspend fun insert(bean: User, projection: User?): Boolean {
-        // o id informado é respeitado (a carga de demonstração grava ids fixos)
+        // the given id is kept (the demo data load writes fixed ids)
         if (bean.id == null) bean.id = dsl().nextval(SQ_USER)
         return QUERY.insert(bean, projection)
     }
 
     override suspend fun update(newBean: User, oldBean: User?, projection: User?): Boolean {
-        val id = newBean.id ?: throw InvalidRequestException("update de usuário exige o id")
-        // a projeção padrão não traz a senha; para regravá-la, marque-a na projeção (ou informe o oldBean)
+        val id = newBean.id ?: throw InvalidRequestException("user update requires the id")
+        // the default projection leaves out the password; to rewrite it, mark it in the projection (or pass the oldBean)
         val prj = projection ?: ownFieldsProjection().apply { if (oldBean != null) password = ProjectionValues.str }
-        // sem projeção nem oldBean: compara com a entidade vazia, e só os campos com valor entram no UPDATE
+        // no projection nor oldBean: compares with the empty entity, and only fields with a value go into the UPDATE
         val base = oldBean ?: if (projection == null) User() else null
 
         val step = dsl().update(EN_USER).set(EN_USER.ID, id)
@@ -59,7 +59,7 @@ class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
 
     override suspend fun delete(criteria: UserCriteria): Int {
         if (criteria.criterions().none { it.isSet() }) {
-            throw InvalidRequestException("delete de usuário exige ao menos um campo de critério informado")
+            throw InvalidRequestException("user delete requires at least one criteria field set")
         }
         return dsl().deleteFrom(EN_USER).where(conditions(EN_USER, criteria)).execute()
     }
@@ -75,7 +75,7 @@ class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
             if (offset > 0) step.offset(offset)
         }
 
-    /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
+    /** The criteria's projection, with the id ensured; without one, the default. */
     private fun projectionFrom(criteria: UserCriteria): User {
         val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
@@ -98,7 +98,7 @@ class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
             .addStr("roles", { it.roles }, { b, v -> b.roles = v }, { it.ROLES })
             .build()
 
-        /** Toda ordenação por campo não único desempata pela chave. */
+        /** Every ordering by a non-unique field breaks ties by the key. */
         fun orderingOf(t: EnUser, criteria: Any?): List<SortField<*>> {
             val c = criteria as? UserCriteria ?: return emptyList()
             return when (c.orderBy ?: return emptyList()) {
@@ -109,7 +109,7 @@ class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
             }
         }
 
-        /** Condição do critério do usuário numa relação (o critério vem da coleção de projeção). */
+        /** Condition of the user criteria in a relation (the criteria comes from the projection collection). */
         fun applyConditions(cq: JsonChildQueryBuilder<*, EnUser>): Condition =
             cq.criteriaAs<UserCriteria>()?.let { conditions(cq.childTable, it) } ?: DSL.noCondition()
 

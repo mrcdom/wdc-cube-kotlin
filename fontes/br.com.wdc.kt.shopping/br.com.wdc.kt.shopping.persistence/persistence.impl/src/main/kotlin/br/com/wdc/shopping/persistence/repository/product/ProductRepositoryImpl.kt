@@ -22,15 +22,15 @@ import org.jooq.impl.DSL
 class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
 
     override suspend fun insert(bean: Product, projection: Product?): Boolean {
-        // o id informado é respeitado (a carga de demonstração grava ids fixos)
+        // the given id is kept (the demo data load writes fixed ids)
         if (bean.id == null) bean.id = dsl().nextval(SQ_PRODUCT)
         return QUERY.insert(bean, projection)
     }
 
     override suspend fun update(newBean: Product, oldBean: Product?, projection: Product?): Boolean {
-        val id = newBean.id ?: throw InvalidRequestException("update de produto exige o id")
+        val id = newBean.id ?: throw InvalidRequestException("product update requires the id")
         val prj = projection ?: ownFieldsProjection()
-        // sem projeção nem oldBean: compara com a entidade vazia, e só os campos com valor entram no UPDATE
+        // no projection nor oldBean: compares with the empty entity, and only fields with a value go into the UPDATE
         val base = oldBean ?: if (projection == null) Product() else null
 
         val step = dsl().update(EN_PRODUCT).set(EN_PRODUCT.ID, id)
@@ -59,7 +59,7 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
 
     override suspend fun delete(criteria: ProductCriteria): Int {
         if (criteria.criterions().none { it.isSet() }) {
-            throw InvalidRequestException("delete de produto exige ao menos um campo de critério informado")
+            throw InvalidRequestException("product delete requires at least one criteria field set")
         }
         return dsl().deleteFrom(EN_PRODUCT).where(conditions(EN_PRODUCT, criteria)).execute()
     }
@@ -85,7 +85,7 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
     override suspend fun updateImage(productId: Long, image: ByteArray): Boolean =
         dsl().update(EN_PRODUCT).set(EN_PRODUCT.IMAGE, image).where(EN_PRODUCT.ID.eq(productId)).execute() > 0
 
-    /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
+    /** The criteria's projection, with the id ensured; without one, the default. */
     private fun projectionFrom(criteria: ProductCriteria): Product {
         val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
@@ -108,7 +108,7 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
             .addBin("image", { it.image }, { b, v -> b.image = v }, { it.IMAGE })
             .build()
 
-        /** Toda ordenação por campo não único desempata pela chave. */
+        /** Every ordering by a non-unique field breaks ties by the key. */
         fun orderingOf(t: EnProduct, criteria: Any?): List<SortField<*>> {
             val c = criteria as? ProductCriteria ?: return emptyList()
             return when (c.orderBy ?: return emptyList()) {
@@ -120,7 +120,7 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
             }
         }
 
-        /** Condição do critério do produto numa relação (o critério vem da coleção de projeção). */
+        /** Condition of the product criteria in a relation (the criteria comes from the projection collection). */
         fun applyConditions(cq: JsonChildQueryBuilder<*, EnProduct>): Condition =
             cq.criteriaAs<ProductCriteria>()?.let { conditions(cq.childTable, it) } ?: DSL.noCondition()
 

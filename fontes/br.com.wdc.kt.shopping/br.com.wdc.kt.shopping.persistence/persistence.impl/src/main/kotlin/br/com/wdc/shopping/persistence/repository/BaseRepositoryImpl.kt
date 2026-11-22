@@ -4,27 +4,27 @@ import br.com.wdc.shopping.persistence.ShoppingDSLContext
 import org.jooq.DSLContext
 
 /**
- * Base dos repositórios sobre jOOQ.
+ * Base of the repositories over jOOQ.
  *
- * Os repositórios não demarcam transação nem pegam conexão: o [DSLContext] do módulo usa a conexão da
- * transação corrente, ou uma avulsa em autocommit. Também não embrulham exceções — a real sobe, e a camada
- * REST a traduz.
+ * The repositories neither demarcate transactions nor take connections: the module's [DSLContext] uses the
+ * current transaction's connection, or a standalone one in autocommit. Nor do they wrap exceptions — the real
+ * one propagates, and the REST layer translates it.
  */
 abstract class BaseRepositoryImpl {
 
     protected fun dsl(): DSLContext = ShoppingDSLContext.BEAN.get()
 
     /**
-     * Diz se um campo entra no `UPDATE`: a projeção o marca (valor não-nulo) e, havendo o estado anterior, o
-     * valor mudou em relação a ele. Sem [oldBean], todo campo marcado é gravado — inclusive com `null`, que
-     * limpa o valor. Por isso o `update` sem projeção nem `oldBean` passa a entidade vazia como [oldBean]: só
-     * os campos com valor entram, como no `insert`.
+     * Tells whether a field goes into the `UPDATE`: the projection marks it (non-null value) and, when there is
+     * a previous state, the value changed from it. Without [oldBean], every marked field is written — even with
+     * `null`, which clears the value. That is why an `update` with neither projection nor `oldBean` passes the
+     * empty entity as [oldBean]: only fields with a value go in, as in `insert`.
      */
     protected fun <E, V> changed(newBean: E, oldBean: E?, projection: E, getter: (E) -> V?): Boolean =
         getter(projection) != null && (oldBean == null || getter(newBean) != getter(oldBean))
 
     companion object {
-        /** O `DSLContext` do módulo, para os mapeamentos (`JsonQueryBuilder.setDSLContextSupplier`). */
+        /** The module's `DSLContext`, for the mappings (`JsonQueryBuilder.setDSLContextSupplier`). */
         fun dsl(): DSLContext = ShoppingDSLContext.BEAN.get()
     }
 }

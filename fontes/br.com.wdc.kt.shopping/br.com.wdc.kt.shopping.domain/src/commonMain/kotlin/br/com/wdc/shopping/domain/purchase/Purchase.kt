@@ -6,11 +6,11 @@ import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
 import br.com.wdc.shopping.domain.user.User
 
 /**
- * Compra de um usuário, com os seus itens.
+ * A user's purchase, with its items.
  *
- * Os campos são anuláveis porque `null` tem dois papéis: dado ausente e, numa projeção, "não traga este campo".
- * Em [items], a projeção é uma coleção com **um** elemento — a forma do item — e pode carregar critério, ordem
- * e recorte (`ProjectionValues.singletonList`).
+ * The fields are nullable because `null` has two roles: missing data and, in a projection, "do not fetch this field".
+ * In [items], the projection is a collection with **one** element — the item's shape — and may carry criteria,
+ * ordering and slicing (`ProjectionValues.singletonList`).
  */
 class Purchase : KeyedEntity {
     var id: Long? = null

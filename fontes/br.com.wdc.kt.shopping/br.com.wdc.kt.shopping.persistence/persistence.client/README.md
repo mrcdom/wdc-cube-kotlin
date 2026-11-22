@@ -1,13 +1,13 @@
 # persistence.client
 
-Cliente REST multiplataforma: implementa os repositórios e o serviço de transação do domínio sobre HTTP.
+Multiplatform REST client: implements the domain's repositories and transaction service over HTTP.
 
-**Plataformas:** JVM, Android, iOS, JS, wasmJs
+**Platforms:** JVM, Android, iOS, JS, wasmJs
 
-- `HttpReadOnlyRepository` / `HttpRepository` — as consultas e, no segundo, também a escrita, uma vez para todas as entidades; cada `HttpXxxRepository` só informa o codec e o caminho.
-- `HttpTransport` — uma implementação bloqueante por plataforma: `OkHttpTransport` (JVM e Android), `JsHttpTransport`, `WasmHttpTransport`, `IosHttpTransport`. Cuidam do token, da renovação da sessão no 401 e dos cabeçalhos de transação.
-- `RestTransactionService` — torna várias escritas atômicas, abrindo uma transação no servidor.
-- `RestAuthClient` / `RestAuthenticationService` — login por desafio e renovação de sessão.
-- `RestRepositoryBootstrap.initialize(config, cryptoProvider)` — registra tudo; todo entry point de cliente o chama.
+- `HttpReadOnlyRepository` / `HttpRepository` — the queries and, in the second, also the writes, once for every entity; each `HttpXxxRepository` only supplies the codec and the path.
+- `HttpTransport` — one blocking implementation per platform: `OkHttpTransport` (JVM and Android), `JsHttpTransport`, `WasmHttpTransport`, `IosHttpTransport`. They handle the token, session renewal on 401 and the transaction headers.
+- `RestTransactionService` — makes several writes atomic by opening a transaction on the server.
+- `RestAuthClient` / `RestAuthenticationService` — challenge login and session renewal.
+- `RestRepositoryBootstrap.initialize(config, cryptoProvider)` — registers everything; every client entry point calls it.
 
-Usado pelas views locais (Compose e nativas), em que os presenters rodam no cliente. Veja a [arquitetura de persistência](../../../../docs/architecture-persistence.md#cliente-http).
+Used by the local views (Compose and native), where the presenters run on the client. See the [persistence architecture](../../../../docs/architecture-persistence.md#http-client).

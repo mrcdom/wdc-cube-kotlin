@@ -36,7 +36,7 @@ class AppConfig private constructor(
     companion object {
         private val LOG = Log.getLogger("AppConfig")
 
-        /** Lê o arquivo de configuração informado; se ele não existir, vale tudo no padrão. */
+        /** Reads the given configuration file; if it does not exist, everything takes its default. */
         fun load(configFile: Path): AppConfig {
             if (Files.exists(configFile)) {
                 LOG.info("Loading configuration from {}", configFile.toAbsolutePath())
@@ -51,7 +51,7 @@ class AppConfig private constructor(
             return AppConfig(emptyMap())
         }
 
-        /** Uma configuração sem arquivo: tudo no padrão. */
+        /** A configuration without a file: everything at its default. */
         fun empty(): AppConfig = AppConfig(emptyMap())
 
         internal fun parseToml(content: String): Map<String, String> {

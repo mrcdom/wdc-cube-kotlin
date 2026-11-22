@@ -14,10 +14,10 @@ import br.com.wdc.shopping.domain.product.ProductCodec
 import br.com.wdc.shopping.domain.purchase.Purchase
 
 /**
- * Como [PurchaseItem] e [PurchaseItemCriteria] trafegam — o mesmo codec no cliente e no servidor.
+ * How [PurchaseItem] and [PurchaseItemCriteria] travel — the same codec on client and server.
  *
- * A compra do item trafega só pela chave (`purchaseId`): do outro lado ela é reconstituída como stub. O
- * produto vai aninhado.
+ * The item's purchase travels only by its key (`purchaseId`): on the other side it is rebuilt as a stub. The
+ * product goes nested.
  */
 class PurchaseItemCodec : ModelCodec<PurchaseItem, PurchaseItemCriteria> {
 

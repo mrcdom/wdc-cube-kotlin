@@ -1,12 +1,12 @@
 # persistence.impl
 
-Implementação JVM dos repositórios, sobre **jOOQ**, para **H2** e **PostgreSQL**.
+JVM implementation of the repositories, over **jOOQ**, for **H2** and **PostgreSQL**.
 
-- `repository/` — um `XxxRepositoryImpl` por entidade. Cada um declara o mapeamento entidade ↔ tabela (`JsonQueryBuilder`) e traduz o critério em condições; a consulta devolve o grafo pedido pela projeção numa única ida ao banco.
-- `scheme/` — classes jOOQ **geradas** a partir do DDL de `DBCreate`. Não edite à mão: `./gradlew :shopping-scripts:generateJooqSchema`.
-- `security/` — autenticação: JWT, sessões e segredos de intent. O controle de acesso às operações não fica aqui: é da API REST ([persistence.rest](../persistence.rest/)).
-- `ShoppingRepositoryBootstrap` — liga o módulo ao `DataSource`: registra o `DSLContext`, o serviço de transação e os repositórios; `initializeSecurity` registra o serviço de autenticação quando há segredo JWT.
+- `repository/` — one `XxxRepositoryImpl` per entity. Each declares the entity ↔ table mapping (`JsonQueryBuilder`) and translates the criteria into conditions; the query returns the graph the projection asks for in a single database round trip.
+- `scheme/` — jOOQ classes **generated** from the `DBCreate` DDL. Do not edit by hand: `./gradlew :shopping-scripts:generateJooqSchema`.
+- `security/` — authentication: JWT, sessions and intent secrets. Access control over the operations is not here: it belongs to the REST API ([persistence.rest](../persistence.rest/)).
+- `ShoppingRepositoryBootstrap` — binds the module to the `DataSource`: registers the `DSLContext`, the transaction service and the repositories; `initializeSecurity` registers the authentication service when there is a JWT secret.
 
-Os repositórios não demarcam transação: usam a conexão da transação corrente ou, fora dela, uma avulsa em autocommit.
+The repositories do not demarcate transactions: they use the current transaction's connection or, outside one, a standalone connection in autocommit.
 
-Veja a [arquitetura de persistência](../../../../docs/architecture-persistence.md).
+See the [persistence architecture](../../../../docs/architecture-persistence.md).

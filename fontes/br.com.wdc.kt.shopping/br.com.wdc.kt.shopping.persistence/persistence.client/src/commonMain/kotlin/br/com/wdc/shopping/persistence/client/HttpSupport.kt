@@ -9,26 +9,26 @@ import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundExceptio
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-/** Cabeçalho da transação remota corrente. */
+/** Header of the current remote transaction. */
 const val TX_HEADER = "X-Tx-Id"
 
-/** Cabeçalho que identifica a instância de cliente. */
+/** Header that identifies the client instance. */
 const val CLIENT_HEADER = "X-Client-Id"
 
-/** Um identificador novo para uma instância de transporte. */
+/** A new identifier for a transport instance. */
 @OptIn(ExperimentalUuidApi::class)
 internal fun newClientId(): String = Uuid.random().toString()
 
-/** O `X-Tx-Id` a enviar, se há transação remota corrente. */
+/** The `X-Tx-Id` to send, if there is a current remote transaction. */
 internal fun HttpTransport.currentTxId(): String? = transactionIdSupplier?.invoke()?.takeIf { it.isNotBlank() }
 
 /**
- * A exceção de uma resposta de erro: o status vira o mesmo tipo que o servidor lançou, para o chamador
- * tratar a recusa pelo que ela é. A mensagem é sempre `HTTP <status>: <corpo>`.
+ * The exception for an error response: the status becomes the same type the server threw, so the caller
+ * handles the refusal for what it is. The message is always `HTTP <status>: <body>`.
  */
 /**
- * `true` quando a falha é uma resposta do servidor (saiu de [httpFailure], que sempre escreve "HTTP <status>"), e
- * não uma falha de transporte — conexão recusada, tempo esgotado —, em que não se sabe o que o servidor fez.
+ * `true` when the failure is a server response (it came from [httpFailure], which always writes "HTTP <status>"),
+ * not a transport failure — connection refused, timeout —, where it is unknown what the server did.
  */
 internal fun Throwable.isHttpAnswer(): Boolean = message?.startsWith("HTTP ") == true
 

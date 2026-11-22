@@ -7,18 +7,18 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * O diretório de trabalho do serviço e o que a configuração diz de geral.
+ * The service's work directory and the general settings from the configuration.
  *
- * **O diretório de trabalho é informado por quem sobe o serviço** — não há padrão, nem ele é deduzido de onde o
- * processo roda. Dele saem todas as pastas de execução:
+ * **The work directory is given by whoever starts the service** — there is no default, nor is it inferred from
+ * where the process runs. All runtime folders come from it:
  *
- * | Pasta | Para quê |
+ * | Folder | Purpose |
  * |---|---|
- * | `config/` | a configuração (`application.toml`) e os arquivos que a apoiam, inclusive a do log |
- * | `data/` | dados locais que a aplicação reaproveita entre reinícios (o banco H2 padrão) |
- * | `log/` | o arquivo de log e as suas rotações, conforme a configuração do log |
- * | `tmp/` | arquivos temporários gerados durante a execução |
- * | `deployment/` | cada subpasta é um contexto de recursos estáticos que o servidor publica |
+ * | `config/` | the configuration (`application.toml`) and its supporting files, including the log's |
+ * | `data/` | local data the application reuses across restarts (the default H2 database) |
+ * | `log/` | the log file and its rotations, as the log configuration says |
+ * | `tmp/` | temporary files created while running |
+ * | `deployment/` | each subfolder is a static resource context the server publishes |
  */
 object ShoppingConfig {
 
@@ -60,14 +60,14 @@ object ShoppingConfig {
         fun setRefreshTokenTtlDays(days: Int) { ShoppingConfig.refreshTokenTtlDays = days }
 
         /**
-         * Fixa as pastas de execução a partir do diretório de trabalho, criando as que faltarem.
+         * Sets the runtime folders from the work directory, creating the missing ones.
          *
-         * @param workDir diretório de trabalho; **precisa existir** — um caminho errado não vira, em silêncio,
-         *                um ambiente novo e vazio
+         * @param workDir work directory; **must exist** — a wrong path does not silently become a new, empty
+         *                environment
          */
         fun useWorkDir(workDir: Path) {
             val work = workDir.toAbsolutePath().normalize()
-            require(Files.isDirectory(work)) { "O diretório de trabalho não existe: $work" }
+            require(Files.isDirectory(work)) { "The work directory does not exist: $work" }
             try {
                 setWorkDir(work)
                 setConfigDir(createDirectory(work.resolve("config")))
@@ -80,9 +80,9 @@ object ShoppingConfig {
             }
         }
 
-        /** Carrega a configuração de `config/application.toml`, no diretório de trabalho já fixado. */
+        /** Loads the configuration from `config/application.toml` in the work directory already set. */
         fun loadConfig(): AppConfig {
-            val configDir = ShoppingConfig.configDir ?: throw IllegalStateException("Diretório de trabalho não informado")
+            val configDir = ShoppingConfig.configDir ?: throw IllegalStateException("Work directory not given")
             val config = AppConfig.load(configDir.resolve(CONFIG_FILE_NAME))
             setJwtSecret(config.get("security.jwt.secret"))
             setRefreshTokenTtlDays(config.getInt("security.refresh.token.ttl.days", 7))

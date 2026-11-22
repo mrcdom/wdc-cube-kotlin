@@ -5,11 +5,11 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
- * Descobre o diretório de trabalho com que o serviço foi chamado.
+ * Finds the work directory the service was started with.
  *
- * Ele é **obrigatório** e vem de fora: o argumento `--workdir=<pasta>` ou, na falta dele, a variável de
- * ambiente `SHOPPING_WORKDIR`. Não há padrão: subir o serviço sem dizer onde ele trabalha é erro, e não um
- * convite a criar uma pasta onde quer que o processo esteja.
+ * It is **mandatory** and comes from outside: the `--workdir=<folder>` argument or, without it, the
+ * `SHOPPING_WORKDIR` environment variable. There is no default: starting the service without saying where it
+ * works is an error, not an invitation to create a folder wherever the process happens to be.
  */
 object WorkDirectory {
 
@@ -17,21 +17,21 @@ object WorkDirectory {
     const val ENVIRONMENT_VARIABLE = "SHOPPING_WORKDIR"
 
     /**
-     * @throws IllegalArgumentException se o diretório não foi informado, ou se não existe
+     * @throws IllegalArgumentException if the directory was not given, or does not exist
      */
     fun resolve(args: Array<String>, environment: (String) -> String? = System::getenv): Path {
         val informed = args.firstOrNull { it.startsWith(ARGUMENT) }?.substring(ARGUMENT.length)?.trim()?.takeIf { it.isNotEmpty() }
             ?: environment(ENVIRONMENT_VARIABLE)?.trim()?.takeIf { it.isNotEmpty() }
             ?: throw IllegalArgumentException(
-                "Diretório de trabalho não informado. Use o argumento $ARGUMENT<pasta> ou a variável de ambiente " +
-                    "$ENVIRONMENT_VARIABLE. É a pasta com config/, data/, log/, tmp/ e deployment/ " +
-                    "(em desenvolvimento: fontes/work)."
+                "Work directory not given. Use the $ARGUMENT<folder> argument or the environment variable " +
+                    "$ENVIRONMENT_VARIABLE. It is the folder with config/, data/, log/, tmp/ and deployment/ " +
+                    "(in development: fontes/work)."
             )
         val path = Paths.get(informed).toAbsolutePath().normalize()
-        require(Files.isDirectory(path)) { "O diretório de trabalho informado não existe: $path" }
+        require(Files.isDirectory(path)) { "The given work directory does not exist: $path" }
         return path
     }
 
-    /** Os argumentos que não são o do diretório de trabalho. */
+    /** The arguments other than the work directory one. */
     fun otherArguments(args: Array<String>): List<String> = args.filterNot { it.startsWith(ARGUMENT) }
 }

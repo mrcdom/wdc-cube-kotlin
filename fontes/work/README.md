@@ -1,17 +1,17 @@
 # work
 
-O **diretório de trabalho** do backend em desenvolvimento.
+The backend's **work directory** in development.
 
-O backend não sobe sem saber qual é o seu diretório de trabalho: ele é informado com o argumento `--workdir=<pasta>` ou com a variável de ambiente `SHOPPING_WORKDIR`. O `./gradlew :backend:run` informa esta pasta (outra: `-Pworkdir=/caminho`). Tudo o que o serviço lê e grava em disco sai dela:
+The backend does not start without knowing its work directory: it is given with the `--workdir=<folder>` argument or the `SHOPPING_WORKDIR` environment variable. `./gradlew :backend:run` passes this folder (another one: `-Pworkdir=/path`). Everything the service reads from and writes to disk comes from it:
 
-| Pasta | Para quê | No git |
+| Folder | Purpose | In git |
 |---|---|---|
-| `config/` | A configuração e os arquivos que a apoiam: `application.toml` (local), `application.example.toml` (o modelo, com todas as chaves) e `logback.xml` (o log) | os padrões, sim; o `application.toml`, não |
-| `data/` | Dados locais reaproveitados entre reinícios — o banco H2 padrão | não |
-| `log/` | O arquivo de log e as suas rotações, conforme `config/logback.xml` | não |
-| `tmp/` | Arquivos temporários gerados durante a execução | não |
-| `deployment/` | Cada subpasta é um contexto de recursos estáticos que o servidor publica (`compose/` → `/compose/`). Os `deploy.sh` dos frontends web copiam para cá | só o esqueleto |
+| `config/` | The configuration and its supporting files: `application.toml` (local), `application.example.toml` (the template, with every key) and `logback.xml` (the log) | the defaults, yes; `application.toml`, no |
+| `data/` | Local data reused across restarts — the default H2 database | no |
+| `log/` | The log file and its rotations, as `config/logback.xml` says | no |
+| `tmp/` | Temporary files created while running | no |
+| `deployment/` | Each subfolder is a static resource context the server publishes (`compose/` → `/compose/`). The web frontends' `deploy.sh` scripts copy here | only the skeleton |
 
-Para começar: copie `config/application.example.toml` para `config/application.toml` e ajuste. Sem esse arquivo o backend sobe com os padrões — banco H2 em `data/` e **sem segurança**.
+To get started: copy `config/application.example.toml` to `config/application.toml` and adjust it. Without that file the backend starts with the defaults — H2 database in `data/` and **no security**.
 
-O diretório precisa existir; as subpastas que faltarem são criadas na subida.
+The directory must exist; missing subfolders are created on startup.

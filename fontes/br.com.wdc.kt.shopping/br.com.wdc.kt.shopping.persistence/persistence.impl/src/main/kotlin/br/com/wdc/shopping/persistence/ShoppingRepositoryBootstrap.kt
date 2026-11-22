@@ -21,29 +21,29 @@ import org.jooq.conf.Settings
 import org.jooq.impl.DSL
 
 /**
- * Bootstrap da persistência do Shopping sobre jOOQ: liga o módulo ao DataSource que o composition root lhe
- * entrega (backend, testes).
+ * Bootstrap of the Shopping persistence over jOOQ: binds the module to the DataSource the composition root
+ * hands it (backend, tests).
  *
- * [initialize] registra os quatro repositórios; [initializeSecurity], chamado depois e só quando há segredo
- * JWT configurado, registra o serviço de autenticação.
+ * [initialize] registers the four repositories; [initializeSecurity], called afterwards and only when a JWT
+ * secret is configured, registers the authentication service.
  */
 object ShoppingRepositoryBootstrap {
 
     /**
-     * @param dataSource DataSource **deste módulo** — usado pelo `DSLContext` e pelo `TransactionService`
-     * @param logSql     se `true`, o jOOQ registra os SQLs executados (nível DEBUG)
-     * @param dialect    banco em uso ([SQLDialect.H2] ou [SQLDialect.POSTGRES])
-     * @param cleanUp    recebe a ação que desfaz o que foi registrado aqui
+     * @param dataSource DataSource **of this module** — used by the `DSLContext` and the `TransactionService`
+     * @param logSql     if `true`, jOOQ logs the executed SQL (DEBUG level)
+     * @param dialect    database in use ([SQLDialect.H2] or [SQLDialect.POSTGRES])
+     * @param cleanUp    receives the action that undoes what was registered here
      */
     fun initialize(dataSource: DataSource, logSql: Boolean = false, dialect: SQLDialect = SQLDialect.H2, cleanUp: Defer) {
         var settings = Settings().withExecuteLogging(logSql)
         if (dialect == SQLDialect.POSTGRES) {
-            // As classes geradas vêm do H2: esquema "PUBLIC" e nomes em maiúsculas. No PostgreSQL os nomes do DDL
-            // são minúsculos e o esquema se resolve pelo search_path.
+            // The generated classes come from H2: schema "PUBLIC" and upper-case names. On PostgreSQL the DDL
+            // names are lower-case and the schema is resolved by the search_path.
             settings = settings.withRenderSchema(false).withRenderNameCase(RenderNameCase.LOWER)
         }
 
-        // Dentro de uma transação as consultas usam a conexão do escopo; fora dela, uma avulsa em autocommit.
+        // Inside a transaction the queries use the scope's connection; outside one, a standalone one in autocommit.
         ShoppingDSLContext.BEAN.set(DSL.using(TransactionAwareConnectionProvider(dataSource), dialect, settings))
         ShoppingTransactions.BEAN.set(TransactionServiceImpl { dataSource })
         UserRepository.BEAN.set(UserRepositoryImpl())
@@ -62,10 +62,10 @@ object ShoppingRepositoryBootstrap {
     }
 
     /**
-     * Liga a autenticação: registra o [AuthenticationService], com o que a API REST passa a exigir e conferir
-     * o acesso. Os repositórios não mudam — o controle de acesso é da fronteira HTTP.
+     * Turns authentication on: registers the [AuthenticationService], after which the REST API requires and
+     * checks access. The repositories do not change — access control belongs to the HTTP boundary.
      *
-     * @param cleanUp recebe a ação que retira o serviço de autenticação
+     * @param cleanUp receives the action that removes the authentication service
      */
     fun initializeSecurity(jwtSecret: String, refreshTokenTtlDays: Int = 7, cleanUp: Defer) {
         AuthenticationService.BEAN.set(AuthenticationServiceImpl(UserRepository.BEAN.get(), jwtSecret, refreshTokenTtlDays))

@@ -8,7 +8,7 @@ import br.com.wdc.shopping.domain.purchase.Purchase
 
 interface PurchaseItemRepository : Repository<PurchaseItem, PurchaseItemCriteria, Long> {
 
-    /** O item e os ids da compra e do produto. */
+    /** The item and the purchase and product ids. */
     override fun ownFieldsProjection(): PurchaseItem {
         val pv = ProjectionValues
         return PurchaseItem().apply {

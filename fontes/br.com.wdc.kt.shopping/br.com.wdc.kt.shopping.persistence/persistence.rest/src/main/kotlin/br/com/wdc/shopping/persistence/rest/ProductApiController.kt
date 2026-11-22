@@ -24,8 +24,8 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 
 /**
- * Endpoints REST de produto: o RPC do repositório, lido e escrito com o [ProductCodec] — o mesmo que o cliente
- * usa —, mais a imagem. Ler exige `product:read`, escrever `product:write`; a leitura da imagem é pública.
+ * Product REST endpoints: the repository RPC, read and written with the [ProductCodec] — the same one the client
+ * uses —, plus the image. Reading requires `product:read`, writing `product:write`; reading the image is public.
  */
 internal object ProductApiController {
 
@@ -49,7 +49,7 @@ internal object ProductApiController {
             parseId = String::toLongOrNull,
             idOf = { it.id },
         )
-        // o catálogo é de todos: não há restrição por usuário
+        // the catalog belongs to everyone: no per-user restriction
         rpc.rule = { op -> ApiSecurity.permission(ENTITY, op) }
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("product", op) }
         rpc.register(routes)
@@ -90,7 +90,7 @@ internal object ProductApiController {
         if (resultBytes == null) {
             return RestResponse.noContent()
         }
-        // A URL é mutável (o PUT troca a imagem): o navegador guarda, mas revalida pelo ETag a cada uso.
+        // The URL is mutable (PUT replaces the image): the browser caches it, but revalidates by ETag on every use.
         val etag = etagOf(resultBytes)
         val headers = mapOf("Cache-Control" to "no-cache", "ETag" to etag)
         if (call.header("If-None-Match")?.split(',')?.any { it.trim() == etag } == true) {
@@ -134,15 +134,15 @@ internal object ProductApiController {
             val imageBytes = call.bodyBytes()
             val success = call.inTransaction {
                 val updated = repo().updateImage(id, imageBytes)
-                // Só depois do commit: limpar antes deixaria um GET no intervalo (que lê a imagem confirmada, a
-                // velha) recolocá-la no cache. Numa transação remota, o commit é o do cliente.
+                // Only after commit: clearing earlier would let a GET in between (which reads the committed, old
+                // image) put it back in the cache. In a remote transaction, the commit is the client's.
                 val transactions = ShoppingTransactions.BEAN.getOrNull()
                 if (transactions == null) evictImage(id) else transactions.afterCommit { evictImage(id) }
                 updated
             }
             return mapOf("success" to success)
         } catch (e: Exception) {
-            // recusas da transação e do acesso respondem com o status delas
+            // transaction and access refusals answer with their own status
             if (e is TransactionConflictException || e is TransactionLimitExceededException || e is AccessDeniedException) throw e
             LOG.error("Updating product image", e)
             return RestResponse.status(500, mapOf("error" to "Failed to update image"))

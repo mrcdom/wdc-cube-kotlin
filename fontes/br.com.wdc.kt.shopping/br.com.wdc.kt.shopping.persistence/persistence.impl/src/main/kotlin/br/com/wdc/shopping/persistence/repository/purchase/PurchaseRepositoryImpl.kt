@@ -26,8 +26,8 @@ import org.jooq.impl.DSL
 
 class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
 
-    /** Grava a compra e, em cascata, os itens que vierem com ela. */
-    /** Insere a compra e, se ela entrou, os itens que traz (cada um com a projeção padrão do item). */
+    /** Writes the purchase and, in cascade, the items that come with it. */
+    /** Inserts the purchase and, if it went in, the items it carries (each with the item's default projection). */
     override suspend fun insert(bean: Purchase, projection: Purchase?): Boolean {
         if (bean.id == null) bean.id = dsl().nextval(SQ_PURCHASE)
         val inserted = QUERY.insert(bean, projection)
@@ -41,11 +41,11 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
         return inserted
     }
 
-    /** Atualiza a compra; os itens não são tocados — têm repositório próprio. */
+    /** Updates the purchase; the items are not touched — they have their own repository. */
     override suspend fun update(newBean: Purchase, oldBean: Purchase?, projection: Purchase?): Boolean {
-        val id = newBean.id ?: throw InvalidRequestException("update de compra exige o id")
+        val id = newBean.id ?: throw InvalidRequestException("purchase update requires the id")
         val prj = projection ?: ownFieldsProjection()
-        // sem projeção nem oldBean: compara com a entidade vazia, e só os campos com valor entram no UPDATE
+        // no projection nor oldBean: compares with the empty entity, and only fields with a value go into the UPDATE
         val base = oldBean ?: if (projection == null) Purchase() else null
 
         val step = dsl().update(EN_PURCHASE).set(EN_PURCHASE.ID, id)
@@ -64,13 +64,13 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
         return step.where(EN_PURCHASE.ID.eq(id)).execute() > 0
     }
 
-    /** Remove as compras do critério e, antes delas, os seus itens. */
+    /** Removes the purchases matching the criteria and, before them, their items. */
     override suspend fun delete(criteria: PurchaseCriteria): Int {
         if (criteria.criterions().none { it.isSet() }) {
-            throw InvalidRequestException("delete de compra exige ao menos um campo de critério informado")
+            throw InvalidRequestException("purchase delete requires at least one criteria field set")
         }
         val dsl = dsl()
-        // As chaves são resolvidas antes: o critério pode depender dos itens (productId), que saem primeiro.
+        // The keys are resolved first: the criteria may depend on the items (productId), which go first.
         val ids = dsl.select(EN_PURCHASE.ID).from(EN_PURCHASE).where(conditions(EN_PURCHASE, criteria, "xpi0"))
             .fetch(EN_PURCHASE.ID)
         if (ids.isEmpty()) {
@@ -91,7 +91,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
             if (offset > 0) step.offset(offset)
         }
 
-    /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
+    /** The criteria's projection, with the id ensured; without one, the default. */
     private fun projectionFrom(criteria: PurchaseCriteria): Purchase {
         val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
@@ -109,7 +109,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
             .setOrdering(::orderingOf)
             .addI64("id", { it.id }, { b, v -> b.id = v }, { it.ID })
             .addIlt("buyDate", { it.buyDate }, { b, v -> b.buyDate = v }, { it.BUYDATE })
-            // as relações são declaradas sob demanda: compra e item referenciam-se mutuamente
+            // the relations are declared on demand: purchase and item reference each other
             .lazy { qb ->
                 qb.addBeanField(
                     "user", { it.user }, { b, v -> b.user = v }, UserRepositoryImpl.QUERY,
@@ -130,7 +130,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
             }
             .build()
 
-        /** Toda ordenação por campo não único desempata pela chave. */
+        /** Every ordering by a non-unique field breaks ties by the key. */
         fun orderingOf(t: EnPurchase, criteria: Any?): List<SortField<*>> {
             val c = criteria as? PurchaseCriteria ?: return emptyList()
             return when (c.orderBy ?: return emptyList()) {
@@ -141,11 +141,11 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
             }
         }
 
-        /** Condição do critério da compra numa relação (o critério vem da coleção de projeção). */
+        /** Condition of the purchase criteria in a relation (the criteria comes from the projection collection). */
         fun applyConditions(cq: JsonChildQueryBuilder<*, EnPurchase>): Condition =
             cq.criteriaAs<PurchaseCriteria>()?.let { conditions(cq.childTable, it, cq.uniqueName("xpi")) } ?: DSL.noCondition()
 
-        /** A coluna é TIMESTAMP sem fuso; a convenção é guardar o instante em UTC. */
+        /** The column is TIMESTAMP without time zone; the convention is to store the instant in UTC. */
         private fun toColumn(instant: PlatformDateTime): LocalDateTime =
             LocalDateTime.ofInstant(instant.toJavaInstant(), ZoneOffset.UTC)
 
@@ -159,8 +159,8 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
         )
 
         /**
-         * Compras que contêm o produto pedido. O produto não é coluna da compra — está nos itens; o critério
-         * continua sendo um campo como os outros, e só muda onde a condição incide.
+         * Purchases containing the requested product. The product is not a purchase column — it is in the items;
+         * the criteria is still a field like the others, and only where the condition applies changes.
          */
         private fun existsItemMatching(t: EnPurchase, criteria: PurchaseCriteria, itemAlias: String): Condition? {
             if (!criteria.hasProductId()) {

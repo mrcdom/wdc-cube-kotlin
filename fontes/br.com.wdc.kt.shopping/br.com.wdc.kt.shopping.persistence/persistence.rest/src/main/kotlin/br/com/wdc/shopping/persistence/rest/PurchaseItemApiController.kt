@@ -12,12 +12,12 @@ import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
 import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
 
 /**
- * Endpoints REST de item de compra: o RPC do repositório, lido e escrito com o [PurchaseItemCodec] — o mesmo que
- * o cliente usa. O acesso é conferido aqui ([ApiSecurity]): permissão e, para quem não alcança os dados de todos,
- * restrição aos itens das próprias compras — na leitura e na escrita.
+ * Purchase item REST endpoints: the repository RPC, read and written with the [PurchaseItemCodec] — the same one
+ * the client uses. Access is checked here ([ApiSecurity]): permission and, for callers who don't reach everyone's
+ * data, restriction to the items of their own purchases — on reads and writes.
  *
- * **A senha do usuário da compra nunca sai por aqui**: é retirada da projeção pedida e de toda entidade
- * escrita, esteja a segurança ligada ou não.
+ * **The password of the purchase's user never leaves through here**: it is stripped from the requested
+ * projection and from every written entity, whether security is on or not.
  */
 internal object PurchaseItemApiController {
 
@@ -29,7 +29,7 @@ internal object PurchaseItemApiController {
         item?.purchase?.user?.password = null
     }
 
-    /** A conferência roda dentro da transação da escrita: enxerga a compra aberta nela e ainda não confirmada. */
+    /** The check runs inside the write's transaction: it sees a purchase opened in it and not yet committed. */
     private suspend fun requireOwnPurchase(owner: Long, purchaseId: Long?) {
         if (purchaseId == null || PurchaseRepository.BEAN.get().count(PurchaseCriteria().withPurchaseId(purchaseId).withUserId(owner)) == 0) {
             throw AccessDeniedException("Cannot write items of other user's purchase")
@@ -49,7 +49,7 @@ internal object PurchaseItemApiController {
         )
         rpc.rule = { op -> ApiSecurity.permission(ENTITY, op) }
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("purchase-item", op) }
-        // quem não alcança os dados de todos só alcança os itens das próprias compras, peça o que pedir
+        // callers who don't reach everyone's data only reach the items of their own purchases, whatever they ask for
         rpc.scope = { criteria, request -> ApiSecurity.ownerScope(request)?.let { criteria.userId.and().eq(it) } }
         rpc.sanitizeProjection = ::dropPassword
         rpc.sanitizeOutput = ::dropPassword
@@ -63,7 +63,7 @@ internal object PurchaseItemApiController {
                 if (id == null || repo().count(PurchaseItemCriteria().withPurchaseItemId(id).withUserId(owner)) == 0) {
                     throw AccessDeniedException("Cannot modify other user's purchase item")
                 }
-                // o item só pode ser movido para outra compra do próprio usuário
+                // an item can only be moved to another purchase of the same user
                 data.entity.purchaseId?.let { requireOwnPurchase(owner, it) }
             }
         }

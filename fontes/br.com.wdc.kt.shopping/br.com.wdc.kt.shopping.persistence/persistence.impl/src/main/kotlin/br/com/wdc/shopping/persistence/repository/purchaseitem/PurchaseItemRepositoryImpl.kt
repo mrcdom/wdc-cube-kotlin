@@ -26,9 +26,9 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
     override suspend fun insert(bean: PurchaseItem, projection: PurchaseItem?): Boolean = insertRow(bean, projection)
 
     override suspend fun update(newBean: PurchaseItem, oldBean: PurchaseItem?, projection: PurchaseItem?): Boolean {
-        val id = newBean.id ?: throw InvalidRequestException("update de item de compra exige o id")
+        val id = newBean.id ?: throw InvalidRequestException("purchase item update requires the id")
         val prj = projection ?: ownFieldsProjection()
-        // sem projeção nem oldBean: compara com a entidade vazia, e só os campos com valor entram no UPDATE
+        // no projection nor oldBean: compares with the empty entity, and only fields with a value go into the UPDATE
         val base = oldBean ?: if (projection == null) PurchaseItem() else null
 
         val step = dsl().update(EN_PURCHASEITEM).set(EN_PURCHASEITEM.ID, id)
@@ -58,7 +58,7 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
 
     override suspend fun delete(criteria: PurchaseItemCriteria): Int {
         if (criteria.criterions().none { it.isSet() }) {
-            throw InvalidRequestException("delete de item de compra exige ao menos um campo de critério informado")
+            throw InvalidRequestException("purchase item delete requires at least one criteria field set")
         }
         return dsl().deleteFrom(EN_PURCHASEITEM).where(conditions(EN_PURCHASEITEM, criteria, "xp0")).execute()
     }
@@ -74,7 +74,7 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
             if (offset > 0) step.offset(offset)
         }
 
-    /** A projeção do critério, com o id garantido; sem projeção, a padrão. */
+    /** The criteria's projection, with the id ensured; without one, the default. */
     private fun projectionFrom(criteria: PurchaseItemCriteria): PurchaseItem {
         val projection = criteria.projection ?: return ownFieldsProjection()
         if (projection.id == null) {
@@ -93,7 +93,7 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
             .addI64("id", { it.id }, { b, v -> b.id = v }, { it.ID })
             .addI32("amount", { it.amount }, { b, v -> b.amount = v }, { it.AMOUNT })
             .addF64("price", { it.price }, { b, v -> b.price = v }, { it.PRICE })
-            // as relações são declaradas sob demanda: compra e item referenciam-se mutuamente
+            // the relations are declared on demand: purchase and item reference each other
             .lazy { qb ->
                 qb.addBeanField(
                     "purchase", { it.purchase }, { b, v -> b.purchase = v }, PurchaseRepositoryImpl.QUERY,
@@ -116,7 +116,7 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
             }
             .build()
 
-        /** Toda ordenação por campo não único desempata pela chave. */
+        /** Every ordering by a non-unique field breaks ties by the key. */
         fun orderingOf(t: EnPurchaseitem, criteria: Any?): List<SortField<*>> {
             val c = criteria as? PurchaseItemCriteria ?: return emptyList()
             return when (c.orderBy ?: return emptyList()) {
@@ -127,11 +127,11 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
             }
         }
 
-        /** Condição do critério do item numa relação (o critério vem da coleção de projeção). */
+        /** Condition of the item criteria in a relation (the criteria comes from the projection collection). */
         fun applyConditions(cq: JsonChildQueryBuilder<*, EnPurchaseitem>): Condition =
             cq.criteriaAs<PurchaseItemCriteria>()?.let { conditions(cq.childTable, it, cq.uniqueName("xp")) } ?: DSL.noCondition()
 
-        /** Grava a linha do item — também usado pela cascata do insert da compra. */
+        /** Writes the item row — also used by the purchase insert cascade. */
         internal fun insertRow(bean: PurchaseItem, projection: PurchaseItem?): Boolean {
             bean.amount?.let(::checkAmount)
             if (bean.id == null) bean.id = BaseRepositoryImpl.dsl().nextval(SQ_PURCHASEITEM)
@@ -140,7 +140,7 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
 
         private fun checkAmount(amount: Int) {
             if (amount <= 0) {
-                throw InvalidRequestException("a quantidade do item deve ser maior que zero")
+                throw InvalidRequestException("the item quantity must be greater than zero")
             }
         }
 
@@ -157,8 +157,8 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
             )
 
         /**
-         * Itens cujas compras são do usuário pedido. O usuário é dono da compra, não do item: a condição
-         * incide sobre a compra, correlacionada pela chave estrangeira.
+         * Items whose purchases belong to the requested user. The user owns the purchase, not the item: the
+         * condition applies to the purchase, correlated by the foreign key.
          */
         private fun existsPurchaseOfUser(t: EnPurchaseitem, criteria: PurchaseItemCriteria, purchaseAlias: String): Condition? {
             if (!criteria.hasUserId()) {

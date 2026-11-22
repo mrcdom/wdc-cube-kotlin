@@ -9,10 +9,10 @@ import br.com.wdc.framework.domain.criteria.CriterionCodec
 import br.com.wdc.framework.domain.projection.ProjectionValues
 
 /**
- * Como [User] e [UserCriteria] trafegam — o mesmo codec no cliente e no servidor.
+ * How [User] and [UserCriteria] travel — the same codec on client and server.
  *
- * A senha trafega quando está na entidade (gravação) ou marcada na projeção; o que impede que ela saia do
- * servidor é o repositório com segurança, que a remove do que devolve.
+ * The password travels when it is in the entity (write) or marked in the projection; what keeps it from leaving
+ * the server is the secured repository, which removes it from what it returns.
  */
 class UserCodec : ModelCodec<User, UserCriteria> {
 

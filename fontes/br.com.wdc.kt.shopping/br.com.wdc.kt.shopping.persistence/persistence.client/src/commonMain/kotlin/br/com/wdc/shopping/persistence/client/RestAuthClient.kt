@@ -59,7 +59,7 @@ class RestAuthClient(private val config: RestConfig) {
     fun logout() {
         if (accessToken != null) {
             try {
-                // o servidor revoga a sessão pelo refresh token; sem ele, só responderia sucesso
+                // the server revokes the session by the refresh token; without it, it would only answer success
                 val body = config.toJson { out ->
                     out.beginObject()
                     refreshToken?.let { out.name("refreshToken").value(it) }
