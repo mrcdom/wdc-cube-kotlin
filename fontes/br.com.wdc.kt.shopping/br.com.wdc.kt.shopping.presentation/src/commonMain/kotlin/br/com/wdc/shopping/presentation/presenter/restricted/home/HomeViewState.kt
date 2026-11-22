@@ -2,17 +2,17 @@ package br.com.wdc.shopping.presentation.presenter.restricted.home
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.ViewState
+import br.com.wdc.framework.cube.ObservableViewState
 
-class HomeViewState : ViewState {
+class HomeViewState : ObservableViewState() {
 
-    var contentView: CubeView? = null
-    var productsPanelView: CubeView? = null
-    var purchasesPanelView: CubeView? = null
-    var nickName: String? = null
-    var cartItemCount: Int = 0
-    var errorCode: Int = 0
-    var errorMessage: String? = null
+    var contentView: CubeView? by field(null)
+    var productsPanelView: CubeView? by field(null)
+    var purchasesPanelView: CubeView? by field(null)
+    var nickName: String? by field(null)
+    var cartItemCount: Int by field(0)
+    var errorCode: Int by field(0)
+    var errorMessage: String? by field(null)
 
     override fun write(instanceId: String, json: ExtensibleObjectOutput) {
         json.beginObject()

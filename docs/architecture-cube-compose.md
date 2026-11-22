@@ -591,8 +591,7 @@ stateDiagram-v2
 
 ```kotlin
 fun onEnter() {
-    state.loading = true
-    update()  // → UI shows spinner
+    state.loading = true  // → UI shows spinner (the state is observed: no update() call)
 
     try {
         val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")
@@ -603,12 +602,10 @@ fun onEnter() {
             Routes.home(app)
         } else {
             state.errorMessage = "Username or password not recognized!"
-            update()
         }
     } catch (caught: Exception) {
         state.loading = false
         state.errorMessage = "Failed to communicate with the server. Check your connection."
-        update()
     }
 }
 ```
@@ -624,4 +621,4 @@ Button(
 }
 ```
 
-The presenter changes `state.loading`, calls `update()`, and Compose recomposes automatically. No callbacks, no observers, no explicit bindings.
+The presenter changes `state.loading`; the observed state (`ObservableViewState`) calls `update()`, and Compose recomposes. No callbacks, no observers, no explicit bindings.

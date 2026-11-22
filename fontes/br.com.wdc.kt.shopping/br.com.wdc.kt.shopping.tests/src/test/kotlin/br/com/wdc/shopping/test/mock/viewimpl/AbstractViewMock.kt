@@ -22,7 +22,10 @@ abstract class AbstractViewMock<P : CubePresenter>(
         released = true
     }
 
+    /** How many times the presenter asked for a repaint. */
+    var updates = 0
+
     override fun update() {
-        // NOOP
+        updates++
     }
 }

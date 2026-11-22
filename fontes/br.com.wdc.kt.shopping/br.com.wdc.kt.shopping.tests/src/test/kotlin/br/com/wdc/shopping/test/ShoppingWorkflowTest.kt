@@ -149,14 +149,19 @@ class ShoppingWorkflowTest : BasePresentationTest() {
             "ID in the cart <> ${DBReset.FLASH_DRIVE_2GB_ID}"
         )
 
+        // the presenter no longer calls update(): its observed state asks for the repaint
+        var updatesBefore = cartView.updates
         cartView.presenter.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 0)
+        assertTrue(cartView.updates > updatesBefore, "an alert repaints the cart")
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
         cartView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(cartView.state.errorCode == 1, "Invalid quantity indication")
         assertEquals("Some products have a quantity of less than one item. Unable to purchase.", cartView.state.errorMessage)
         cartView.state.errorCode = 0
 
+        updatesBefore = cartView.updates
         cartView.presenter.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 2)
+        assertTrue(cartView.updates > updatesBefore, "a new quantity repaints the cart")
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
         cartView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(cartView.state.errorCode == 0, "It must work without errors")

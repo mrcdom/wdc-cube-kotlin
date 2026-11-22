@@ -10,6 +10,14 @@ class CartItem {
     var price: Double = 0.0
     var quantity: Int = 0
 
+    fun copy(): CartItem = CartItem().also {
+        it.id = id
+        it.image = image
+        it.name = name
+        it.price = price
+        it.quantity = quantity
+    }
+
     companion object {
         fun create(product: ProductInfo, quantity: Int): CartItem {
             val item = CartItem()

@@ -1,13 +1,13 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.receipt
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.ViewState
+import br.com.wdc.framework.cube.ObservableViewState
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptForm
 
-class ReceiptViewState : ViewState {
+class ReceiptViewState : ObservableViewState() {
 
-    var notifySuccess: Boolean = false
-    var receipt: ReceiptForm? = null
+    var notifySuccess: Boolean by field(false)
+    var receipt: ReceiptForm? by field(null)
 
     override fun write(instanceId: String, json: ExtensibleObjectOutput) {
         json.beginObject()

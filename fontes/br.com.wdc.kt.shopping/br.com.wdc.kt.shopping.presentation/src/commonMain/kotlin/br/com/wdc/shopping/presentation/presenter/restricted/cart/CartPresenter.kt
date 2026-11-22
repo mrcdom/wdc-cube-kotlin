@@ -25,7 +25,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     // :: Public Instance Fields
 
-    val state = CartViewState()
+    val state = observed(CartViewState())
 
     // :: Internal Instance Fields
 
@@ -81,7 +81,6 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
                 LOG.warn("onModifyQuantity.alertProductNotFound: {}", state.errorMessage)
             } else {
                 state.items = cart.getCartItems()
-                update()
             }
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Modifying a product quantity", caught)
@@ -102,7 +101,6 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
                     Routes.home(app)
                 } else {
                     state.items = cart.getCartItems()
-                    update()
                 }
             }
         } catch (caught: Exception) {
@@ -156,49 +154,42 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         pendingErrorClear = ScheduledExecutor.BEAN.get().schedule({
             state.errorCode = 0
             state.errorMessage = null
-            update()
         }, 3.seconds)
     }
 
     private fun alertThereIsItemWhichValueIsLessThanOne() {
         state.errorCode = 1
         state.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
-        update()
         clearErrorAfterDelay()
     }
 
     private fun alertProductNotFound() {
         state.errorCode = 2
         state.errorMessage = "Product not found in the database."
-        update()
         clearErrorAfterDelay()
     }
 
     private fun alertPurchaseOfEmptyCart() {
         state.errorCode = 3
         state.errorMessage = "There must be at least one item in the cart to complete a purchase."
-        update()
         clearErrorAfterDelay()
     }
 
     private fun alertDatabaseOffline() {
         state.errorCode = 4
         state.errorMessage = "The database is currently offline. Please wait a moment and try again."
-        update()
         clearErrorAfterDelay()
     }
 
     private fun errorMalformedProductId() {
         state.errorCode = 5
         state.errorMessage = "Malformed product code."
-        update()
         clearErrorAfterDelay()
     }
 
     private fun errorMalformedQuantity() {
         state.errorCode = 6
         state.errorMessage = "Malformed quantity value."
-        update()
         clearErrorAfterDelay()
     }
 }

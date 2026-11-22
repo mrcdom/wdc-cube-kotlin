@@ -1,15 +1,15 @@
 package br.com.wdc.shopping.presentation.presenter.open.login
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.ViewState
+import br.com.wdc.framework.cube.ObservableViewState
 
-class LoginViewState : ViewState {
+class LoginViewState : ObservableViewState() {
 
-    var userName: String? = null
-    var password: String? = null
-    var errorCode: Int = 0
-    var errorMessage: String? = null
-    var loading: Boolean = false
+    var userName: String? by field(null)
+    var password: String? by field(null)
+    var errorCode: Int by field(0)
+    var errorMessage: String? by field(null)
+    var loading: Boolean by field(false)
 
     override fun write(instanceId: String, json: ExtensibleObjectOutput) {
         json.beginObject()
