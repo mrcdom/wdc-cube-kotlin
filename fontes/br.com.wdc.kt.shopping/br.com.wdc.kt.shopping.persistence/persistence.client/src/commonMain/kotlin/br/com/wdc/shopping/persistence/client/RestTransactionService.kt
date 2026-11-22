@@ -42,7 +42,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
 
     override suspend fun <T> required(work: suspend (TransactionContext) -> T): T {
         val existing = current.getOrNull()
-        return if (existing != null) work(existing) else runInNewTx(work)
+        return if (existing != null) participate(existing, work) else runInNewTx(work)
     }
 
     override suspend fun <T> requiresNew(work: suspend (TransactionContext) -> T): T {
@@ -58,10 +58,13 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
 
     override suspend fun <T> mandatory(work: suspend (TransactionContext) -> T): T {
         val state = current.getOrNull() ?: throw TransactionRequiredException("mandatory: nenhuma transação remota ativa")
-        return work(state)
+        return participate(state, work)
     }
 
-    override suspend fun <T> supports(work: suspend (TransactionContext) -> T): T = work(current.getOrNull() ?: NoTx)
+    override suspend fun <T> supports(work: suspend (TransactionContext) -> T): T {
+        val state = current.getOrNull() ?: return work(NoTx)
+        return participate(state, work)
+    }
 
     override suspend fun <T> notSupported(work: suspend (TransactionContext) -> T): T {
         val outer = current.getOrNull()
@@ -83,6 +86,20 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
     override suspend fun afterCommit(task: suspend () -> Unit) {
         val state = current.getOrNull()
         if (state != null) state.afterCommit.add(task) else AfterCommitTasks.runAll(listOf(task))
+    }
+
+    /**
+     * Executa [work] como participante da transação remota corrente. A falha condena a transação, mesmo que quem
+     * chamou a capture e siga: é o que faz a transação local (`TransactionServiceImpl`), e sem isso o commit
+     * confirmaria no servidor o que o participante gravou antes de falhar.
+     */
+    private suspend fun <T> participate(state: TxState, work: suspend (TransactionContext) -> T): T {
+        try {
+            return work(state)
+        } catch (e: Throwable) {
+            state.rollbackOnly = true
+            throw e
+        }
     }
 
     private suspend fun <T> runInNewTx(work: suspend (TransactionContext) -> T): T {

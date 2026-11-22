@@ -275,6 +275,32 @@ class RemoteTransactionRestTest {
     }
 
     @Test
+    fun participantThatThrows_condemnsTheTransaction_evenIfTheCallerCarriesOn() = runBlocking {
+        val service = tx()
+        for (join in listOf<suspend (suspend () -> Unit) -> Unit>(
+            { block -> service.required { block() } },
+            { block -> service.mandatory { block() } },
+            { block -> service.supports { block() } },
+        )) {
+            val before = product("rtx-participant-before")
+            val inside = product("rtx-participant-inside")
+            var condemned = false
+            service.required { outer ->
+                env.productRepo.insert(before)
+                try {
+                    join { env.productRepo.insert(inside); throw IllegalStateException("falha no participante") }
+                } catch (_: IllegalStateException) {
+                    // quem chamou captura e segue: a transação já está condenada, como no servidor
+                }
+                condemned = outer.isRollbackOnly()
+            }
+            assertTrue(condemned, "o participante que falhou marca rollback-only")
+            assertFalse(exists(before))
+            assertFalse(exists(inside))
+        }
+    }
+
+    @Test
     fun requiresNew_runsInItsOwnTransaction() = runBlocking {
         val service = tx()
         val outer = product("rtx-outer")
