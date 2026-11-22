@@ -23,15 +23,42 @@ import mui.system.sx
 import react.FC
 import react.Props
 import react.ReactNode
-import react.dom.events.KeyboardEvent
+import react.RefCallback
+import react.dom.events.KeyboardEventHandler
+import react.dom.events.MouseEventHandler
 import react.dom.html.ReactHTML.form
-import react.dom.onChange
 import react.useEffect
 import react.useState
 import web.cssom.*
+import web.html.HTMLButtonElement
+import web.html.HTMLDivElement
 import web.html.HTMLInputElement
 
 class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-view", presenter) {
+
+    // :: Element refs — the fields are uncontrolled: typing repaints nothing, and the values are read on submit
+
+    private var userNameInput: HTMLInputElement? = null
+    private var passwordInput: HTMLInputElement? = null
+    private val userNameRef = RefCallback<HTMLInputElement> { userNameInput = it }
+    private val passwordRef = RefCallback<HTMLInputElement> { passwordInput = it }
+
+    // :: Emitters — created once per view, so they are the same function on every render
+
+    private val emitOnEnter: () -> Unit = {
+        val userName = userNameInput?.value ?: ""
+        val password = passwordInput?.value ?: ""
+        safeCall { presenter.onEnter(userName, password) }
+    }
+
+    private val onEnterClick: MouseEventHandler<HTMLButtonElement> = { emitOnEnter() }
+
+    private val onPasswordKeyDown: KeyboardEventHandler<HTMLDivElement> = { e ->
+        if (e.key == "Enter") {
+            e.preventDefault()
+            emitOnEnter()
+        }
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -44,8 +71,6 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
 
         val state = presenter.state
         val loading = state.loading
-        var userName by useState(state.userName ?: "")
-        var password by useState(state.password ?: "")
 
         // Full-screen gradient background
         Box {
@@ -121,21 +146,18 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                         TextField {
                             fullWidth = true
                             label = ReactNode("Username")
-                            value = userName
+                            inputRef = userNameRef
+                            defaultValue = state.userName ?: ""
                             disabled = loading
                             asDynamic().autoComplete = "off"
-                            onChange = { e ->
-                                val v = (e.target as HTMLInputElement).value
-                                userName = v
-                                state.userName = v
-                            }
                         }
 
                         // Password
                         TextField {
                             fullWidth = true
                             label = ReactNode("Password")
-                            value = password
+                            inputRef = passwordRef
+                            defaultValue = state.password ?: ""
                             asDynamic().type = "text"
                             asDynamic().autoComplete = "off"
                             asDynamic().InputProps = js("""({
@@ -144,16 +166,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                                 }
                             })""")
                             disabled = loading
-                            onChange = { e ->
-                                val v = (e.target as HTMLInputElement).value
-                                password = v
-                                state.password = v
-                            }
-                            onKeyDown = { e: KeyboardEvent<*> ->
-                                if (e.key == "Enter") {
-                                    safeCall { presenter.onEnter() }
-                                }
-                            }
+                            onKeyDown = onPasswordKeyDown
                         }
 
                         // Error message
@@ -172,7 +185,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             variant = ButtonVariant.contained
                             disabled = loading
                             asDynamic().type = "button"
-                            onClick = { safeCall { presenter.onEnter() } }
+                            onClick = onEnterClick
                             sx {
                                 height = 48.px
                                 borderRadius = 12.px

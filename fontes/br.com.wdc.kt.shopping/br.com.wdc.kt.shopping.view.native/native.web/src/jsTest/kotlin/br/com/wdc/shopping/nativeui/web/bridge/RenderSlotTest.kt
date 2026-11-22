@@ -49,6 +49,25 @@ class RenderSlotTest {
         }
     }
 
+    /** A view whose UI state lives in a field, changed by an emitter that calls [forceUpdate]. */
+    private class CounterView : ReactCubeView("counter", TestPresenter()) {
+        var renders = 0
+        private var count = 0
+        val increment: () -> Unit = {
+            count++
+            forceUpdate()
+        }
+
+        override val component = FC<Props> {
+            var rev by useState(revision)
+            useEffect(this@CounterView) {
+                onUpdate = { rev = revision }
+            }
+            renders++
+            div { +"count $count" }
+        }
+    }
+
     private var root: Root? = null
 
     @AfterTest
@@ -106,5 +125,27 @@ class RenderSlotTest {
         settle()
         assertEquals(1, second.renders)
         assertEquals("second rev 0", container.textContent?.substringAfter("parent 1"))
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    @Test
+    fun forceUpdate_repaintsTheViewItself_withoutTheParent() = GlobalScope.promise {
+        val view = CounterView()
+        var parentRenders = 0
+        val parent = FC<Props> {
+            parentRenders++
+            RenderSlot { this.view = view }
+        }
+        val container = document.createElement("div")
+        document.body!!.appendChild(container)
+        root = createRoot(container.unsafeCast<Element>()).also { it.render(parent.create()) }
+        settle()
+        assertEquals("count 0", container.textContent)
+
+        view.increment()
+        settle()
+        assertEquals("count 1", container.textContent)
+        assertEquals(2, view.renders)
+        assertEquals(1, parentRenders, "the parent is not repainted")
     }
 }

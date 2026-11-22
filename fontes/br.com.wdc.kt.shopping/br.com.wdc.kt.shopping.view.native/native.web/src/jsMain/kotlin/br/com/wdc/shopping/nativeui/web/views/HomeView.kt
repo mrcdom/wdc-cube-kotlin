@@ -30,13 +30,30 @@ import react.FC
 import react.Props
 import react.ReactNode
 import react.create
+import react.dom.events.MouseEventHandler
+import react.dom.events.SyntheticEvent
 import react.useEffect
 import react.useState
 import web.cssom.*
+import web.html.HTMLButtonElement
 
 private const val COMPACT_BREAKPOINT = 518
 
 class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view", presenter) {
+
+    /** The tab shown in the compact layout: UI state of this view, changed by [onTabChange]. */
+    private var selectedTab = 0
+
+    // :: Emitters — created once per view, so they are the same function on every render
+
+    private val onExit: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onExit() } }
+
+    private val onOpenCart: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onOpenCart() } }
+
+    private val onTabChange: (SyntheticEvent<*, *>, Any) -> Unit = { _, value ->
+        selectedTab = value as Int
+        forceUpdate()
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -48,7 +65,6 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
         val unused = rev
 
         val state = presenter.state
-        var selectedTab by useState(0)
         var isCompact by useState(kotlinx.browser.window.innerWidth < COMPACT_BREAKPOINT)
 
         // Track window width for responsiveness
@@ -121,7 +137,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                             // Logout icon (subtle, near brand)
                             IconButton {
-                                onClick = { safeCall { presenter.onExit() } }
+                                onClick = onExit
                                 sx {
                                     width = 28.px
                                     height = 28.px
@@ -157,7 +173,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                                 Button {
                                     variant = ButtonVariant.contained
-                                    onClick = { safeCall { presenter.onOpenCart() } }
+                                    onClick = onOpenCart
                                     sx {
                                         backgroundColor = ShoppingColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
                                         borderRadius = 10.px
@@ -216,7 +232,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                         // Logout icon (subtle, near brand)
                         IconButton {
-                            onClick = { safeCall { presenter.onExit() } }
+                            onClick = onExit
                             sx {
                                 width = 32.px
                                 height = 32.px
@@ -253,7 +269,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                             Button {
                                 variant = ButtonVariant.contained
                                 asDynamic().disableElevation = true
-                                onClick = { safeCall { presenter.onOpenCart() } }
+                                onClick = onOpenCart
                                 sx {
                                     backgroundColor = ShoppingColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
                                     borderRadius = 10.px
@@ -311,7 +327,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                     Tabs {
                         value = selectedTab
-                        onChange = { _, newValue -> selectedTab = newValue as Int }
+                        onChange = onTabChange
                         sx {
                             marginBottom = 4.px
                             minHeight = 36.px

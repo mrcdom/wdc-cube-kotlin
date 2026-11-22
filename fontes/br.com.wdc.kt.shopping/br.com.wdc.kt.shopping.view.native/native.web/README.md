@@ -68,6 +68,25 @@ RenderSlot { view = contentView }
 
 `RenderSlot` is memoized: a parent repaint does not repaint the view in its slot. Cube views are independent of each other — a view repaints itself when its own view state changes (its component subscribes to `onUpdate`), and the slot repaints only when the parent puts a different view in it.
 
+### Emitters (event handlers)
+
+Event handlers are properties of the view class, created once per view — the same function on every render, like the `readonly emitXxx` fields of the remote React client:
+
+```kotlin
+class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("receipt-view", presenter) {
+    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onOpenProducts() } }
+
+    override val component = FC<Props> {
+        Button { onClick = onOpenProducts }
+    }
+}
+```
+
+- An emitter does not capture values of the render: it reads what it needs from the presenter state, from a field of the view, or from an element ref, when it runs.
+- UI state that belongs to the view (a quantity being chosen, the selected tab) lives in a field; the emitter changes it and calls `forceUpdate()`, which repaints this view only.
+- List items get their own emitters, kept per key by `EmitterCache` (`itemEmitters[item.id].remove`); `retainOnly(keys)` drops the keys no longer shown.
+- Text fields are uncontrolled where the value is only needed on submit (login): `inputRef` + `defaultValue`, read when the emitter runs, so typing repaints nothing.
+
 ### Web Worker (optional)
 
 The project supports running the presenters in a separate **Web Worker**, isolating the business logic from the rendering thread. In this mode:

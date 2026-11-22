@@ -61,6 +61,15 @@ abstract class ReactCubeView(
         onUpdate?.invoke()
     }
 
+    /**
+     * Repaints this view only, without going through the presenter: for UI state the view keeps in its own fields
+     * (a quantity being chosen, the selected tab), changed by an emitter. The remote React client's
+     * `BaseViewClass.forceUpdate` does the same.
+     */
+    protected fun forceUpdate() {
+        notifyDirty()
+    }
+
     /** The React functional component that renders this view. */
     abstract val component: FC<Props>
 

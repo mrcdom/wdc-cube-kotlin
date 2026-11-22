@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.shopping.nativeui.web.bridge.EmitterCache
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
@@ -27,15 +28,33 @@ import react.FC
 import react.Props
 import react.ReactNode
 import react.dom.html.ReactHTML.div
+import react.dom.events.MouseEventHandler
 import react.useEffect
 import react.useRef
 import react.useState
 import web.cssom.*
+import web.html.HTMLButtonElement
 import web.html.HTMLDivElement
 
 private const val ITEM_HEIGHT_PX = 76
 
 class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ReactCubeView("purchases-panel-view", presenter) {
+
+    // :: Emitters — created once per view (and once per list item), so they are the same function on every render
+
+    private val openReceipt = EmitterCache<Long, MouseEventHandler<HTMLButtonElement>> { id ->
+        { safeCall { presenter.onOpenReceipt(id) } }
+    }
+
+    private val onPreviousPage: MouseEventHandler<HTMLButtonElement> = {
+        val page = presenter.state.page - 1
+        safeCall { presenter.onPageChange(page) }
+    }
+
+    private val onNextPage: MouseEventHandler<HTMLButtonElement> = {
+        val page = presenter.state.page + 1
+        safeCall { presenter.onPageChange(page) }
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -138,6 +157,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                         direction = responsive(StackDirection.column)
                         spacing = responsive(1)
 
+                        openReceipt.retainOnly(purchases.map { it.id })
                         for (purchase in purchases) {
                             Card {
                                 key = "${purchase.id}"
@@ -148,7 +168,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                                 }
 
                                 CardActionArea {
-                                    onClick = { safeCall { presenter.onOpenReceipt(purchase.id) } }
+                                    onClick = openReceipt[purchase.id]
 
                                     CardContent {
                                         sx { padding = 14.px }
@@ -214,7 +234,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
 
                     IconButton {
                         disabled = state.page <= 0
-                        onClick = { safeCall { presenter.onPageChange(state.page - 1) } }
+                        onClick = onPreviousPage
                         ChevronLeft {}
                     }
 
@@ -226,7 +246,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
 
                     IconButton {
                         disabled = state.page >= totalPages - 1
-                        onClick = { safeCall { presenter.onPageChange(state.page + 1) } }
+                        onClick = onNextPage
                         ChevronRight {}
                     }
                 }
