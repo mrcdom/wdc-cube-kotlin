@@ -50,7 +50,6 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
             }
 
             view = createView?.invoke(this)
-            update()
         }
 
         ownerSlot?.setView(view!!)

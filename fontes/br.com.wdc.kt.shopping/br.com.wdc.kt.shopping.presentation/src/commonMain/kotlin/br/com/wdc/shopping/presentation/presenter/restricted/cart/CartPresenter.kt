@@ -45,7 +45,6 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         if (initialization) {
             ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
             view = createView?.invoke(this)
-            update()
         }
 
         ownerSlot?.setView(view!!)

@@ -138,7 +138,9 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 }
 ```
 
-**What the fields cannot see:** a change *inside* an object already assigned — an element added to a mutable list, a field of a nested object, or an object shared with someone who mutates it. Assign a new value (a copy), or call `state.changed()`. `CartManager.getCartItems()` returns copies for this reason. `update()` is still there for what is not in the state (the view was just created, or it shows something computed in `commitComputedState()`).
+**What the fields cannot see:** a change *inside* an object already assigned — an element added to a mutable list, a field of a nested object, or an object shared with someone who mutates it. Assign a new value (a copy), or call `state.changed()`. `CartManager.getCartItems()` returns copies for this reason.
+
+A new view needs no `update()` either: every view layer paints the current state when the view is created. Keep in the state what the view shows — the Storefront home keeps the cart count as a field, set by the cart's change listener — and the presenter never calls `update()`. It is still there for state the view reads from somewhere else.
 
 ### CubeView
 

@@ -52,7 +52,6 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
             }
 
             view = createView?.invoke(this)
-            update()
         }
 
         ownerSlot?.setView(view!!)

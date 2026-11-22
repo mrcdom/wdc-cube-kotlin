@@ -90,7 +90,6 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             onCartCommitListenerRemover = cart!!.addCommitListener(::onCartCommited)
             onCartChangeListenerRemover = cart!!.addChangeListener(::onCartChanged)
             app.cart = cart
-            update()
         }
 
         if (ownerSlot == null) {
@@ -113,10 +112,6 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         // NOOP
     }
 
-    override fun commitComputedState() {
-        state.cartItemCount = cart?.getItemCount() ?: 0
-    }
-
     // :: User Actions
 
     private suspend fun onCartCommited() {
@@ -125,7 +120,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     }
 
     private fun onCartChanged() {
-        update()
+        state.cartItemCount = cart?.getItemCount() ?: 0
     }
 
     suspend fun onOpenReceipt(purchaseId: Long?) {
