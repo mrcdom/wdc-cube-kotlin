@@ -100,6 +100,9 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
         ownerSlot!!.setView(view!!)
 
+        // the page the address asks for; the panel loads it now, or once its view tells its capacity
+        purchasesPanel?.restorePage(HomeKeys(app, intent).purchasesPage)
+
         if (deepest) {
             setContentView(null)
             reloadPurchasesIfNeeded()
@@ -111,7 +114,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     }
 
     override fun publishParameters(intent: CubeIntent) {
-        // NOOP
+        HomeKeys(app, intent).purchasesPage = purchasesPanel?.state?.page ?: 0
     }
 
     // :: User Actions
