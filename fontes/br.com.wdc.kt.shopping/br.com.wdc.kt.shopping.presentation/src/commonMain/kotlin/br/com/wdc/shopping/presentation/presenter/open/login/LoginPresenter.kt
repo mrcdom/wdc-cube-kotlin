@@ -101,7 +101,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
                     app.sessionStorage.set("authState", authOut.resultString())
                 }
 
-                HomeKeys(app).go()
+                HomeKeys(app).flip()
             }
         } catch (caught: Exception) {
             state.loading = false

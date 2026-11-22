@@ -34,7 +34,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
         val keys = ReceiptKeys(app, intent)
         val pPurchaseId = keys.purchaseId ?: purchaseId ?: run {
             // no usable id in the address: nothing to show; go to the home, with the intent in transit
-            HomeKeys(app, intent).go()
+            HomeKeys(app, intent).flip()
             return false
         }
         state.notifySuccess = keys.purchaseMade
@@ -72,7 +72,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     suspend fun onOpenProducts() {
         try {
-            HomeKeys(app).go()
+            HomeKeys(app).flip()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Going to restricted home place", caught)
         }

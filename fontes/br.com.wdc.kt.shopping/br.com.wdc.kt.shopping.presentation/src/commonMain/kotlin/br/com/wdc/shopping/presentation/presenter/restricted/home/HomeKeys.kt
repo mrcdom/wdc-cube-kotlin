@@ -1,23 +1,26 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home
 
 import br.com.wdc.framework.cube.CubeIntent
+import br.com.wdc.framework.cube.CubeTreePlace
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.Routes
 
 /** The keys of the restricted branch (home and the places inside it). See [RootKeys]. */
-open class HomeKeys(app: ShoppingApplication, intent: CubeIntent? = null) : RootKeys(app, intent) {
+open class HomeKeys protected constructor(app: ShoppingApplication, intent: CubeIntent?, place: CubeTreePlace) :
+    RootKeys(app, intent, place) {
+
+    constructor(app: ShoppingApplication, intent: CubeIntent? = null) : this(app, intent, PLACE)
 
     companion object {
         const val PREFIX = "hm"
+
+        val PLACE: CubeTreePlace = RootKeys.PLACE.child("home", ::HomePresenter)
     }
 
     private object P {
         /** The page of the purchases panel (0 is the first). */
         const val PURCHASES_PAGE = "$PREFIX-page"
     }
-
-    override suspend fun go(): Boolean = Routes.home(app, intent)
 
     /** The page of the purchases panel: 0 or more; the first page (the default) leaves the address. */
     var purchasesPage: Int

@@ -1,7 +1,11 @@
 package br.com.wdc.shopping.test
 
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.framework.cube.CubeKeys
+import br.com.wdc.framework.cube.CubeTreePlace
+import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootKeys
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
@@ -16,7 +20,10 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-/** The keys classes: unique prefixes, getters that never trust the address, and what a bad address leads to. */
+/**
+ * The keys classes: unique prefixes, one keys class per place with the class tree as the place tree, getters that
+ * never trust the address, and what a bad address leads to.
+ */
 class PlaceKeysTest : BasePresentationTest() {
 
     private val presentationSources = File("../br.com.wdc.kt.shopping.presentation/src")
@@ -44,14 +51,41 @@ class PlaceKeysTest : BasePresentationTest() {
     }
 
     @Test
-    fun everyPlace_hasItsOwnKeys_evenWithoutNamesOfItsOwn() {
-        // every place has <Place>Keys
-        val expected = Routes.Place.entries.map(::keysNameOf).toSet()
-        val found = presentationSources.walkTopDown().filter { it.isFile && it.name.endsWith("Keys.kt") }.map { it.nameWithoutExtension }.toSet()
-        assertEquals(emptySet<String>(), expected - found, "places without keys")
+    fun eachPlace_isDeclaredByOneKeysClass_childOfTheKeysOfItsParent() {
+        // the keys classes, by the source files: CubeKeys is in another module, so a scan of the classpath would not do
+        val keysClasses = presentationSources.walkTopDown().filter { it.isFile && it.name.endsWith("Keys.kt") }.map { file ->
+            val pkg = Regex("""^package ([\w.]+)""", RegexOption.MULTILINE).find(file.readText())!!.groupValues[1]
+            Class.forName("$pkg.${file.nameWithoutExtension}")
+        }.toList()
+        keysClasses.forEach { assertTrue(CubeKeys::class.java.isAssignableFrom(it), "${it.simpleName} does not extend CubeKeys") }
+
+        val placeOf = keysClasses.associateWith(::placeOf)
+        assertEquals(placeOf.size, placeOf.values.toSet().size, "a place declared by more than one keys class")
+        assertEquals(ShoppingApplication.PLACES.toSet(), placeOf.values.toSet(), "the places of the keys are the places of the application")
+
+        for ((keys, place) in placeOf) {
+            if (keys == RootKeys::class.java) {
+                assertNull(place.parent, "the root keys declare the root")
+            } else {
+                assertSame(placeOf(keys.superclass), place.parent, "${keys.simpleName}: its place must be a child of the place of the keys it extends")
+            }
+            assertEquals(place, keysOf(keys).place, "${keys.simpleName}: its instances go to the place it declares")
+        }
     }
 
-    private fun keysNameOf(place: Routes.Place) = place.name.lowercase().replaceFirstChar { it.uppercase() } + "Keys"
+    /** The `PLACE` a keys class declares in its companion (Kotlin keeps it in a static field of the class). */
+    private fun placeOf(keys: Class<*>): CubeTreePlace =
+        keys.getDeclaredField("PLACE").apply { isAccessible = true }.get(null) as CubeTreePlace
+
+    private fun keysOf(keys: Class<*>): CubeKeys<*> =
+        keys.getConstructor(ShoppingApplication::class.java, CubeIntent::class.java).newInstance(app, CubeIntent()) as CubeKeys<*>
+
+    @Test
+    fun anAddress_resolvesToItsPlace_andAnUnknownOneToTheRoot() {
+        for (place in ShoppingApplication.PLACES) assertSame(place, ShoppingApplication.placeOf(place.placeName))
+        assertSame(RootKeys.PLACE, ShoppingApplication.placeOf("nowhere"))
+        assertSame(RootKeys.PLACE, ShoppingApplication.placeOf(null))
+    }
 
     @Test
     fun getters_neverTrustTheAddress() {
@@ -78,7 +112,7 @@ class PlaceKeysTest : BasePresentationTest() {
     }
 
     private suspend fun signIn() {
-        Routes.login(app)
+        LoginKeys(app).flip()
         val loginView = LoginViewMock.cast(app.getRootView()!!.state.contentView)
         loginView.state.userName = "admin"
         loginView.state.password = "admin"
@@ -91,7 +125,7 @@ class PlaceKeysTest : BasePresentationTest() {
     fun anAddressWithoutAUsableId_redirectsToTheHome() = runBlocking {
         signIn()
         for (address in listOf("product?pr-id=abc", "product", "receipt?rc-id=-1", "receipt", "public")) {
-            app.go(address)
+            app.flip(address)
             assertNull(home().state.contentView, "$address: the home shows no inner place")
             assertEquals("home", app.newIntent().toString(), address)
         }
@@ -100,12 +134,12 @@ class PlaceKeysTest : BasePresentationTest() {
     @Test
     fun navigatingFromTheState_putsTheNewNamesInTheAddress() = runBlocking {
         signIn()
-        ProductKeys(app).apply { productId = DBReset.FLASH_DRIVE_2GB_ID }.go()
+        ProductKeys(app).apply { productId = DBReset.FLASH_DRIVE_2GB_ID }.flip()
         val productView = ProductViewMock.cast(home().state.contentView)
         assertEquals(DBReset.FLASH_DRIVE_2GB_ID, productView.state.product!!.id)
         assertEquals("product?pr-id=${DBReset.FLASH_DRIVE_2GB_ID}", app.newIntent().toString())
 
-        app.go("receipt?rc-id=${DBReset.ADMIN_SECOND_PURCHASE_ID}")
+        app.flip("receipt?rc-id=${DBReset.ADMIN_SECOND_PURCHASE_ID}")
         assertEquals("receipt?rc-id=${DBReset.ADMIN_SECOND_PURCHASE_ID}", app.newIntent().toString())
     }
 
@@ -113,7 +147,7 @@ class PlaceKeysTest : BasePresentationTest() {
     fun thePurchasesPage_isInTheAddress_andComesBackFromIt() = runBlocking {
         signIn()
         // the address brings page 1 before the panel knows its capacity: the first capacity keeps it
-        app.go("home?hm-page=1")
+        app.flip("home?hm-page=1")
         val panel = PurchasesPanelViewMock.cast(home().state.purchasesPanelView)
         panel.presenter.onItemSizeCapacityChanged(1) // admin has two purchases: one per page
         assertEquals(1, panel.state.page)
@@ -132,9 +166,9 @@ class PlaceKeysTest : BasePresentationTest() {
         // the page survives a trip to another place and back
         panel.presenter.onItemSizeCapacityChanged(1)
         panel.presenter.onPageChange(1)
-        ProductKeys(app).apply { productId = DBReset.FLASH_DRIVE_2GB_ID }.go()
+        ProductKeys(app).apply { productId = DBReset.FLASH_DRIVE_2GB_ID }.flip()
         assertTrue(app.newIntent().toString().contains("hm-page=1"), app.newIntent().toString())
-        HomeKeys(app).go()
+        HomeKeys(app).flip()
         assertEquals(1, PurchasesPanelViewMock.cast(home().state.purchasesPanelView).state.page)
     }
 }

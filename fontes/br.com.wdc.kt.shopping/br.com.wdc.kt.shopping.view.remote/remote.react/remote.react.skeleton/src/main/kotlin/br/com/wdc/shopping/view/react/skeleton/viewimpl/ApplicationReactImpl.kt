@@ -221,9 +221,9 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
             if (newInt.place == null) {
                 newInt.place = getRootPlace()
             }
-            go(newInt)
+            flip(newInt)
         } else {
-            go(intent)
+            flip(intent)
         }
     }
 

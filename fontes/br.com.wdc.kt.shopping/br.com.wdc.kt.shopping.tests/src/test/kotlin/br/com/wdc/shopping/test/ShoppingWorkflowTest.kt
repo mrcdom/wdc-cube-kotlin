@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.test
 
-import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.mock.viewimpl.CartViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.LoginViewMock
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.Test
 class ShoppingWorkflowTest : BasePresentationTest() {
 
     private suspend fun gotoRestricted(): RestrictedViewMock {
-        Routes.login(app)
+        LoginKeys(app).flip()
 
         val rootView = app.getRootView()!!
 
@@ -51,7 +52,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     @Test
     fun buyingWithAnEmptyCart_saysTheCartIsEmpty() = runBlocking {
         gotoRestricted()
-        Routes.cart(app)
+        CartKeys(app).flip()
         val home = RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
         val cartView = CartViewMock.cast(home.state.contentView)
         cartView.presenter.onBuy()
@@ -127,7 +128,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
 
     @Test
     fun testBuyProduct() = runBlocking {
-        Routes.login(app)
+        LoginKeys(app).flip()
 
         val rootView = app.getRootView()!!
 

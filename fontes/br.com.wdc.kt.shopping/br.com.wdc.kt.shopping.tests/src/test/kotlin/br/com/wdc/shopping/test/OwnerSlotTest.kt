@@ -5,7 +5,8 @@ import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 import br.com.wdc.shopping.scripts.sgbd.DBReset
@@ -37,7 +38,7 @@ class OwnerSlotTest : BasePresentationTest() {
     }
 
     private suspend fun gotoRestricted(): RestrictedViewMock {
-        Routes.login(app)
+        LoginKeys(app).flip()
         val loginView = LoginViewMock.cast(app.getRootView()!!.state.contentView)
         loginView.state.userName = "admin"
         loginView.state.password = "admin"
@@ -47,7 +48,7 @@ class OwnerSlotTest : BasePresentationTest() {
 
     @Test
     fun login_followsTheSlotOfferedNow() = runBlocking {
-        Routes.login(app)
+        LoginKeys(app).flip()
         val loginView = LoginViewMock.cast(app.getRootView()!!.state.contentView)
         assertSame(loginView, reapplyWithANewSlot(loginView.presenter))
     }
@@ -70,7 +71,7 @@ class OwnerSlotTest : BasePresentationTest() {
     @Test
     fun cart_followsTheSlotOfferedNow() = runBlocking {
         gotoRestricted()
-        Routes.cart(app)
+        CartKeys(app).flip()
         val cartView = CartViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.state.contentView).state.contentView)
         assertSame(cartView, reapplyWithANewSlot(cartView.presenter))
     }

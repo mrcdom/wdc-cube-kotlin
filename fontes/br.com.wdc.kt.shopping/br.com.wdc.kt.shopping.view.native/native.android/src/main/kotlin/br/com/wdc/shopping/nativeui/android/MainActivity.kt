@@ -22,6 +22,7 @@ import br.com.wdc.shopping.nativeui.android.views.*
 import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
+import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
@@ -62,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
         val app = AndroidNativeShoppingApplication(AndroidPersistentSessionStorage(prefs))
         ViewUpdateScheduler.initialize { app }
-        runBlocking { app.go(app.getRootPlace().placeName) }
+        runBlocking { RootKeys(app).flip() }
 
         val rootPresenter = app.getRootPresenter()
         val rootView = (rootPresenter?.view() as? AbstractViewAndroid<*>)?.rootView

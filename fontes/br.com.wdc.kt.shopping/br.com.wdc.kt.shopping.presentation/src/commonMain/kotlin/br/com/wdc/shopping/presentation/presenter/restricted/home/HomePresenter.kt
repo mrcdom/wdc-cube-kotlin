@@ -71,7 +71,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (app.subject == null) {
-            LoginKeys(app, intent).go() // redirect, with the intent in transit
+            LoginKeys(app, intent).flip() // redirect, with the intent in transit
             return false
         }
 
@@ -136,7 +136,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
                 return
             }
 
-            ReceiptKeys(app).apply { this.purchaseId = purchaseId }.go()
+            ReceiptKeys(app).apply { this.purchaseId = purchaseId }.flip()
         } catch (caught: Exception) {
             if (caught is PurchaseNotFoundException) {
                 alertPurchaseNotFound()
@@ -160,7 +160,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
                 return
             }
 
-            ProductKeys(app).apply { this.productId = productId }.go()
+            ProductKeys(app).apply { this.productId = productId }.flip()
         } catch (caught: Exception) {
             if (caught is ProductNotFoundException) {
                 alertProductNotFound()
@@ -178,7 +178,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     suspend fun onOpenCart() {
         try {
-            CartKeys(app).go()
+            CartKeys(app).flip()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Trying to go to cart place", caught)
         }
@@ -193,7 +193,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             setContentView(null)
             reloadPurchasesIfNeeded()
 
-            LoginKeys(app).go()
+            LoginKeys(app).flip()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Trying to go to login place", caught)
         }

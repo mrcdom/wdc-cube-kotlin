@@ -26,6 +26,7 @@ import br.com.wdc.shopping.persistence.client.IosHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
@@ -82,7 +83,7 @@ fun MainViewController(baseUrl: String): UIViewController {
 
     val app = IosShoppingApplication()
     ViewUpdateScheduler.initialize { app }
-    kotlinx.coroutines.runBlocking { app.go("public") }
+    kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
     return ComposeUIViewController {
         ShoppingTheme {
