@@ -44,6 +44,9 @@ class RemoteTransactionCoordinatorImpl(
     /** Índice dono → nº de transações abertas (donos nulos não entram). */
     private val openByOwner = ConcurrentHashMap<String, Int>()
 
+    /** Desfeitas enquanto uma requisição as usava: fecham quando ela as desliga ([suspend]). */
+    private val closingInUse = ConcurrentHashMap<String, Entry>()
+
     /** Desfecho de transações finalizadas, retido por `outcomeRetentionMs` para idempotência. */
     private val outcomes = ConcurrentHashMap<String, Finalized>()
 
@@ -73,8 +76,11 @@ class RemoteTransactionCoordinatorImpl(
     override fun resume(txId: String, ownerKey: String?) {
         val entry = registry[txId] ?: throw unknown(txId)
         verifyOwner(entry.owner, ownerKey)
-        if (!entry.inUse.compareAndSet(false, true)) {
-            throw TransactionConflictException("Transação remota em uso por outra requisição: $txId")
+        synchronized(entry) {
+            if (entry.finished) throw unknown(txId)
+            if (!entry.inUse.compareAndSet(false, true)) {
+                throw TransactionConflictException("Transação remota em uso por outra requisição: $txId")
+            }
         }
         try {
             TransactionScope.resume(entry.scope)
@@ -86,12 +92,20 @@ class RemoteTransactionCoordinatorImpl(
     }
 
     override fun suspend(txId: String) {
-        val entry = registry[txId] ?: return
+        val entry = registry[txId] ?: closingInUse[txId]
         try {
+            // sempre: mesmo sem entrada, a thread não pode ficar com o escopo ligado
             TransactionScope.suspend()
         } finally {
-            entry.lastUsedAt = clock()
-            entry.inUse.set(false)
+            if (entry != null) {
+                entry.lastUsedAt = clock()
+                val closeNow = synchronized(entry) {
+                    entry.inUse.set(false)
+                    entry.finished && closingInUse.remove(txId, entry)
+                }
+                // desfeita enquanto esta requisição a usava: fecha agora, já desligada da thread
+                if (closeNow) rollbackQuietly(entry)
+            }
         }
     }
 
@@ -166,12 +180,43 @@ class RemoteTransactionCoordinatorImpl(
         val entry = registry[txId]
         if (entry != null) {
             verifyOwner(entry.owner, ownerKey)
-            if (registry.remove(txId, entry)) {
-                untrackOwner(entry.owner)
-                closeAndRecord(txId, entry, rollback)
-                return
+            val action = synchronized(entry) {
+                when {
+                    entry.finished -> Finish.ALREADY
+                    entry.inUse.get() -> {
+                        // Uma requisição usa a transação agora (o cliente desistiu dela por timeout, por exemplo).
+                        // Fechar a conexão debaixo do statement em curso a faria falhar de um jeito qualquer: o
+                        // commit é recusado, e o rollback vale já como desfecho, mas fecha quando ela desligar.
+                        if (!rollback) {
+                            throw TransactionConflictException("Transação remota em uso por uma requisição: $txId; tente de novo")
+                        }
+                        entry.finished = true
+                        registry.remove(txId, entry)
+                        closingInUse[txId] = entry
+                        Finish.DEFERRED
+                    }
+                    else -> {
+                        entry.finished = true
+                        registry.remove(txId, entry)
+                        Finish.NOW
+                    }
+                }
             }
-            // outra thread finalizou entre o get e o remove → trata como repetição
+            when (action) {
+                Finish.NOW -> {
+                    untrackOwner(entry.owner)
+                    closeAndRecord(txId, entry, rollback)
+                    return
+                }
+                Finish.DEFERRED -> {
+                    untrackOwner(entry.owner)
+                    outcomes[txId] = Finalized(false, entry.owner, clock())
+                    rolledBackCount.incrementAndGet()
+                    LOG.debug("tx remota desfeita em uso; fecha quando a requisição desligar: {}", txId)
+                    return
+                }
+                Finish.ALREADY -> Unit // outra thread finalizou: trata como repetição
+            }
         }
         finishAlreadyFinalized(txId, ownerKey, rollback)
     }
@@ -228,7 +273,15 @@ class RemoteTransactionCoordinatorImpl(
             for ((txId, entry) in registry) {
                 val idleExpired = entry.lastUsedAt < idleDeadline
                 val lifetimeExpired = (now - entry.createdAt) >= options.maxLifetimeMs
-                if ((idleExpired || lifetimeExpired) && !entry.inUse.get() && registry.remove(txId, entry)) {
+                val reap = (idleExpired || lifetimeExpired) && synchronized(entry) {
+                    if (entry.finished || entry.inUse.get()) {
+                        false
+                    } else {
+                        entry.finished = true
+                        registry.remove(txId, entry)
+                    }
+                }
+                if (reap) {
                     untrackOwner(entry.owner)
                     rollbackQuietly(entry)
                     outcomes[txId] = Finalized(false, entry.owner, now) // reaped = rolledback (desambigua a repetição)
@@ -272,9 +325,14 @@ class RemoteTransactionCoordinatorImpl(
     ) {
         val inUse = AtomicBoolean(false)
 
+        /** Finalizada (ou com rollback adiado): não aceita mais requisições. Mexa só com o lock da entrada. */
+        var finished = false
+
         @Volatile
         var lastUsedAt: Long = createdAt
     }
+
+    private enum class Finish { NOW, DEFERRED, ALREADY }
 
     /** Desfecho retido de uma transação finalizada. */
     private class Finalized(val committed: Boolean, val owner: String?, val at: Long)

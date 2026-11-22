@@ -208,6 +208,45 @@ class RemoteTransactionCoordinatorImplTest {
         assertFalse(coordinator.exists(null))
     }
 
+    @Test
+    fun rollbackWhileARequestUsesTheTransaction_waitsForTheRequestToRelease() {
+        val coordinator = coordinator()
+        val txId = coordinator.begin("user:1")
+
+        // a requisição em curso (nesta thread) segura a transação; o cliente desiste e manda rollback
+        coordinator.resume(txId, "user:1")
+        try {
+            db.insertInCurrentTx(1)
+            onAnotherThread { coordinator.rollback(txId, "user:1") }
+            assertEquals("rolledback", coordinator.status(txId, "user:1"), "o desfecho já vale")
+            assertFailsWith<RemoteTransactionNotFoundException> { onAnotherThread { coordinator.resume(txId, "user:1") } }
+            // a conexão não foi fechada debaixo da requisição: ela segue trabalhando
+            db.insertInCurrentTx(2)
+            assertEquals(1, db.openConnections.get())
+        } finally {
+            coordinator.suspend(txId)
+        }
+        // ao desligar, a transação fecha desfeita
+        assertEquals(emptyList(), db.ids())
+        assertEquals(0, db.openConnections.get())
+        coordinator.rollback(txId, "user:1") // repetição: idempotente
+    }
+
+    @Test
+    fun commitWhileARequestUsesTheTransaction_isAConflict() {
+        val coordinator = coordinator()
+        val txId = coordinator.begin(null)
+        coordinator.resume(txId, null)
+        try {
+            db.insertInCurrentTx(1)
+            assertFailsWith<TransactionConflictException> { onAnotherThread { coordinator.commit(txId, null) } }
+        } finally {
+            coordinator.suspend(txId)
+        }
+        coordinator.commit(txId, null) // liberada, o commit passa
+        assertEquals(listOf(1), db.ids())
+    }
+
     // :: Tetos
 
     @Test
