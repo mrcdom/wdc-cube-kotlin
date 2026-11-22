@@ -107,17 +107,15 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         current.set(state)
         val result: T
         try {
-            result = work(state)
-            // o txId ainda é o corrente: vai no cabeçalho do commit/rollback
-            transport.postJson(if (state.rollbackOnly) "/api/tx/rollback" else "/api/tx/commit", "{}")
-        } catch (e: Throwable) {
-            // Melhor esforço: a falha do bloco é a que interessa. Se o commit falhou, o rollback do mesmo txId
-            // é recusado ou inócuo no servidor.
-            try {
-                transport.postJson("/api/tx/rollback", "{}")
-            } catch (_: Exception) {
+            result = try {
+                work(state)
+            } catch (e: Throwable) {
+                // a falha do bloco é a que interessa
+                rollbackQuietly()
+                throw e
             }
-            throw e
+            // o txId ainda é o corrente: vai no cabeçalho do commit/rollback
+            if (state.rollbackOnly) transport.postJson("/api/tx/rollback", "{}") else commit()
         } finally {
             current.set(null)
         }
@@ -125,6 +123,52 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         val tasks = state.afterCommit.drain()
         if (!state.rollbackOnly) AfterCommitTasks.runAll(tasks)
         return result
+    }
+
+    /**
+     * Pede o commit. Resposta do servidor (sucesso ou recusa) é definitiva. Falha de transporte não diz o que
+     * aconteceu — o commit pode ter chegado e a resposta se perdido —: o cliente pergunta o desfecho
+     * (`GET /api/tx/status`) antes de decidir. Comitou: sucesso. Ainda aberta: desfaz e falha. Desfeita, desconhecida
+     * ou sem resposta: falha.
+     */
+    private fun commit() {
+        try {
+            transport.postJson("/api/tx/commit", "{}")
+        } catch (e: Throwable) {
+            if (e.isHttpAnswer()) {
+                rollbackQuietly() // recusado: o rollback do mesmo txId é aceito ou inócuo
+                throw e
+            }
+            when (remoteStatus()) {
+                "committed" -> return
+                "open" -> rollbackQuietly()
+            }
+            throw e
+        }
+    }
+
+    /** O desfecho da transação corrente no servidor, ou `null` se nem isso se pôde saber. */
+    private fun remoteStatus(): String? = try {
+        // getBytes é autenticado e leva o X-Tx-Id em todos os transportes
+        val text = transport.getBytes("/api/tx/status")?.decodeToString() ?: return null
+        val input = JsonInputFactory.createStringInput(text).input
+        var status: String? = null
+        input.beginObject()
+        while (input.hasNext()) {
+            if (input.nextName() == "status") status = input.nextString() else input.skipValue()
+        }
+        input.endObject()
+        status
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun rollbackQuietly() {
+        try {
+            transport.postJson("/api/tx/rollback", "{}")
+        } catch (_: Exception) {
+            // melhor esforço: recusado (já finalizada) ou sem rede; a transação abandonada é revertida pelo servidor
+        }
     }
 
     private fun remoteBegin(): String {

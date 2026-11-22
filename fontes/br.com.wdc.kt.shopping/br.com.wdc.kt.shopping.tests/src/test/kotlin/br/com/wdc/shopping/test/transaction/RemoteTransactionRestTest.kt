@@ -216,6 +216,39 @@ class RemoteTransactionRestTest {
         assertTrue(env.productRepo.insert(product("rtx-after-condemned")), "a transação foi encerrada")
     }
 
+    /** O transporte do ambiente, mas o commit se perde no caminho: antes de chegar ao servidor, ou na volta. */
+    private class LossyCommit(private val target: br.com.wdc.shopping.persistence.client.HttpTransport, private val loseRequest: Boolean) :
+        br.com.wdc.shopping.persistence.client.HttpTransport by target {
+        override fun postJson(path: String, body: String): String {
+            if (path != "/api/tx/commit") return target.postJson(path, body)
+            if (loseRequest) throw IllegalStateException("connection refused")
+            target.postJson(path, body)
+            throw IllegalStateException("read timed out") // comitou no servidor, mas a resposta não voltou
+        }
+    }
+
+    @Test
+    fun commitWhoseResponseIsLost_isRecognisedAsCommitted() = runBlocking {
+        val p = product("rtx-lost-response")
+        var afterCommitRan = false
+        val service = RestTransactionService(LossyCommit(env.transport, loseRequest = false))
+        service.required {
+            env.productRepo.insert(p)
+            service.afterCommit { afterCommitRan = true }
+        }
+        assertTrue(exists(p), "gravado no servidor")
+        assertTrue(afterCommitRan, "o cliente sabe que comitou: as tarefas de afterCommit rodam")
+    }
+
+    @Test
+    fun commitThatNeverReachedTheServer_rollsBackAndFails() = runBlocking {
+        val p = product("rtx-lost-request")
+        val service = RestTransactionService(LossyCommit(env.transport, loseRequest = true))
+        assertThrows(IllegalStateException::class.java) { runBlocking { service.required { env.productRepo.insert(p) } } }
+        assertFalse(exists(p))
+        assertTrue(env.productRepo.insert(product("rtx-after-lost-request")), "a transação foi desfeita, não ficou aberta")
+    }
+
     @Test
     fun everyKindOfWrite_joinsTheTransaction_includingTheImageUpload() = runBlocking {
         val id = DBReset.CAFETEIRA_ID
