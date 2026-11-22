@@ -46,10 +46,21 @@ dependencies {
 
 | Versão | O que trouxe |
 |---|---|
+| 0.4.1 (a publicar) | Correção de segurança: critério do transporte com operador e valores em desacordo passa a ser recusado (400), em vez de sumir do SQL — um `delete` assim apagava a tabela. Detalhes em [Notas da 0.4.1](#notas-da-041). |
 | 0.4.0 | `insert` por projeção, com o bean completo de volta; `afterCommit` nas transações; no `framework-rest`, `Server-Timing`, cabeçalhos de cache e de segurança, página do Swagger UI, limite por minuto e novas leituras na `RestCall`; `isIn(vazia)` passa a filtrar por nenhum. Detalhes e trocas a fazer em [Notas da 0.4.0](#notas-da-040). |
 | 0.3.0 | **`framework-rest`**, APIs REST sobre Javalin 7: rotas de recurso e RPC por entidade, segurança plugável, mapa de exceções, contexto e transação por requisição, CORS, gzip, OpenAPI gerado das rotas (também de `@ApiDoc`), servidor de teste; os corpos Kotlin são lidos pelo construtor primário (padrões valem, sem gravar `val` por reflexão, pronto para o JDK 26). **`framework-domain`**: `@ApiDoc`; `containing` e `startingWith` procuram o texto literalmente (`%` e `_` deixam de ser curingas), e o tradutor declara `ESCAPE '\'`. **`framework-jooq`**: um critério sobre várias colunas (`translateAny`); colunas `UUID` e `DATE` (como `LocalDate`) na projeção JSON; leitura de `TIMESTAMP` sem fuso sem lançar exceção por valor. |
 | 0.2.0 | `framework-domain`, `framework-persistence` e `framework-jooq`; compilação com Kotlin 2.3 |
 | 0.1.0 | `framework-commons` e `framework-cube` |
+
+## Notas da 0.4.1
+
+Ainda não publicada. Corrige defeitos achados na revisão de um port da arquitetura para outra linguagem.
+
+| Módulo | Mudança | Quebra? | O que fazer |
+|---|---|---|---|
+| `framework-domain` | **Segurança.** `Criterion.restore` (a leitura do critério vindo do transporte) recusa com `InvalidRequestException` (400) a quantidade de valores que o operador não aceita (`BETWEEN` com um, `EQ` sem nenhum, `GT` com dois) e `null` em comparação de ordem, `LIKE`, `ILIKE` ou `BETWEEN`. Antes, o pedido era guardado, o campo contava como informado e o tradutor o tirava do SQL: um `delete` "com critério" virava `DELETE` sem `WHERE`, e `count`, `fetch` e o alcance por usuário perdiam o filtro. `EQ`/`NE` com `null` e `IN` vazio continuam aceitos. | Comportamento | Nenhuma, salvo cliente que enviava pedido malformado: ele passa a receber 400. |
+| `framework-jooq` | O `CriterionTranslator` recusa (`IllegalArgumentException`) o pedido com operador e valores em desacordo, em vez de descartá-lo. | Comportamento | Critério montado em código só chega aí por `restore`; nada a fazer. |
+| `framework-rest` | A KDoc de `RepositoryRpc.scope` (e o README) avisa: some o alcance com `campo.and().eq(dono)`, nunca só `eq`. Num campo que o cliente marcou com `"or": true`, `eq` vira mais uma alternativa e o alcance some. | Não | Confira os seus `scope`: troque `eq(dono)` por `and().eq(dono)`. |
 
 ## Notas da 0.4.0
 
