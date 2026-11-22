@@ -35,6 +35,11 @@ kotlin {
             implementation(project(":shopping-presentation"))
             implementation(project(":shopping-persistence-client"))
         }
+        jvmTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation("org.jetbrains.compose.ui:ui-test:${libs.versions.compose.multiplatform.get()}")
+            implementation(compose.desktop.currentOs)
+        }
 
 
     }
