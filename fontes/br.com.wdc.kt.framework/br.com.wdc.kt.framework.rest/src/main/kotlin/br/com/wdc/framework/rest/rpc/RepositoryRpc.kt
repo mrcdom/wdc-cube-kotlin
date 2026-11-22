@@ -17,54 +17,54 @@ import br.com.wdc.framework.rest.security.AccessRule
 import io.javalin.http.NotFoundResponse
 
 /**
- * O RPC genérico de uma entidade: as operações do repositório como rotas `POST <base>/<operação>`, lidas e
- * escritas com o [ModelCodec] da entidade — o mesmo que o cliente usa.
+ * The generic RPC of an entity: the repository's operations as `POST <base>/<operation>` routes, read and
+ * written with the entity's [ModelCodec] — the same one the client uses.
  *
- * | Rota | Corpo | Resposta |
+ * | Route | Body | Response |
  * |---|---|---|
- * | `POST insert` | `{"entity", "projection"?}`, ou a entidade solta | `{"success", "id", "entity"}` (o bean completo) |
- * | `POST update` | campos a atualizar (os presentes, inclusive `null`) | `{"success"}` |
- * | `POST delete` | critério | `{"count"}` |
- * | `POST count` | critério | `{"count"}` |
- * | `POST fetch` | critério + `projection`, `offset`, `limit` | `{"items"}` |
- * | `POST fetch-page` | critério + `projection`, `page`, `pageSize` | `{"items", "totalItems"}` |
- * | `POST fetch-by-id` | `{"id", "projection"?}` | entidade, ou 404 |
- * | `GET {id}` | — | entidade com a projeção padrão, ou 404 |
+ * | `POST insert` | `{"entity", "projection"?}`, or the bare entity | `{"success", "id", "entity"}` (the complete bean) |
+ * | `POST update` | fields to update (those present, including `null`) | `{"success"}` |
+ * | `POST delete` | criteria | `{"count"}` |
+ * | `POST count` | criteria | `{"count"}` |
+ * | `POST fetch` | criteria + `projection`, `offset`, `limit` | `{"items"}` |
+ * | `POST fetch-page` | criteria + `projection`, `page`, `pageSize` | `{"items", "totalItems"}` |
+ * | `POST fetch-by-id` | `{"id", "projection"?}` | entity, or 404 |
+ * | `GET {id}` | — | entity with the default projection, or 404 |
  *
- * As escritas só existem se o repositório for um [Repository], e são `transactional`. O acesso é da aplicação:
- * [rule] por operação, [scope] para restringir o critério ao que é de quem chama, e os ganchos de escrita, que
- * rodam dentro da transação. Buscar pela chave passa pela mesma regra e pelo mesmo alcance das consultas.
+ * The writes only exist if the repository is a [Repository], and they are `transactional`. Access is up to the
+ * application: [rule] per operation, [scope] to restrict the criteria to what belongs to the caller, and the write
+ * hooks, which run inside the transaction. Fetching by key goes through the same rule and reach as the queries.
  *
- * O insert devolve a entidade como o repositório a deixou (a chave gerada, os padrões das colunas), passada por
- * [sanitizeOutput] como toda entidade lida. O corpo sem `entity` é lido como a entidade solta, a forma anterior à
- * 0.4.0; por isso, entidade com um campo chamado `entity` precisa do envelope.
+ * Insert returns the entity as the repository left it (the generated key, the column defaults), passed through
+ * [sanitizeOutput] like every entity read. A body without `entity` is read as the bare entity, the form before
+ * 0.4.0; so an entity with a field named `entity` needs the envelope.
  *
- * @param K tipo da chave
+ * @param K key type
  */
 class RepositoryRpc<E : Any, C : Any, K : Any>(
-    /** Prefixo das rotas: `/api/repo/product`. */
+    /** Route prefix: `/api/repo/product`. */
     val basePath: String,
     val codec: ModelCodec<E, C>,
-    /** Resolvido a cada requisição: o repositório pode ser trocado (testes, reinício). */
+    /** Resolved on each request: the repository may be swapped (tests, restart). */
     val repository: () -> ReadOnlyRepository<E, C, K>,
-    /** Critério vazio. */
+    /** Empty criteria. */
     val newCriteria: () -> C,
-    /** Põe a projeção no critério. */
+    /** Sets the projection on the criteria. */
     val setProjection: (C, E) -> Unit,
-    /** Restringe o critério à chave. */
+    /** Restricts the criteria to the key. */
     val restrictToId: (C, K) -> Unit,
-    /** Converte a chave do caminho e do corpo de `fetch-by-id`. */
+    /** Converts the key from the path and from the `fetch-by-id` body. */
     val parseId: (String) -> K?,
-    /** A chave da entidade, para a resposta do insert. */
+    /** The entity's key, for the insert response. */
     val idOf: (E) -> K?,
 ) {
     /**
-     * Registra também as escritas. Desligue para repositório só de leitura: as escritas exigem um [Repository]
-     * (é conferido na requisição, porque o repositório é resolvido nela).
+     * Also registers the writes. Turn off for a read-only repository: the writes require a [Repository]
+     * (checked on the request, because the repository is resolved there).
      */
     var writes: Boolean = true
 
-    /** Operações do RPC, para [rule] e [doc]. */
+    /** RPC operations, for [rule] and [doc]. */
     enum class Operation(val route: String, val write: Boolean) {
         INSERT("insert", true), UPDATE("update", true), DELETE("delete", true),
         COUNT("count", false), FETCH("fetch", false), FETCH_PAGE("fetch-page", false), FETCH_BY_ID("fetch-by-id", false),
@@ -73,35 +73,35 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         GET_BY_ID("{id}", false),
     }
 
-    /** A regra de acesso de cada operação, somada à do caminho. `null` = só a do caminho. */
+    /** The access rule of each operation, combined with the path's. `null` = only the path's. */
     var rule: (Operation) -> AccessRule? = { null }
 
     /**
-     * Restringe o critério de toda leitura e do delete ao que quem chama alcança.
+     * Restricts the criteria of every read and of delete to what the caller can reach.
      *
-     * **O critério veio de quem chama**, inclusive a disjunção de cada campo. Some o alcance com o campo
-     * conjuntivo — `criteria.ownerId.and().eq(owner)` —, nunca só com `eq`: num campo que o cliente marcou com
-     * `"or": true`, `eq` vira mais uma alternativa (`ownerId IS NOT NULL OR ownerId = :owner`) e o alcance some.
-     * Com `and()`, todo pedido do cliente nesse campo fica em `AND` com o dono, e nenhum alcança outra linha.
+     * **The criteria came from the caller**, including each field's disjunction. Add the reach with the conjunctive
+     * field — `criteria.ownerId.and().eq(owner)` —, never with just `eq`: on a field the client marked with
+     * `"or": true`, `eq` becomes one more alternative (`ownerId IS NOT NULL OR ownerId = :owner`) and the reach is lost.
+     * With `and()`, every client condition on that field is `AND`ed with the owner, and none reaches another row.
      */
     var scope: suspend (C, RequestContext) -> Unit = { _, _ -> }
 
-    /** Ajusta a projeção pedida antes da consulta — retire o que nunca sai (a senha, por exemplo). */
+    /** Adjusts the requested projection before the query — remove what never goes out (the password, for example). */
     var sanitizeProjection: (E) -> Unit = {}
 
-    /** Última barreira antes da resposta: limpa o que não pode sair de cada entidade lida. */
+    /** Last barrier before the response: clears what must not go out from each entity read. */
     var sanitizeOutput: (E) -> Unit = {}
 
-    /** Antes do insert, dentro da transação: validar, completar, recusar com `AccessDeniedException`. */
+    /** Before insert, inside the transaction: validate, complete, refuse with `AccessDeniedException`. */
     var beforeInsert: suspend (E, RequestContext) -> Unit = { _, _ -> }
 
-    /** Antes do update, dentro da transação. */
+    /** Before update, inside the transaction. */
     var beforeUpdate: suspend (ModelCodec.UpdateData<E>, RequestContext) -> Unit = { _, _ -> }
 
-    /** Documentação de cada operação; o padrão descreve o contrato acima. */
+    /** Documentation of each operation; the default describes the contract above. */
     var doc: (Operation) -> (OperationDoc.() -> Unit)? = { null }
 
-    /** O id na resposta do insert. Padrão: número se for número, texto senão, `-1` se não houver. */
+    /** The id in the insert response. Default: a number if it is a number, text otherwise, `-1` if there is none. */
     var writeId: (ExtensibleObjectOutput, K?) -> Unit = { out, id ->
         when (id) {
             null -> out.value(-1L)
@@ -110,7 +110,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         }
     }
 
-    /** Registra as rotas em [routes]. */
+    /** Registers the routes on [routes]. */
     fun register(routes: RestApi.Routes) {
         if (writes) {
             post(routes, Operation.INSERT, transactional = true, ::insert)
@@ -130,7 +130,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     @Suppress("UNCHECKED_CAST")
     private fun writable(): Repository<E, C, K> = repository() as? Repository<E, C, K>
-        ?: throw IllegalStateException("O repositório de $basePath é só de leitura: registre o RPC com writes = false")
+        ?: throw IllegalStateException("The repository of $basePath is read-only: register the RPC with writes = false")
 
     private suspend fun insert(call: RestCall): RawJson {
         val (entity, projection) = readInsert(call)
@@ -149,7 +149,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         }
     }
 
-    /** `{"entity", "projection"?}`; sem `entity`, o corpo inteiro é a entidade. */
+    /** `{"entity", "projection"?}`; without `entity`, the whole body is the entity. */
     private fun readInsert(call: RestCall): Pair<E, E?> {
         val envelope = call.readingBody {
             val input = call.bodyInput()
@@ -177,7 +177,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             }
             input.endObject()
         }
-        return (entity ?: throw InvalidRequestException("insert sem a entidade")) to projection
+        return (entity ?: throw InvalidRequestException("insert without the entity")) to projection
     }
 
     private suspend fun update(call: RestCall): RawJson {
@@ -215,7 +215,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     }
 
     private suspend fun fetchById(call: RestCall): RawJson {
-        val id = parseId(call.path("id")) ?: throw InvalidRequestException("id inválido")
+        val id = parseId(call.path("id")) ?: throw InvalidRequestException("invalid id")
         return respondEntity(fetchOne(call, id, null))
     }
 
@@ -237,7 +237,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             }
             input.endObject()
         }
-        return respondEntity(fetchOne(call, id ?: throw InvalidRequestException("fetch-by-id exige o id"), projection))
+        return respondEntity(fetchOne(call, id ?: throw InvalidRequestException("fetch-by-id requires the id"), projection))
     }
 
     private suspend fun fetchOne(call: RestCall, id: K, projection: E?): E? {
@@ -256,7 +256,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         return RawJson.write { codec.writeEntity(it, entity) }
     }
 
-    /** O critério, a projeção (sem ela, a padrão do repositório) e o recorte de um pedido de consulta. */
+    /** The criteria, the projection (without it, the repository's default) and the slice of a query request. */
     private class FetchRequest<C>(val criteria: C) {
         var offset = 0
         var limit = 0
@@ -265,8 +265,8 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     }
 
     /**
-     * Lê `{ <campos do critério>, "projection": {…}?, "offset"?, "limit"?, "page"?, "pageSize"? }`. Nome que
-     * não é campo do critério nem do recorte é ignorado.
+     * Reads `{ <criteria fields>, "projection": {…}?, "offset"?, "limit"?, "page"?, "pageSize"? }`. A name that
+     * is neither a criteria field nor a slice field is ignored.
      */
     private fun readFetchRequest(call: RestCall): FetchRequest<C> {
         val request = FetchRequest(newCriteria())
@@ -286,14 +286,14 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             }
             input.endObject()
         }
-        // fora da leitura do corpo: falha aqui é do servidor, não do pedido
+        // outside the body reading: a failure here is the server's, not the request's
         val shape = projection ?: repository().ownFieldsProjection()
         sanitizeProjection(shape)
         setProjection(request.criteria, shape)
         return request
     }
 
-    /** `{ "items": [ … ] }`, com `totalItems` quando informado. */
+    /** `{ "items": [ … ] }`, with `totalItems` when given. */
     private fun writeItems(out: ExtensibleObjectOutput, items: List<E>, totalItems: Int?) {
         out.beginObject()
         out.name("items").beginArray()

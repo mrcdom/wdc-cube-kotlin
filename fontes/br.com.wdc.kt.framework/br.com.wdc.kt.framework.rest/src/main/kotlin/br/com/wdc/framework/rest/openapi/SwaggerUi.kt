@@ -6,37 +6,38 @@ import com.google.gson.Gson
 import io.javalin.http.NotFoundResponse
 import java.util.Properties
 
-/** Um documento no seletor da página do Swagger: onde ele é servido e o nome que aparece. */
+/** A document in the Swagger page's selector: where it is served and the name shown. */
 data class SwaggerDocument(val url: String, val name: String)
 
 /**
- * A página do Swagger UI ([OpenApiConfig.ui]), servida do webjar oficial pelo classpath, sem CDN.
+ * The Swagger UI page ([OpenApiConfig.ui]), served from the official webjar on the classpath, without a CDN.
  *
- * O webjar não vem com a biblioteca: quem liga a página o declara (`runtimeOnly("org.webjars:swagger-ui:<versão>")`).
- * A versão é lida do próprio webjar; sem ele no classpath, a montagem da [br.com.wdc.framework.rest.RestApi] falha.
+ * The webjar doesn't come with the library: whoever turns the page on declares it
+ * (`runtimeOnly("org.webjars:swagger-ui:<version>")`). The version is read from the webjar itself; without it on the
+ * classpath, building the [br.com.wdc.framework.rest.RestApi] fails.
  *
- * Rotas, públicas e fora do documento OpenAPI:
- * - `GET {path}.html` → 302 para `{path}/index.html`;
- * - `GET {path}/index.html` → a página, com o documento da própria API e os de [documents] (com mais de um, o
- *   seletor do topo, aberto em [primary]);
- * - `GET {path}/{arquivo}` → só os arquivos que a página carrega, com `Cache-Control: public, max-age=86400`; o resto
- *   do webjar é 404.
+ * Routes, public and left out of the OpenAPI document:
+ * - `GET {path}.html` → 302 to `{path}/index.html`;
+ * - `GET {path}/index.html` → the page, with the API's own document and those in [documents] (with more than one,
+ *   the selector at the top, opened on [primary]);
+ * - `GET {path}/{file}` → only the files the page loads, with `Cache-Control: public, max-age=86400`; the rest
+ *   of the webjar is 404.
  */
 class SwaggerUiOptions {
 
-    /** Onde a página fica. */
+    /** Where the page lives. */
     var path: String = "/swagger-ui"
 
-    /** O título da aba. `null` = o título do documento OpenAPI. */
+    /** The tab title. `null` = the OpenAPI document's title. */
     var title: String? = null
 
-    /** Lista o documento da própria API, em primeiro lugar. */
+    /** Lists the API's own document, first. */
     var includeOwn: Boolean = true
 
-    /** Outros documentos: o de outra `RestApi` no mesmo servidor, um documento estático. */
+    /** Other documents: another `RestApi`'s on the same server, a static document. */
     val documents = ArrayList<SwaggerDocument>()
 
-    /** O nome do documento aberto quando há vários. `null` = o primeiro. */
+    /** The name of the document opened when there are several. `null` = the first. */
     var primary: String? = null
 
     fun document(url: String, name: String) {
@@ -44,7 +45,7 @@ class SwaggerUiOptions {
     }
 }
 
-/** As rotas da página. */
+/** The page routes. */
 internal class SwaggerUiRoutes(private val options: SwaggerUiOptions, private val api: OpenApiConfig) {
 
     private val base: String = locateWebjar()
@@ -53,8 +54,8 @@ internal class SwaggerUiRoutes(private val options: SwaggerUiOptions, private va
         (if (options.includeOwn) listOf(SwaggerDocument(api.path, api.title)) else emptyList()) + options.documents
 
     init {
-        require(documents.isNotEmpty()) { "openApi { ui { } }: nenhum documento a mostrar" }
-        options.primary?.let { name -> require(documents.any { it.name == name }) { "openApi { ui { primary = \"$name\" } }: documento inexistente" } }
+        require(documents.isNotEmpty()) { "openApi { ui { } }: no document to show" }
+        options.primary?.let { name -> require(documents.any { it.name == name }) { "openApi { ui { primary = \"$name\" } }: no such document" } }
     }
 
     val root: String = options.path.trimEnd('/')
@@ -83,7 +84,7 @@ internal class SwaggerUiRoutes(private val options: SwaggerUiOptions, private va
             config["urls"] = documents.map { mapOf("url" to it.url, "name" to it.name) }
             config["urls.primaryName"] = options.primary ?: documents.first().name
         }
-        // o Gson padrão escapa < > & = ' como \uXXXX: o JSON não fecha o <script>
+        // default Gson escapes < > & = ' as \uXXXX: the JSON can't close the <script>
         val json = Gson().toJson(config)
         val title = escapeHtml(options.title ?: api.title)
         return """
@@ -120,7 +121,7 @@ internal class SwaggerUiRoutes(private val options: SwaggerUiOptions, private va
         text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 
     companion object {
-        /** Os arquivos que a página carrega, com o tipo de cada um. */
+        /** The files the page loads, with each one's type. */
         val FILES = mapOf(
             "swagger-ui.css" to "text/css; charset=utf-8",
             "swagger-ui-bundle.js" to "text/javascript; charset=utf-8",
@@ -130,13 +131,13 @@ internal class SwaggerUiRoutes(private val options: SwaggerUiOptions, private va
 
         private const val POM_PROPERTIES = "META-INF/maven/org.webjars/swagger-ui/pom.properties"
 
-        /** O diretório do webjar no classpath, pela versão que ele mesmo declara. */
+        /** The webjar's directory on the classpath, by the version it declares itself. */
         fun locateWebjar(): String {
             val loader = SwaggerUiRoutes::class.java.classLoader
             val stream = loader.getResourceAsStream(POM_PROPERTIES)
-                ?: error("openApi { ui { } } precisa do webjar org.webjars:swagger-ui no classpath")
+                ?: error("openApi { ui { } } needs the org.webjars:swagger-ui webjar on the classpath")
             val version = stream.use { Properties().apply { load(it) }.getProperty("version") }
-                ?: error("$POM_PROPERTIES sem versão")
+                ?: error("$POM_PROPERTIES has no version")
             return "META-INF/resources/webjars/swagger-ui/$version/"
         }
     }

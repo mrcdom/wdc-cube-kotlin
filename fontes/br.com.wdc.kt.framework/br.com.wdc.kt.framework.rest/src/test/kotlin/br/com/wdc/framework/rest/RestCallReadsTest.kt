@@ -8,7 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** As leituras exigidas da query, os nulos explícitos do corpo e as credenciais do `Basic`. */
+/** The required query reads, the body's explicit nulls and the `Basic` credentials. */
 class RestCallReadsTest {
 
     data class CustomerPatch(val name: String? = null, val phone: String? = null)
@@ -53,12 +53,12 @@ class RestCallReadsTest {
         assertEquals("2026-11-15", client.get("/date?day=2026-11-15").body)
         assertEquals("WEEKLY", client.get("/enum?kind=WEEKLY").body)
 
-        // ausente (ou vazio): a mesma mensagem do requiredQuery
+        // absent (or empty): the same message as requiredQuery
         assertEquals("Required request parameter 'id' is not present", error("/long"))
         assertEquals("Required request parameter 'id' is not present", error("/long?id="))
         assertEquals("Required request parameter 'kind' is not present", error("/enum"))
 
-        // malformado: a mesma mensagem do query* anulável
+        // malformed: the same message as the nullable query*
         assertEquals("Failed to convert value 'x' of parameter 'id' to required type 'long'", error("/long?id=x"))
         assertEquals("Failed to convert value '9999999999' of parameter 'page' to required type 'int'", error("/int?page=9999999999"))
         assertEquals("Failed to convert value 'nope' of parameter 'key' to required type 'UUID'", error("/uuid?key=nope"))
@@ -71,11 +71,11 @@ class RestCallReadsTest {
     fun explicitNulls_onlyTopLevelNulls_andTheBodyStillReads() {
         val read = patch("""{"name":"Ana","phone":null,"address":{"zip":null},"tags":[null]}""")
         assertEquals(listOf("phone"), read["nulls"].asJsonArray.map { it.asString })
-        assertEquals("Ana", read["name"].asString, "o body<T>() depois continua lendo")
-        assertEquals(listOf("phone"), read["again"].asJsonArray.map { it.asString }, "ler de novo dá o mesmo")
+        assertEquals("Ana", read["name"].asString, "body<T>() still reads afterwards")
+        assertEquals(listOf("phone"), read["again"].asJsonArray.map { it.asString }, "reading again gives the same")
 
         assertEquals(listOf("name", "phone"), patch("""{"name":null,"phone":null}""")["nulls"].asJsonArray.map { it.asString })
-        assertTrue(patch("""{"name":"Ana"}""")["nulls"].asJsonArray.isEmpty, "ausente não é nulo")
+        assertTrue(patch("""{"name":"Ana"}""")["nulls"].asJsonArray.isEmpty, "absent is not null")
     }
 
     @Test
@@ -84,7 +84,7 @@ class RestCallReadsTest {
             val response = client.send("POST", "/nulls", body)
             assertEquals("[]", response.body, "corpo: $body")
         }
-        // o corpo que não é objeto também não serve ao DTO: o 400 vem do body, não daqui
+        // a non-object body doesn't fit the DTO either: the 400 comes from body, not from here
         assertEquals(400, client.send("PATCH", "/customer", "{not json").status)
     }
 
@@ -96,13 +96,13 @@ class RestCallReadsTest {
     @Test
     fun basicCredentials_decoded() {
         assertEquals("app|s3cret", token(basic("app:s3cret")))
-        assertEquals("app|s3cret", token("basic " + basic("app:s3cret").substringAfter(' ')), "esquema sem diferenciar maiúsculas")
+        assertEquals("app|s3cret", token("basic " + basic("app:s3cret").substringAfter(' ')), "scheme is case-insensitive")
         assertEquals("app|s3cret", token("  BASIC   " + basic("app:s3cret").substringAfter(' ') + "  "))
-        assertEquals("app|a:b:c", token(basic("app:a:b:c")), "só o primeiro ':' separa")
-        assertEquals("my app|p:w d", token(basic("my+app:p%3Aw+d")), "cada parte decodificada como formulário")
-        assertEquals("app|", token(basic("app:")), "senha vazia")
+        assertEquals("app|a:b:c", token(basic("app:a:b:c")), "only the first ':' separates")
+        assertEquals("my app|p:w d", token(basic("my+app:p%3Aw+d")), "each part decoded as a form")
+        assertEquals("app|", token(basic("app:")), "empty password")
         assertEquals("|x", token(basic(":x")))
-        assertEquals("usuário|sénha", token(basic("usuário:sénha")), "UTF-8")
+        assertEquals("jalapeño|crème", token(basic("jalapeño:crème")), "UTF-8")
     }
 
     @Test
@@ -112,6 +112,6 @@ class RestCallReadsTest {
         assertEquals("none", token("Basic"))
         assertEquals("none", token("Basic !!!not-base64"))
         assertEquals("none", token(basic("no-colon")))
-        assertEquals("none", token(basic("app:%zz")), "codificação de formulário inválida")
+        assertEquals("none", token(basic("app:%zz")), "invalid form encoding")
     }
 }

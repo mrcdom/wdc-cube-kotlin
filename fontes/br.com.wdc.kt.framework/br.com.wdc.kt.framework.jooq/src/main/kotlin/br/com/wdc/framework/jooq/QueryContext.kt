@@ -3,8 +3,8 @@ package br.com.wdc.framework.jooq
 import org.jooq.DSLContext
 
 /**
- * Contexto de montagem de **uma** consulta: gera aliases únicos (raiz e subconsultas não colidem) e dá acesso
- * ao [DSLContext], que é injetado — ver [JsonQueryBuilder.setDSLContextSupplier].
+ * Building context of **one** query: generates unique aliases (root and subqueries do not collide) and gives
+ * access to the [DSLContext], which is injected — see [JsonQueryBuilder.setDSLContextSupplier].
  */
 class QueryContext(private val jooq: DSLContext) {
 

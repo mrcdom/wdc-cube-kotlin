@@ -15,10 +15,10 @@ abstract class CubeApplication {
 
     internal var navigation: CubeNavigation<*>? = null
 
-    /** Completa quando a navegação em curso (com os redirecionamentos dela) termina: `true` se comitou. */
+    /** Completes when the running navigation (with its redirects) finishes: `true` if it committed. */
     private var navigationDone: CompletableDeferred<Boolean>? = null
 
-    /** O pedido de fora que espera a navegação em curso. Só o último espera; os anteriores desistem. */
+    /** The outside request waiting for the running navigation. Only the last one waits; the earlier ones give up. */
     internal var waitingNavigation: CubeNavigation<*>? = null
 
     fun getPresenter(placeId: Int): CubePresenter? = presenterMap[placeId]
@@ -54,26 +54,26 @@ abstract class CubeApplication {
     }
 
     /**
-     * Uma navegação nova; os passos vêm por [CubeNavigation.step] e ela corre em [CubeNavigation.execute].
+     * A new navigation; the steps come through [CubeNavigation.step] and it runs in [CubeNavigation.execute].
      *
-     * O que acontece com uma navegação em curso se decide no `execute`: pedida de dentro dela (o presenter, no
-     * próprio `applyParameters`) é um redirecionamento e a interrompe; pedida de fora (ação da view, histórico)
-     * espera ela terminar.
+     * What happens to a running navigation is decided in `execute`: requested from inside it (the presenter, in
+     * its own `applyParameters`) it is a redirect and interrupts it; requested from outside (view action, history)
+     * it waits for it to finish.
      */
     fun <T : CubeApplication> navigate(): CubeNavigation<T> = CubeNavigation(this)
 
-    /** A navegação [nav] passa a ser a corrente, num período ocioso. */
+    /** Navigation [nav] becomes the current one, during an idle period. */
     internal fun startNavigation(nav: CubeNavigation<*>) {
         navigation = nav
         navigationDone = CompletableDeferred()
     }
 
-    /** Um redirecionamento toma o lugar da navegação corrente, no mesmo período. */
+    /** A redirect takes the place of the current navigation, in the same period. */
     internal fun replaceNavigation(nav: CubeNavigation<*>) {
         navigation = nav
     }
 
-    /** A navegação corrente terminou (comitou, ou desfez com [success] `false`): acorda quem esperava. */
+    /** The current navigation finished (committed, or rolled back with [success] `false`): wakes whoever was waiting. */
     internal fun endNavigation(success: Boolean) {
         navigation = null
         val done = navigationDone
@@ -81,7 +81,7 @@ abstract class CubeApplication {
         done?.complete(success)
     }
 
-    /** Espera a navegação corrente terminar; `true` se ela comitou. */
+    /** Waits for the current navigation to finish; `true` if it committed. */
     internal suspend fun awaitNavigation(): Boolean = navigationDone?.await() ?: true
 
     private val attributes: MutableMap<String, Any?> = concurrentMutableMapOf()

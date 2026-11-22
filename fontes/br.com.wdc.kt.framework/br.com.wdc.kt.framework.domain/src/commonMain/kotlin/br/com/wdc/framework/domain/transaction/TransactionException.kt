@@ -1,19 +1,20 @@
 package br.com.wdc.framework.domain.transaction
 
-/** Base das falhas de demarcação de transação. */
+/** Base of transaction demarcation failures. */
 open class TransactionException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
-/** Propagação `mandatory` sem transação corrente. */
+/** `mandatory` propagation without a current transaction. */
 class TransactionRequiredException(message: String) : TransactionException(message)
 
-/** Propagação `never` com transação corrente. */
+/** `never` propagation with a current transaction. */
 class TransactionNotAllowedException(message: String) : TransactionException(message)
 
 /**
- * A transação remota não existe (mais): o `txId` nunca foi aberto, ou já foi revertido por abandono, ou o desfecho
- * dele já saiu da retenção. A camada REST devolve 410; o cliente a recebe com o mesmo tipo.
+ * The remote transaction doesn't exist (anymore): the `txId` was never opened, or was already rolled back for being
+ * abandoned, or its outcome has already left retention. The REST layer returns 410; the client receives it with the
+ * same type.
  */
 class RemoteTransactionNotFoundException(message: String) : TransactionException(message)
 
-/** Falha ao abrir, confirmar ou desfazer a transação. */
+/** Failure to open, commit or roll back the transaction. */
 class TransactionSystemException(message: String, cause: Throwable? = null) : TransactionException(message, cause)

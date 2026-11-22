@@ -1,11 +1,11 @@
 package br.com.wdc.framework.rest.security
 
 /**
- * Casa verbo e caminho da requisição, no estilo dos `requestMatchers` do Spring:
+ * Matches the request's verb and path, in the style of Spring's `requestMatchers`:
  *
- * - `"/auth/login"` — qualquer verbo; `"POST /auth/login"` — só POST;
- * - `*` casa parte de um segmento (`foto*.png`), `{x}` um segmento inteiro, `**` zero ou mais segmentos;
- * - a barra final é ignorada (`/a/` casa `/a`), como no Spring MVC.
+ * - `"/auth/login"` — any verb; `"POST /auth/login"` — POST only;
+ * - `*` matches part of a segment (`photo*.png`), `{x}` a whole segment, `**` zero or more segments;
+ * - the trailing slash is ignored (`/a/` matches `/a`), as in Spring MVC.
  */
 class RequestMatcher private constructor(val method: String?, val pattern: String, private val regex: Regex) {
 
@@ -21,7 +21,7 @@ class RequestMatcher private constructor(val method: String?, val pattern: Strin
             val space = trimmed.indexOf(' ')
             val method = if (space > 0) trimmed.substring(0, space).uppercase() else null
             val pattern = if (space > 0) trimmed.substring(space + 1).trim() else trimmed
-            require(pattern.startsWith("/")) { "O padrão deve começar com '/': $spec" }
+            require(pattern.startsWith("/")) { "The pattern must start with '/': $spec" }
             return RequestMatcher(method, pattern, compile(normalize(pattern)))
         }
 

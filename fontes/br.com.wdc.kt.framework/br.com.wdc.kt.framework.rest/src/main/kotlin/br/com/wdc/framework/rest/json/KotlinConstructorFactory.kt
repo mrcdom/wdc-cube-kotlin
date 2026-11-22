@@ -30,29 +30,30 @@ import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaType
 
 /**
- * Lê as classes Kotlin pelo **construtor primário**, em vez de deixar o Gson criar o objeto sem construtor e
- * gravar os campos por reflexão.
+ * Reads Kotlin classes through the **primary constructor**, instead of letting Gson create the object without a
+ * constructor and write the fields by reflection.
  *
- * Dois motivos:
- * - **campo `val` é final**, e o JDK 26 avisa que vai bloquear a gravação de campo final por reflexão (JEP 500):
- *   o leitor padrão do Gson deixaria de funcionar;
- * - pelo construtor, **os valores padrão dos parâmetros valem** quando o campo não vem no JSON.
+ * Two reasons:
+ * - **a `val` field is final**, and JDK 26 warns it will block writing final fields by reflection (JEP 500):
+ *   Gson's default reader would stop working;
+ * - through the constructor, **parameter default values apply** when the field is not in the JSON.
  *
- * Campo ausente: parâmetro com padrão usa o padrão; anulável sem padrão fica `null`; não anulável sem padrão é
- * erro. `null` explícito: num anulável é `null`; num não anulável usa o padrão, se houver, e senão é erro. Os erros são
- * [JsonParseException] (400 na leitura do corpo).
+ * Absent field: a parameter with a default uses the default; a nullable without a default becomes `null`; a
+ * non-nullable without a default is an error. Explicit `null`: on a nullable it is `null`; on a non-nullable it uses
+ * the default, if any, and otherwise is an error. The errors are [JsonParseException] (400 when reading the body).
  *
- * O nome no JSON é o do campo que guarda o parâmetro (`@SerializedName`, com os nomes alternativos, ou a
- * política de nomes); `@JsonAdapter` no campo vale (adaptador ou fábrica). Propriedades `var` declaradas fora do
- * construtor são gravadas depois de construir; `val` fora do construtor é ignorada na leitura. A escrita não
- * muda: segue o Gson.
+ * The JSON name is that of the field holding the parameter (`@SerializedName`, with the alternate names, or the
+ * naming policy); `@JsonAdapter` on the field applies (adapter or factory). `var` properties declared outside the
+ * constructor are written after construction; a `val` outside the constructor is ignored on reading. Writing
+ * doesn't change: it follows Gson.
  *
- * Parâmetro cujo campo é **transiente** (`@Transient` do Kotlin ou o modificador `transient`) não é lido do JSON,
- * como no Gson: a chave dele, se vier, é ignorada, e o parâmetro recebe o padrão, ou `null`. Sem padrão e sem ser
- * anulável é erro de declaração: a primeira leitura da classe falha com [JsonDeclarationException], que não é 400.
+ * A parameter whose field is **transient** (Kotlin's `@Transient` or the `transient` modifier) is not read from the
+ * JSON, as in Gson: its key, if present, is ignored, and the parameter gets the default, or `null`. Without a default
+ * and not nullable it is a declaration error: the class's first read fails with [JsonDeclarationException], which is
+ * not 400.
  *
- * Fora daqui, e lidas pelo Gson como antes: enum, `object`, classe de valor, registro (`@JvmRecord`), classe
- * abstrata, classe sem parâmetros no construtor primário e classes que não são Kotlin.
+ * Left out, and read by Gson as before: enums, `object`s, value classes, records (`@JvmRecord`), abstract
+ * classes, classes without parameters in the primary constructor and non-Kotlin classes.
  */
 internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy) : TypeAdapterFactory {
 
@@ -64,7 +65,7 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
             return null
         }
         val delegate = gson.getDelegateAdapter(this, type)
-        // montado na primeira leitura: um erro de declaração não impede a escrita
+        // built on the first read: a declaration error doesn't prevent writing
         val reader by lazy { Reader(gson, type) }
         return object : TypeAdapter<T>() {
             override fun write(out: JsonWriter, value: T?) = delegate.write(out, value)
@@ -74,7 +75,7 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
         }
     }
 
-    /** O construtor primário, se a classe é das que este leitor trata; `null` senão. */
+    /** The primary constructor, if the class is one this reader handles; `null` otherwise. */
     private fun kotlinConstructorOf(raw: Class<*>): KFunction<*>? {
         if (!raw.isAnnotationPresent(Metadata::class.java) || raw.isEnum || raw.isInterface || raw.isRecord ||
             raw.isArray || Modifier.isAbstract(raw.modifiers) || raw.name.startsWith("kotlin.")
@@ -86,9 +87,9 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
             if (kClass.objectInstance != null || kClass.isValue || kClass.isInner) return null
             kClass.primaryConstructor?.takeIf { it.parameters.isNotEmpty() }?.also { it.isAccessible = true }
         } catch (_: UnsupportedOperationException) {
-            null // classes sintéticas, lambdas, classes locais que o kotlin-reflect não descreve
+            null // synthetic classes, lambdas, local classes that kotlin-reflect doesn't describe
         } catch (_: Error) {
-            null // KotlinReflectionInternalError: metadados que o kotlin-reflect não lê
+            null // KotlinReflectionInternalError: metadata that kotlin-reflect can't read
         }
     }
 
@@ -102,7 +103,7 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
         private val elements = gson.getAdapter(JsonElement::class.java)
         private val bindings = bindingsOf(type)
         private val slots: List<Slot>
-        private val transientNulls: List<KParameter> // transientes anuláveis sem padrão: vão `null`
+        private val transientNulls: List<KParameter> // nullable transients without a default: get `null`
         private val byName = HashMap<String, Slot>()
         private val extras = HashMap<String, Extra>()
 
@@ -113,8 +114,8 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
                 if (parameter.name !in transient) return@filter true
                 if (!parameter.isOptional && !parameter.type.isMarkedNullable) {
                     throw JsonDeclarationException(
-                        "${type.rawType.name}: o parâmetro '${parameter.name}' é transiente (não vem do JSON) e precisa " +
-                            "de valor padrão ou ser anulável"
+                        "${type.rawType.name}: parameter '${parameter.name}' is transient (not read from JSON) and needs " +
+                            "a default value or to be nullable"
                     )
                 }
                 false
@@ -141,7 +142,7 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
             }
             val tree = elements.read(input)
             if (tree !is JsonObject) {
-                throw JsonParseException("Esperava um objeto JSON para ${constructor.returnType}, veio $tree")
+                throw JsonParseException("Expected a JSON object for ${constructor.returnType}, got $tree")
             }
             val values = HashMap<KParameter, Any?>()
             val present = HashSet<KParameter>()
@@ -163,18 +164,18 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
                 val nullable = parameter.type.isMarkedNullable
                 when {
                     value != null -> arguments[parameter] = value
-                    parameter in present && nullable -> arguments[parameter] = null // null explícito
-                    parameter.isOptional -> Unit // vale o padrão
+                    parameter in present && nullable -> arguments[parameter] = null // explicit null
+                    parameter.isOptional -> Unit // the default applies
                     nullable -> arguments[parameter] = null
-                    parameter in present -> throw JsonParseException("O campo '${slot.names.first()}' não pode ser nulo")
-                    else -> throw JsonParseException("Falta o campo obrigatório '${slot.names.first()}'")
+                    parameter in present -> throw JsonParseException("Field '${slot.names.first()}' must not be null")
+                    else -> throw JsonParseException("Missing required field '${slot.names.first()}'")
                 }
             }
 
             val instance = try {
                 constructor.callBy(arguments)
             } catch (e: InvocationTargetException) {
-                throw e.targetException // validação no init: a exceção da classe, inteira
+                throw e.targetException // validation in init: the class's own exception, untouched
             }
             for ((extra, element) in later) {
                 extra.field.set(instance, extra.adapter.fromJsonTree(element))
@@ -182,16 +183,16 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
             return instance
         }
 
-        /** O adaptador de `@JsonAdapter` no campo, ou `null` se não há. */
+        /** The adapter from `@JsonAdapter` on the field, or `null` if there is none. */
         private fun adapterOf(field: Field): TypeAdapter<*>? {
             val annotation = field.getAnnotation(JsonAdapter::class.java) ?: return null
             val ctor = annotation.value.java.getDeclaredConstructor().also { it.isAccessible = true }
             val adapter: TypeAdapter<*> = when (val created = ctor.newInstance()) {
                 is TypeAdapter<*> -> created
                 is TypeAdapterFactory -> created.create(gson, TypeToken.get(resolve(field.genericType, bindings)))
-                    ?: throw IllegalArgumentException("@JsonAdapter de ${field.name}: a fábrica não trata ${field.genericType}")
+                    ?: throw IllegalArgumentException("@JsonAdapter of ${field.name}: the factory doesn't handle ${field.genericType}")
                 else -> throw IllegalArgumentException(
-                    "@JsonAdapter de ${field.name}: só TypeAdapter e TypeAdapterFactory são aceitos na leitura pelo construtor"
+                    "@JsonAdapter of ${field.name}: only TypeAdapter and TypeAdapterFactory are accepted when reading through the constructor"
                 )
             }
             return if (annotation.nullSafe) adapter.nullSafe() else adapter
@@ -213,7 +214,7 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
         return fields
     }
 
-    /** Nomes dos campos transientes da classe e das superclasses. */
+    /** Names of the transient fields of the class and its superclasses. */
     private fun transientNamesOf(type: Class<*>): Set<String> {
         val names = HashSet<String>()
         var current: Class<*>? = type
@@ -230,7 +231,7 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
         return type.rawType.typeParameters.map { it.name }.zip(parameterized.actualTypeArguments).toMap()
     }
 
-    /** Troca as variáveis de tipo da classe pelos argumentos pedidos (`Page<T>` lido como `Page<Order>`). */
+    /** Replaces the class's type variables with the requested arguments (`Page<T>` read as `Page<Order>`). */
     private fun resolve(type: Type, bindings: Map<String, Type>): Type = when {
         bindings.isEmpty() -> type
         type is TypeVariable<*> -> bindings[type.name] ?: type
@@ -249,7 +250,7 @@ internal class KotlinConstructorFactory(private val naming: FieldNamingStrategy)
 }
 
 /**
- * Classe mal declarada para a leitura JSON (por exemplo, parâmetro transiente sem padrão e não anulável). É defeito do
- * código, não do pedido: não vira 400.
+ * Class badly declared for JSON reading (for example, a transient parameter without a default and not nullable). It is
+ * a code defect, not a request one: it doesn't become 400.
  */
 class JsonDeclarationException(message: String) : RuntimeException(message)

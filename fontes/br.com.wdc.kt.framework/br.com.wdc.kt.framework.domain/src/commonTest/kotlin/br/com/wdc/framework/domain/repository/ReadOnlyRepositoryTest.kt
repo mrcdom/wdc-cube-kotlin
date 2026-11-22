@@ -7,12 +7,12 @@ import kotlinx.coroutines.test.runTest
 
 class ReadOnlyRepositoryTest {
 
-    /** Uma linha de painel: não é entidade que se grave, é o resultado de uma consulta. */
+    /** A dashboard row: not an entity that gets written, it is the result of a query. */
     private data class SalesRow(var productId: Long? = null, var total: Double? = null)
 
     private class SalesCriteria(var minTotal: Double? = null)
 
-    /** Repositório de somente leitura: implementa as consultas, e não há escrita para implementar. */
+    /** Read-only repository: implements the queries, and there is no write to implement. */
     private class SalesDashboard(private val rows: List<SalesRow>) : ReadOnlyRepository<SalesRow, SalesCriteria, Long> {
         private fun matching(criteria: SalesCriteria) = rows.filter { criteria.minTotal == null || it.total!! >= criteria.minTotal!! }
 
@@ -26,7 +26,7 @@ class ReadOnlyRepositoryTest {
         override fun ownFieldsProjection() = SalesRow(0L, 0.0)
     }
 
-    /** Uma entidade comum, com repositório completo. */
+    /** A plain entity, with a full repository. */
     private data class Note(var id: Long? = null)
 
     private class NoteRepository(private val rows: MutableList<Note>) : Repository<Note, Unit, Long> {
@@ -39,7 +39,7 @@ class ReadOnlyRepositoryTest {
         override fun ownFieldsProjection() = Note(0L)
     }
 
-    /** Código que só lê declara isso pelo tipo — e serve a qualquer repositório. */
+    /** Code that only reads declares so through the type — and works with any repository. */
     private suspend fun <E, C> howMany(repository: ReadOnlyRepository<E, C, *>, criteria: C): Int = repository.count(criteria)
 
     private val dashboard = SalesDashboard(listOf(SalesRow(1, 10.5), SalesRow(2, 99.5), SalesRow(3, 45.5), SalesRow(4, 70.5)))

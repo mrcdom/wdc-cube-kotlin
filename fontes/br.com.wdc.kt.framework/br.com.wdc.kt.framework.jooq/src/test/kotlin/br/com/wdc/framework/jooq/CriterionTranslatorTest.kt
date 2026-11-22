@@ -11,7 +11,7 @@ import org.jooq.SQLDialect
 import org.jooq.impl.DSL
 import org.jooq.impl.SQLDataType
 
-/** A tradução de um campo que incide sobre várias colunas. */
+/** The translation of a field that applies to several columns. */
 class CriterionTranslatorTest {
 
     private class Search : Criteria {
@@ -55,7 +55,7 @@ class CriterionTranslatorTest {
             sql(DSL.or(DSL.falseCondition(), DSL.falseCondition())),
             sql(CriterionTranslator.translateAny(listOf(name, code), empty)),
         )
-        // dentro de um campo disjuntivo, o vazio não esconde os outros pedidos
+        // inside a disjunctive field, the empty one does not hide the other predicates
         val alternative = Search().term.or().eq("x").term.isIn().term
         assertEquals(sql(DSL.or(name.eq("x"), DSL.falseCondition())), sql(CriterionTranslator.translate(name, alternative)))
     }

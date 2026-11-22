@@ -5,37 +5,37 @@ import org.jooq.Table
 import org.jooq.TableField
 
 /**
- * Um campo do mapeamento, como o [JsonQueryBuilder] o conhece: o nome, a coluna, como ler e gravar no bean. É o que
- * o [JsonQuery.insert] usa para montar o `INSERT` sem que o repositório repita o mapeamento, e o que um repositório usa
- * para montar a sua própria escrita (um `UPDATE` pelas colunas que a projeção marca, por exemplo): [projected] diz se o
- * campo foi pedido, [mark] o pede num bean de projeção e [toColumn] dá o valor no tipo da coluna.
+ * A mapping field, as [JsonQueryBuilder] knows it: the name, the column, how to read and write it on the bean. It is
+ * what [JsonQuery.insert] uses to build the `INSERT` without the repository repeating the mapping, and what a repository
+ * uses to build its own writes (an `UPDATE` by the columns the projection marks, for example): [projected] says whether
+ * the field was requested, [mark] requests it on a projection bean and [toColumn] gives the value in the column type.
  *
- * As associações declaradas com chave (`addBeanField(…, key = …)`) entram uma vez por parte da chave, com o nome
- * `associação.parte` (`author.id`) e a coluna da chave estrangeira **desta** tabela. Coleções não entram.
+ * Associations declared with a key (`addBeanField(…, key = …)`) appear once per key part, named
+ * `association.part` (`author.id`) and with the foreign key column of **this** table. Collections are left out.
  *
- * @param B tipo do bean
- * @param T tipo da tabela jOOQ
+ * @param B bean type
+ * @param T jOOQ table type
  */
 class JsonQueryField<B : Any, T : Table<*>> internal constructor(
-    /** O nome no JSON; numa parte de chave de associação, `associação.parte`. */
+    /** The JSON name; for an association key part, `association.part`. */
     val name: String,
-    /** A coluna, ou a expressão, sobre a instância da tabela. */
+    /** The column, or the expression, over the table instance. */
     val column: (T) -> Field<*>,
-    /** O valor no bean, como o domínio o guarda (numa associação, a parte da chave do associado). */
+    /** The value on the bean, as the domain keeps it (for an association, the associated entity's key part). */
     val get: (B) -> Any?,
-    /** Grava o valor no bean; `null` não grava. Numa associação ausente, cria o associado só com a chave. */
+    /** Writes the value on the bean; `null` writes nothing. For a missing association, creates the associated entity with just the key. */
     val set: (B, Any?) -> Unit,
-    /** Se o bean de projeção pede este campo. */
+    /** Whether the projection bean asks for this field. */
     val projected: (B) -> Boolean,
-    /** Marca o campo num bean de projeção (numa associação, cria o associado só com a parte da chave marcada). */
+    /** Marks the field on a projection bean (for an association, creates the associated entity with just the key part marked). */
     val mark: (B) -> Unit,
     /**
-     * O valor do domínio (o que [get] devolve, não nulo) no tipo da coluna: `Instant` → `LocalDateTime` em UTC,
-     * `Double` → `BigDecimal`, enum → nome... Para o tipo exato, `DSL.val(valor, coluna).value` (o `DataType.convert` está obsoleto no jOOQ).
+     * The domain value (what [get] returns, non-null) in the column type: `Instant` → `LocalDateTime` in UTC,
+     * `Double` → `BigDecimal`, enum → name... For the exact type, `DSL.val(value, column).value` (`DataType.convert` is deprecated in jOOQ).
      */
     val toColumn: (Any) -> Any?,
 ) {
-    /** `true` quando [column] é coluna de [table], e não uma expressão sobre ela (campo derivado). */
+    /** `true` when [column] is a column of [table], not an expression over it (derived field). */
     fun isColumnOf(table: T): Boolean {
         val field = column(table)
         return field is TableField<*, *> && table.fields().any { it == field }

@@ -9,16 +9,16 @@ import org.jooq.Field
 import org.jooq.Table
 
 /**
- * A correspondência entre a chave de uma entidade associada e a coluna que a guarda deste lado.
+ * The match between the key of an associated entity and the column that holds it on this side.
  *
- * Serve a um atalho: quando a projeção da associação pede **apenas a chave**, o valor já está na linha
- * corrente — é a coluna da chave estrangeira. Ir buscá-lo do outro lado seria uma subconsulta para descobrir
- * o que já se sabe.
+ * Serves a shortcut: when the association's projection asks for **only the key**, the value is already in the
+ * current row — it is the foreign key column. Fetching it from the other side would be a subquery to find out
+ * what is already known.
  *
- * **Os nomes dos métodos são os do [JsonQueryBuilder] de propósito**: a chave é declarada a partir do mesmo
- * tipo de coluna com que se declararia o campo escalar, o que impede escolher um tipo aqui e outro lá.
+ * **The method names are those of [JsonQueryBuilder] on purpose**: the key is declared from the same column
+ * type the scalar field would be declared with, which prevents picking one type here and another there.
  *
- * @param T a tabela deste lado, onde mora a coluna da chave estrangeira
+ * @param T the table on this side, where the foreign key column lives
  */
 class RelationKey<T : Table<*>> internal constructor() {
 
@@ -26,40 +26,40 @@ class RelationKey<T : Table<*>> internal constructor() {
 
     private val parts = LinkedHashMap<String, Part<T>>()
 
-    /** Campo `Long` da chave do filho, guardado nesta coluna. */
+    /** `Long` field of the child's key, stored in this column. */
     fun addI64(fn: String, column: (T) -> Field<out Number?>) = add(fn, column, JsonFieldType.NUMBER)
 
-    /** Campo `Int` da chave do filho, guardado nesta coluna. */
+    /** `Int` field of the child's key, stored in this column. */
     fun addI32(fn: String, column: (T) -> Field<out Number?>) = add(fn, column, JsonFieldType.NUMBER)
 
-    /** Campo `Double` da chave do filho, guardado nesta coluna. */
+    /** `Double` field of the child's key, stored in this column. */
     fun addF64(fn: String, column: (T) -> Field<out Number?>) = add(fn, column, JsonFieldType.NUMBER)
 
-    /** Campo `BigDecimal` da chave do filho, guardado nesta coluna. */
+    /** `BigDecimal` field of the child's key, stored in this column. */
     fun addDec(fn: String, column: (T) -> Field<out BigDecimal?>) = add(fn, column, JsonFieldType.NUMBER)
 
-    /** Campo `String` da chave do filho, guardado nesta coluna. */
+    /** `String` field of the child's key, stored in this column. */
     fun addStr(fn: String, column: (T) -> Field<out String?>) = add(fn, column, JsonFieldType.STRING)
 
-    /** Campo enum da chave do filho, guardado nesta coluna como texto. */
+    /** Enum field of the child's key, stored in this column as text. */
     fun addEnm(fn: String, column: (T) -> Field<out String?>) = add(fn, column, JsonFieldType.STRING)
 
-    /** Campo `Boolean` da chave do filho, guardado nesta coluna. */
+    /** `Boolean` field of the child's key, stored in this column. */
     fun addBit(fn: String, column: (T) -> Field<out Boolean?>) = add(fn, column, JsonFieldType.BOOLEAN)
 
-    /** Campo de data/hora com fuso da chave do filho, guardado nesta coluna. */
+    /** Date/time with time zone field of the child's key, stored in this column. */
     fun addOdt(fn: String, column: (T) -> Field<out OffsetDateTime?>) = add(fn, column, JsonFieldType.DATETIME)
 
-    /** Campo de data/hora sem fuso da chave do filho, guardado nesta coluna. */
+    /** Date/time without time zone field of the child's key, stored in this column. */
     fun addLdt(fn: String, column: (T) -> Field<out LocalDateTime?>) = add(fn, column, JsonFieldType.DATETIME)
 
-    /** Campo de dia (DATE) da chave do filho, guardado nesta coluna. */
+    /** Day (DATE) field of the child's key, stored in this column. */
     fun addDay(fn: String, column: (T) -> Field<out LocalDate?>) = add(fn, column, JsonFieldType.DATETIME)
 
-    /** Campo [UUID] da chave do filho, guardado nesta coluna. */
+    /** [UUID] field of the child's key, stored in this column. */
     fun addUid(fn: String, column: (T) -> Field<out UUID?>) = add(fn, column, JsonFieldType.STRING)
 
-    /** Campo `ByteArray` da chave do filho, guardado nesta coluna. */
+    /** `ByteArray` field of the child's key, stored in this column. */
     fun addBin(fn: String, column: (T) -> Field<out ByteArray?>) = add(fn, column, JsonFieldType.BINARY)
 
     private fun add(fn: String, column: (T) -> Field<*>, type: JsonFieldType): RelationKey<T> {
@@ -67,15 +67,15 @@ class RelationKey<T : Table<*>> internal constructor() {
         return this
     }
 
-    /** Cada parte: o nome no JSON do filho e a coluna desta tabela. */
+    /** Each part: the name in the child's JSON and this table's column. */
     internal fun columns(): List<Pair<String, (T) -> Field<*>>> = parts.values.map { it.name to it.column }
 
-    /** Os campos que esta chave cobre — é contra eles que se pergunta se a projeção pediu mais. */
+    /** The fields this key covers — they are what the projection is checked against for asking more. */
     internal fun names(): Set<String> = parts.keys
 
     internal fun isEmpty(): Boolean = parts.isEmpty()
 
-    /** O objeto da chave, montado com as colunas desta linha. */
+    /** The key object, built from this row's columns. */
     internal fun entries(table: T): List<JsonFieldEntry> =
         parts.values.map { JsonFieldEntry(it.name, it.column(table), it.type) }
 }

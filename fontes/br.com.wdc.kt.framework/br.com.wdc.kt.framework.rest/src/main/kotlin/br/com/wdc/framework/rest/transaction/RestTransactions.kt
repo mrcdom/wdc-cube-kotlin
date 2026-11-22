@@ -6,34 +6,37 @@ import br.com.wdc.framework.persistence.transaction.RemoteTransactionCoordinator
 import br.com.wdc.framework.rest.RequestContext
 
 /**
- * A ponte entre a requisição e a transação: o que roda numa rota `transactional` confirma junto, ou nada
- * confirma.
+ * The bridge between the request and the transaction: what runs on a `transactional` route commits together, or
+ * nothing commits.
  *
- * 1. Veio [txHeader] e há [coordinator]: a escrita se junta à transação remota do cliente e **não confirma** —
- *    a fronteira é do cliente. Roda como participante ([service] `required`): se a requisição falhar no meio, a
- *    transação remota fica condenada, e o commit do cliente a desfaz (409) em vez de confirmar a escrita parcial.
- * 2. Não veio o cabeçalho, mas o dono tem transação remota aberta: o cabeçalho se perdeu no caminho. A escrita é
- *    recusada (409) em vez de confirmar sozinha, fora da transação. Desligue com [refuseWritesOutsideOpenTransaction].
- * 3. Senão: [service] `required` — uma transação por requisição. Sem serviço, executa direto.
+ * 1. [txHeader] came and there is a [coordinator]: the write joins the client's remote transaction and **doesn't
+ *    commit** — the boundary is the client's. It runs as a participant ([service] `required`): if the request fails
+ *    midway, the remote transaction is doomed, and the client's commit rolls it back (409) instead of committing the
+ *    partial write.
+ * 2. The header didn't come, but the owner has an open remote transaction: the header got lost on the way. The write
+ *    is refused (409) instead of committing on its own, outside the transaction. Turn off with
+ *    [refuseWritesOutsideOpenTransaction].
+ * 3. Otherwise: [service] `required` — one transaction per request. Without a service, it runs directly.
  *
- * O cabeçalho é opcional: sem coordenador, ou sem transação remota aberta, a rota é simplesmente transacional.
+ * The header is optional: without a coordinator, or without an open remote transaction, the route is simply
+ * transactional.
  */
 class RestTransactions {
 
-    /** De onde vêm as transações locais, consultado a cada requisição. */
+    /** Where the local transactions come from, queried on each request. */
     var serviceSource: () -> TransactionService? = { null }
 
-    /** De onde vem o coordenador das transações remotas, consultado a cada requisição. */
+    /** Where the remote transaction coordinator comes from, queried on each request. */
     var coordinatorSource: () -> RemoteTransactionCoordinator? = { null }
 
-    /** As transações locais. `null` = a rota `transactional` executa sem transação. */
+    /** The local transactions. `null` = a `transactional` route runs without a transaction. */
     var service: TransactionService?
         get() = serviceSource()
         set(value) {
             serviceSource = { value }
         }
 
-    /** As transações remotas, dirigidas pelo cliente. `null` = não há. */
+    /** The remote transactions, driven by the client. `null` = none. */
     var coordinator: RemoteTransactionCoordinator?
         get() = coordinatorSource()
         set(value) {
@@ -42,19 +45,19 @@ class RestTransactions {
 
     var txHeader: String = "X-Tx-Id"
 
-    /** Identifica a instância de cliente quando não há usuário autenticado. */
+    /** Identifies the client instance when there is no authenticated user. */
     var clientHeader: String = "X-Client-Id"
 
     var refuseWritesOutsideOpenTransaction: Boolean = true
 
     /**
-     * A chave opaca do dono das transações remotas, em espaços de nome separados para um anônimo não se passar
-     * por usuário: com principal, `user:<id>/client:<clientHeader>` (ou `user:<id>`, se o cabeçalho não veio);
-     * sem, `anon:<clientHeader>`, ou `null` se o cabeçalho não veio.
+     * The opaque key of the remote transactions' owner, in separate namespaces so an anonymous caller can't pass
+     * for a user: with a principal, `user:<id>/client:<clientHeader>` (or `user:<id>`, if the header didn't come);
+     * without, `anon:<clientHeader>`, or `null` if the header didn't come.
      *
-     * O cliente entra na chave para o mesmo usuário em dois clientes (desktop e web) não se bloquear: a recusa de
-     * escrita sem [txHeader] e a transação ficam por instância. O usuário continua na chave, e a transação de um
-     * usuário segue inalcançável por outro.
+     * The client is part of the key so the same user on two clients (desktop and web) doesn't block itself: the
+     * refusal of writes without [txHeader] and the transaction are per instance. The user stays in the key, and one
+     * user's transaction remains unreachable by another.
      */
     var ownerKey: (RequestContext) -> String? = { request ->
         val client = request.header(clientHeader)?.takeIf { it.isNotBlank() }
@@ -63,15 +66,15 @@ class RestTransactions {
     }
 
     /**
-     * A chave do teto de transações abertas por dono: com principal, `user:<id>` — o teto é do usuário, e trocar o
-     * [clientHeader] não o contorna —; sem, a mesma do [ownerKey].
+     * The key of the cap of open transactions per owner: with a principal, `user:<id>` — the cap is the user's, and
+     * changing [clientHeader] doesn't get around it —; without, the same as [ownerKey].
      */
     var quotaKey: (RequestContext) -> String? = { request ->
         request.principal?.let { "user:${it.id}" }
             ?: request.header(clientHeader)?.takeIf { it.isNotBlank() }?.let { "anon:$it" }
     }
 
-    /** Executa [block] na transação que cabe à requisição (ver a classe). */
+    /** Runs [block] in the transaction that fits the request (see the class). */
     suspend fun <T> run(request: RequestContext, block: suspend () -> T): T {
         val coordinator = coordinator
         if (coordinator != null) {
@@ -88,7 +91,7 @@ class RestTransactions {
             }
             if (refuseWritesOutsideOpenTransaction && owner != null && coordinator.hasOpenTransactionForOwner(owner)) {
                 throw TransactionConflictException(
-                    "Escrita sem $txHeader enquanto há transação remota aberta para o solicitante — abortada para preservar a atomicidade"
+                    "Write without $txHeader while the caller has an open remote transaction — aborted to preserve atomicity"
                 )
             }
         }

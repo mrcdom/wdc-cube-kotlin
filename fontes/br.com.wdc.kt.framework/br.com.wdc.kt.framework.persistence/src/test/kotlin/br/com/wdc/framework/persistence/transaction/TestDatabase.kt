@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 import org.h2.jdbcx.JdbcDataSource
 
-/** H2 em memória com uma tabela `T(ID, NAME)`, e um DataSource que conta as conexões abertas. */
+/** In-memory H2 with a table `T(ID, NAME)`, and a DataSource that counts open connections. */
 class TestDatabase(name: String) : AutoCloseable {
 
     private val h2 = JdbcDataSource().apply {
@@ -14,13 +14,13 @@ class TestDatabase(name: String) : AutoCloseable {
         password = "sa"
     }
 
-    /** Conexões entregues e ainda não fechadas. */
+    /** Connections handed out and not yet closed. */
     val openConnections = AtomicInteger()
 
-    /** Total de conexões entregues. */
+    /** Total connections handed out. */
     val acquired = AtomicInteger()
 
-    /** Quando `true`, o próximo commit falha. */
+    /** When `true`, the next commit fails. */
     @Volatile
     var failNextCommit = false
 
@@ -51,7 +51,7 @@ class TestDatabase(name: String) : AutoCloseable {
                 "commit" -> {
                     if (failNextCommit) {
                         failNextCommit = false
-                        throw java.sql.SQLException("commit recusado (teste)")
+                        throw java.sql.SQLException("commit refused (test)")
                     }
                     real.commit()
                     null
@@ -65,13 +65,13 @@ class TestDatabase(name: String) : AutoCloseable {
         } as Connection
     }
 
-    /** Insere pela transação corrente da thread. */
+    /** Inserts through the thread's current transaction. */
     fun insertInCurrentTx(id: Int, name: String = "n$id") {
-        val connection = TransactionScope.current()?.connection() ?: error("sem transação corrente")
+        val connection = TransactionScope.current()?.connection() ?: error("no current transaction")
         insert(connection, id, name)
     }
 
-    /** Insere por uma conexão avulsa, em autocommit. */
+    /** Inserts through a standalone connection, in autocommit. */
     fun insertAutoCommit(id: Int, name: String = "n$id") {
         dataSource.connection.use { insert(it, id, name) }
     }
@@ -84,7 +84,7 @@ class TestDatabase(name: String) : AutoCloseable {
         }
     }
 
-    /** Ids persistidos, vistos por uma conexão independente. */
+    /** Persisted ids, seen through an independent connection. */
     fun ids(): List<Int> = h2.connection.use { c ->
         c.createStatement().use { st ->
             st.executeQuery("SELECT ID FROM T ORDER BY ID").use { rs ->

@@ -10,40 +10,40 @@ import javax.sql.DataSource
 import kotlinx.coroutines.withContext
 
 /**
- * Implementação de [TransactionService] no estilo CMT, sobre JDBC, reentrante.
+ * CMT-style [TransactionService] implementation, over JDBC, reentrant.
  *
- * Apoia-se no frame [TransactionScope]: REQUIRED junta-se à transação ativa compartilhando a mesma conexão;
- * REQUIRES_NEW abre uma segunda conexão e a corrente fica intocada até o bloco terminar; NOT_SUPPORTED
- * executa sem transação e a corrente volta ao final.
+ * Built on the [TransactionScope] frame: REQUIRED joins the active transaction sharing the same connection;
+ * REQUIRES_NEW opens a second connection and the current one stays untouched until the block ends;
+ * NOT_SUPPORTED runs without a transaction and the current one comes back at the end.
  *
- * Semântica do `work`: COMMIT em retorno normal (apenas o owner comita), ROLLBACK em **qualquer** exceção
- * (repropagada intacta — inclusive `Error` e cancelamento) ou se [TransactionContext.setRollbackOnly] foi
- * chamado. Falhas ao abrir ou finalizar a transação viram [TransactionSystemException].
+ * `work` semantics: COMMIT on normal return (only the owner commits), ROLLBACK on **any** exception
+ * (rethrown intact — including `Error` and cancellation) or if [TransactionContext.setRollbackOnly] was
+ * called. Failures opening or finishing the transaction become [TransactionSystemException].
  *
- * [afterCommit] guarda a tarefa no owner da transação física ([TransactionScope.afterCommit]); quem abriu o owner
- * a roda depois do commit, já com a conexão devolvida e sem transação corrente.
+ * [afterCommit] stores the task in the owner of the physical transaction ([TransactionScope.afterCommit]); whoever
+ * opened the owner runs it after the commit, with the connection already returned and no current transaction.
  *
- * **Corrotinas.** O `work` roda com o escopo no contexto da corrotina ([TransactionScope.asContextElement]):
- * se suspender e retomar em outra thread, a transação corrente vai junto, com a mesma conexão. Ainda assim,
- * **o bloco não deve fazer suspensão real** (`delay`, espera de rede): a transação segura uma conexão do
- * pool durante a espera. As implementações `suspend` dos repositórios chamam JDBC bloqueante e respeitam isso.
+ * **Coroutines.** `work` runs with the scope in the coroutine context ([TransactionScope.asContextElement]):
+ * if it suspends and resumes on another thread, the current transaction goes along, with the same connection.
+ * Even so, **the block must not really suspend** (`delay`, network wait): the transaction holds a pool
+ * connection during the wait. The repositories' `suspend` implementations call blocking JDBC and respect this.
  *
- * @param dataSource DataSource deste contexto (por módulo), resolvido a cada abertura — o composition root o
- *                   injeta no bootstrap do módulo
+ * @param dataSource DataSource of this context (per module), resolved on each opening — the composition root
+ *                   injects it in the module bootstrap
  */
 class TransactionServiceImpl(private val dataSource: () -> DataSource?) : TransactionService {
 
     override suspend fun <T> required(work: suspend (TransactionContext) -> T): T {
         val ambient = TransactionScope.current()
-        return if (ambient != null) join(ambient, work) else runNew("Falha ao abrir/juntar transação", work)
+        return if (ambient != null) join(ambient, work) else runNew("Failed to open/join transaction", work)
     }
 
     override suspend fun <T> requiresNew(work: suspend (TransactionContext) -> T): T =
-        runNew("Falha ao abrir nova transação", work)
+        runNew("Failed to open new transaction", work)
 
     override suspend fun <T> mandatory(work: suspend (TransactionContext) -> T): T {
         val ambient = TransactionScope.current()
-            ?: throw TransactionRequiredException("mandatory: nenhuma transação ativa no escopo")
+            ?: throw TransactionRequiredException("mandatory: no active transaction in scope")
         return join(ambient, work)
     }
 
@@ -57,7 +57,7 @@ class TransactionServiceImpl(private val dataSource: () -> DataSource?) : Transa
 
     override suspend fun <T> never(work: suspend (TransactionContext) -> T): T {
         if (TransactionScope.isActive()) {
-            throw TransactionNotAllowedException("never: há transação ativa no escopo")
+            throw TransactionNotAllowedException("never: there is an active transaction in scope")
         }
         return work(HANDLE)
     }
@@ -67,18 +67,18 @@ class TransactionServiceImpl(private val dataSource: () -> DataSource?) : Transa
         if (current != null) current.afterCommit(task) else AfterCommitTasks.runAll(listOf(task))
     }
 
-    // :: Núcleo
+    // :: Core
 
-    /** Abre uma transação owner e executa o `work` nela; a transação ambiente, se houver, volta ao final. */
+    /** Opens an owner transaction and runs `work` in it; the ambient transaction, if any, comes back at the end. */
     private suspend fun <T> runNew(openFailure: String, work: suspend (TransactionContext) -> T): T {
-        val ds = dataSource() ?: throw TransactionSystemException("DataSource não inicializado para este TransactionService")
+        val ds = dataSource() ?: throw TransactionSystemException("DataSource not initialized for this TransactionService")
         val scope = try {
             TransactionScope.open(ds)
         } catch (e: Exception) {
             throw TransactionSystemException(openFailure, e)
         }
         val result = withTransaction(scope) { finish(scope, work) }
-        // comitou e a conexão já voltou ao pool: as tarefas rodam sem transação, para não herdar nenhuma
+        // committed and the connection is back in the pool: tasks run without a transaction, so as not to inherit one
         val tasks = scope.takeAfterCommit()
         if (tasks.isNotEmpty()) {
             withTransaction(null) { AfterCommitTasks.runAll(tasks) }
@@ -86,17 +86,17 @@ class TransactionServiceImpl(private val dataSource: () -> DataSource?) : Transa
         return result
     }
 
-    /** Executa o `work` como participante da transação ambiente. */
+    /** Runs `work` as a participant of the ambient transaction. */
     private suspend fun <T> join(ambient: TransactionScope, work: suspend (TransactionContext) -> T): T =
-        // o elemento garante a transação ambiente também quando ela foi ligada direto na thread (coordenador remoto)
+        // the element guarantees the ambient transaction also when it was bound directly on the thread (remote coordinator)
         withTransaction(ambient) { finish(ambient.participant(), work) }
 
     /**
-     * Executa o bloco com [scope] como transação corrente da corrotina (`null` = sem transação).
+     * Runs the block with [scope] as the coroutine's current transaction (`null` = no transaction).
      *
-     * A falha do bloco é capturada **dentro** do `withContext` e relançada fora: assim a exceção chega ao
-     * chamador como a mesma instância. Atravessando a fronteira como exceção, o modo de depuração das
-     * corrotinas (ligado por `-ea`) a substituiria por uma cópia, para recompor a pilha.
+     * The block's failure is caught **inside** `withContext` and rethrown outside: so the exception reaches the
+     * caller as the same instance. Crossing the boundary as an exception, the coroutines debug mode (enabled
+     * by `-ea`) would replace it with a copy, to rebuild the stack.
      */
     private suspend fun <T> withTransaction(scope: TransactionScope?, block: suspend () -> T): T {
         var failure: Throwable? = null
@@ -114,8 +114,8 @@ class TransactionServiceImpl(private val dataSource: () -> DataSource?) : Transa
     }
 
     /**
-     * Executa o `work` no frame: comita em sucesso (só o owner comita; participante é no-op), marca
-     * rollback em exceção (repropagada) e encerra o frame.
+     * Runs `work` in the frame: commits on success (only the owner commits; participant is a no-op), marks
+     * rollback on exception (rethrown) and ends the frame.
      */
     private suspend fun <T> finish(scope: TransactionScope, work: suspend (TransactionContext) -> T): T {
         val result = try {
@@ -132,17 +132,17 @@ class TransactionServiceImpl(private val dataSource: () -> DataSource?) : Transa
         try {
             scope.close()
         } catch (e: Exception) {
-            throw TransactionSystemException("Falha ao finalizar a transação", e)
+            throw TransactionSystemException("Failed to finish the transaction", e)
         }
         return result
     }
 
-    /** Handle entregue ao `work`; lê o estado da transação ambiente. */
+    /** Handle given to `work`; reads the state of the ambient transaction. */
     private object HANDLE : TransactionContext {
 
         override fun setRollbackOnly() {
             val current = TransactionScope.current()
-                ?: throw IllegalStateException("setRollbackOnly: nenhuma transação ativa neste escopo")
+                ?: throw IllegalStateException("setRollbackOnly: no active transaction in this scope")
             current.setRollbackOnly()
         }
 

@@ -1,24 +1,25 @@
 package br.com.wdc.framework.domain.criteria
 
 /**
- * Critério de campo textual.
+ * Criterion on a text field.
  *
- * Herda de [ComparableCriterion] porque texto também se ordena — `name.ge("M")` é consulta legítima — e
- * acrescenta as buscas por padrão.
+ * Extends [ComparableCriterion] because text can be ordered too — `name.ge("M")` is a legitimate query — and
+ * adds pattern searches.
  *
- * **Os curingas fazem parte do valor.** `like("%CAFE%")` é diferente de `like("CAFE")`, exatamente como em
- * SQL. Acrescentá-los automaticamente tiraria de quem escreve a consulta a capacidade de ancorar no início —
- * que é justamente o que decide se um índice será usado.
+ * **Wildcards are part of the value.** `like("%CAFE%")` differs from `like("CAFE")`, exactly as in SQL.
+ * Adding them automatically would take away from whoever writes the query the ability to anchor at the start —
+ * which is precisely what decides whether an index will be used.
  *
- * **Em [like] e [ilike] o valor é padrão; em [containing] e [startingWith], é texto.** Os dois últimos escapam
- * `%`, `_` e a própria barra invertida do trecho antes de pôr os curingas: o que a pessoa digitou é procurado
- * literalmente, e `50%` não vira "começa com 50". Para montar à mão um padrão com texto de fora, [escape].
+ * **In [like] and [ilike] the value is a pattern; in [containing] and [startingWith], it is text.** The latter
+ * two escape `%`, `_` and the backslash itself in the fragment before adding the wildcards: what the person
+ * typed is searched literally, and `50%` doesn't become "starts with 50". To build a pattern by hand with
+ * outside text, [escape].
  *
- * @param C tipo do `XxxCriteria` que contém este campo
+ * @param C type of the `XxxCriteria` that contains this field
  */
 class TextCriterion<C>(owner: C?, name: String) : ComparableCriterion<C, String>(owner, name) {
 
-    // Retorno covariante: sem isto, or() devolveria a superclasse e o encadeamento perderia like e ilike.
+    // Covariant return: without this, or() would return the superclass and chaining would lose like and ilike.
     override fun or(): TextCriterion<C> {
         super.or()
         return this
@@ -29,23 +30,23 @@ class TextCriterion<C>(owner: C?, name: String) : ComparableCriterion<C, String>
         return this
     }
 
-    /** `LIKE`, sensível a maiúsculas. Texto nulo ou vazio não acrescenta pedido. */
+    /** `LIKE`, case-sensitive. Null or empty text adds no request. */
     fun like(pattern: String?): C = if (pattern.isNullOrEmpty()) owner() else add(Operator.LIKE, pattern)
 
-    /** `ILIKE`, insensível a maiúsculas. Texto nulo ou vazio não acrescenta pedido. */
+    /** `ILIKE`, case-insensitive. Null or empty text adds no request. */
     fun ilike(pattern: String?): C = if (pattern.isNullOrEmpty()) owner() else add(Operator.ILIKE, pattern)
 
-    /** `ILIKE '%valor%'`, com o valor literal — o caso mais comum de busca por trecho. */
+    /** `ILIKE '%value%'`, with the literal value — the most common fragment search. */
     fun containing(fragment: String?): C = if (fragment.isNullOrEmpty()) owner() else ilike("%${escape(fragment)}%")
 
-    /** `ILIKE 'valor%'`, com o valor literal — ancorado no início, que é o que permite ao banco usar índice. */
+    /** `ILIKE 'value%'`, with the literal value — anchored at the start, which lets the database use an index. */
     fun startingWith(prefix: String?): C = if (prefix.isNullOrEmpty()) owner() else ilike("${escape(prefix)}%")
 
     companion object {
-        /** O caractere de escape dos padrões; o tradutor para SQL o declara (`ESCAPE '\'`). */
+        /** The escape character of patterns; the SQL translator declares it (`ESCAPE '\'`). */
         const val ESCAPE: Char = '\\'
 
-        /** O texto como literal num padrão: `%`, `_` e o próprio [ESCAPE] ganham o escape na frente. */
+        /** The text as a literal in a pattern: `%`, `_` and [ESCAPE] itself get the escape in front. */
         fun escape(text: String): String = buildString(text.length) {
             for (ch in text) {
                 if (ch == '%' || ch == '_' || ch == ESCAPE) append(ESCAPE)

@@ -32,17 +32,17 @@ import java.util.Date
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Serialização dos DTOs (o que não é entidade de repositório) com o Gson, configurável para reproduzir uma
- * resposta existente: política de nulos global e por classe ou campo ([JsonNulls]), formato de cada tipo de
- * data ([DateFormats]) e ajustes livres do Gson ([JsonOptions.customize]).
+ * DTO serialization (whatever isn't a repository entity) with Gson, configurable to reproduce an existing
+ * response: global and per-class or per-field null policy ([JsonNulls]), the format of each date type
+ * ([DateFormats]) and free Gson tuning ([JsonOptions.customize]).
  *
- * Implementa o `JsonMapper` do Javalin, e por isso também serve a `ctx.json(…)`/`ctx.bodyAsClass(…)` se a
- * aplicação o instalar com `config.jsonMapper(…)`.
+ * Implements Javalin's `JsonMapper`, so it also serves `ctx.json(…)`/`ctx.bodyAsClass(…)` if the application
+ * installs it with `config.jsonMapper(…)`.
  *
- * Por campo, o formato de data se troca com `@JsonAdapter` do próprio Gson.
+ * Per field, the date format is changed with Gson's own `@JsonAdapter`.
  *
- * Classes Kotlin são lidas pelo construtor primário ([KotlinConstructorFactory]): os padrões dos parâmetros valem e
- * campo `val` não é gravado por reflexão — o que o JDK 26 avisa que vai bloquear.
+ * Kotlin classes are read through the primary constructor ([KotlinConstructorFactory]): parameter defaults apply and
+ * `val` fields are not written by reflection — which JDK 26 warns it will block.
  */
 class GsonJsonMapper(val options: JsonOptions = JsonOptions()) : JsonMapper {
 
@@ -76,7 +76,7 @@ class GsonJsonMapper(val options: JsonOptions = JsonOptions()) : JsonMapper {
             dates.instant?.let { builder.registerTypeAdapter(Instant::class.java, TemporalAdapter(it, Instant::from).nullSafe()) }
             dates.utilDatePattern?.let { builder.registerTypeAdapter(Date::class.java, UtilDateAdapter(it, dates.utilDateZone).nullSafe()) }
 
-            // a ordem importa: a fábrica registrada depois é consultada antes; a de nulos delega a leitura a esta
+            // order matters: the factory registered later is consulted first; the null one delegates reading to this one
             builder.registerTypeAdapterFactory(KotlinConstructorFactory(options.fieldNaming))
             builder.registerTypeAdapterFactory(NullPolicyFactory(options.nulls, options.fieldNaming))
             options.customizers.forEach { it(builder) }
@@ -97,7 +97,7 @@ class GsonJsonMapper(val options: JsonOptions = JsonOptions()) : JsonMapper {
         fun parse(text: String): T = try {
             formatter.parse(text, from)
         } catch (e: DateTimeParseException) {
-            throw JsonParseException("Data inválida: $text", e)
+            throw JsonParseException("Invalid date: $text", e)
         }
     }
 
@@ -115,11 +115,11 @@ class GsonJsonMapper(val options: JsonOptions = JsonOptions()) : JsonMapper {
             return try {
                 formatter.parse(text, from)
             } catch (e: DateTimeParseException) {
-                if (!lenient) throw JsonParseException("Data inválida: $text", e)
+                if (!lenient) throw JsonParseException("Invalid date: $text", e)
                 try {
                     OffsetDateTime.parse(text).withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime()
                 } catch (_: DateTimeParseException) {
-                    throw JsonParseException("Data inválida: $text", e)
+                    throw JsonParseException("Invalid date: $text", e)
                 }
             }
         }
@@ -143,18 +143,18 @@ class GsonJsonMapper(val options: JsonOptions = JsonOptions()) : JsonMapper {
                 try {
                     Date.from(OffsetDateTime.parse(text).toInstant())
                 } catch (_: DateTimeParseException) {
-                    throw JsonParseException("Data inválida: $text", e)
+                    throw JsonParseException("Invalid date: $text", e)
                 }
             }
         }
     }
 
     /**
-     * Aplica [JsonNulls] onde ele diverge da política global. Só envolve as classes que têm a anotação; as
-     * outras seguem direto pelo adaptador do Gson.
+     * Applies [JsonNulls] where it differs from the global policy. Only wraps the classes that have the annotation;
+     * the others go straight through Gson's adapter.
      *
-     * A classe envolvida é escrita como árvore com todos os nulos e depois podada: some o campo nulo cuja
-     * política efetiva é [NullPolicy.OMIT]. Ressalva: um `Map` dentro dessa classe sai com os valores nulos.
+     * The wrapped class is written as a tree with all nulls and then pruned: a null field whose effective policy
+     * is [NullPolicy.OMIT] disappears. Caveat: a `Map` inside that class goes out with its null values.
      */
     private class NullPolicyFactory(private val global: NullPolicy, private val naming: FieldNamingStrategy) : TypeAdapterFactory {
 
@@ -195,7 +195,7 @@ class GsonJsonMapper(val options: JsonOptions = JsonOptions()) : JsonMapper {
             }
         }
 
-        /** Nome no JSON → política, para cada campo; `null` se a classe não tem a anotação. */
+        /** JSON name → policy, for each field; `null` if the class doesn't have the annotation. */
         private fun planOf(type: Class<*>): Map<String, NullPolicy>? {
             val fields = ArrayList<Field>()
             var current: Class<*>? = type

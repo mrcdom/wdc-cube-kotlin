@@ -152,7 +152,7 @@ class ProjectionCollectionCodecTest {
         assertEquals("criteria", list.criteria)
         assertNull(list.limit)
         assertNull(list.offset)
-        // critério e recorte não participam da igualdade
+        // criteria and slice don't take part in equality
         assertEquals(listOf(item), list.toList())
         assertTrue(list == listOf(item))
         assertEquals(listOf(item).hashCode(), list.hashCode())

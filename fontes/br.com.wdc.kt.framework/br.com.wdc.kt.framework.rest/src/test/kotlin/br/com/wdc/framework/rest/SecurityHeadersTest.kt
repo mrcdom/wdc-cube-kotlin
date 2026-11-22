@@ -45,11 +45,11 @@ class SecurityHeadersTest {
     }
 
     private fun assertAll(response: TestResponse, expected: Map<String, String>) {
-        expected.forEach { (name, value) -> assertEquals(value, response.header(name), "$name em $response") }
+        expected.forEach { (name, value) -> assertEquals(value, response.header(name), "$name in $response") }
     }
 
     private fun assertNone(response: TestResponse, names: Collection<String>) {
-        names.forEach { assertNull(response.header(it), "$it em $response") }
+        names.forEach { assertNull(response.header(it), "$it in $response") }
     }
 
     @Test

@@ -8,33 +8,33 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.asContextElement
 
 /**
- * Frame de transação JDBC ligado à thread (via [ThreadLocal]).
+ * JDBC transaction frame bound to the thread (via [ThreadLocal]).
  *
- * **Reentrância (propagação REQUIRED):** [begin] junta-se à transação ativa quando há uma —
- * **compartilhando a mesma conexão do owner** (uma única transação física) — ou abre uma nova e torna-se
- * owner. Apenas o owner comita/reverte e fecha a conexão no [close]; para participantes o [close] é no-op.
+ * **Reentrancy (REQUIRED propagation):** [begin] joins the active transaction when there is one —
+ * **sharing the owner's connection** (a single physical transaction) — or opens a new one and becomes the
+ * owner. Only the owner commits/rolls back and closes the connection in [close]; for participants [close] is a no-op.
  *
- * **Suspensão (REQUIRES_NEW / NOT_SUPPORTED):** [suspend] desliga a transação corrente da thread (a
- * conexão/transação fica viva, sem dono na thread) e [resume] religa. Um novo escopo aberto nesse intervalo
- * usa uma **segunda conexão** do pool, independente da suspensa.
+ * **Suspension (REQUIRES_NEW / NOT_SUPPORTED):** [suspend] unbinds the current transaction from the thread (the
+ * connection/transaction stays alive, with no owner on the thread) and [resume] rebinds it. A new scope opened in
+ * that interval uses a **second connection** from the pool, independent of the suspended one.
  *
- * Usado pelo [TransactionServiceImpl] (estilo CMT), pelo coordenador de transação remota e pelos
- * repositórios, que obtêm a conexão da transação corrente via [current].
+ * Used by [TransactionServiceImpl] (CMT style), by the remote transaction coordinator and by the
+ * repositories, which get the current transaction's connection via [current].
  *
- * **Corrotinas:** o escopo vive em `ThreadLocal` porque quem o consulta é código bloqueante (o provedor de
- * conexão do jOOQ), que não recebe contexto. Para um bloco `suspend`, [asContextElement] leva o escopo junto
- * com a corrotina: a cada retomada, em qualquer thread, o `ThreadLocal` é reinstalado.
+ * **Coroutines:** the scope lives in a `ThreadLocal` because whoever reads it is blocking code (jOOQ's connection
+ * provider), which receives no context. For a `suspend` block, [asContextElement] carries the scope along with
+ * the coroutine: on each resumption, on any thread, the `ThreadLocal` is reinstalled.
  *
- * **Só JDBC.** A forma já separa os três pontos que um modo JTA precisaria tocar, sem mudar o contrato: a
- * decisão de como abrir fica em [open]; commit/rollback, no [close] do owner; e ligar/desligar da thread,
- * em [suspend]/[resume] (com JTA, a transação passa a ter afinidade de thread, e o bloco transacional deixa
- * de poder trocar de thread).
+ * **JDBC only.** The shape already separates the three points a JTA mode would need to touch, without changing
+ * the contract: the decision of how to open lives in [open]; commit/rollback, in the owner's [close]; and
+ * binding/unbinding from the thread, in [suspend]/[resume] (with JTA, the transaction gets thread affinity, and
+ * the transactional block can no longer switch threads).
  */
 class TransactionScope private constructor(
     private val connection: Connection,
-    /** Escopo que detém a transação física; `this` quando owner. */
+    /** Scope that holds the physical transaction; `this` when owner. */
     owner: TransactionScope?,
-    /** `autoCommit` original, a restaurar no [close] do owner. */
+    /** Original `autoCommit`, restored in the owner's [close]. */
     private val oldAutoCommit: Boolean,
 ) : AutoCloseable {
 
@@ -48,16 +48,16 @@ class TransactionScope private constructor(
     @Volatile
     private var closed = false
 
-    /** Tarefas para depois do commit; só as do owner valem (os participantes entregam a ele). */
+    /** Tasks for after the commit; only the owner's count (participants hand them to it). */
     private val afterCommitTasks = AfterCommitTasks()
 
     @Volatile
     private var committed = false
 
     /**
-     * A conexão da transação.
+     * The transaction's connection.
      *
-     * @throws IllegalStateException se o escopo já foi fechado
+     * @throws IllegalStateException if the scope is already closed
      */
     fun connection(): Connection {
         check(!closed) { "TransactionScope already closed" }
@@ -66,14 +66,14 @@ class TransactionScope private constructor(
 
     fun isRollbackOnly(): Boolean = root.rollbackOnly
 
-    /** Marca a transação para rollback (sem volta). O commit não será executado no [close] do owner. */
+    /** Marks the transaction for rollback (irreversible). The commit will not run in the owner's [close]. */
     fun setRollbackOnly() {
         root.rollbackOnly = true
     }
 
     /**
-     * Agenda [task] para depois do commit desta transação física (a do owner, também quando chamado num
-     * participante). Quem a executa é quem fecha o owner, por [takeAfterCommit].
+     * Schedules [task] for after the commit of this physical transaction (the owner's, also when called on a
+     * participant). Whoever closes the owner runs it, through [takeAfterCommit].
      */
     fun afterCommit(task: suspend () -> Unit) {
         check(!root.closed) { "TransactionScope already closed" }
@@ -81,8 +81,8 @@ class TransactionScope private constructor(
     }
 
     /**
-     * As tarefas agendadas, se o owner foi fechado com commit; vazio se foi desfeito ou ainda está aberto. Esvazia a
-     * fila: cada tarefa é entregue uma vez só.
+     * The scheduled tasks, if the owner was closed with commit; empty if rolled back or still open. Drains the
+     * queue: each task is delivered only once.
      */
     fun takeAfterCommit(): List<suspend () -> Unit> {
         if (!isOwner || !closed) return emptyList()
@@ -91,8 +91,8 @@ class TransactionScope private constructor(
     }
 
     /**
-     * Encerra o frame. Participante: no-op (a conexão pertence ao owner). Owner: comita (ou reverte, se
-     * marcado), restaura o `autoCommit` e fecha a conexão.
+     * Ends the frame. Participant: no-op (the connection belongs to the owner). Owner: commits (or rolls back, if
+     * marked), restores `autoCommit` and closes the connection.
      */
     @Throws(SQLException::class)
     override fun close() {
@@ -124,12 +124,12 @@ class TransactionScope private constructor(
             try {
                 connection.autoCommit = oldAutoCommit
             } catch (_: SQLException) {
-                // melhor esforço
+                // best effort
             }
             try {
                 connection.close()
             } catch (_: Exception) {
-                // melhor esforço
+                // best effort
             }
         }
     }
@@ -137,11 +137,11 @@ class TransactionScope private constructor(
     companion object {
         private val CURRENT = ThreadLocal<TransactionScope?>()
 
-        // :: Propagação REQUIRED
+        // :: REQUIRED propagation
 
         /**
-         * Junta-se à transação ativa (participante que compartilha a conexão do owner) ou abre uma nova
-         * (owner, instalada como corrente).
+         * Joins the active transaction (participant sharing the owner's connection) or opens a new one
+         * (owner, installed as current).
          */
         @Throws(SQLException::class)
         fun begin(dataSource: DataSource): TransactionScope {
@@ -149,8 +149,8 @@ class TransactionScope private constructor(
         }
 
         /**
-         * Abre incondicionalmente uma nova transação owner e a instala como corrente. Deve ser precedido de
-         * [suspend] se já houver transação ativa (caso REQUIRES_NEW).
+         * Unconditionally opens a new owner transaction and installs it as current. Must be preceded by
+         * [suspend] if a transaction is already active (REQUIRES_NEW case).
          */
         @Throws(SQLException::class)
         fun beginNew(dataSource: DataSource): TransactionScope {
@@ -160,8 +160,8 @@ class TransactionScope private constructor(
         }
 
         /**
-         * Abre uma nova transação owner **sem** instalá-la na thread. Ponto único de decisão de como a
-         * transação física nasce.
+         * Opens a new owner transaction **without** installing it on the thread. Single decision point for how
+         * the physical transaction is born.
          */
         @Throws(SQLException::class)
         internal fun open(dataSource: DataSource): TransactionScope {
@@ -180,11 +180,11 @@ class TransactionScope private constructor(
             }
         }
 
-        // :: Suspensão / retomada (REQUIRES_NEW, NOT_SUPPORTED, transação remota)
+        // :: Suspension / resumption (REQUIRES_NEW, NOT_SUPPORTED, remote transaction)
 
         /**
-         * Desliga a transação corrente da thread e a devolve para posterior [resume]. `null` se não houver
-         * transação ativa. A transação suspensa permanece viva (não é comitada).
+         * Unbinds the current transaction from the thread and returns it for a later [resume]. `null` if there is
+         * no active transaction. The suspended transaction stays alive (it is not committed).
          */
         fun suspend(): TransactionScope? {
             val current = current()
@@ -192,29 +192,29 @@ class TransactionScope private constructor(
             return current
         }
 
-        /** Religa uma transação previamente suspensa por [suspend]. No-op se [suspended] for `null`. */
+        /** Rebinds a transaction previously suspended by [suspend]. No-op if [suspended] is `null`. */
         fun resume(suspended: TransactionScope?) {
             if (suspended != null) {
                 CURRENT.set(suspended)
             }
         }
 
-        // :: Acesso / estado
+        // :: Access / state
 
-        /** Escopo corrente da thread, ou `null` se não houver transação ativa. */
+        /** The thread's current scope, or `null` if there is no active transaction. */
         fun current(): TransactionScope? = CURRENT.get()?.takeUnless { it.closed }
 
-        /** Verifica se há uma transação ativa na thread atual. */
+        /** Checks whether there is an active transaction on the current thread. */
         fun isActive(): Boolean = current() != null
 
         /**
-         * Elemento de contexto que mantém [scope] como transação corrente da corrotina, em qualquer thread em
-         * que ela for retomada, e devolve à thread o valor anterior ao sair. `null` executa **sem** transação,
-         * mesmo que o contexto externo carregue uma.
+         * Context element that keeps [scope] as the coroutine's current transaction, on any thread where it is
+         * resumed, and gives the thread back its previous value on leaving. `null` runs **without** a transaction,
+         * even if the outer context carries one.
          */
         internal fun asContextElement(scope: TransactionScope?): CoroutineContext.Element = CURRENT.asContextElement(scope)
     }
 
-    /** Participante desta transação: compartilha a conexão, sem ciclo de vida próprio. */
+    /** Participant of this transaction: shares the connection, with no lifecycle of its own. */
     internal fun participant(): TransactionScope = TransactionScope(connection, root, oldAutoCommit)
 }

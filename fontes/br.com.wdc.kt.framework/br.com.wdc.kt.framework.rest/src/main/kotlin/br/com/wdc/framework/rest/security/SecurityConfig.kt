@@ -1,49 +1,49 @@
 package br.com.wdc.framework.rest.security
 
 /**
- * A segurança da API. Sem ela ([br.com.wdc.framework.rest.RestApi.Builder.security] não chamado), toda rota
- * é aberta e o principal é sempre `null`.
+ * The API's security. Without it ([br.com.wdc.framework.rest.RestApi.Builder.security] not called), every route
+ * is open and the principal is always `null`.
  *
- * Ordem em cada rota: filtros `before` → [authenticator] → limite por minuto ([rateLimit]) → regra da rota (ou
+ * Order on each route: `before` filters → [authenticator] → per-minute limit ([rateLimit]) → the route's rule (or
  * [defaultRule]) → handler.
  */
 class SecurityConfig {
 
-    /** Quem transforma a credencial em principal. Obrigatório. */
+    /** What turns the credential into a principal. Required. */
     var authenticator: Authenticator? = null
 
-    /** A regra das rotas que não declaram a sua e não estão em [permitAll]. Padrão: exige autenticação. */
+    /** The rule of routes that don't declare their own and aren't in [permitAll]. Default: requires authentication. */
     var defaultRule: AccessRule = AccessRules.authenticated
 
     /**
-     * Status da resposta a quem não tem credencial válida numa rota que a exige. Padrão 401; o Spring Security
-     * sem `AuthenticationEntryPoint` responde 403.
+     * Status of the response to a caller without a valid credential on a route that requires one. Default 401;
+     * Spring Security without an `AuthenticationEntryPoint` answers 403.
      */
     var unauthenticatedStatus: Int = 401
 
     /**
-     * Requisição anônima a um caminho que nenhuma rota atende (e fora de [permitAll]) recebe a resposta de
-     * "sem credencial" em vez de 404/405 — como no Spring Security, em que a autorização vem antes do
-     * roteamento. Padrão: `false` (404/405 do Javalin).
+     * An anonymous request to a path no route serves (and outside [permitAll]) gets the "no credential" response
+     * instead of 404/405 — as in Spring Security, where authorization comes before routing. Default: `false`
+     * (Javalin's 404/405).
      */
     var protectUnmatched: Boolean = false
 
     /**
-     * Numa rota pública, credencial recusada é ignorada (a requisição segue anônima). `true` a recusa com a
-     * resposta de "sem credencial".
+     * On a public route, a refused credential is ignored (the request proceeds anonymously). `true` refuses it with
+     * the "no credential" response.
      */
     var rejectInvalidCredentialsOnPublicRoutes: Boolean = false
 
     internal var rateLimitOptions: RateLimitOptions? = null
 
-    /** Liga o limite de requisições por minuto de cada quem chama (ver [RateLimitOptions]). */
+    /** Turns on the per-minute request limit of each caller (see [RateLimitOptions]). */
     fun rateLimit(block: RateLimitOptions.() -> Unit) {
         rateLimitOptions = (rateLimitOptions ?: RateLimitOptions()).apply(block)
     }
 
     internal val publicMatchers = ArrayList<RequestMatcher>()
 
-    /** Rotas públicas, por padrão de caminho com verbo opcional: `"POST /auth/login"`, `"GET /catalog/featured"` (ver [RequestMatcher]). */
+    /** Public routes, by path pattern with an optional verb: `"POST /auth/login"`, `"GET /catalog/featured"` (see [RequestMatcher]). */
     fun permitAll(vararg specs: String) {
         specs.mapTo(publicMatchers) { RequestMatcher.of(it) }
     }

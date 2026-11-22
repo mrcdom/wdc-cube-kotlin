@@ -1,11 +1,11 @@
 # framework-persistence
 
-Transações sobre JDBC (JVM).
+Transactions over JDBC (JVM).
 
-- `TransactionServiceImpl` — as seis propagações do `TransactionService`, numa conexão do `DataSource`. Convive com corrotinas: a transação acompanha o bloco entre suspensões.
-- `TransactionScope` — a transação corrente da thread; é por ele que o acesso a dados acha a conexão.
-- `RemoteTransactionCoordinatorImpl` — guarda transações abertas por clientes remotos, com dono, tetos, expiração por ociosidade e desfecho idempotente.
+- `TransactionServiceImpl` — the six propagations of `TransactionService`, on a connection from the `DataSource`. Works with coroutines: the transaction follows the block across suspensions.
+- `TransactionScope` — the thread's current transaction; data access finds the connection through it.
+- `RemoteTransactionCoordinatorImpl` — keeps transactions opened by remote clients, with owner, caps, idle expiration and idempotent outcome.
 
-Publicado no Maven Central como `io.github.mrcdom.wdc.kt:framework-persistence`.
+Published on Maven Central as `io.github.mrcdom.wdc.kt:framework-persistence`.
 
-Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).
+See the [persistence architecture](../../../docs/architecture-persistence.md).

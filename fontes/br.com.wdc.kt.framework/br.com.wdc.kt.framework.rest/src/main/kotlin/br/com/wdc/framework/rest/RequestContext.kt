@@ -7,41 +7,41 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.asContextElement
 
 /**
- * Chave tipada de um atributo da requisição. Compare por identidade: crie uma instância por atributo, num
- * `companion object` ou num `object` da aplicação.
+ * Typed key of a request attribute. Compared by identity: create one instance per attribute, in a
+ * `companion object` or an application `object`.
  */
 class RequestKey<T : Any>(val name: String) {
     override fun toString(): String = "RequestKey($name)"
 }
 
 /**
- * O que se sabe da requisição corrente, acessível de qualquer camada por [current] — inclusive de dentro de
- * corrotinas, em qualquer thread: o pipeline das rotas instala o contexto como elemento da corrotina.
+ * What is known about the current request, reachable from any layer through [current] — even from inside
+ * coroutines, on any thread: the route pipeline installs the context as a coroutine element.
  *
- * Nasce antes dos filtros `before` e morre depois dos `after`. Os cabeçalhos são lidos da requisição; os
- * atributos são livres, para a aplicação guardar o que extrair dela (cliente, fuso, versão do app…).
+ * Born before the `before` filters and dies after the `after` ones. Headers are read from the request; the
+ * attributes are free, for the application to keep what it extracts from it (client, time zone, app version…).
  */
 class RequestContext internal constructor(
-    /** A requisição do Javalin. Para quem está na fronteira HTTP; camadas de baixo usam os métodos daqui. */
+    /** The Javalin request. For code at the HTTP boundary; lower layers use the methods here. */
     val http: Context,
 ) {
 
     private val attributes = ConcurrentHashMap<RequestKey<*>, Any>()
 
-    /** Verbo HTTP, em maiúsculas. */
+    /** HTTP verb, uppercase. */
     val method: String get() = http.method().name()
 
-    /** Caminho pedido, sem a query. */
+    /** Requested path, without the query. */
     val path: String get() = http.path()
 
-    /** O modelo da rota que atendeu (`/api/user/{id}`), ou o caminho pedido se nenhuma rota casou. */
+    /** The template of the route that served (`/api/user/{id}`), or the requested path if no route matched. */
     val matchedPath: String get() = runCatching { http.endpoints().lastHttpEndpoint()?.path }.getOrNull() ?: http.path()
 
-    /** Quem chama, depois da autenticação; `null` = anônimo, ou segurança desligada. */
+    /** The caller, after authentication; `null` = anonymous, or security off. */
     var principal: RestPrincipal? = null
         internal set
 
-    /** O principal como o tipo da aplicação, ou `null` se anônimo ou de outro tipo. */
+    /** The principal as the application's type, or `null` if anonymous or of another type. */
     inline fun <reified P : RestPrincipal> principalAs(): P? = principal as? P
 
     fun header(name: String): String? = http.header(name)
@@ -62,21 +62,21 @@ class RequestContext internal constructor(
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> getOrPut(key: RequestKey<T>, compute: () -> T): T = attributes.getOrPut(key, compute) as T
 
-    /** Elemento de corrotina que mantém este contexto como o corrente, em qualquer thread em que ela retome. */
+    /** Coroutine element that keeps this context as the current one, on whatever thread it resumes. */
     fun asContextElement(): CoroutineContext.Element = CURRENT.asContextElement(this)
 
     companion object {
         private val CURRENT = ThreadLocal<RequestContext?>()
 
-        /** O contexto da requisição corrente, ou `null` fora de uma requisição. */
+        /** The current request's context, or `null` outside a request. */
         fun currentOrNull(): RequestContext? = CURRENT.get()
 
-        /** O contexto da requisição corrente. Fora de uma requisição, [IllegalStateException]. */
-        fun current(): RequestContext = CURRENT.get() ?: throw IllegalStateException("Não há requisição corrente")
+        /** The current request's context. Outside a request, [IllegalStateException]. */
+        fun current(): RequestContext = CURRENT.get() ?: throw IllegalStateException("No current request")
 
         /**
-         * Executa [block] com [context] como contexto corrente da thread, restaurando o anterior no fim. É o que
-         * o pipeline faz em volta de cada rota; serve também a quem atende requisição fora dele.
+         * Runs [block] with [context] as the thread's current context, restoring the previous one at the end. It is
+         * what the pipeline does around each route; it also serves whoever handles a request outside it.
          */
         fun <T> withCurrent(context: RequestContext?, block: () -> T): T {
             val previous = CURRENT.get()

@@ -24,16 +24,16 @@ class ExceptionMappingTest {
             errorBody = { status, message, _ -> mapOf("message" to message, "code" to status) }
             on<AppException> { e, _ -> ErrorResponse(400, mapOf("message" to e.message)) }
             on<UniqueException> { e, _ -> ErrorResponse(400, mapOf(e.field to e.message)) }
-            // devolver null passa a vez para a superclasse
+            // returning null defers to the superclass
             on<Teapot> { e, _ -> if (e.message == "brew") ErrorResponse(418, null, mapOf("X-Pot" to "1")) else null }
-            fallback = { _, _ -> ErrorResponse(500, mapOf("message" to "Não foi possível concluir a operação.")) }
+            fallback = { _, _ -> ErrorResponse(500, mapOf("message" to "The operation could not be completed.")) }
         }
-        get("/unique") { _ -> throw UniqueException("email", "já existe") }
-        get("/app") { _ -> throw AppException("regra") }
+        get("/unique") { _ -> throw UniqueException("email", "already exists") }
+        get("/app") { _ -> throw AppException("rule") }
         get("/teapot/{m}") { call -> throw Teapot(call.path("m")) }
-        get("/business") { _ -> throw BusinessException("sem handler") }
+        get("/business") { _ -> throw BusinessException("no handler") }
         get("/conflict") { _ -> throw TransactionConflictException("tx") }
-        get("/missing") { _ -> throw NotFoundResponse("não achei") }
+        get("/missing") { _ -> throw NotFoundResponse("not found here") }
         get("/boom") { _ -> throw Unexpected() }
         get("/param") { call -> call.pathLong("nope") }
     }
@@ -46,8 +46,8 @@ class ExceptionMappingTest {
 
     @Test
     fun mostSpecificHandlerWins() {
-        assertEquals("""{"email":"já existe"}""", client.get("/unique").body)
-        assertEquals("""{"message":"regra"}""", client.get("/app").body)
+        assertEquals("""{"email":"already exists"}""", client.get("/unique").body)
+        assertEquals("""{"message":"rule"}""", client.get("/app").body)
     }
 
     @Test
@@ -64,7 +64,7 @@ class ExceptionMappingTest {
         val conflict = client.get("/conflict")
         assertEquals(409, conflict.status)
         assertEquals("""{"message":"tx","code":409}""", conflict.body)
-        assertEquals("""{"message":"não achei","code":404}""", client.get("/missing").body)
+        assertEquals("""{"message":"not found here","code":404}""", client.get("/missing").body)
         assertEquals(400, client.get("/param").status)
     }
 
@@ -72,7 +72,7 @@ class ExceptionMappingTest {
     fun unmappedException_fallsBack() {
         val response = client.get("/boom")
         assertEquals(500, response.status)
-        assertEquals("""{"message":"Não foi possível concluir a operação."}""", response.body)
-        assertEquals(500, client.get("/business").status, "BusinessException não tem mapeamento padrão")
+        assertEquals("""{"message":"The operation could not be completed."}""", response.body)
+        assertEquals(500, client.get("/business").status, "BusinessException has no default mapping")
     }
 }

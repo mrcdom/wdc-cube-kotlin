@@ -5,34 +5,34 @@ import org.jooq.SelectConditionStep
 import org.jooq.SelectJoinStep
 
 /**
- * O que a cláusula de correlação de uma relação recebe: a tabela pai, a tabela filha e a consulta filha em
- * montagem.
+ * What a relation's correlation clause receives: the parent table, the child table and the child query being
+ * built.
  *
- * Quando a coleção de projeção carrega critério (`HasCriteria`), ele chega por [criteria], para que a
- * cláusula o aplique na consulta filha.
+ * When the projection collection carries a criterion (`HasCriteria`), it arrives through [criteria], so the
+ * clause can apply it to the child query.
  *
- * **A cláusula pode ser chamada mais de uma vez na mesma consulta** (coleção com recorte: uma vez para a
- * tabela agregada, outra para a do recorte) — não guarde estado entre chamadas.
+ * **The clause may be called more than once in the same query** (sliced collection: once for the aggregated
+ * table, again for the slice's) — do not keep state between calls.
  *
- * @param S tipo da tabela pai
- * @param C tipo da tabela filha
+ * @param S parent table type
+ * @param C child table type
  */
 class JsonChildQueryBuilder<S, C> internal constructor(val ctx: QueryContext, val superTable: S) {
 
     private var child: C? = null
     private var query: SelectJoinStep<Record1<String>>? = null
 
-    /** A tabela filha, com o alias desta chamada. */
-    val childTable: C get() = child ?: error("childTable só existe durante a cláusula de correlação")
+    /** The child table, with this call's alias. */
+    val childTable: C get() = child ?: error("childTable only exists during the correlation clause")
 
-    /** Critério propagado por uma coleção `HasCriteria`, ou `null`. */
+    /** Criterion propagated by a `HasCriteria` collection, or `null`. */
     var criteria: Any? = null
         internal set
 
-    /** O critério, se for do tipo esperado; senão `null`. */
+    /** The criterion, if of the expected type; otherwise `null`. */
     inline fun <reified X> criteriaAs(): X? = criteria as? X
 
-    fun dsl(): SelectJoinStep<Record1<String>> = query ?: error("dsl() só existe durante a cláusula de correlação")
+    fun dsl(): SelectJoinStep<Record1<String>> = query ?: error("dsl() only exists during the correlation clause")
 
     fun where(): SelectConditionStep<Record1<String>> = dsl().where()
 

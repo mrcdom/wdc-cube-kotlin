@@ -9,7 +9,7 @@ import br.com.wdc.framework.domain.criteria.Criteria
 import br.com.wdc.framework.domain.criteria.Criterion
 import br.com.wdc.framework.domain.criteria.TextCriterion
 
-/** Critério de exemplo: um campo de cada família. */
+/** Sample criteria: one field of each family. */
 class SampleCriteria : Criteria {
     val id = ComparableCriterion<SampleCriteria, Long>(this, "id")
     val price = ComparableCriterion<SampleCriteria, Double>(this, "price")
@@ -23,7 +23,7 @@ class SampleCriteria : Criteria {
     enum class OrderBy { OLDEST_FIRST, NAME_A_TO_Z }
 }
 
-/** Escreve um objeto JSON com o que [block] puser dentro. */
+/** Writes a JSON object with whatever [block] puts inside. */
 fun jsonObject(block: (ExtensibleObjectOutput) -> Unit): String {
     val writer = JsonStreamWriter()
     writer.beginObject()
@@ -32,7 +32,7 @@ fun jsonObject(block: (ExtensibleObjectOutput) -> Unit): String {
     return writer.result()
 }
 
-/** Posiciona um leitor no valor do único campo de `{"<field>": <value>}`. */
+/** Positions a reader on the value of the single field of `{"<field>": <value>}`. */
 fun readerAtField(json: String): ExtensibleObjectInput {
     val reader = JsonStreamReader(json)
     reader.beginObject()

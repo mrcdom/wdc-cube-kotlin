@@ -1,16 +1,16 @@
 package br.com.wdc.framework.domain.criteria
 
 /**
- * Contrato comum a todo `XxxCriteria`: expõe os campos filtráveis como uma lista.
+ * Contract shared by every `XxxCriteria`: exposes the filterable fields as a list.
  *
- * Existe para que a tradução do critério em condição seja escrita **uma vez**: o núcleo percorre os
- * campos informados e o que resta a cada entidade é dizer qual coluna corresponde a cada nome.
+ * It exists so that translating the criteria into a condition is written **once**: the core walks the
+ * provided fields, and what is left to each entity is saying which column matches each name.
  */
 interface Criteria {
 
     /**
-     * Os campos do critério, na ordem de declaração — que é a ordem em que as condições entram no `AND`.
-     * Traz todos, informados ou não; distinguir é com [Criterion.isSet].
+     * The criteria fields, in declaration order — which is the order in which the conditions enter the `AND`.
+     * Includes all of them, provided or not; tell them apart with [Criterion.isSet].
      */
     fun criterions(): List<Criterion<*, *>>
 }

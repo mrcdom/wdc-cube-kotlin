@@ -24,7 +24,7 @@ import org.jooq.impl.Internal
 import org.jooq.impl.SQLDataType
 import org.jooq.impl.TableImpl
 
-// Esquema de exemplo, escrito à mão no formato que o gerador do jOOQ produz.
+// Sample schema, handwritten in the format the jOOQ generator produces.
 
 class TAuthor(alias: Name = DSL.name("AUTHOR"), aliased: Table<Record>? = null) : TableImpl<Record>(alias, null, aliased) {
     val ID: TableField<Record, Long?> = createField(DSL.name("ID"), SQLDataType.BIGINT.nullable(false), this)
@@ -55,7 +55,7 @@ class TBook(alias: Name = DSL.name("BOOK"), aliased: Table<Record>? = null) : Ta
     override fun `as`(alias: String): TBook = TBook(DSL.name(alias), this)
 }
 
-/** Tabela sem chave primária, para o caso em que o recorte de coleção é recusado. */
+/** Table without a primary key, for the case where the collection slice is refused. */
 class TNote(alias: Name = DSL.name("NOTE"), aliased: Table<Record>? = null) : TableImpl<Record>(alias, null, aliased) {
     val AUTHOR_ID: TableField<Record, Long?> = createField(DSL.name("AUTHOR_ID"), SQLDataType.BIGINT, this)
     val TEXT: TableField<Record, String?> = createField(DSL.name("TEXT"), SQLDataType.VARCHAR(200), this)
@@ -63,7 +63,7 @@ class TNote(alias: Name = DSL.name("NOTE"), aliased: Table<Record>? = null) : Ta
     override fun `as`(alias: String): TNote = TNote(DSL.name(alias), this)
 }
 
-/** Tabela com identidade, padrões de coluna e um código único: o caso do insert por projeção. */
+/** Table with identity, column defaults and a unique code: the insert-by-projection case. */
 class TCoupon(alias: Name = DSL.name("COUPON"), aliased: Table<Record>? = null) : TableImpl<Record>(alias, null, aliased) {
     val ID: TableField<Record, Long?> = createField(DSL.name("ID"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this)
     val CODE: TableField<Record, String?> = createField(DSL.name("CODE"), SQLDataType.VARCHAR(20).nullable(false), this)
@@ -86,7 +86,7 @@ val AUTHOR = TAuthor()
 val BOOK = TBook()
 val NOTE = TNote()
 
-// Domínio de exemplo
+// Sample domain
 
 enum class Kind {
     NOVEL, ESSAY;
@@ -120,7 +120,7 @@ class Coupon(
     var status: String? = null,
     var discount: Double? = null,
     var created: Instant? = null,
-    /** Derivado: `código:situação`, uma expressão na consulta. */
+    /** Derived: `code:status`, an expression in the query. */
     var label: String? = null,
     var author: Author? = null,
 )
@@ -143,7 +143,7 @@ class BookCriteria : Criteria {
 
 fun Instant.toUtcLocalDateTime(): LocalDateTime = LocalDateTime.ofEpochSecond(epochSeconds, nanosecondsOfSecond, ZoneOffset.UTC)
 
-/** Os mapeamentos do domínio de exemplo, como um repositório os declararia. */
+/** The sample domain's mappings, as a repository would declare them. */
 class Library(private val dsl: () -> DSLContext) {
 
     val bookQuery: JsonQuery<Book, TBook> = JsonQueryBuilder<Book, TBook>()

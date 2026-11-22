@@ -8,52 +8,52 @@ import org.jooq.SelectQuery
 import org.jooq.SortField
 import org.jooq.Table
 
-/** Completa a consulta de uma tabela: recebe a instância da tabela (com o alias da vez) e a consulta. */
+/** Completes a table's query: receives the table instance (with the current alias) and the query. */
 typealias JsonWhereClause<T> = (table: T, query: SelectJoinStep<Record1<String>>) -> Unit
 
 /**
- * Mapeamento bean ↔ tabela construído e pronto para uso — ver [JsonQueryBuilder].
+ * Bean ↔ table mapping, built and ready to use — see [JsonQueryBuilder].
  *
- * @param B tipo do bean
- * @param T tipo da tabela jOOQ
+ * @param B bean type
+ * @param T jOOQ table type
  */
 interface JsonQuery<B : Any, T : Table<*>> {
 
-    /** Cria um bean vazio. */
+    /** Creates an empty bean. */
     fun newBean(): B
 
     /**
-     * Cria um bean de projeção com todos os campos **escalares** marcados. [adapt] pode anular os
-     * indesejados (campo `null` não entra no SELECT) ou acrescentar relações.
+     * Creates a projection bean with all **scalar** fields marked. [adapt] can null out the unwanted ones
+     * (a `null` field stays out of the SELECT) or add relations.
      */
     fun newProjectionBean(adapt: ((B) -> Unit)? = null): B
 
-    /** Cria uma instância da tabela com o alias informado. */
+    /** Creates a table instance with the given alias. */
     fun newTable(alias: String): T
 
-    /** Monta o SELECT (sem executar). */
+    /** Builds the SELECT (without running it). */
     fun select(prjBean: B?, whereClause: JsonWhereClause<T>): SelectQuery<Record1<String>>
 
-    /** Monta o SELECT num contexto existente; [isAgg] agrega as linhas num array JSON (uso das relações). */
+    /** Builds the SELECT in an existing context; [isAgg] aggregates the rows into a JSON array (used by relations). */
     fun select(ctx: QueryContext, prjBean: B?, whereClause: JsonWhereClause<T>, isAgg: Boolean): SelectQuery<Record1<String>>
 
-    /** Se esta consulta sabe traduzir o `OrderBy` do seu critério. */
+    /** Whether this query knows how to translate its criterion's `OrderBy`. */
     fun hasOrdering(): Boolean
 
-    /** Traduz o `OrderBy` do critério em `ORDER BY`, contra a tabela informada. */
+    /** Translates the criterion's `OrderBy` into `ORDER BY`, against the given table. */
     fun orderingOf(table: T, criteria: Any?): List<SortField<*>>
 
     /**
-     * Monta o SELECT agregado de uma coleção filha, ordenado e/ou recortado.
+     * Builds the aggregated SELECT of a child collection, ordered and/or sliced.
      *
-     * **A ordem é função da tabela**, e não uma lista pronta: a instância da tabela filha — com o alias único
-     * daquela consulta — só existe aqui dentro.
+     * **The order is a function of the table**, not a ready list: the child table instance — with that query's
+     * unique alias — only exists in here.
      *
-     * @param order  traduz o critério em `ORDER BY`; `null` deixa a ordem a cargo do banco
-     * @param limit  máximo de linhas, ou `null`
-     * @param offset linhas a pular, ou `null`
-     * @throws UnsupportedOperationException se há ordem e o dialeto não sabe ordenar dentro da agregação
-     * @throws IllegalStateException se há recorte e a tabela não tem chave primária simples
+     * @param order  translates the criterion into `ORDER BY`; `null` leaves the order to the database
+     * @param limit  maximum rows, or `null`
+     * @param offset rows to skip, or `null`
+     * @throws UnsupportedOperationException if there is an order and the dialect cannot order inside the aggregation
+     * @throws IllegalStateException if there is a slice and the table has no simple primary key
      */
     fun selectOrdered(
         ctx: QueryContext,
@@ -64,47 +64,47 @@ interface JsonQuery<B : Any, T : Table<*>> {
         offset: Int?,
     ): SelectQuery<Record1<String>>
 
-    /** O campo de projeção JSON para a tabela. */
+    /** The JSON projection field for the table. */
     fun projection(ctx: QueryContext, table: T, prjBean: B?): Field<String>
 
     /**
-     * Se a projeção pede algum campo fora da lista informada.
+     * Whether the projection asks for any field outside the given list.
      *
-     * Serve ao atalho de chave estrangeira: quando a projeção da associação não pede nada além da chave, o
-     * valor já está na coluna da linha corrente, e a subconsulta ao outro lado é dispensável.
+     * Serves the foreign key shortcut: when the association's projection asks for nothing beyond the key, the
+     * value is already in the current row's column, and the subquery to the other side can be skipped.
      */
     fun projectsBeyond(prjBean: B?, fields: Collection<String>): Boolean
 
     /**
-     * Os campos do mapeamento — escalares e partes de chave de associação —, na ordem da declaração. Resolve as
-     * relações declaradas com `lazy` antes de responder.
+     * The mapping's fields — scalars and association key parts —, in declaration order. Resolves the relations
+     * declared with `lazy` before answering.
      */
     fun fields(): List<JsonQueryField<B, T>>
 
     /**
-     * Insere [bean] e o completa com o que o banco preencheu, numa ida só ao banco.
+     * Inserts [bean] and completes it with what the database filled in, in a single round trip.
      *
-     * Entram no `INSERT` os campos que são coluna da tabela (não os derivados) e que [projection] marca; sem
-     * projeção, os que têm valor no bean. O campo que fica fora recebe o padrão da coluna. A chave primária
-     * informada entra sempre; a coluna de identidade nunca. Depois, volta ao bean, pelo mesmo mapeamento do
-     * fetch, cada coluna que não foi gravada ou foi gravada nula: a identidade, os padrões, o que um gatilho mudou.
-     * O que volta nulo não é gravado no bean (os setters do mapeamento não recebem nulo).
+     * The `INSERT` takes the fields that are table columns (not the derived ones) and that [projection] marks;
+     * without a projection, those with a value in the bean. A field left out gets the column default. A given
+     * primary key always goes in; the identity column never does. Then every column that was not written, or was
+     * written null, comes back to the bean through the same mapping as the fetch: the identity, the defaults,
+     * what a trigger changed. What comes back null is not written to the bean (the mapping setters take no null).
      *
-     * @param onConflictDoNothing descarta a linha em conflito (`ON CONFLICT DO NOTHING`) em vez de falhar. No H2 o
-     *   jOOQ o emula com um `MERGE` pela chave primária: lá, só o conflito na chave primária é descartado
-     * @return `true` se a linha entrou; `false` se o conflito a descartou, e então o bean fica como estava
+     * @param onConflictDoNothing discards the conflicting row (`ON CONFLICT DO NOTHING`) instead of failing. On H2
+     *   jOOQ emulates it with a `MERGE` by the primary key: there, only a primary key conflict is discarded
+     * @return `true` if the row went in; `false` if the conflict discarded it, and then the bean stays as it was
      */
     fun insert(bean: B, projection: B? = null, onConflictDoNothing: Boolean = false): Boolean
 
-    /** Lê um bean de um texto JSON. */
+    /** Reads a bean from a JSON text. */
     fun parseJson(json: String): B
 
-    /** Lê um bean do leitor, posicionado no início do objeto. */
+    /** Reads a bean from the reader, positioned at the start of the object. */
     fun parseJson(reader: JsonReader): B
 
-    /** Executa e devolve um único bean, ou `null`. */
+    /** Runs and returns a single bean, or `null`. */
     fun fetchOne(prjBean: B?, whereClause: JsonWhereClause<T>): B?
 
-    /** Executa e devolve a lista. */
+    /** Runs and returns the list. */
     fun fetchToList(prjBean: B?, whereClause: JsonWhereClause<T>): List<B>
 }

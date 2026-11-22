@@ -1,14 +1,14 @@
 # framework-domain
 
-Contratos de acesso a dados, independentes de banco e de transporte (KMP).
+Data access contracts, independent of database and transport (KMP).
 
-- `repository` / `pagination` — `ReadOnlyRepository<E, C, K>` (consultas), `Repository<E, C, K>` (consultas e escrita) e `Page`.
-- `criteria` — `Criterion`, `ComparableCriterion`, `TextCriterion`, `Operator` e o `CriterionCodec`, que os leva e traz em JSON.
-- `projection` — `ProjectionValues`, `ProjectionList` e o envelope de coleção projetada.
-- `codec` — `ModelCodec`, o contrato de leitura e escrita de uma entidade e do seu critério.
-- `transaction` — `TransactionService` e `TransactionContext`.
-- `exception` — `BusinessException`, `InvalidRequestException`, `AccessDeniedException` e as de transação.
+- `repository` / `pagination` — `ReadOnlyRepository<E, C, K>` (queries), `Repository<E, C, K>` (queries and writes) and `Page`.
+- `criteria` — `Criterion`, `ComparableCriterion`, `TextCriterion`, `Operator` and the `CriterionCodec`, which carries them to and from JSON.
+- `projection` — `ProjectionValues`, `ProjectionList` and the projected collection envelope.
+- `codec` — `ModelCodec`, the contract for reading and writing an entity and its criteria.
+- `transaction` — `TransactionService` and `TransactionContext`.
+- `exception` — `BusinessException`, `InvalidRequestException`, `AccessDeniedException` and the transaction ones.
 
-**Plataformas:** JVM, Android, iOS, JS, wasmJs. Publicado no Maven Central como `io.github.mrcdom.wdc.kt:framework-domain`.
+**Platforms:** JVM, Android, iOS, JS, wasmJs. Published on Maven Central as `io.github.mrcdom.wdc.kt:framework-domain`.
 
-Veja a [arquitetura de persistência](../../../docs/architecture-persistence.md).
+See the [persistence architecture](../../../docs/architecture-persistence.md).

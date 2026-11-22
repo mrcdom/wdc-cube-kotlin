@@ -12,19 +12,19 @@ import org.jooq.SortField
 import org.jooq.impl.DSL
 
 /**
- * Dialeto JSON do PostgreSQL.
+ * PostgreSQL JSON dialect.
  *
- * **Por que não `json_build_object()`:** ela recebe dois argumentos por campo, e o PostgreSQL limita uma
- * chamada de função a 100 argumentos (`FUNC_MAX_ARGS`, constante de compilação) — 50 campos. O objeto é
- * montado por concatenação, sem esse limite:
+ * **Why not `json_build_object()`:** it takes two arguments per field, and PostgreSQL limits a function
+ * call to 100 arguments (`FUNC_MAX_ARGS`, a compile-time constant) — 50 fields. The object is built by
+ * concatenation, without that limit:
  * ```
  * '{' || array_to_string(array[
  *   '"id":' || coalesce(to_json(t.id), 'null'),
  *   '"image":' || coalesce(to_json(encode(t.image, 'base64')), 'null')
  * ], ',') || '}'
  * ```
- * `array[...]` é um construtor, não uma função; `to_json()` serializa qualquer tipo para JSON válido.
- * Chaves de valor nulo são **emitidas** como `"k":null` (o H2 as omite; a leitura trata os dois casos igual).
+ * `array[...]` is a constructor, not a function; `to_json()` serializes any type to valid JSON.
+ * Keys with a null value are **emitted** as `"k":null` (H2 omits them; reading treats both cases alike).
  */
 object PostgresJsonDialect : JsonDialect {
 
@@ -61,7 +61,7 @@ object PostgresJsonDialect : JsonDialect {
         val ph = "{${args.size}}"
         args.add(e.field)
         return when (e.type) {
-            // encode() quebra a linha a cada 76 caracteres (RFC 2045); a leitura usa o decoder MIME, que tolera
+            // encode() breaks the line every 76 characters (RFC 2045); reading uses the MIME decoder, which tolerates it
             JsonFieldType.BINARY -> "coalesce(to_json(encode($ph, 'base64')), 'null')"
             JsonFieldType.RAW_JSON -> "coalesce($ph, 'null')"
             else -> "coalesce(to_json($ph), 'null')"
@@ -70,7 +70,7 @@ object PostgresJsonDialect : JsonDialect {
 
     private fun escapeKey(key: String): String = key.replace("'", "''").replace("\"", "\\\"")
 
-    // Uma instrução só, atômica: WITH inserted AS (INSERT … RETURNING *) SELECT <row> FROM inserted
+    // A single, atomic statement: WITH inserted AS (INSERT … RETURNING *) SELECT <row> FROM inserted
     override fun insertAndSelect(
         dsl: DSLContext,
         insert: InsertReturningStep<*>,

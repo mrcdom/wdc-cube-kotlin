@@ -21,55 +21,55 @@ import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
 /**
- * O que o handler de uma rota recebe: a requisição, com leitura tipada dos parâmetros e do corpo.
+ * What a route's handler receives: the request, with typed reading of the parameters and the body.
  *
- * **O valor devolvido pelo handler é a resposta:**
+ * **The value returned by the handler is the response:**
  *
- * | Valor | Resposta |
+ * | Value | Response |
  * |---|---|
- * | `Unit` ou `null` | corpo vazio (o que o handler tiver escrito em [http] vale) |
- * | [RestResponse] | status, cabeçalhos e corpo dela |
- * | [RawJson] | o JSON como está |
+ * | `Unit` or `null` | empty body (whatever the handler wrote to [http] stands) |
+ * | [RestResponse] | its status, headers and body |
+ * | [RawJson] | the JSON as is |
  * | `String` | `text/plain` |
- * | `ByteArray`, `InputStream` | `application/octet-stream` (outro tipo: [RestResponse] com `contentType`) |
- * | qualquer outro | DTO, pelo mapeador JSON da API |
+ * | `ByteArray`, `InputStream` | `application/octet-stream` (other type: [RestResponse] with `contentType`) |
+ * | anything else | DTO, through the API's JSON mapper |
  *
- * Parâmetro ausente ou malformado lança [RequestParameterException]; corpo ilegível, [RequestBodyException] —
- * ambos 400 pelo mapeamento padrão.
+ * A missing or malformed parameter throws [RequestParameterException]; an unreadable body, [RequestBodyException] —
+ * both 400 by the default mapping.
  */
 class RestCall internal constructor(
     val request: RequestContext,
     private val api: RestApi,
 ) {
-    /** A requisição do Javalin, para o que a [RestCall] não cobre. */
+    /** The Javalin request, for what [RestCall] doesn't cover. */
     val http: Context get() = request.http
 
     val principal: RestPrincipal? get() = request.principal
 
-    /** O principal, exigido. Sem ele, `AuthenticationRequiredException` (a resposta de "sem credencial"). */
+    /** The principal, required. Without it, `AuthenticationRequiredException` (the "no credential" response). */
     inline fun <reified P : RestPrincipal> requirePrincipal(): P =
         request.principal as? P ?: throw br.com.wdc.framework.rest.security.AuthenticationRequiredException("Authentication required")
 
     /**
-     * Executa [block] na transação da requisição (a mesma ponte das rotas `transactional`), para quem precisa
-     * demarcar só parte do handler.
+     * Runs [block] in the request transaction (the same bridge as `transactional` routes), for handlers that need
+     * to demarcate only part of their work.
      */
     suspend fun <T> inTransaction(block: suspend () -> T): T = api.transactions.run(request, block)
 
     /**
-     * Registra uma medida para o cabeçalho `Server-Timing` (ver [ServerTimingOptions]): sai antes do `total`, na
-     * ordem do registro. Sem a opção ligada, não faz nada. É uma função simples: a rota pode passá-la adiante
-     * (`call::timing`) a quem mede.
+     * Records a measurement for the `Server-Timing` header (see [ServerTimingOptions]): it goes out before `total`, in
+     * registration order. Without the option on, it does nothing. It is a plain function: the route can pass it along
+     * (`call::timing`) to whatever measures.
      *
-     * @param name o nome da medida (um token, sem espaço: `action`, `db`)
-     * @param nanos a duração, em nanossegundos
-     * @param desc a descrição, que só sai com [ServerTimingOptions.names] ligado
+     * @param name the measurement name (a token, no spaces: `action`, `db`)
+     * @param nanos the duration, in nanoseconds
+     * @param desc the description, which only goes out with [ServerTimingOptions.names] on
      */
     fun timing(name: String, nanos: Long, desc: String? = null) {
         request[ServerTiming.KEY]?.add(name, nanos, desc)
     }
 
-    /** Executa [block] e registra quanto ele levou como a medida [name] (ver [timing]), mesmo se ele falhar. */
+    /** Runs [block] and records how long it took as the measurement [name] (see [timing]), even if it fails. */
     inline fun <T> timed(name: String, desc: String? = null, block: () -> T): T {
         val start = System.nanoTime()
         try {
@@ -79,13 +79,13 @@ class RestCall internal constructor(
         }
     }
 
-    // :: Status e cabeçalhos da resposta
+    // :: Response status and headers
 
     fun status(status: Int): RestCall = apply { http.status(status) }
 
     fun header(name: String, value: String): RestCall = apply { http.header(name, value) }
 
-    // :: Cabeçalhos
+    // :: Headers
 
     fun header(name: String): String? = request.header(name)
 
@@ -93,11 +93,11 @@ class RestCall internal constructor(
         header(name)?.takeIf { it.isNotBlank() } ?: throw RequestParameterException(name, "Required header '$name' is not present")
 
     /**
-     * Usuário e senha de `Authorization: Basic …`, o esquema comparado sem diferenciar maiúsculas. Depois do Base64,
-     * cada parte é decodificada como formulário (`%3A`, `+`), que é como o OAuth manda `client_id` e `client_secret`
-     * (RFC 6749, seção 2.3.1). Só o primeiro `:` separa: a senha pode conter outros.
+     * User and password from `Authorization: Basic …`, the scheme compared case-insensitively. After the Base64,
+     * each part is decoded as a form (`%3A`, `+`), which is how OAuth sends `client_id` and `client_secret`
+     * (RFC 6749, section 2.3.1). Only the first `:` separates: the password may contain others.
      *
-     * @return `null` sem o cabeçalho, com outro esquema, com Base64 ou codificação inválidos, ou sem `:`
+     * @return `null` without the header, with another scheme, with invalid Base64 or encoding, or without `:`
      */
     fun basicCredentials(): Pair<String, String>? {
         val value = header("Authorization")?.trim() ?: return null
@@ -114,7 +114,7 @@ class RestCall internal constructor(
         }
     }
 
-    // :: Caminho
+    // :: Path
 
     fun path(name: String): String =
         request.pathParam(name) ?: throw RequestParameterException(name, "Path parameter '$name' is not present")
@@ -125,7 +125,7 @@ class RestCall internal constructor(
 
     fun pathUuid(name: String): UUID = convert(name, path(name), "UUID") { UUID.fromString(it) }
 
-    // :: Query — `query*` devolve `null` se ausente ou vazio; `required*` exige.
+    // :: Query — `query*` returns `null` if absent or empty; `required*` requires it.
 
     fun query(name: String): String? = request.queryParam(name)?.takeIf { it.isNotEmpty() }
 
@@ -140,7 +140,7 @@ class RestCall internal constructor(
 
     fun queryDouble(name: String): Double? = query(name)?.let { convert(name, it, "double") { v -> v.toDouble() } }
 
-    /** `true`/`false`, sem diferenciar maiúsculas; também `1`/`0`, `yes`/`no`, `on`/`off`, como o Spring. */
+    /** `true`/`false`, case-insensitive; also `1`/`0`, `yes`/`no`, `on`/`off`, as Spring does. */
     fun queryBoolean(name: String): Boolean? = query(name)?.let { value ->
         when (value.lowercase()) {
             "true", "1", "yes", "on" -> true
@@ -158,13 +158,13 @@ class RestCall internal constructor(
     fun queryLocalDateTime(name: String): LocalDateTime? =
         query(name)?.let { convert(name, it, "LocalDateTime") { v -> LocalDateTime.parse(v) } }
 
-    /** Pelo nome da constante, exato (como o Spring). */
+    /** By the exact constant name (as Spring does). */
     inline fun <reified T : Enum<T>> queryEnum(name: String): T? =
         query(name)?.let { value -> enumValues<T>().firstOrNull { it.name == value } ?: throw mismatch(name, value, T::class.java.simpleName) }
 
     fun <T> query(name: String, typeName: String, parse: (String) -> T): T? = query(name)?.let { convert(name, it, typeName, parse) }
 
-    // Exigidos: ausente, a mesma falha de [requiredQuery]; malformado, a mesma do `query*` correspondente.
+    // Required: absent, the same failure as [requiredQuery]; malformed, the same as the matching `query*`.
 
     fun requiredQueryLong(name: String): Long = queryLong(name) ?: throw missingQuery(name)
 
@@ -182,20 +182,20 @@ class RestCall internal constructor(
 
     inline fun <reified T : Enum<T>> requiredQueryEnum(name: String): T = queryEnum<T>(name) ?: throw missingQuery(name)
 
-    // :: Corpo
+    // :: Body
 
     fun bodyText(): String = http.body()
 
     fun bodyBytes(): ByteArray = http.bodyAsBytes()
 
-    /** O corpo como DTO, pelo mapeador JSON da API. Corpo vazio é `null` — use [body] para exigi-lo. */
+    /** The body as a DTO, through the API's JSON mapper. An empty body is `null` — use [body] to require it. */
     fun <T> bodyOrNull(type: Type): T? {
         val text = http.body()
         if (text.isBlank()) return null
         return try {
             api.json.fromJsonString<Any>(text, type) as T?
         } catch (e: br.com.wdc.framework.rest.json.JsonDeclarationException) {
-            throw e // defeito da declaração, não do pedido
+            throw e // a declaration defect, not a request one
         } catch (e: Exception) {
             throw RequestBodyException("JSON parse error: ${e.message}", e)
         }
@@ -208,13 +208,13 @@ class RestCall internal constructor(
     inline fun <reified T> bodyOrNull(): T? = bodyOrNull<T>(typeOf<T>().javaType)
 
     /**
-     * Os nomes dos campos de primeiro nível do corpo JSON que vieram com `null` explícito. Um DTO lê ausente e nulo
-     * do mesmo jeito; numa atualização parcial, isto separa "não mexer" (ausente) de "apagar" (nulo):
+     * The names of the top-level JSON body fields that came with an explicit `null`. A DTO reads absent and null
+     * the same way; in a partial update, this separates "leave alone" (absent) from "clear" (null):
      * ```kotlin
      * val patch = call.body<CustomerPatch>()
      * if ("phone" in call.explicitNulls()) customer.phone = null else patch.phone?.let { customer.phone = it }
      * ```
-     * Corpo vazio, malformado ou que não é objeto dá o conjunto vazio. Não consome o corpo: [body] continua valendo.
+     * An empty, malformed or non-object body gives the empty set. It doesn't consume the body: [body] still works.
      */
     fun explicitNulls(): Set<String> {
         val text = http.body()
@@ -228,16 +228,16 @@ class RestCall internal constructor(
         return root.asJsonObject.entrySet().filter { it.value.isJsonNull }.mapTo(LinkedHashSet()) { it.key }
     }
 
-    /** O corpo como leitor de streaming, para os `ModelCodec`. Corpo vazio é lido como `{}`. */
+    /** The body as a streaming reader, for the `ModelCodec`s. An empty body is read as `{}`. */
     fun bodyInput(): ExtensibleObjectInput = JsonStreamReader(http.body().ifBlank { "{}" })
 
-    /** O corpo como entidade, pelo codec dela. */
+    /** The body as an entity, through its codec. */
     fun <E> entity(codec: ModelCodec<E, *>): E = readingBody { codec.readEntity(bodyInput()) }
 
-    /** O corpo como entidade para update: a entidade e a projeção dos campos presentes. */
+    /** The body as an entity for update: the entity and the projection of the fields present. */
     fun <E> entityForUpdate(codec: ModelCodec<E, *>): ModelCodec.UpdateData<E> = readingBody { codec.readEntityForUpdate(bodyInput()) }
 
-    /** Lê o corpo com [read]; falha de leitura que não seja da aplicação vira [RequestBodyException]. */
+    /** Reads the body with [read]; a read failure that isn't the application's becomes [RequestBodyException]. */
     fun <T> readingBody(read: () -> T): T = try {
         read()
     } catch (e: br.com.wdc.framework.domain.exception.BusinessException) {
@@ -248,7 +248,7 @@ class RestCall internal constructor(
         throw RequestBodyException("Malformed JSON body: ${e.message}", e)
     }
 
-    // :: Apoio
+    // :: Support
 
     @PublishedApi
     internal fun missingQuery(name: String) =

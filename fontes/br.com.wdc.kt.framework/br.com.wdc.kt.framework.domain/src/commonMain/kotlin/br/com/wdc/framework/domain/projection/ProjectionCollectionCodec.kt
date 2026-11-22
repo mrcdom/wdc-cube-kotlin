@@ -7,37 +7,37 @@ import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 
 /**
- * Como uma **coleção projetada** de relação 1:N trafega.
+ * How a **projected collection** of a 1:N relation travels.
  *
- * Uma coleção de projeção não é uma lista de resultados: é **uma** forma de item mais o que fazer com a
- * coleção — o critério que a filtra ([HasCriteria]) e o recorte a aplicar ([HasSlice]). Esses dados precisam
- * chegar ao outro lado, ou a coleção volta inteira e desordenada.
+ * A projection collection is not a list of results: it is **one** item shape plus what to do with the
+ * collection — the criteria that filters it ([HasCriteria]) and the slice to apply ([HasSlice]). This data must
+ * reach the other side, or the collection comes back whole and unordered.
  *
- * **A forma no fio distingue projeção de resultado por si só.** A projeção é um objeto; o resultado, o
- * array de sempre:
+ * **The shape on the wire tells projection from result by itself.** The projection is an object; the result, the
+ * usual array:
  * ```
- * // projeção (cliente → servidor)
- * "items": { "shape": {…um item…}, "where": {…critério…}, "limit": 5, "offset": 0 }
+ * // projection (client → server)
+ * "items": { "shape": {…one item…}, "where": {…criteria…}, "limit": 5, "offset": 0 }
  *
- * // resultado (servidor → cliente)
+ * // result (server → client)
  * "items": [ {…}, {…}, {…} ]
  * ```
- * O leitor decide pelo token: objeto é projeção, array é resultado. Assim o mesmo campo serve os dois
- * sentidos sem um segundo nome.
+ * The reader decides by the token: object is projection, array is result. So the same field serves both
+ * directions without a second name.
  *
- * O critério embutido usa a mesma estrutura do critério de topo — é o codec da entidade filha quem o
- * escreve e lê, através dos callbacks.
+ * The embedded criteria uses the same structure as the top-level criteria — the child entity's codec writes
+ * and reads it, through the callbacks.
  */
 object ProjectionCollectionCodec {
 
     /**
-     * Escreve a coleção projetada como envelope `{ shape, where?, limit?, offset? }`.
+     * Writes the projected collection as an envelope `{ shape, where?, limit?, offset? }`.
      *
-     * Só a forma é obrigatória — é o primeiro elemento da coleção. Critério e recorte entram quando a
-     * coleção os carrega; ausentes, a chave nem aparece.
+     * Only the shape is mandatory — it is the first element of the collection. Criteria and slice go in when the
+     * collection carries them; when absent, the key doesn't even appear.
      *
-     * @param shapeWriter    escreve a forma de um item
-     * @param criteriaWriter escreve o critério embutido — objeto completo, `begin/endObject` inclusos
+     * @param shapeWriter    writes the shape of one item
+     * @param criteriaWriter writes the embedded criteria — whole object, `begin/endObject` included
      */
     fun <E> write(
         out: ExtensibleObjectOutput,
@@ -62,14 +62,14 @@ object ProjectionCollectionCodec {
         out.endObject()
     }
 
-    /** Se o valor corrente do campo é uma coleção projetada (objeto), e não uma lista de resultados (array). */
+    /** Whether the field's current value is a projected collection (object), not a list of results (array). */
     fun isProjectionEnvelope(input: ExtensibleObjectInput): Boolean = input.peek() == SerializationToken.BEGIN_OBJECT
 
     /**
-     * Lê o envelope e devolve a coleção de projeção pronta — forma, critério e recorte reidratados.
+     * Reads the envelope and returns the ready projection collection — shape, criteria and slice rehydrated.
      *
-     * @param shapeReader    lê a forma de um item
-     * @param criteriaReader lê o critério embutido — objeto completo, `begin/endObject` inclusos
+     * @param shapeReader    reads the shape of one item
+     * @param criteriaReader reads the embedded criteria — whole object, `begin/endObject` included
      */
     fun <E> read(
         input: ExtensibleObjectInput,
@@ -96,7 +96,7 @@ object ProjectionCollectionCodec {
         }
         input.endObject()
         if (!hasShape) {
-            throw InvalidRequestException("coleção projetada sem 'shape'")
+            throw InvalidRequestException("projected collection without 'shape'")
         }
         @Suppress("UNCHECKED_CAST")
         return ProjectionList(shape as E, criteria, limit, offset)

@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 
 class RateLimitTest {
 
-    /** Relógio que o teste avança. */
+    /** Clock the test advances. */
     private class TestClock(var now: Instant) : Clock() {
         override fun instant(): Instant = now
         override fun getZone(): ZoneId = ZoneOffset.UTC
@@ -25,7 +25,7 @@ class RateLimitTest {
         }
     }
 
-    /** O principal do teste carrega o próprio limite; `null` = sem limite. */
+    /** The test principal carries its own limit; `null` = no limit. */
     private data class Partner(override val id: String, val limit: Int?, val account: String = id) : RestPrincipal {
         override val roles: Set<String> = emptySet()
     }
@@ -37,7 +37,7 @@ class RateLimitTest {
         "a2" to Partner("a2", 3, account = "a"),
     )
 
-    // 12:00:30.200: faltam 29,8 s para a virada
+    // 12:00:30.200: 29.8 s until the minute turns
     private val clock = TestClock(Instant.parse("2026-11-15T12:00:30.200Z"))
 
     private fun api(
@@ -63,10 +63,10 @@ class RateLimitTest {
     fun belowAndAtTheLimit_pass_aboveIs429_withRetryAfter() {
         RestTestServer(api()).use { server ->
             val client = server.client().bearer("a")
-            repeat(3) { assertEquals(200, client.hit().status, "pedido ${it + 1}") }
+            repeat(3) { assertEquals(200, client.hit().status, "request ${it + 1}") }
             val refused = client.hit()
             assertEquals(429, refused.status)
-            assertEquals("30", refused.header("Retry-After"), "29,8 s arredondados para cima")
+            assertEquals("30", refused.header("Retry-After"), "29.8 s rounded up")
             assertEquals("Too many requests", refused.json().asJsonObject["error"].asString)
 
             clock.advance(29_000) // 12:00:59.200
@@ -94,9 +94,9 @@ class RateLimitTest {
         RestTestServer(api()).use { server ->
             repeat(3) { server.client().bearer("a").hit() }
             assertEquals(429, server.client().bearer("a").hit().status)
-            assertEquals(200, server.client().bearer("b").hit().status, "outra chave, outra contagem")
+            assertEquals(200, server.client().bearer("b").hit().status, "another key, another count")
         }
-        // a chave pela conta: a e a2 dividem a mesma contagem
+        // the key by account: a and a2 share the same count
         RestTestServer(api({ key = { p -> (p as Partner).account } })).use { server ->
             repeat(2) { server.client().bearer("a").hit() }
             assertEquals(200, server.client().bearer("a2").hit().status)
@@ -109,7 +109,7 @@ class RateLimitTest {
         RestTestServer(api()).use { server ->
             repeat(10) { assertEquals(200, server.client().hit("/catalog").status) }
             repeat(10) { assertEquals(200, server.client().bearer("free").hit().status) }
-            // o anônimo numa rota protegida é recusado pela regra, não pelo limite
+            // an anonymous caller on a protected route is refused by the rule, not by the limit
             assertEquals(401, server.client().hit().status)
         }
     }
@@ -129,7 +129,7 @@ class RateLimitTest {
         RestTestServer(api).use { server ->
             val client = server.client().bearer("a")
             repeat(3) { assertEquals(403, client.hit("/admin").status) }
-            assertEquals(429, client.hit("/admin").status, "o limite vem antes da regra")
+            assertEquals(429, client.hit("/admin").status, "the limit comes before the rule")
         }
     }
 
@@ -165,13 +165,13 @@ class RateLimitTest {
         assertEquals(2, limiter.size)
         clock.advance(60_000)
         limiter.check(SimplePrincipal("z"))
-        assertEquals(1, limiter.size, "as janelas do minuto anterior saíram")
+        assertEquals(1, limiter.size, "the previous minute's windows were removed")
     }
 
     @Test
     fun withoutPrincipalOrLimit_theLimiterIsNotReached() {
         val limiter = RateLimiter(RateLimitOptions().apply { clock = this@RateLimitTest.clock })
         repeat(100) { limiter.check(SimplePrincipal("x")) }
-        assertTrue(limiter.size == 0, "perMinute padrão é sem limite, e nada é contado")
+        assertTrue(limiter.size == 0, "default perMinute is no limit, and nothing is counted")
     }
 }

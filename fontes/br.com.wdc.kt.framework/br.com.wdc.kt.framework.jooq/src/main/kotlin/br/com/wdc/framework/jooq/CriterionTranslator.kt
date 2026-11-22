@@ -10,36 +10,36 @@ import org.jooq.TableField
 import org.jooq.impl.DSL
 
 /**
- * Traduz um campo de critério em condição jOOQ — a **única** tradução critério → SQL.
+ * Translates a criterion field into a jOOQ condition — the **only** criterion → SQL translation.
  *
- * O que fica por entidade é só o que ela sabe e o framework não: qual coluna corresponde a cada campo e,
- * quando o tipo do domínio difere do da coluna, como converter o valor.
+ * What stays per entity is only what it knows and the framework does not: which column matches each field and,
+ * when the domain type differs from the column's, how to convert the value.
  *
- * **Campo não informado devolve `null`** e não entra na consulta; critério inteiramente vazio resulta em
- * `noCondition()` — nunca uma condição falsa, que transformaria "sem filtro" em "nenhum resultado".
+ * **An unset field returns `null`** and stays out of the query; an entirely empty criterion results in
+ * `noCondition()` — never a false condition, which would turn "no filter" into "no results".
  */
 object CriterionTranslator {
 
-    /** Condição de um campo cujo valor vai ao banco como está. */
+    /** Condition of a field whose value goes to the database as is. */
     fun <V : Any> translate(column: Field<out V?>, criterion: Criterion<*, V>?): Condition? =
         translateWith(column, criterion, null)
 
     /**
-     * Condição de um campo cujo valor precisa ser convertido antes de chegar à coluna. O conversor vale
-     * igual para `eq`, `between` e `isIn`.
+     * Condition of a field whose value must be converted before reaching the column. The converter applies
+     * equally to `eq`, `between` and `isIn`.
      *
-     * @param A tipo do valor no domínio — `Instant`, `Double`
-     * @param B tipo da coluna — `LocalDateTime`, `BigDecimal`
+     * @param A value type in the domain — `Instant`, `Double`
+     * @param B column type — `LocalDateTime`, `BigDecimal`
      */
     fun <A : Any, B : Any> translate(column: Field<out B?>, criterion: Criterion<*, A>?, converter: (A) -> B): Condition? =
         translateWith(column, criterion, converter)
 
     /**
-     * Condição de um campo que incide sobre **várias** colunas: casa a linha em que alguma delas atende ao campo
-     * inteiro (cada coluna recebe todos os pedidos do campo; entre colunas, `OR`). É a busca de um termo em vários
-     * campos — nome, razão social, documento — sem que o critério precise de um campo por coluna.
+     * Condition of a field that applies to **several** columns: matches the row where any of them satisfies the
+     * whole field (each column gets all of the field's predicates; between columns, `OR`). It is the search for a
+     * term in several fields — name, company name, document — without the criterion needing one field per column.
      *
-     * Campo não informado, ou lista sem colunas, devolve `null`, como [translate].
+     * An unset field, or a list without columns, returns `null`, like [translate].
      */
     fun <V : Any> translateAny(columns: List<Field<out V?>>, criterion: Criterion<*, V>?): Condition? {
         val ofColumns = columns.mapNotNull { translate(it, criterion) }
@@ -51,15 +51,15 @@ object CriterionTranslator {
     }
 
     /**
-     * Condição de um campo sobre a tabela informada, e não sobre a que declarou a coluna — serve à
-     * subconsulta correlacionada, onde a instância da tabela tem alias próprio.
+     * Condition of a field over the given table, not over the one that declared the column — serves the
+     * correlated subquery, where the table instance has its own alias.
      */
     fun <V : Any> translate(table: Table<*>, column: TableField<*, out V?>, criterion: Criterion<*, V>?): Condition? {
         if (criterion == null || !criterion.isSet()) return null
         return translateWith(column(table, column), criterion, null)
     }
 
-    /** Como a anterior, para campo que precisa de conversão. */
+    /** Like the previous one, for a field that needs conversion. */
     fun <A : Any, B : Any> translate(
         table: Table<*>,
         column: TableField<*, out B?>,
@@ -71,15 +71,15 @@ object CriterionTranslator {
     }
 
     /**
-     * A coluna, resolvida em [table].
+     * The column, resolved in [table].
      *
-     * **Recusa quando não existe, em vez de ignorar o filtro.** Devolver `noCondition()` aí entregaria o
-     * conjunto inteiro como se o filtro tivesse sido aplicado.
+     * **Refuses when it does not exist, instead of ignoring the filter.** Returning `noCondition()` there would
+     * hand back the whole set as if the filter had been applied.
      */
     fun <V> column(table: Table<*>, column: TableField<*, V>): Field<V> =
-        table.field(column) ?: throw IllegalArgumentException("a coluna ${column.name} não existe em ${table.name}")
+        table.field(column) ?: throw IllegalArgumentException("column ${column.name} does not exist in ${table.name}")
 
-    /** Junta as condições que sobraram; lista vazia (ou só de `null`) devolve `noCondition()`. */
+    /** Joins the remaining conditions; an empty list (or only `null`s) returns `noCondition()`. */
     fun and(conditions: List<Condition?>): Condition {
         val useful = conditions.filterNotNull()
         return if (useful.isEmpty()) DSL.noCondition() else DSL.and(useful)
@@ -95,8 +95,8 @@ object CriterionTranslator {
         return when {
             ofField.isEmpty() -> null
             ofField.size == 1 -> ofField[0]
-            // AND por padrão — é o que faz ge(inicio) com le(fim) significar intervalo, e ne(1) com ne(2) excluir
-            // os dois. Só vira OR quando o campo foi marcado com or(), e a disjunção fica contida no campo.
+            // AND by default — it is what makes ge(start) with le(end) mean a range, and ne(1) with ne(2) exclude
+            // both. It only becomes OR when the field was marked with or(), and the disjunction stays within the field.
             criterion.disjunctive -> DSL.or(ofField)
             else -> DSL.and(ofField)
         }
@@ -108,9 +108,9 @@ object CriterionTranslator {
         if (op == Operator.IS_NOT_NULL) return column.isNotNull
 
         val values: List<Any?> = predicate.values.map { v -> if (v == null || converter == null) v else converter(v) }
-        // Operador e valores em desacordo: recusa. Ignorar tiraria o pedido do SQL com o campo ainda contando como
-        // filtro informado, e um delete "com critério" apagaria a tabela. Do transporte, Criterion.restore já recusa.
-        require(op.accepts(values.size)) { "critério: $op não aceita ${values.size} valor(es)" }
+        // Operator and values disagree: refuse. Ignoring it would drop the predicate from the SQL with the field still
+        // counting as a given filter, and a delete "with criterion" would wipe the table. From the wire, Criterion.restore already refuses.
+        require(op.accepts(values.size)) { "criterion: $op does not accept ${values.size} value(s)" }
         return when (op) {
             Operator.EQ -> column.eq(values[0])
             Operator.NE -> column.ne(values[0])
@@ -118,12 +118,12 @@ object CriterionTranslator {
             Operator.GE -> column.ge(values[0])
             Operator.LT -> column.lt(values[0])
             Operator.LE -> column.le(values[0])
-            // like/ilike só são oferecidos em TextCriterion, que quem declara o campo escolhe pelo tipo da coluna
-            // O escape vai declarado: e o que containing/startingWith usam, e alguns bancos nao tem escape padrao.
+            // like/ilike are only offered on TextCriterion, which whoever declares the field picks by the column type
+            // The escape is declared: it is what containing/startingWith use, and some databases have no default escape.
             Operator.LIKE -> column.like(values[0] as String, TextCriterion.ESCAPE)
             Operator.ILIKE -> column.likeIgnoreCase(values[0] as String, TextCriterion.ESCAPE)
             Operator.BETWEEN -> column.between(values[0], values[1])
-            // conjunto vazio: nada pertence. Condição falsa explícita, porque o jOOQ varia por dialeto com `in()`
+            // empty set: nothing belongs. Explicit false condition, because jOOQ varies by dialect with `in()`
             Operator.IN -> if (values.isEmpty()) DSL.falseCondition() else column.`in`(values)
             Operator.IS_NULL, Operator.IS_NOT_NULL -> null
         }

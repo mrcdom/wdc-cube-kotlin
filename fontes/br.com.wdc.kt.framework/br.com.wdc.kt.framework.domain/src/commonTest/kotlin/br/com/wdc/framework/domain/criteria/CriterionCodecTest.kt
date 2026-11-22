@@ -25,7 +25,7 @@ class CriterionCodecTest {
     @Test
     fun write_usesTheWireFormat() {
         val c = SampleCriteria()
-        // valor não inteiro: em JS um Double inteiro é escrito sem a parte decimal (10.0 → 10)
+        // non-integer value: in JS an integer Double is written without the decimal part (10.0 → 10)
         c.price.or().ge(10.5)
         c.price.isNull()
         val json = jsonObject { CriterionCodec.write(it, "price", c.price, CriterionCodec.DOUBLE_OUT) }
@@ -111,11 +111,11 @@ class CriterionCodecTest {
 
     @Test
     fun read_malformedPredicates_areRefused() {
-        // quantidade de valores que o operador não aceita: o pedido contaria como filtro e sumiria do SQL
+        // number of values the operator doesn't accept: the request would count as a filter and vanish from the SQL
         for (p in listOf(
             """{"o":"BETWEEN","v":[1]}""", """{"o":"BETWEEN","v":[1,2,3]}""", """{"o":"EQ"}""", """{"o":"GT","v":[1,2]}""",
             """{"o":"IS_NULL","v":[1]}""",
-            // null onde a comparação nunca é verdadeira
+            // null where the comparison is never true
             """{"o":"GT","v":[null]}""", """{"o":"BETWEEN","v":[1,null]}""",
         )) {
             val c = SampleCriteria()
@@ -169,7 +169,7 @@ class CriterionCodecTest {
         val json = jsonObject { CriterionCodec.write(it, "when", holder, CriterionCodec.INSTANT_OUT) }
         assertEquals("""{"when":{"p":[{"o":"GE","v":["2026-10-05T03:30:00Z"]}]}}""", json)
 
-        // um cliente Java manda ISO_OFFSET_DATE_TIME
+        // a Java client sends ISO_OFFSET_DATE_TIME
         val fromOffset = ComparableCriterion<SampleCriteria, Instant>(SampleCriteria(), "when")
         CriterionCodec.read(
             readerAtField("""{"when":{"p":[{"o":"GE","v":["2026-10-05T00:30:00-03:00"]}]}}"""),
@@ -198,7 +198,7 @@ class CriterionCodecTest {
         val e = assertFailsWith<InvalidRequestException> {
             CriterionCodec.readOrderBy(reader, SampleCriteria.OrderBy.entries)
         }
-        assertEquals("ordenação desconhecida: 'RANDOM' — aceitas: OLDEST_FIRST, NAME_A_TO_Z", e.message)
+        assertEquals("unknown ordering: 'RANDOM' — accepted: OLDEST_FIRST, NAME_A_TO_Z", e.message)
     }
 
     @Test

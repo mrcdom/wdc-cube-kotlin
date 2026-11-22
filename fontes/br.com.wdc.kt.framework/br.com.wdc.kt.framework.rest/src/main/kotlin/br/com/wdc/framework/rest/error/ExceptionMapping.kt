@@ -11,44 +11,44 @@ import br.com.wdc.framework.rest.security.AuthenticationException
 import br.com.wdc.framework.rest.security.RateLimitedException
 import io.javalin.http.HttpResponseException
 
-/** Resposta de erro: status, corpo (serializado como DTO; `null` = vazio) e cabeçalhos extras. */
+/** Error response: status, body (serialized as a DTO; `null` = empty) and extra headers. */
 data class ErrorResponse(val status: Int, val body: Any?, val headers: Map<String, String> = emptyMap())
 
-/** Decide a resposta de uma exceção. `null` = "não é comigo": a busca segue para a superclasse. */
+/** Decides the response for an exception. `null` = "not mine": the lookup moves on to the superclass. */
 fun interface ExceptionHandler<in E : Throwable> {
     fun handle(e: E, request: RequestContext): ErrorResponse?
 }
 
 /**
- * Mapa de exceção para resposta, configurado pela aplicação.
+ * Exception-to-response map, configured by the application.
  *
- * A busca vai da classe da exceção para as superclasses (e as interfaces de cada uma); vence o primeiro
- * handler que devolver resposta. Sem nenhum, [fallback] (500). Vêm registrados:
+ * The lookup goes from the exception's class to its superclasses (and each one's interfaces); the first handler
+ * that returns a response wins. With none, [fallback] (500). Registered by default:
  *
- * | Exceção | Status |
+ * | Exception | Status |
  * |---|---|
- * | `InvalidRequestException` (inclui os parâmetros e corpos malformados) | 400 |
- * | `AuthenticationException` (sem credencial, ou credencial recusada) | `unauthenticatedStatus` (padrão 401) |
+ * | `InvalidRequestException` (includes malformed parameters and bodies) | 400 |
+ * | `AuthenticationException` (no credential, or credential refused) | `unauthenticatedStatus` (default 401) |
  * | `AccessDeniedException` | 403 |
- * | `TransactionConflictException` (inclusive transação remota em uso por outra requisição) | 409 |
- * | `RemoteTransactionNotFoundException` (transação remota desconhecida ou expirada) | 410 |
+ * | `TransactionConflictException` (including a remote transaction in use by another request) | 409 |
+ * | `RemoteTransactionNotFoundException` (unknown or expired remote transaction) | 410 |
  * | `TransactionLimitExceededException` | 429 |
- * | `RateLimitedException` (limite por minuto) | 429, com `Retry-After` |
- * | `HttpResponseException` do Javalin | o status dela |
+ * | `RateLimitedException` (per-minute limit) | 429, with `Retry-After` |
+ * | Javalin's `HttpResponseException` | its status |
  *
- * Todos com o corpo de [errorBody]. Registrar a mesma classe de novo substitui o handler.
+ * All with the body from [errorBody]. Registering the same class again replaces the handler.
  */
 class ExceptionMapping {
 
     private val handlers = LinkedHashMap<Class<*>, ExceptionHandler<Throwable>>()
 
-    /** Status de "sem credencial"; a segurança o ajusta. */
+    /** Status for "no credential"; security adjusts it. */
     var unauthenticatedStatus: Int = 401
 
-    /** O corpo dos erros padrão. Padrão: `{"error": "<mensagem>"}`. */
+    /** The body of the default errors. Default: `{"error": "<message>"}`. */
     var errorBody: (status: Int, message: String?, request: RequestContext) -> Any? = { _, message, _ -> mapOf("error" to message) }
 
-    /** Exceção sem handler. Padrão: 500, com `errorBody(500, "Internal server error")`. */
+    /** Exception without a handler. Default: 500, with `errorBody(500, "Internal server error")`. */
     var fallback: (Throwable, RequestContext) -> ErrorResponse = { _, request ->
         ErrorResponse(500, errorBody(500, "Internal server error", request))
     }
@@ -73,19 +73,19 @@ class ExceptionMapping {
 
     inline fun <reified E : Throwable> on(handler: ExceptionHandler<E>) = on(E::class.java, handler)
 
-    /** [type] responde [status], com a mensagem da exceção em [errorBody]. */
+    /** [type] answers [status], with the exception's message in [errorBody]. */
     fun status(type: Class<out Throwable>, status: Int) {
         on(type) { e, r -> ErrorResponse(status, errorBody(status, e.message, r)) }
     }
 
-    /** Resposta de [e]. Nunca falha: erro dentro de um handler cai no [fallback] e é registrado. */
+    /** Response for [e]. Never fails: an error inside a handler falls into [fallback] and is logged. */
     fun resolve(e: Throwable, request: RequestContext): ErrorResponse {
         try {
             for (type in hierarchy(e.javaClass)) {
                 handlers[type]?.handle(e, request)?.let { return it }
             }
         } catch (failure: Exception) {
-            LOG.error("Falha no mapeamento da exceção ${e.javaClass.name}", failure)
+            LOG.error("Failed to map exception ${e.javaClass.name}", failure)
         }
         return fallback(e, request)
     }
@@ -105,10 +105,10 @@ class ExceptionMapping {
     }
 }
 
-/** Parâmetro de caminho, query ou cabeçalho ausente ou malformado. 400 pelo mapeamento padrão. */
+/** Missing or malformed path, query or header parameter. 400 by the default mapping. */
 open class RequestParameterException(val parameter: String, message: String) : InvalidRequestException(message)
 
-/** Corpo da requisição ilegível (JSON malformado, tipo errado). 400 pelo mapeamento padrão. */
+/** Unreadable request body (malformed JSON, wrong type). 400 by the default mapping. */
 open class RequestBodyException(message: String, cause: Throwable? = null) : InvalidRequestException(message) {
     init {
         cause?.let { initCause(it) }

@@ -5,27 +5,27 @@ import java.sql.SQLException
 import javax.sql.DataSource
 
 /**
- * Gerenciador de transação local com propagação REQUIRED via [ThreadLocal].
+ * Local transaction manager with REQUIRED propagation via [ThreadLocal].
  *
- * Uso típico:
+ * Typical use:
  * ```
  * TransactionContext.begin(dataSource).use { tx ->
- *     // operações usando tx.connection()
+ *     // operations using tx.connection()
  * }
- * // commit automático ao fechar; rollback em caso de exceção
+ * // automatic commit on close; rollback in case of exception
  * ```
  *
- * Composição transacional (mesma conexão/transação):
+ * Transactional composition (same connection/transaction):
  * ```
  * TransactionContext.begin(dataSource).use { tx ->
- *     shoppingService.purchase(userId, items)    // participa da tx existente
- *     shoppingService.loadPurchases(userId)       // mesma conexão
+ *     shoppingService.purchase(userId, items)    // joins the existing tx
+ *     shoppingService.loadPurchases(userId)       // same connection
  * }
  * ```
  */
 @Deprecated(
-    "Só propagação REQUIRED, e comita em caso de exceção. Use TransactionService " +
-        "(br.com.wdc.framework.domain.transaction), implementado por TransactionServiceImpl em framework-persistence."
+    "Only REQUIRED propagation, and it commits in case of exception. Use TransactionService " +
+        "(br.com.wdc.framework.domain.transaction), implemented by TransactionServiceImpl in framework-persistence."
 )
 class TransactionContext private constructor(
     private val connection: Connection,
@@ -37,9 +37,9 @@ class TransactionContext private constructor(
     private var closed = false
 
     /**
-     * Obtém a conexão da transação corrente.
+     * Gets the connection of the current transaction.
      *
-     * @throws IllegalStateException se o contexto já foi fechado
+     * @throws IllegalStateException if the context was already closed
      */
     fun connection(): Connection {
         check(!closed) { "TransactionContext already closed" }
@@ -47,7 +47,7 @@ class TransactionContext private constructor(
     }
 
     /**
-     * Marca a transação para rollback.
+     * Marks the transaction for rollback.
      */
     fun setRollbackOnly() {
         if (owner) {
@@ -58,9 +58,9 @@ class TransactionContext private constructor(
     }
 
     /**
-     * Fecha o contexto:
-     * - Owner: commit ou rollback, fecha conexão e limpa ThreadLocal.
-     * - Participante: noop.
+     * Closes the context:
+     * - Owner: commit or rollback, closes the connection and clears the ThreadLocal.
+     * - Participant: noop.
      */
     @Throws(SQLException::class)
     override fun close() {
@@ -94,7 +94,7 @@ class TransactionContext private constructor(
         private val CURRENT = ThreadLocal<TransactionContext>()
 
         /**
-         * Inicia ou participa de uma transação (propagação REQUIRED).
+         * Starts or joins a transaction (REQUIRED propagation).
          */
         @JvmStatic
         @Throws(SQLException::class)
@@ -114,7 +114,7 @@ class TransactionContext private constructor(
         }
 
         /**
-         * Verifica se há uma transação ativa na thread atual.
+         * Checks whether there is an active transaction on the current thread.
          */
         @JvmStatic
         fun isActive(): Boolean {
