@@ -28,23 +28,25 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
     override suspend fun update(newBean: PurchaseItem, oldBean: PurchaseItem?, projection: PurchaseItem?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de item de compra exige o id")
         val prj = projection ?: ownFieldsProjection()
+        // sem projeção nem oldBean: compara com a entidade vazia, e só os campos com valor entram no UPDATE
+        val base = oldBean ?: if (projection == null) PurchaseItem() else null
 
         val step = dsl().update(EN_PURCHASEITEM).set(EN_PURCHASEITEM.ID, id)
         var hasChanges = false
-        if (changed(newBean, oldBean, prj) { it.purchaseId }) {
+        if (changed(newBean, base, prj) { it.purchaseId }) {
             step.set(EN_PURCHASEITEM.PURCHASEID, newBean.purchaseId)
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.productId }) {
+        if (changed(newBean, base, prj) { it.productId }) {
             step.set(EN_PURCHASEITEM.PRODUCTID, newBean.productId)
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.amount }) {
+        if (changed(newBean, base, prj) { it.amount }) {
             newBean.amount?.let(::checkAmount)
             step.set(EN_PURCHASEITEM.AMOUNT, newBean.amount)
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.price }) {
+        if (changed(newBean, base, prj) { it.price }) {
             step.set(EN_PURCHASEITEM.PRICE, newBean.price?.let(BigDecimal::valueOf))
             hasChanges = true
         }

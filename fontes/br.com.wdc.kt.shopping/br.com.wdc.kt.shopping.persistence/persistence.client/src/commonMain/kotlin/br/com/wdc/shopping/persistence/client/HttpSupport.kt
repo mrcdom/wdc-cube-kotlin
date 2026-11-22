@@ -5,6 +5,7 @@ import br.com.wdc.framework.domain.exception.BusinessException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
+import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -25,12 +26,19 @@ internal fun HttpTransport.currentTxId(): String? = transactionIdSupplier?.invok
  * A exceção de uma resposta de erro: o status vira o mesmo tipo que o servidor lançou, para o chamador
  * tratar a recusa pelo que ela é. A mensagem é sempre `HTTP <status>: <corpo>`.
  */
+/**
+ * `true` quando a falha é uma resposta do servidor (saiu de [httpFailure], que sempre escreve "HTTP <status>"), e
+ * não uma falha de transporte — conexão recusada, tempo esgotado —, em que não se sabe o que o servidor fez.
+ */
+internal fun Throwable.isHttpAnswer(): Boolean = message?.startsWith("HTTP ") == true
+
 internal fun httpFailure(status: Int, body: String? = null): RuntimeException {
     val message = if (body.isNullOrEmpty()) "HTTP $status" else "HTTP $status: $body"
     return when (status) {
         400 -> InvalidRequestException(message)
         403 -> AccessDeniedException(message)
         409 -> TransactionConflictException(message)
+        410 -> RemoteTransactionNotFoundException(message)
         429 -> TransactionLimitExceededException(message)
         else -> BusinessException(message)
     }

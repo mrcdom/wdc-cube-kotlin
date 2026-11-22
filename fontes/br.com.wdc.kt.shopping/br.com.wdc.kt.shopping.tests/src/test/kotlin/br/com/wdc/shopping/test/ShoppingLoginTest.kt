@@ -88,16 +88,11 @@ class ShoppingLoginTest : BasePresentationTest() {
 
         assertEquals(4, productsState.products!!.size)
 
-        assertEquals(DBReset.CAFETEIRA_ID, productsState.products!![0].id)
-        assertEquals("unknown", productsState.products!![0].description)
-
-        assertEquals(DBReset.BOLA_WILSON_ID, productsState.products!![1].id)
-        assertEquals("unknown", productsState.products!![1].description)
-
-        assertEquals(DBReset.FITA_VEDA_ROSCA_ID, productsState.products!![2].id)
-        assertEquals("unknown", productsState.products!![2].description)
-
-        assertEquals(DBReset.PEN_DRIVE2GB_ID, productsState.products!![3].id)
-        assertEquals("unknown", productsState.products!![3].description)
+        // em ordem de nome; a descrição fica fora da projeção do painel, e por isso não vem (nula, não "unknown")
+        assertEquals(
+            listOf(DBReset.BOLA_WILSON_ID, DBReset.CAFETEIRA_ID, DBReset.FITA_VEDA_ROSCA_ID, DBReset.PEN_DRIVE2GB_ID),
+            productsState.products!!.map { it.id },
+        )
+        assertTrue(productsState.products!!.all { it.description == null })
     }
 }

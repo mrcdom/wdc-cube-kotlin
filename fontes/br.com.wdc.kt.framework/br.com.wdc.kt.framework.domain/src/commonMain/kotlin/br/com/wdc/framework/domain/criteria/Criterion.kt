@@ -1,5 +1,7 @@
 package br.com.wdc.framework.domain.criteria
 
+import br.com.wdc.framework.domain.exception.InvalidRequestException
+
 /**
  * Critério sobre um campo: os pedidos de comparação feitos e como eles se combinam.
  *
@@ -123,9 +125,21 @@ open class Criterion<C, T : Any>(owner: C?, val name: String) {
      *
      * Existe para a desserialização, e só para ela: `eq(null)` não acrescenta pedido, o que é o certo para
      * quem monta o filtro a partir de uma tela, mas apagaria em silêncio um `EQ NULL` que o outro lado enviou.
+     *
+     * **Recusa o pedido malformado** com [InvalidRequestException] (400 na API): quantidade de valores que o
+     * operador não aceita (`BETWEEN` com um, `EQ` sem nenhum) e `null` numa comparação de ordem, `LIKE` ou
+     * `BETWEEN`. Aceito, um pedido assim contaria como filtro informado e sumiria do SQL — um `delete` "com
+     * critério" apagaria a tabela inteira. `EQ`/`NE` com `null` valem (`IS NULL`/`IS NOT NULL`).
      */
     fun restore(operator: Operator, values: List<T?>?) {
-        requests.add(Predicate(operator, values ?: emptyList()))
+        val list = values ?: emptyList()
+        if (!operator.accepts(list.size)) {
+            throw InvalidRequestException("critério '$name': $operator não aceita ${list.size} valor(es)")
+        }
+        if (operator in NOT_NULL_OPERANDS && list.any { it == null }) {
+            throw InvalidRequestException("critério '$name': $operator não aceita valor nulo")
+        }
+        requests.add(Predicate(operator, list))
     }
 
     /** Marca a disjunção ao remontar o critério do transporte. */
@@ -146,4 +160,9 @@ open class Criterion<C, T : Any>(owner: C?, val name: String) {
     override fun toString(): String =
         if (!isSet()) "$name (não informado)"
         else "$name ${if (disjunctive) "qualquer de " else "todos de "}$requests"
+
+    private companion object {
+        /** Operadores em que `null` não tem sentido: a comparação com nulo nunca é verdadeira. */
+        val NOT_NULL_OPERANDS = setOf(Operator.GT, Operator.GE, Operator.LT, Operator.LE, Operator.LIKE, Operator.ILIKE, Operator.BETWEEN)
+    }
 }

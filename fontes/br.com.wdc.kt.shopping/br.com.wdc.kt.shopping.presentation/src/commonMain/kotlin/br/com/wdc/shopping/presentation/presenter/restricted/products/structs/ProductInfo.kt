@@ -28,7 +28,8 @@ class ProductInfo {
             item.id = product.id ?: -1L
             item.name = product.name ?: "unknown"
             item.price = product.price ?: 0.0
-            item.description = product.description ?: "unknown"
+            // não lida (fora da projeção) ou vazia no banco: fica nula, e cada view decide; não inventa texto
+            item.description = product.description
             item.image = "image/product/${item.id}.png"
             return item
         }

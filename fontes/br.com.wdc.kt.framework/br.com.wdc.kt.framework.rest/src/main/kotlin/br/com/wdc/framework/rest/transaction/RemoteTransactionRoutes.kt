@@ -32,7 +32,7 @@ object RemoteTransactionRoutes {
             call.header(transactions.txHeader)?.takeIf { it.isNotBlank() } ?: throw AccessDeniedException("Cabeçalho ${transactions.txHeader} ausente")
 
         routes.post("$basePath/begin", doc = doc("begin")) { call ->
-            RawJson.field("txId", coordinator().begin(transactions.ownerKey(call.request)))
+            RawJson.field("txId", coordinator().begin(transactions.ownerKey(call.request), transactions.quotaKey(call.request)))
         }
         routes.post("$basePath/commit", doc = doc("commit")) { call ->
             coordinator().commit(txId(call), transactions.ownerKey(call.request))

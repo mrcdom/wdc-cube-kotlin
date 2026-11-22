@@ -323,6 +323,18 @@ abstract class AbstractProductRepositoryTest {
     }
 
     @Test
+    fun update_withoutProjectionNorOldBean_writesOnlyTheFieldsWithValue() = runBlocking {
+        val original = repo().fetchById(penDrive)!!
+        // um bean lido com projeção estreita (id, nome), alterado e devolvido: o que ele não leu não pode ser limpo
+        assertTrue(repo().update(Product().apply { id = penDrive; name = "Só o nome, sem projeção" }))
+
+        val fetched = repo().fetchById(penDrive)!!
+        assertEquals("Só o nome, sem projeção", fetched.name)
+        assertEquals(original.price!!, fetched.price!!, 0.001)
+        assertEquals(original.description, fetched.description)
+    }
+
+    @Test
     fun update_withoutChanges_returnsFalse() = runBlocking {
         val original = repo().fetchById(penDrive)!!
         val same = Product().apply { id = original.id; name = original.name; price = original.price; description = original.description }

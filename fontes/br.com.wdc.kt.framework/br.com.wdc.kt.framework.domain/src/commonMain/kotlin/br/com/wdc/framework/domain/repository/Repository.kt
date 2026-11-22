@@ -29,8 +29,10 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
      *
      * @param newBean    valores novos
      * @param oldBean    valores antigos, base da comparação (pode ser `null`)
-     * @param projection indica quais campos considerar — campo não-nulo na projeção = "atualizar este campo";
-     *                   `null` usa [ownFieldsProjection]
+     * @param projection indica quais campos considerar — campo não-nulo na projeção = "atualizar este campo",
+     *                   **inclusive com `null`, que limpa a coluna**. `null`: com [oldBean], os campos que mudaram;
+     *                   sem ele, só os campos com valor em [newBean], como no [insert] (um nulo não limpa nada).
+     *                   Para limpar uma coluna, marque-a numa projeção.
      */
     suspend fun update(newBean: E, oldBean: E? = null, projection: E? = null): Boolean
 

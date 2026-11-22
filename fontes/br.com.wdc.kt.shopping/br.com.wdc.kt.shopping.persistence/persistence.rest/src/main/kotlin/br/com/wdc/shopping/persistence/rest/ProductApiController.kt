@@ -9,6 +9,7 @@ import br.com.wdc.framework.rest.RestApi
 import br.com.wdc.framework.rest.RestCall
 import br.com.wdc.framework.rest.RestResponse
 import br.com.wdc.framework.rest.rpc.RepositoryRpc
+import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.product.ProductCodec
 import br.com.wdc.shopping.domain.product.ProductCriteria
@@ -18,6 +19,7 @@ import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 
@@ -88,7 +90,22 @@ internal object ProductApiController {
         if (resultBytes == null) {
             return RestResponse.noContent()
         }
-        return RestResponse(200, resultBytes, mapOf("Cache-Control" to "public, max-age=86400, immutable"), contentType = "image/png")
+        // A URL é mutável (o PUT troca a imagem): o navegador guarda, mas revalida pelo ETag a cada uso.
+        val etag = etagOf(resultBytes)
+        val headers = mapOf("Cache-Control" to "no-cache", "ETag" to etag)
+        if (call.header("If-None-Match")?.split(',')?.any { it.trim() == etag } == true) {
+            return RestResponse(304, null, headers)
+        }
+        return RestResponse(200, resultBytes, headers, contentType = "image/png")
+    }
+
+    private fun etagOf(bytes: ByteArray): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
+        return "\"" + digest.take(16).joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') } + "\""
+    }
+
+    private fun evictImage(id: Long) {
+        imageCache.keys.filter { it == "$id" || it.startsWith("${id}_") }.forEach { imageCache.remove(it) }
     }
 
     private fun resizeImage(originalBytes: ByteArray, targetSize: Int): ByteArray {
@@ -115,8 +132,14 @@ internal object ProductApiController {
         val id = imageId(call)
         try {
             val imageBytes = call.bodyBytes()
-            val success = call.inTransaction { repo().updateImage(id, imageBytes) }
-            imageCache.keys.filter { it == "$id" || it.startsWith("${id}_") }.forEach { imageCache.remove(it) }
+            val success = call.inTransaction {
+                val updated = repo().updateImage(id, imageBytes)
+                // Só depois do commit: limpar antes deixaria um GET no intervalo (que lê a imagem confirmada, a
+                // velha) recolocá-la no cache. Numa transação remota, o commit é o do cliente.
+                val transactions = ShoppingTransactions.BEAN.getOrNull()
+                if (transactions == null) evictImage(id) else transactions.afterCommit { evictImage(id) }
+                updated
+            }
             return mapOf("success" to success)
         } catch (e: Exception) {
             // recusas da transação e do acesso respondem com o status delas

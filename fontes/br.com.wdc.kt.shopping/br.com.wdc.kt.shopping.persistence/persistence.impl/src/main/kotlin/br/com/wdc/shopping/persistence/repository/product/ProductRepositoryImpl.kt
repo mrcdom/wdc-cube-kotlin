@@ -30,22 +30,24 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
     override suspend fun update(newBean: Product, oldBean: Product?, projection: Product?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de produto exige o id")
         val prj = projection ?: ownFieldsProjection()
+        // sem projeção nem oldBean: compara com a entidade vazia, e só os campos com valor entram no UPDATE
+        val base = oldBean ?: if (projection == null) Product() else null
 
         val step = dsl().update(EN_PRODUCT).set(EN_PRODUCT.ID, id)
         var hasChanges = false
-        if (changed(newBean, oldBean, prj) { it.name }) {
+        if (changed(newBean, base, prj) { it.name }) {
             step.set(EN_PRODUCT.NAME, newBean.name)
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.price }) {
+        if (changed(newBean, base, prj) { it.price }) {
             step.set(EN_PRODUCT.PRICE, newBean.price?.let(BigDecimal::valueOf))
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.description }) {
+        if (changed(newBean, base, prj) { it.description }) {
             step.set(EN_PRODUCT.DESCRIPTION, newBean.description)
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.image }) {
+        if (changed(newBean, base, prj) { it.image }) {
             step.set(EN_PRODUCT.IMAGE, newBean.image)
             hasChanges = true
         }

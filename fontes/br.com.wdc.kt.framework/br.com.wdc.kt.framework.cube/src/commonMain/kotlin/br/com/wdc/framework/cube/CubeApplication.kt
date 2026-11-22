@@ -2,6 +2,7 @@ package br.com.wdc.framework.cube
 
 import br.com.wdc.framework.commons.concurrent.concurrentMutableMapOf
 import br.com.wdc.framework.commons.log.Log
+import kotlinx.coroutines.CompletableDeferred
 
 abstract class CubeApplication {
 
@@ -13,6 +14,12 @@ abstract class CubeApplication {
         protected set
 
     internal var navigation: CubeNavigation<*>? = null
+
+    /** Completa quando a navegação em curso (com os redirecionamentos dela) termina: `true` se comitou. */
+    private var navigationDone: CompletableDeferred<Boolean>? = null
+
+    /** O pedido de fora que espera a navegação em curso. Só o último espera; os anteriores desistem. */
+    internal var waitingNavigation: CubeNavigation<*>? = null
 
     fun getPresenter(placeId: Int): CubePresenter? = presenterMap[placeId]
 
@@ -46,30 +53,36 @@ abstract class CubeApplication {
         return intent
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun <T : CubeApplication> navigate(): CubeNavigation<T> {
-        val current = navigation
-        if (current != null) {
-            current.interrupt()
+    /**
+     * Uma navegação nova; os passos vêm por [CubeNavigation.step] e ela corre em [CubeNavigation.execute].
+     *
+     * O que acontece com uma navegação em curso se decide no `execute`: pedida de dentro dela (o presenter, no
+     * próprio `applyParameters`) é um redirecionamento e a interrompe; pedida de fora (ação da view, histórico)
+     * espera ela terminar.
+     */
+    fun <T : CubeApplication> navigate(): CubeNavigation<T> = CubeNavigation(this)
 
-            if (current.reflowCount > 10) {
-                throw AssertionError("Navigation recursion detected")
-            }
-
-            val newContext = CubeNavigation<T>(this)
-            newContext.reflowCount = current.reflowCount + 1
-
-            // Migrate created presenters from interrupted navigation
-            newContext.newPresenterMap.putAll(current.newPresenterMap)
-
-            navigation = newContext
-            return newContext
-        } else {
-            val newContext = CubeNavigation<T>(this)
-            navigation = newContext
-            return newContext
-        }
+    /** A navegação [nav] passa a ser a corrente, num período ocioso. */
+    internal fun startNavigation(nav: CubeNavigation<*>) {
+        navigation = nav
+        navigationDone = CompletableDeferred()
     }
+
+    /** Um redirecionamento toma o lugar da navegação corrente, no mesmo período. */
+    internal fun replaceNavigation(nav: CubeNavigation<*>) {
+        navigation = nav
+    }
+
+    /** A navegação corrente terminou (comitou, ou desfez com [success] `false`): acorda quem esperava. */
+    internal fun endNavigation(success: Boolean) {
+        navigation = null
+        val done = navigationDone
+        navigationDone = null
+        done?.complete(success)
+    }
+
+    /** Espera a navegação corrente terminar; `true` se ela comitou. */
+    internal suspend fun awaitNavigation(): Boolean = navigationDone?.await() ?: true
 
     private val attributes: MutableMap<String, Any?> = concurrentMutableMapOf()
 

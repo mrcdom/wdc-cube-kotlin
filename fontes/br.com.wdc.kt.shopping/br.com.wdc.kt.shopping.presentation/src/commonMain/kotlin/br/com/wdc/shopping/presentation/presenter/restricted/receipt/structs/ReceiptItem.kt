@@ -30,6 +30,7 @@ class ReceiptItem {
             if (src == null) return null
 
             val tgt = ReceiptItem()
+            tgt.id = src.id ?: 0
             tgt.value = src.price ?: 0.0
             tgt.quantity = src.amount ?: 0
 

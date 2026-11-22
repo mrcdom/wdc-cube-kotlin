@@ -19,7 +19,7 @@ class ProductService(private val repo: ProductRepository) {
 
     suspend fun loadProductsWithoutDescription(limit: Int): List<ProductInfo> {
         val projection = ProductInfo.projection().apply { description = null }
-        val criteria = ProductCriteria().withProjection(projection)
+        val criteria = ProductCriteria().withProjection(projection).withOrderBy(ProductCriteria.OrderBy.NAME_A_TO_Z)
         return repo.fetch(criteria, limit = limit).mapNotNull { ProductInfo.create(it) }
     }
 }

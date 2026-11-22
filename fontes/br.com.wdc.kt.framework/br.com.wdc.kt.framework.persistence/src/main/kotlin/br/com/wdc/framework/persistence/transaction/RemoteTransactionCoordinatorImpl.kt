@@ -5,6 +5,7 @@ import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
 import br.com.wdc.framework.domain.transaction.AfterCommitTasks
+import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
 import br.com.wdc.framework.domain.transaction.TransactionSystemException
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -43,6 +44,12 @@ class RemoteTransactionCoordinatorImpl(
     /** Índice dono → nº de transações abertas (donos nulos não entram). */
     private val openByOwner = ConcurrentHashMap<String, Int>()
 
+    /** Índice da chave do teto → nº de transações abertas (o teto por dono é contado aqui). */
+    private val openByQuota = ConcurrentHashMap<String, Int>()
+
+    /** Desfeitas enquanto uma requisição as usava: fecham quando ela as desliga ([suspend]). */
+    private val closingInUse = ConcurrentHashMap<String, Entry>()
+
     /** Desfecho de transações finalizadas, retido por `outcomeRetentionMs` para idempotência. */
     private val outcomes = ConcurrentHashMap<String, Finalized>()
 
@@ -52,9 +59,11 @@ class RemoteTransactionCoordinatorImpl(
     private val reapedCount = AtomicLong()
     private val rejectedByLimitCount = AtomicLong()
 
-    override fun begin(ownerKey: String?): String {
+    override fun begin(ownerKey: String?): String = begin(ownerKey, ownerKey)
+
+    override fun begin(ownerKey: String?, quotaKey: String?): String {
         reapExpired() // recupera transações expiradas antes de avaliar os tetos
-        enforceLimits(ownerKey)
+        enforceLimits(quotaKey)
         val ds = dataSource() ?: throw TransactionSystemException("DataSource não inicializado para o coordenador remoto")
         val scope = try {
             TransactionScope.open(ds) // owner, sem dono de thread: já nasce suspenso
@@ -62,8 +71,8 @@ class RemoteTransactionCoordinatorImpl(
             throw TransactionSystemException("Falha ao abrir transação remota", e)
         }
         val txId = UUID.randomUUID().toString()
-        registry[txId] = Entry(scope, ownerKey, clock())
-        trackOwner(ownerKey)
+        registry[txId] = Entry(scope, ownerKey, quotaKey, clock())
+        trackOwner(ownerKey, quotaKey)
         begunCount.incrementAndGet()
         LOG.debug("tx remota aberta: {} (owner={}, abertas={})", txId, ownerKey, registry.size)
         return txId
@@ -72,8 +81,11 @@ class RemoteTransactionCoordinatorImpl(
     override fun resume(txId: String, ownerKey: String?) {
         val entry = registry[txId] ?: throw unknown(txId)
         verifyOwner(entry.owner, ownerKey)
-        if (!entry.inUse.compareAndSet(false, true)) {
-            throw TransactionSystemException("Transação remota em uso concorrente: $txId")
+        synchronized(entry) {
+            if (entry.finished) throw unknown(txId)
+            if (!entry.inUse.compareAndSet(false, true)) {
+                throw TransactionConflictException("Transação remota em uso por outra requisição: $txId")
+            }
         }
         try {
             TransactionScope.resume(entry.scope)
@@ -85,12 +97,20 @@ class RemoteTransactionCoordinatorImpl(
     }
 
     override fun suspend(txId: String) {
-        val entry = registry[txId] ?: return
+        val entry = registry[txId] ?: closingInUse[txId]
         try {
+            // sempre: mesmo sem entrada, a thread não pode ficar com o escopo ligado
             TransactionScope.suspend()
         } finally {
-            entry.lastUsedAt = clock()
-            entry.inUse.set(false)
+            if (entry != null) {
+                entry.lastUsedAt = clock()
+                val closeNow = synchronized(entry) {
+                    entry.inUse.set(false)
+                    entry.finished && closingInUse.remove(txId, entry)
+                }
+                // desfeita enquanto esta requisição a usava: fecha agora, já desligada da thread
+                if (closeNow) rollbackQuietly(entry)
+            }
         }
     }
 
@@ -140,7 +160,7 @@ class RemoteTransactionCoordinatorImpl(
                 "Limite global de transações remotas abertas atingido (${options.maxOpen})"
             )
         }
-        if (ownerKey != null && (openByOwner[ownerKey] ?: 0) >= options.maxOpenPerOwner) {
+        if (ownerKey != null && (openByQuota[ownerKey] ?: 0) >= options.maxOpenPerOwner) {
             rejectedByLimitCount.incrementAndGet()
             LOG.warn("teto POR DONO de transações remotas atingido ({}) — owner={}", options.maxOpenPerOwner, ownerKey)
             throw TransactionLimitExceededException(
@@ -149,34 +169,72 @@ class RemoteTransactionCoordinatorImpl(
         }
     }
 
-    private fun trackOwner(owner: String?) {
-        if (owner != null) {
-            openByOwner.merge(owner, 1, Int::plus)
-        }
+    private fun trackOwner(owner: String?, quota: String?) {
+        if (owner != null) openByOwner.merge(owner, 1, Int::plus)
+        if (quota != null) openByQuota.merge(quota, 1, Int::plus)
     }
 
-    private fun untrackOwner(owner: String?) {
-        if (owner != null) {
-            openByOwner.computeIfPresent(owner) { _, count -> if (count <= 1) null else count - 1 }
-        }
+    private fun untrackOwner(entry: Entry) {
+        entry.owner?.let { owner -> openByOwner.computeIfPresent(owner) { _, count -> if (count <= 1) null else count - 1 } }
+        entry.quota?.let { quota -> openByQuota.computeIfPresent(quota) { _, count -> if (count <= 1) null else count - 1 } }
     }
 
     private fun finish(txId: String, ownerKey: String?, rollback: Boolean) {
         val entry = registry[txId]
         if (entry != null) {
             verifyOwner(entry.owner, ownerKey)
-            if (registry.remove(txId, entry)) {
-                untrackOwner(entry.owner)
-                closeAndRecord(txId, entry, rollback)
-                return
+            val action = synchronized(entry) {
+                when {
+                    entry.finished -> Finish.ALREADY
+                    entry.inUse.get() -> {
+                        // Uma requisição usa a transação agora (o cliente desistiu dela por timeout, por exemplo).
+                        // Fechar a conexão debaixo do statement em curso a faria falhar de um jeito qualquer: o
+                        // commit é recusado, e o rollback vale já como desfecho, mas fecha quando ela desligar.
+                        if (!rollback) {
+                            throw TransactionConflictException("Transação remota em uso por uma requisição: $txId; tente de novo")
+                        }
+                        entry.finished = true
+                        registry.remove(txId, entry)
+                        closingInUse[txId] = entry
+                        Finish.DEFERRED
+                    }
+                    else -> {
+                        entry.finished = true
+                        registry.remove(txId, entry)
+                        Finish.NOW
+                    }
+                }
             }
-            // outra thread finalizou entre o get e o remove → trata como repetição
+            when (action) {
+                Finish.NOW -> {
+                    untrackOwner(entry)
+                    closeAndRecord(txId, entry, rollback)
+                    return
+                }
+                Finish.DEFERRED -> {
+                    untrackOwner(entry)
+                    outcomes[txId] = Finalized(false, entry.owner, clock())
+                    rolledBackCount.incrementAndGet()
+                    LOG.debug("tx remota desfeita em uso; fecha quando a requisição desligar: {}", txId)
+                    return
+                }
+                Finish.ALREADY -> Unit // outra thread finalizou: trata como repetição
+            }
         }
         finishAlreadyFinalized(txId, ownerKey, rollback)
     }
 
     /** Fecha o escopo (commit/rollback) e grava o desfecho para idempotência. */
     private fun closeAndRecord(txId: String, entry: Entry, rollback: Boolean) {
+        // Commit pedido, mas uma requisição falhou dentro da transação (ou alguém marcou rollback): desfaz e diz,
+        // em vez de responder sucesso a quem acha que confirmou.
+        val condemned = !rollback && entry.scope.isRollbackOnly()
+        if (condemned) {
+            closeAndRecord(txId, entry, rollback = true)
+            throw TransactionConflictException(
+                "Transação $txId desfeita: uma requisição dentro dela falhou (ou ela foi marcada para rollback)"
+            )
+        }
         try {
             if (rollback) {
                 entry.scope.setRollbackOnly()
@@ -227,8 +285,16 @@ class RemoteTransactionCoordinatorImpl(
             for ((txId, entry) in registry) {
                 val idleExpired = entry.lastUsedAt < idleDeadline
                 val lifetimeExpired = (now - entry.createdAt) >= options.maxLifetimeMs
-                if ((idleExpired || lifetimeExpired) && !entry.inUse.get() && registry.remove(txId, entry)) {
-                    untrackOwner(entry.owner)
+                val reap = (idleExpired || lifetimeExpired) && synchronized(entry) {
+                    if (entry.finished || entry.inUse.get()) {
+                        false
+                    } else {
+                        entry.finished = true
+                        registry.remove(txId, entry)
+                    }
+                }
+                if (reap) {
+                    untrackOwner(entry)
                     rollbackQuietly(entry)
                     outcomes[txId] = Finalized(false, entry.owner, now) // reaped = rolledback (desambigua a repetição)
                     reapedCount.incrementAndGet()
@@ -254,7 +320,7 @@ class RemoteTransactionCoordinatorImpl(
         }
     }
 
-    private fun unknown(txId: String) = TransactionSystemException("Transação remota desconhecida ou expirada: $txId")
+    private fun unknown(txId: String) = RemoteTransactionNotFoundException("Transação remota desconhecida ou expirada: $txId")
 
     /** Se a transação tem dono (chave não-nula no begin), exige que a operação apresente a mesma chave. */
     private fun verifyOwner(owner: String?, requesterKey: String?) {
@@ -267,13 +333,20 @@ class RemoteTransactionCoordinatorImpl(
         val scope: TransactionScope,
         /** Chave opaca do dono. `null` = transação sem dono (segurança desativada). */
         val owner: String?,
+        /** Chave do teto por dono (a mesma do dono, salvo [begin] com `quotaKey`). */
+        val quota: String?,
         val createdAt: Long,
     ) {
         val inUse = AtomicBoolean(false)
 
+        /** Finalizada (ou com rollback adiado): não aceita mais requisições. Mexa só com o lock da entrada. */
+        var finished = false
+
         @Volatile
         var lastUsedAt: Long = createdAt
     }
+
+    private enum class Finish { NOW, DEFERRED, ALREADY }
 
     /** Desfecho retido de uma transação finalizada. */
     private class Finalized(val committed: Boolean, val owner: String?, val at: Long)

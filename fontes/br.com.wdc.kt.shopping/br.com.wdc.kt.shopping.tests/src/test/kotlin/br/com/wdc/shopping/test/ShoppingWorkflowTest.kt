@@ -5,6 +5,8 @@ import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.mock.viewimpl.CartViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.LoginViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.ProductViewMock
+import br.com.wdc.shopping.test.mock.viewimpl.ProductsPanelViewMock
+import br.com.wdc.shopping.test.mock.viewimpl.PurchasesPanelViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.ReceiptViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.RestrictedViewMock
 import br.com.wdc.shopping.test.util.BasePresentationTest
@@ -25,6 +27,67 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         loginView.presenter.onEnter()
 
         return RestrictedViewMock.cast(rootView.state.contentView)
+    }
+
+    @Test
+    fun unexpectedError_showsTheDetail_onlyWhenThereIsOne() = runBlocking {
+        gotoRestricted()
+        val log = br.com.wdc.framework.commons.log.Log.getLogger("ShoppingWorkflowTest")
+        app.alertUnexpectedError(log, "Erro inesperado", IllegalStateException("conexão recusada"))
+        assertEquals("Erro inesperado: conexão recusada", app.getRootView()!!.state.errorMessage)
+        app.alertUnexpectedError(log, "Erro inesperado", IllegalStateException())
+        assertEquals("Erro inesperado", app.getRootView()!!.state.errorMessage)
+    }
+
+    @Test
+    fun openingAReceiptThatDoesNotExist_saysSo() = runBlocking {
+        val restrictedView = gotoRestricted()
+        restrictedView.presenter.onOpenReceipt(Long.MIN_VALUE)
+        val home = RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
+        assertEquals(5, home.state.errorCode, "recibo não localizado")
+        assertEquals("Código do recibo não localizado.", home.state.errorMessage)
+    }
+
+    @Test
+    fun buyingWithAnEmptyCart_saysTheCartIsEmpty() = runBlocking {
+        gotoRestricted()
+        Routes.cart(app)
+        val home = RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
+        val cartView = CartViewMock.cast(home.state.contentView)
+        cartView.presenter.onBuy()
+        assertEquals(3, cartView.state.errorCode)
+        assertEquals("Deve existir pelo menos um item no carrinho para se efetivar uma compra.", cartView.state.errorMessage)
+    }
+
+    @Test
+    fun receiptItems_keepTheirIds_andComeOrderedByThem() = runBlocking {
+        val restrictedView = gotoRestricted()
+        restrictedView.presenter.onOpenReceipt(DBReset.ADMIN_SECOND_PURCHASE_ID)
+        val home = RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
+        val receipt = ReceiptViewMock.cast(home.state.contentView).state.receipt!!
+        assertEquals(
+            listOf(DBReset.ADMIN_SECOND_PURCHASE_ITEM0_ID, DBReset.ADMIN_SECOND_PURCHASE_ITEM1_ID),
+            receipt.items.map { it.id },
+        )
+    }
+
+    @Test
+    fun purchasesPanel_pagePastTheEnd_showsTheLastPageWithItsItems() = runBlocking {
+        val restrictedView = gotoRestricted()
+        val panel = PurchasesPanelViewMock.cast(restrictedView.state.purchasesPanelView)
+        panel.state.pageSize = 1
+        panel.presenter.onPageChange(50) // o admin tem duas compras: a página 50 não existe
+        assertEquals(1, panel.state.page, "ajustada para a última")
+        assertEquals(1, panel.state.purchases.size, "com os itens da página ajustada")
+    }
+
+    @Test
+    fun productsPanel_doesNotShowAMadeUpDescription_andComesInAStableOrder() = runBlocking {
+        val restrictedView = gotoRestricted()
+        val panel = ProductsPanelViewMock.cast(restrictedView.state.productsPanelView)
+        val products = panel.state.products!!
+        assertTrue(products.none { it.description == "unknown" }, "a descrição não foi lida: não pode trafegar inventada")
+        assertEquals(products.map { it.name }.sortedBy { it!!.lowercase() }, products.map { it.name }, "ordem por nome")
     }
 
     @Test
@@ -90,6 +153,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
         carrinhoView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(carrinhoView.state.errorCode == 1, "Indicação de quantidade inválida")
+        assertEquals("Existem produtos com menos de um item na quantidade. Impossível comprar.", carrinhoView.state.errorMessage)
         carrinhoView.state.errorCode = 0
 
         carrinhoView.presenter.onModifyQuantity(DBReset.PEN_DRIVE2GB_ID, 2)

@@ -1,5 +1,7 @@
 package br.com.wdc.framework.persistence.transaction
 
+import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
+
 import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
@@ -126,8 +128,11 @@ class RemoteTransactionCoordinatorImplTest {
                 runBlocking { service.required { db.insertInCurrentTx(1); throw IllegalStateException("boom") } }
             }
         }
-        coordinator.commit(txId, null)
+        // o commit desfaz e diz: quem pediu o commit não pode achar que confirmou
+        assertFailsWith<TransactionConflictException> { coordinator.commit(txId, null) }
         assertEquals(emptyList(), db.ids())
+        assertEquals("rolledback", coordinator.status(txId, null))
+        coordinator.rollback(txId, null) // o cliente, ao ver a falha, manda rollback: idempotente
     }
 
     // :: Dono
@@ -185,7 +190,7 @@ class RemoteTransactionCoordinatorImplTest {
 
         coordinator.resume(txId, null)
         try {
-            assertFailsWith<TransactionSystemException> { onAnotherThread { coordinator.resume(txId, null) } }
+            assertFailsWith<TransactionConflictException> { onAnotherThread { coordinator.resume(txId, null) } }
         } finally {
             coordinator.suspend(txId)
         }
@@ -198,15 +203,71 @@ class RemoteTransactionCoordinatorImplTest {
     @Test
     fun unknownTxId_isRefused() {
         val coordinator = coordinator()
-        assertFailsWith<TransactionSystemException> { coordinator.resume("nope", null) }
-        assertFailsWith<TransactionSystemException> { coordinator.commit("nope", null) }
-        assertFailsWith<TransactionSystemException> { coordinator.rollback("nope", null) }
+        assertFailsWith<RemoteTransactionNotFoundException> { coordinator.resume("nope", null) }
+        assertFailsWith<RemoteTransactionNotFoundException> { coordinator.commit("nope", null) }
+        assertFailsWith<RemoteTransactionNotFoundException> { coordinator.rollback("nope", null) }
         coordinator.suspend("nope") // no-op
         assertFalse(coordinator.exists("nope"))
         assertFalse(coordinator.exists(null))
     }
 
+    @Test
+    fun rollbackWhileARequestUsesTheTransaction_waitsForTheRequestToRelease() {
+        val coordinator = coordinator()
+        val txId = coordinator.begin("user:1")
+
+        // a requisição em curso (nesta thread) segura a transação; o cliente desiste e manda rollback
+        coordinator.resume(txId, "user:1")
+        try {
+            db.insertInCurrentTx(1)
+            onAnotherThread { coordinator.rollback(txId, "user:1") }
+            assertEquals("rolledback", coordinator.status(txId, "user:1"), "o desfecho já vale")
+            assertFailsWith<RemoteTransactionNotFoundException> { onAnotherThread { coordinator.resume(txId, "user:1") } }
+            // a conexão não foi fechada debaixo da requisição: ela segue trabalhando
+            db.insertInCurrentTx(2)
+            assertEquals(1, db.openConnections.get())
+        } finally {
+            coordinator.suspend(txId)
+        }
+        // ao desligar, a transação fecha desfeita
+        assertEquals(emptyList(), db.ids())
+        assertEquals(0, db.openConnections.get())
+        coordinator.rollback(txId, "user:1") // repetição: idempotente
+    }
+
+    @Test
+    fun commitWhileARequestUsesTheTransaction_isAConflict() {
+        val coordinator = coordinator()
+        val txId = coordinator.begin(null)
+        coordinator.resume(txId, null)
+        try {
+            db.insertInCurrentTx(1)
+            assertFailsWith<TransactionConflictException> { onAnotherThread { coordinator.commit(txId, null) } }
+        } finally {
+            coordinator.suspend(txId)
+        }
+        coordinator.commit(txId, null) // liberada, o commit passa
+        assertEquals(listOf(1), db.ids())
+    }
+
     // :: Tetos
+
+    @Test
+    fun quotaKey_countsTheCap_whileTheOwnerKeyGuardsTheTransaction() {
+        val coordinator = coordinator(RemoteTransactionOptions(maxOpenPerOwner = 2))
+        val a = coordinator.begin("user:1/client:a", "user:1")
+        val b = coordinator.begin("user:1/client:b", "user:1")
+        // o teto é do usuário: um terceiro cliente dele não abre
+        assertFailsWith<TransactionLimitExceededException> { coordinator.begin("user:1/client:c", "user:1") }
+        // a recusa de escrita sem txId é por dono (instância de cliente)
+        assertTrue(coordinator.hasOpenTransactionForOwner("user:1/client:a"))
+        assertFalse(coordinator.hasOpenTransactionForOwner("user:1/client:c"))
+        // outro cliente do mesmo usuário não usa a transação do primeiro
+        assertFailsWith<AccessDeniedException> { coordinator.resume(a, "user:1/client:b") }
+        coordinator.rollback(a, "user:1/client:a")
+        coordinator.begin("user:1/client:c", "user:1").also { coordinator.rollback(it, "user:1/client:c") }
+        coordinator.rollback(b, "user:1/client:b")
+    }
 
     @Test
     fun exceedingMaxOpen_isRejected() {
@@ -359,7 +420,7 @@ class RemoteTransactionCoordinatorImplTest {
         now.addAndGet(1_001)
         val other = coordinator.begin(null) // a varredura acontece no begin
         assertEquals("unknown", coordinator.status(txId, null))
-        assertFailsWith<TransactionSystemException> { coordinator.commit(txId, null) }
+        assertFailsWith<RemoteTransactionNotFoundException> { coordinator.commit(txId, null) }
         coordinator.rollback(other, null)
     }
 

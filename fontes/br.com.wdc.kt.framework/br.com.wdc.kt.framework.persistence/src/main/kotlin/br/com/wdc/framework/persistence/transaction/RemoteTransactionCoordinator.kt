@@ -28,6 +28,13 @@ interface RemoteTransactionCoordinator {
      */
     fun begin(ownerKey: String?): String
 
+    /**
+     * Como [begin], com o teto de abertas por dono contado por [quotaKey], e não por [ownerKey]. Serve quando o
+     * dono é mais fino que quem responde pelo teto: dono = usuário + instância de cliente, teto = usuário. Sem
+     * suporte na implementação, cai em [begin] (o teto fica por dono).
+     */
+    fun begin(ownerKey: String?, quotaKey: String?): String = begin(ownerKey)
+
     /** Religa a transação à thread corrente. Falha se desconhecida, já em uso, ou se [ownerKey] divergir. */
     fun resume(txId: String, ownerKey: String?)
 

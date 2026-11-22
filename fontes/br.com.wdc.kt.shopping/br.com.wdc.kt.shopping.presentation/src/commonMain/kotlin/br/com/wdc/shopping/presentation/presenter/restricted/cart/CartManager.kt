@@ -47,9 +47,10 @@ class CartManager(private val repo: PurchaseRepository) {
 
         if (isNew) {
             cart.add(CartItem.create(product, quantity))
-            for (listener in ArrayList(changeListenerMap.values)) {
-                listener()
-            }
+        }
+        // nos dois casos o carrinho mudou: o contador do cabeçalho depende deste aviso
+        for (listener in ArrayList(changeListenerMap.values)) {
+            listener()
         }
     }
 
@@ -117,7 +118,7 @@ class CartManager(private val repo: PurchaseRepository) {
 
         purchase.items = ArrayList()
         for (srcItem in request) {
-            if (srcItem.quantity < 0) {
+            if (srcItem.quantity < 1) {
                 throw InvalidCartItemException()
             }
 

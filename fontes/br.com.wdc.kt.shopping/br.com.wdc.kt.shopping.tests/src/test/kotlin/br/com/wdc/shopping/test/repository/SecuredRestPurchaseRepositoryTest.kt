@@ -8,6 +8,7 @@ import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.user.User
+import br.com.wdc.shopping.domain.user.UserCriteria
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.RestTestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
@@ -114,6 +115,25 @@ class SecuredRestPurchaseRepositoryTest {
         assertEquals(listOf<Long?>(own.id), items().fetch(PurchaseItemCriteria()).map { it.purchaseId })
         assertEquals(emptyList<PurchaseItem>(), items().fetch(PurchaseItemCriteria().withPurchaseId(DBReset.ADMIN_FIRST_PURCHASE_ID)))
         assertNull(items().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID))
+    }
+
+    @Test
+    fun customer_disjunctiveFilterOnTheOwnerField_doesNotWidenTheScope() = runBlocking {
+        val own = fulanoBuys()
+
+        // "or" no campo do dono: o escopo somado a ele virava USERID IS NOT NULL OR USERID = dono
+        val anyone = PurchaseCriteria().also { it.userId.or().isNotNull() }
+        assertEquals(listOf(own.id), purchases().fetch(anyone).map { it.id })
+        assertEquals(1, purchases().count(PurchaseCriteria().also { it.userId.or().isNotNull() }))
+        assertEquals(emptyList<Purchase>(), purchases().fetch(PurchaseCriteria().also { it.userId.or().eq(DBReset.ADMIN_ID) }))
+        assertEquals(1, items().count(PurchaseItemCriteria().also { it.userId.or().isNotNull() }))
+        assertEquals(1, env.userRepo.count(UserCriteria().also { it.userId.or().isNotNull() }))
+
+        // o mesmo pedido cru, como um cliente qualquer o enviaria
+        val raw = env.transport.postJson(
+            "/api/repo/purchase/count", """{"userId":{"or":true,"p":[{"o":"IS_NOT_NULL"}]}}""",
+        )
+        assertEquals("""{"count":1}""", raw)
     }
 
     @Test

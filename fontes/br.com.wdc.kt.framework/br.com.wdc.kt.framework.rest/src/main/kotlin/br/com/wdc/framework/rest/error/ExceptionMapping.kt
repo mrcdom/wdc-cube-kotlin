@@ -5,6 +5,7 @@ import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
+import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
 import br.com.wdc.framework.rest.RequestContext
 import br.com.wdc.framework.rest.security.AuthenticationException
 import br.com.wdc.framework.rest.security.RateLimitedException
@@ -29,7 +30,8 @@ fun interface ExceptionHandler<in E : Throwable> {
  * | `InvalidRequestException` (inclui os parâmetros e corpos malformados) | 400 |
  * | `AuthenticationException` (sem credencial, ou credencial recusada) | `unauthenticatedStatus` (padrão 401) |
  * | `AccessDeniedException` | 403 |
- * | `TransactionConflictException` | 409 |
+ * | `TransactionConflictException` (inclusive transação remota em uso por outra requisição) | 409 |
+ * | `RemoteTransactionNotFoundException` (transação remota desconhecida ou expirada) | 410 |
  * | `TransactionLimitExceededException` | 429 |
  * | `RateLimitedException` (limite por minuto) | 429, com `Retry-After` |
  * | `HttpResponseException` do Javalin | o status dela |
@@ -56,6 +58,7 @@ class ExceptionMapping {
         on(AuthenticationException::class.java) { e, r -> ErrorResponse(unauthenticatedStatus, errorBody(unauthenticatedStatus, e.message, r)) }
         status(AccessDeniedException::class.java, 403)
         status(TransactionConflictException::class.java, 409)
+        status(RemoteTransactionNotFoundException::class.java, 410)
         status(TransactionLimitExceededException::class.java, 429)
         on(RateLimitedException::class.java) { e, r ->
             ErrorResponse(429, errorBody(429, e.message, r), mapOf("Retry-After" to e.retryAfterSeconds.toString()))

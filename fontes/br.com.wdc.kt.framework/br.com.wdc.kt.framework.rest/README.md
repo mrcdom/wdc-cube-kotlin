@@ -113,6 +113,7 @@ Entidades de repositório trafegam pelo `ModelCodec` delas, sem reflexão. O res
 | `TransactionConflictException` | 409 |
 | `TransactionLimitExceededException` | 429 |
 | `RateLimitedException` (limite por minuto) | 429, com `Retry-After` |
+| `RemoteTransactionNotFoundException` (transação remota desconhecida ou expirada) | 410 |
 | `HttpResponseException` do Javalin (`NotFoundResponse`…) | o status dela |
 
 O corpo de todos esses vem de `errorBody(status, mensagem, request)`, que por padrão é `{"error": "<mensagem>"}`. Para que caminhos sem rota (404/405) também passem pelo mapa, ligue `handleUnmatched = true`; sem isso, o corpo é o do Javalin.
@@ -168,7 +169,7 @@ Para levar o contexto a uma corrotina lançada fora do pipeline, use `request.as
 2. Se não veio o cabeçalho mas o dono tem transação remota aberta, a escrita é recusada com 409, para não ser confirmada fora da transação. `refuseWritesOutsideOpenTransaction = false` desliga isso.
 3. Nos outros casos, há uma transação por requisição (`TransactionService.required`).
 
-O dono de uma transação remota é `user:<principal.id>`, ou `anon:<X-Client-Id>` sem principal (configurável em `ownerKey`). `RemoteTransactionRoutes.register(this, transactions)` publica `begin`, `commit`, `rollback` e `status` em `/api/tx`. `serviceSource` e `coordinatorSource` são consultados a cada requisição, para quem guarda os serviços em holders.
+O dono de uma transação remota é `user:<principal.id>/client:<X-Client-Id>` (ou `user:<principal.id>` sem o cabeçalho), ou `anon:<X-Client-Id>` sem principal (configurável em `ownerKey`): o mesmo usuário em dois clientes não se bloqueia. O teto de abertas por dono é contado por `quotaKey` (`user:<principal.id>`), e trocar o `X-Client-Id` não o contorna. Com `X-Tx-Id`, a requisição roda como participante: se falhar, a transação remota fica condenada, e o commit responde 409. `RemoteTransactionRoutes.register(this, transactions)` publica `begin`, `commit`, `rollback` e `status` em `/api/tx`. `serviceSource` e `coordinatorSource` são consultados a cada requisição, para quem guarda os serviços em holders.
 
 ## CORS, compressão e limite de corpo
 
@@ -224,6 +225,8 @@ openApi {
 ## RPC genérico por entidade
 
 `RepositoryRpc(basePath, codec, repository, …)` publica as operações de um repositório: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` e `GET {id}`. É o protocolo que o cliente `HttpRepository` do Shopping fala. O acesso fica com a aplicação, por meio de `rule` (por operação), `scope` (restringe o critério a quem chama), `sanitizeProjection`, `sanitizeOutput`, `beforeInsert` e `beforeUpdate`. Os dois ganchos de escrita rodam dentro da transação. Para um repositório só de leitura, use `writes = false`.
+
+**O `scope` soma o alcance a um critério que veio de quem chama**, com a disjunção que ele escolheu em cada campo. Use o campo conjuntivo, `criteria.ownerId.and().eq(owner)`, e nunca só `eq`: num campo enviado com `"or": true`, `eq` vira mais uma alternativa (`ownerId IS NOT NULL OR ownerId = :owner`) e quem chama alcança tudo.
 
 O `insert` recebe `{"entity", "projection"?}` (ou, como antes da 0.4.0, a entidade solta) e responde `{"success", "id", "entity"}`, com a entidade como o repositório a deixou — a chave gerada e os padrões das colunas —, passada por `sanitizeOutput`.
 

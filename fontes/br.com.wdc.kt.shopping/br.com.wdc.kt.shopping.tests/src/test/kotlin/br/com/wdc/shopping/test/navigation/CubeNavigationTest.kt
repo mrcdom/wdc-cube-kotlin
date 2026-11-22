@@ -1,7 +1,10 @@
 package br.com.wdc.shopping.test.navigation
 
 import br.com.wdc.framework.cube.CubeIntent
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.junit.jupiter.api.Assertions.*
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -328,6 +331,9 @@ class CubeNavigationTest {
         // HOME released (replaced), PRODUCT_DETAIL never created
         assertTrue(home.released, "HOME should be released")
         assertNull(presenterOf(TestPlace.PRODUCT_DETAIL.id), "PRODUCT_DETAIL should not exist")
+
+        // the current place is the last accepted presenter, not the route's last step (never visited)
+        assertEquals(TestPlace.PRODUCTS.id, app.newIntent().place?.id, "current place = last accepted step")
     }
 
     // ---------------------------------------------------------------
@@ -551,5 +557,102 @@ class CubeNavigationTest {
         nav.step(TestPlace.ROOT).step(throwingPlace)
         assertThrows(RuntimeException::class.java) { runBlocking { nav.execute(CubeIntent()) } }
         assertTrue(app.historyUpdateCount > countBeforeRollback, "updateHistory should be called after rollback")
+    }
+
+    // ---------------------------------------------------------------
+    // Navegação pedida de fora durante outra navegação (cliques durante uma carga lenta)
+    // ---------------------------------------------------------------
+
+    /** Presenter cuja carga só termina quando o [gate] abre — a I/O lenta dentro do applyParameters. */
+    private class SlowPresenter(override val app: TestApp, private val gate: kotlinx.coroutines.CompletableDeferred<Unit>, private val fail: Boolean) :
+        br.com.wdc.framework.cube.CubePresenter {
+        override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+            gate.await()
+            if (fail) throw IllegalStateException("carga falhou")
+            return true
+        }
+
+        override fun publishParameters(intent: CubeIntent) {}
+
+        override fun release() {}
+    }
+
+    private fun slow(place: TestPlace, gate: kotlinx.coroutines.CompletableDeferred<Unit>, fail: Boolean = false) =
+        object : br.com.wdc.framework.cube.CubePlace {
+            override val id = place.id
+            override val placeName = "SLOW_${place.name}"
+            override fun <A : br.com.wdc.framework.cube.CubeApplication> presenterFactory(): (A) -> br.com.wdc.framework.cube.CubePresenter =
+                { a -> SlowPresenter(a as TestApp, gate, fail) }
+        }
+
+    private suspend fun navigateTo(vararg places: br.com.wdc.framework.cube.CubePlace): Boolean {
+        val nav = app.navigate<TestApp>()
+        for (p in places) nav.step(p)
+        return nav.execute(CubeIntent())
+    }
+
+    @Test
+    fun `outside request during a navigation waits for it instead of interrupting it`() = runBlocking {
+        navigate(TestPlace.ROOT)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val running = async { navigateTo(TestPlace.ROOT, slow(TestPlace.HOME, gate)) }
+        yield()
+        val click = async { navigate(TestPlace.ROOT, TestPlace.PRODUCTS) }
+        yield()
+        assertFalse(click.isCompleted, "o clique espera a navegação em curso")
+
+        gate.complete(Unit)
+        assertTrue(running.await(), "a navegação em curso não foi interrompida")
+        assertTrue(click.await(), "depois dela, o clique navega")
+        assertEquals(TestPlace.PRODUCTS.id, app.newIntent().place?.id)
+    }
+
+    @Test
+    fun `only the last outside request waits, the earlier ones are dropped`() = runBlocking {
+        navigate(TestPlace.ROOT)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val running = async { navigateTo(TestPlace.ROOT, slow(TestPlace.HOME, gate)) }
+        yield()
+        val first = async { navigate(TestPlace.ROOT, TestPlace.PRODUCTS) }
+        yield()
+        val last = async { navigate(TestPlace.ROOT, TestPlace.CART) }
+        yield()
+
+        gate.complete(Unit)
+        assertTrue(running.await())
+        assertFalse(first.await(), "superado pelo pedido seguinte")
+        assertTrue(last.await())
+        assertEquals(TestPlace.CART.id, app.newIntent().place?.id)
+    }
+
+    @Test
+    fun `a failing navigation discards the request waiting for it`() = runBlocking {
+        navigate(TestPlace.ROOT)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val running = async { runCatching { navigateTo(TestPlace.ROOT, slow(TestPlace.HOME, gate, fail = true)) } }
+        yield()
+        val click = async { navigate(TestPlace.ROOT, TestPlace.PRODUCTS) }
+        yield()
+
+        gate.complete(Unit)
+        assertTrue(running.await().isFailure)
+        assertFalse(click.await(), "descartado: a navegação de que dependia falhou")
+        assertEquals(TestPlace.ROOT.id, app.newIntent().place?.id)
+    }
+
+    @Test
+    fun `many clicks during a slow load do not hit the recursion limit`() = runBlocking {
+        navigate(TestPlace.ROOT)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val running = async { navigateTo(TestPlace.ROOT, slow(TestPlace.HOME, gate)) }
+        yield()
+        val clicks = (1..15).map { async { navigate(TestPlace.ROOT, if (it % 2 == 0) TestPlace.PRODUCTS else TestPlace.CART) } }
+        yield()
+
+        gate.complete(Unit)
+        assertTrue(running.await())
+        val results = clicks.awaitAll()
+        assertEquals(listOf(true), results.filter { it }, "só o último navega")
+        assertTrue(results.last())
     }
 }

@@ -112,7 +112,7 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
 
 As quatro entidades do Shopping têm repositório completo.
 
-- **`update` é parcial.** A `projection` diz quais campos considerar; com `oldBean`, só entram os que mudaram. Sem nenhuma das duas, vale a projeção padrão da entidade.
+- **`update` é parcial.** A `projection` diz quais campos considerar, e um campo marcado com valor nulo limpa a coluna. Com `oldBean`, só entram os que mudaram. Sem nenhuma das duas, só os campos com valor, como no `insert`: um bean lido com projeção estreita e devolvido não apaga o que não leu. Para limpar uma coluna, marque-a numa projeção.
 - **`insert` também aceita projeção.** Ela diz quais campos entram no `INSERT`; o que fica fora recebe o padrão da coluna. Sem projeção, entram os campos que têm valor (o nulo fica fora). O bean sai completo: a chave gerada e o que o banco preencheu.
 - **`insertOrUpdate`** insere quando `oldBean` é `null` e atualiza caso contrário — não consulta o banco para decidir. A projeção vale para os dois.
 - **`fetch`**: `0` em `offset` ou `limit` significa "sem salto" e "sem limite". Atenção à ordem posicional: `fetch(c, 10)` pula dez linhas; para limitar, nomeie — `fetch(c, limit = 10)`.
@@ -271,10 +271,13 @@ Um cliente REST que precise de várias escritas atômicas abre uma transação n
 
 O `RestTransactionService` faz isso por baixo de `required { }`. No servidor, um coordenador guarda as transações abertas e aplica as defesas:
 
-- **Dono.** A transação pertence a quem a abriu — o usuário autenticado ou, sem segurança, o `X-Client-Id` — e ninguém mais a usa (403).
+- **Dono.** A transação pertence a quem a abriu — o usuário autenticado **e** a instância de cliente (`X-Client-Id`), ou, sem segurança, só o `X-Client-Id` — e ninguém mais a usa (403). O mesmo usuário em dois clientes (desktop e web) não se bloqueia.
 - **Cabeçalho perdido.** Uma escrita **sem** `X-Tx-Id` de quem tem transação aberta é recusada (409), em vez de confirmar sozinha fora da transação.
-- **Abandono.** Transação ociosa é desfeita pelo servidor; há tetos de transações abertas, no total e por dono (429).
+- **Requisição que falha.** A escrita roda como participante da transação remota: se falhar no meio, a transação fica condenada, e o commit a desfaz e responde 409, em vez de confirmar a escrita parcial.
+- **Abandono.** Transação ociosa é desfeita pelo servidor; há tetos de transações abertas, no total e por usuário (429). Um `txId` desconhecido ou já revertido responde 410.
+- **Em uso.** Rollback pedido enquanto uma requisição usa a transação vale na hora, mas a conexão só fecha quando ela termina; commit nessa hora é conflito (409).
 - **Repetição.** Repetir o mesmo desfecho é inócuo; pedir o oposto é conflito (409).
+- **Resposta perdida.** Se o commit falhar no transporte (tempo esgotado, conexão caída), o cliente pergunta o `status` antes de decidir: comitou é sucesso, aberta é desfeita.
 
 Dois limites para ter em mente:
 

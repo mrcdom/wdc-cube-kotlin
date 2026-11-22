@@ -45,14 +45,16 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
     override suspend fun update(newBean: Purchase, oldBean: Purchase?, projection: Purchase?): Boolean {
         val id = newBean.id ?: throw InvalidRequestException("update de compra exige o id")
         val prj = projection ?: ownFieldsProjection()
+        // sem projeção nem oldBean: compara com a entidade vazia, e só os campos com valor entram no UPDATE
+        val base = oldBean ?: if (projection == null) Purchase() else null
 
         val step = dsl().update(EN_PURCHASE).set(EN_PURCHASE.ID, id)
         var hasChanges = false
-        if (changed(newBean, oldBean, prj) { it.userId }) {
+        if (changed(newBean, base, prj) { it.userId }) {
             step.set(EN_PURCHASE.USERID, newBean.userId)
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.buyDate }) {
+        if (changed(newBean, base, prj) { it.buyDate }) {
             step.set(EN_PURCHASE.BUYDATE, newBean.buyDate?.let(::toColumn))
             hasChanges = true
         }

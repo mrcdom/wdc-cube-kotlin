@@ -60,13 +60,17 @@ class PurchasesPanelPresenter(
     suspend fun loadPurchases() {
         val subject = app.subject
         if (subject != null && state.pageSize > 0) {
-            val page = purchasesPanelService.fetchPageOfUser(subject.id!!, state.page, state.pageSize)
+            var page = purchasesPanelService.fetchPageOfUser(subject.id!!, state.page, state.pageSize)
 
             state.totalCount = page.totalItems
 
             val totalPages = max(1, ceil(state.totalCount.toDouble() / state.pageSize).toInt())
             if (state.page >= totalPages) {
+                // a página pedida passou do fim (a capacidade da view mudou, ou compras sumiram): mostra a última,
+                // com os itens dela — o resultado acima é o da página que não existe
                 state.page = totalPages - 1
+                page = purchasesPanelService.fetchPageOfUser(subject.id!!, state.page, state.pageSize)
+                state.totalCount = page.totalItems
             }
 
             state.purchases = page.items

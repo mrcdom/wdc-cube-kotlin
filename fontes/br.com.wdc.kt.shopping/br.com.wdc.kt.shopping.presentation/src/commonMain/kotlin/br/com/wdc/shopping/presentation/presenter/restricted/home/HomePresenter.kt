@@ -9,6 +9,7 @@ import br.com.wdc.shopping.presentation.PlaceAttributes
 import br.com.wdc.shopping.presentation.PlaceParameters
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
+import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
@@ -139,7 +140,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             intent.setParameter(PlaceParameters.PURCHASE_ID, purchaseId)
             Routes.receipt(app, intent)
         } catch (caught: Exception) {
-            if (caught is ProductNotFoundException) {
+            if (caught is PurchaseNotFoundException) {
                 alertPurchaseNotFound()
                 LOG.warn("{}: purchaseId={}", state.errorMessage, purchaseId)
                 return

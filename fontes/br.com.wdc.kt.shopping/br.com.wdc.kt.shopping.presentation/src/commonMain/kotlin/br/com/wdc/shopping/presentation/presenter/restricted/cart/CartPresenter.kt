@@ -84,7 +84,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
                 update()
             }
         } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Removing a prouduct", caught)
+            app.alertUnexpectedError(LOG, "Modifying a product quantity", caught)
         }
     }
 
@@ -106,7 +106,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
                 }
             }
         } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Removing a prouduct", caught)
+            app.alertUnexpectedError(LOG, "Removing a product", caught)
         }
     }
 
@@ -137,7 +137,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
                 return
             }
 
-            app.alertUnexpectedError(LOG, "Buying an product", caught)
+            app.alertUnexpectedError(LOG, "Buying a product", caught)
         }
     }
 
@@ -162,21 +162,21 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     private fun alertThereIsItemWhichValueIsLessThanOne() {
         state.errorCode = 1
-        state.errorMessage = "Deve existir pelo menos um item no carrinhro para se efetivar uma compra"
+        state.errorMessage = "Existem produtos com menos de um item na quantidade. Impossível comprar."
         update()
         clearErrorAfterDelay()
     }
 
     private fun alertProductNotFound() {
         state.errorCode = 2
-        state.errorMessage = "Produdo não localizado na base dados."
+        state.errorMessage = "Produto não localizado na base de dados."
         update()
         clearErrorAfterDelay()
     }
 
     private fun alertPurchaseOfEmptyCart() {
         state.errorCode = 3
-        state.errorMessage = "Existem produtos com menos de um item na quantidade. Impossível comprar."
+        state.errorMessage = "Deve existir pelo menos um item no carrinho para se efetivar uma compra."
         update()
         clearErrorAfterDelay()
     }
@@ -197,7 +197,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     private fun errorValorQuantidadeMalFormatado() {
         state.errorCode = 6
-        state.errorMessage = "Valor da quantiade está mal formado."
+        state.errorMessage = "Valor da quantidade está mal formado."
         update()
         clearErrorAfterDelay()
     }
