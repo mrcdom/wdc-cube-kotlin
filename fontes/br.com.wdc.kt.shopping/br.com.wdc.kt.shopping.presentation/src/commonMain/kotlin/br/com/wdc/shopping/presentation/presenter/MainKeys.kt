@@ -5,8 +5,9 @@ import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.presentation.ShoppingApplication
 
 /**
- * The names a place reads from and writes to the [CubeIntent], typed. **Each module has one keys class, the only
- * one that knows its names**; presenters never read or write the intent with a literal name.
+ * The names a place reads from and writes to the [CubeIntent], typed. **Each place has one keys class, the only
+ * one that knows its names** — even a place with no names of its own yet; presenters never read or write the intent
+ * with a literal name, and navigate through the keys of the destination.
  *
  * - **A two-letter prefix per class, unique in the application** ([PREFIX]); every name it declares starts with it
  *   (`pr-id`). Names live in a private table: `P` for parameters (they go in the address), `A` for attributes (they

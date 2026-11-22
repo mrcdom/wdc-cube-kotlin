@@ -144,7 +144,7 @@ A new view needs no `update()` either: every view layer paints the current state
 
 ### Keys classes
 
-The names a place reads from and writes to the `CubeIntent` live in **one keys class per module** (`MainKeys`, `HomeKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties; presenters never use a literal name.
+The names a place reads from and writes to the `CubeIntent` live in **one keys class per place** (`MainKeys` for the root, `LoginKeys`, `HomeKeys`, `CartKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties; presenters never use a literal name, nor call `Routes` to navigate. A place with no names of its own still has its keys (`LoginKeys`, `CartKeys`): it reads its slot and is navigated to through them, and it is where its names will go. `PlaceKeysTest` fails when a place has none.
 
 - **A two-letter prefix per class, unique in the application.** Every name the class declares starts with it (`pr-id`), in a private table: `P` for parameters, which go in the address, and `A` for attributes, which don't. To create a name, look only at your own file. `PlaceKeysTest` checks that the prefixes are unique.
 - **Inheritance follows the place tree:** `MainKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.

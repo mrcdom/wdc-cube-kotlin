@@ -42,6 +42,16 @@ class PlaceKeysTest : BasePresentationTest() {
     }
 
     @Test
+    fun everyPlace_hasItsOwnKeys_evenWithoutNamesOfItsOwn() {
+        // the root's keys are MainKeys; every other place has <Place>Keys
+        val expected = Routes.Place.entries.map { if (it == Routes.Place.ROOT) "MainKeys" else keysNameOf(it) }.toSet()
+        val found = presentationSources.walkTopDown().filter { it.isFile && it.name.endsWith("Keys.kt") }.map { it.nameWithoutExtension }.toSet()
+        assertEquals(emptySet<String>(), expected - found, "places without keys")
+    }
+
+    private fun keysNameOf(place: Routes.Place) = place.name.lowercase().replaceFirstChar { it.uppercase() } + "Keys"
+
+    @Test
     fun getters_neverTrustTheAddress() {
         fun productIdOf(query: String) = ProductKeys(app, CubeIntent.parse("product?$query")).productId
         assertEquals(7L, productIdOf("pr-id=7"))

@@ -9,8 +9,7 @@ import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.presentation.ShoppingApplication
-import br.com.wdc.shopping.presentation.presenter.MainKeys
-import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
 class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
@@ -33,7 +32,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
-        ownerSlot = MainKeys(app, intent).parentSlot
+        ownerSlot = LoginKeys(app, intent).parentSlot
         if (initialization) {
             view = createView?.invoke(this)
         }
@@ -102,7 +101,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
                     app.sessionStorage.set("authState", authOut.resultString())
                 }
 
-                Routes.home(app)
+                HomeKeys(app).go()
             }
         } catch (caught: Exception) {
             state.loading = false

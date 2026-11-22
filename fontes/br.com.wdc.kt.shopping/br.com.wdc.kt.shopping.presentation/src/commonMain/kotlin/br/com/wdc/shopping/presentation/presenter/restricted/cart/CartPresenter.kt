@@ -10,7 +10,6 @@ import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.presentation.ShoppingApplication
-import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 import kotlin.time.Duration.Companion.seconds
@@ -43,7 +42,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         state.items = cart.getCartItems()
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
-        ownerSlot = HomeKeys(app, intent).parentSlot
+        ownerSlot = CartKeys(app, intent).parentSlot
         if (initialization) {
             view = createView?.invoke(this)
         }
@@ -98,7 +97,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             val modified = cart.removeProduct(productId)
             if (modified) {
                 if (cart.getSize() == 0) {
-                    Routes.home(app)
+                    HomeKeys(app).go()
                 } else {
                     state.items = cart.getCartItems()
                 }
@@ -141,7 +140,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     suspend fun onOpenProducts() {
         try {
-            Routes.home(app)
+            HomeKeys(app).go()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Going to root restricted place", caught)
         }
