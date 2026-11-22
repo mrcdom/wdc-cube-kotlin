@@ -10,7 +10,8 @@ import br.com.wdc.framework.rest.RequestContext
  * confirma.
  *
  * 1. Veio [txHeader] e há [coordinator]: a escrita se junta à transação remota do cliente e **não confirma** —
- *    a fronteira é do cliente.
+ *    a fronteira é do cliente. Roda como participante ([service] `required`): se a requisição falhar no meio, a
+ *    transação remota fica condenada, e o commit do cliente a desfaz (409) em vez de confirmar a escrita parcial.
  * 2. Não veio o cabeçalho, mas o dono tem transação remota aberta: o cabeçalho se perdeu no caminho. A escrita é
  *    recusada (409) em vez de confirmar sozinha, fora da transação. Desligue com [refuseWritesOutsideOpenTransaction].
  * 3. Senão: [service] `required` — uma transação por requisição. Sem serviço, executa direto.
@@ -64,7 +65,8 @@ class RestTransactions {
             if (!txId.isNullOrBlank()) {
                 coordinator.resume(txId, owner)
                 try {
-                    return block()
+                    val service = service ?: return block()
+                    return service.required { block() }
                 } finally {
                     coordinator.suspend(txId)
                 }

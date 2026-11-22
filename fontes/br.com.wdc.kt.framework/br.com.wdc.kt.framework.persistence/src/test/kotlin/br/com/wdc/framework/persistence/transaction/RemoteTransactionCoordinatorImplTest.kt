@@ -128,8 +128,11 @@ class RemoteTransactionCoordinatorImplTest {
                 runBlocking { service.required { db.insertInCurrentTx(1); throw IllegalStateException("boom") } }
             }
         }
-        coordinator.commit(txId, null)
+        // o commit desfaz e diz: quem pediu o commit não pode achar que confirmou
+        assertFailsWith<TransactionConflictException> { coordinator.commit(txId, null) }
         assertEquals(emptyList(), db.ids())
+        assertEquals("rolledback", coordinator.status(txId, null))
+        coordinator.rollback(txId, null) // o cliente, ao ver a falha, manda rollback: idempotente
     }
 
     // :: Dono

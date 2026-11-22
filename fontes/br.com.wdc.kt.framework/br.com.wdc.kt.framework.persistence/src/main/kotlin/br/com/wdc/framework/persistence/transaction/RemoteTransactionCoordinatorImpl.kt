@@ -223,6 +223,15 @@ class RemoteTransactionCoordinatorImpl(
 
     /** Fecha o escopo (commit/rollback) e grava o desfecho para idempotência. */
     private fun closeAndRecord(txId: String, entry: Entry, rollback: Boolean) {
+        // Commit pedido, mas uma requisição falhou dentro da transação (ou alguém marcou rollback): desfaz e diz,
+        // em vez de responder sucesso a quem acha que confirmou.
+        val condemned = !rollback && entry.scope.isRollbackOnly()
+        if (condemned) {
+            closeAndRecord(txId, entry, rollback = true)
+            throw TransactionConflictException(
+                "Transação $txId desfeita: uma requisição dentro dela falhou (ou ela foi marcada para rollback)"
+            )
+        }
         try {
             if (rollback) {
                 entry.scope.setRollbackOnly()

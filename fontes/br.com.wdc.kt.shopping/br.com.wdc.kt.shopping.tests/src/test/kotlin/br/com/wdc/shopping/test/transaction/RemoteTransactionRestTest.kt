@@ -189,6 +189,34 @@ class RemoteTransactionRestTest {
     }
 
     @Test
+    fun requestThatFailsMidway_condemnsTheRemoteTransaction_evenIfTheClientCarriesOn() = runBlocking {
+        val before = env.purchaseRepo.count(PurchaseCriteria())
+        // uma requisição só: a compra grava, o segundo item (produto inexistente) falha no servidor
+        val purchase = Purchase().apply {
+            buyDate = Clock.System.now()
+            user = User().apply { id = DBReset.FULANO_ID }
+            items = arrayListOf(
+                PurchaseItem().apply { product = Product().apply { id = DBReset.CAFETEIRA_ID }; amount = 1; price = 10.5 },
+                PurchaseItem().apply { product = Product().apply { id = 987_654L }; amount = 1; price = 10.5 },
+            )
+        }
+        val e = assertThrows(TransactionConflictException::class.java) {
+            runBlocking {
+                tx().required {
+                    try {
+                        env.purchaseRepo.insert(purchase)
+                    } catch (_: RuntimeException) {
+                        // o cliente captura e segue: a atomicidade da requisição não pode depender disso
+                    }
+                }
+            }
+        }
+        assertTrue(e.message!!.startsWith("HTTP 409"), e.message)
+        assertEquals(before, env.purchaseRepo.count(PurchaseCriteria()), "a compra gravada antes da falha não fica")
+        assertTrue(env.productRepo.insert(product("rtx-after-condemned")), "a transação foi encerrada")
+    }
+
+    @Test
     fun everyKindOfWrite_joinsTheTransaction_includingTheImageUpload() = runBlocking {
         val id = DBReset.CAFETEIRA_ID
         val original = env.productRepo.fetchImage(id)!!
