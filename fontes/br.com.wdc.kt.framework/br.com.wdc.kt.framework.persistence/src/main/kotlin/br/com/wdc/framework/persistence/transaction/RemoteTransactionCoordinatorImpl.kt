@@ -5,6 +5,7 @@ import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
 import br.com.wdc.framework.domain.transaction.AfterCommitTasks
+import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
 import br.com.wdc.framework.domain.transaction.TransactionSystemException
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -73,7 +74,7 @@ class RemoteTransactionCoordinatorImpl(
         val entry = registry[txId] ?: throw unknown(txId)
         verifyOwner(entry.owner, ownerKey)
         if (!entry.inUse.compareAndSet(false, true)) {
-            throw TransactionSystemException("Transação remota em uso concorrente: $txId")
+            throw TransactionConflictException("Transação remota em uso por outra requisição: $txId")
         }
         try {
             TransactionScope.resume(entry.scope)
@@ -254,7 +255,7 @@ class RemoteTransactionCoordinatorImpl(
         }
     }
 
-    private fun unknown(txId: String) = TransactionSystemException("Transação remota desconhecida ou expirada: $txId")
+    private fun unknown(txId: String) = RemoteTransactionNotFoundException("Transação remota desconhecida ou expirada: $txId")
 
     /** Se a transação tem dono (chave não-nula no begin), exige que a operação apresente a mesma chave. */
     private fun verifyOwner(owner: String?, requesterKey: String?) {

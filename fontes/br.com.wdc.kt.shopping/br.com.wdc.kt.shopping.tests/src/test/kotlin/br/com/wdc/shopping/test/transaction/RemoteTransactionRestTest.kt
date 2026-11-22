@@ -18,6 +18,7 @@ import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.persistence.client.HttpProductRepository
 import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestTransactionService
+import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
@@ -477,6 +478,24 @@ class RemoteTransactionRestTest {
     }
 
     // :: Erros tipados no cliente
+
+    @Test
+    fun unknownOrExpiredTransaction_is410_andArrivesTyped() {
+        val client = anotherClient()
+        for (outcome in listOf("commit", "rollback")) {
+            val e = assertThrows(RemoteTransactionNotFoundException::class.java) { finish(client, "no-such-transaction", outcome) }
+            assertTrue(e.message!!.startsWith("HTTP 410"), e.message)
+        }
+        // uma escrita levando o txId de uma transação que não existe mais
+        client.transactionIdSupplier = { "no-such-transaction" }
+        try {
+            assertThrows(RemoteTransactionNotFoundException::class.java) {
+                client.postJson("/api/repo/product/insert", """{"name":"x","price":1.5,"description":"d"}""")
+            }
+        } finally {
+            client.transactionIdSupplier = null
+        }
+    }
 
     @Test
     fun refusedRequests_arriveAsTheExceptionTheServerThrew() = runBlocking<Unit> {

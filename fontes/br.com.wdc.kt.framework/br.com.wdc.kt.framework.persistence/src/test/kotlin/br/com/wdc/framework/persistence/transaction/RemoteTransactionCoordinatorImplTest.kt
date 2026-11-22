@@ -1,5 +1,7 @@
 package br.com.wdc.framework.persistence.transaction
 
+import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
+
 import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
@@ -185,7 +187,7 @@ class RemoteTransactionCoordinatorImplTest {
 
         coordinator.resume(txId, null)
         try {
-            assertFailsWith<TransactionSystemException> { onAnotherThread { coordinator.resume(txId, null) } }
+            assertFailsWith<TransactionConflictException> { onAnotherThread { coordinator.resume(txId, null) } }
         } finally {
             coordinator.suspend(txId)
         }
@@ -198,9 +200,9 @@ class RemoteTransactionCoordinatorImplTest {
     @Test
     fun unknownTxId_isRefused() {
         val coordinator = coordinator()
-        assertFailsWith<TransactionSystemException> { coordinator.resume("nope", null) }
-        assertFailsWith<TransactionSystemException> { coordinator.commit("nope", null) }
-        assertFailsWith<TransactionSystemException> { coordinator.rollback("nope", null) }
+        assertFailsWith<RemoteTransactionNotFoundException> { coordinator.resume("nope", null) }
+        assertFailsWith<RemoteTransactionNotFoundException> { coordinator.commit("nope", null) }
+        assertFailsWith<RemoteTransactionNotFoundException> { coordinator.rollback("nope", null) }
         coordinator.suspend("nope") // no-op
         assertFalse(coordinator.exists("nope"))
         assertFalse(coordinator.exists(null))
@@ -359,7 +361,7 @@ class RemoteTransactionCoordinatorImplTest {
         now.addAndGet(1_001)
         val other = coordinator.begin(null) // a varredura acontece no begin
         assertEquals("unknown", coordinator.status(txId, null))
-        assertFailsWith<TransactionSystemException> { coordinator.commit(txId, null) }
+        assertFailsWith<RemoteTransactionNotFoundException> { coordinator.commit(txId, null) }
         coordinator.rollback(other, null)
     }
 

@@ -113,6 +113,7 @@ Entidades de repositório trafegam pelo `ModelCodec` delas, sem reflexão. O res
 | `TransactionConflictException` | 409 |
 | `TransactionLimitExceededException` | 429 |
 | `RateLimitedException` (limite por minuto) | 429, com `Retry-After` |
+| `RemoteTransactionNotFoundException` (transação remota desconhecida ou expirada) | 410 |
 | `HttpResponseException` do Javalin (`NotFoundResponse`…) | o status dela |
 
 O corpo de todos esses vem de `errorBody(status, mensagem, request)`, que por padrão é `{"error": "<mensagem>"}`. Para que caminhos sem rota (404/405) também passem pelo mapa, ligue `handleUnmatched = true`; sem isso, o corpo é o do Javalin.
