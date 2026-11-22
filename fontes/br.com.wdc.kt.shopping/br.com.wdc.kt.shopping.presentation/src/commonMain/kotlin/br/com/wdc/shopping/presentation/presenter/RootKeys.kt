@@ -36,8 +36,8 @@ open class RootKeys protected constructor(app: ShoppingApplication, intent: Cube
     companion object {
         const val PREFIX = "rt"
 
-        /** The root: the shell (alerts, the content slot); alone, it goes on to the home. */
-        val PLACE: CubeTreePlace = CubeTreePlace.root("public", ::RootPresenter)
+        /** The root: the application itself (the page frame); alone, it goes on to the home. */
+        val PLACE: CubeTreePlace = CubeTreePlace.ROOT
     }
 
     private object A {

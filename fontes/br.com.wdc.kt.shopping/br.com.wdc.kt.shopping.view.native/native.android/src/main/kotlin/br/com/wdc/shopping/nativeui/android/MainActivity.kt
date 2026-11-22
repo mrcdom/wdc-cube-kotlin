@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.nativeui.android
 
+import br.com.wdc.shopping.presentation.ShoppingApplication
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
@@ -23,7 +24,6 @@ import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
@@ -65,8 +65,7 @@ class MainActivity : AppCompatActivity() {
         ViewUpdateScheduler.initialize { app }
         runBlocking { RootKeys(app).flip() }
 
-        val rootPresenter = app.getRootPresenter()
-        val rootView = (rootPresenter?.view() as? AbstractViewAndroid<*>)?.rootView
+        val rootView = (app.view as? AbstractViewAndroid<*>)?.rootView
 
         if (rootView != null) {
             setContentView(rootView)
@@ -86,7 +85,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun registerViewFactories() {
-        RootPresenter.createView = { onMainThread { RootViewAndroid(it).initialize() } }
+        ShoppingApplication.createView = { onMainThread { RootViewAndroid(it).initialize() } }
         LoginPresenter.createView = { onMainThread { LoginViewAndroid(it).initialize() } }
         HomePresenter.createView = { onMainThread { HomeViewAndroid(it).initialize() } }
         ProductsPanelPresenter.createView = { onMainThread { ProductsPanelViewAndroid(it).initialize() } }

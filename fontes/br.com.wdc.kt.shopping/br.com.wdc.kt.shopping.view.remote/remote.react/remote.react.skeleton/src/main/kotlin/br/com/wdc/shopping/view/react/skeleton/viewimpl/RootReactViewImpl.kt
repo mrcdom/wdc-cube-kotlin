@@ -1,19 +1,10 @@
 package br.com.wdc.shopping.view.react.skeleton.viewimpl
 
+import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
-class RootReactViewImpl(presenter: RootPresenter) : GenericViewImpl<RootPresenter>("f2d345c4a610", presenter) {
-
-    init {
-        app.setRootPresenter(presenter)
-    }
-
-    override fun release() {
-        app.setRootPresenter(null)
-        super.release()
-    }
+class RootReactViewImpl(presenter: ShoppingApplication) : GenericViewImpl<ShoppingApplication>("f2d345c4a610", presenter) {
 
     override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
         // NOOP

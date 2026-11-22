@@ -27,7 +27,6 @@ import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
@@ -110,7 +109,7 @@ private fun initializePlatform(baseUrl: String) {
     RestRepositoryBootstrap.initialize(config, JsCryptoProvider())
 
     // Wire view factories
-    RootPresenter.createView = { p -> createView(RootView(p)) }
+    ShoppingApplication.createView = { p -> createView(RootView(p)) }
     LoginPresenter.createView = { p -> createView(LoginView(p)) }
     HomePresenter.createView = { p -> createView(HomeView(p)) }
     CartPresenter.createView = { p -> createView(CartView(p)) }
@@ -188,8 +187,7 @@ fun main() {
 
             CssBaseline()
 
-            val rootPresenter = app.getRootPresenter()
-            val rootView = rootPresenter?.view() as? RootView
+            val rootView = app.view as? RootView
 
             rootView?.component {}
         }

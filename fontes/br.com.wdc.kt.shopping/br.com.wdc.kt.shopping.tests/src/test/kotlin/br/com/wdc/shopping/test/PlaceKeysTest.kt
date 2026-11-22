@@ -61,11 +61,11 @@ class PlaceKeysTest : BasePresentationTest() {
 
         val placeOf = keysClasses.associateWith(::placeOf)
         assertEquals(placeOf.size, placeOf.values.toSet().size, "a place declared by more than one keys class")
-        assertEquals(ShoppingApplication.PLACES.toSet(), placeOf.values.toSet(), "the places of the keys are the places of the application")
+        assertEquals(ShoppingApplication.PLACES.toSet() + CubeTreePlace.ROOT, placeOf.values.toSet(), "the places of the keys are the places of the application, and the root")
 
         for ((keys, place) in placeOf) {
             if (keys == RootKeys::class.java) {
-                assertNull(place.parent, "the root keys declare the root")
+                assertSame(CubeTreePlace.ROOT, place, "the root keys declare the root: the application itself")
             } else {
                 assertSame(placeOf(keys.superclass), place.parent, "${keys.simpleName}: its place must be a child of the place of the keys it extends")
             }

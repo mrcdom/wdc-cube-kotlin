@@ -1,8 +1,8 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.nativeui.web.bridge.RenderSlot
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
-import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.material.Alert
 import mui.material.Box
 import mui.material.Button
@@ -15,7 +15,7 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class RootView(private val presenter: RootPresenter) : ReactCubeView("root-view", presenter) {
+class RootView(private val presenter: ShoppingApplication) : ReactCubeView("root-view", presenter) {
 
     override val component = FC<Props> {
         var rev by useState(revision)
