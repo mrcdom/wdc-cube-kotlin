@@ -49,5 +49,11 @@ kotlin {
                 implementation(npm("@mui/icons-material", "5.18.0"))
             }
         }
+        getByName("jsTest") {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.core)
+            }
+        }
     }
 }
