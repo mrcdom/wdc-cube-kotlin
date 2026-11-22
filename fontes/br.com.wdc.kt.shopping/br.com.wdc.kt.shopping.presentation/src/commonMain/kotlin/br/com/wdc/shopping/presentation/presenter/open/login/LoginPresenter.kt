@@ -32,8 +32,9 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+        // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
+        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
         if (initialization) {
-            ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
             view = createView?.invoke(this)
         }
 

@@ -74,8 +74,9 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             return false
         }
 
+        // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
+        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
         if (initialization || view == null) {
-            ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
             view = createView?.invoke(this)
 
             state.nickName = app.subject?.nickName

@@ -785,15 +785,14 @@ override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean
     if (state.receipt == null || pPurchaseId != purchaseId) {
         val receipt = receiptService.loadReceipt(pPurchaseId)  // ← suspend
         purchaseId = pPurchaseId
-        state.receipt = receipt   // ← sync: mutates state
-        update()                  // ← sync: notifies the view
+        state.receipt = receipt   // ← sync: mutates state, which asks the view to repaint
     }
 
-    // (2) Create view and connect slot — SYNC
+    // (2) Create view and connect slot — SYNC. The slot is read on every call: a reused presenter goes where its
+    // parent puts it now, which may differ from where it was first put.
+    ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
     if (initialization) {
-        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
         view = createView?.invoke(this)
-        update()
     }
 
     ownerSlot?.setView(view!!)   // ← sync: connects to the parent

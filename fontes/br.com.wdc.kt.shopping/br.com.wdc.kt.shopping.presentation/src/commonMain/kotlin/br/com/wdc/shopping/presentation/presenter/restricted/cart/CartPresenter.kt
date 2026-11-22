@@ -42,8 +42,9 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         state.items = cart.getCartItems()
 
+        // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
+        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
         if (initialization) {
-            ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
             view = createView?.invoke(this)
         }
 
