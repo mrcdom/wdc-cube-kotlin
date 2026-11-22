@@ -62,6 +62,18 @@ abstract class CubeApplication {
      */
     fun <T : CubeApplication> navigate(): CubeNavigation<T> = CubeNavigation(this)
 
+    /**
+     * Navigates to [place], stepping through its [path][CubeTreePlace.path] from the root, with [intent] (by default
+     * a new one, from the current state). Applications usually call it through their keys ([CubeKeys.flip]).
+     *
+     * @return `true` if the whole path was accepted
+     */
+    suspend fun flip(place: CubeTreePlace, intent: CubeIntent = newIntent()): Boolean {
+        val navigation = navigate<CubeApplication>()
+        for (step in place.path) navigation.step(step)
+        return navigation.execute(intent)
+    }
+
     /** Navigation [nav] becomes the current one, during an idle period. */
     internal fun startNavigation(nav: CubeNavigation<*>) {
         navigation = nav
