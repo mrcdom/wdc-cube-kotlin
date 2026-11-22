@@ -1,6 +1,6 @@
 # shopping-tests
 
-Integration tests of the Shopping application: repositories, REST API, transactions, security, schema and presenters.
+Integration tests of the Storefront application: repositories, REST API, transactions, security, schema and presenters.
 
 ```bash
 cd fontes

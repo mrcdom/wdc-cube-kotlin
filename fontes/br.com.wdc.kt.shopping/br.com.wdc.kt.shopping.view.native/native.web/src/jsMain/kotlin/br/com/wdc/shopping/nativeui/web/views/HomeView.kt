@@ -77,7 +77,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                     Box {
                         sx { padding = Padding(10.px, 12.px) }
 
-                        // Top row: logo + "Shopping" + logout icon (all left)
+                        // Top row: logo + "Storefront" + logout icon (all left)
                         Box {
                             sx {
                                 display = Display.flex
@@ -103,7 +103,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                                 Typography {
                                     variant = TypographyVariant.h6
                                     sx { fontWeight = FontWeight.bold; color = NamedColor.white.unsafeCast<Color>() }
-                                    +"Shopping"
+                                    +"Storefront"
                                 }
                                 Typography {
                                     variant = TypographyVariant.caption
@@ -198,7 +198,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                             Typography {
                                 variant = TypographyVariant.h6
                                 sx { fontWeight = FontWeight.bold }
-                                +"Shopping"
+                                +"Storefront"
                             }
                             Typography {
                                 variant = TypographyVariant.caption

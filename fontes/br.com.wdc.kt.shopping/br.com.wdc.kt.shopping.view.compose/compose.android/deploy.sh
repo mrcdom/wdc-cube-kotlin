@@ -385,7 +385,7 @@ DEVICE_SERIAL=""
 
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
-echo "║   Shopping Compose Android — Deploy             ║"
+echo "║   Storefront Compose Android — Deploy           ║"
 echo "╠══════════════════════════════════════════════════╣"
 printf "║  Target:       %s\n" "$TARGET"
 printf "║  Build:        %s\n" "$BUILD_TYPE"

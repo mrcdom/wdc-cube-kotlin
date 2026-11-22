@@ -1,6 +1,6 @@
 # fontes
 
-Root Gradle project containing all modules of the Shopping application.
+Root Gradle project containing all modules of the Storefront application.
 
 ## Modules
 
@@ -8,9 +8,9 @@ Root Gradle project containing all modules of the Shopping application.
 
 - [br.com.wdc.kt.framework/](br.com.wdc.kt.framework/) — Framework base libraries
 
-### Shopping application
+### Storefront application
 
-- [br.com.wdc.kt.shopping/](br.com.wdc.kt.shopping/) — Shopping application modules
+- [br.com.wdc.kt.shopping/](br.com.wdc.kt.shopping/) — Storefront application modules
 
 ## Build
 

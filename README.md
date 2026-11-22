@@ -1,10 +1,12 @@
-# WDC Cube Kotlin — Shopping Demo
+# WDC Cube Kotlin — Storefront Demo
 
 Demo application for the **Cube MVP** framework in Kotlin Multiplatform, with three view modalities:
 
 - **Compose Multiplatform** — presenters on the client (Desktop, Android, iOS, Web/WASM)
 - **Native** — presenters on the client with native UI per platform (Android Views, UIKit, React/MUI)
 - **React (Remote View)** — presenters on the server over WebSocket
+
+The application was first called "Shopping". Its code identifiers keep that name — packages (`br.com.wdc.shopping`), Gradle modules (`:shopping-*`), classes (`ShoppingApplication`), the `SHOPPING_WORKDIR` variable and the database names — so existing builds, configurations and databases keep working.
 
 **Documentation:** [Overview](docs/architecture.md) · [Cube Framework](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [React View](docs/architecture-react.md) · [Persistence](docs/architecture-persistence.md)
 

@@ -95,7 +95,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             Typography {
                                 variant = TypographyVariant.h5
                                 sx { fontWeight = FontWeight.bold }
-                                +"Shopping"
+                                +"Storefront"
                             }
                             Typography {
                                 variant = TypographyVariant.caption

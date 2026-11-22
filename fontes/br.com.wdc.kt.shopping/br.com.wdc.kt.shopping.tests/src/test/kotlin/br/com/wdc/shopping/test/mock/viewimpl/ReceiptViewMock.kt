@@ -33,7 +33,7 @@ class ReceiptViewMock(
         println("Print your receipt:")
 
         println("------------------------------------------------------------")
-        println("WeDoCode Shopping - THE RIGHT PURCHASE ONLINE")
+        println("WeDoCode Storefront - THE RIGHT PURCHASE ONLINE")
         println("Purchase receipt")
         println("Date: ${Date(state.receipt!!.date!!)}")
         println("------------------------------------------------------------")

@@ -1,6 +1,6 @@
-# WDC Shopping — React Client
+# WDC Storefront — React Client
 
-SPA frontend of the Shopping system, built with **React 19**, **TypeScript** and **MUI 9**. It talks to the backend over a **bidirectional WebSocket**, receiving serialized presenter states and sending events back.
+SPA frontend of the Storefront system, built with **React 19**, **TypeScript** and **MUI 9**. It talks to the backend over a **bidirectional WebSocket**, receiving serialized presenter states and sending events back.
 
 See the [architecture documentation](../../../../docs/architecture-react.md) for details of the protocol and the communication cycle.
 

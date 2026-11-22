@@ -1,6 +1,6 @@
 # Framework
 
-Reusable base libraries, independent of the Shopping application.
+Reusable base libraries, independent of the Storefront application.
 
 ## Modules
 

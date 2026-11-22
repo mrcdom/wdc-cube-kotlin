@@ -65,7 +65,7 @@ class BusinessContext(private val config: AppConfig) {
                 ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, ShoppingConfig.refreshTokenTtlDays, cleanUp)
             }
 
-            LOG.info("Shopping backend context initialized with database {}", dataSourceSupport.jdbcUrl)
+            LOG.info("Storefront backend context initialized with database {}", dataSourceSupport.jdbcUrl)
         } catch (e: Exception) {
             throw IllegalStateException("Failed to initialize shopping backend context", e)
         }

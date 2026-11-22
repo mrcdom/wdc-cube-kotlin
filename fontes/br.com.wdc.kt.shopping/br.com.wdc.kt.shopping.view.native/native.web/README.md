@@ -109,6 +109,6 @@ src/jsMain/kotlin/br/com/wdc/shopping/nativeui/web/
     ├── ProductsPanelView.kt     # Product grid (CSS Grid/Flow)
     ├── PurchasesPanelView.kt    # Paginated purchase list
     ├── ProductView.kt           # Product detail
-    ├── CartView.kt              # Shopping cart
+    ├── CartView.kt              # Storefront cart
     └── ReceiptView.kt           # Purchase receipt
 ```

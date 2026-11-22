@@ -224,7 +224,7 @@ openApi {
 
 ## Generic RPC per entity
 
-`RepositoryRpc(basePath, codec, repository, …)` publishes a repository's operations: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}`. It is the protocol the Shopping `HttpRepository` client speaks. Access stays with the application, through `rule` (per operation), `scope` (restricts the criteria to the caller), `sanitizeProjection`, `sanitizeOutput`, `beforeInsert` and `beforeUpdate`. The two write hooks run inside the transaction. For a read-only repository, use `writes = false`.
+`RepositoryRpc(basePath, codec, repository, …)` publishes a repository's operations: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}`. It is the protocol the Storefront `HttpRepository` client speaks. Access stays with the application, through `rule` (per operation), `scope` (restricts the criteria to the caller), `sanitizeProjection`, `sanitizeOutput`, `beforeInsert` and `beforeUpdate`. The two write hooks run inside the transaction. For a read-only repository, use `writes = false`.
 
 **`scope` adds the reach to criteria that came from the caller**, with the disjunction the caller chose on each field. Use the conjunctive field, `criteria.ownerId.and().eq(owner)`, and never just `eq`: on a field sent with `"or": true`, `eq` becomes one more alternative (`ownerId IS NOT NULL OR ownerId = :owner`) and the caller reaches everything.
 

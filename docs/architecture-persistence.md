@@ -1,6 +1,6 @@
 # Persistence Architecture
 
-How Shopping stores and queries data: the repository contract, criteria, projection, transactions, and the REST path. The same use case runs on the server, talking to the database, and on a client, talking HTTP — guaranteeing that is why this architecture exists.
+How Storefront stores and queries data: the repository contract, criteria, projection, transactions, and the REST path. The same use case runs on the server, talking to the database, and on a client, talking HTTP — guaranteeing that is why this architecture exists.
 
 ## Contents
 
@@ -74,11 +74,11 @@ Three ideas underpin the design:
 | `:framework-rest` | JVM | REST APIs on Javalin: routes, pluggable security, exception map, per-request context and transaction, OpenAPI, `RepositoryRpc` |
 | `:shopping-domain` | KMP | Entities, `XxxCriteria`, `XxxCodec`, `XxxRepository`, `ShoppingTransactions` |
 | `:shopping-persistence` | JVM | `XxxRepositoryImpl`, generated jOOQ classes, authentication, bootstrap |
-| `:persistence-rest` | JVM | The Shopping API on `framework-rest`: each entity's RPC with access control, `/api/tx`, `/api/auth`, `/openapi.json` |
+| `:persistence-rest` | JVM | The Storefront API on `framework-rest`: each entity's RPC with access control, `/api/tx`, `/api/auth`, `/openapi.json` |
 | `:shopping-persistence-client` | KMP | `HttpRepository`, per-platform transports, `RestTransactionService` |
 | `:shopping-scripts` | JVM | `DBCreate`, `DBReset`, migrations, jOOQ class generator |
 
-The three Shopping persistence modules are grouped under the `br.com.wdc.kt.shopping.persistence/` directory, as `persistence.impl` (`:shopping-persistence`), `persistence.rest`, and `persistence.client`.
+The three Storefront persistence modules are grouped under the `br.com.wdc.kt.shopping.persistence/` directory, as `persistence.impl` (`:shopping-persistence`), `persistence.rest`, and `persistence.client`.
 
 In the domain, each entity has its own package: `domain.product`, `domain.user`, `domain.purchase`, `domain.purchaseitem`.
 
@@ -110,7 +110,7 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
 - **Data that isn't written through here** — a dashboard view, a report, an aggregate computed in the database. The repository implements only the queries, without having to invent what to do with an `insert`.
 - **Code that only reads** — a service that declares a dependency on `ReadOnlyRepository` states, through the type, that it changes nothing, and accepts either a read-only repository or a full one.
 
-All four Shopping entities have a full repository.
+All four Storefront entities have a full repository.
 
 - **`update` is partial.** The `projection` says which fields to consider, and a marked field with a null value clears the column. With `oldBean`, only the fields that changed are included. With neither, only fields with a value, as in `insert`: a bean read with a narrow projection and handed back does not erase what it didn't read. To clear a column, mark it in a projection.
 - **`insert` also accepts a projection.** It says which fields go into the `INSERT`; whatever is left out gets the column default. Without a projection, the fields that have a value go in (null ones are left out). The bean comes back complete: the generated key and whatever the database filled in.
@@ -212,7 +212,7 @@ From that mapping and a projection, `JsonQuery` builds **a single query** that r
 - `CriterionTranslator` translates each criteria field into a jOOQ condition; values are always *bind values*.
 - The module's `DSLContext` (`ShoppingDSLContext.BEAN`) uses the current transaction's connection or, outside a transaction, a standalone connection in autocommit.
 - Repositories don't wrap exceptions: the real one propagates, and the REST layer translates it into a status.
-- **`insert` also comes from the mapping:** `QUERY.insert(bean, projection)` builds the `INSERT` from the mapping's columns (associations by the foreign key declared in `key`; derived fields and identity columns are left out) and reads the inserted row back through the same JSON projection as fetch. On PostgreSQL it is a single statement (`WITH … INSERT … RETURNING`); on H2, a plain `INSERT` followed by a `SELECT` by key — H2 2.4's `FINAL TABLE` leaves the row written when the statement fails on a constraint. The Shopping repository only fills in the id from the sequence before calling it.
+- **`insert` also comes from the mapping:** `QUERY.insert(bean, projection)` builds the `INSERT` from the mapping's columns (associations by the foreign key declared in `key`; derived fields and identity columns are left out) and reads the inserted row back through the same JSON projection as fetch. On PostgreSQL it is a single statement (`WITH … INSERT … RETURNING`); on H2, a plain `INSERT` followed by a `SELECT` by key — H2 2.4's `FINAL TABLE` leaves the row written when the statement fails on a constraint. The Storefront repository only fills in the id from the sequence before calling it.
 
 ---
 

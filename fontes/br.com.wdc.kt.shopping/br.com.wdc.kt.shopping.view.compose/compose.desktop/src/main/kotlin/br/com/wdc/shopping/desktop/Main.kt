@@ -41,7 +41,7 @@ import br.com.wdc.shopping.view.compose.views.*
 
 fun main() {
     // Set macOS app name before any AWT initialization
-    System.setProperty("apple.awt.application.name", "Shopping")
+    System.setProperty("apple.awt.application.name", "Storefront")
 
     val baseUrl = System.getProperty("baseUrl", "http://localhost:8080")
     initializePlatform(baseUrl)
@@ -64,7 +64,7 @@ fun main() {
     application {
         Window(
             onCloseRequest = ::exitApplication,
-            title = "Shopping",
+            title = "Storefront",
             icon = painterResource("icon.png"),
             state = rememberWindowState(width = 1024.dp, height = 768.dp)
         ) {
