@@ -24,7 +24,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.api.io.TempDir
 
-/** As classes jOOQ versionadas conferem com o esquema, e o `DSLContext` do módulo funciona com elas. */
+/** The versioned jOOQ classes match the schema, and the module's `DSLContext` works with them. */
 class JooqSchemaTest {
 
     companion object {
@@ -46,12 +46,12 @@ class JooqSchemaTest {
 
         val packagePath = GenerateJooqSchema.PACKAGE_NAME.replace('.', '/')
         val generated = kotlinFiles(tempDir.resolve(packagePath))
-        // o teste roda com o diretório do módulo :shopping-tests como corrente
+        // the test runs with the :shopping-tests module directory as the current one
         val versioned = kotlinFiles(
             Paths.get("../br.com.wdc.kt.shopping.persistence/persistence.impl/src/main/kotlin").resolve(packagePath).toAbsolutePath().normalize()
         )
 
-        val hint = "esquema e classes jOOQ divergiram — rode ./gradlew :shopping-scripts:generateJooqSchema e faça commit"
+        val hint = "schema and jOOQ classes diverged — run ./gradlew :shopping-scripts:generateJooqSchema and commit"
         assertEquals(generated.keys.sorted(), versioned.keys.sorted(), hint)
         for ((file, content) in generated) {
             assertEquals(content, versioned[file], "$file: $hint")
@@ -81,12 +81,12 @@ class JooqSchemaTest {
 
         assertFailsWith<IllegalStateException> {
             tx.required {
-                dsl.update(EN_USER).set(EN_USER.NAME, "provisório").where(EN_USER.ID.eq(DBReset.ADMIN_ID)).execute()
-                assertEquals("provisório", dsl.select(EN_USER.NAME).from(EN_USER).where(EN_USER.ID.eq(DBReset.ADMIN_ID)).fetchOne()!!.value1())
+                dsl.update(EN_USER).set(EN_USER.NAME, "temporary").where(EN_USER.ID.eq(DBReset.ADMIN_ID)).execute()
+                assertEquals("temporary", dsl.select(EN_USER.NAME).from(EN_USER).where(EN_USER.ID.eq(DBReset.ADMIN_ID)).fetchOne()!!.value1())
                 throw IllegalStateException("desiste")
             }
         }
-        assertEquals("João da Silva", dsl.select(EN_USER.NAME).from(EN_USER).where(EN_USER.ID.eq(DBReset.ADMIN_ID)).fetchOne()!!.value1())
+        assertEquals("John Smith", dsl.select(EN_USER.NAME).from(EN_USER).where(EN_USER.ID.eq(DBReset.ADMIN_ID)).fetchOne()!!.value1())
 
         tx.required { dsl.update(EN_USER).set(EN_USER.NAME, "definitivo").where(EN_USER.ID.eq(DBReset.ADMIN_ID)).execute() }
         assertEquals("definitivo", dsl.select(EN_USER.NAME).from(EN_USER).where(EN_USER.ID.eq(DBReset.ADMIN_ID)).fetchOne()!!.value1())

@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * Executa os mesmos testes de [ShoppingServiceTest], porém usando
- * [RestTestEnvironment] — os repositórios são implementações REST client
- * que comunicam via HTTP com um Javalin in-process.
+ * Runs the same tests as [ShoppingServiceTest], but using
+ * [RestTestEnvironment] — the repositories are REST client implementations
+ * that communicate over HTTP with an in-process Javalin.
  */
 class ShoppingServiceRestTest {
 

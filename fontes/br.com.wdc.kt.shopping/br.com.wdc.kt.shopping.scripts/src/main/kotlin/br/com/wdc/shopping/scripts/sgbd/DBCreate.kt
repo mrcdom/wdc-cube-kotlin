@@ -6,11 +6,11 @@ import java.sql.SQLException
 import org.jooq.SQLDialect
 
 /**
- * Cria o esquema do banco e roda as migrações pendentes.
+ * Creates the database schema and runs the pending migrations.
  *
- * **O DDL daqui é a fonte de verdade do esquema.** As classes jOOQ de `:shopping-persistence`
- * (`…persistence.scheme`) são geradas a partir dele, por `GenerateJooqSchema`. Ao mudar uma tabela: altere
- * aqui, escreva a migração que leva os bancos existentes ao mesmo resultado e regenere as classes.
+ * **The DDL here is the source of truth of the schema.** The jOOQ classes of `:shopping-persistence`
+ * (`…persistence.scheme`) are generated from it, by `GenerateJooqSchema`. When changing a table: change it
+ * here, write the migration that brings existing databases to the same result and regenerate the classes.
  */
 class DBCreate {
     private var connection: Connection? = null
@@ -22,13 +22,13 @@ class DBCreate {
         return this
     }
 
-    /** Apaga os dados e recarrega a carga de demonstração. */
+    /** Deletes the data and reloads the demo seed. */
     fun withReset(): DBCreate {
         this.mustResetDb = true
         return this
     }
 
-    /** Não carrega dados, mesmo num banco recém-criado (uso do gerador de classes jOOQ). */
+    /** Loads no data, even into a freshly created database (used by the jOOQ class generator). */
     fun withSkipReset(): DBCreate {
         this.skipReset = true
         return this
@@ -70,7 +70,7 @@ class DBCreate {
                     CONSTRAINT PK_USER PRIMARY KEY (ID)
                 )""",
                 "CREATE SEQUENCE IF NOT EXISTS SQ_USER START WITH 1 INCREMENT BY 1",
-                // sustentam as ordenações NAME_A_TO_Z e LOGIN_A_TO_Z de UserCriteria
+                // back the NAME_A_TO_Z and LOGIN_A_TO_Z orderings of UserCriteria
                 "CREATE INDEX IX_USER_NAME ON EN_USER (NAME)",
                 "CREATE INDEX IX_USER_USERNAME ON EN_USER (USERNAME)",
             )
@@ -80,7 +80,7 @@ class DBCreate {
         if ("EN_PRODUCT" !in existing) {
             val nameType = if (postgres) "TEXT" else "VARCHAR_IGNORECASE(1000000)"
             val descriptionType = if (postgres) "TEXT" else "VARCHAR(1000000)"
-            // VARBINARY, e não BINARY: no H2 2.x o BINARY é de tamanho fixo e completa o valor com zeros
+            // VARBINARY, not BINARY: in H2 2.x BINARY has a fixed size and pads the value with zeros
             val imageType = if (postgres) "BYTEA" else "VARBINARY(1000000)"
             conn.execute(
                 """
@@ -93,7 +93,7 @@ class DBCreate {
                     CONSTRAINT PK_PRODUCT PRIMARY KEY (ID)
                 )""",
                 "CREATE SEQUENCE IF NOT EXISTS SQ_PRODUCT START WITH 1 INCREMENT BY 1",
-                // sustentam NAME_A_TO_Z, CHEAPEST_FIRST e MOST_EXPENSIVE_FIRST de ProductCriteria
+                // back NAME_A_TO_Z, CHEAPEST_FIRST and MOST_EXPENSIVE_FIRST of ProductCriteria
                 "CREATE INDEX IX_PRODUCT_NAME ON EN_PRODUCT (NAME)",
                 "CREATE INDEX IX_PRODUCT_PRICE ON EN_PRODUCT (PRICE)",
             )
@@ -111,7 +111,7 @@ class DBCreate {
                     CONSTRAINT FK_PURCHASE_USER FOREIGN KEY (USERID) REFERENCES EN_USER(ID)
                 )""",
                 "CREATE SEQUENCE IF NOT EXISTS SQ_PURCHASE START WITH 1 INCREMENT BY 1",
-                // sustenta MOST_RECENT_PURCHASE_FIRST e EARLIEST_PURCHASE_FIRST de PurchaseCriteria
+                // backs MOST_RECENT_PURCHASE_FIRST and EARLIEST_PURCHASE_FIRST of PurchaseCriteria
                 "CREATE INDEX IX_PURCHASE_BUYDATE ON EN_PURCHASE (BUYDATE)",
             )
             mustResetDb = true
@@ -131,7 +131,7 @@ class DBCreate {
                     CONSTRAINT FK_PURCHASEITEM_PURCHASE FOREIGN KEY (PURCHASEID) REFERENCES EN_PURCHASE(ID)
                 )""",
                 "CREATE SEQUENCE IF NOT EXISTS SQ_PURCHASEITEM START WITH 1 INCREMENT BY 1",
-                // sustentam MOST_EXPENSIVE_FIRST e LARGEST_QUANTITY_FIRST de PurchaseItemCriteria
+                // back MOST_EXPENSIVE_FIRST and LARGEST_QUANTITY_FIRST of PurchaseItemCriteria
                 "CREATE INDEX IX_PURCHASEITEM_PRICE ON EN_PURCHASEITEM (PRICE)",
                 "CREATE INDEX IX_PURCHASEITEM_AMOUNT ON EN_PURCHASEITEM (AMOUNT)",
             )
@@ -169,7 +169,7 @@ class DBCreate {
             )
         }
 
-        // As migrações levam os bancos criados por versões anteriores ao esquema acima; num banco novo, não mudam nada.
+        // The migrations bring databases created by earlier versions to the schema above; on a new database they change nothing.
         MigrationRunner(conn)
             .run(Migration_0001_AddUserRoles(conn))
             .run(Migration_0002_PurchaseBuyDateToTimestamp(conn))
@@ -179,7 +179,7 @@ class DBCreate {
             .run(Migration_0006_PurchaseBuyDateToUtc(conn))
             .run(Migration_0007_SessionExpiryToUtc(conn))
 
-        // A carga vem depois das migrações: ela já grava no formato atual, e não deve ser migrada.
+        // The seed comes after the migrations: it already writes in the current format, and must not be migrated.
         if (mustResetDb && !skipReset) {
             DBReset.run(conn)
         }
@@ -189,7 +189,7 @@ class DBCreate {
 
     private fun loadExistingTables(conn: Connection): Set<String> {
         val tables = HashSet<String>()
-        // No PostgreSQL só contam as tabelas do esquema corrente: a mesma base pode ter outro esquema com as mesmas tabelas.
+        // In PostgreSQL only the tables of the current schema count: the same database may have another schema with the same tables.
         val schema = if (detectDialect(conn) == SQLDialect.POSTGRES) conn.schema else null
         conn.metaData.getTables(null, schema, "%", arrayOf("TABLE")).use { rs ->
             while (rs.next()) {
@@ -204,7 +204,7 @@ class DBCreate {
     }
 
     companion object {
-        /** O banco, pela URL da conexão: PostgreSQL ou, por padrão, H2. */
+        /** The database, from the connection URL: PostgreSQL or, by default, H2. */
         fun detectDialect(connection: Connection): SQLDialect {
             val url = try {
                 connection.metaData.url

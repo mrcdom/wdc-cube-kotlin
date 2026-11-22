@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * O que o transporte faz quando o servidor recusa o token de acesso (401): renova a sessão e repete a chamada
- * uma vez; sem como renovar, avisa a aplicação e deixa a recusa subir.
+ * What the transport does when the server refuses the access token (401): renews the session and repeats the call
+ * once; with no way to renew, it notifies the application and lets the refusal propagate.
  */
 class SecuredRestTokenRefreshTest {
 
@@ -30,10 +30,10 @@ class SecuredRestTokenRefreshTest {
     fun signOut() = env.logout()
 
     /**
-     * Faz o cliente apresentar um token que o servidor não aceita, até a sessão ser renovada — o efeito de um
-     * token de acesso vencido.
+     * Makes the client present a token the server does not accept, until the session is renewed — the effect of an
+     * expired access token.
      *
-     * @return quantas vezes a renovação foi pedida
+     * @return how many times the renewal was requested
      */
     private fun expireAccessToken(): () -> Int {
         val renew = env.transport.refreshHandler!!
@@ -57,7 +57,7 @@ class SecuredRestTokenRefreshTest {
 
         assertEquals(1, refreshes())
         assertNotEquals(firstToken, env.authClient!!.accessToken)
-        // com o token novo, as chamadas seguintes não renovam de novo
+        // with the new token, the following calls do not renew again
         assertEquals(4, env.productRepo.fetch(ProductCriteria()).size)
         assertEquals(1, refreshes())
     }
@@ -71,15 +71,15 @@ class SecuredRestTokenRefreshTest {
         assertEquals(1, refreshes())
 
         refreshes = expireAccessToken()
-        assertTrue(env.productRepo.updateImage(DBReset.CAFETEIRA_ID, byteArrayOf(1, 2, 3)))
+        assertTrue(env.productRepo.updateImage(DBReset.COFFEE_MAKER_ID, byteArrayOf(1, 2, 3)))
         assertEquals(1, refreshes())
 
         refreshes = expireAccessToken()
-        val product = Product().apply { name = "depois de renovar"; price = 1.5; description = "d" }
+        val product = Product().apply { name = "after renewing"; price = 1.5; description = "d" }
         assertTrue(env.productRepo.insert(product))
         assertEquals(1, refreshes())
-        // a escrita repetida não duplicou
-        assertEquals(1, env.productRepo.count(ProductCriteria().withName("depois de renovar")))
+        // the repeated write did not duplicate
+        assertEquals(1, env.productRepo.count(ProductCriteria().withName("after renewing")))
     }
 
     @Test

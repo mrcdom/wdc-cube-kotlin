@@ -12,10 +12,10 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 /**
- * O contrato do repositório de usuários, válido direto na implementação (LOCAL) e atravessando o REST.
+ * The user repository contract, valid straight on the implementation (LOCAL) and through REST.
  *
- * Carga de demonstração, em ordem de id: admin "João da Silva" (ADMIN), fulano "Fulano de Tal" (CUSTOMER) e
- * beotrano "Beotrano de Alguma Coisa" (CUSTOMER).
+ * Demo seed, in id order: admin "John Smith" (ADMIN), fulano "John Doe" (CUSTOMER) and
+ * beotrano "Jane Roe" (CUSTOMER).
  */
 abstract class AbstractUserRepositoryTest {
 
@@ -42,7 +42,7 @@ abstract class AbstractUserRepositoryTest {
         val user = repo().fetch(UserCriteria().withUserId(admin)).single()
         assertEquals(admin, user.id)
         assertEquals("admin", user.userName)
-        assertEquals("João da Silva", user.name)
+        assertEquals("John Smith", user.name)
         assertEquals("ADMIN", user.roles)
         assertNull(user.password)
     }
@@ -51,7 +51,7 @@ abstract class AbstractUserRepositoryTest {
     fun fetchById_returnsCorrectUser() = runBlocking {
         val user = repo().fetchById(admin, null)
         assertEquals("admin", user!!.userName)
-        assertEquals("João da Silva", user.name)
+        assertEquals("John Smith", user.name)
     }
 
     @Test
@@ -91,19 +91,19 @@ abstract class AbstractUserRepositoryTest {
         assertEquals(3, page.totalItems)
     }
 
-    // :: ordenações
+    // :: orderings
 
     @Test
     fun orderBy_everyConstant() = runBlocking {
         assertEquals(listOf<Long?>(admin, fulano, beotrano), ids(UserCriteria().withOrderBy(OrderBy.OLDEST_FIRST)))
         assertEquals(listOf<Long?>(beotrano, fulano, admin), ids(UserCriteria().withOrderBy(OrderBy.NEWEST_FIRST)))
-        // Beotrano de…, Fulano de Tal, João da Silva
+        // Jane Roe, John Doe, John Smith
         assertEquals(listOf<Long?>(beotrano, fulano, admin), ids(UserCriteria().withOrderBy(OrderBy.NAME_A_TO_Z)))
         // admin, beotrano, fulano
         assertEquals(listOf<Long?>(admin, beotrano, fulano), ids(UserCriteria().withOrderBy(OrderBy.LOGIN_A_TO_Z)))
     }
 
-    // :: operadores e texto
+    // :: operators and text
 
     @Test
     fun criteria_identityAndComparison() = runBlocking {
@@ -115,11 +115,11 @@ abstract class AbstractUserRepositoryTest {
 
     @Test
     fun criteria_text() = runBlocking {
-        assertEquals(listOf<Long?>(fulano), ids(byIdAsc().also { it.name.startingWith("fulano") }))
-        assertEquals(listOf<Long?>(fulano, beotrano), ids(byIdAsc().also { it.name.containing(" DE ") }))
-        assertEquals(listOf<Long?>(admin), ids(byIdAsc().also { it.name.like("João%") }))
-        assertEquals(emptyList<Long?>(), ids(byIdAsc().also { it.name.like("joão%") }))
-        assertEquals(listOf<Long?>(admin), ids(byIdAsc().also { it.name.ilike("joão%") }))
+        assertEquals(listOf<Long?>(fulano), ids(byIdAsc().also { it.name.startingWith("john d") }))
+        assertEquals(listOf<Long?>(fulano, beotrano), ids(byIdAsc().also { it.name.containing("OE") }))
+        assertEquals(listOf<Long?>(admin), ids(byIdAsc().also { it.name.like("John S%") }))
+        assertEquals(emptyList<Long?>(), ids(byIdAsc().also { it.name.like("john s%") }))
+        assertEquals(listOf<Long?>(admin), ids(byIdAsc().also { it.name.ilike("john s%") }))
         assertEquals(listOf<Long?>(admin, beotrano), ids(byIdAsc().also { it.userName.or().eq("admin"); it.userName.startingWith("beo") }))
     }
 
@@ -183,23 +183,23 @@ abstract class AbstractUserRepositoryTest {
         val updated = User().apply {
             id = original.id
             userName = original.userName
-            name = "Nome Alterado"
+            name = "Changed Name"
             roles = original.roles
         }
         assertTrue(repo().update(updated, original, repo().ownFieldsProjection()))
 
         val fetched = repo().fetchById(admin)!!
-        assertEquals("Nome Alterado", fetched.name)
+        assertEquals("Changed Name", fetched.name)
         assertEquals("admin", fetched.userName)
     }
 
     @Test
     fun update_withProjection_changesOnlyTheMarkedFields_andCanSetNull() = runBlocking {
-        val changes = User().apply { id = fulano; name = "Só o nome"; userName = "ignorado"; roles = null }
+        val changes = User().apply { id = fulano; name = "Only the name"; userName = "ignored"; roles = null }
         assertTrue(repo().update(changes, null, User().apply { name = ProjectionValues.str; roles = ProjectionValues.str }))
 
         val fetched = repo().fetchById(fulano)!!
-        assertEquals("Só o nome", fetched.name)
+        assertEquals("Only the name", fetched.name)
         assertEquals("fulano", fetched.userName)
         assertNull(fetched.roles)
     }
@@ -214,7 +214,7 @@ abstract class AbstractUserRepositoryTest {
     @Test
     fun update_withoutId_isRefused() = runBlocking<Unit> {
         assertThrows(BusinessException::class.java) {
-            runBlocking { repo().update(User().apply { name = "sem id" }) }
+            runBlocking { repo().update(User().apply { name = "no id" }) }
         }
     }
 

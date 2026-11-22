@@ -5,12 +5,12 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** A regra que decide, campo a campo, o que um `update` grava. */
+/** The rule that decides, field by field, what an `update` writes. */
 class BaseRepositoryImplTest {
 
     private data class Thing(var id: Long? = null, var name: String? = null)
 
-    /** Expõe o utilitário, que é `protected`: só as implementações de repositório o usam. */
+    /** Exposes the utility, which is `protected`: only repository implementations use it. */
     private object Probe : BaseRepositoryImpl() {
         fun nameChanged(newBean: Thing, oldBean: Thing?, projection: Thing) = changed(newBean, oldBean, projection) { it.name }
     }
@@ -20,7 +20,7 @@ class BaseRepositoryImplTest {
     @Test
     fun withoutTheOldState_everyMarkedFieldIsWritten() {
         assertTrue(Probe.nameChanged(Thing(1L, "a"), null, marked))
-        // inclusive null, que limpa o valor
+        // including null, which clears the value
         assertTrue(Probe.nameChanged(Thing(1L, null), null, marked))
     }
 

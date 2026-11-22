@@ -560,15 +560,15 @@ class CubeNavigationTest {
     }
 
     // ---------------------------------------------------------------
-    // Navegação pedida de fora durante outra navegação (cliques durante uma carga lenta)
+    // Navigation requested from outside during another navigation (clicks during a slow load)
     // ---------------------------------------------------------------
 
-    /** Presenter cuja carga só termina quando o [gate] abre — a I/O lenta dentro do applyParameters. */
+    /** Presenter whose load only finishes when the [gate] opens — the slow I/O inside applyParameters. */
     private class SlowPresenter(override val app: TestApp, private val gate: kotlinx.coroutines.CompletableDeferred<Unit>, private val fail: Boolean) :
         br.com.wdc.framework.cube.CubePresenter {
         override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
             gate.await()
-            if (fail) throw IllegalStateException("carga falhou")
+            if (fail) throw IllegalStateException("load failed")
             return true
         }
 
@@ -599,11 +599,11 @@ class CubeNavigationTest {
         yield()
         val click = async { navigate(TestPlace.ROOT, TestPlace.PRODUCTS) }
         yield()
-        assertFalse(click.isCompleted, "o clique espera a navegação em curso")
+        assertFalse(click.isCompleted, "the click waits for the running navigation")
 
         gate.complete(Unit)
-        assertTrue(running.await(), "a navegação em curso não foi interrompida")
-        assertTrue(click.await(), "depois dela, o clique navega")
+        assertTrue(running.await(), "the running navigation was not interrupted")
+        assertTrue(click.await(), "after it, the click navigates")
         assertEquals(TestPlace.PRODUCTS.id, app.newIntent().place?.id)
     }
 
@@ -620,7 +620,7 @@ class CubeNavigationTest {
 
         gate.complete(Unit)
         assertTrue(running.await())
-        assertFalse(first.await(), "superado pelo pedido seguinte")
+        assertFalse(first.await(), "superseded by the next request")
         assertTrue(last.await())
         assertEquals(TestPlace.CART.id, app.newIntent().place?.id)
     }
@@ -636,7 +636,7 @@ class CubeNavigationTest {
 
         gate.complete(Unit)
         assertTrue(running.await().isFailure)
-        assertFalse(click.await(), "descartado: a navegação de que dependia falhou")
+        assertFalse(click.await(), "dropped: the navigation it depended on failed")
         assertEquals(TestPlace.ROOT.id, app.newIntent().place?.id)
     }
 
@@ -652,7 +652,7 @@ class CubeNavigationTest {
         gate.complete(Unit)
         assertTrue(running.await())
         val results = clicks.awaitAll()
-        assertEquals(listOf(true), results.filter { it }, "só o último navega")
+        assertEquals(listOf(true), results.filter { it }, "only the last one navigates")
         assertTrue(results.last())
     }
 }

@@ -18,15 +18,15 @@ dependencies {
     testImplementation(libs.okhttp)
 }
 
-// A mesma suíte, em PostgreSQL. Usa um PostgreSQL embutido, que sobe sozinho (a primeira execução baixa os
-// binários); com SHOPPING_TEST_PG_URL (+ _USER, _PASSWORD) no ambiente, usa esse servidor — e apaga os dados dele.
+// The same suite, on PostgreSQL. Uses an embedded PostgreSQL, which starts on its own (the first run downloads the
+// binaries); with SHOPPING_TEST_PG_URL (+ _USER, _PASSWORD) in the environment, uses that server — and deletes its data.
 val testPostgres = tasks.register<Test>("testPostgres") {
     description = "Runs the test suite against PostgreSQL."
     group = "verification"
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
     systemProperty("shopping.test.db", "postgres")
-    // conferem o esquema do H2 e a migração dos bancos H2 antigos: não mudam com o banco da suíte
+    // they check the H2 schema and the migration of old H2 databases: they do not change with the suite's database
     filter {
         excludeTestsMatching("br.com.wdc.shopping.test.schema.SchemaMigrationTest")
         excludeTestsMatching("br.com.wdc.shopping.test.schema.JooqSchemaTest")

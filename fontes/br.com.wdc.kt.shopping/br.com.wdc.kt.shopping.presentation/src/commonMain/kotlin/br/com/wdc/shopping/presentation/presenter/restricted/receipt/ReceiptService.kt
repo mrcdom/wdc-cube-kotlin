@@ -11,10 +11,11 @@ class ReceiptService(private val repo: PurchaseRepository) {
     constructor(app: ShoppingApplication) : this(app.getPurchaseRepository())
 
     /**
-     * O recibo de uma compra **do usuário informado**.
+     * The receipt of a purchase **of the given user**.
      *
-     * O id da compra chega pela navegação — é o usuário quem o escolhe —, e por isso a busca é sempre
-     * restrita a quem está logado: pedir a compra de outro é o mesmo que pedir uma que não existe.
+     * The purchase id arrives through navigation — the user is the one who chooses it —, so the lookup is always
+     * restricted to whoever is logged in: asking for someone else's purchase is the same as asking for one that does
+     * not exist.
      */
     suspend fun loadReceipt(purchaseId: Long?, userId: Long?): ReceiptForm? {
         if (purchaseId == null || userId == null) throw WrongParametersException()

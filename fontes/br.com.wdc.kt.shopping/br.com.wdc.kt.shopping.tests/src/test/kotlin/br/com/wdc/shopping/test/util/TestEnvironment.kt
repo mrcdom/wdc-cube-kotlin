@@ -18,7 +18,7 @@ import java.nio.file.Paths
 
 class TestEnvironment(
     private val dbName: String = "wedocode-shopping",
-    /** Com segredo, a segurança fica ligada (serviço de autenticação + controle de acesso); `null` = sem segurança. */
+    /** With a secret, security is on (authentication service + access control); `null` = no security. */
     private val jwtSecret: String? = null,
 ) : ShoppingTestEnvironment {
 
@@ -47,7 +47,7 @@ class TestEnvironment(
         ShoppingConfig.Internals.setLogDir(basePath.resolve("log"))
         ShoppingConfig.Internals.setTmpDir(basePath.resolve("tmp"))
         ScheduledExecutor.BEAN.set(executor)
-        // o login sem serviço de autenticação confere o resumo da senha na apresentação
+        // login without an authentication service checks the password digest in the presentation
         CryptoProvider.BEAN.set(JceCryptoProvider())
         ShoppingRepositoryBootstrap.initialize(ds, dialect = database.dialect, cleanUp = cleanUp)
         if (jwtSecret != null) {

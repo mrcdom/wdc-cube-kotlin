@@ -7,13 +7,13 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 
 /**
- * Passa a data das compras já gravadas para UTC.
+ * Converts the date of the purchases already stored to UTC.
  *
- * `BUYDATE` é TIMESTAMP sem fuso. A persistência antiga entregava ao driver um valor com fuso, e o banco o
- * guardava na hora local da máquina; a atual guarda — e lê — o instante em UTC. Sem esta conversão, as compras
- * antigas apareceriam deslocadas pelo fuso da máquina.
+ * `BUYDATE` is a TIMESTAMP without time zone. The old persistence handed the driver a value with a time zone, and
+ * the database stored it in the machine's local time; the current one stores — and reads — the instant in UTC.
+ * Without this conversion, old purchases would show up shifted by the machine's time zone.
  *
- * A conversão usa o fuso desta JVM, que se supõe ser o mesmo de quem gravou os dados.
+ * The conversion uses this JVM's time zone, which is assumed to be the same as the one that stored the data.
  */
 class Migration_0006_PurchaseBuyDateToUtc(
     private val connection: Connection,

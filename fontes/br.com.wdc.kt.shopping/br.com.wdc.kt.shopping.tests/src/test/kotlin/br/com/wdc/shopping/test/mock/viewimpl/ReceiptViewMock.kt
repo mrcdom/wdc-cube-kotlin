@@ -24,22 +24,22 @@ class ReceiptViewMock(
 
     var state: ReceiptViewState = presenter.state
 
-    fun printRecibo() {
+    fun printReceipt() {
         if (state.notifySuccess) {
-            println("Compra efetuada com sucesso")
+            println("Purchase completed successfully")
             println()
         }
 
-        println("Imprima seu recibo:")
+        println("Print your receipt:")
 
         println("------------------------------------------------------------")
-        println("WeDoCode Shopping - SUA COMPRA CERTA NA INTERNET")
-        println("Recibo de compra")
-        println("Data: ${Date(state.receipt!!.date!!)}")
+        println("WeDoCode Shopping - THE RIGHT PURCHASE ONLINE")
+        println("Purchase receipt")
+        println("Date: ${Date(state.receipt!!.date!!)}")
         println("------------------------------------------------------------")
         for (item: ReceiptItem in state.receipt!!.items) {
             print(item.description)
-            print("(${item.quantity})=R$ ")
+            print("(${item.quantity})=\$")
             println(item.value)
         }
         println("------------------------------------------------------------")

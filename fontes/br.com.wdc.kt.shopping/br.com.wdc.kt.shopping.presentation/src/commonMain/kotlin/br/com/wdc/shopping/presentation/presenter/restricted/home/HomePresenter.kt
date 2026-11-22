@@ -207,25 +207,25 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     private fun alertProductNotFound() {
         state.errorCode = 3
-        state.errorMessage = "Código do produto não localizado."
+        state.errorMessage = "Product code not found."
         update()
     }
 
     private fun alertPurchaseNotFound() {
         state.errorCode = 5
-        state.errorMessage = "Código do recibo não localizado."
+        state.errorMessage = "Receipt code not found."
         update()
     }
 
     private fun alertProductIdRequired() {
         state.errorCode = 6
-        state.errorMessage = "Código do produto é um argumento obrigatório."
+        state.errorMessage = "Product code is a required argument."
         update()
     }
 
     private fun alertPurchaseIdRequired() {
         state.errorCode = 7
-        state.errorMessage = "Código do recibo é um argumento obrigatório."
+        state.errorMessage = "Receipt code is a required argument."
         update()
     }
 

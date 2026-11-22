@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * O contrato HTTP de produto visto de fora, sem passar pelo repositório do cliente: o que um consumidor
- * externo (ou um cliente de versão anterior) envia e recebe.
+ * The product HTTP contract seen from outside, without going through the client repository: what an external
+ * consumer (or a client of an earlier version) sends and receives.
  */
 class RestProductEndpointsTest {
 
@@ -26,8 +26,8 @@ class RestProductEndpointsTest {
 
     @Test
     fun looseValueCriterion_fromOlderClients_stillMeansEquality() {
-        val response = post("fetch", """{"productId":${DBReset.BOLA_WILSON_ID},"projection":{"id":1,"name":"~"}}""")
-        assertEquals("""{"items":[{"id":${DBReset.BOLA_WILSON_ID},"name":"Bola Wilson"}]}""", response)
+        val response = post("fetch", """{"productId":${DBReset.WILSON_BALL_ID},"projection":{"id":1,"name":"~"}}""")
+        assertEquals("""{"items":[{"id":${DBReset.WILSON_BALL_ID},"name":"Wilson Ball"}]}""", response)
     }
 
     @Test
@@ -37,7 +37,7 @@ class RestProductEndpointsTest {
             """{"price":{"or":true,"p":[{"o":"LT","v":[10]},{"o":"GT","v":[100]}]},"orderBy":"CHEAPEST_FIRST","projection":{"name":"~"}}""",
         )
         assertEquals(
-            """{"items":[{"id":${DBReset.FITA_VEDA_ROSCA_ID},"name":"Fita veda rosca"},{"id":${DBReset.CAFETEIRA_ID},"name":"Cafeteira design italiano"}]}""",
+            """{"items":[{"id":${DBReset.THREAD_SEAL_TAPE_ID},"name":"Thread Seal Tape"},{"id":${DBReset.COFFEE_MAKER_ID},"name":"Italian Design Coffee Maker"}]}""",
             response,
         )
     }
@@ -51,7 +51,7 @@ class RestProductEndpointsTest {
     @Test
     fun malformedCriterion_isRefused_andDeleteRemovesNothing() {
         val before = post("count", "{}")
-        // operador e valores em desacordo: contava como filtro informado e sumia do SQL (DELETE sem WHERE)
+        // operator and values in disagreement: it counted as a provided filter and vanished from the SQL (DELETE without WHERE)
         for (criterion in listOf(
             """{"price":{"p":[{"o":"BETWEEN","v":[1]}]}}""",
             """{"price":{"p":[{"o":"EQ"}]}}""",
@@ -59,16 +59,16 @@ class RestProductEndpointsTest {
             """{"name":{"p":[{"o":"LIKE","v":[null]}]}}""",
         )) {
             val e = assertThrows(BusinessException::class.java, { post("delete", criterion) }, criterion)
-            assertTrue(e.message!!.contains("critério"), e.message)
+            assertTrue(e.message!!.contains("criterion"), e.message)
             assertThrows(BusinessException::class.java, { post("fetch", criterion) }, criterion)
         }
-        assertEquals(before, post("count", "{}"), "nenhum produto apagado")
+        assertEquals(before, post("count", "{}"), "no product deleted")
     }
 
     @Test
     fun fetch_withoutProjection_bringsEverythingButTheImage() {
-        val response = post("fetch", """{"productId":${DBReset.PEN_DRIVE2GB_ID}}""")
-        assertTrue(response.startsWith("""{"items":[{"id":${DBReset.PEN_DRIVE2GB_ID},"name":"Pen Drive 2GB","price":16"""), response)
+        val response = post("fetch", """{"productId":${DBReset.FLASH_DRIVE_2GB_ID}}""")
+        assertTrue(response.startsWith("""{"items":[{"id":${DBReset.FLASH_DRIVE_2GB_ID},"name":"USB Flash Drive 2GB","price":16"""), response)
         assertTrue(""""description":""" in response, response)
         assertFalse(""""image"""" in response, response)
     }
@@ -76,30 +76,30 @@ class RestProductEndpointsTest {
     @Test
     fun fetchPage_returnsItemsAndTotal() {
         val response = post("fetch-page", """{"orderBy":"OLDEST_FIRST","page":1,"pageSize":3,"projection":{"id":1}}""")
-        assertEquals("""{"items":[{"id":${DBReset.PEN_DRIVE2GB_ID}}],"totalItems":4}""", response)
+        assertEquals("""{"items":[{"id":${DBReset.FLASH_DRIVE_2GB_ID}}],"totalItems":4}""", response)
     }
 
     @Test
     fun fetchById_byGetAndByPost() {
-        val byGet = env.transport.getJson("/api/repo/product/${DBReset.FITA_VEDA_ROSCA_ID}")
-        assertTrue(byGet.startsWith("""{"id":${DBReset.FITA_VEDA_ROSCA_ID},"name":"Fita veda rosca","price":2.67"""), byGet)
+        val byGet = env.transport.getJson("/api/repo/product/${DBReset.THREAD_SEAL_TAPE_ID}")
+        assertTrue(byGet.startsWith("""{"id":${DBReset.THREAD_SEAL_TAPE_ID},"name":"Thread Seal Tape","price":2.67"""), byGet)
 
-        val byPost = post("fetch-by-id", """{"id":${DBReset.FITA_VEDA_ROSCA_ID},"projection":{"name":"~"}}""")
-        assertEquals("""{"id":${DBReset.FITA_VEDA_ROSCA_ID},"name":"Fita veda rosca"}""", byPost)
+        val byPost = post("fetch-by-id", """{"id":${DBReset.THREAD_SEAL_TAPE_ID},"projection":{"name":"~"}}""")
+        assertEquals("""{"id":${DBReset.THREAD_SEAL_TAPE_ID},"name":"Thread Seal Tape"}""", byPost)
 
         assertNull(env.transport.postJsonNullable("/api/repo/product/fetch-by-id", """{"id":${Long.MAX_VALUE}}"""))
     }
 
     @Test
     fun insert_returnsTheGeneratedId_andUpdateTouchesOnlyThePresentKeys() {
-        // a entidade solta, como antes da 0.4.0
-        val inserted = post("insert", """{"name":"Teclado","price":80.5,"description":"d"}""")
+        // the bare entity, as before 0.4.0
+        val inserted = post("insert", """{"name":"Keyboard","price":80.5,"description":"d"}""")
         val id = Regex(""""id":(\d+)""").find(inserted)!!.groupValues[1]
-        assertEquals("""{"success":true,"id":$id,"entity":{"id":$id,"name":"Teclado","price":80.5,"description":"d"}}""", inserted)
+        assertEquals("""{"success":true,"id":$id,"entity":{"id":$id,"name":"Keyboard","price":80.5,"description":"d"}}""", inserted)
 
-        assertEquals("""{"success":true}""", post("update", """{"id":$id,"name":"Teclado 2"}"""))
+        assertEquals("""{"success":true}""", post("update", """{"id":$id,"name":"Keyboard 2"}"""))
         assertEquals(
-            """{"id":$id,"name":"Teclado 2","price":80.5,"description":"d"}""",
+            """{"id":$id,"name":"Keyboard 2","price":80.5,"description":"d"}""",
             post("fetch-by-id", """{"id":$id}"""),
         )
         assertEquals("""{"count":1}""", post("delete", """{"productId":$id}"""))
@@ -120,10 +120,10 @@ class RestProductEndpointsTest {
     fun insertedUser_comesBackWithoutThePassword() {
         val inserted = env.transport.postJson(
             "/api/repo/user/insert",
-            """{"entity":{"userName":"semsenha","password":"0123456789abcdef0123456789abcdef","name":"Sem Senha","roles":"CUSTOMER"}}""",
+            """{"entity":{"userName":"nosecret","password":"0123456789abcdef0123456789abcdef","name":"No Secret","roles":"CUSTOMER"}}""",
         )
         assertTrue(""""success":true""" in inserted, inserted)
-        assertTrue(""""userName":"semsenha"""" in inserted, inserted)
+        assertTrue(""""userName":"nosecret"""" in inserted, inserted)
         assertFalse("password" in inserted, inserted)
         val id = Regex(""""id":(\d+)""").find(inserted)!!.groupValues[1]
         env.transport.postJson("/api/repo/user/delete", """{"userId":$id}""")

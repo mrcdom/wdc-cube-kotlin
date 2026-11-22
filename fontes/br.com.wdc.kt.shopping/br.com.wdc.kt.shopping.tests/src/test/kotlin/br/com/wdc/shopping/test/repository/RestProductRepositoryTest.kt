@@ -6,8 +6,8 @@ import br.com.wdc.shopping.test.util.TestEnvironmentExtension
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * Executa os mesmos testes de [ProductRepositoryTest], porém pelo caminho REST:
- * client HTTP → Javalin in-process → repositórios de persistência → H2.
+ * Runs the same tests as [ProductRepositoryTest], but over the REST path:
+ * HTTP client → in-process Javalin → persistence repositories → H2.
  */
 class RestProductRepositoryTest : AbstractProductRepositoryTest() {
 

@@ -23,22 +23,22 @@ class LoginService(private val app: ShoppingApplication?) {
         userName: String,
         password: String,
     ): Subject? {
-        // 1. Hash da senha (MD5 → base36, mesmo formato do banco)
+        // 1. Password hash (MD5 → base36, same format as in the database)
         val passwordHash = PasswordUtil.hashPassword(password)
 
-        // 2. Obter challenge (nonce de uso único)
+        // 2. Get a challenge (single-use nonce)
         val challenge = authService.challenge()
 
-        // 3. Calcular HMAC-SHA256(key=passwordHash, data=userName+nonce)
+        // 3. Compute HMAC-SHA256(key=passwordHash, data=userName+nonce)
         val digest = PasswordUtil.computeHmac(passwordHash, userName + challenge.nonce)
 
-        // 4. Autenticar
+        // 4. Authenticate
         val authResult = authService.login(userName, digest, challenge.nonce) ?: return null
 
-        // 5. Guardar na aplicação o contexto da sessão (no servidor; num cliente REST não há o que resolver)
+        // 5. Keep the session context in the application (on the server; on a REST client there is nothing to resolve)
         app!!.setSecurityContext(authService.resolveToken(authResult.accessToken))
 
-        // 6. Buscar nome de exibição do usuário
+        // 6. Fetch the user's display name
         val users = app!!.getUserRepository().fetch(
             UserCriteria().withUserId(authResult.userId).withProjection(Subject.projection()),
             limit = 1,
@@ -47,16 +47,16 @@ class LoginService(private val app: ShoppingApplication?) {
     }
 
     /**
-     * Sem serviço de autenticação (testes e uso local sem segurança): a senha não é campo de critério, então
-     * busca só pelo login, projetando o resumo da senha, e o confere aqui — o mesmo que o serviço de
-     * autenticação faz no servidor.
+     * Without an authentication service (tests and local use without security): the password is not a criteria
+     * field, so it searches by login only, projecting the password digest, and checks it here — the same thing the
+     * authentication service does on the server.
      */
     private suspend fun authenticateViaRepository(userName: String, password: String): Subject? {
         val projection = Subject.projection().apply { this.password = ProjectionValues.str }
         val stored = UserRepository.BEAN.get()
             .fetch(UserCriteria().withUserName(userName).withProjection(projection), limit = 1)
             .firstOrNull() ?: return null
-        // a coluna é CHAR(32): o resumo vem completado com espaços
+        // the column is CHAR(32): the digest comes padded with spaces
         if (stored.password?.trim() != PasswordUtil.hashPassword(password)) return null
         return Subject.create(stored)
     }

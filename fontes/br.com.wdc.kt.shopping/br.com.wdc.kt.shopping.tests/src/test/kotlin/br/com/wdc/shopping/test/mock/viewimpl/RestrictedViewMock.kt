@@ -36,36 +36,36 @@ class RestrictedViewMock(
     }
 
     fun render() {
-        println("Seja bem vindo, ${state.nickName}!")
+        println("Welcome, ${state.nickName}!")
         println()
-        println("Carrinho[${state.cartItemCount}]")
+        println("Cart[${state.cartItemCount}]")
         println()
-        printCompras()
-        printProdutos()
+        printPurchases()
+        printProducts()
         println("---------------------------------------------------------")
     }
 
-    fun printCompras() {
+    fun printPurchases() {
         val purchasesState = getPurchasesPanelState()
-        for (compra: PurchaseInfo in purchasesState.purchases) {
-            println("COMPRA #${compra.id}")
-            println("Data da compra: ${Date(compra.date)}")
-            println("Itens adquiridos: ${compra.items}")
-            println("Valor total: R$ ${compra.total}")
+        for (purchase: PurchaseInfo in purchasesState.purchases) {
+            println("PURCHASE #${purchase.id}")
+            println("Purchase date: ${Date(purchase.date)}")
+            println("Items purchased: ${purchase.items}")
+            println("Total: \$${purchase.total}")
             println()
         }
     }
 
-    fun printProdutos() {
+    fun printProducts() {
         val productsState = getProductsPanelState()
-        for (produto: ProductInfo in productsState.products ?: emptyList()) {
-            print("PRODUTO #${produto.id}")
-            print("{nome: ")
-            print(produto.name)
-            print(", valor: ")
-            print(produto.price)
-            print(", imagem: ")
-            print(produto.image)
+        for (product: ProductInfo in productsState.products ?: emptyList()) {
+            print("PRODUCT #${product.id}")
+            print("{name: ")
+            print(product.name)
+            print(", price: ")
+            print(product.price)
+            print(", image: ")
+            print(product.image)
             println("}")
         }
     }

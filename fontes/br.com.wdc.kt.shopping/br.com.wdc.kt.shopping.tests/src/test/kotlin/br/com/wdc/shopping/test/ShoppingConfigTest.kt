@@ -9,10 +9,10 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** O diretório de trabalho é dado de fora, e todas as pastas de execução saem dele. */
+/** The work directory is given from outside, and all the runtime folders come from it. */
 class ShoppingConfigTest {
 
-    /** Roda o bloco e devolve a configuração global ao que era: outros testes dependem dela. */
+    /** Runs the block and restores the global configuration to what it was: other tests depend on it. */
     private fun <T> preservingTheConfiguration(block: () -> T): T {
         val saved = listOf(
             ShoppingConfig.workDir, ShoppingConfig.configDir, ShoppingConfig.dataDir,
@@ -46,17 +46,17 @@ class ShoppingConfigTest {
         )
         for ((name, directory) in directories) {
             assertEquals(work.resolve(name), directory!!.toRealPath(), name)
-            assertTrue(Files.isDirectory(directory), "$name não foi criado")
+            assertTrue(Files.isDirectory(directory), "$name was not created")
         }
     }
 
     @Test
     fun aWorkDirectoryThatDoesNotExist_isRefused_andNotCreated() = preservingTheConfiguration {
-        val missing = Files.createTempDirectory("shopping-work").resolve("nao-existe")
+        val missing = Files.createTempDirectory("shopping-work").resolve("missing-dir")
 
         val e = assertFailsWith<IllegalArgumentException> { ShoppingConfig.Internals.useWorkDir(missing) }
 
-        assertTrue("não existe" in e.message!!, e.message)
+        assertTrue("does not exist" in e.message!!, e.message)
         assertTrue(Files.notExists(missing))
     }
 
@@ -65,7 +65,7 @@ class ShoppingConfigTest {
         val work = Files.createTempDirectory("shopping-work")
         ShoppingConfig.Internals.useWorkDir(work)
 
-        // sem o arquivo, vale o padrão
+        // without the file, the default applies
         assertNull(ShoppingConfig.Internals.loadConfig().get("server.port"))
         assertNull(ShoppingConfig.jwtSecret)
 

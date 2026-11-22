@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * Compra e item de compra pelo caminho REST com a segurança ligada: permissão, escopo (cada um só alcança as
- * próprias compras, na leitura e na escrita) e a senha do usuário da compra, que nunca sai do servidor.
+ * Purchase and purchase item over the REST path with security on: permission, scope (each one only reaches their
+ * own purchases, on reads and writes) and the password of the purchase's user, which never leaves the server.
  */
 class SecuredRestPurchaseRepositoryTest {
 
@@ -52,12 +52,12 @@ class SecuredRestPurchaseRepositoryTest {
         purchaseId?.let { purchase = Purchase().apply { id = it } }
     }
 
-    /** Uma compra de fulano, com um item, feita por ele mesmo. */
+    /** A purchase by fulano, with one item, made by himself. */
     private suspend fun fulanoBuys(): Purchase {
         env.loginAs("fulano")
         val purchase = Purchase().apply {
             buyDate = Clock.System.now()
-            items = mutableListOf(newItem(DBReset.PEN_DRIVE2GB_ID))
+            items = mutableListOf(newItem(DBReset.FLASH_DRIVE_2GB_ID))
         }
         assertTrue(purchases().insert(purchase))
         return purchase
@@ -69,7 +69,7 @@ class SecuredRestPurchaseRepositoryTest {
         assertHttp(401) { purchases().insert(Purchase().apply { buyDate = Clock.System.now() }) }
         assertHttp(401) { purchases().delete(PurchaseCriteria().withPurchaseId(DBReset.ADMIN_FIRST_PURCHASE_ID)) }
         assertHttp(401) { items().fetch(PurchaseItemCriteria()) }
-        assertHttp(401) { items().insert(newItem(DBReset.CAFETEIRA_ID, DBReset.ADMIN_FIRST_PURCHASE_ID)) }
+        assertHttp(401) { items().insert(newItem(DBReset.COFFEE_MAKER_ID, DBReset.ADMIN_FIRST_PURCHASE_ID)) }
     }
 
     @Test
@@ -86,11 +86,11 @@ class SecuredRestPurchaseRepositoryTest {
     fun customer_buysOnlyForThemselves() = runBlocking {
         env.loginAs("fulano")
 
-        // pede a compra em nome de outro: fica no próprio nome
+        // asks for the purchase on someone else's behalf: it stays in their own name
         val purchase = Purchase().apply {
             buyDate = Clock.System.now()
             user = User().apply { id = DBReset.ADMIN_ID }
-            items = mutableListOf(newItem(DBReset.CAFETEIRA_ID))
+            items = mutableListOf(newItem(DBReset.COFFEE_MAKER_ID))
         }
         assertTrue(purchases().insert(purchase))
         assertEquals(DBReset.FULANO_ID, purchases().fetchById(purchase.id!!)!!.userId)
@@ -103,11 +103,11 @@ class SecuredRestPurchaseRepositoryTest {
     fun customer_readsOnlyTheirOwnPurchases() = runBlocking {
         val own = fulanoBuys()
 
-        // o escopo restringe ao próprio usuário, peça o que pedir
+        // the scope restricts to the user themselves, whatever is asked
         assertEquals(listOf(own.id), purchases().fetch(PurchaseCriteria()).map { it.id })
         assertEquals(1, purchases().count(PurchaseCriteria()))
         assertEquals(emptyList<Purchase>(), purchases().fetch(PurchaseCriteria().withUserId(DBReset.ADMIN_ID)))
-        assertEquals(emptyList<Purchase>(), purchases().fetch(PurchaseCriteria().withProductId(DBReset.CAFETEIRA_ID)))
+        assertEquals(emptyList<Purchase>(), purchases().fetch(PurchaseCriteria().withProductId(DBReset.COFFEE_MAKER_ID)))
         assertNull(purchases().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ID))
         assertEquals(1, purchases().fetchPage(PurchaseCriteria(), 0, 10).totalItems)
 
@@ -121,7 +121,7 @@ class SecuredRestPurchaseRepositoryTest {
     fun customer_disjunctiveFilterOnTheOwnerField_doesNotWidenTheScope() = runBlocking {
         val own = fulanoBuys()
 
-        // "or" no campo do dono: o escopo somado a ele virava USERID IS NOT NULL OR USERID = dono
+        // "or" on the owner field: the scope added to it used to become USERID IS NOT NULL OR USERID = owner
         val anyone = PurchaseCriteria().also { it.userId.or().isNotNull() }
         assertEquals(listOf(own.id), purchases().fetch(anyone).map { it.id })
         assertEquals(1, purchases().count(PurchaseCriteria().also { it.userId.or().isNotNull() }))
@@ -129,7 +129,7 @@ class SecuredRestPurchaseRepositoryTest {
         assertEquals(1, items().count(PurchaseItemCriteria().also { it.userId.or().isNotNull() }))
         assertEquals(1, env.userRepo.count(UserCriteria().also { it.userId.or().isNotNull() }))
 
-        // o mesmo pedido cru, como um cliente qualquer o enviaria
+        // the same raw request, as any client would send it
         val raw = env.transport.postJson(
             "/api/repo/purchase/count", """{"userId":{"or":true,"p":[{"o":"IS_NOT_NULL"}]}}""",
         )
@@ -141,12 +141,12 @@ class SecuredRestPurchaseRepositoryTest {
         val own = fulanoBuys()
         val ownItem = items().fetch(PurchaseItemCriteria().withPurchaseId(own.id)).single()
 
-        assertHttp(403) { items().insert(newItem(DBReset.PEN_DRIVE2GB_ID, DBReset.ADMIN_FIRST_PURCHASE_ID)) }
-        assertHttp(403) { items().insert(newItem(DBReset.PEN_DRIVE2GB_ID)) }
+        assertHttp(403) { items().insert(newItem(DBReset.FLASH_DRIVE_2GB_ID, DBReset.ADMIN_FIRST_PURCHASE_ID)) }
+        assertHttp(403) { items().insert(newItem(DBReset.FLASH_DRIVE_2GB_ID)) }
         assertHttp(403) {
             items().update(PurchaseItem().apply { id = DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID; amount = 50 }, null, PurchaseItem().apply { amount = ProjectionValues.i32 })
         }
-        // nem levar um item seu para a compra de outro
+        // nor move one of their items to someone else's purchase
         assertHttp(403) {
             items().update(
                 PurchaseItem().apply { id = ownItem.id; purchase = Purchase().apply { id = DBReset.ADMIN_FIRST_PURCHASE_ID } },
@@ -160,7 +160,7 @@ class SecuredRestPurchaseRepositoryTest {
         assertHttp(403) {
             purchases().update(Purchase().apply { id = own.id; user = User().apply { id = DBReset.ADMIN_ID } }, null, Purchase().apply { user = User().apply { id = ProjectionValues.i64 } })
         }
-        // o cliente não apaga compras — nem as próprias
+        // the customer does not delete purchases — not even their own
         assertHttp(403) { purchases().delete(PurchaseCriteria().withPurchaseId(DBReset.ADMIN_FIRST_PURCHASE_ID)) }
         assertHttp(403) { items().delete(PurchaseItemCriteria().withPurchaseItemId(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID)) }
         assertHttp(403) { purchases().delete(PurchaseCriteria().withPurchaseId(own.id)) }
@@ -170,7 +170,7 @@ class SecuredRestPurchaseRepositoryTest {
         assertEquals(4, items().count(PurchaseItemCriteria()))
         assertEquals(1, items().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID)!!.amount)
         assertEquals(own.id, items().fetchById(ownItem.id!!)!!.purchaseId)
-        // o administrador apaga, e a compra leva os itens
+        // the administrator deletes, and the purchase takes its items along
         assertEquals(1, purchases().delete(PurchaseCriteria().withPurchaseId(own.id)))
         assertEquals(3, items().count(PurchaseItemCriteria()))
     }
@@ -179,7 +179,7 @@ class SecuredRestPurchaseRepositoryTest {
     fun customer_writesOnTheirOwnPurchases() = runBlocking {
         val own = fulanoBuys()
 
-        val extra = newItem(DBReset.CAFETEIRA_ID, own.id)
+        val extra = newItem(DBReset.COFFEE_MAKER_ID, own.id)
         assertTrue(items().insert(extra))
         assertTrue(items().update(PurchaseItem().apply { id = extra.id; amount = 3 }, null, PurchaseItem().apply { amount = ProjectionValues.i32 }))
         assertEquals(3, items().fetchById(extra.id!!)!!.amount)

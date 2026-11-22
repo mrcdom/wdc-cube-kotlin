@@ -13,33 +13,33 @@ import org.junit.jupiter.api.Test
 class ShoppingLoginTest : BasePresentationTest() {
 
     @Test
-    fun testLoginPrimeiroAcesso() = runBlocking {
+    fun testLoginFirstAccess() = runBlocking {
         Routes.login(app)
 
         val rootView = app.getRootView()!!
 
         val mainContent = LoginViewMock.cast(rootView.state.contentView)
-        assertTrue(mainContent.state.errorCode == 0, "Usuário não poderia ter sido validado")
+        assertTrue(mainContent.state.errorCode == 0, "The user should not have been validated")
     }
 
     @Test
-    fun testLoginFalhaPorSenhaOuUsuarioNaoReconhecidos() = runBlocking {
+    fun testLoginFailsWithUnrecognizedUserOrPassword() = runBlocking {
         Routes.login(app)
 
         val rootView = app.getRootView()!!
 
         var loginView = LoginViewMock.cast(rootView.state.contentView)
         loginView.state.userName = "admin"
-        loginView.state.password = "senha não reconhecida"
+        loginView.state.password = "unrecognized password"
         loginView.presenter.onEnter()
 
         // Check if it keeps bean login view
         loginView = LoginViewMock.cast(rootView.state.contentView)
-        assertTrue(loginView.state.errorCode == 1, "Usuário não poderia ter sido validado")
+        assertTrue(loginView.state.errorCode == 1, "The user should not have been validated")
     }
 
     @Test
-    fun testLoginAcessoAoSistema() = runBlocking {
+    fun testLoginSystemAccess() = runBlocking {
         Routes.login(app)
 
         val rootView = app.getRootView()!!
@@ -51,21 +51,21 @@ class ShoppingLoginTest : BasePresentationTest() {
 
         val restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
 
-        assertTrue(!restrictedView.state.nickName.isNullOrBlank(), "Nome do usuário inválido")
-        assertTrue(restrictedView.state.cartItemCount >= 0, "Quantidade itens no carrinho não pode ser negativo")
-        assertTrue(restrictedView.state.errorCode == 0, "Usuário deveria ter sido validado")
+        assertTrue(!restrictedView.state.nickName.isNullOrBlank(), "Invalid user name")
+        assertTrue(restrictedView.state.cartItemCount >= 0, "The number of items in the cart cannot be negative")
+        assertTrue(restrictedView.state.errorCode == 0, "The user should have been validated")
 
         val purchasesState = restrictedView.getPurchasesPanelState()
         val productsState = restrictedView.getProductsPanelState()
 
-        assertNotNull(purchasesState.purchases, "Falta lista de compras")
-        assertNotNull(productsState.products, "Falta lista de produtos")
+        assertNotNull(purchasesState.purchases, "Missing purchase list")
+        assertNotNull(productsState.products, "Missing product list")
 
         // Simulate the view reporting capacity (no real view in tests)
         val purchasesMock = PurchasesPanelViewMock.cast(restrictedView.state.purchasesPanelView)
         purchasesMock.presenter.onItemSizeCapacityChanged(3)
 
-        assertEquals("João da Silva", restrictedView.state.nickName)
+        assertEquals("John Smith", restrictedView.state.nickName)
         assertEquals(0, restrictedView.state.cartItemCount)
 
         // Pagination metadata
@@ -78,19 +78,19 @@ class ShoppingLoginTest : BasePresentationTest() {
         assertEquals(DBReset.ADMIN_SECOND_PURCHASE_ID, purchasesState.purchases[0].id)
         assertEquals(47.97, purchasesState.purchases[0].total, 0.001)
         assertEquals(2, purchasesState.purchases[0].items.size)
-        assertEquals("Bola Wilson", purchasesState.purchases[0].items[0])
-        assertEquals("Fita veda rosca", purchasesState.purchases[0].items[1])
+        assertEquals("Wilson Ball", purchasesState.purchases[0].items[0])
+        assertEquals("Thread Seal Tape", purchasesState.purchases[0].items[1])
 
         assertEquals(DBReset.ADMIN_FIRST_PURCHASE_ID, purchasesState.purchases[1].id)
         assertEquals(200.0, purchasesState.purchases[1].total, 0.001)
         assertEquals(1, purchasesState.purchases[1].items.size)
-        assertEquals("Cafeteira design italiano", purchasesState.purchases[1].items[0])
+        assertEquals("Italian Design Coffee Maker", purchasesState.purchases[1].items[0])
 
         assertEquals(4, productsState.products!!.size)
 
-        // em ordem de nome; a descrição fica fora da projeção do painel, e por isso não vem (nula, não "unknown")
+        // in name order; the description is outside the panel's projection, so it does not come (null, not "unknown")
         assertEquals(
-            listOf(DBReset.BOLA_WILSON_ID, DBReset.CAFETEIRA_ID, DBReset.FITA_VEDA_ROSCA_ID, DBReset.PEN_DRIVE2GB_ID),
+            listOf(DBReset.COFFEE_MAKER_ID, DBReset.THREAD_SEAL_TAPE_ID, DBReset.FLASH_DRIVE_2GB_ID, DBReset.WILSON_BALL_ID),
             productsState.products!!.map { it.id },
         )
         assertTrue(productsState.products!!.all { it.description == null })

@@ -17,12 +17,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * Um repositório de somente leitura sobre HTTP: o caso de quem só consulta — um painel, um relatório. Aqui,
- * um catálogo que lê os produtos pela API e não tem como gravá-los.
+ * A read-only repository over HTTP: the case of whoever only queries — a dashboard, a report. Here,
+ * a catalog that reads the products through the API and has no way to write them.
  */
 class RestReadOnlyRepositoryTest {
 
-    /** Só o caminho e a busca pela chave: as consultas vêm de [HttpReadOnlyRepository]. */
+    /** Only the path and the lookup by key: the queries come from [HttpReadOnlyRepository]. */
     private class ProductCatalog(transport: HttpTransport) :
         HttpReadOnlyRepository<Product, ProductCriteria, Long>(transport, ProductCodec(), "/api/repo/product") {
 
@@ -49,15 +49,15 @@ class RestReadOnlyRepositoryTest {
 
         val cheapestFirst = ProductCriteria().withOrderBy(ProductCriteria.OrderBy.CHEAPEST_FIRST).withProjection(catalog.ownFieldsProjection())
         val products = catalog.fetch(cheapestFirst, limit = 2)
-        assertEquals(listOf<Long?>(DBReset.FITA_VEDA_ROSCA_ID, DBReset.PEN_DRIVE2GB_ID), products.map { it.id })
-        // a projeção do catálogo não pede a descrição
+        assertEquals(listOf<Long?>(DBReset.THREAD_SEAL_TAPE_ID, DBReset.FLASH_DRIVE_2GB_ID), products.map { it.id })
+        // the catalog projection does not ask for the description
         assertTrue(products.all { it.description == null })
 
         val page = catalog.fetchPage(cheapestFirst, 1, 3)
         assertEquals(1, page.items.size)
         assertEquals(4, page.totalItems)
 
-        assertEquals("Cafeteira", catalog.fetchById(DBReset.CAFETEIRA_ID)!!.name!!.substringBefore(' '))
+        assertEquals("Italian", catalog.fetchById(DBReset.COFFEE_MAKER_ID)!!.name!!.substringBefore(' '))
         assertNull(catalog.fetchById(987_654L))
     }
 
@@ -66,7 +66,7 @@ class RestReadOnlyRepositoryTest {
         val catalog: Any = catalog()
         assertTrue(catalog is ReadOnlyRepository<*, *, *>)
         assertFalse(catalog is Repository<*, *, *>)
-        // o repositório completo do mesmo dado serve onde só se lê
+        // the full repository of the same data serves where it is only read
         assertTrue(env.productRepo is ReadOnlyRepository<*, *, *>)
     }
 }

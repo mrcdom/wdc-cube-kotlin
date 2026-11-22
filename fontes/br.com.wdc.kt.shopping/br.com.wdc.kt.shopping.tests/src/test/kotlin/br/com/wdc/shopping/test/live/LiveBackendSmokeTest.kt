@@ -33,12 +33,12 @@ import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 
 /**
- * Smoke de ponta a ponta contra um **backend no ar**, pelo mesmo caminho de um cliente REST (Compose, nativo):
- * login, catálogo, checkout em transação remota e extrato.
+ * End-to-end smoke test against a **running backend**, along the same path as a REST client (Compose, native):
+ * login, catalog, checkout in a remote transaction and statement.
  *
- * Só roda com `SHOPPING_LIVE_BACKEND_URL` no ambiente (ex.: `http://localhost:8080`); sem ela, é pulado. O
- * backend precisa estar com a segurança ligada e com a carga de demonstração (usuário `fulano`). **Grava uma
- * compra no banco desse backend.**
+ * Only runs with `SHOPPING_LIVE_BACKEND_URL` in the environment (e.g. `http://localhost:8080`); without it, it is
+ * skipped. The backend must have security on and the demo seed (user `fulano`). **It writes a purchase to that
+ * backend's database.**
  */
 class LiveBackendSmokeTest {
 
@@ -46,7 +46,7 @@ class LiveBackendSmokeTest {
 
     @Test
     fun customer_logsIn_browses_buys_andSeesThePurchase() = runBlocking {
-        assumeTrue(baseUrl != null, "defina SHOPPING_LIVE_BACKEND_URL para rodar contra um backend no ar")
+        assumeTrue(baseUrl != null, "set SHOPPING_LIVE_BACKEND_URL to run against a running backend")
         JsonInputFactory.installCommon()
         JsonOutputFactory.installCommon()
         CryptoProvider.BEAN.set(JceCryptoProvider())
@@ -66,18 +66,18 @@ class LiveBackendSmokeTest {
         assertEquals("fulano", me.userName)
         assertNull(me.password)
 
-        // catálogo
+        // catalog
         val catalog = products.fetch(ProductCriteria().withOrderBy(ProductCriteria.OrderBy.CHEAPEST_FIRST))
-        assertTrue(catalog.size >= 2, "catálogo com ${catalog.size} produto(s)")
+        assertTrue(catalog.size >= 2, "catalog with ${catalog.size} product(s)")
         assertTrue(catalog.zipWithNext().all { (a, b) -> a.price!! <= b.price!! })
         assertNotNull(products.fetchImage(catalog.first().id!!))
 
-        // um cliente não escreve no catálogo
+        // a customer does not write to the catalog
         assertThrows(AccessDeniedException::class.java) {
             runBlocking { products.insert(Product().apply { name = "x"; price = 1.5; description = "x" }) }
         }
 
-        // checkout, na transação remota que o cliente REST registra
+        // checkout, in the remote transaction the REST client registers
         val before = purchases.count(PurchaseCriteria())
         val serverSide = ShoppingTransactions.BEAN.getOrNull()
         ShoppingTransactions.BEAN.set(RestTransactionService(transport))
@@ -92,7 +92,7 @@ class LiveBackendSmokeTest {
         assertNotNull(purchaseId)
         assertEquals(before + 1, purchases.count(PurchaseCriteria()))
 
-        // extrato: a compra nova vem primeiro, com os itens e os produtos
+        // statement: the new purchase comes first, with its items and products
         val pv = ProjectionValues
         val statement = purchases.fetchPage(
             PurchaseCriteria()

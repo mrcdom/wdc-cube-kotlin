@@ -13,7 +13,7 @@ class PurchaseInfo {
     var items: List<String> = emptyList()
 
     companion object {
-        fun projectionWithItens(): Purchase {
+        fun projectionWithItems(): Purchase {
             val pv = ProjectionValues
 
             val prdPrj = Product()

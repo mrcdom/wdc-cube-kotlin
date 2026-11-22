@@ -33,10 +33,10 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     fun unexpectedError_showsTheDetail_onlyWhenThereIsOne() = runBlocking {
         gotoRestricted()
         val log = br.com.wdc.framework.commons.log.Log.getLogger("ShoppingWorkflowTest")
-        app.alertUnexpectedError(log, "Erro inesperado", IllegalStateException("conexão recusada"))
-        assertEquals("Erro inesperado: conexão recusada", app.getRootView()!!.state.errorMessage)
-        app.alertUnexpectedError(log, "Erro inesperado", IllegalStateException())
-        assertEquals("Erro inesperado", app.getRootView()!!.state.errorMessage)
+        app.alertUnexpectedError(log, "Unexpected error", IllegalStateException("connection refused"))
+        assertEquals("Unexpected error: connection refused", app.getRootView()!!.state.errorMessage)
+        app.alertUnexpectedError(log, "Unexpected error", IllegalStateException())
+        assertEquals("Unexpected error", app.getRootView()!!.state.errorMessage)
     }
 
     @Test
@@ -44,8 +44,8 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         val restrictedView = gotoRestricted()
         restrictedView.presenter.onOpenReceipt(Long.MIN_VALUE)
         val home = RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
-        assertEquals(5, home.state.errorCode, "recibo não localizado")
-        assertEquals("Código do recibo não localizado.", home.state.errorMessage)
+        assertEquals(5, home.state.errorCode, "receipt not found")
+        assertEquals("Receipt code not found.", home.state.errorMessage)
     }
 
     @Test
@@ -56,7 +56,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         val cartView = CartViewMock.cast(home.state.contentView)
         cartView.presenter.onBuy()
         assertEquals(3, cartView.state.errorCode)
-        assertEquals("Deve existir pelo menos um item no carrinho para se efetivar uma compra.", cartView.state.errorMessage)
+        assertEquals("There must be at least one item in the cart to complete a purchase.", cartView.state.errorMessage)
     }
 
     @Test
@@ -76,9 +76,9 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         val restrictedView = gotoRestricted()
         val panel = PurchasesPanelViewMock.cast(restrictedView.state.purchasesPanelView)
         panel.state.pageSize = 1
-        panel.presenter.onPageChange(50) // o admin tem duas compras: a página 50 não existe
-        assertEquals(1, panel.state.page, "ajustada para a última")
-        assertEquals(1, panel.state.purchases.size, "com os itens da página ajustada")
+        panel.presenter.onPageChange(50) // admin has two purchases: page 50 does not exist
+        assertEquals(1, panel.state.page, "adjusted to the last one")
+        assertEquals(1, panel.state.purchases.size, "with the items of the adjusted page")
     }
 
     @Test
@@ -86,38 +86,38 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         val restrictedView = gotoRestricted()
         val panel = ProductsPanelViewMock.cast(restrictedView.state.productsPanelView)
         val products = panel.state.products!!
-        assertTrue(products.none { it.description == "unknown" }, "a descrição não foi lida: não pode trafegar inventada")
-        assertEquals(products.map { it.name }.sortedBy { it!!.lowercase() }, products.map { it.name }, "ordem por nome")
+        assertTrue(products.none { it.description == "unknown" }, "the description was not read: it must not travel made up")
+        assertEquals(products.map { it.name }.sortedBy { it!!.lowercase() }, products.map { it.name }, "ordered by name")
     }
 
     @Test
-    fun testVisualizaProdutoInexistente() = runBlocking {
+    fun testViewNonexistentProduct() = runBlocking {
         var restrictedView = gotoRestricted()
         val rootView = app.getRootView()!!
 
-        // Produto que não existe
+        // Product that does not exist
         restrictedView.presenter.onOpenProduct(Long.MIN_VALUE)
         restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
         assertTrue(
             restrictedView.state.errorCode == 3,
-            "O código de erro deve estar indicado produto não existe: ${restrictedView.state.errorCode}"
+            "The error code must indicate that the product does not exist: ${restrictedView.state.errorCode}"
         )
     }
 
     @Test
-    fun testVisualizaProduto() = runBlocking {
+    fun testViewProduct() = runBlocking {
         var restrictedView = gotoRestricted()
         val rootView = app.getRootView()!!
 
-        restrictedView.presenter.onOpenProduct(DBReset.PEN_DRIVE2GB_ID)
+        restrictedView.presenter.onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
         restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
 
-        val produtoView = ProductViewMock.cast(restrictedView.state.contentView)
-        assertTrue(produtoView.state.product != null, "Produto deve ter sido selecionado")
+        val productView = ProductViewMock.cast(restrictedView.state.contentView)
+        assertTrue(productView.state.product != null, "A product must have been selected")
     }
 
     @Test
-    fun testComprarProduto() = runBlocking {
+    fun testBuyProduct() = runBlocking {
         Routes.login(app)
 
         val rootView = app.getRootView()!!
@@ -129,83 +129,83 @@ class ShoppingWorkflowTest : BasePresentationTest() {
 
         var homeView = RestrictedViewMock.cast(rootView.state.contentView)
 
-        homeView.presenter.onOpenProduct(DBReset.PEN_DRIVE2GB_ID)
+        homeView.presenter.onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
-        var produtoView = ProductViewMock.cast(homeView.state.contentView)
-        assertTrue(produtoView.state.product != null, "Produto deve ter sido selecionado")
+        var productView = ProductViewMock.cast(homeView.state.contentView)
+        assertTrue(productView.state.product != null, "A product must have been selected")
         assertTrue(
-            produtoView.state.product!!.id == DBReset.PEN_DRIVE2GB_ID,
-            "Produto deve ser o id==${DBReset.PEN_DRIVE2GB_ID}"
+            productView.state.product!!.id == DBReset.FLASH_DRIVE_2GB_ID,
+            "The product must be id==${DBReset.FLASH_DRIVE_2GB_ID}"
         )
 
-        produtoView.presenter.onAddToCart(1)
+        productView.presenter.onAddToCart(1)
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
-        var carrinhoView = CartViewMock.cast(homeView.state.contentView)
-        assertTrue(carrinhoView.state.errorCode == 0, "Não deve haver indicação de erros")
-        assertTrue(carrinhoView.state.items.size == 1, "Um item no carrinho")
-        assertTrue(carrinhoView.state.items[0].quantity == 1, "O item deve ter quantidade 1")
+        var cartView = CartViewMock.cast(homeView.state.contentView)
+        assertTrue(cartView.state.errorCode == 0, "There must be no error indication")
+        assertTrue(cartView.state.items.size == 1, "One item in the cart")
+        assertTrue(cartView.state.items[0].quantity == 1, "The item must have quantity 1")
         assertTrue(
-            carrinhoView.state.items[0].id == DBReset.PEN_DRIVE2GB_ID,
-            "ID no carriho <> ${DBReset.PEN_DRIVE2GB_ID}"
+            cartView.state.items[0].id == DBReset.FLASH_DRIVE_2GB_ID,
+            "ID in the cart <> ${DBReset.FLASH_DRIVE_2GB_ID}"
         )
 
-        carrinhoView.presenter.onModifyQuantity(DBReset.PEN_DRIVE2GB_ID, 0)
+        cartView.presenter.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 0)
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
-        carrinhoView = CartViewMock.cast(homeView.state.contentView)
-        assertTrue(carrinhoView.state.errorCode == 1, "Indicação de quantidade inválida")
-        assertEquals("Existem produtos com menos de um item na quantidade. Impossível comprar.", carrinhoView.state.errorMessage)
-        carrinhoView.state.errorCode = 0
+        cartView = CartViewMock.cast(homeView.state.contentView)
+        assertTrue(cartView.state.errorCode == 1, "Invalid quantity indication")
+        assertEquals("Some products have a quantity of less than one item. Unable to purchase.", cartView.state.errorMessage)
+        cartView.state.errorCode = 0
 
-        carrinhoView.presenter.onModifyQuantity(DBReset.PEN_DRIVE2GB_ID, 2)
+        cartView.presenter.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 2)
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
-        carrinhoView = CartViewMock.cast(homeView.state.contentView)
-        assertTrue(carrinhoView.state.errorCode == 0, "Tem que funcionar sem erro")
-        assertTrue(carrinhoView.state.items[0].quantity == 2, "O item deve ter quantidade 2")
+        cartView = CartViewMock.cast(homeView.state.contentView)
+        assertTrue(cartView.state.errorCode == 0, "It must work without errors")
+        assertTrue(cartView.state.items[0].quantity == 2, "The item must have quantity 2")
 
-        carrinhoView.presenter.onModifyQuantity(Long.MIN_VALUE, 2)
-        carrinhoView = CartViewMock.cast(homeView.state.contentView)
-        assertTrue(carrinhoView.state.errorCode == 2, "Produto não encontrado")
-        carrinhoView.state.errorCode = 0
+        cartView.presenter.onModifyQuantity(Long.MIN_VALUE, 2)
+        cartView = CartViewMock.cast(homeView.state.contentView)
+        assertTrue(cartView.state.errorCode == 2, "Product not found")
+        cartView.state.errorCode = 0
 
-        carrinhoView.presenter.onOpenProducts()
+        cartView.presenter.onOpenProducts()
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
 
-        homeView.presenter.onOpenProduct(DBReset.BOLA_WILSON_ID)
-        produtoView = ProductViewMock.cast(homeView.state.contentView)
+        homeView.presenter.onOpenProduct(DBReset.WILSON_BALL_ID)
+        productView = ProductViewMock.cast(homeView.state.contentView)
         assertTrue(
-            produtoView.state.product!!.id == DBReset.BOLA_WILSON_ID,
-            "Produto BOLA_WILSON não localizado"
+            productView.state.product!!.id == DBReset.WILSON_BALL_ID,
+            "Product WILSON_BALL not found"
         )
 
-        produtoView.presenter.onOpenProducts()
+        productView.presenter.onOpenProducts()
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
 
-        homeView.presenter.onOpenProduct(DBReset.FITA_VEDA_ROSCA_ID)
+        homeView.presenter.onOpenProduct(DBReset.THREAD_SEAL_TAPE_ID)
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
-        produtoView = ProductViewMock.cast(homeView.state.contentView)
+        productView = ProductViewMock.cast(homeView.state.contentView)
         assertTrue(
-            produtoView.state.product!!.id == DBReset.FITA_VEDA_ROSCA_ID,
-            "Produto FITA_VEDA_ROSCA não localizado"
+            productView.state.product!!.id == DBReset.THREAD_SEAL_TAPE_ID,
+            "Product THREAD_SEAL_TAPE not found"
         )
 
-        produtoView.presenter.onAddToCart(1)
+        productView.presenter.onAddToCart(1)
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
-        carrinhoView = CartViewMock.cast(homeView.state.contentView)
-        assertTrue(carrinhoView.state.items.size == 2, "Um item no carrinho")
-        assertTrue(carrinhoView.state.items[1].quantity == 1, "O item deve ter quantidade 1")
+        cartView = CartViewMock.cast(homeView.state.contentView)
+        assertTrue(cartView.state.items.size == 2, "Two items in the cart")
+        assertTrue(cartView.state.items[1].quantity == 1, "The item must have quantity 1")
 
-        carrinhoView.presenter.onBuy()
+        cartView.presenter.onBuy()
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
-        val reciboView = ReceiptViewMock.cast(homeView.state.contentView)
-        assertTrue(reciboView.state.notifySuccess, "Tem que estar marcado como novo recibo")
-        assertNotNull(reciboView.state.receipt)
-        assertEquals(2, reciboView.state.receipt!!.items.size)
+        val receiptView = ReceiptViewMock.cast(homeView.state.contentView)
+        assertTrue(receiptView.state.notifySuccess, "It must be flagged as a new receipt")
+        assertNotNull(receiptView.state.receipt)
+        assertEquals(2, receiptView.state.receipt!!.items.size)
 
-        reciboView.presenter.onOpenProducts()
+        receiptView.presenter.onOpenProducts()
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
         assertNull(
             homeView.state.contentView,
-            "A visão restrita deveria estar mostrando o conteúdo padrão"
+            "The restricted view should be showing the default content"
         )
     }
 }

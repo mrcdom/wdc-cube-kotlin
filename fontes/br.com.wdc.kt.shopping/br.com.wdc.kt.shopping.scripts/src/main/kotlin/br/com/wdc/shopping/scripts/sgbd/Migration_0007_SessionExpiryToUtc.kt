@@ -4,10 +4,11 @@ import java.sql.Connection
 import java.sql.SQLException
 
 /**
- * Descarta as sessões gravadas com a expiração na hora local da máquina.
+ * Discards the sessions stored with the expiry in the machine's local time.
  *
- * `EXPIRES_AT` é TIMESTAMP sem fuso e passou a guardar o instante em UTC, como as demais datas. As sessões
- * antigas expirariam na hora errada; como sessão é estado descartável, saem — o usuário autentica de novo.
+ * `EXPIRES_AT` is a TIMESTAMP without time zone and now stores the instant in UTC, like the other dates. Old
+ * sessions would expire at the wrong time; since a session is disposable state, they go — the user authenticates
+ * again.
  */
 class Migration_0007_SessionExpiryToUtc(private val connection: Connection) {
 

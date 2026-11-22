@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/** O dono da transação remota é o usuário **e** a instância de cliente: o mesmo usuário em dois clientes não se bloqueia. */
+/** The remote transaction owner is the user **and** the client instance: the same user in two clients does not block itself. */
 class SecuredRemoteTransactionOwnerTest {
 
     companion object {
@@ -35,14 +35,14 @@ class SecuredRemoteTransactionOwnerTest {
     @Test
     fun sameUser_inAnotherClient_writesWhileTheFirstHasAnOpenTransaction() = runBlocking {
         env.loginAs("fulano")
-        // o segundo cliente (outro X-Client-Id) do mesmo usuário, com o mesmo token
+        // the second client (another X-Client-Id) of the same user, with the same token
         val other = OkHttpTransport("http://127.0.0.1:${env.port}").apply { accessTokenSupplier = { env.authClient!!.accessToken } }
         val otherPurchases = HttpPurchaseRepository(other)
         val before = env.purchaseRepo.count(PurchaseCriteria())
 
         RestTransactionService(env.transport).required {
             assertTrue(env.purchaseRepo.insert(purchase()))
-            // antes: 409 "cabeçalho perdido", porque o dono era só o usuário
+            // before: 409 "lost header", because the owner was only the user
             assertTrue(otherPurchases.insert(purchase()))
         }
         assertEquals(before + 2, env.purchaseRepo.count(PurchaseCriteria()))

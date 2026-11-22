@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * A descrição OpenAPI continua dizendo a verdade: é JSON válido, não aponta para o que não existe, e os campos
- * de critério, as ordenações e as rotas que ela documenta são os que o domínio e o servidor realmente têm.
+ * The OpenAPI description keeps telling the truth: it is valid JSON, it does not point to what does not exist, and
+ * the criteria fields, orderings and routes it documents are the ones the domain and the server really have.
  */
 class OpenApiSpecTest {
 
@@ -48,7 +48,7 @@ class OpenApiSpecTest {
     @AfterEach
     fun signOut() = env.logout()
 
-    /** O documento da API como o servidor do ambiente o monta (com a segurança ligada). */
+    /** The API document as the environment's server builds it (with security on). */
     private fun json(): String = RepositoryApiRoutes.create().openApiJson!!
 
     private fun spec(): JsonObject = JsonParser.parseString(json()).asJsonObject
@@ -84,15 +84,15 @@ class OpenApiSpecTest {
     fun everyReferencePointsToSomethingThatExists() {
         val components = spec().getAsJsonObject("components")
         val references = REF.findAll(json()).map { it.groupValues[1] to it.groupValues[2] }.toSet()
-        assertTrue(references.size > 20, "poucas referências: ${references.size}")
+        assertTrue(references.size > 20, "too few references: ${references.size}")
         val broken = references.filterNot { (kind, name) -> components.getAsJsonObject(kind).has(name) }
         assertEquals(emptyList<Pair<String, String>>(), broken)
     }
 
     @Test
     fun criteriaFieldsAreTheOnesOfTheDomain() {
-        // Confere contra criterions(), e não contra uma lista escrita aqui: lista fixa envelheceria junto com a
-        // documentação, e as duas passariam a concordar sobre o que já não é verdade.
+        // Checks against criterions(), not against a list written here: a fixed list would age together with the
+        // documentation, and both would come to agree on what is no longer true.
         for (case in cases) {
             val properties = schemas().getAsJsonObject(case.schema).getAsJsonObject("properties")
             val documented = properties.keySet().filter { it != "orderBy" }
@@ -124,7 +124,7 @@ class OpenApiSpecTest {
         val envelope = schemas().getAsJsonObject("ProjectedCollection").getAsJsonObject("properties")
         assertEquals(setOf("shape", "where", "limit", "offset"), envelope.keySet())
 
-        // items é array na resposta e envelope na projeção — descrever só uma das formas induziria ao erro
+        // items is an array in the response and an envelope in the projection — describing only one of the forms would mislead
         val forms = schemas().getAsJsonObject("Purchase").getAsJsonObject("properties").getAsJsonObject("items").getAsJsonArray("oneOf").toString()
         assertTrue("PurchaseItem" in forms)
         assertTrue("ProjectedCollection" in forms)
@@ -164,22 +164,22 @@ class OpenApiSpecTest {
     fun everyDocumentedRoute_isServed_andTransactionRoutesAreDocumented() {
         val paths = spec().getAsJsonObject("paths")
         for (route in listOf("/api/tx/begin", "/api/tx/commit", "/api/tx/rollback", "/api/tx/status")) {
-            assertTrue(paths.has(route), "falta documentar $route")
+            assertTrue(paths.has(route), "route not documented: $route")
         }
 
         env.loginAs("admin")
         val token = env.authClient!!.accessToken
         fun served(response: HttpResponse<String>) =
-            // 404 com corpo de erro da aplicação é resposta da rota ("não achei a linha"); o do Javalin é "não há rota"
+            // a 404 with the application's error body is the route's answer ("row not found"); Javalin's is "no route"
             response.statusCode() != 405 && !(response.statusCode() == 404 && "Endpoint" in response.body())
-        // a conferência distingue a rota (ou o método) que não existe
+        // the check tells apart the route (or the method) that does not exist
         for ((method, path) in listOf("POST" to "/api/repo/product/no-such-operation", "GET" to "/api/repo/product/fetch/x", "PUT" to "/api/tx/begin")) {
             assertFalse(served(send(method, path, if (method == "GET") null else "{}", token)), "$method $path")
         }
 
         val notServed = ArrayList<String>()
         var openTx: String? = null
-        // o begin fica por último: com transação aberta, as escritas sem X-Tx-Id seriam recusadas
+        // begin goes last: with an open transaction, writes without X-Tx-Id would be refused
         val routes = paths.keySet().sortedBy { it == "/api/tx/begin" }
         for (path in routes) {
             for (method in paths.getAsJsonObject(path).keySet()) {
@@ -191,7 +191,7 @@ class OpenApiSpecTest {
                 }
             }
         }
-        assertNotNull(openTx, "begin não abriu transação")
+        assertNotNull(openTx, "begin did not open a transaction")
         val rollback = HttpRequest.newBuilder(URI("http://127.0.0.1:${env.port}/api/tx/rollback"))
             .header("Authorization", "Bearer $token").header("X-Tx-Id", openTx).POST(HttpRequest.BodyPublishers.ofString("{}")).build()
         assertEquals(200, HttpClient.newHttpClient().send(rollback, HttpResponse.BodyHandlers.ofString()).statusCode())

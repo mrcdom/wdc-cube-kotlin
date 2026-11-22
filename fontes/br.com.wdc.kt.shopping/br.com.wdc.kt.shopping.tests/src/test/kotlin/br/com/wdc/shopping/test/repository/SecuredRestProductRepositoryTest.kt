@@ -15,8 +15,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * Produto pelo caminho REST **com a segurança ligada**: autenticação por JWT e o controle de acesso dos
- * decoradores `Secured*`, atravessando cliente HTTP, filtro, controller e repositório.
+ * Product over the REST path **with security on**: JWT authentication and the access control of the
+ * `Secured*` decorators, going through HTTP client, filter, controller and repository.
  */
 class SecuredRestProductRepositoryTest {
 
@@ -33,43 +33,43 @@ class SecuredRestProductRepositoryTest {
     @AfterEach
     fun signOut() = env.logout()
 
-    private fun newProduct() = Product().apply { name = "Teclado"; price = 80.0; description = "d" }
+    private fun newProduct() = Product().apply { name = "Keyboard"; price = 80.0; description = "d" }
 
     private fun assertHttp(status: Int, block: suspend () -> Unit) {
         val e = assertThrows(RuntimeException::class.java) { runBlocking { block() } }
-        assertTrue(e.message!!.startsWith("HTTP $status"), "esperava HTTP $status, veio: ${e.message}")
+        assertTrue(e.message!!.startsWith("HTTP $status"), "expected HTTP $status, got: ${e.message}")
     }
 
-    // :: Autenticação
+    // :: Authentication
 
     @Test
     fun withoutAuthentication_everyRepositoryOperationIsRefused() {
         assertHttp(401) { repo().fetch(ProductCriteria()) }
         assertHttp(401) { repo().count(ProductCriteria()) }
         assertHttp(401) { repo().insert(newProduct()) }
-        assertHttp(401) { repo().delete(ProductCriteria().withProductId(DBReset.PEN_DRIVE2GB_ID)) }
+        assertHttp(401) { repo().delete(ProductCriteria().withProductId(DBReset.FLASH_DRIVE_2GB_ID)) }
     }
 
     @Test
     fun wrongPassword_doesNotAuthenticate() {
-        assertThrows(BusinessException::class.java) { env.loginAs("admin", "senha-errada") }
+        assertThrows(BusinessException::class.java) { env.loginAs("admin", "wrong-password") }
         assertHttp(401) { repo().fetch(ProductCriteria()) }
     }
 
-    // :: Controle de acesso
+    // :: Access control
 
     @Test
     fun admin_readsAndWrites() = runBlocking {
         env.loginAs("admin")
 
         assertEquals(4, repo().fetch(ProductCriteria()).size)
-        assertEquals("Bola Wilson", repo().fetchById(DBReset.BOLA_WILSON_ID)!!.name)
+        assertEquals("Wilson Ball", repo().fetchById(DBReset.WILSON_BALL_ID)!!.name)
         assertEquals(4, repo().fetchPage(ProductCriteria(), 0, 10).totalItems)
 
         val product = newProduct()
         assertTrue(repo().insert(product))
-        assertTrue(repo().update(Product().apply { id = product.id; name = "Teclado 2" }, null, Product().apply { name = ProjectionValues.str }))
-        assertEquals("Teclado 2", repo().fetchById(product.id!!)!!.name)
+        assertTrue(repo().update(Product().apply { id = product.id; name = "Keyboard 2" }, null, Product().apply { name = ProjectionValues.str }))
+        assertEquals("Keyboard 2", repo().fetchById(product.id!!)!!.name)
         assertEquals(1, repo().delete(ProductCriteria().withProductId(product.id)))
     }
 
@@ -79,36 +79,36 @@ class SecuredRestProductRepositoryTest {
 
         assertEquals(4, repo().count(ProductCriteria()))
         assertEquals(4, repo().fetch(ProductCriteria()).size)
-        assertNotNull(repo().fetchById(DBReset.CAFETEIRA_ID))
+        assertNotNull(repo().fetchById(DBReset.COFFEE_MAKER_ID))
 
         assertHttp(403) { repo().insert(newProduct()) }
-        assertHttp(403) { repo().update(Product().apply { id = DBReset.CAFETEIRA_ID; name = "x" }, null, Product().apply { name = ProjectionValues.str }) }
-        assertHttp(403) { repo().delete(ProductCriteria().withProductId(DBReset.CAFETEIRA_ID)) }
-        // nada mudou
-        assertEquals("Cafeteira design italiano", repo().fetchById(DBReset.CAFETEIRA_ID)!!.name)
+        assertHttp(403) { repo().update(Product().apply { id = DBReset.COFFEE_MAKER_ID; name = "x" }, null, Product().apply { name = ProjectionValues.str }) }
+        assertHttp(403) { repo().delete(ProductCriteria().withProductId(DBReset.COFFEE_MAKER_ID)) }
+        // nothing changed
+        assertEquals("Italian Design Coffee Maker", repo().fetchById(DBReset.COFFEE_MAKER_ID)!!.name)
         assertEquals(4, repo().count(ProductCriteria()))
     }
 
-    // :: Imagem
+    // :: Image
 
     @Test
     fun image_isPublicToRead_butNotToWrite() = runBlocking {
-        val original = repo().fetchImage(DBReset.CAFETEIRA_ID)
+        val original = repo().fetchImage(DBReset.COFFEE_MAKER_ID)
         assertNotNull(original)
 
         val replacement = ByteArray(64) { it.toByte() }
-        assertHttp(401) { repo().updateImage(DBReset.CAFETEIRA_ID, replacement) }
+        assertHttp(401) { repo().updateImage(DBReset.COFFEE_MAKER_ID, replacement) }
 
         env.loginAs("fulano")
-        // recusa por permissão, como nas outras escritas (antes saía como erro genérico do upload)
-        assertHttp(403) { repo().updateImage(DBReset.CAFETEIRA_ID, replacement) }
-        assertArrayEquals(original, repo().fetchImage(DBReset.CAFETEIRA_ID))
+        // refused by permission, as in the other writes (it used to come out as a generic upload error)
+        assertHttp(403) { repo().updateImage(DBReset.COFFEE_MAKER_ID, replacement) }
+        assertArrayEquals(original, repo().fetchImage(DBReset.COFFEE_MAKER_ID))
 
         env.loginAs("admin")
-        assertTrue(repo().updateImage(DBReset.CAFETEIRA_ID, replacement))
+        assertTrue(repo().updateImage(DBReset.COFFEE_MAKER_ID, replacement))
     }
 
-    // :: Pedidos recusados
+    // :: Refused requests
 
     @Test
     fun unknownOrderBy_is400_namingTheValueAndTheAcceptedOnes() {
@@ -117,7 +117,7 @@ class SecuredRestProductRepositoryTest {
             env.transport.postJson("/api/repo/product/fetch", """{"orderBy":"RANDOM"}""")
         }
         assertTrue(e.message!!.startsWith("HTTP 400"), e.message)
-        assertTrue("ordenação desconhecida" in e.message!! && "RANDOM" in e.message!!, e.message)
+        assertTrue("unknown ordering" in e.message!! && "RANDOM" in e.message!!, e.message)
         assertTrue("OLDEST_FIRST, NEWEST_FIRST, NAME_A_TO_Z, CHEAPEST_FIRST, MOST_EXPENSIVE_FIRST" in e.message!!, e.message)
     }
 

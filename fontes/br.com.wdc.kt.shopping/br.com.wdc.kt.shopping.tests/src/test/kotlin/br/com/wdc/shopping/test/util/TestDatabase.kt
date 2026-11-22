@@ -8,16 +8,16 @@ import org.jooq.SQLDialect
 import org.postgresql.ds.PGSimpleDataSource
 
 /**
- * O banco de um ambiente de teste.
+ * The database of a test environment.
  *
- * Por padrão, H2 em memória. Com `-Dshopping.test.db=postgres` (a task `testPostgres`), a mesma suíte roda em
+ * By default, in-memory H2. With `-Dshopping.test.db=postgres` (the `testPostgres` task), the same suite runs on
  * PostgreSQL:
  *
- * - **embutido** (`io.zonky.test:embedded-postgres`), que sobe sozinho — uma instância por JVM e uma base nova
- *   por ambiente;
- * - ou o servidor indicado por `SHOPPING_TEST_PG_URL` (com `SHOPPING_TEST_PG_USER` e
- *   `SHOPPING_TEST_PG_PASSWORD`), quando se quer conferir contra um PostgreSQL de verdade. **A carga de teste
- *   apaga e recria os dados dessa base.**
+ * - **embedded** (`io.zonky.test:embedded-postgres`), which starts on its own — one instance per JVM and a new
+ *   database per environment;
+ * - or the server given by `SHOPPING_TEST_PG_URL` (with `SHOPPING_TEST_PG_USER` and
+ *   `SHOPPING_TEST_PG_PASSWORD`), when you want to check against a real PostgreSQL. **The test seed
+ *   deletes and recreates the data of that database.**
  */
 class TestDatabase private constructor(
     val dataSource: DataSource,
@@ -28,7 +28,7 @@ class TestDatabase private constructor(
     fun close() = onClose()
 
     companion object {
-        /** `true` quando a suíte está rodando em PostgreSQL. */
+        /** `true` when the suite is running on PostgreSQL. */
         val postgres: Boolean = System.getProperty("shopping.test.db").equals("postgres", ignoreCase = true)
 
         private val sequence = AtomicInteger()
@@ -56,7 +56,7 @@ class TestDatabase private constructor(
                 return TestDatabase(ds, SQLDialect.POSTGRES) {}
             }
 
-            // uma base por ambiente, para um teste não ver os dados de outro
+            // one database per environment, so that a test does not see another one's data
             val database = "t${sequence.incrementAndGet()}_" + name.lowercase().replace(Regex("[^a-z0-9]"), "_").take(40)
             embedded.postgresDatabase.connection.use { c ->
                 c.createStatement().use { it.execute("CREATE DATABASE $database") }

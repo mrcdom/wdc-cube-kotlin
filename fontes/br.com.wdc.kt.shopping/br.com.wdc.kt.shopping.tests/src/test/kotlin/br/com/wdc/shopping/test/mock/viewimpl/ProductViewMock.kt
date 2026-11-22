@@ -22,12 +22,12 @@ class ProductViewMock(
 
     var state: ProductViewState = presenter.state
 
-    fun printProduto() {
-        println("PRODUTO #${state.product?.id}")
-        println("Nome: ${state.product?.name}")
-        println("Preço: ${state.product?.price}")
-        println("Descrição: ${state.product?.description}")
-        println("Imagem: ${state.product?.image}")
+    fun printProduct() {
+        println("PRODUCT #${state.product?.id}")
+        println("Name: ${state.product?.name}")
+        println("Price: ${state.product?.price}")
+        println("Description: ${state.product?.description}")
+        println("Image: ${state.product?.image}")
         println()
     }
 }

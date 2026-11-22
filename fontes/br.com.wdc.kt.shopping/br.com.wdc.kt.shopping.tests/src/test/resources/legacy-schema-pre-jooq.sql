@@ -1,5 +1,5 @@
--- Esquema do banco H2 tal como existia antes da adoção do jOOQ (Fase 4 da migração de persistência),
--- extraído de um banco real com SCRIPT NODATA. Serve de ponto de partida para o teste das migrações.
+-- Schema of the H2 database as it existed before jOOQ was adopted (Phase 4 of the persistence migration),
+-- extracted from a real database with SCRIPT NODATA. It is the starting point for the migration test.
 
 CREATE SEQUENCE "PUBLIC"."SQ_MIGRATION_LOG" START WITH 1;
 
