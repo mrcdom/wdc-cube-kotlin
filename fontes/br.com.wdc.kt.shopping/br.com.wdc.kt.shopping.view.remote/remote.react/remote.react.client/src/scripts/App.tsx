@@ -61,7 +61,10 @@ const publicApp = new (class {
   }
 
   registerComponent(Component: ViewComponent) {
-    privateApp.registerView(Component.VIEW_ID, (vsid, props) => <Component vsid={vsid} {...props} />)
+    // Memoized: a parent repaint does not repaint the child views. Cube views are independent; each one repaints
+    // itself when its own state arrives (bindView's forceUpdate), and a parent only repaints a child it swaps.
+    const View = React.memo(Component)
+    privateApp.registerView(Component.VIEW_ID, (vsid, props) => <View vsid={vsid} {...props} />)
   }
 
   registerComponents(...components: ViewComponent[]) {

@@ -3,27 +3,19 @@ package br.com.wdc.shopping.nativeui.web.bridge
 import br.com.wdc.framework.cube.CubeView
 import react.FC
 import react.Props
-import react.useEffect
-import react.useState
+import react.memo
 
 /**
- * Renders a [CubeView] slot by casting to [ReactCubeView] and mounting
- * its React component with automatic re-render on presenter updates.
+ * Renders a [CubeView] slot by mounting the React component of its [ReactCubeView].
+ *
+ * **Memoized: a parent repaint does not repaint the slot.** Cube views are independent of each other; a view's
+ * content only changes when its own view state does, and then the view repaints itself (each component
+ * subscribes to its view's `onUpdate`). The slot repaints only when the parent puts a different view in it.
  */
-val RenderSlot = FC<RenderSlotProps> { props ->
+val RenderSlot = memo(FC<RenderSlotProps> { props ->
     val view = props.view as? ReactCubeView ?: return@FC
-    var rev by useState(view.revision)
-
-    useEffect(view) {
-        view.onUpdate = { rev = view.revision }
-    }
-
-    // Read rev to subscribe to updates
-    @Suppress("UNUSED_VARIABLE")
-    val unused = rev
-
     view.component {}
-}
+})
 
 external interface RenderSlotProps : Props {
     var view: CubeView?

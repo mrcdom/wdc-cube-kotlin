@@ -60,11 +60,13 @@ Parent views use the `RenderSlot` component, which renders the child view bound 
 
 ```kotlin
 // In HomeView
-RenderSlot { slot = detailSlot }
+RenderSlot { view = contentView }
 
-// When the presenter navigates, the slot updates
+// When the presenter navigates, the slot gets another view
 // and RenderSlot renders the new view automatically
 ```
+
+`RenderSlot` is memoized: a parent repaint does not repaint the view in its slot. Cube views are independent of each other — a view repaints itself when its own view state changes (its component subscribes to `onUpdate`), and the slot repaints only when the parent puts a different view in it.
 
 ### Web Worker (optional)
 
