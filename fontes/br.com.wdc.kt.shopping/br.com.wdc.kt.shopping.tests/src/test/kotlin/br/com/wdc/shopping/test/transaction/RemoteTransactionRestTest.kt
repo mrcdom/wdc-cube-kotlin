@@ -524,7 +524,8 @@ class RemoteTransactionRestTest {
 
     @Test
     fun outcomeWithoutTheHeader_isRefused() {
-        assertThrows(AccessDeniedException::class.java) { anotherClient().postJson("/api/tx/commit", "{}") }
+        // malformed request (400), not a refusal of access (403)
+        assertThrows(InvalidRequestException::class.java) { anotherClient().postJson("/api/tx/commit", "{}") }
     }
 
     @Test

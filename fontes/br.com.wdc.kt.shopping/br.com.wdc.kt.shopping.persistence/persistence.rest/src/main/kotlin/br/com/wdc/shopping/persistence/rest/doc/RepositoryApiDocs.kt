@@ -387,7 +387,8 @@ object RepositoryApiDocs {
             "post" to operation(tag, summary, description) + mapOf(
                 "parameters" to listOf(paramRef("TxId"), paramRef("ClientId")),
                 "responses" to responses("TransactionStatus") + mapOf(
-                    "403" to error("`X-Tx-Id` is missing, or the transaction belongs to someone else."),
+                    "400" to error("`X-Tx-Id` is missing."),
+                    "403" to error("The transaction belongs to someone else."),
                     "409" to error("The transaction already had the opposite outcome, or is in use by another request."),
                 ),
             ),
@@ -408,7 +409,10 @@ object RepositoryApiDocs {
             "/api/tx/status" to mapOf(
                 "get" to operation(tag, "State of a transaction", "Tells what happened when the answer of a commit or rollback was lost.") + mapOf(
                     "parameters" to listOf(paramRef("TxId"), paramRef("ClientId")),
-                    "responses" to responses("TransactionStatus") + mapOf("403" to error("`X-Tx-Id` is missing, or the transaction belongs to someone else.")),
+                    "responses" to responses("TransactionStatus") + mapOf(
+                        "400" to error("`X-Tx-Id` is missing."),
+                        "403" to error("The transaction belongs to someone else."),
+                    ),
                 ),
             ),
         )

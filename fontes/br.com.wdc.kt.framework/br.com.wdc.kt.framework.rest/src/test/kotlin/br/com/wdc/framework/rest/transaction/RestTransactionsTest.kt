@@ -88,7 +88,11 @@ class RestTransactionsTest {
         client.header("X-Tx-Id", txId)
         client.post("/rows/9")
         assertEquals(403, server.client().header("X-Client-Id", "intruso").header("X-Tx-Id", txId).post("/api/tx/commit").status)
-        assertEquals(403, server.client().post("/api/tx/commit").status, "without X-Tx-Id")
+        // a request without the header is malformed (400), not a refusal of access (403)
+        for (op in listOf("commit", "rollback")) {
+            assertEquals(400, server.client().post("/api/tx/$op").status, "$op without X-Tx-Id")
+        }
+        assertEquals(400, server.client().get("/api/tx/status").status, "status without X-Tx-Id")
         assertEquals("""{"status":"rolledback"}""", client.post("/api/tx/rollback").body)
         assertEquals(emptyList(), ids())
     }
