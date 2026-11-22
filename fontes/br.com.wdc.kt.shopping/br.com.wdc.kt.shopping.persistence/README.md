@@ -1,6 +1,6 @@
 # persistence
 
-The Shopping persistence layer: how data is stored on the server, exposed over HTTP and consumed by the clients.
+The Storefront persistence layer: how data is stored on the server, exposed over HTTP and consumed by the clients.
 
 Each of the three subprojects implements, on its own side, the contracts of [shopping-domain](../br.com.wdc.kt.shopping.domain/) — the same repositories and the same transaction service hold on server and client.
 

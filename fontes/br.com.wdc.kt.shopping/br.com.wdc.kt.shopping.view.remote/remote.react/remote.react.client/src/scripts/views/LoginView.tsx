@@ -68,7 +68,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
 
                 <Box sx={{ position: 'relative' }}>
                   <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                    Shopping
+                    Storefront
                   </Typography>
                   <Typography variant="caption" sx={{ position: 'absolute', bottom: -16, right: 0, color: Colors.OnSurfaceVariant, opacity: 0.5, fontSize: 10 }}>
                     react

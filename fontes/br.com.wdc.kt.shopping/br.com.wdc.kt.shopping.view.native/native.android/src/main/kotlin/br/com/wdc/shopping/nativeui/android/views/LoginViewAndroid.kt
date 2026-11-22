@@ -91,7 +91,7 @@ class LoginViewAndroid(presenter: LoginPresenter) : AbstractViewAndroid<LoginPre
                         }
                     }) {
                         textView {
-                            text = "Shopping"
+                            text = "Storefront"
                             textSize = 28f
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(ShoppingColors.OnSurface)

@@ -29,7 +29,7 @@ fun ShoppingLogoLarge() {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.Default.LocalMall,
-                    contentDescription = "Shopping",
+                    contentDescription = "Storefront",
                     modifier = Modifier.size(40.dp),
                     tint = Color.White
                 )
@@ -38,7 +38,7 @@ fun ShoppingLogoLarge() {
         Spacer(Modifier.height(12.dp))
         Box {
             Text(
-                "Shopping",
+                "Storefront",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -72,7 +72,7 @@ fun ShoppingLogoHeader(size: Dp = 36.dp, compact: Boolean = false) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.Default.LocalMall,
-                    contentDescription = "Shopping",
+                    contentDescription = "Storefront",
                     modifier = Modifier.size(size * 0.6f),
                     tint = Color.White
                 )
@@ -80,7 +80,7 @@ fun ShoppingLogoHeader(size: Dp = 36.dp, compact: Boolean = false) {
         }
         Box {
             Text(
-                "Shopping",
+                "Storefront",
                 fontSize = if (compact) 16.sp else 20.sp,
                 lineHeight = if (compact) 18.sp else 22.sp,
                 fontWeight = FontWeight.Bold,

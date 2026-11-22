@@ -73,7 +73,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                     (layoutParams as LinearLayout.LayoutParams).height = (Dimens.headerHeightCompact * density).toInt()
                     setPadding((12 * density).toInt(), (10 * density).toInt(), (12 * density).toInt(), (10 * density).toInt())
                 }) {
-                    // Row 1: Logo + "Shopping" + Logout icon (all on left)
+                    // Row 1: Logo + "Storefront" + Logout icon (all on left)
                     hStack(configure = {
                         gravity = Gravity.CENTER_VERTICAL
                         (layoutParams as LinearLayout.LayoutParams).apply {
@@ -106,7 +106,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                             }
                         }) {
                             textView {
-                                text = "Shopping"
+                                text = "Storefront"
                                 textSize = 20f
                                 setTypeface(null, Typeface.BOLD)
                                 setTextColor(Color.WHITE)
@@ -252,7 +252,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                         }
                     }) {
                         textView {
-                            text = "Shopping"
+                            text = "Storefront"
                             textSize = 18f
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(Color.WHITE)

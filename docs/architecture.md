@@ -25,7 +25,7 @@
 
 ## Introduction
 
-This project is a demo application (**Shopping Demo**) built on the **Cube MVP** framework in **Kotlin Multiplatform**. Its goal is to show how a single presentation codebase can be shared across multiple platforms and distinct view technologies.
+This project is a demo application (**Storefront Demo**) built on the **Cube MVP** framework in **Kotlin Multiplatform**. Its goal is to show how a single presentation codebase can be shared across multiple platforms and distinct view technologies.
 
 The architecture is centered on three fundamental decisions:
 

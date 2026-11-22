@@ -125,7 +125,7 @@ class JavalinApplication(
                 }
             }
 
-            LOG.info("Starting WeDoCode Shopping React Server on port {}", port)
+            LOG.info("Starting WeDoCode Storefront React Server on port {}", port)
 
             val corsAllowAll = config.getBoolean("server.cors.allowAll", false)
             if (corsAllowAll) {

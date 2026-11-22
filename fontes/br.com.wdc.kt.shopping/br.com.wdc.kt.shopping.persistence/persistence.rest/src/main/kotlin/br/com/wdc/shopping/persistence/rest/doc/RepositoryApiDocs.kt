@@ -86,7 +86,7 @@ object RepositoryApiDocs {
     /** What does not come from the routes: intro, tags, schemas and reusable parameters. */
     fun configure(config: OpenApiConfig) {
         val entities = entities()
-        config.title = "WeDoCode Shopping — Repository API"
+        config.title = "WeDoCode Storefront — Repository API"
         config.version = "1.0.0"
         config.description = DESCRIPTION
         entities.forEach { config.tag(it.name, it.scope) }

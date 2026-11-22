@@ -93,7 +93,7 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
 
                 // Title
                 label {
-                    text = "Shopping"
+                    text = "Storefront"
                     font = UIFont.boldSystemFontOfSize(28.0)
                     textColor = ShoppingColors.OnSurface
                     textAlignment = UIK.TextAlignCenter

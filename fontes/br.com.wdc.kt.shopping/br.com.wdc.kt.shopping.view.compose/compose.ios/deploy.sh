@@ -356,7 +356,7 @@ done
 # --- Main ---
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
-echo "║   Shopping Compose iOS — Deploy                 ║"
+echo "║   Storefront Compose iOS — Deploy               ║"
 echo "╠══════════════════════════════════════════════════╣"
 echo "║  Target:       $TARGET"
 echo "║  Config:       $CONFIGURATION"

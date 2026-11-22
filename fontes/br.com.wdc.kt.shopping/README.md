@@ -1,6 +1,6 @@
-# Shopping
+# Storefront
 
-Modules of the Shopping application, organized in layers: domain, persistence, presentation and views.
+Modules of the Storefront application, organized in layers: domain, persistence, presentation and views.
 
 ## Modules
 

@@ -1,6 +1,6 @@
 # shopping-domain
 
-The Shopping application domain: entities, criteria, repository contracts and the codecs all of it travels with.
+The Storefront application domain: entities, criteria, repository contracts and the codecs all of it travels with.
 
 **Platforms:** JVM, Android, iOS, JS, wasmJs
 

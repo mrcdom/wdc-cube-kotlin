@@ -1,6 +1,6 @@
-# WDC Shopping — React Client
+# WDC Storefront — React Client
 
-SPA frontend of the Shopping system, built with **React 19**, **TypeScript** and **MUI 9**. It talks to the backend over a **bidirectional WebSocket**, receiving serialized presenter states and sending events back.
+SPA frontend of the Storefront system, built with **React 19**, **TypeScript** and **MUI 9**. It talks to the backend over a **bidirectional WebSocket**, receiving serialized presenter states and sending events back.
 
 See the [architecture documentation](../../../../docs/architecture-react.md) for details of the protocol and the communication cycle.
 
@@ -116,10 +116,10 @@ Configured in `package.json` (Parcel) and `tsconfig.json` (TypeScript/IDE).
 The compiled assets are written straight into the `skeleton` module:
 
 ```
-../br.com.wdc.shopping.view.react.skeleton/src/main/resources/META-INF/resources/
+../remote.react.skeleton/src/main/resources/META-INF/resources/
 ```
 
-This lets the Javalin server serve the static files automatically from the classpath.
+This lets the Javalin server serve the static files automatically from the classpath. The bundle is generated, not versioned (the skeleton's `.gitignore` excludes it): run `npm run build` after cloning and after changing the client, before starting the backend; without it, the backend starts without the React view.
 
 ## Commands
 

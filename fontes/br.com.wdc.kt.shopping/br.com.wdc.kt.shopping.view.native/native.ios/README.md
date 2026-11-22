@@ -159,7 +159,7 @@ src/iosMain/kotlin/br/com/wdc/shopping/nativeui/ios/
     ├── ProductsPanelViewIos.kt  # Product grid (FlowLayout)
     ├── PurchasesPanelViewIos.kt # Paginated purchase list
     ├── ProductViewIos.kt        # Product details
-    ├── CartViewIos.kt           # Shopping cart
+    ├── CartViewIos.kt           # Storefront cart
     └── ReceiptViewIos.kt        # Purchase receipt
 
 app/

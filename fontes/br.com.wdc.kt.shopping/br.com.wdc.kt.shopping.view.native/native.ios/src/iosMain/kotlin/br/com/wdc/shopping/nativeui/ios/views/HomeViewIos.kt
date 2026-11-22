@@ -122,7 +122,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                         size(logoIv, width = 20.0, height = 20.0)
                     }
                     val compactBrandLabel = label {
-                        text = "Shopping"
+                        text = "Storefront"
                         font = UIFont.boldSystemFontOfSize(20.0)
                         textColor = UIColor.whiteColor
                         NSLayoutConstraint.activateConstraints(listOf(
@@ -233,7 +233,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                     size(logoIv, width = 22.0, height = 22.0)
                 }
                 val wideBrandLabel = label {
-                    text = "Shopping"
+                    text = "Storefront"
                     font = UIFont.boldSystemFontOfSize(18.0)
                     textColor = UIColor.whiteColor
                     NSLayoutConstraint.activateConstraints(listOf(

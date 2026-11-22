@@ -417,7 +417,7 @@ DEVICE_SERIAL=""
 
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
-echo "║   Shopping Native Android — Deploy              ║"
+echo "║   Storefront Native Android — Deploy            ║"
 echo "╠══════════════════════════════════════════════════╣"
 printf "║  Target:       %s\n" "$TARGET"
 printf "║  Build:        %s\n" "$BUILD_TYPE"

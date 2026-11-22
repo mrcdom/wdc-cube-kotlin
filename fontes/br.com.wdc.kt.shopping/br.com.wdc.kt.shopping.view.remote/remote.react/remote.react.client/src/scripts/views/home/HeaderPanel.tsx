@@ -38,7 +38,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
       return (
         <AppBar position="static" sx={{ bgcolor: Colors.Primary }}>
           <Box sx={{ p: '10px 12px' }}>
-            {/* Top row: logo + "Shopping" + logout */}
+            {/* Top row: logo + "Storefront" + logout */}
             <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
               <Avatar
                 sx={{
@@ -53,7 +53,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
               </Avatar>
               <Box sx={{ position: 'relative' }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
-                  Shopping
+                  Storefront
                 </Typography>
                 <Typography variant="caption" sx={{ position: 'absolute', bottom: -10, right: 0, color: '#fff', opacity: 0.45, fontSize: 9 }}>
                   remote.react
@@ -117,7 +117,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
 
           <Box sx={{ position: 'relative' }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
-              Shopping
+              Storefront
             </Typography>
             <Typography variant="caption" sx={{ position: 'absolute', bottom: -10, right: 0, color: '#fff', opacity: 0.45, fontSize: 10 }}>
               remote.react

@@ -1,6 +1,6 @@
 # shopping-presentation
 
-Presenters (Cubes) of the Shopping application — platform-independent presentation logic.
+Presenters (Cubes) of the Storefront application — platform-independent presentation logic.
 
 **Platforms:** JVM, Android, iOS, wasmJs
 

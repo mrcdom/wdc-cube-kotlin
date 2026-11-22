@@ -440,7 +440,7 @@ fun main() {
     app.go("public")
 
     application {
-        Window(title = "Shopping", ...) {
+        Window(title = "Storefront", ...) {
             ShoppingTheme {
                 val rootView = app.getRootPresenter()?.view() as? RootView
                 rootView?.Render()

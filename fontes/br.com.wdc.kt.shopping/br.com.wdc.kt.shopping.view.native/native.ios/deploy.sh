@@ -350,7 +350,7 @@ done
 # --- Main ---
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
-echo "║   Shopping Native iOS — Deploy                  ║"
+echo "║   Storefront Native iOS — Deploy                ║"
 echo "╠══════════════════════════════════════════════════╣"
 echo "║  Target:       $TARGET"
 echo "║  Config:       $CONFIGURATION"
