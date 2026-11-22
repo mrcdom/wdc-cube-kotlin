@@ -9,6 +9,8 @@ import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundExceptio
 import br.com.wdc.framework.domain.transaction.TransactionSystemException
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import javax.sql.DataSource
@@ -21,8 +23,10 @@ import kotlinx.coroutines.runBlocking
  * request that carries the `txId`, [resume] rebinds the scope to the current thread and [suspend] unbinds it
  * at the end, keeping it alive for the next one. [commit]/[rollback] finish and remove.
  *
- * Transactions idle past the timeout, or alive past the maximum lifetime, are rolled back and removed (lazy
- * sweep in [begin]), avoiding connection leaks from clients that abandon the transaction.
+ * Transactions idle past the timeout, or alive past the maximum lifetime, are rolled back and removed, avoiding
+ * connection leaks (and row locks held) from clients that abandon the transaction. The sweep ([reapExpired]) runs on
+ * every [begin] and, once the host calls [startReaper], periodically: without it, a quiet server would keep an
+ * abandoned transaction until the next `begin`.
  *
  * **Threads.** [resume] and [suspend] act on the calling thread: the host must run `resume` → work →
  * `suspend` on the same thread (which is what happens when the handler runs with `runBlocking` on the request thread).
@@ -279,7 +283,28 @@ class RemoteTransactionCoordinatorImpl(
         // same outcome already applied → successful no-op (previous response lost)
     }
 
-    private fun reapExpired() {
+    /**
+     * Sweeps expired transactions every [intervalMs] on [executor], until the returned handle is closed. The host
+     * calls it once at startup, with an executor it already has, and closes the handle at shutdown. A failing sweep
+     * goes to the log and the next one still runs.
+     */
+    fun startReaper(executor: ScheduledExecutorService, intervalMs: Long = options.reapIntervalMs): AutoCloseable {
+        require(intervalMs > 0) { "reap interval must be positive: $intervalMs" }
+        val task = executor.scheduleWithFixedDelay({
+            try {
+                reapExpired()
+            } catch (e: Exception) {
+                LOG.warn("remote transaction sweep failed", e)
+            }
+        }, intervalMs, intervalMs, TimeUnit.MILLISECONDS)
+        return AutoCloseable { task.cancel(false) }
+    }
+
+    /**
+     * Rolls back and removes the transactions idle past `idleTimeoutMs` or alive past `maxLifetimeMs`; one in use by
+     * a request is left alone. Runs on every [begin] and periodically through [startReaper].
+     */
+    fun reapExpired() {
         val now = clock()
         if (registry.isNotEmpty()) {
             val idleDeadline = now - options.idleTimeoutMs

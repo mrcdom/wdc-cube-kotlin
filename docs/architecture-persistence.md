@@ -275,7 +275,7 @@ A REST client that needs several atomic writes opens a transaction on the server
 - **Owner.** The transaction belongs to whoever opened it — the authenticated user **and** the client instance (`X-Client-Id`), or, without security, just the `X-Client-Id` — and no one else may use it (403). The same user on two clients (desktop and web) doesn't block themselves.
 - **Lost header.** A write **without** `X-Tx-Id` from someone who has an open transaction is refused (409), instead of committing on its own outside the transaction.
 - **Failing request.** The write runs as a participant in the remote transaction: if it fails halfway, the transaction is doomed, and the commit rolls it back and responds 409, instead of committing the partial write.
-- **Abandonment.** An idle transaction is rolled back by the server; there are caps on open transactions, in total and per user (429). An unknown or already rolled-back `txId` responds 410.
+- **Abandonment.** An idle transaction is rolled back by the server, by a sweep that runs every 15 seconds (`remoteTransaction.reapIntervalSeconds`) and on every `begin`; there are caps on open transactions, in total and per user (429). An unknown or already rolled-back `txId` responds 410.
 - **In use.** A rollback requested while a request is using the transaction takes effect immediately, but the connection only closes when the request finishes; a commit at that moment is a conflict (409).
 - **Repetition.** Repeating the same outcome is harmless; asking for the opposite is a conflict (409).
 - **Lost response.** If the commit fails in transport (timeout, dropped connection), the client asks for the `status` before deciding: committed is success, open is rolled back.
