@@ -103,11 +103,11 @@ function AppAlert(props: AppAlertProps) {
       detailMessage = props.args[1]
       break
     case -2:
-      msgNode = 'A URI ' + props.args[0] + ' não está acessível'
+      msgNode = 'The URI ' + props.args[0] + ' is not reachable'
       detailMessage = props.args[1]
       break
     default:
-      msgNode = props.args.length > 0 ? props.args[0] : 'Ocorreu um erro não esperado'
+      msgNode = props.args.length > 0 ? props.args[0] : 'An unexpected error occurred'
   }
 
   return (
@@ -120,7 +120,7 @@ function AppAlert(props: AppAlertProps) {
         </Button>
       }
     >
-      <AlertTitle>Aviso!</AlertTitle>
+      <AlertTitle>Warning!</AlertTitle>
       {msgNode}
       {detailMessage && (
         <Typography variant="body2" sx={{ mt: 1 }}>
@@ -150,7 +150,7 @@ function ConnectionAlert(props: ConnectionAlertProps) {
 
     timeElm = (
       <Typography component="span" variant="body2">
-        {minutes > 0 ? `Conectando em ${minutes}m e ${seconds}s...` : `Conectando em ${seconds}s...`}
+        {minutes > 0 ? `Connecting in ${minutes}m ${seconds}s...` : `Connecting in ${seconds}s...`}
       </Typography>
     )
     retryElm = (
@@ -161,13 +161,13 @@ function ConnectionAlert(props: ConnectionAlertProps) {
         onClick={props.onReconnectNow}
         sx={{ cursor: 'pointer', ml: 1 }}
       >
-        Tentar agora
+        Try now
       </Link>
     )
   } else {
     timeElm = (
       <Typography component="span" variant="body2">
-        Conectando agora...
+        Connecting now...
       </Typography>
     )
   }
@@ -185,7 +185,7 @@ function ConnectionAlert(props: ConnectionAlertProps) {
         }}
       >
         <Typography component="span" variant="body2" sx={{ fontWeight: 'bold' }}>
-          Não conectado.
+          Not connected.
         </Typography>{' '}
         {timeElm} {retryElm}.
       </Alert>

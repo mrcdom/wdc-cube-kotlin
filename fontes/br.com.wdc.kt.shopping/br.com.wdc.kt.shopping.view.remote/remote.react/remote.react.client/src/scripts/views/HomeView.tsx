@@ -73,13 +73,13 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeViewState> {
               sx={{ mb: 0.5, minHeight: 36 }}
             >
               <Tab
-                label="Produtos"
+                label="Products"
                 icon={<ShoppingBagIcon />}
                 iconPosition="start"
                 sx={{ minHeight: 36, py: 0.5, fontSize: 13 }}
               />
               <Tab
-                label="Compras"
+                label="Purchases"
                 icon={<Inventory2Icon />}
                 iconPosition="start"
                 sx={{ minHeight: 36, py: 0.5, fontSize: 13 }}

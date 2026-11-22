@@ -38,7 +38,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
             vStack {
                 // Title
                 textView {
-                    text = "Carrinho de Compras"
+                    text = "Shopping Cart"
                     textSize = 24f
                     setTextColor(ShoppingColors.OnSurface)
                     setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (12 * density).toInt())
@@ -125,7 +125,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                                 }
                             }) {
                                 // Continue shopping
-                                button("Continuar Comprando") {
+                                button("Continue Shopping") {
                                     textSize = 14f
                                     setTextColor(ShoppingColors.Primary)
                                     background = ShoppingStyles.borderPill(ShoppingColors.Primary, 12 * density)
@@ -144,7 +144,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                                     setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
                                 }
                                 // Buy button
-                                button("Comprar") {
+                                button("Buy") {
                                     textSize = 16f
                                     setTypeface(null, Typeface.BOLD)
                                     setTextColor(Color.WHITE)
@@ -183,7 +183,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                         }
                     }
                     textView {
-                        text = "Seu carrinho está vazio"
+                        text = "Your cart is empty"
                         textSize = 18f
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(ShoppingColors.OnSurface)
@@ -191,13 +191,13 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                         (layoutParams as LinearLayout.LayoutParams).topMargin = (16 * density).toInt()
                     }
                     textView {
-                        text = "Adicione produtos para começar suas compras"
+                        text = "Add products to start shopping"
                         textSize = 14f
                         setTextColor(ShoppingColors.OnSurfaceVariant)
                         gravity = Gravity.CENTER
                         (layoutParams as LinearLayout.LayoutParams).topMargin = (8 * density).toInt()
                     }
-                    backButtonEmpty = button("Continuar Comprando") {
+                    backButtonEmpty = button("Continue Shopping") {
                         textSize = 14f
                         setTextColor(ShoppingColors.Primary)
                         background = ShoppingStyles.borderPill(ShoppingColors.Primary, 12 * density)
@@ -247,7 +247,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                 for (item in items) {
                     total += item.price * item.quantity
                 }
-                totalLabel.text = "R$ ${ViewUtils.formatPrice(total)}"
+                totalLabel.text = "\$${ViewUtils.formatPrice(total)}"
             }
         }
 
@@ -404,7 +404,7 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewAndroid<CartP
         if (i.price != lastPrice || i.quantity != lastQuantity) {
             lastPrice = i.price
             lastQuantity = i.quantity
-            priceLabel.text = "R$ ${ViewUtils.formatPrice(i.price)} × ${i.quantity}"
+            priceLabel.text = "\$${ViewUtils.formatPrice(i.price)} × ${i.quantity}"
             qtyLabel.text = i.quantity.toString()
         }
     }

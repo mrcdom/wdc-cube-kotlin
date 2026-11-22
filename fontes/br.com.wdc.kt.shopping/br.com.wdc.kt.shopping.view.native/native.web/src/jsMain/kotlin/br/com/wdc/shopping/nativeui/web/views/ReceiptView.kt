@@ -80,7 +80,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                                 Typography {
                                     variant = TypographyVariant.subtitle1
                                     asDynamic().style = ShoppingStyles.successText
-                                    +"Compra realizada com sucesso!"
+                                    +"Purchase completed successfully!"
                                 }
                             }
                         }
@@ -101,7 +101,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                                 Typography {
                                     variant = TypographyVariant.h5
                                     asDynamic().style = ShoppingStyles.titleH5
-                                    +"Recibo"
+                                    +"Receipt"
                                 }
                             }
 
@@ -135,12 +135,12 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                             Typography {
                                 variant = TypographyVariant.caption
                                 sx { width = 50.px; textAlign = TextAlign.center; color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>() }
-                                +"Qtd"
+                                +"Qty"
                             }
                             Typography {
                                 variant = TypographyVariant.caption
                                 sx { width = 100.px; textAlign = TextAlign.end; color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>() }
-                                +"Valor"
+                                +"Amount"
                             }
                         }
 
@@ -182,7 +182,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                                                 color = ShoppingColors.PriceColor.unsafeCast<Color>()
                                             }
                                             asDynamic().style = ShoppingStyles.fontMedium
-                                            +"R$ ${formatPrice(item.value)}"
+                                            +"\$${formatPrice(item.value)}"
                                         }
                                     }
                                 }
@@ -216,7 +216,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                                             fontSize = 22.px
                                             color = ShoppingColors.PriceColor.unsafeCast<Color>()
                                         }
-                                        +"R$ ${formatPrice(total)}"
+                                        +"\$${formatPrice(total)}"
                                     }
                                 }
                             }
@@ -234,7 +234,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                             asDynamic().style = ShoppingStyles.fontMedium
                             sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                             ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
-                            +"Continuar Comprando"
+                            +"Continue Shopping"
                         }
                     }
                 }

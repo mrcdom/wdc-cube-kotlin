@@ -72,7 +72,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                     Typography {
                         variant = TypographyVariant.h5
                         asDynamic().style = ShoppingStyles.titleH5
-                        +"Carrinho de Compras"
+                        +"Shopping Cart"
                     }
                 }
 
@@ -103,12 +103,12 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                         Typography {
                             variant = TypographyVariant.h6
                             sx { marginTop = 16.px; color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>() }
-                            +"Seu carrinho está vazio"
+                            +"Your cart is empty"
                         }
                         Typography {
                             variant = TypographyVariant.body2
                             sx { marginTop = 8.px; color = ShoppingColors.OnSurfaceVariant.unsafeCast<Color>(); opacity = number(0.7) }
-                            +"Adicione produtos para começar suas compras"
+                            +"Add products to start shopping"
                         }
                     }
                 } else {
@@ -154,7 +154,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                                     variant = TypographyVariant.body2
                                                     asDynamic().style = ShoppingStyles.fontMedium
                                                     sx { color = ShoppingColors.PriceColor.unsafeCast<Color>() }
-                                                    +"R$ ${formatPrice(item.price)}"
+                                                    +"\$${formatPrice(item.price)}"
                                                 }
                                             }
 
@@ -214,7 +214,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                                 color = ButtonColor.error
                                                 onClick = { safeCall { presenter.onRemoveProduct(item.id) } }
                                                 asDynamic().style = ShoppingStyles.smallAction
-                                                +"Remover"
+                                                +"Remove"
                                             }
                                         }
                                     }
@@ -251,7 +251,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                     fontSize = 22.px
                                     color = ShoppingColors.PriceColor.unsafeCast<Color>()
                                 }
-                                +"R$ ${formatPrice(total)}"
+                                +"\$${formatPrice(total)}"
                             }
                         }
                     }
@@ -268,7 +268,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                         onClick = { safeCall { presenter.onOpenProducts() } }
                         sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                         ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
-                        +"Continuar Comprando"
+                        +"Continue Shopping"
                     }
 
                     if (state.items.isNotEmpty()) {
@@ -283,7 +283,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                 fontSize = 16.px
                                 backgroundColor = ShoppingColors.PriceColor.unsafeCast<BackgroundColor>()
                             }
-                            +"Comprar"
+                            +"Buy"
                         }
                     }
                 }

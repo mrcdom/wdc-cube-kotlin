@@ -56,7 +56,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                                 Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(32.dp), tint = SuccessColor)
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Compra realizada com sucesso!",
+                                    "Purchase completed successfully!",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = SuccessColor,
@@ -76,7 +76,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(28.dp))
                                 Text(
-                                    "Recibo",
+                                    "Receipt",
                                     style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -112,14 +112,14 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                                     modifier = Modifier.weight(1f)
                                 )
                                 Text(
-                                    "Qtd",
+                                    "Qty",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.width(50.dp)
                                 )
                                 Text(
-                                    "Valor",
+                                    "Amount",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.End,
@@ -152,7 +152,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
-                                            "R$ ${formatPrice(item.value)}",
+                                            "\$${formatPrice(item.value)}",
                                             textAlign = TextAlign.End,
                                             modifier = Modifier.width(100.dp),
                                             style = MaterialTheme.typography.bodyMedium,
@@ -185,7 +185,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                                     color = PriceColor.copy(alpha = 0.1f)
                                 ) {
                                     Text(
-                                        "R$ ${formatPrice(it)}",
+                                        "\$${formatPrice(it)}",
                                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Bold,
@@ -211,7 +211,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(
-                                    "Continuar Comprando",
+                                    "Continue Shopping",
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -228,5 +228,5 @@ private fun formatDate(epochMs: Long): String {
     val year = 1970 + (days / 365).toInt()
     val month = ((days % 365) / 30 + 1).toInt().coerceIn(1, 12)
     val day = ((days % 365) % 30 + 1).toInt().coerceIn(1, 31)
-    return "${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/$year"
+    return "${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/$year"
 }

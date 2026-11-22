@@ -112,20 +112,20 @@ class LoginViewAndroid(presenter: LoginPresenter) : AbstractViewAndroid<LoginPre
 
                     // Subtitle
                     textView {
-                        text = "Entre com suas credenciais para continuar"
+                        text = "Sign in to continue"
                         textSize = 14f
                         setTextColor(ShoppingColors.OnSurfaceVariant)
                         gravity = Gravity.CENTER
                     }
 
                     // Username field
-                    userField = editText("Usuário") {
+                    userField = editText("Username") {
                         inputType = InputType.TYPE_CLASS_TEXT
                         (layoutParams as LinearLayout.LayoutParams).height = (48 * density).toInt()
                     }
 
                     // Password field
-                    passwordField = editText("Senha") {
+                    passwordField = editText("Password") {
                         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                         imeOptions = EditorInfo.IME_ACTION_GO
                         (layoutParams as LinearLayout.LayoutParams).height = (48 * density).toInt()
@@ -146,7 +146,7 @@ class LoginViewAndroid(presenter: LoginPresenter) : AbstractViewAndroid<LoginPre
                     }
 
                     // Login button
-                    loginButton = button("Entrar") {
+                    loginButton = button("Sign in") {
                         ShoppingStyles.actionButton(this)
                         (layoutParams as LinearLayout.LayoutParams).height = (48 * density).toInt()
                         setOnClickListener { performLogin() }

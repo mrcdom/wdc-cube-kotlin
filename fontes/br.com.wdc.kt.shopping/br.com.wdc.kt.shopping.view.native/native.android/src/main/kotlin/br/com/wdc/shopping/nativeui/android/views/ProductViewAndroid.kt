@@ -99,7 +99,7 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
                                 gravity = Gravity.CENTER_VERTICAL
                             }) {
                                 textView {
-                                    text = "Qtd:"
+                                    text = "Qty:"
                                     textSize = 14f
                                     setTypeface(null, Typeface.BOLD)
                                     setTextColor(ShoppingColors.OnSurface)
@@ -169,8 +169,8 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
                         gravity = Gravity.CENTER_VERTICAL
                         (layoutParams as LinearLayout.LayoutParams).topMargin = (8 * density).toInt()
                     }) {
-                        // Voltar button (outline)
-                        backButton = button("Voltar") {
+                        // Back button (outline)
+                        backButton = button("Back") {
                             textSize = 15f
                             setTextColor(ShoppingColors.Primary)
                             background = ShoppingStyles.borderPill(ShoppingColors.Primary, 12 * density)
@@ -189,8 +189,8 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
                             setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
                         }
 
-                        // Adicionar ao Carrinho button (primary)
-                        addButton = button("Adicionar ao Carrinho") {
+                        // Add to Cart button (primary)
+                        addButton = button("Add to Cart") {
                             textSize = 15f
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(android.graphics.Color.WHITE)
@@ -224,7 +224,7 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
 
         nameLabel.text = product.name ?: ""
         descriptionLabel.text = ViewUtils.stripHtml(product.description)
-        priceLabel.text = "R$ ${ViewUtils.formatPrice(product.price)}"
+        priceLabel.text = "\$${ViewUtils.formatPrice(product.price)}"
         ViewUtils.loadImageAsync(imageView, ViewUtils.productImageUrl(product.id))
 
         // Reset quantity

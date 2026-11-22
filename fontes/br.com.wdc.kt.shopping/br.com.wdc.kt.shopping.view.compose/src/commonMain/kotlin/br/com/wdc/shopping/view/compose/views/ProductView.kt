@@ -114,7 +114,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                                     color = PriceColor.copy(alpha = 0.1f)
                                 ) {
                                     Text(
-                                        "R$ ${formatPrice(product.price)}",
+                                        "\$${formatPrice(product.price)}",
                                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                         style = MaterialTheme.typography.headlineSmall,
                                         fontWeight = FontWeight.Bold,
@@ -128,7 +128,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     Text(
-                                        "Qtd:",
+                                        "Qty:",
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -204,7 +204,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text("Voltar", fontWeight = FontWeight.Medium)
+                                Text("Back", fontWeight = FontWeight.Medium)
                             }
                             }
                             Button(
@@ -217,7 +217,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Icon(Icons.Default.AddShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Text("Adicionar ao Carrinho", fontWeight = FontWeight.SemiBold)
+                                    Text("Add to Cart", fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -227,7 +227,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                     CircularProgressIndicator(strokeWidth = 3.dp)
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "Carregando produto...",
+                        "Loading product...",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

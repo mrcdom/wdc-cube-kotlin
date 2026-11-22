@@ -174,7 +174,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                 height = ViewGroup.LayoutParams.WRAP_CONTENT
                             }
                         }) {
-                            cartButton = button("Carrinho") {
+                            cartButton = button("Cart") {
                                 textSize = 13f
                                 setTextColor(Color.WHITE)
                                 isAllCaps = false
@@ -330,7 +330,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
                     }) {
-                        wideCartButton = button("Carrinho") {
+                        wideCartButton = button("Cart") {
                             textSize = 14f
                             setTextColor(Color.WHITE)
                             isAllCaps = false
@@ -398,7 +398,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                     marginEnd = (24 * density).toInt()
                                 }
                             }) {
-                                productsTab = button("PRODUTOS") {
+                                productsTab = button("PRODUCTS") {
                                     textSize = 14f
                                     setTypeface(null, Typeface.BOLD)
                                     setTextColor(ShoppingColors.Primary)
@@ -430,7 +430,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                     height = ViewGroup.LayoutParams.MATCH_PARENT
                                 }
                             }) {
-                                purchasesTab = button("COMPRAS") {
+                                purchasesTab = button("PURCHASES") {
                                     textSize = 14f
                                     setTextColor(ShoppingColors.OnSurfaceVariant)
                                     setBackgroundColor(Color.TRANSPARENT)
@@ -641,7 +641,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
         val nick = state.nickName
         if (nick != lastNick) {
             lastNick = nick
-            val greeting = if (!nick.isNullOrBlank()) "Olá, $nick" else ""
+            val greeting = if (!nick.isNullOrBlank()) "Hello, $nick" else ""
             nicknameLabel.text = greeting
             wideNicknameLabel.text = greeting
         }

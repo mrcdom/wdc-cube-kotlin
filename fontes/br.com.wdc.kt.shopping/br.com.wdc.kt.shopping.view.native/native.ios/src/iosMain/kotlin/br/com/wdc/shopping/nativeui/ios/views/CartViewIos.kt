@@ -45,7 +45,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
 
         // Title header
         titleLabel = label {
-            text = "Carrinho de Compras"
+            text = "Shopping Cart"
             font = UIFont.systemFontOfSize(24.0, UIFontWeightMedium)
             textColor = ShoppingColors.OnSurface
             NSLayoutConstraint.activateConstraints(listOf(
@@ -67,7 +67,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
         })
 
         // Back button (visible in empty state, aligned right below empty message)
-        backButton = button("Continuar Comprando") {
+        backButton = button("Continue Shopping") {
             setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
             titleLabel?.font = UIFont.systemFontOfSize(14.0)
             setImage(ShoppingIcons.arrowBack(18.0, ShoppingColors.Primary), forState = UIControlStateNormal)
@@ -181,7 +181,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
                             heightAnchor.constraintEqualToConstant(48.0)
                         ))
                     }) {
-                        buyButton = button("Comprar") {
+                        buyButton = button("Buy") {
                             setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                             backgroundColor = ShoppingColors.PriceColor
                             layer.cornerRadius = 12.0
@@ -194,7 +194,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
                                 heightAnchor.constraintEqualToConstant(48.0)
                             ))
                         }
-                        button("Continuar Comprando") {
+                        button("Continue Shopping") {
                             setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
                             titleLabel?.font = UIFont.systemFontOfSize(14.0)
                             setImage(ShoppingIcons.arrowBack(18.0, ShoppingColors.Primary), forState = UIControlStateNormal)
@@ -234,7 +234,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
                 ))
             }
             label {
-                text = "Seu carrinho está vazio"
+                text = "Your cart is empty"
                 font = UIFont.boldSystemFontOfSize(18.0)
                 textColor = ShoppingColors.OnSurface
                 textAlignment = UIK.TextAlignCenter
@@ -244,7 +244,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
                 ))
             }
             val subtitle = label {
-                text = "Adicione produtos para começar suas compras"
+                text = "Add products to start shopping"
                 font = UIFont.systemFontOfSize(14.0)
                 textColor = ShoppingColors.OnSurfaceVariant
                 textAlignment = UIK.TextAlignCenter
@@ -305,7 +305,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
                 for (item in items) {
                     total += item.price * item.quantity
                 }
-                totalLabel.text = "R$ ${ViewUtils.formatPrice(total)}"
+                totalLabel.text = "\$${ViewUtils.formatPrice(total)}"
             }
         }
 
@@ -444,7 +444,7 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewIos<CartPrese
         if (i.price != lastPrice || i.quantity != lastQuantity) {
             lastPrice = i.price
             lastQuantity = i.quantity
-            priceLabel.text = "R$ ${ViewUtils.formatPrice(i.price)} × ${i.quantity}"
+            priceLabel.text = "\$${ViewUtils.formatPrice(i.price)} × ${i.quantity}"
             qtyLabel.text = i.quantity.toString()
         }
     }

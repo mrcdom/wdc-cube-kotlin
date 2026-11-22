@@ -1,24 +1,24 @@
 # remote.react
 
-Implementação da view remota usando **React** — os presenters executam no servidor e se comunicam com o cliente via WebSocket.
+Remote view implementation using **React** — the presenters run on the server and talk to the client over WebSocket.
 
-Veja a [documentação de arquitetura](../../../../docs/architecture-react.md) para detalhes completos.
+See the [architecture documentation](../../../../docs/architecture-react.md) for the full details.
 
-## Subprojetos
+## Subprojects
 
-- [remote.react.skeleton/](remote.react.skeleton/) — Bridge server-side (Kotlin/JVM) entre presenters e cliente React
-- [remote.react.client/](remote.react.client/) — Aplicação React/TypeScript (renderização pura)
+- [remote.react.skeleton/](remote.react.skeleton/) — Server-side bridge (Kotlin/JVM) between the presenters and the React client
+- [remote.react.client/](remote.react.client/) — React/TypeScript application (pure rendering)
 
-## Telas
+## Screens
 
-| Login | Home (Produtos + Compras) |
+| Login | Home (Products + Purchases) |
 |:---:|:---:|
 | ![Login](screenshots/01-login.png) | ![Home](screenshots/02-home.png) |
 
-| Detalhes do Produto | Carrinho |
+| Product Details | Cart |
 |:---:|:---:|
-| ![Detalhes do Produto](screenshots/03-detalhes-produto.png) | ![Carrinho](screenshots/04-carrinho.png) |
+| ![Product Details](screenshots/03-detalhes-produto.png) | ![Cart](screenshots/04-carrinho.png) |
 
-| Recibo |
+| Receipt |
 |:---:|
-| ![Recibo](screenshots/05-recibo.png) |
+| ![Receipt](screenshots/05-recibo.png) |

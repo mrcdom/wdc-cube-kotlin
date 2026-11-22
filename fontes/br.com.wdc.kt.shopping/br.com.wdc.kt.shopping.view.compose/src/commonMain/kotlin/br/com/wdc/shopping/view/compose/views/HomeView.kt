@@ -75,7 +75,7 @@ class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-vie
                     if (isCompact) {
                         // Tabs for mobile
                         var selectedTab by remember { mutableIntStateOf(0) }
-                        val tabTitles = listOf("Produtos" to Icons.Filled.ShoppingBag, "Compras" to Icons.Filled.Inventory2)
+                        val tabTitles = listOf("Products" to Icons.Filled.ShoppingBag, "Purchases" to Icons.Filled.Inventory2)
 
                         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                             PrimaryTabRow(
@@ -197,7 +197,7 @@ private fun HeaderBar(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Sair",
+                            contentDescription = "Sign out",
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -213,7 +213,7 @@ private fun HeaderBar(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        "Olá, $nickName",
+                        "Hello, $nickName",
                         color = Color.White.copy(alpha = 0.85f),
                         style = MaterialTheme.typography.bodySmall,
                         lineHeight = 16.sp
@@ -243,7 +243,7 @@ private fun HeaderBar(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Text("Carrinho", fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
+                                Text("Cart", fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
                             }
                         }
                     }
@@ -274,7 +274,7 @@ private fun HeaderBar(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Sair",
+                            contentDescription = "Sign out",
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(18.dp)
                         )
@@ -291,7 +291,7 @@ private fun HeaderBar(
                         color = Color.White.copy(alpha = 0.15f)
                     ) {
                         Text(
-                            "Olá, $nickName",
+                            "Hello, $nickName",
                             color = Color.White,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                             fontSize = 14.sp,
@@ -328,7 +328,7 @@ private fun HeaderBar(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Text("Carrinho", fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
+                                Text("Cart", fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
                             }
                         }
                     }

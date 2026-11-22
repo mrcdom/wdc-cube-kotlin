@@ -21,7 +21,7 @@ class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl<Applicat
         var message = msg
         val alertCode = -1
         if (message == null) {
-            message = cause?.message ?: "Ocorreu um erro não previsto"
+            message = cause?.message ?: "An unexpected error occurred"
         }
 
         if (cause != null) {

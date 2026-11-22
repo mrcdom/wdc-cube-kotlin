@@ -1,15 +1,15 @@
 # iosApp
 
-Projeto Xcode nativo que hospeda o framework `ShoppingApp` produzido pelo módulo `:view-compose-ios`.
+Native Xcode project that hosts the `ShoppingApp` framework produced by the `:view-compose-ios` module.
 
-Gerado via **XcodeGen** a partir de `project.yml`.
+Generated with **XcodeGen** from `project.yml`.
 
-## Como rodar
+## How to run
 
-1. Abra `ShoppingiOS.xcodeproj` no Xcode
-2. Selecione o simulador (ex: iPhone 16 Pro)
-3. Rode com ▶️ (Cmd+R)
+1. Open `ShoppingiOS.xcodeproj` in Xcode
+2. Select the simulator (e.g. iPhone 16 Pro)
+3. Run with ▶️ (Cmd+R)
 
-O build phase compila automaticamente o framework Kotlin via Gradle.
+The build phase compiles the Kotlin framework through Gradle automatically.
 
-O backend precisa estar rodando na porta 8080.
+The backend must be running on port 8080.

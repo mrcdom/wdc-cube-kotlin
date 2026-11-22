@@ -73,7 +73,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
             {/* Bottom row: greeting + cart */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
               <Typography variant="body2" sx={{ color: Colors.WhiteOverlay85 }}>
-                Olá, {nickName}
+                Hello, {nickName}
               </Typography>
               <Badge badgeContent={cartItemCount} color="error" invisible={cartItemCount <= 0}>
                 <Button
@@ -89,7 +89,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
                   }}
                 >
                   <ShoppingCartIcon sx={{ mr: 0.75, fontSize: 16 }} />
-                  Carrinho
+                  Cart
                 </Button>
               </Badge>
             </Box>
@@ -146,7 +146,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
             }}
           >
             <Typography variant="body2" sx={{ color: '#fff' }}>
-              Olá, {nickName}
+              Hello, {nickName}
             </Typography>
           </Box>
 
@@ -165,7 +165,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
               }}
             >
               <ShoppingCartIcon sx={{ mr: 0.75, fontSize: 18 }} />
-              Carrinho
+              Cart
             </Button>
           </Badge>
         </Toolbar>

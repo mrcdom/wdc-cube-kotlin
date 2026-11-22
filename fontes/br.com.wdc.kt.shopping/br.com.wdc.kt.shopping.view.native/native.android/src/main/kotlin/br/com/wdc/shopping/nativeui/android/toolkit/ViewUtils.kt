@@ -18,9 +18,11 @@ object ViewUtils {
     }
 
     fun formatPrice(value: Double): String {
-        val intPart = value.toLong()
-        val decPart = ((value - intPart) * 100).toLong()
-        return "$intPart,${decPart.toString().padStart(2, '0')}"
+        val cents = kotlin.math.round(value * 100).toLong()
+        val sign = if (cents < 0) "-" else ""
+        val abs = kotlin.math.abs(cents)
+        val whole = (abs / 100).toString().reversed().chunked(3).joinToString(",").reversed()
+        return "$sign$whole.${(abs % 100).toString().padStart(2, '0')}"
     }
 
     fun formatDate(epochMs: Long): String {
@@ -45,7 +47,7 @@ object ViewUtils {
             m++
         }
         val d = remaining + 1
-        return "${d.toString().padStart(2, '0')}/${(m + 1).toString().padStart(2, '0')}/$y"
+        return "${(m + 1).toString().padStart(2, '0')}/${d.toString().padStart(2, '0')}/$y"
     }
 
     private fun isLeapYear(year: Int): Boolean =

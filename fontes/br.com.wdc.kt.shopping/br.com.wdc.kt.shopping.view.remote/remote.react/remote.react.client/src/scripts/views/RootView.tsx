@@ -29,7 +29,7 @@ class RootViewClass extends BaseViewClass<ViewProps, RootViewState> {
 
     return (
       <Box className={className} sx={{ m: 2 }}>
-        <Alert severity="error">Falta conteúdo para a página inicial</Alert>
+        <Alert severity="error">Missing content for the home page</Alert>
       </Box>
     )
   }

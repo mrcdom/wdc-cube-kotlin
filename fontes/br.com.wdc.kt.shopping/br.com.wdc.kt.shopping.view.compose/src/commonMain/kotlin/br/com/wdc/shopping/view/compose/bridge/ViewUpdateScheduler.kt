@@ -54,7 +54,7 @@ object ViewUpdateScheduler {
     fun markDirty(view: ComposeCubeView) {
         dirtyViews.add(view)
         if (!flushScheduled) {
-            // sem agendamento, um update() fora de safeCall só aparecia na próxima ação do usuário
+            // without scheduling, an update() outside safeCall only showed up on the next user action
             val scope = appProvider?.invoke()?.presenterScope ?: return
             flushScheduled = true
             scope.launch { flush() }

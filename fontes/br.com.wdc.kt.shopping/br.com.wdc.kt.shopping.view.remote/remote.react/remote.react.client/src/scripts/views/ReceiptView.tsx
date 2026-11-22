@@ -59,7 +59,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptViewState> {
                 <Stack direction="column" spacing={1} sx={{ alignItems: 'center' }}>
                   <CheckCircleIcon sx={{ fontSize: 32, color: Colors.SuccessColor }} />
                   <Typography variant="subtitle1" sx={{ fontWeight: 500, color: Colors.SuccessColor }}>
-                    Compra realizada com sucesso!
+                    Purchase completed successfully!
                   </Typography>
                 </Stack>
               </Paper>
@@ -70,7 +70,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptViewState> {
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <ReceiptIcon sx={{ fontSize: 28 }} />
                 <Typography variant="h5" sx={{ fontWeight: 500, fontSize: 28 }}>
-                  Recibo
+                  Receipt
                 </Typography>
               </Stack>
               {receipt.date && (
@@ -90,10 +90,10 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptViewState> {
                 Item
               </Typography>
               <Typography variant="caption" sx={{ width: 50, textAlign: 'center', color: Colors.OnSurfaceVariant }}>
-                Qtd
+                Qty
               </Typography>
               <Typography variant="caption" sx={{ width: 100, textAlign: 'right', color: Colors.OnSurfaceVariant }}>
-                Valor
+                Amount
               </Typography>
             </Stack>
 
@@ -119,7 +119,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptViewState> {
                       variant="body2"
                       sx={{ width: 100, textAlign: 'right', color: Colors.PriceColor, fontWeight: 500 }}
                     >
-                      R$ {NumberUtils.format(item.value)}
+                      ${NumberUtils.format(item.value)}
                     </Typography>
                   </Stack>
                 </Paper>
@@ -134,7 +134,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptViewState> {
               </Typography>
               <Box sx={{ bgcolor: Colors.PriceBackground, borderRadius: '10px', px: 1.75, py: 0.75 }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: 22, color: Colors.PriceColor }}>
-                  R$ {NumberUtils.format(receipt.total)}
+                  ${NumberUtils.format(receipt.total)}
                 </Typography>
               </Box>
             </Stack>
@@ -147,7 +147,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptViewState> {
                 sx={{ borderRadius: '12px', height: 48, textTransform: 'none', fontWeight: 500 }}
                 startIcon={<ArrowBackIcon />}
               >
-                Continuar Comprando
+                Continue Shopping
               </Button>
             </Stack>
           </Stack>

@@ -1,11 +1,11 @@
 # react.skeleton
 
-Bridge server-side entre os presenters e o cliente React. Cada `*ReactViewImpl` traduz eventos WebSocket em chamadas ao presenter e serializa o ViewState para JSON.
+Server-side bridge between the presenters and the React client. Each `*ReactViewImpl` turns WebSocket events into presenter calls and serializes the ViewState to JSON.
 
-Componentes principais:
-- `ApplicationReactImpl` — gerencia sessão, dirty tracking e server push
-- `DispatcherHandler` — handler do WebSocket Javalin
-- `GenericViewImpl` — base para todas as view impls
-- `*ReactViewImpl` — uma implementação por presenter
+Main components:
+- `ApplicationReactImpl` — manages the session, dirty tracking and server push
+- `DispatcherHandler` — Javalin WebSocket handler
+- `GenericViewImpl` — base for all view impls
+- `*ReactViewImpl` — one implementation per presenter
 
-Veja a [documentação de arquitetura](../../../../docs/architecture-react.md) para o ciclo completo de comunicação.
+See the [architecture documentation](../../../../docs/architecture-react.md) for the full communication cycle.

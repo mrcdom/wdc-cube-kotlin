@@ -52,7 +52,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "Carrinho de Compras",
+                            "Shopping Cart",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -85,13 +85,13 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.height(16.dp))
                                 Text(
-                                    "Seu carrinho está vazio",
+                                    "Your cart is empty",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Adicione produtos para começar suas compras",
+                                    "Add products to start shopping",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
@@ -127,7 +127,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                             )
                                             Spacer(Modifier.height(4.dp))
                                             Text(
-                                                "R$ ${formatPrice(item.price)}",
+                                                "\$${formatPrice(item.price)}",
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 color = PriceColor,
                                                 fontWeight = FontWeight.Medium
@@ -184,7 +184,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                                 contentColor = MaterialTheme.colorScheme.error
                                             )
                                         ) {
-                                            Text("Remover", fontSize = 12.sp)
+                                            Text("Remove", fontSize = 12.sp)
                                         }
                                     }
                                 }
@@ -212,7 +212,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                 color = PriceColor.copy(alpha = 0.1f)
                             ) {
                                 Text(
-                                    "R$ ${formatPrice(total)}",
+                                    "\$${formatPrice(total)}",
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
@@ -236,7 +236,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text("Continuar Comprando", fontWeight = FontWeight.Medium)
+                                Text("Continue Shopping", fontWeight = FontWeight.Medium)
                             }
                         }
                         if (state.items.isNotEmpty()) {
@@ -249,7 +249,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                 )
                             ) {
                                 Text(
-                                    "Comprar",
+                                    "Buy",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp,
                                     color = Color.White

@@ -47,7 +47,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "Produtos",
+                    "Products",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -58,7 +58,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         Text(
-                            "${products.size} itens",
+                            "${products.size} ${if (products.size == 1) "item" else "items"}",
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -81,7 +81,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            "Carregando produtos...",
+                            "Loading products...",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -90,7 +90,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
             } else if (products.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        "Nenhum produto disponível",
+                        "No products available",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -192,7 +192,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
                         color = PriceColor.copy(alpha = 0.1f)
                     ) {
                         Text(
-                            "R$ ${formatPrice(product.price)}",
+                            "\$${formatPrice(product.price)}",
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,

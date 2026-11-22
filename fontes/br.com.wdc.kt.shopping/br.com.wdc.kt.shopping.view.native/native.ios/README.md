@@ -1,35 +1,35 @@
 # native.ios
 
-Implementação da view usando **UIKit** via Kotlin/Native — sem SwiftUI, sem Storyboards, programático puro.
+View implementation using **UIKit** via Kotlin/Native — no SwiftUI, no Storyboards, purely programmatic.
 
-## Arquitetura
+## Architecture
 
 ### Base Class: `AbstractViewIos<P>`
 
-Toda view estende `AbstractViewIos<P>`, que implementa a interface `CubeView` do framework:
+Every view extends `AbstractViewIos<P>`, which implements the framework's `CubeView` interface:
 
 ```kotlin
 class ProductsPanelViewIos(presenter: ProductsPanelPresenter) 
     : AbstractViewIos<ProductsPanelPresenter>("products-panel", presenter) {
 
     override fun createView(): UIView = UIKitDom.build {
-        // DSL para construção de UIViews com Auto Layout
+        // DSL for building UIViews with Auto Layout
     }
 
     override fun doUpdate() {
-        // Atualização eficiente com guards
+        // Efficient update with guards
     }
 }
 ```
 
-O ciclo de vida é:
-1. `createView()` — constrói a hierarquia de `UIView`s programaticamente via `UIKitDom`
-2. `doUpdate()` — chamado pelo scheduler quando o presenter sinaliza mudança de estado
-3. Guards (`lastX != newX`) evitam manipulações desnecessárias do UIKit
+The lifecycle is:
+1. `createView()` — builds the `UIView` hierarchy programmatically via `UIKitDom`
+2. `doUpdate()` — called by the scheduler when the presenter signals a state change
+3. Guards (`lastX != newX`) avoid unnecessary UIKit manipulation
 
 ### DSL: `UIKitDom`
 
-DSL Kotlin que constrói UIViews com Auto Layout via `NSLayoutConstraint`:
+Kotlin DSL that builds UIViews with Auto Layout via `NSLayoutConstraint`:
 
 ```kotlin
 UIKitDom.build {
@@ -37,7 +37,7 @@ UIKitDom.build {
     
     vStack(spacing = 8.0) {
         label { 
-            text = "Título"
+            text = "Title"
             font = UIFont.boldSystemFontOfSize(17.0) 
         }
     }
@@ -55,34 +55,34 @@ UIKitDom.build {
 }
 ```
 
-Componentes disponíveis: `vStack`, `hStack`, `view`, `scrollView`, `flowLayout`, `label`, `button`, `textField`, `imageView`.
+Available components: `vStack`, `hStack`, `view`, `scrollView`, `flowLayout`, `label`, `button`, `textField`, `imageView`.
 
-Todas as views usam `translatesAutoresizingMaskIntoConstraints = false` (definido automaticamente pelo DSL) e posicionamento via Auto Layout constraints.
+All views use `translatesAutoresizingMaskIntoConstraints = false` (set automatically by the DSL) and are positioned with Auto Layout constraints.
 
-### Atualização de Views: `ViewUpdateScheduler`
+### View Updates: `ViewUpdateScheduler`
 
-O scheduler opera via `dispatch_async(dispatch_get_main_queue())`:
+The scheduler works via `dispatch_async(dispatch_get_main_queue())`:
 
-1. Presenter chama `update()` → marca a view como dirty
-2. Na próxima iteração do run loop, o scheduler faz flush
-3. Antes do flush, `app.commitComputedState()` garante consistência
-4. Cada view executa `doUpdate()` uma única vez por ciclo
+1. The presenter calls `update()` → marks the view as dirty
+2. On the next run loop iteration, the scheduler flushes
+3. Before the flush, `app.commitComputedState()` ensures consistency
+4. Each view runs `doUpdate()` only once per cycle
 
-### Padrões de Implementação
+### Implementation Patterns
 
-| Padrão | Descrição |
+| Pattern | Description |
 |--------|-----------|
-| **ListSlot** | Reciclagem de views em listas — suporta `UIStackView` e `UIView` genérico |
-| **FlowLayoutView** | View customizada baseada em constraints que distribui filhos em grid responsivo |
-| **retainForGC()** | Evita que o GC do Kotlin/Native colete targets de gestos (UIKit usa weak refs) |
-| **UILongPressGestureRecognizer** | Feedback visual de toque (minimumPressDuration=0 para detectar touch-down) |
-| **pin()** | Helper que ancora uma view nas 4 bordas do parent via constraints |
-| **center()** | Helper que centraliza uma view no parent |
-| **Guards** | Variáveis `lastX` que evitam redesenho quando o estado não mudou |
+| **ListSlot** | View recycling in lists — supports `UIStackView` and generic `UIView` |
+| **FlowLayoutView** | Custom constraint-based view that lays out children in a responsive grid |
+| **retainForGC()** | Keeps the Kotlin/Native GC from collecting gesture targets (UIKit uses weak refs) |
+| **UILongPressGestureRecognizer** | Visual touch feedback (minimumPressDuration=0 to detect touch-down) |
+| **pin()** | Helper that anchors a view to the parent's 4 edges via constraints |
+| **center()** | Helper that centers a view in the parent |
+| **Guards** | `lastX` variables that avoid redrawing when the state has not changed |
 
-### Detecção de Rotação e Layout Responsivo
+### Rotation Detection and Responsive Layout
 
-A view `HomeViewIos` observa `UIDeviceOrientationDidChangeNotification` para re-detectar o layout quando o dispositivo é rotacionado:
+`HomeViewIos` observes `UIDeviceOrientationDidChangeNotification` to re-detect the layout when the device rotates:
 
 ```kotlin
 UIDevice.currentDevice.beginGeneratingDeviceOrientationNotifications()
@@ -97,73 +97,73 @@ orientationObserver = NSNotificationCenter.defaultCenter.addObserverForName(
 ```
 
 Breakpoints:
-- `WIDE_BREAKPOINT = 700pt` — acima disso, layout side-by-side (produtos + compras)
-- `MAX_CONTENT_WIDTH = 1200pt` — largura máxima do container principal
-- `MAX_DETAIL_WIDTH = 560pt` — largura máxima das telas de detalhe
+- `WIDE_BREAKPOINT = 700pt` — above this, side-by-side layout (products + purchases)
+- `MAX_CONTENT_WIDTH = 1200pt` — maximum width of the main container
+- `MAX_DETAIL_WIDTH = 560pt` — maximum width of the detail screens
 
-### Navegação e Slots
+### Navigation and Slots
 
-Views-pai declaram `ViewSlot` (uma `UIView`) que recebe views-filhas por navegação. O slot "pina" a view-filha com constraints nas 4 bordas:
+Parent views declare a `ViewSlot` (a `UIView`) that receives child views through navigation. The slot pins the child view with constraints on all 4 edges:
 
 ```kotlin
-// No HomeViewIos
+// In HomeViewIos
 val detailSlot = newViewSlot(detailContainer)
 
-// Quando o presenter navega para "product-details"
-// O slot automaticamente troca a view visível
+// When the presenter navigates to "product-details"
+// the slot swaps the visible view automatically
 ```
 
-### Interop Kotlin/Native ↔ Objective-C
+### Kotlin/Native ↔ Objective-C Interop
 
-A comunicação com UIKit usa as anotações de interop:
-- `@ObjCAction` — marca métodos que serão chamados por seletores (gesture targets)
-- `sel_registerName("onTap")` — registra o seletor para a action
-- `@OptIn(ExperimentalForeignApi::class)` — necessário para APIs de interop
+Communication with UIKit uses the interop annotations:
+- `@ObjCAction` — marks methods called through selectors (gesture targets)
+- `sel_registerName("onTap")` — registers the selector for the action
+- `@OptIn(ExperimentalForeignApi::class)` — required for interop APIs
 
-## Como compilar e executar
+## Building and running
 
 ```bash
 cd fontes
 
-# Compilar framework para simulador
+# Build the framework for the simulator
 ./gradlew :view-native-ios:linkDebugFrameworkIosSimulatorArm64
 
-# Deploy no simulador iPhone
+# Deploy to the iPhone simulator
 cd br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.native/native.ios
 ./deploy.sh simulator --simulator-name "iPhone 17"
 
-# Deploy no simulador iPad
+# Deploy to the iPad simulator
 ./deploy.sh simulator --ipad
 ```
 
-O projeto Xcode (`ShoppingNativeApp.xcodeproj`) é gerado via [XcodeGen](https://github.com/yonaskolb/XcodeGen) a partir do `project.yml`.
+The Xcode project (`ShoppingNativeApp.xcodeproj`) is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen) from `project.yml`.
 
-## Estrutura de Arquivos
+## File Structure
 
 ```
 src/iosMain/kotlin/br/com/wdc/shopping/nativeui/ios/
 ├── theme/
-│   ├── Colors.kt          # Paleta Material Design adaptada para UIColor
-│   ├── Icons.kt           # Ícones SVG path → UIBezierPath
-│   └── UIK.kt             # Constantes UIKit (alinhamentos, content modes)
+│   ├── Colors.kt          # Material Design palette adapted to UIColor
+│   ├── Icons.kt           # SVG path icons → UIBezierPath
+│   └── UIK.kt             # UIKit constants (alignments, content modes)
 ├── toolkit/
 │   ├── AbstractViewIos.kt       # Base class + ListSlot + ViewSlot
-│   ├── UIKitDom.kt              # DSL de construção de UIViews
-│   ├── FlowLayoutView.kt        # Grid responsivo baseado em constraints
-│   ├── ViewUpdateScheduler.kt   # Coalescing de updates via GCD
-│   └── ViewUtils.kt             # Formatação, loading async de imagens
+│   ├── UIKitDom.kt              # DSL for building UIViews
+│   ├── FlowLayoutView.kt        # Constraint-based responsive grid
+│   ├── ViewUpdateScheduler.kt   # Update coalescing via GCD
+│   └── ViewUtils.kt             # Formatting, async image loading
 └── views/
-    ├── RootViewIos.kt           # Entry point + registro de factories
-    ├── LoginViewIos.kt          # Tela de login
-    ├── HomeViewIos.kt           # Layout responsivo com panels/tabs/detail
-    ├── ProductsPanelViewIos.kt  # Grid de produtos (FlowLayout)
-    ├── PurchasesPanelViewIos.kt # Lista de compras paginada
-    ├── ProductViewIos.kt        # Detalhe do produto
-    ├── CartViewIos.kt           # Carrinho de compras
-    └── ReceiptViewIos.kt        # Recibo de compra
+    ├── RootViewIos.kt           # Entry point + factory registration
+    ├── LoginViewIos.kt          # Login screen
+    ├── HomeViewIos.kt           # Responsive layout with panels/tabs/detail
+    ├── ProductsPanelViewIos.kt  # Product grid (FlowLayout)
+    ├── PurchasesPanelViewIos.kt # Paginated purchase list
+    ├── ProductViewIos.kt        # Product details
+    ├── CartViewIos.kt           # Shopping cart
+    └── ReceiptViewIos.kt        # Purchase receipt
 
 app/
-├── AppDelegate.swift        # Entry point Swift (bootstrap do framework Kotlin)
-├── Info.plist               # Configuração do app (orientações, ATS)
-└── Assets.xcassets/         # Ícone do app
+├── AppDelegate.swift        # Swift entry point (Kotlin framework bootstrap)
+├── Info.plist               # App configuration (orientations, ATS)
+└── Assets.xcassets/         # App icon
 ```

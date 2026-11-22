@@ -1,114 +1,114 @@
 # native.web
 
-Implementação da view usando **React + Material UI** via Kotlin/JS — sem Compose Web, sem Wasm.
+View implementation using **React + Material UI** through Kotlin/JS — no Compose Web, no Wasm.
 
-## Arquitetura
+## Architecture
 
 ### Base Class: `ReactCubeView`
 
-Toda view estende `ReactCubeView`, que integra o ciclo de vida Cube com o mecanismo de renderização do React:
+Every view extends `ReactCubeView`, which ties the Cube lifecycle to React's rendering mechanism:
 
 ```kotlin
 class ProductsPanelView(presenter: ProductsPanelPresenter) 
     : ReactCubeView<ProductsPanelPresenter>("products-panel", presenter) {
 
     override fun ChildrenScope.render() {
-        // JSX via Kotlin/JS wrappers
-        Typography { +"Produtos" }
+        // JSX through Kotlin/JS wrappers
+        Typography { +"Products" }
         Box { /* ... */ }
     }
 }
 ```
 
-O ciclo de vida é:
-1. `render()` — função declarativa que produz a UI via React/MUI
-2. `ViewUpdateScheduler` incrementa uma `revision` → React detecta mudança de estado → re-render
-3. Como React já é reativo, não há necessidade de guards manuais (o virtual DOM otimiza automaticamente)
+The lifecycle is:
+1. `render()` — declarative function that produces the UI through React/MUI
+2. `ViewUpdateScheduler` increments a `revision` → React detects the state change → re-render
+3. Since React is already reactive, there is no need for manual guards (the virtual DOM optimizes automatically)
 
-### Stack Tecnológica
+### Technology Stack
 
-| Camada | Tecnologia |
+| Layer | Technology |
 |--------|-----------|
-| **Linguagem** | Kotlin/JS (compilado para JavaScript) |
-| **UI Library** | React 18 (via kotlin-wrappers) |
+| **Language** | Kotlin/JS (compiled to JavaScript) |
+| **UI Library** | React 18 (through kotlin-wrappers) |
 | **Component Library** | Material UI 5 (MUI) |
-| **Bundler** | Webpack (via Gradle plugin) |
-| **Routing** | Hash-based (`#home`, `#product?id=1`) via Cube navigation |
+| **Bundler** | Webpack (through the Gradle plugin) |
+| **Routing** | Hash-based (`#home`, `#product?id=1`) through Cube navigation |
 
-### Integração Cube ↔ React
+### Cube ↔ React Integration
 
-A ponte entre o framework Cube (imperativo) e React (declarativo) é feita pelo `ViewUpdateScheduler`:
+The bridge between the Cube framework (imperative) and React (declarative) is the `ViewUpdateScheduler`:
 
-1. Presenter chama `update()` → marca a view como dirty
-2. Na próxima microtask (`Promise.resolve().then {}`), o scheduler faz flush
-3. O flush incrementa a `revision` (estado React) de cada view dirty
-4. React re-renderiza apenas os componentes cujo estado mudou
+1. The presenter calls `update()` → marks the view as dirty
+2. On the next microtask (`Promise.resolve().then {}`), the scheduler flushes
+3. The flush increments the `revision` (React state) of each dirty view
+4. React re-renders only the components whose state changed
 
-### Padrões de Implementação
+### Implementation Patterns
 
-| Padrão | Descrição |
+| Pattern | Description |
 |--------|-----------|
-| **RenderSlot** | Componente React que renderiza um `CubeView` filha (navegação) |
-| **Responsive breakpoints** | `window.innerWidth` para alternar entre layouts mobile e desktop |
-| **Hash routing** | `window.location.hash` sincronizado com a navegação Cube |
-| **MUI theming** | Cores e tipografia via constantes (`ShoppingColors`, `ShoppingTheme`) |
-| **useEffect + revision** | Cada view usa `useState(revision)` para trigger de re-render |
+| **RenderSlot** | React component that renders a child `CubeView` (navigation) |
+| **Responsive breakpoints** | `window.innerWidth` to switch between mobile and desktop layouts |
+| **Hash routing** | `window.location.hash` kept in sync with Cube navigation |
+| **MUI theming** | Colors and typography through constants (`ShoppingColors`, `ShoppingTheme`) |
+| **useEffect + revision** | Each view uses `useState(revision)` to trigger a re-render |
 
-### Navegação e Slots
+### Navigation and Slots
 
-Views-pai usam o componente `RenderSlot` que renderiza a view-filha associada a um slot do presenter:
+Parent views use the `RenderSlot` component, which renders the child view bound to a presenter slot:
 
 ```kotlin
-// No HomeView
+// In HomeView
 RenderSlot { slot = detailSlot }
 
-// Quando o presenter navega, o slot atualiza
-// e o RenderSlot renderiza a nova view automaticamente
+// When the presenter navigates, the slot updates
+// and RenderSlot renders the new view automatically
 ```
 
-### Web Worker (opcional)
+### Web Worker (optional)
 
-O projeto suporta execução dos presenters em um **Web Worker** separado, isolando a lógica de negócio da thread de renderização. Nesse modo:
-- Presenters rodam no worker thread
-- A view comunica via `postMessage` serializado
-- O `bridge/` contém os adaptadores para essa comunicação
+The project supports running the presenters in a separate **Web Worker**, isolating the business logic from the rendering thread. In this mode:
+- Presenters run on the worker thread
+- The view communicates through serialized `postMessage`
+- `bridge/` holds the adapters for that communication
 
-## Como compilar e executar
+## How to build and run
 
 ```bash
 cd fontes
 
-# Desenvolvimento com hot-reload
+# Development with hot reload
 ./gradlew :view-native-web:jsBrowserDevelopmentRun --continuous
 
-# Build de produção
+# Production build
 ./gradlew :view-native-web:jsBrowserProductionWebpack
 
-# Build do Web Worker (se necessário)
+# Web Worker build (if needed)
 ./gradlew :view-native-web-worker:jsBrowserDevelopmentWebpack
 ```
 
-A aplicação estará disponível em `http://localhost:8080/native/index.html`.
+The application will be available at `http://localhost:8080/native/index.html`.
 
-## Estrutura de Arquivos
+## File Structure
 
 ```
 src/jsMain/kotlin/br/com/wdc/shopping/nativeui/web/
-├── Main.kt                # Entry point — bootstrap e registro de factories
-├── bridge/                # Adaptadores para Web Worker (comunicação serializada)
+├── Main.kt                # Entry point — bootstrap and factory registration
+├── bridge/                # Web Worker adapters (serialized communication)
 ├── theme/
-│   ├── Colors.kt          # Paleta Material Design
-│   └── Theme.kt           # Configuração do tema MUI
+│   ├── Colors.kt          # Material Design palette
+│   └── Theme.kt           # MUI theme configuration
 ├── util/
-│   ├── ViewUpdateScheduler.kt  # Coalescing de updates via microtask
-│   └── ViewUtils.kt            # Formatação, URLs de imagens
+│   ├── ViewUpdateScheduler.kt  # Update coalescing through a microtask
+│   └── ViewUtils.kt            # Formatting, image URLs
 └── views/
-    ├── RootView.kt              # Shell do app + hash router
-    ├── LoginView.kt             # Tela de login
-    ├── HomeView.kt              # Layout responsivo com panels/tabs
-    ├── ProductsPanelView.kt     # Grid de produtos (CSS Grid/Flow)
-    ├── PurchasesPanelView.kt    # Lista de compras paginada
-    ├── ProductView.kt           # Detalhe do produto
-    ├── CartView.kt              # Carrinho de compras
-    └── ReceiptView.kt           # Recibo de compra
+    ├── RootView.kt              # App shell + hash router
+    ├── LoginView.kt             # Login screen
+    ├── HomeView.kt              # Responsive layout with panels/tabs
+    ├── ProductsPanelView.kt     # Product grid (CSS Grid/Flow)
+    ├── PurchasesPanelView.kt    # Paginated purchase list
+    ├── ProductView.kt           # Product detail
+    ├── CartView.kt              # Shopping cart
+    └── ReceiptView.kt           # Purchase receipt
 ```

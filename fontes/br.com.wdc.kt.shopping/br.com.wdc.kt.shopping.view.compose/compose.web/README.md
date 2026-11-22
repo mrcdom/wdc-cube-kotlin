@@ -1,106 +1,105 @@
 # compose.web
 
-Ponto de entrada **Web** da aplicação Compose. Compila para **wasmJs** e roda no browser via webpack dev server (porta 8082).
+**Web** entry point of the Compose application. Compiles to **wasmJs** and runs in the browser through the webpack dev server (port 8082).
 
 ```bash
 cd fontes && ./gradlew :view-compose-web:wasmJsBrowserDevelopmentRun
 ```
 
-O webpack proxy redireciona `/api/*` para o backend na porta 8080.
+The webpack proxy forwards `/api/*` to the backend on port 8080.
 
-## Segurança de Navegação — Assinatura HMAC de Intents
+## Navigation Security — HMAC Signing of Intents
 
-Em uma SPA (Single Page Application), o estado de navegação fica exposto na URL
-(hash fragment). Um usuário mal-intencionado poderia editar o hash manualmente
-para acessar telas ou parâmetros que não lhe foram oferecidos pela aplicação.
+In a SPA (Single Page Application), the navigation state is exposed in the URL
+(hash fragment). A malicious user could edit the hash by hand to reach screens
+or parameters the application never offered them.
 
-Para mitigar isso, toda navegação é assinada com **HMAC-SHA256** e a assinatura é
-incluída como parâmetro `sign` no hash fragment. Ao receber uma navegação
-(inclusive F5 ou botão voltar), a assinatura é verificada localmente antes de
-permitir o acesso à tela.
+To mitigate this, every navigation is signed with **HMAC-SHA256** and the signature
+is included as the `sign` parameter in the hash fragment. When a navigation arrives
+(including F5 or the back button), the signature is verified locally before
+access to the screen is allowed.
 
-### Modelo: Segredo HMAC por Sessão
+### Model: Per-Session HMAC Secret
 
-O design segue o modelo do **AWS Signature V4** — um segredo compartilhado por
-sessão, sem round-trips ao backend para assinar ou verificar:
+The design follows the **AWS Signature V4** model — one shared secret per
+session, with no round trips to the backend to sign or verify:
 
 ```mermaid
 sequenceDiagram
     participant S as Server
     participant C as Client (Browser)
 
-    S->>S: gera segredo aleatório (32 bytes)
+    S->>S: generates random secret (32 bytes)
     S->>C: login/refresh response { ..., intentSignKey }
-    C->>C: armazena segredo em RestAuthClient
-    C->>C: persiste no sessionStorage
+    C->>C: stores secret in RestAuthClient
+    C->>C: persists it in sessionStorage
 
-    Note over C: Navegação
+    Note over C: Navigation
     C->>C: HMAC-SHA256(key, intentString)
     C->>C: Base62 encode → sign param
     C-->>C: #place?param=x&sign=ABC
 
-    Note over C: Verificação (hashchange / F5 / back)
-    C->>C: recalcula HMAC e compara
-    C->>C: fallback: tenta chave anônima
+    Note over C: Verification (hashchange / F5 / back)
+    C->>C: recomputes HMAC and compares
+    C->>C: fallback: tries the anonymous key
 ```
 
-1. **No login/refresh**, o backend carrega (ou gera e persiste) o segredo do
-   usuário na tabela `EN_USER_INTENT_SECRET` via `IntentSecretStore`. O segredo
-   é permanente por usuário — uma vez criado, nunca muda. É retornado no campo
-   `intentSignKey` da resposta JSON.
-2. **O client** armazena o segredo em `RestAuthClient.intentSignSecret` e o
-   persiste no session storage (via `writeAuthState`/`readAuthState`).
-3. **Ao navegar**, `Main.kt` calcula `HMAC-SHA256(key, intentString)` e codifica
-   o resultado em Base62 (URL-safe). O hash resultante fica:
+1. **On login/refresh**, the backend loads (or generates and persists) the user's
+   secret in the `EN_USER_INTENT_SECRET` table through `IntentSecretStore`. The
+   secret is permanent per user — once created, it never changes. It is returned
+   in the `intentSignKey` field of the JSON response.
+2. **The client** stores the secret in `RestAuthClient.intentSignSecret` and
+   persists it in session storage (through `writeAuthState`/`readAuthState`).
+3. **When navigating**, `Main.kt` computes `HMAC-SHA256(key, intentString)` and
+   encodes the result in Base62 (URL-safe). The resulting hash looks like:
    `#restricted/product?id=42&sign=7kT9x...`
-4. **Ao verificar** (hashchange, F5, back/forward), o HMAC é recalculado e
-   comparado — tudo local, sem chamada ao servidor.
+4. **When verifying** (hashchange, F5, back/forward), the HMAC is recomputed and
+   compared — all locally, with no call to the server.
 
-### Usuário Anônimo
+### Anonymous User
 
-Antes do login, uma chave fixa (`ANONYMOUS_SIGN_KEY`) é usada para assinar as
-telas públicas. Após o login, a chave de sessão assume. Na verificação, ambas as
-chaves são testadas para suportar a transição (ex: URL pública assinada com chave
-anônima, verificada após login).
+Before login, a fixed key (`ANONYMOUS_SIGN_KEY`) signs the public screens.
+After login, the session key takes over. On verification, both keys are tried
+to support the transition (e.g. a public URL signed with the anonymous key and
+verified after login).
 
-### Restauração de Sessão (F5)
+### Session Restore (F5)
 
-No refresh da página, o auth state (incluindo `intentSignSecret`) é restaurado
-do session storage **antes** da primeira navegação (`restoreAuthState` em
-`main()`). Isso garante que URLs assinadas com a chave de sessão sejam
-verificadas corretamente, sem cair no fallback anônimo.
+On page refresh, the auth state (including `intentSignSecret`) is restored
+from session storage **before** the first navigation (`restoreAuthState` in
+`main()`). This ensures that URLs signed with the session key are verified
+correctly, without falling back to the anonymous key.
 
-### Fluxo no Código
+### Flow in the Code
 
-| Etapa | Arquivo | Função/Campo |
+| Step | File | Function/Field |
 |---|---|---|
-| Geração do segredo | `IntentSecretStore.kt` | `getOrCreate(userId)` — persiste em `EN_USER_INTENT_SECRET` |
-| Transporte no auth | `AuthResult.intentSignKey` | campo no JSON de login/refresh |
-| Armazenamento client | `RestAuthClient.kt` | `intentSignSecret` |
-| Persistência F5 | `RestAuthenticationService.kt` | `writeAuthState()` / `readAuthState()` |
-| Restore antes do go | `Main.kt` | `restoreAuthState()` em `main()` |
-| Assinatura local | `Main.kt` | `signIntent()` → `CryptoProvider.hmacSha256()` + `Base62` |
-| Verificação local | `Main.kt` | `verifyIntent()` — tenta chave de sessão, fallback anônimo |
+| Secret generation | `IntentSecretStore.kt` | `getOrCreate(userId)` — persists in `EN_USER_INTENT_SECRET` |
+| Transport in auth | `AuthResult.intentSignKey` | field in the login/refresh JSON |
+| Client storage | `RestAuthClient.kt` | `intentSignSecret` |
+| F5 persistence | `RestAuthenticationService.kt` | `writeAuthState()` / `readAuthState()` |
+| Restore before go | `Main.kt` | `restoreAuthState()` in `main()` |
+| Local signing | `Main.kt` | `signIntent()` → `CryptoProvider.hmacSha256()` + `Base62` |
+| Local verification | `Main.kt` | `verifyIntent()` — tries the session key, anonymous fallback |
 
-### Limitações
+### Limitations
 
-- **Não substitui autorização server-side.** Cada endpoint REST valida
-  permissões via JWT. A assinatura de intents é uma camada de defesa em
-  profundidade na UI.
-- **A chave anônima é fixa e conhecida.** Telas públicas não têm proteção real
-  contra manipulação de URL — o que é aceitável, pois são públicas.
+- **It does not replace server-side authorization.** Each REST endpoint validates
+  permissions through JWT. Intent signing is a defense-in-depth layer in the UI.
+- **The anonymous key is fixed and known.** Public screens have no real protection
+  against URL tampering — which is acceptable, since they are public.
 
-### Persistência de Sessões
+### Session Persistence
 
-As sessões de autenticação (RSA key pairs, refresh tokens, permissões) são
-persistidas na tabela `EN_USER_SESSION` do H2. Isso significa que **reiniciar o
-servidor não invalida as sessões existentes** — o client continua navegando
-normalmente sem precisar re-autenticar.
+Authentication sessions (RSA key pairs, refresh tokens, permissions) are
+persisted in the H2 `EN_USER_SESSION` table. This means that **restarting the
+server does not invalidate existing sessions** — the client keeps navigating
+normally without having to re-authenticate.
 
-Cada login cria uma sessão independente identificada por um UUID (`sessionId`),
-que é incluído como claim `sid` no JWT. Isso permite **múltiplas sessões
-simultâneas por usuário** (ex: abas diferentes, dispositivos diferentes).
+Each login creates an independent session identified by a UUID (`sessionId`),
+which is included as the `sid` claim in the JWT. This allows **multiple
+simultaneous sessions per user** (e.g. different tabs, different devices).
 
-O segredo HMAC de intents também é permanente por usuário (persistido em
-`EN_USER_INTENT_SECRET`), então URLs assinadas permanecem válidas mesmo após
-restart do servidor.
+The intent HMAC secret is also permanent per user (persisted in
+`EN_USER_INTENT_SECRET`), so signed URLs stay valid even after a server
+restart.

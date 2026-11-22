@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.sp
 
 /**
- * Logo grande para tela de login.
+ * Large logo for the login screen.
  */
 @Composable
 fun ShoppingLogoLarge() {
@@ -56,7 +56,7 @@ fun ShoppingLogoLarge() {
 }
 
 /**
- * Logo pequeno para cabeçalho (fundo escuro).
+ * Small logo for the header (dark background).
  */
 @Composable
 fun ShoppingLogoHeader(size: Dp = 36.dp, compact: Boolean = false) {

@@ -72,7 +72,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductViewState> {
         <Stack direction="column" spacing={2} sx={{ alignItems: 'center', p: 6 }}>
           <CircularProgress />
           <Typography variant="body2" sx={{ color: Colors.OnSurfaceVariant }}>
-            Carregando produto...
+            Loading product...
           </Typography>
         </Stack>
       )
@@ -127,14 +127,14 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductViewState> {
                   }}
                 >
                   <Typography variant="body1" sx={{ color: Colors.PriceColor, fontWeight: 500, fontSize: 16 }}>
-                    R$ {NumberUtils.format(product.price)}
+                    ${NumberUtils.format(product.price)}
                   </Typography>
                 </Box>
 
                 {/* Quantity selector */}
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                   <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                    Qtd:
+                    Qty:
                   </Typography>
                   <Paper
                     elevation={0}
@@ -186,7 +186,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductViewState> {
                 sx={{ borderRadius: '12px', height: 48, textTransform: 'none' }}
                 startIcon={<ArrowBackIcon />}
               >
-                Voltar
+                Back
               </Button>
               <Button
                 variant="contained"
@@ -194,7 +194,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductViewState> {
                 sx={{ borderRadius: '12px', height: 48, textTransform: 'none' }}
                 startIcon={<AddShoppingCartIcon />}
               >
-                Adicionar ao Carrinho
+                Add to Cart
               </Button>
             </Stack>
           </Stack>

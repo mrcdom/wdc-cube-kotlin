@@ -1,9 +1,9 @@
 # view-remote
 
-Implementações de **view remota** — os presenters executam no servidor e se comunicam com o cliente via WebSocket ou protocolo proprietário.
+**Remote view** implementations — the presenters run on the server and talk to the client over WebSocket or a proprietary protocol.
 
-## Subprojetos
+## Subprojects
 
-- [remote.react/](remote.react/) — Implementação com React/TypeScript — [arquitetura](../../../docs/architecture-react.md)
-- remote.vaadin/ — *(planejado)* Implementação com Vaadin
-- remote.zk/ — *(planejado)* Implementação com ZK Web Framework
+- [remote.react/](remote.react/) — React/TypeScript implementation — [architecture](../../../docs/architecture-react.md)
+- remote.vaadin/ — *(planned)* Vaadin implementation
+- remote.zk/ — *(planned)* ZK Web Framework implementation

@@ -51,7 +51,7 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
                     hidden = true
                 }) {
                     val successLabel = label {
-                        text = "✅ Compra realizada com sucesso!"
+                        text = "✅ Purchase completed successfully!"
                         font = UIFont.boldSystemFontOfSize(15.0)
                         textColor = ShoppingColors.SuccessColor
                         textAlignment = UIK.TextAlignCenter
@@ -70,7 +70,7 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
                         ))
                     }
                     label {
-                        text = "Recibo"
+                        text = "Receipt"
                         font = UIFont.systemFontOfSize(24.0, UIFontWeightMedium)
                         textColor = ShoppingColors.OnSurface
                     }
@@ -100,14 +100,14 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
                         setContentHuggingPriority(249.0f, UIK.AxisHorizontal)
                     }
                     label {
-                        text = "Qtd"
+                        text = "Qty"
                         font = UIFont.systemFontOfSize(12.0)
                         textColor = ShoppingColors.OnSurfaceVariant
                         textAlignment = UIK.TextAlignCenter
                         widthAnchor.constraintEqualToConstant(50.0).active = true
                     }
                     label {
-                        text = "Valor"
+                        text = "Amount"
                         font = UIFont.systemFontOfSize(12.0)
                         textColor = ShoppingColors.OnSurfaceVariant
                         textAlignment = UIK.TextAlignRight
@@ -147,7 +147,7 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
                 // Back button
                 hStack(spacing = 0.0) {
                     flexSpacer()
-                    backButton = button("Continuar Comprando") {
+                    backButton = button("Continue Shopping") {
                         setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                         backgroundColor = ShoppingColors.Primary
                         layer.cornerRadius = 12.0
@@ -196,7 +196,7 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
 
             // Total
             val total = receipt.total
-            totalLabel.text = if (total != null) "R$ ${ViewUtils.formatPrice(total)}" else ""
+            totalLabel.text = if (total != null) "\$${ViewUtils.formatPrice(total)}" else ""
         }
     }
 
@@ -221,7 +221,7 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
         }
 
         val valueLabel = label {
-            text = "R$ ${ViewUtils.formatPrice(item.value)}"
+            text = "\$${ViewUtils.formatPrice(item.value)}"
             font = UIFont.systemFontOfSize(14.0, UIFontWeightMedium)
             textColor = ShoppingColors.PriceColor
             textAlignment = UIK.TextAlignRight

@@ -30,7 +30,7 @@ android {
     }
 }
 
-// O Kotlin vem embutido no plugin Android (AGP 9): não se aplica plugin Kotlin à parte.
+// Kotlin comes built into the Android plugin (AGP 9): no separate Kotlin plugin is applied.
 kotlin {
     jvmToolchain(21)
 }

@@ -172,7 +172,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                             centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                         ))
                     }
-                    cartButton = button("Carrinho") {
+                    cartButton = button("Cart") {
                         setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                         titleLabel?.font = UIFont.systemFontOfSize(13.0)
                         backgroundColor = ShoppingColors.WhiteOverlay20
@@ -267,7 +267,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                     ))
                 }
 
-                wideCartButton = button("Carrinho") {
+                wideCartButton = button("Cart") {
                     setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                     titleLabel?.font = UIFont.systemFontOfSize(14.0)
                     backgroundColor = ShoppingColors.WhiteOverlay20
@@ -329,7 +329,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                 heightAnchor.constraintEqualToConstant(48.0)
             ))
         }) {
-            productsTab = button("PRODUTOS") {
+            productsTab = button("PRODUCTS") {
                 setTitleColor(ShoppingColors.Primary, forState = UIControlStateNormal)
                 titleLabel?.font = UIFont.boldSystemFontOfSize(14.0)
                 setImage(ShoppingIcons.shoppingBag(22.0, ShoppingColors.Primary), forState = UIControlStateNormal)
@@ -340,7 +340,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
                     centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                 ))
             }
-            purchasesTab = button("COMPRAS") {
+            purchasesTab = button("PURCHASES") {
                 setTitleColor(ShoppingColors.OnSurfaceVariant, forState = UIControlStateNormal)
                 titleLabel?.font = UIFont.systemFontOfSize(14.0)
                 setImage(ShoppingIcons.inventory(22.0, ShoppingColors.OnSurfaceVariant), forState = UIControlStateNormal)
@@ -598,7 +598,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         val nick = state.nickName
         if (nick != lastNick) {
             lastNick = nick
-            val greeting = if (!nick.isNullOrBlank()) "Olá, $nick" else ""
+            val greeting = if (!nick.isNullOrBlank()) "Hello, $nick" else ""
             nicknameLabel.text = greeting
             wideNicknameLabel.text = greeting
         }

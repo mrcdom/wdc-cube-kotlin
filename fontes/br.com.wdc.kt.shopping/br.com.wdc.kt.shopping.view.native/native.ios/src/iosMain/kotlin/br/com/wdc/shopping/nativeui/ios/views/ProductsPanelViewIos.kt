@@ -47,7 +47,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
             ))
         }) {
             headerTitle = label {
-                text = "Produtos"
+                text = "Products"
                 font = UIFont.boldSystemFontOfSize(17.0)
                 textColor = ShoppingColors.OnSurface
                 NSLayoutConstraint.activateConstraints(listOf(
@@ -110,7 +110,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
         }
 
         emptyLabel = label {
-            text = "Nenhum produto disponível"
+            text = "No products available"
             font = UIFont.systemFontOfSize(16.0)
             textColor = ShoppingColors.OnSurfaceVariant
             textAlignment = UIK.TextAlignCenter
@@ -136,7 +136,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
             productsSlot.sync(emptyList())
             if (lastCount != 0) {
                 lastCount = 0
-                headerBadge.text = "0 itens"
+                headerBadge.text = "0 items"
             }
         } else {
             emptyLabel.hidden = true
@@ -145,7 +145,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
             val count = products.size
             if (count != lastCount) {
                 lastCount = count
-                headerBadge.text = "$count itens"
+                headerBadge.text = "$count ${if (count == 1) "item" else "items"}"
             }
         }
     }
@@ -240,7 +240,7 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewI
         }
         if (p.price != lastPrice) {
             lastPrice = p.price
-            priceLabel.text = "R$ ${ViewUtils.formatPrice(p.price)}"
+            priceLabel.text = "\$${ViewUtils.formatPrice(p.price)}"
         }
     }
 
