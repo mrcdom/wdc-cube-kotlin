@@ -348,7 +348,7 @@ sequenceDiagram
     participant RootView as RootView Compose
 
     Note over Root: applyParameters deepest=false
-    Root->>Intent: parentSlot = contentSlot (MainKeys)
+    Root->>Intent: parentSlot = contentSlot (RootKeys)
     Note over Root: contentSlot callback:<br/>view -> state.contentView = view (observed state)
 
     Note over Home: applyParameters deepest=true, init=true
@@ -376,7 +376,7 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             view = createView?.invoke(this)
         }
         // Publishes the slot in the intent so the next step can use it
-        MainKeys(app, intent).parentSlot = contentSlot
+        RootKeys(app, intent).parentSlot = contentSlot
         return true
     }
 

@@ -45,8 +45,8 @@ class PlaceKeysTest : BasePresentationTest() {
 
     @Test
     fun everyPlace_hasItsOwnKeys_evenWithoutNamesOfItsOwn() {
-        // the root's keys are MainKeys; every other place has <Place>Keys
-        val expected = Routes.Place.entries.map { if (it == Routes.Place.ROOT) "MainKeys" else keysNameOf(it) }.toSet()
+        // every place has <Place>Keys
+        val expected = Routes.Place.entries.map(::keysNameOf).toSet()
         val found = presentationSources.walkTopDown().filter { it.isFile && it.name.endsWith("Keys.kt") }.map { it.nameWithoutExtension }.toSet()
         assertEquals(emptySet<String>(), expected - found, "places without keys")
     }

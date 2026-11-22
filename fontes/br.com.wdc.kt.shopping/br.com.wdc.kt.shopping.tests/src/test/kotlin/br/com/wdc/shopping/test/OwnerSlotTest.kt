@@ -4,7 +4,7 @@ import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.presenter.MainKeys
+import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
@@ -31,7 +31,7 @@ class OwnerSlotTest : BasePresentationTest() {
         var placed: CubeView? = null
         val intent = app.newIntent()
         configure(intent)
-        MainKeys(app, intent).parentSlot = CubeViewSlot { placed = it }
+        RootKeys(app, intent).parentSlot = CubeViewSlot { placed = it }
         presenter.applyParameters(intent, false, true)
         return placed
     }

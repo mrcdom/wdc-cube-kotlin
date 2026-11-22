@@ -12,7 +12,7 @@ import br.com.wdc.shopping.presentation.ShoppingApplication
  * - **A two-letter prefix per class, unique in the application** ([PREFIX]); every name it declares starts with it
  *   (`pr-id`). Names live in a private table: `P` for parameters (they go in the address), `A` for attributes (they
  *   don't). To create a name, look only at your own file. `PlaceKeysTest` checks the prefixes are unique.
- * - **Inheritance follows the place tree:** `MainKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the
+ * - **Inheritance follows the place tree:** `RootKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the
  *   keys of whoever publishes it; the places below inherit it to read.
  * - **The one name reused on purpose is the composition slot** ([parentSlot]): each level reads the slot it got and
  *   republishes, under the same name, the slot of its content for the level below.
@@ -23,13 +23,13 @@ import br.com.wdc.shopping.presentation.ShoppingApplication
  * - **Redirecting from inside `applyParameters` uses the intent in transit** (`HomeKeys(app, intent).go()`), not a new
  *   one: that presenter is not accepted yet, and a new intent would lose what the address just brought.
  */
-open class MainKeys(protected val app: ShoppingApplication, intent: CubeIntent? = null) {
+open class RootKeys(protected val app: ShoppingApplication, intent: CubeIntent? = null) {
 
     /** The intent these keys read and write. */
     val intent: CubeIntent = intent ?: app.newIntent()
 
     companion object {
-        const val PREFIX = "mn"
+        const val PREFIX = "rt"
     }
 
     private object A {

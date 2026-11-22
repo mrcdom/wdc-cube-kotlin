@@ -2,11 +2,11 @@ package br.com.wdc.shopping.presentation.presenter.restricted.products
 
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.shopping.presentation.ShoppingApplication
-import br.com.wdc.shopping.presentation.presenter.MainKeys
+import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
-/** The keys of the product place. See [MainKeys]. */
+/** The keys of the product place. See [RootKeys]. */
 class ProductKeys(app: ShoppingApplication, intent: CubeIntent? = null) : HomeKeys(app, intent) {
 
     companion object {
