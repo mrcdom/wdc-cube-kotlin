@@ -230,6 +230,8 @@ openApi {
 
 **`scope` adds the reach to criteria that came from the caller**, with the disjunction the caller chose on each field. Use the conjunctive field, `criteria.ownerId.and().eq(owner)`, and never just `eq`: on a field sent with `"or": true`, `eq` becomes one more alternative (`ownerId IS NOT NULL OR ownerId = :owner`) and the caller reaches everything.
 
+**Reads join the client's remote transaction.** With `X-Tx-Id`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}` run in it, as participants: they see what it already wrote and are not blocked by the rows it locked. Without the header, they run with no transaction. A handler of your own does the same with `call.inRemoteTransaction { … }`.
+
 **Queries have a cap**, `maxLimit` (1000 by default; `null` turns it off). A `limit` or `pageSize` above it is 400, and so is a `fetch` without `limit` that would bring more rows: it is refused, not cut short, so the client never takes a partial list for the whole one. Page with `limit` and `offset`, or with `fetch-page`.
 
 `insert` receives `{"entity", "projection"?}` (or, as before 0.4.0, the bare entity) and answers `{"success", "id", "entity"}`, with the entity as the repository left it — the generated key and the column defaults —, passed through `sanitizeOutput`.

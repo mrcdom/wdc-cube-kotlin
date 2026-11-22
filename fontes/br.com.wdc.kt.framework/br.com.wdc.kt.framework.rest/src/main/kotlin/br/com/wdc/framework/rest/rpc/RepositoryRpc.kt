@@ -32,7 +32,8 @@ import io.javalin.http.NotFoundResponse
  * | `POST fetch-by-id` | `{"id", "projection"?}` | entity, or 404 |
  * | `GET {id}` | — | entity with the default projection, or 404 |
  *
- * The writes only exist if the repository is a [Repository], and they are `transactional`. Access is up to the
+ * The writes only exist if the repository is a [Repository], and they are `transactional`. The reads run in the
+ * client's remote transaction when the request carries its `X-Tx-Id`, so they see what it already wrote. Access is up to the
  * application: [rule] per operation, [scope] to restrict reads, delete and update to what belongs to the caller, and the write
  * hooks, which run inside the transaction. Fetching by key goes through the same rule and reach as the queries.
  *
@@ -138,11 +139,14 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             post(routes, Operation.UPDATE, transactional = true, ::update)
             post(routes, Operation.DELETE, transactional = true, ::delete)
         }
-        post(routes, Operation.COUNT, transactional = false, ::count)
-        post(routes, Operation.FETCH, transactional = false, ::fetch)
-        post(routes, Operation.FETCH_PAGE, transactional = false, ::fetchPage)
-        post(routes, Operation.FETCH_BY_ID, transactional = false, ::fetchByIdPost)
-        routes.get("$basePath/{id}", rule = rule(Operation.GET_BY_ID), doc = doc(Operation.GET_BY_ID)) { fetchById(it) }
+        // reads are not transactional, but with X-Tx-Id they run in the client's remote transaction (its own writes)
+        post(routes, Operation.COUNT, transactional = false) { call -> call.inRemoteTransaction { count(call) } }
+        post(routes, Operation.FETCH, transactional = false) { call -> call.inRemoteTransaction { fetch(call) } }
+        post(routes, Operation.FETCH_PAGE, transactional = false) { call -> call.inRemoteTransaction { fetchPage(call) } }
+        post(routes, Operation.FETCH_BY_ID, transactional = false) { call -> call.inRemoteTransaction { fetchByIdPost(call) } }
+        routes.get("$basePath/{id}", rule = rule(Operation.GET_BY_ID), doc = doc(Operation.GET_BY_ID)) { call ->
+            call.inRemoteTransaction { fetchById(call) }
+        }
     }
 
     private fun post(routes: RestApi.Routes, op: Operation, transactional: Boolean, handler: suspend (RestCall) -> Any?) {

@@ -282,7 +282,7 @@ A REST client that needs several atomic writes opens a transaction on the server
 
 Two limits to keep in mind:
 
-- **Reads don't participate** in the remote transaction: inside the block, a `fetch` sees only what has already been committed.
+- **Reads participate** in the remote transaction: inside the block, `fetch`, `count`, `fetch-page` and `fetch-by-id` carry the `X-Tx-Id` and see what the transaction already wrote. Another client keeps seeing only what is committed.
 - `notSupported` inside a remote transaction is for reading, not writing — the server can't tell "suspended transaction" from "lost header". To write outside it, use `requiresNew`.
 
 The client's current transaction is kept per service instance (one per application). Presentation actions run serially and HTTP is blocking; therefore, **the calls of a remote transaction must be sequential**.
