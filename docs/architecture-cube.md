@@ -282,31 +282,23 @@ A chamada `Routes.login(app)` dispara `app.navigate()` **de dentro** da execuç�
 
 ### A Solução — Migração de Presenters
 
-Quando `navigate()` detecta que já existe uma navegação em andamento:
+`navigate()` só cria a navegação. Quem decide o que fazer com uma navegação em curso é o `execute()`, que roda
+cada `applyParameters` com a própria navegação marcada no contexto da corrotina. Assim ele sabe de onde veio o
+pedido:
 
 ```kotlin
-fun <T : CubeApplication> navigate(): CubeNavigation<T> {
-    val current = navigation
-    if (current != null) {
-        // (1) Marca a navegação corrente como interrompida
-        current.interrupt()
-
-        // (2) Verifica limite de recursão
-        if (current.reflowCount > 10) {
-            throw AssertionError("Navigation recursion detected")
-        }
-
-        // (3) Cria novo contexto de navegação
-        val newContext = CubeNavigation<T>(this)
-        newContext.reflowCount = current.reflowCount + 1
-
-        // (4) MIGRA os presenters criados pela navegação interrompida
-        newContext.newPresenterMap.putAll(current.newPresenterMap)
-
-        navigation = newContext
-        return newContext
+// CubeNavigation.join(), chamado no início do execute()
+val current = app.navigation
+when {
+    current == null -> app.startNavigation(this)                    // nenhuma em curso: começa
+    contextoDaCorrotina.navegação === current -> {                   // de dentro: é um redirect
+        current.interrupt()                                          // (1) a corrente para
+        if (current.reflowCount > 10) throw AssertionError("Navigation recursion detected")
+        reflowCount = current.reflowCount + 1
+        newPresenterMap.putAll(current.newPresenterMap)              // (2) herda o que ela criou
+        app.replaceNavigation(this)
     }
-    // ...
+    else -> esperaACorrenteTerminar()                                // de fora: veja abaixo
 }
 ```
 
@@ -315,6 +307,25 @@ A **migração** (`putAll`) transfere os presenters criados para o novo contexto
 - Se a nova navegação **reutilizar** um presenter criado pela interrompida, ele será encontrado via `newPresenterMap[id]` e não será criado novamente
 - Se a nova navegação **não usar** o presenter, ele será liberado no commit ou rollback da nova navegação
 - **Nenhum presenter criado é esquecido** — o `release()` é garantido
+
+### Pedido de fora durante uma navegação
+
+O `presenterScope` é serial, mas uma ação suspensa (a I/O dentro de `applyParameters`) deixa a próxima entrar.
+Um clique durante uma carga lenta chama `navigate()` + `execute()` com uma navegação em curso, **fora** do contexto
+dela. Esse pedido **espera** a navegação corrente (com os redirects dela) terminar, em vez de interrompê-la:
+
+- só o último pedido espera; um anterior desiste e o `execute` dele devolve `false`;
+- se a navegação corrente falhar, o pedido que esperava também desiste (`false`);
+- por isso vários cliques durante uma carga não estouram o limite de 10 redirects.
+
+Um presenter que lance outra corrotina para navegar e espere por ela dentro do próprio `applyParameters` ficaria
+esperando a si mesmo: navegue direto, de dentro do `applyParameters`, que é redirect.
+
+### `false` no applyParameters
+
+`false` quer dizer que o presenter foi aceito, mas a composição para nele: os níveis visitados são comitados, e o
+**lugar corrente** (`lastPlace`, o que o histórico e o deep link mostram) é o desse presenter, e não o último passo da
+rota, que nunca foi visitado.
 
 ### Fluxo Detalhado de uma Interrupção
 

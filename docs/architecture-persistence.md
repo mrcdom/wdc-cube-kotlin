@@ -271,10 +271,13 @@ Um cliente REST que precise de várias escritas atômicas abre uma transação n
 
 O `RestTransactionService` faz isso por baixo de `required { }`. No servidor, um coordenador guarda as transações abertas e aplica as defesas:
 
-- **Dono.** A transação pertence a quem a abriu — o usuário autenticado ou, sem segurança, o `X-Client-Id` — e ninguém mais a usa (403).
+- **Dono.** A transação pertence a quem a abriu — o usuário autenticado **e** a instância de cliente (`X-Client-Id`), ou, sem segurança, só o `X-Client-Id` — e ninguém mais a usa (403). O mesmo usuário em dois clientes (desktop e web) não se bloqueia.
 - **Cabeçalho perdido.** Uma escrita **sem** `X-Tx-Id` de quem tem transação aberta é recusada (409), em vez de confirmar sozinha fora da transação.
-- **Abandono.** Transação ociosa é desfeita pelo servidor; há tetos de transações abertas, no total e por dono (429).
+- **Requisição que falha.** A escrita roda como participante da transação remota: se falhar no meio, a transação fica condenada, e o commit a desfaz e responde 409, em vez de confirmar a escrita parcial.
+- **Abandono.** Transação ociosa é desfeita pelo servidor; há tetos de transações abertas, no total e por usuário (429). Um `txId` desconhecido ou já revertido responde 410.
+- **Em uso.** Rollback pedido enquanto uma requisição usa a transação vale na hora, mas a conexão só fecha quando ela termina; commit nessa hora é conflito (409).
 - **Repetição.** Repetir o mesmo desfecho é inócuo; pedir o oposto é conflito (409).
+- **Resposta perdida.** Se o commit falhar no transporte (tempo esgotado, conexão caída), o cliente pergunta o `status` antes de decidir: comitou é sucesso, aberta é desfeita.
 
 Dois limites para ter em mente:
 

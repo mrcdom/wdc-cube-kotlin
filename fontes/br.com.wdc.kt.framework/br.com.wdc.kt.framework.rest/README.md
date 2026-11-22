@@ -169,7 +169,7 @@ Para levar o contexto a uma corrotina lançada fora do pipeline, use `request.as
 2. Se não veio o cabeçalho mas o dono tem transação remota aberta, a escrita é recusada com 409, para não ser confirmada fora da transação. `refuseWritesOutsideOpenTransaction = false` desliga isso.
 3. Nos outros casos, há uma transação por requisição (`TransactionService.required`).
 
-O dono de uma transação remota é `user:<principal.id>`, ou `anon:<X-Client-Id>` sem principal (configurável em `ownerKey`). `RemoteTransactionRoutes.register(this, transactions)` publica `begin`, `commit`, `rollback` e `status` em `/api/tx`. `serviceSource` e `coordinatorSource` são consultados a cada requisição, para quem guarda os serviços em holders.
+O dono de uma transação remota é `user:<principal.id>/client:<X-Client-Id>` (ou `user:<principal.id>` sem o cabeçalho), ou `anon:<X-Client-Id>` sem principal (configurável em `ownerKey`): o mesmo usuário em dois clientes não se bloqueia. O teto de abertas por dono é contado por `quotaKey` (`user:<principal.id>`), e trocar o `X-Client-Id` não o contorna. Com `X-Tx-Id`, a requisição roda como participante: se falhar, a transação remota fica condenada, e o commit responde 409. `RemoteTransactionRoutes.register(this, transactions)` publica `begin`, `commit`, `rollback` e `status` em `/api/tx`. `serviceSource` e `coordinatorSource` são consultados a cada requisição, para quem guarda os serviços em holders.
 
 ## CORS, compressão e limite de corpo
 
