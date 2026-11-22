@@ -44,7 +44,7 @@ internal object UserApiController {
         rpc.rule = { op -> ApiSecurity.permission(ENTITY, op) }
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("user", op) }
         // quem não alcança os dados de todos só alcança o próprio usuário, peça o que pedir
-        rpc.scope = { criteria, request -> ApiSecurity.ownerScope(request)?.let { criteria.userId.eq(it) } }
+        rpc.scope = { criteria, request -> ApiSecurity.ownerScope(request)?.let { criteria.userId.and().eq(it) } }
         // a senha nunca é projetada, e é retirada de tudo o que sai
         rpc.sanitizeProjection = { it.password = null }
         rpc.sanitizeOutput = { it.password = null }

@@ -76,7 +76,14 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     /** A regra de acesso de cada operação, somada à do caminho. `null` = só a do caminho. */
     var rule: (Operation) -> AccessRule? = { null }
 
-    /** Restringe o critério de toda leitura e do delete ao que quem chama alcança. */
+    /**
+     * Restringe o critério de toda leitura e do delete ao que quem chama alcança.
+     *
+     * **O critério veio de quem chama**, inclusive a disjunção de cada campo. Some o alcance com o campo
+     * conjuntivo — `criteria.ownerId.and().eq(owner)` —, nunca só com `eq`: num campo que o cliente marcou com
+     * `"or": true`, `eq` vira mais uma alternativa (`ownerId IS NOT NULL OR ownerId = :owner`) e o alcance some.
+     * Com `and()`, todo pedido do cliente nesse campo fica em `AND` com o dono, e nenhum alcança outra linha.
+     */
     var scope: suspend (C, RequestContext) -> Unit = { _, _ -> }
 
     /** Ajusta a projeção pedida antes da consulta — retire o que nunca sai (a senha, por exemplo). */

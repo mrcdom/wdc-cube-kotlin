@@ -42,7 +42,7 @@ internal object PurchaseApiController {
         rpc.rule = { op -> ApiSecurity.permission(ENTITY, op) }
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("purchase", op) }
         // quem não alcança os dados de todos só alcança as próprias compras, peça o que pedir
-        rpc.scope = { criteria, request -> ApiSecurity.ownerScope(request)?.let { criteria.userId.eq(it) } }
+        rpc.scope = { criteria, request -> ApiSecurity.ownerScope(request)?.let { criteria.userId.and().eq(it) } }
         rpc.sanitizeProjection = ::dropPassword
         rpc.sanitizeOutput = ::dropPassword
         rpc.beforeInsert = { purchase, request ->
