@@ -45,7 +45,7 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
         if (deepest) {
             // the root alone shows nothing: go to the home, with the intent in transit
-            HomeKeys(app, intent).go()
+            HomeKeys(app, intent).flip()
             return false
         }
         RootKeys(app, intent).parentSlot = contentSlot

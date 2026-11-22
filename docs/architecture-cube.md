@@ -74,6 +74,8 @@ interface CubePlace {
 
 IDs follow a **hierarchical convention**: lower IDs represent nodes closer to the root, and higher IDs represent leaves. The release order relies on this convention (leaf-first, i.e. higher IDs first).
 
+**`CubeTreePlace`** is the implementation applications use: a place that knows its `parent`, so its `path` from the root is the navigation that reaches it. `CubeTreePlace.root(name, factory)` creates a root and `place.child(name, factory)` a place nested in it. Ids grow in creation order and a child is always created after its parent, so the convention above holds by construction. `placeName` is what the address carries, given as is. `app.flip(place, intent)` steps through the path: it is what the keys classes call (next section).
+
 ### CubePresenter
 
 Interface every presenter must implement. It defines the lifecycle contract:
@@ -144,23 +146,26 @@ A new view needs no `update()` either: every view layer paints the current state
 
 ### Keys classes
 
-The names a place reads from and writes to the `CubeIntent` live in **one keys class per place**, named after it (`RootKeys`, `LoginKeys`, `HomeKeys`, `CartKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties; presenters never use a literal name, nor call `Routes` to navigate. A place with no names of its own still has its keys (`LoginKeys`, `CartKeys`): it reads its slot and is navigated to through them, and it is where its names will go. `PlaceKeysTest` fails when a place has none.
+The names a place reads from and writes to the `CubeIntent` live in **one keys class per place**, named after it (`RootKeys`, `LoginKeys`, `HomeKeys`, `CartKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties, on the framework's `CubeKeys` (the application, the intent and `flip()`). **The keys class declares its place**: presenters never use a literal name, and navigate through the keys of the destination (`CartKeys(app).flip()`). A place with no names of its own still has its keys (`LoginKeys`, `CartKeys`): they declare the place, read its slot and navigate to it, and they are where its names will go.
+
+- **Each keys class declares its place**, in its companion, from the place of the keys it extends: `val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`; the root keys use `CubeTreePlace.root("public", ::RootPresenter)`. So the class tree is the place tree, by construction, and there is no separate table of places to keep in step. The application lists every place an address can name, by hand, in `ShoppingApplication.PLACES` (a place is created when its keys are first used; the list creates them all before the first navigation), and `ShoppingApplication.flip(address)` resolves an address to its place, or to the root. `PlaceKeysTest` checks that each place is declared by one keys class, child of the place of the keys it extends, and that they are the places of the list.
 
 - **A two-letter prefix per class, unique in the application.** Every name the class declares starts with it (`pr-id`), in a private table: `P` for parameters, which go in the address, and `A` for attributes, which don't. To create a name, look only at your own file. `PlaceKeysTest` checks that the prefixes are unique.
-- **Inheritance follows the place tree:** `RootKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.
+- **Inheritance is the place tree:** `RootKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.
 - **The one name reused on purpose is the composition slot, `parentSlot`.** Each level reads the slot it got and republishes, under the same name, the slot of its content for the level below. A reused presenter reads it on every `applyParameters`, because the parent may now offer another slot.
 - **Validation is in the getter, which never throws.** The address is input from outside, so a getter returns a usable value or `null`: an id must be positive. A setter given the default or `null` removes the name from the address.
 - **The address follows the state through `publishParameters`.** Each presenter publishes what it shows — the product publishes `pr-id`, the home publishes the purchases page (`hm-page`, left out when it is the first page) — and the address is rebuilt from them at the end of every navigation. A change that is not a navigation, such as turning a page, calls `app.updateHistory()` so the address follows it; `applyParameters` reads the value back from the address.
-- **Navigating starts from the state.** Without an intent, the keys start from `app.newIntent()`, which asks every live presenter what it shows: `ProductKeys(app).apply { productId = id }.go()`.
-- **Redirecting from inside `applyParameters` uses the intent in transit**, as in `HomeKeys(app, intent).go(); return false`, not a new intent: the presenter is not accepted yet, and a new intent would lose what the address brought. The Storefront does this when an address has no usable id: it goes to the home.
+- **Navigating starts from the state.** Without an intent, the keys start from `app.newIntent()`, which asks every live presenter what it shows: `ProductKeys(app).apply { productId = id }.flip()`.
+- **Redirecting from inside `applyParameters` uses the intent in transit**, as in `HomeKeys(app, intent).flip(); return false`, not a new intent: the presenter is not accepted yet, and a new intent would lose what the address brought. The Storefront does this when an address has no usable id: it goes to the home.
 
 ```kotlin
-class ProductKeys(app: ShoppingApplication, intent: CubeIntent? = null) : HomeKeys(app, intent) {
-    companion object { const val PREFIX = "pr" }
+class ProductKeys(app: ShoppingApplication, intent: CubeIntent? = null) : HomeKeys(app, intent, PLACE) {
+    companion object {
+        const val PREFIX = "pr"
+        val PLACE: CubeTreePlace = HomeKeys.PLACE.child("product", ::ProductPresenter)
+    }
 
     private object P { const val PRODUCT_ID = "$PREFIX-id" }
-
-    override suspend fun go(): Boolean = Routes.product(app, intent)
 
     var productId: Long?
         get() = intent.getParameterAsLong(P.PRODUCT_ID)?.takeIf { it > 0 }
@@ -318,7 +323,7 @@ class HomePresenter(app: ShoppingApp) : AbstractCubePresenter<ShoppingApp>(app) 
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (app.subject == null) {
             // Unauthenticated user — redirect to login
-            Routes.login(app)  // ← calls app.navigate() internally
+            LoginKeys(app, intent).flip()  // ← calls app.navigate() internally
             return false
         }
         // ...
@@ -327,7 +332,7 @@ class HomePresenter(app: ShoppingApp) : AbstractCubePresenter<ShoppingApp>(app) 
 }
 ```
 
-The `Routes.login(app)` call triggers `app.navigate()` **from inside** the execution of another navigation. This creates a **recursion**: the current navigation must be interrupted and a new one must take over, without losing the presenters already created.
+The `LoginKeys(app, intent).flip()` call triggers `app.navigate()` **from inside** the execution of another navigation. This creates a **recursion**: the current navigation must be interrupted and a new one must take over, without losing the presenters already created.
 
 ### The Solution — Presenter Migration
 
@@ -632,7 +637,7 @@ flowchart LR
     subgraph SUSPEND["Suspend World"]
         direction TB
         A1["applyParameters()"]
-        A2["Routes.xxx()"]
+        A2["XxxKeys(app).flip()"]
         A3["repository.fetch()"]
         A4["childPresenter.initialize()"]
         A5["cart.commit()"]
@@ -680,7 +685,7 @@ sequenceDiagram
 
     activate Q
     Note over Q: Now runs onExit()
-    Q->>IO: Routes.login() → execute()
+    Q->>IO: LoginKeys(app).flip() → execute()
     IO-->>Q: navigation complete
     deactivate Q
 ```
@@ -702,7 +707,7 @@ The table below summarizes which framework operations are `suspend` and which ar
 | `CubeNavigation.execute()` | ✅ | Calls each presenter's `applyParameters()` |
 | `CubePresenter.applyParameters()` | ✅ | May initialize child presenters (I/O) |
 | `AbstractChildPresenter.initialize()` | ✅ | Calls `onInitialize()`, which may load data |
-| `Routes.xxx(app)` | ✅ | Calls `navigate().execute()` |
+| `XxxKeys(app).flip()` | ✅ | Calls `navigate().execute()` |
 | `repository.fetch/insert/update()` | ✅ | Network or database access |
 | User actions with I/O (`onBuy()`) | ✅ | Call repositories or navigate |
 | User actions without I/O (`onModifyQuantity()`) | ❌ | Only mutate local state |
@@ -806,7 +811,7 @@ flowchart TD
 override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
     val keys = ReceiptKeys(app, intent)
     val pPurchaseId = keys.purchaseId ?: purchaseId ?: run {
-        HomeKeys(app, intent).go()  // no usable id in the address: redirect, with the intent in transit
+        HomeKeys(app, intent).flip()  // no usable id in the address: redirect, with the intent in transit
         return false
     }
 
@@ -884,7 +889,7 @@ abstract class AbstractChildPresenter<A : CubeApplication>(override val app: A) 
 ```mermaid
 flowchart TD
     Q1{Does the function do I/O?\nnetwork, disk, database}
-    Q2{Does the function navigate?\ncall Routes.xxx}
+    Q2{Does the function navigate?\ncall XxxKeys.flip}
     Q3{Does the function initialize\na child presenter?}
     Q4{Does the function only\nmutate local state?}
 
@@ -913,12 +918,12 @@ fun onModifyQuantity(productId: Long?, quantity: Int?) {
     }
 }
 
-// ✅ suspend — may navigate (Routes.home)
+// ✅ suspend — may navigate (HomeKeys.flip)
 suspend fun onRemoveProduct(productId: Long?) {
     val modified = cart.removeProduct(productId)  // sync
     if (modified) {
         if (cart.getSize() == 0) {
-            Routes.home(app)  // ← suspend: navigates
+            HomeKeys(app).flip()  // ← suspend: navigates
         } else {
             state.items = cart.getCartItems()
             update()
@@ -926,16 +931,16 @@ suspend fun onRemoveProduct(productId: Long?) {
     }
 }
 
-// ✅ suspend — does I/O (cart.commit) and navigates (Routes.receipt)
+// ✅ suspend — does I/O (cart.commit) and navigates (ReceiptKeys.flip)
 suspend fun onBuy() {
     val purchaseId = cart.commit(app.subject!!)  // ← suspend: persists the purchase
-    ReceiptKeys(app).apply { this.purchaseId = purchaseId }.go()  // ← suspend: navigates
+    ReceiptKeys(app).apply { this.purchaseId = purchaseId }.flip()  // ← suspend: navigates
 }
 ```
 
 ### Practical Rules for the Developer
 
-1. **Mark a function `suspend` if and only if** it calls another suspend function (repository, Routes, initialize). Do not add `suspend` "just in case".
+1. **Mark a function `suspend` if and only if** it calls another suspend function (repository, `flip`, initialize). Do not add `suspend` "just in case".
 
 2. **Never call `runBlocking` inside a presenter.** The `presenterScope` already is the coroutine; using `runBlocking` inside it causes a deadlock.
 
@@ -947,7 +952,7 @@ suspend fun onBuy() {
 
 6. **`CubeViewSlot.setView()` is synchronous.** It assigns a view to the parent's slot and never involves I/O.
 
-7. **Navigation actions (Routes) are always suspend.** Any method that may navigate must be marked `suspend`, because `CubeNavigation.execute()` is suspend.
+7. **Navigation actions (`flip`) are always suspend.** Any method that may navigate must be marked `suspend`, because `CubeNavigation.execute()` is suspend.
 
 8. **The typical flow inside a `safeCall`:**
 

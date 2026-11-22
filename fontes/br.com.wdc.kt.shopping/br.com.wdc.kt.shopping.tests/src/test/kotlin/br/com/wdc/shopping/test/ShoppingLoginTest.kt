@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.test
 
-import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.mock.viewimpl.LoginViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.PurchasesPanelViewMock
@@ -14,7 +14,7 @@ class ShoppingLoginTest : BasePresentationTest() {
 
     @Test
     fun testLoginFirstAccess() = runBlocking {
-        Routes.login(app)
+        LoginKeys(app).flip()
 
         val rootView = app.getRootView()!!
 
@@ -24,7 +24,7 @@ class ShoppingLoginTest : BasePresentationTest() {
 
     @Test
     fun testLoginFailsWithUnrecognizedUserOrPassword() = runBlocking {
-        Routes.login(app)
+        LoginKeys(app).flip()
 
         val rootView = app.getRootView()!!
 
@@ -40,7 +40,7 @@ class ShoppingLoginTest : BasePresentationTest() {
 
     @Test
     fun testLoginSystemAccess() = runBlocking {
-        Routes.login(app)
+        LoginKeys(app).flip()
 
         val rootView = app.getRootView()!!
 

@@ -27,7 +27,7 @@ import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.persistence.client.WasmHttpTransport
 import br.com.wdc.shopping.presentation.ShoppingApplication
-import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
@@ -78,7 +78,7 @@ private class ComposeShoppingApplication : ShoppingApplication() {
         val intentStr = intent.toString()
 
         if (verifyIntent(intentStr, actualSignature)) {
-            go(intent)
+            flip(intent)
         } else {
             // Invalid signature: navigate to current state or root
             updateHistory()
@@ -86,7 +86,7 @@ private class ComposeShoppingApplication : ShoppingApplication() {
             if (newIntent.place == null) {
                 newIntent.place = getRootPlace()
             }
-            go(newIntent)
+            flip(newIntent)
         }
     }
 
@@ -135,7 +135,7 @@ fun main() {
             app.sessionStorage.remove("authState")
             app.sessionStorage.remove("securityContext")
             app.setSecurityContext(null)
-            app.go("public")
+            RootKeys(app).flip()
         }
     }
 
@@ -143,16 +143,13 @@ fun main() {
     // so that safeGo() can verify URL signatures made with the session key.
     restoreAuthState(app)
 
-    // Ensure route registrations are initialized before navigation
-    Routes.Place.entries
-
     // Read initial path from URL hash, verify signature, or default to "public"
     ViewUpdateScheduler.launchPresenterAction {
         val hash = getLocationHash()
         if (hash.isNotBlank()) {
             app.safeGo(hash)
         } else {
-            app.go("public")
+            RootKeys(app).flip()
         }
     }
 
@@ -164,7 +161,7 @@ fun main() {
                 if (newHash.isNotBlank()) {
                     app.safeGo(newHash)
                 } else {
-                    app.go("public")
+                    RootKeys(app).flip()
                 }
             }
         }

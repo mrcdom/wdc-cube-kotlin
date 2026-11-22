@@ -3,8 +3,14 @@ package br.com.wdc.shopping.presentation
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeApplication
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubePlace
 import br.com.wdc.framework.commons.storage.SessionStorage
+import br.com.wdc.framework.cube.CubeTreePlace
+import br.com.wdc.shopping.presentation.presenter.RootKeys
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import br.com.wdc.shopping.domain.product.ProductRepository
@@ -12,9 +18,7 @@ import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContext
-import br.com.wdc.shopping.presentation.function.GoAction
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
-import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 
@@ -37,10 +41,10 @@ abstract class ShoppingApplication : CubeApplication() {
 
     // :: Getters and Setters
 
-    fun getRootPlace(): CubePlace = Routes.Place.ROOT
+    fun getRootPlace(): CubeTreePlace = RootKeys.PLACE
 
     open fun getRootPresenter(): RootPresenter? =
-        getPresenter(Routes.Place.ROOT.id) as? RootPresenter
+        getPresenter(RootKeys.PLACE.id) as? RootPresenter
 
     fun getSecurityContext(): SecurityContext? = securityContext
 
@@ -65,30 +69,30 @@ abstract class ShoppingApplication : CubeApplication() {
         getRootPresenter()?.alertUnexpectedError(logger, message, e)
     }
 
-    suspend fun go(placeStr: String) {
-        go(CubeIntent.parse(placeStr))
-    }
+    /** Navigates to an address (`product?pr-id=7`): an unknown place goes to the root. */
+    suspend fun flip(address: String): Boolean = flip(CubeIntent.parse(address))
 
-    suspend fun go(intent: CubeIntent) {
-        Internals.go(this, intent)
-    }
+    /** Navigates to the place [intent] names (an unknown one goes to the root), with its parameters. */
+    suspend fun flip(intent: CubeIntent): Boolean = flip(placeOf(intent.place?.placeName), intent)
 
-    // :: Internal Classes - Meant to be used on initialization only
+    companion object {
+        /**
+         * Every place an address can name, listed by hand: each keys class declares its own place, and a place is
+         * created when its keys are first used — this list creates them all before the first navigation.
+         */
+        val PLACES: List<CubeTreePlace> = listOf(
+            RootKeys.PLACE,
+            LoginKeys.PLACE,
+            HomeKeys.PLACE,
+            CartKeys.PLACE,
+            ProductKeys.PLACE,
+            ReceiptKeys.PLACE,
+        )
 
-    object Internals {
+        private val placesByName: Map<String, CubeTreePlace> = PLACES.associateBy { it.placeName }
 
-        private val goActionMap: MutableMap<String, GoAction> = HashMap()
-
-        fun registerPlace(tag: String, goAction: GoAction) {
-            goActionMap[tag] = goAction
-        }
-
-        internal suspend fun go(app: ShoppingApplication, place: CubeIntent) {
-            val goAction = goActionMap[place.place?.placeName]
-                ?: goActionMap[app.getRootPlace().placeName]
-
-            goAction?.apply(app, place)
-        }
+        /** The place with [placeName], or the root when no place has it. */
+        fun placeOf(placeName: String?): CubeTreePlace = placesByName[placeName] ?: RootKeys.PLACE
     }
 
     protected abstract fun createSessionStorage(): SessionStorage

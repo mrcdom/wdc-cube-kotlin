@@ -97,7 +97,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             val modified = cart.removeProduct(productId)
             if (modified) {
                 if (cart.getSize() == 0) {
-                    HomeKeys(app).go()
+                    HomeKeys(app).flip()
                 } else {
                     state.items = cart.getCartItems()
                 }
@@ -120,7 +120,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             ReceiptKeys(app).apply {
                 this.purchaseId = purchaseId
                 purchaseMade = true
-            }.go()
+            }.flip()
         } catch (caught: Exception) {
             if (caught is InvalidCartItemException) {
                 alertThereIsItemWhichValueIsLessThanOne()
@@ -140,7 +140,7 @@ class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     suspend fun onOpenProducts() {
         try {
-            HomeKeys(app).go()
+            HomeKeys(app).flip()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Going to root restricted place", caught)
         }

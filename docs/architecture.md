@@ -302,7 +302,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
         if (subject?.id != null) {
             app.subject = subject
-            Routes.home(app)
+            HomeKeys(app).flip()
         } else {
             state.errorMessage = "Username or password not recognized!"
         }
@@ -456,7 +456,7 @@ Errors are handled at **two levels**:
 fun onBuy() {
     try {
         val purchaseId = cart.commit(app.subject!!)
-        Routes.receipt(app, intent)
+        ReceiptKeys(app).apply { this.purchaseId = purchaseId }.flip()
     } catch (caught: InvalidCartItemException) {
         state.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
         update()
@@ -494,7 +494,7 @@ sequenceDiagram
     participant Main as Entry Point
     participant Platform as Platform Config
     participant App as ShoppingApplication
-    participant Routes as Routes
+    participant Keys as RootKeys
     participant Root as RootPresenter
     participant Compose as Compose Runtime
 
@@ -502,11 +502,11 @@ sequenceDiagram
     Note over Platform: JSON, HTTP, Crypto,<br/>Scheduler, View Factories
 
     Main->>App: create ShoppingApplication()
-    Main->>App: app.go("public")
-    App->>Routes: Routes.root(app)
-    Routes->>Root: navigate().step(ROOT).execute()
+    Main->>Keys: RootKeys(app).flip()
+    Keys->>App: app.flip(RootKeys.PLACE, intent)
+    App->>Root: navigate().step(ROOT).execute()
     Root->>Root: Checks subject
-    Root->>Routes: Routes.login(app) or Routes.home(app)
+    Root->>Keys: LoginKeys(app, intent).flip() or HomeKeys(app, intent).flip()
 
     Main->>Compose: Renders RootView
     Compose->>Root: rootView.Render()
@@ -526,7 +526,7 @@ sequenceDiagram
     participant LP as LoginPresenter
     participant LS as LoginService
     participant API as Backend REST
-    participant Routes as Routes
+    participant Keys as HomeKeys
     participant Nav as CubeNavigation
     participant HP as HomePresenter
     participant HV as HomeView
@@ -547,8 +547,8 @@ sequenceDiagram
     LP->>LP: state.loading = false
     LP->>LP: app.subject = subject
 
-    LP->>Routes: Routes.home(app)
-    Routes->>Nav: navigate().step(ROOT).step(HOME).execute()
+    LP->>Keys: HomeKeys(app).flip()
+    Keys->>Nav: navigate().step(ROOT).step(HOME).execute()
 
     Nav->>HP: applyParameters(init=true, deepest=true)
     Note over HP: Creates CartManager,<br/>ProductsPanel, PurchasesPanel
@@ -579,7 +579,7 @@ sequenceDiagram
 
 | Term                 | Definition |
 |----------------------|-----------|
-| **Place**            | Navigation destination with id, name and presenter factory |
+| **Place**            | Navigation destination with id, name and presenter factory; declared by the keys class of the place (`CubeTreePlace`, child of the place of the keys it extends) |
 | **CubeIntent**       | Container of parameters (serializable) and attributes (ephemeral) for a navigation transaction |
 | **CubeViewSlot**     | Functional callback for injecting a child view into a parent view |
 | **Presenter**        | Controller that encapsulates a screen's presentation logic (plain Kotlin, no UI dependency) |

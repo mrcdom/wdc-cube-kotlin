@@ -1,16 +1,18 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.receipt
 
 import br.com.wdc.framework.cube.CubeIntent
+import br.com.wdc.framework.cube.CubeTreePlace
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.Routes
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
 /** The keys of the receipt place. See [RootKeys]. */
-class ReceiptKeys(app: ShoppingApplication, intent: CubeIntent? = null) : HomeKeys(app, intent) {
+class ReceiptKeys(app: ShoppingApplication, intent: CubeIntent? = null) : HomeKeys(app, intent, PLACE) {
 
     companion object {
         const val PREFIX = "rc"
+
+        val PLACE: CubeTreePlace = HomeKeys.PLACE.child("receipt", ::ReceiptPresenter)
     }
 
     private object P {
@@ -22,8 +24,6 @@ class ReceiptKeys(app: ShoppingApplication, intent: CubeIntent? = null) : HomeKe
         /** Set by the cart right after the purchase: the receipt congratulates the buyer. */
         const val PURCHASE_MADE = "$PREFIX-purchase-made"
     }
-
-    override suspend fun go(): Boolean = Routes.receipt(app, intent)
 
     /** A positive id, or `null` when the address carries none it can use. */
     var purchaseId: Long?

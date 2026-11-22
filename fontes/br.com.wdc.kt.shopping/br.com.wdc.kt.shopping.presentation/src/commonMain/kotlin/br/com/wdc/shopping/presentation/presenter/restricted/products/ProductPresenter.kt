@@ -35,7 +35,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
         val newProductId = keys.productId ?: oldProductId ?: run {
             // no usable id in the address: nothing to show; go to the home, with the intent in transit
-            HomeKeys(app, intent).go()
+            HomeKeys(app, intent).flip()
             return false
         }
 
@@ -82,7 +82,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
             app.cart!!.addProduct(state.product!!, quantity)
 
-            CartKeys(app).go()
+            CartKeys(app).flip()
         } catch (caught: Exception) {
             if (caught is OfflineException) {
                 alertDatabaseNotAvailable()
@@ -96,7 +96,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     suspend fun onOpenProducts() {
         try {
-            HomeKeys(app).go()
+            HomeKeys(app).flip()
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Going to home of restricted place", caught)
         }

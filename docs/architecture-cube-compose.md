@@ -270,7 +270,7 @@ sequenceDiagram
 
     P->>S: state.loading = false
     P->>S: app.subject = subject
-    P->>P: Routes.home(app) → navigation
+    P->>P: HomeKeys(app).flip() → navigation
     Note over P: CubeNavigation commit → HomePresenter created
     Note over View: Root slot updated → HomeView rendered
 ```
@@ -426,7 +426,7 @@ sequenceDiagram
     Main->>Plat: Configures JSON, HTTP, Crypto, Scheduler
     Main->>Factories: Registers createView for each presenter
     Main->>App: Creates the application instance
-    Main->>App: app.go("public") → initial navigation
+    Main->>App: RootKeys(app).flip() → initial navigation
     Main->>Compose: Renders RootView
 ```
 
@@ -437,7 +437,7 @@ fun main() {
     initializePlatform(baseUrl)  // JSON, HTTP, Crypto, Scheduler, View Factories
 
     val app = DesktopShoppingApplication()
-    app.go("public")
+    RootKeys(app).flip()
 
     application {
         Window(title = "Storefront", ...) {
@@ -464,7 +464,7 @@ fun main() {
     restoreAuthState(app)
 
     val hash = getLocationHash()
-    if (hash.isNotBlank()) app.safeGo(hash) else app.go("public")
+    if (hash.isNotBlank()) app.safeGo(hash) else RootKeys(app).flip()
 
     jsOnHashChange {
         val newHash = getLocationHash()
@@ -492,7 +492,7 @@ class MainActivity : ComponentActivity() {
         initializePlatform(baseUrl)
 
         val app = AndroidShoppingApplication(this)
-        app.go("public")
+        RootKeys(app).flip()
 
         setContent {
             ShoppingTheme {
@@ -515,7 +515,7 @@ fun MainViewController() = ComposeUIViewController {
     initializePlatform(baseUrl)
 
     val app = IosShoppingApplication()
-    app.go("public")
+    RootKeys(app).flip()
 
     ShoppingTheme {
         val rootView = app.getRootPresenter()?.view() as? RootView
@@ -599,7 +599,7 @@ fun onEnter() {
 
         if (subject?.id != null) {
             app.subject = subject
-            Routes.home(app)
+            HomeKeys(app).flip()
         } else {
             state.errorMessage = "Username or password not recognized!"
         }

@@ -13,6 +13,7 @@ import br.com.wdc.shopping.nativeui.ios.views.*
 import br.com.wdc.shopping.persistence.client.IosHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
+import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
@@ -63,7 +64,7 @@ fun createRootViewController(baseUrl: String): UIViewController {
     viewController.view.backgroundColor = ShoppingColors.Background
 
     // Start navigation
-    kotlinx.coroutines.runBlocking { app.go(app.getRootPlace().placeName) }
+    kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
     // Mount root view
     val rootPresenter = app.getRootPresenter()
