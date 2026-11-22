@@ -40,8 +40,8 @@ subprojects {
         useJUnitPlatform()
     }
 
-    // `./gradlew test` também roda os testes comuns dos módulos multiplataforma, na JVM. (Com o plugin Android
-    // antigo eles entravam pelos testes unitários do Android; o plugin multiplataforma novo não cria essa tarefa.)
+    // `./gradlew test` also runs the common tests of the multiplatform modules, on the JVM. (With the old Android
+    // plugin they came in through the Android unit tests; the new multiplatform plugin does not create that task.)
     pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
         afterEvaluate {
             if (tasks.findByName("test") == null && tasks.findByName("jvmTest") != null) {

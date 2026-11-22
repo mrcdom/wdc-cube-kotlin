@@ -1,9 +1,9 @@
-# Arquitetura Cube — Mecanismo de Navegação
+# Cube Architecture — Navigation Mechanism
 
-## Sumário
+## Table of Contents
 
-- [Visão Geral](#visão-geral)
-- [Componentes Fundamentais](#componentes-fundamentais)
+- [Overview](#overview)
+- [Core Components](#core-components)
   - [CubePlace](#cubeplace)
   - [CubePresenter](#cubepresenter)
   - [CubeIntent](#cubeintent)
@@ -11,58 +11,58 @@
   - [CubeView](#cubeview)
   - [CubeApplication](#cubeapplication)
   - [CubeNavigation](#cubenavigation)
-- [Modelo de Dados Interno](#modelo-de-dados-interno)
-- [Ciclo de Navegação — Passo a Passo](#ciclo-de-navegação--passo-a-passo)
-  - [1. Montagem da Rota](#1-montagem-da-rota)
-  - [2. Execução dos Steps](#2-execução-dos-steps)
-  - [3. Commit — Navegação Bem-Sucedida](#3-commit--navegação-bem-sucedida)
-  - [4. Rollback — Falha na Navegação](#4-rollback--falha-na-navegação)
-- [Interrupção e Redirect](#interrupção-e-redirect)
-  - [O Problema](#o-problema)
-  - [A Solução — Migração de Presenters](#a-solução--migração-de-presenters)
-  - [Fluxo Detalhado de uma Interrupção](#fluxo-detalhado-de-uma-interrupção)
-  - [Interrupções Encadeadas](#interrupções-encadeadas)
-- [Garantias do Mecanismo](#garantias-do-mecanismo)
-- [Ordem de Release — Leaf-First](#ordem-de-release--leaf-first)
-- [Proteção contra Recursão Infinita](#proteção-contra-recursão-infinita)
-- [Cenários Completos](#cenários-completos)
-  - [Navegação Normal com Reutilização](#navegação-normal-com-reutilização)
-  - [Redirect durante Navegação](#redirect-durante-navegação)
-  - [Rollback após Exceção](#rollback-após-exceção)
-- [Suspend e Coroutines no Cube MVP](#suspend-e-coroutines-no-cube-mvp)
-  - [O Modelo de Execução](#o-modelo-de-execução)
-  - [O presenterScope — Serialização de Ações](#o-presenterscope--serialização-de-ações)
-  - [A Fronteira Suspend / Síncrono](#a-fronteira-suspend--síncrono)
-  - [O Padrão safeCall — Bridge entre View e Presenter](#o-padrão-safecall--bridge-entre-view-e-presenter)
-  - [Ciclo de Vida dos Presenters e Suspend](#ciclo-de-vida-dos-presenters-e-suspend)
-  - [Child Presenters — Inicialização Assíncrona](#child-presenters--inicialização-assíncrona)
-  - [Quando Usar e Quando NÃO Usar Suspend](#quando-usar-e-quando-não-usar-suspend)
-  - [Regras Práticas para o Desenvolvedor](#regras-práticas-para-o-desenvolvedor)
-  - [Disparo Assíncrono Paralelo — Fire-and-Forget com Retorno](#disparo-assíncrono-paralelo--fire-and-forget-com-retorno)
+- [Internal Data Model](#internal-data-model)
+- [Navigation Cycle — Step by Step](#navigation-cycle--step-by-step)
+  - [1. Building the Route](#1-building-the-route)
+  - [2. Executing the Steps](#2-executing-the-steps)
+  - [3. Commit — Successful Navigation](#3-commit--successful-navigation)
+  - [4. Rollback — Navigation Failure](#4-rollback--navigation-failure)
+- [Interruption and Redirect](#interruption-and-redirect)
+  - [The Problem](#the-problem)
+  - [The Solution — Presenter Migration](#the-solution--presenter-migration)
+  - [Detailed Flow of an Interruption](#detailed-flow-of-an-interruption)
+  - [Chained Interruptions](#chained-interruptions)
+- [Mechanism Guarantees](#mechanism-guarantees)
+- [Release Order — Leaf-First](#release-order--leaf-first)
+- [Protection Against Infinite Recursion](#protection-against-infinite-recursion)
+- [Complete Scenarios](#complete-scenarios)
+  - [Normal Navigation with Reuse](#normal-navigation-with-reuse)
+  - [Redirect during Navigation](#redirect-during-navigation)
+  - [Rollback after an Exception](#rollback-after-an-exception)
+- [Suspend and Coroutines in Cube MVP](#suspend-and-coroutines-in-cube-mvp)
+  - [The Execution Model](#the-execution-model)
+  - [The presenterScope — Serializing Actions](#the-presenterscope--serializing-actions)
+  - [The Suspend / Synchronous Boundary](#the-suspend--synchronous-boundary)
+  - [The safeCall Pattern — Bridge between View and Presenter](#the-safecall-pattern--bridge-between-view-and-presenter)
+  - [Presenter Lifecycle and Suspend](#presenter-lifecycle-and-suspend)
+  - [Child Presenters — Asynchronous Initialization](#child-presenters--asynchronous-initialization)
+  - [When to Use and When NOT to Use Suspend](#when-to-use-and-when-not-to-use-suspend)
+  - [Practical Rules for the Developer](#practical-rules-for-the-developer)
+  - [Parallel Asynchronous Dispatch — Fire-and-Forget with a Result](#parallel-asynchronous-dispatch--fire-and-forget-with-a-result)
 
 ---
 
-## Visão Geral
+## Overview
 
-O Cube é uma solução de **gerenciamento de estado de aplicação** baseada no padrão MVP (Model-View-Presenter). Diferente de abordagens que exigem estado imutável e unidirecional, o Cube adota **estados de view mutáveis** — os presenters manipulam diretamente objetos de estado (`ViewState`) e notificam a view para re-renderizar. Essa decisão simplifica o código de apresentação, eliminando a cerimônia de cópias imutáveis e reducers.
+Cube is an **application state management** solution based on the MVP (Model-View-Presenter) pattern. Unlike approaches that require immutable, unidirectional state, Cube uses **mutable view states**: presenters manipulate state objects (`ViewState`) directly and notify the view to re-render. This decision simplifies presentation code by eliminating the ceremony of immutable copies and reducers.
 
-Um princípio central da arquitetura é o **desacoplamento total entre a lógica de apresentação e a tecnologia de visualização**. Os presenters são classes Kotlin puras, sem nenhuma dependência de framework de UI. A tecnologia de renderização — seja Compose Multiplatform, React, SwiftUI ou qualquer outra — é uma **escolha do projeto**, não uma imposição do framework. Isso permite que o mesmo código de apresentação seja compartilhado entre plataformas distintas, com cada uma implementando apenas a camada de view.
+A central principle of the architecture is the **complete decoupling of presentation logic from the view technology**. Presenters are plain Kotlin classes with no dependency on any UI framework. The rendering technology (Compose Multiplatform, React, SwiftUI or anything else) is a **project choice**, not something the framework imposes. This lets the same presentation code be shared across different platforms, each implementing only the view layer.
 
-O `CubeNavigation` é o motor de navegação do framework. Ele orquestra o **ciclo de vida dos presenters** durante transições de tela, tratando a navegação como uma **transação atômica**: ou todos os steps são aplicados com sucesso (commit), ou o estado anterior é restaurado (rollback).
+`CubeNavigation` is the framework's navigation engine. It orchestrates the **presenter lifecycle** during screen transitions, treating navigation as an **atomic transaction**: either all steps are applied successfully (commit), or the previous state is restored (rollback).
 
-O mecanismo foi projetado para lidar com um cenário crítico: **redirects durante a navegação**. Um presenter pode, dentro de `applyParameters()`, iniciar uma nova navegação (por exemplo, redirecionar um usuário não autenticado para a tela de login). Isso **interrompe** a navegação corrente e inicia outra, e o framework garante que nenhum presenter criado seja perdido sem ter `release()` chamado.
+The mechanism was designed to handle a critical scenario: **redirects during navigation**. A presenter may, inside `applyParameters()`, start a new navigation (for example, redirecting an unauthenticated user to the login screen). This **interrupts** the current navigation and starts another, and the framework guarantees that no created presenter is lost without having `release()` called.
 
 ---
 
-## Componentes Fundamentais
+## Core Components
 
 ### CubePlace
 
-Representa um **destino de navegação**. Cada Place possui:
+Represents a **navigation destination**. Each Place has:
 
-- **`id: Int`** — identificador numérico único, usado como chave no mapa de presenters
-- **`placeName: String`** — nome simbólico para deep-linking (ex: `"home"`, `"product"`)
-- **`presenterFactory()`** — factory function que cria a instância de `CubePresenter` associada
+- **`id: Int`**: unique numeric identifier, used as the key in the presenter map
+- **`placeName: String`**: symbolic name for deep-linking (e.g. `"home"`, `"product"`)
+- **`presenterFactory()`**: factory function that creates the associated `CubePresenter` instance
 
 ```kotlin
 interface CubePlace {
@@ -72,11 +72,11 @@ interface CubePlace {
 }
 ```
 
-Os IDs seguem uma **convenção hierárquica**: IDs menores representam nós mais próximos da raiz, e IDs maiores representam folhas. Essa convenção é explorada na ordem de release (leaf-first, ou seja, IDs maiores primeiro).
+IDs follow a **hierarchical convention**: lower IDs represent nodes closer to the root, and higher IDs represent leaves. The release order relies on this convention (leaf-first, i.e. higher IDs first).
 
 ### CubePresenter
 
-Interface que todo presenter deve implementar. Define o contrato do ciclo de vida:
+Interface every presenter must implement. It defines the lifecycle contract:
 
 ```kotlin
 interface CubePresenter {
@@ -87,19 +87,19 @@ interface CubePresenter {
 }
 ```
 
-| Método | Quando é chamado | Responsabilidade |
+| Method | When it is called | Responsibility |
 |--------|-----------------|------------------|
-| `applyParameters` | Durante `execute()` | Receber parâmetros, criar view (se `initialization=true`), conectar slots. Retorna `true` para continuar, `false` para interromper. |
-| `publishParameters` | Durante `newIntent()` | Exportar o estado atual do presenter para o intent (para deep-linking e histórico). |
-| `commitComputedState` | Após commit da navegação | Finalizar cálculos derivados que dependem do estado completo da navegação. |
-| `release` | Quando o presenter é descartado | Liberar recursos (views, listeners, conexões). **Chamado exatamente uma vez.** |
+| `applyParameters` | During `execute()` | Receive parameters, create the view (if `initialization=true`), connect slots. Returns `true` to continue, `false` to stop. |
+| `publishParameters` | During `newIntent()` | Export the presenter's current state to the intent (for deep-linking and history). |
+| `commitComputedState` | After the navigation commits | Finish derived computations that depend on the complete navigation state. |
+| `release` | When the presenter is discarded | Free resources (views, listeners, connections). **Called exactly once.** |
 
 ### CubeIntent
 
-Container de dados que trafega pela hierarquia de navegação. Carrega dois tipos de dados:
+Data container that travels through the navigation hierarchy. It carries two kinds of data:
 
-- **Parameters** (`MutableMap<String, Any?>`) — dados serializáveis de rota, usados para deep-linking e histórico do navegador (ex: `productId=42`)
-- **Attributes** (`MutableMap<String, Any?>`) — dados efêmeros da transação, como `CubeViewSlot`s para conexão pai-filho
+- **Parameters** (`MutableMap<String, Any?>`): serializable route data, used for deep-linking and browser history (e.g. `productId=42`)
+- **Attributes** (`MutableMap<String, Any?>`): ephemeral transaction data, such as `CubeViewSlot`s for parent-child wiring
 
 ```kotlin
 class CubeIntent {
@@ -111,7 +111,7 @@ class CubeIntent {
 
 ### CubeViewSlot
 
-Mecanismo de composição de views. Um presenter pai cria um slot e o publica no intent. O presenter filho obtém o slot e insere sua view nele, sem acoplamento direto entre pai e filho.
+View composition mechanism. A parent presenter creates a slot and publishes it in the intent. The child presenter gets the slot and inserts its view into it, with no direct coupling between parent and child.
 
 ```kotlin
 fun interface CubeViewSlot {
@@ -121,7 +121,7 @@ fun interface CubeViewSlot {
 
 ### CubeView
 
-Interface para a camada de renderização. Cada tecnologia de UI (Compose, React, etc.) implementa esta interface:
+Interface for the rendering layer. Each UI technology (Compose, React, etc.) implements this interface:
 
 ```kotlin
 interface CubeView {
@@ -133,12 +133,12 @@ interface CubeView {
 
 ### CubeApplication
 
-Classe base abstrata que mantém o estado global da aplicação:
+Abstract base class that holds the global application state:
 
-- **`presenterMap`** — mapa `<Int, CubePresenter>` com os presenters ativos (chave = `Place.id`)
-- **`lastPlace`** — último place navegado (para deep-linking)
-- **`navigation`** — referência à navegação em andamento (ou `null` se nenhuma)
-- **`navigate()`** — ponto de entrada para iniciar uma navegação
+- **`presenterMap`**: `<Int, CubePresenter>` map of the active presenters (key = `Place.id`)
+- **`lastPlace`**: last place navigated to (for deep-linking)
+- **`navigation`**: reference to the navigation in progress (or `null` if none)
+- **`navigate()`**: entry point for starting a navigation
 
 ```kotlin
 abstract class CubeApplication {
@@ -156,13 +156,13 @@ abstract class CubeApplication {
 
 ### CubeNavigation
 
-O orquestrador da transação de navegação. Criado por `CubeApplication.navigate()`, gerencia dois mapas de presenters e conduz o fluxo de `execute()` → `commit()` ou `rollback()`.
+The navigation transaction orchestrator. Created by `CubeApplication.navigate()`, it manages two presenter maps and drives the `execute()` → `commit()` or `rollback()` flow.
 
 ---
 
-## Modelo de Dados Interno
+## Internal Data Model
 
-O `CubeNavigation` mantém dois mapas internos, cada um com um papel bem definido:
+`CubeNavigation` keeps two internal maps, each with a well-defined role:
 
 ```mermaid
 classDiagram
@@ -180,24 +180,24 @@ classDiagram
         -rollback(caught)
     }
 
-    class curPresenterMap ["curPresenterMap\n─────────────────\nPresenters ativos ANTES da navegação\n(referência direta a app.presenterMap)"]
-    class newPresenterMap ["newPresenterMap\n─────────────────\nPresenters CRIADOS durante a navegação\n(nunca contém presenters reutilizados)"]
-    class sourceIntent ["sourceIntent\n─────────────────\nSnapshot do estado antes da navegação\n(para rollback)"]
+    class curPresenterMap ["curPresenterMap\n─────────────────\nPresenters active BEFORE the navigation\n(direct reference to app.presenterMap)"]
+    class newPresenterMap ["newPresenterMap\n─────────────────\nPresenters CREATED during the navigation\n(never contains reused presenters)"]
+    class sourceIntent ["sourceIntent\n─────────────────\nSnapshot of the state before the navigation\n(for rollback)"]
 
     CubeNavigation --> curPresenterMap
     CubeNavigation --> newPresenterMap
     CubeNavigation --> sourceIntent
 ```
 
-**Invariante fundamental:** os IDs em `newPresenterMap` **nunca colidem** com os de `curPresenterMap`. Um presenter só é adicionado a `newPresenterMap` quando ambos os lookups (`curPresenterMap[id]` e `newPresenterMap[id]`) retornam `null`. Se o presenter já existia, ele é reutilizado — sem inserção em `newPresenterMap`.
+**Core invariant:** the IDs in `newPresenterMap` **never collide** with those in `curPresenterMap`. A presenter is added to `newPresenterMap` only when both lookups (`curPresenterMap[id]` and `newPresenterMap[id]`) return `null`. If the presenter already existed, it is reused, with no insertion into `newPresenterMap`.
 
 ---
 
-## Ciclo de Navegação — Passo a Passo
+## Navigation Cycle — Step by Step
 
-### 1. Montagem da Rota
+### 1. Building the Route
 
-A navegação começa com a construção da rota via API fluente:
+Navigation starts by building the route through a fluent API:
 
 ```kotlin
 app.navigate<ShoppingApp>()
@@ -207,69 +207,69 @@ app.navigate<ShoppingApp>()
     .execute(intent)
 ```
 
-Os `step()` registram a sequência de Places que compõem a rota hierárquica, do nó raiz até a folha.
+The `step()` calls register the sequence of Places that make up the hierarchical route, from the root node to the leaf.
 
-### 2. Execução dos Steps
+### 2. Executing the Steps
 
-O `execute(intent)` itera sobre os steps na ordem declarada. Para cada step:
+`execute(intent)` iterates over the steps in the declared order. For each step:
 
 ```mermaid
 flowchart TD
-    START([Para cada Place na rota]) --> LOOKUP["Busca presenter existente:\ncurPresenterMap[place.id]\n?: newPresenterMap[place.id]"]
-    LOOKUP --> FOUND{Encontrou?}
-    FOUND -->|Sim| REUSE["Reutiliza\ninitialize = false"]
-    FOUND -->|Não| CREATE["Cria via factory\nnewPresenterMap[place.id] = novo\ninitialize = true"]
+    START([For each Place in the route]) --> LOOKUP["Look up existing presenter:\ncurPresenterMap[place.id]\n?: newPresenterMap[place.id]"]
+    LOOKUP --> FOUND{Found?}
+    FOUND -->|Yes| REUSE["Reuse\ninitialize = false"]
+    FOUND -->|No| CREATE["Create via factory\nnewPresenterMap[place.id] = new\ninitialize = true"]
     REUSE --> APPLY["applyParameters(intent, initialize, deepest)"]
     CREATE --> APPLY
-    APPLY --> GOAHEAD{Retornou true?}
-    GOAHEAD -->|false| STOP_PARTIAL(["Para iteração\n— commit parcial"])
+    APPLY --> GOAHEAD{Returned true?}
+    GOAHEAD -->|false| STOP_PARTIAL(["Stop iterating\n— partial commit"])
     GOAHEAD -->|true| INTERRUPTED{notInterrupted?}
-    INTERRUPTED -->|false| STOP_INTERRUPT(["Navegação interrompida\n— NÃO faz commit"])
-    INTERRUPTED -->|true| NEXT([Próximo step])
+    INTERRUPTED -->|false| STOP_INTERRUPT(["Navigation interrupted\n— NO commit"])
+    INTERRUPTED -->|true| NEXT([Next step])
 ```
 
-O parâmetro `deepest` é `true` apenas para o último step da rota.
+The `deepest` parameter is `true` only for the last step of the route.
 
-### 3. Commit — Navegação Bem-Sucedida
+### 3. Commit — Successful Navigation
 
-Quando todos os steps completam sem interrupção:
+When all steps complete without interruption:
 
 ```mermaid
 flowchart TD
-    C1["1 — Constrói finalMap\nPara cada holder em nextPresenters:\nfinalMap[id] = presenter\nnewPresenterMap.remove(id)\ncurPresenterMap.remove(id)"] --> C2["2 — Unifica mapas restantes\ncurPresenterMap.putAll(newPresenterMap)\n(antigos substituídos + criados não-aceitos)"]
-    C2 --> C3["3 — Libera não-aceitos (leaf-first)\nreleasePresenters(curPresenterMap)"]
-    C3 --> C4["4 — Atualiza estado da aplicação\napp.presenterMap = finalMap\napp.lastPlace = targetPlace"]
-    C4 --> C5["5 — Finaliza\napp.navigation = null\napp.updateHistory()"]
+    C1["1 — Build finalMap\nFor each holder in nextPresenters:\nfinalMap[id] = presenter\nnewPresenterMap.remove(id)\ncurPresenterMap.remove(id)"] --> C2["2 — Merge remaining maps\ncurPresenterMap.putAll(newPresenterMap)\n(replaced old ones + created but not accepted)"]
+    C2 --> C3["3 — Release the non-accepted (leaf-first)\nreleasePresenters(curPresenterMap)"]
+    C3 --> C4["4 — Update application state\napp.presenterMap = finalMap\napp.lastPlace = targetPlace"]
+    C4 --> C5["5 — Finish\napp.navigation = null\napp.updateHistory()"]
 ```
 
-**Por que unificar os mapas antes de liberar?** Isso garante uma **única passada de release** com ordenação global leaf-first (IDs descendentes), incluindo tanto presenters antigos quanto criados que não entraram na rota final.
+**Why merge the maps before releasing?** This guarantees a **single release pass** with global leaf-first ordering (descending IDs), covering both old presenters and created presenters that did not make it into the final route.
 
-### 4. Rollback — Falha na Navegação
+### 4. Rollback — Navigation Failure
 
-Se uma exceção ocorre em `applyParameters()`:
+If an exception occurs in `applyParameters()`:
 
 ```mermaid
 flowchart TD
-    R1["1 — Restaura presenters originais\nPara cada presenter em curPresenterMap\n(ordem ascendente de ID):\napplyParameters(sourceIntent, false, ...)\nErros adicionados como suppressed"] --> R2["2 — Libera TODOS os criados (leaf-first)\nreleasePresenters(newPresenterMap)\n(só criados — originais não são afetados)"]
-    R2 --> R3["3 — Finaliza\napp.updateHistory()\napp.navigation = null\nExceção original é re-lançada"]
+    R1["1 — Restore original presenters\nFor each presenter in curPresenterMap\n(ascending ID order):\napplyParameters(sourceIntent, false, ...)\nErrors added as suppressed"] --> R2["2 — Release ALL created ones (leaf-first)\nreleasePresenters(newPresenterMap)\n(created only — originals are not affected)"]
+    R2 --> R3["3 — Finish\napp.updateHistory()\napp.navigation = null\nOriginal exception is rethrown"]
 ```
 
-O `sourceIntent` é capturado no momento da criação do `CubeNavigation` via `app.newIntent()`. Ele contém o snapshot dos parâmetros publicados por todos os presenters ativos antes da navegação.
+`sourceIntent` is captured when the `CubeNavigation` is created, via `app.newIntent()`. It holds the snapshot of the parameters published by all active presenters before the navigation.
 
 ---
 
-## Interrupção e Redirect
+## Interruption and Redirect
 
-### O Problema
+### The Problem
 
-Durante `applyParameters()`, um presenter pode decidir que o usuário deve ser redirecionado para outra tela. Exemplo clássico:
+During `applyParameters()`, a presenter may decide the user must be redirected to another screen. Classic example:
 
 ```kotlin
 class HomePresenter(app: ShoppingApp) : AbstractCubePresenter<ShoppingApp>(app) {
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (app.subject == null) {
-            // Usuário não autenticado — redireciona para login
-            Routes.login(app)  // ← chama app.navigate() internamente
+            // Unauthenticated user — redirect to login
+            Routes.login(app)  // ← calls app.navigate() internally
             return false
         }
         // ...
@@ -278,143 +278,143 @@ class HomePresenter(app: ShoppingApp) : AbstractCubePresenter<ShoppingApp>(app) 
 }
 ```
 
-A chamada `Routes.login(app)` dispara `app.navigate()` **de dentro** da execução de outra navegação. Isso cria uma **recursão**: a navegação corrente precisa ser interrompida e uma nova precisa assumir, sem perder os presenters que já foram criados.
+The `Routes.login(app)` call triggers `app.navigate()` **from inside** the execution of another navigation. This creates a **recursion**: the current navigation must be interrupted and a new one must take over, without losing the presenters already created.
 
-### A Solução — Migração de Presenters
+### The Solution — Presenter Migration
 
-`navigate()` só cria a navegação. Quem decide o que fazer com uma navegação em curso é o `execute()`, que roda
-cada `applyParameters` com a própria navegação marcada no contexto da corrotina. Assim ele sabe de onde veio o
-pedido:
+`navigate()` only creates the navigation. What to do with a navigation in progress is decided by `execute()`, which
+runs each `applyParameters` with its own navigation marked in the coroutine context. That way it knows where the
+request came from:
 
 ```kotlin
-// CubeNavigation.join(), chamado no início do execute()
+// CubeNavigation.join(), called at the start of execute()
 val current = app.navigation
 when {
-    current == null -> app.startNavigation(this)                    // nenhuma em curso: começa
-    contextoDaCorrotina.navegação === current -> {                   // de dentro: é um redirect
-        current.interrupt()                                          // (1) a corrente para
+    current == null -> app.startNavigation(this)                    // none in progress: start
+    coroutineContext.navigation === current -> {                     // from inside: it is a redirect
+        current.interrupt()                                          // (1) the current one stops
         if (current.reflowCount > 10) throw AssertionError("Navigation recursion detected")
         reflowCount = current.reflowCount + 1
-        newPresenterMap.putAll(current.newPresenterMap)              // (2) herda o que ela criou
+        newPresenterMap.putAll(current.newPresenterMap)              // (2) inherits what it created
         app.replaceNavigation(this)
     }
-    else -> esperaACorrenteTerminar()                                // de fora: veja abaixo
+    else -> waitForCurrentToFinish()                                 // from outside: see below
 }
 ```
 
-A **migração** (`putAll`) transfere os presenters criados para o novo contexto. Isso garante que:
+The **migration** (`putAll`) transfers the created presenters to the new context. This guarantees that:
 
-- Se a nova navegação **reutilizar** um presenter criado pela interrompida, ele será encontrado via `newPresenterMap[id]` e não será criado novamente
-- Se a nova navegação **não usar** o presenter, ele será liberado no commit ou rollback da nova navegação
-- **Nenhum presenter criado é esquecido** — o `release()` é garantido
+- If the new navigation **reuses** a presenter created by the interrupted one, it is found via `newPresenterMap[id]` and is not created again
+- If the new navigation **does not use** the presenter, it is released in the new navigation's commit or rollback
+- **No created presenter is forgotten**: `release()` is guaranteed
 
-### Pedido de fora durante uma navegação
+### Request from outside during a navigation
 
-O `presenterScope` é serial, mas uma ação suspensa (a I/O dentro de `applyParameters`) deixa a próxima entrar.
-Um clique durante uma carga lenta chama `navigate()` + `execute()` com uma navegação em curso, **fora** do contexto
-dela. Esse pedido **espera** a navegação corrente (com os redirects dela) terminar, em vez de interrompê-la:
+`presenterScope` is serial, but a suspended action (the I/O inside `applyParameters`) lets the next one in.
+A click during a slow load calls `navigate()` + `execute()` while a navigation is in progress, **outside** its
+context. That request **waits** for the current navigation (with its redirects) to finish, instead of interrupting it:
 
-- só o último pedido espera; um anterior desiste e o `execute` dele devolve `false`;
-- se a navegação corrente falhar, o pedido que esperava também desiste (`false`);
-- por isso vários cliques durante uma carga não estouram o limite de 10 redirects.
+- only the latest request waits; an earlier one gives up and its `execute` returns `false`;
+- if the current navigation fails, the waiting request also gives up (`false`);
+- that is why several clicks during a load do not exceed the 10-redirect limit.
 
-Um presenter que lance outra corrotina para navegar e espere por ela dentro do próprio `applyParameters` ficaria
-esperando a si mesmo: navegue direto, de dentro do `applyParameters`, que é redirect.
+A presenter that launches another coroutine to navigate and waits for it inside its own `applyParameters` would end up
+waiting for itself: navigate directly, from inside `applyParameters`, which is a redirect.
 
-### `false` no applyParameters
+### `false` in applyParameters
 
-`false` quer dizer que o presenter foi aceito, mas a composição para nele: os níveis visitados são comitados, e o
-**lugar corrente** (`lastPlace`, o que o histórico e o deep link mostram) é o desse presenter, e não o último passo da
-rota, que nunca foi visitado.
+`false` means the presenter was accepted, but composition stops at it: the visited levels are committed, and the
+**current place** (`lastPlace`, what history and the deep link show) is this presenter's, not the last step of the
+route, which was never visited.
 
-### Fluxo Detalhado de uma Interrupção
+### Detailed Flow of an Interruption
 
-Considere o cenário: navegar para `ROOT → HOME → PRODUCT`, mas `HOME` redireciona para `ROOT → LOGIN`.
+Consider the scenario: navigate to `ROOT → HOME → PRODUCT`, but `HOME` redirects to `ROOT → LOGIN`.
 
 ```mermaid
 sequenceDiagram
-    box rgb(220,235,250) Navegação A: ROOT → HOME → PRODUCT
+    box rgb(220,235,250) Navigation A: ROOT → HOME → PRODUCT
         participant NavA as Nav A (execute)
     end
     participant App as CubeApplication
     participant Root as RootPresenter
     participant Home as HomePresenter
-    box rgb(235,250,220) Navegação B: ROOT → LOGIN
+    box rgb(235,250,220) Navigation B: ROOT → LOGIN
         participant NavB as Nav B (execute)
     end
     participant Login as LoginPresenter
 
     Note over NavA: Step ROOT (id=0)
     NavA->>Root: applyParameters(init=false)
-    Root-->>NavA: true ✓ (reutilizado)
+    Root-->>NavA: true ✓ (reused)
 
-    Note over NavA: Step HOME (id=2) — não existe, cria
+    Note over NavA: Step HOME (id=2) — does not exist, create
     NavA->>NavA: newPresenterMap[2] = new HomePresenter
     NavA->>Home: applyParameters(init=true)
 
     Note over Home: subject == null → redirect!
-    Home->>App: navigate() — detecta Nav A em andamento
+    Home->>App: navigate() — detects Nav A in progress
     App->>NavA: interrupt() → notInterrupted = false
-    App->>NavB: cria Nav B (reflowCount = 2)
+    App->>NavB: creates Nav B (reflowCount = 2)
     App->>NavB: newPresenterMap.putAll(NavA.newPresenterMap)
-    Note over NavB: Herda {2: HomePresenter}
+    Note over NavB: Inherits {2: HomePresenter}
 
     Note over NavB: Step ROOT (id=0)
     NavB->>Root: applyParameters(init=false)
-    Root-->>NavB: true ✓ (reutilizado)
+    Root-->>NavB: true ✓ (reused)
 
-    Note over NavB: Step LOGIN (id=1) — não existe, cria
+    Note over NavB: Step LOGIN (id=1) — does not exist, create
     NavB->>NavB: newPresenterMap[1] = new LoginPresenter
     NavB->>Login: applyParameters(init=true)
     Login-->>NavB: true ✓
 
     Note over NavB: commit()
     NavB->>NavB: finalMap = {0: Root, 1: Login}
-    NavB->>NavB: Restantes: newPresenterMap = {2: Home}
-    NavB->>Home: release() ← herdado, não aceito
+    NavB->>NavB: Remaining: newPresenterMap = {2: Home}
+    NavB->>Home: release() ← inherited, not accepted
     NavB->>App: presenterMap = finalMap
     NavB->>App: updateHistory()
 
-    Note over NavA: Retorno do redirect
+    Note over NavA: Return from the redirect
     Home-->>NavA: false
-    Note over NavA: notInterrupted == false → PARA
-    Note over NavA: Não faz commit nem rollback (Nav B já finalizou)
+    Note over NavA: notInterrupted == false → STOP
+    Note over NavA: No commit or rollback (Nav B already finished)
 ```
 
-### Interrupções Encadeadas
+### Chained Interruptions
 
-O mecanismo suporta múltiplas interrupções em cadeia. Se a navegação B for interrompida por uma navegação C, os presenters criados por A e B que estavam em `newPresenterMap` de B serão migrados para C:
+The mechanism supports multiple chained interruptions. If navigation B is interrupted by a navigation C, the presenters created by A and B that were in B's `newPresenterMap` are migrated to C:
 
 ```mermaid
 flowchart LR
-    A["Nav A\ncria P₁"] -->|interrompida\nreflowCount=1| B["Nav B\nherda P₁, cria P₂"]
-    B -->|interrompida\nreflowCount=2| C["Nav C\nherda P₁ e P₂, cria P₃"]
-    C --> D{commit ou rollback?}
-    D -->|commit| E["Aceitos ficam no finalMap\nP₁, P₂, P₃ não-aceitos → release()"]
-    D -->|rollback| F["Todos criados → release()\nP₁, P₂, P₃"]
+    A["Nav A\ncreates P₁"] -->|interrupted\nreflowCount=1| B["Nav B\ninherits P₁, creates P₂"]
+    B -->|interrupted\nreflowCount=2| C["Nav C\ninherits P₁ and P₂, creates P₃"]
+    C --> D{commit or rollback?}
+    D -->|commit| E["Accepted ones stay in finalMap\nnon-accepted P₁, P₂, P₃ → release()"]
+    D -->|rollback| F["All created → release()\nP₁, P₂, P₃"]
 ```
 
-O `reflowCount` é incrementado a cada nível para detectar loops infinitos.
+`reflowCount` is incremented at each level to detect infinite loops.
 
 ---
 
-## Garantias do Mecanismo
+## Mechanism Guarantees
 
-| Garantia | Como é implementada |
+| Guarantee | How it is implemented |
 |----------|-------------------|
-| **Todo presenter criado terá `release()` chamado** | `newPresenterMap` só contém criados. No commit, os não-aceitos são liberados. No rollback, todos são liberados. Na interrupção, são migrados para a próxima navegação. |
-| **Nenhum presenter é liberado duas vezes** | IDs de `newPresenterMap` nunca colidem com `curPresenterMap`. Reutilizados não entram em `newPresenterMap`. |
-| **O estado original é restaurável** | `sourceIntent` captura o snapshot antes da navegação. No rollback, cada presenter original recebe `applyParameters(sourceIntent)`. |
-| **Navegação é atômica** | Ou todos os steps aceitos entram no `finalMap` (commit), ou nenhum efeito permanece (rollback). |
-| **Release é leaf-first** | `releasePresenters()` ordena IDs de forma descendente. Filhos (IDs maiores) são liberados antes de pais (IDs menores). |
-| **Recursão é limitada** | `reflowCount > 10` lança `AssertionError`. |
-| **Histórico é atualizado** | `updateHistory()` é chamado tanto no commit quanto no rollback (no bloco `finally`). |
+| **Every created presenter will have `release()` called** | `newPresenterMap` only contains created presenters. On commit, the non-accepted ones are released. On rollback, all are released. On interruption, they are migrated to the next navigation. |
+| **No presenter is released twice** | IDs in `newPresenterMap` never collide with `curPresenterMap`. Reused presenters do not enter `newPresenterMap`. |
+| **The original state can be restored** | `sourceIntent` captures the snapshot before the navigation. On rollback, each original presenter receives `applyParameters(sourceIntent)`. |
+| **Navigation is atomic** | Either all accepted steps enter `finalMap` (commit), or no effect remains (rollback). |
+| **Release is leaf-first** | `releasePresenters()` sorts IDs in descending order. Children (higher IDs) are released before parents (lower IDs). |
+| **Recursion is bounded** | `reflowCount > 10` throws `AssertionError`. |
+| **History is updated** | `updateHistory()` is called on both commit and rollback (in the `finally` block). |
 
 ---
 
-## Ordem de Release — Leaf-First
+## Release Order — Leaf-First
 
-A função `releasePresenters()` sempre libera presenters na ordem **descendente de ID**:
+The `releasePresenters()` function always releases presenters in **descending ID** order:
 
 ```kotlin
 private fun releasePresenters(presenterMap: MutableMap<Int, CubePresenter>) {
@@ -426,37 +426,37 @@ private fun releasePresenters(presenterMap: MutableMap<Int, CubePresenter>) {
 }
 ```
 
-Isso garante que filhos (folhas, IDs maiores) sejam liberados antes dos pais (raiz, IDs menores), respeitando a hierarquia de dependências. Um presenter filho pode depender de recursos do pai, então o pai deve ser o último a ser liberado.
+This guarantees that children (leaves, higher IDs) are released before parents (root, lower IDs), respecting the dependency hierarchy. A child presenter may depend on the parent's resources, so the parent must be the last to be released.
 
-**Exemplo:** Se a rota ativa era `ROOT(0) → HOME(2) → PRODUCT(4)` e uma nova navegação vai para `ROOT(0) → LOGIN(1)`, os presenters `HOME(2)` e `PRODUCT(4)` precisam ser liberados. A ordem será: `PRODUCT(4)` primeiro, depois `HOME(2)`.
+**Example:** If the active route was `ROOT(0) → HOME(2) → PRODUCT(4)` and a new navigation goes to `ROOT(0) → LOGIN(1)`, the `HOME(2)` and `PRODUCT(4)` presenters must be released. The order is: `PRODUCT(4)` first, then `HOME(2)`.
 
 ---
 
-## Proteção contra Recursão Infinita
+## Protection Against Infinite Recursion
 
-Se um presenter sempre redireciona durante `applyParameters()`, pode-se criar um loop infinito de interrupções. O framework protege contra isso com o `reflowCount`:
+If a presenter always redirects during `applyParameters()`, an infinite loop of interruptions can arise. The framework guards against this with `reflowCount`:
 
 ```mermaid
 flowchart TD
-    N1["Nav₁ — reflowCount = 1"] -->|interrompida| N2["Nav₂ — reflowCount = 2"]
-    N2 -->|interrompida| N3["Nav₃ — reflowCount = 3"]
+    N1["Nav₁ — reflowCount = 1"] -->|interrupted| N2["Nav₂ — reflowCount = 2"]
+    N2 -->|interrupted| N3["Nav₃ — reflowCount = 3"]
     N3 -->|...| N10["Nav₁₀ — reflowCount = 10"]
-    N10 -->|interrompida| N11["Nav₁₁ — reflowCount = 11"]
+    N10 -->|interrupted| N11["Nav₁₁ — reflowCount = 11"]
     N11 -->|reflowCount > 10| ERR(["AssertionError\nNavigation recursion detected"])
 
     style ERR fill:#e53935,color:#fff
 ```
 
-Esse limite de 10 níveis é suficiente para cenários legítimos de redirect encadeado, mas detecta bugs de loop infinito antes de causar stack overflow.
+This 10-level limit is enough for legitimate chained-redirect scenarios, but it detects infinite-loop bugs before they cause a stack overflow.
 
 ---
 
-## Cenários Completos
+## Complete Scenarios
 
-### Navegação Normal com Reutilização
+### Normal Navigation with Reuse
 
-Estado inicial: `presenterMap = {0: RootPresenter, 2: HomePresenter}`
-Navegação: `ROOT(0) → HOME(2) → PRODUCT(4)`
+Initial state: `presenterMap = {0: RootPresenter, 2: HomePresenter}`
+Navigation: `ROOT(0) → HOME(2) → PRODUCT(4)`
 
 ```mermaid
 sequenceDiagram
@@ -466,28 +466,28 @@ sequenceDiagram
     participant Prod as Product (id=4)
     participant App as CubeApplication
 
-    Note over Nav: Estado inicial: {0: Root, 2: Home}
+    Note over Nav: Initial state: {0: Root, 2: Home}
 
-    Nav->>Root: applyParameters() — reutilizado
+    Nav->>Root: applyParameters() — reused
     Root-->>Nav: true ✓
 
-    Nav->>Home: applyParameters() — reutilizado
+    Nav->>Home: applyParameters() — reused
     Home-->>Nav: true ✓
 
-    Note over Nav: Product(4) não existe → cria
+    Note over Nav: Product(4) does not exist → create
     Nav->>Prod: applyParameters(init=true, deepest=true)
     Prod-->>Nav: true ✓
 
     Note over Nav: commit()
     Nav->>App: presenterMap = {0: Root, 2: Home, 4: Product}
-    Note over Nav: Nada a liberar (todos aceitos)
+    Note over Nav: Nothing to release (all accepted)
     Nav->>App: updateHistory()
 ```
 
-### Redirect durante Navegação
+### Redirect during Navigation
 
-Estado inicial: `presenterMap = {0: RootPresenter, 1: LoginPresenter}`
-Navegação A: `ROOT(0) → HOME(2)`, mas HOME redireciona para `ROOT(0) → LOGIN(1)`
+Initial state: `presenterMap = {0: RootPresenter, 1: LoginPresenter}`
+Navigation A: `ROOT(0) → HOME(2)`, but HOME redirects to `ROOT(0) → LOGIN(1)`
 
 ```mermaid
 sequenceDiagram
@@ -498,36 +498,36 @@ sequenceDiagram
     participant Home as Home (id=2)
     participant App as CubeApplication
 
-    Note over NavA: Estado inicial: {0: Root, 1: Login}
+    Note over NavA: Initial state: {0: Root, 1: Login}
 
-    NavA->>Root: applyParameters() — reutilizado
+    NavA->>Root: applyParameters() — reused
     Root-->>NavA: true ✓
 
-    Note over NavA: Home(2) não existe → cria
+    Note over NavA: Home(2) does not exist → create
     NavA->>Home: applyParameters(init=true)
     Note over Home: subject == null → redirect!
-    Home->>App: navigate() → interrupção
+    Home->>App: navigate() → interruption
     App->>NavA: interrupt()
-    App->>NavB: cria Nav B + migra {2: Home}
+    App->>NavB: creates Nav B + migrates {2: Home}
 
-    NavB->>Root: applyParameters() — reutilizado
+    NavB->>Root: applyParameters() — reused
     Root-->>NavB: true ✓
-    NavB->>Login: applyParameters() — reutilizado
+    NavB->>Login: applyParameters() — reused
     Login-->>NavB: true ✓
 
     Note over NavB: commit()
     NavB->>NavB: finalMap = {0: Root, 1: Login}
-    NavB->>Home: release() ← herdado, não aceito ✓
+    NavB->>Home: release() ← inherited, not accepted ✓
     NavB->>App: presenterMap = {0: Root, 1: Login}
     NavB->>App: updateHistory()
 
-    Note over NavA: notInterrupted=false → PARA
+    Note over NavA: notInterrupted=false → STOP
 ```
 
-### Rollback após Exceção
+### Rollback after an Exception
 
-Estado inicial: `presenterMap = {0: RootPresenter, 2: HomePresenter}`
-Navegação: `ROOT(0) → HOME(2) → CART(5)`, mas CART lança exceção
+Initial state: `presenterMap = {0: RootPresenter, 2: HomePresenter}`
+Navigation: `ROOT(0) → HOME(2) → CART(5)`, but CART throws an exception
 
 ```mermaid
 sequenceDiagram
@@ -537,42 +537,42 @@ sequenceDiagram
     participant Cart as Cart (id=5)
     participant App as CubeApplication
 
-    Note over Nav: Estado inicial: {0: Root, 2: Home}
+    Note over Nav: Initial state: {0: Root, 2: Home}
 
-    Nav->>Root: applyParameters() — reutilizado
+    Nav->>Root: applyParameters() — reused
     Root-->>Nav: true ✓
-    Nav->>Home: applyParameters() — reutilizado
+    Nav->>Home: applyParameters() — reused
     Home-->>Nav: true ✓
 
-    Note over Nav: Cart(5) não existe → cria
+    Note over Nav: Cart(5) does not exist → create
     Nav->>Cart: applyParameters(init=true, deepest=true)
     Cart--xNav: RuntimeException!
 
     Note over Nav: rollback()
-    Nav->>Root: applyParameters(sourceIntent) — restaura
-    Nav->>Home: applyParameters(sourceIntent) — restaura
+    Nav->>Root: applyParameters(sourceIntent) — restore
+    Nav->>Home: applyParameters(sourceIntent) — restore
     Nav->>Cart: release() ✓
     Nav->>App: updateHistory()
     Nav->>App: navigation = null
-    Note over Nav: RuntimeException re-lançada
-    Note over App: presenterMap inalterado = {0: Root, 2: Home}
+    Note over Nav: RuntimeException rethrown
+    Note over App: presenterMap unchanged = {0: Root, 2: Home}
 ```
 
 ---
 
-## Suspend e Coroutines no Cube MVP
+## Suspend and Coroutines in Cube MVP
 
-O Cube MVP adota **Kotlin coroutines** como mecanismo de concorrência. A escolha de quais métodos são `suspend` e quais são síncronos segue uma regra fundamental: **suspend marca operações que cruzam fronteiras de I/O ou navegação; mutação de estado e notificação de view são sempre síncronas.**
+Cube MVP uses **Kotlin coroutines** as its concurrency mechanism. Which methods are `suspend` and which are synchronous follows one fundamental rule: **suspend marks operations that cross I/O or navigation boundaries; state mutation and view notification are always synchronous.**
 
-### O Modelo de Execução
+### The Execution Model
 
-A arquitetura define dois "mundos" de execução que se complementam:
+The architecture defines two complementary execution "worlds":
 
 ```mermaid
 flowchart LR
-    subgraph SYNC["Mundo Síncrono"]
+    subgraph SYNC["Synchronous World"]
         direction TB
-        S1["state.x = valor"]
+        S1["state.x = value"]
         S2["update()"]
         S3["view.update()"]
         S4["CubeViewSlot.setView()"]
@@ -580,7 +580,7 @@ flowchart LR
         S1 --> S2 --> S3
     end
 
-    subgraph SUSPEND["Mundo Suspend"]
+    subgraph SUSPEND["Suspend World"]
         direction TB
         A1["applyParameters()"]
         A2["Routes.xxx()"]
@@ -591,90 +591,90 @@ flowchart LR
         A3 --> A4
     end
 
-    SUSPEND -->|"após await\nmuta estado"| SYNC
-    SYNC -->|"evento de UI\nvia safeCall"| SUSPEND
+    SUSPEND -->|"after await\nmutates state"| SYNC
+    SYNC -->|"UI event\nvia safeCall"| SUSPEND
 
     style SYNC fill:#e8f5e9,stroke:#2e7d32
     style SUSPEND fill:#e3f2fd,stroke:#1565c0
 ```
 
-**Princípio:** O código suspend **nunca muta estado diretamente na view**. Ele faz o I/O, obtém dados, e então muta o `ViewState` e chama `update()` — ambos síncronos.
+**Principle:** suspend code **never mutates state directly in the view**. It does the I/O, gets the data, and then mutates the `ViewState` and calls `update()`, both synchronous.
 
-### O presenterScope — Serialização de Ações
+### The presenterScope — Serializing Actions
 
-O `ShoppingApplication` define um `CoroutineScope` com paralelismo limitado a 1:
+`ShoppingApplication` defines a `CoroutineScope` with parallelism limited to 1:
 
 ```kotlin
 val presenterScope = CoroutineScope(Dispatchers.Default.limitedParallelism(1))
 ```
 
-Isso garante que **todas as ações de presenter executam serialmente**, eliminando condições de corrida sem necessidade de locks ou mutexes:
+This guarantees that **all presenter actions run serially**, eliminating race conditions without locks or mutexes:
 
 ```mermaid
 sequenceDiagram
     participant UI as UI Thread
     participant Q as presenterScope (serial)
-    participant IO as Rede/Disco
+    participant IO as Network/Disk
 
     UI->>Q: safeCall → presenter.onBuy()
-    Note right of Q: Ação enfileirada
+    Note right of Q: Action queued
 
     UI->>Q: safeCall → presenter.onExit()
-    Note right of Q: Aguarda a anterior
+    Note right of Q: Waits for the previous one
 
     activate Q
     Q->>IO: cart.commit() — suspend
-    IO-->>Q: resultado
-    Q->>Q: state.x = ... (síncrono)
-    Q->>Q: update() (síncrono)
+    IO-->>Q: result
+    Q->>Q: state.x = ... (synchronous)
+    Q->>Q: update() (synchronous)
     deactivate Q
 
     activate Q
-    Note over Q: Agora executa onExit()
+    Note over Q: Now runs onExit()
     Q->>IO: Routes.login() → execute()
-    IO-->>Q: navegação completa
+    IO-->>Q: navigation complete
     deactivate Q
 ```
 
-**Consequência prática:** O desenvolvedor pode programar os presenters como se fossem single-threaded — lê e escreve no `state` sem preocupações de concorrência.
+**Practical consequence:** developers can write presenters as if they were single-threaded, reading and writing `state` without concurrency concerns.
 
-### A Fronteira Suspend / Síncrono
+### The Suspend / Synchronous Boundary
 
-A tabela abaixo resume quais operações do framework são `suspend` e quais são síncronas:
+The table below summarizes which framework operations are `suspend` and which are synchronous:
 
-| Operação | Suspend? | Por quê |
+| Operation | Suspend? | Why |
 |----------|:--------:|---------|
-| `state.campo = valor` | ❌ | Pura atribuição em memória |
-| `update()` | ❌ | Notifica a view para re-renderizar (síncrono) |
-| `CubeView.update()` | ❌ | Apenas marca dirty / recompõe |
-| `CubeViewSlot.setView(view)` | ❌ | Conecta view ao slot do pai (atribuição) |
-| `release()` | ❌ | Libera recursos locais |
-| `commitComputedState()` | ❌ | Cálculo derivado síncrono |
-| `CubeNavigation.execute()` | ✅ | Chama `applyParameters()` de cada presenter |
-| `CubePresenter.applyParameters()` | ✅ | Pode inicializar child presenters (I/O) |
-| `AbstractChildPresenter.initialize()` | ✅ | Chama `onInitialize()` que pode carregar dados |
-| `Routes.xxx(app)` | ✅ | Chama `navigate().execute()` |
-| `repository.fetch/insert/update()` | ✅ | Acesso a rede ou banco de dados |
-| Ações do usuário com I/O (`onBuy()`) | ✅ | Chamam repositórios ou navegam |
-| Ações do usuário sem I/O (`onModifyQuantity()`) | ❌ | Apenas mutam estado local |
+| `state.field = value` | ❌ | Plain in-memory assignment |
+| `update()` | ❌ | Notifies the view to re-render (synchronous) |
+| `CubeView.update()` | ❌ | Only marks dirty / recomposes |
+| `CubeViewSlot.setView(view)` | ❌ | Connects the view to the parent's slot (assignment) |
+| `release()` | ❌ | Frees local resources |
+| `commitComputedState()` | ❌ | Synchronous derived computation |
+| `CubeNavigation.execute()` | ✅ | Calls each presenter's `applyParameters()` |
+| `CubePresenter.applyParameters()` | ✅ | May initialize child presenters (I/O) |
+| `AbstractChildPresenter.initialize()` | ✅ | Calls `onInitialize()`, which may load data |
+| `Routes.xxx(app)` | ✅ | Calls `navigate().execute()` |
+| `repository.fetch/insert/update()` | ✅ | Network or database access |
+| User actions with I/O (`onBuy()`) | ✅ | Call repositories or navigate |
+| User actions without I/O (`onModifyQuantity()`) | ❌ | Only mutate local state |
 
-### O Padrão safeCall — Bridge entre View e Presenter
+### The safeCall Pattern — Bridge between View and Presenter
 
-A camada de view **nunca chama funções suspend diretamente**. Ela usa o padrão `safeCall` para despachar ações no `presenterScope`:
+The view layer **never calls suspend functions directly**. It uses the `safeCall` pattern to dispatch actions on the `presenterScope`:
 
 ```mermaid
 sequenceDiagram
-    participant User as Usuário
+    participant User as User
     participant View as CubeView (UI thread)
     participant Safe as safeCall
     participant Scope as presenterScope
     participant Pres as Presenter
     participant Repo as Repository (I/O)
 
-    User->>View: click no botão "Comprar"
+    User->>View: click on the "Buy" button
     View->>Safe: safeCall → presenter.onBuy()
     Safe->>Scope: launch → action()
-    Note over View: UI thread liberada imediatamente
+    Note over View: UI thread freed immediately
 
     activate Scope
     Scope->>Pres: onBuy()
@@ -682,32 +682,32 @@ sequenceDiagram
     Repo-->>Pres: purchaseId
     Pres->>Pres: state.receipt = ...
     Pres->>Pres: update()
-    Note over Scope: flush() — processa views dirty
+    Note over Scope: flush() — processes dirty views
     deactivate Scope
 ```
 
-A implementação de `safeCall` é idêntica em todas as plataformas:
+The `safeCall` implementation is identical on all platforms:
 
 ```kotlin
-// Em ComposeCubeView, ReactCubeView, AbstractViewAndroid
+// In ComposeCubeView, ReactCubeView, AbstractViewAndroid
 protected fun safeCall(action: suspend () -> Unit) {
     app.presenterScope.launch {
         try {
             action()
         } catch (e: Exception) {
-            app.alertUnexpectedError(LOG, "Erro inesperado", e)
+            app.alertUnexpectedError(LOG, "Unexpected error", e)
         } finally {
-            ViewUpdateScheduler.flush()  // Processa views dirty
+            ViewUpdateScheduler.flush()  // Processes dirty views
         }
     }
 }
 ```
 
-**Na prática, na view:**
+**In practice, in the view:**
 
 ```kotlin
 // Compose
-Button(onClick = { safeCall { presenter.onBuy() } }) { Text("Comprar") }
+Button(onClick = { safeCall { presenter.onBuy() } }) { Text("Buy") }
 
 // Native Android
 buyButton.setOnClickListener { safeAction("onBuy") { presenter.onBuy() } }
@@ -716,34 +716,34 @@ buyButton.setOnClickListener { safeAction("onBuy") { presenter.onBuy() } }
 onClick = { safeCall { presenter.onOpenProduct(productId) } }
 ```
 
-### Ciclo de Vida dos Presenters e Suspend
+### Presenter Lifecycle and Suspend
 
-O `applyParameters()` é o único método do ciclo de vida que é `suspend`. Isso permite que presenters façam trabalho assíncrono durante a navegação:
+`applyParameters()` is the only lifecycle method that is `suspend`. This lets presenters do asynchronous work during navigation:
 
 ```mermaid
 flowchart TD
     subgraph "CubeNavigation.execute() — SUSPEND"
         direction TB
-        E1["Para cada step na rota"]
+        E1["For each step in the route"]
         E2["presenter.applyParameters() — SUSPEND"]
-        E3{Retornou true?}
-        E4["Próximo step"]
+        E3{Returned true?}
+        E4["Next step"]
         E5["commit() — SYNC"]
 
         E1 --> E2 --> E3
-        E3 -->|sim| E4 --> E1
-        E3 -->|não| E5
+        E3 -->|yes| E4 --> E1
+        E3 -->|no| E5
     end
 
-    subgraph "Dentro de applyParameters() — SUSPEND"
+    subgraph "Inside applyParameters() — SUSPEND"
         direction TB
-        AP1["Ler parâmetros do intent — SYNC"]
-        AP2["Criar view se initialization — SYNC"]
-        AP3["Inicializar child presenters — SUSPEND"]
-        AP4["Carregar dados — SUSPEND"]
-        AP5["Mutar state — SYNC"]
+        AP1["Read intent parameters — SYNC"]
+        AP2["Create view if initialization — SYNC"]
+        AP3["Initialize child presenters — SUSPEND"]
+        AP4["Load data — SUSPEND"]
+        AP5["Mutate state — SYNC"]
         AP6["update() — SYNC"]
-        AP7["Conectar slot — SYNC"]
+        AP7["Connect slot — SYNC"]
 
         AP1 --> AP2 --> AP3 --> AP4 --> AP5 --> AP6 --> AP7
     end
@@ -751,36 +751,36 @@ flowchart TD
     E2 -.-> AP1
 ```
 
-**Exemplo concreto — ReceiptPresenter:**
+**Concrete example — ReceiptPresenter:**
 
 ```kotlin
 override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
     val pPurchaseId = intent.getParameterAsLong(PlaceParameters.PURCHASE_ID, purchaseId)
         ?: throw AssertionError("Missing PURCHASE_ID")
 
-    // (1) Carrega dados do servidor — SUSPEND (I/O)
+    // (1) Load data from the server — SUSPEND (I/O)
     if (state.receipt == null || pPurchaseId != purchaseId) {
         val receipt = receiptService.loadReceipt(pPurchaseId)  // ← suspend
         purchaseId = pPurchaseId
-        state.receipt = receipt   // ← sync: muta estado
-        update()                  // ← sync: notifica view
+        state.receipt = receipt   // ← sync: mutates state
+        update()                  // ← sync: notifies the view
     }
 
-    // (2) Cria view e conecta slot — SYNC
+    // (2) Create view and connect slot — SYNC
     if (initialization) {
         ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
         view = createView?.invoke(this)
         update()
     }
 
-    ownerSlot?.setView(view!!)   // ← sync: conecta ao pai
+    ownerSlot?.setView(view!!)   // ← sync: connects to the parent
     return true
 }
 ```
 
-### Child Presenters — Inicialização Assíncrona
+### Child Presenters — Asynchronous Initialization
 
-Presenters filhos (painéis embutidos) seguem um padrão de dois passos:
+Child presenters (embedded panels) follow a two-step pattern:
 
 ```mermaid
 sequenceDiagram
@@ -789,35 +789,35 @@ sequenceDiagram
     participant View as ProductsPanelView
     participant Repo as ProductRepository
 
-    Note over Parent: Dentro de applyParameters() — SUSPEND
+    Note over Parent: Inside applyParameters() — SUSPEND
 
     Parent->>Child: new ProductsPanelPresenter(app, this)
     Parent->>Child: initialize() — SUSPEND
 
     activate Child
     Child->>Child: onCreateView() — SYNC
-    Child->>View: cria view (factory)
+    Child->>View: creates view (factory)
     View-->>Child: CubeView
 
     Child->>Child: onInitialize() — SUSPEND
     Child->>Repo: loadProducts() — SUSPEND (I/O)
     Repo-->>Child: List<Product>
-    Child->>Child: state.products = resultado — SYNC
+    Child->>Child: state.products = result — SYNC
     Child->>Child: update() — SYNC
     deactivate Child
 
-    Child-->>Parent: CubeView (retorno de initialize)
+    Child-->>Parent: CubeView (returned by initialize)
     Parent->>Parent: state.productsPanelView = view — SYNC
 ```
 
 ```kotlin
-// AbstractChildPresenter — ciclo de vida
+// AbstractChildPresenter — lifecycle
 abstract class AbstractChildPresenter<A : CubeApplication>(override val app: A) : PresenterBase {
 
     suspend fun initialize(): CubeView {
-        val v = onCreateView()       // SYNC — cria instância da view
+        val v = onCreateView()       // SYNC — creates the view instance
         view = v
-        onInitialize()               // SUSPEND — pode fazer I/O
+        onInitialize()               // SUSPEND — may do I/O
         return v
     }
 
@@ -826,34 +826,34 @@ abstract class AbstractChildPresenter<A : CubeApplication>(override val app: A) 
 }
 ```
 
-**A separação é intencional:** `onCreateView()` é síncrono porque criar uma view é rápido e não envolve I/O. `onInitialize()` é suspend porque tipicamente carrega dados iniciais do servidor.
+**The split is intentional:** `onCreateView()` is synchronous because creating a view is fast and involves no I/O. `onInitialize()` is suspend because it typically loads initial data from the server.
 
-### Quando Usar e Quando NÃO Usar Suspend
+### When to Use and When NOT to Use Suspend
 
 ```mermaid
 flowchart TD
-    Q1{A função faz I/O?\nrede, disco, banco}
-    Q2{A função navega?\ncall Routes.xxx}
-    Q3{A função inicializa\nchild presenter?}
-    Q4{A função apenas\nmuta estado local?}
+    Q1{Does the function do I/O?\nnetwork, disk, database}
+    Q2{Does the function navigate?\ncall Routes.xxx}
+    Q3{Does the function initialize\na child presenter?}
+    Q4{Does the function only\nmutate local state?}
 
-    Q1 -->|Sim| SUSPEND["✅ suspend"]
-    Q1 -->|Não| Q2
-    Q2 -->|Sim| SUSPEND
-    Q2 -->|Não| Q3
-    Q3 -->|Sim| SUSPEND
-    Q3 -->|Não| Q4
-    Q4 -->|Sim| NOSUSPEND["❌ NÃO suspend"]
-    Q4 -->|Não| NOSUSPEND
+    Q1 -->|Yes| SUSPEND["✅ suspend"]
+    Q1 -->|No| Q2
+    Q2 -->|Yes| SUSPEND
+    Q2 -->|No| Q3
+    Q3 -->|Yes| SUSPEND
+    Q3 -->|No| Q4
+    Q4 -->|Yes| NOSUSPEND["❌ NOT suspend"]
+    Q4 -->|No| NOSUSPEND
 
     style SUSPEND fill:#e3f2fd,stroke:#1565c0
     style NOSUSPEND fill:#e8f5e9,stroke:#2e7d32
 ```
 
-**Exemplos no CartPresenter:**
+**Examples in CartPresenter:**
 
 ```kotlin
-// ❌ NÃO suspend — apenas opera no carrinho local (in-memory)
+// ❌ NOT suspend — only works on the local (in-memory) cart
 fun onModifyQuantity(productId: Long?, quantity: Int?) {
     val found = cart.modifyProductQuantity(productId, quantity)  // sync
     if (found) {
@@ -862,12 +862,12 @@ fun onModifyQuantity(productId: Long?, quantity: Int?) {
     }
 }
 
-// ✅ suspend — pode navegar (Routes.home)
+// ✅ suspend — may navigate (Routes.home)
 suspend fun onRemoveProduct(productId: Long?) {
     val modified = cart.removeProduct(productId)  // sync
     if (modified) {
         if (cart.getSize() == 0) {
-            Routes.home(app)  // ← suspend: navega
+            Routes.home(app)  // ← suspend: navigates
         } else {
             state.items = cart.getCartItems()
             update()
@@ -875,39 +875,39 @@ suspend fun onRemoveProduct(productId: Long?) {
     }
 }
 
-// ✅ suspend — faz I/O (cart.commit) e navega (Routes.receipt)
+// ✅ suspend — does I/O (cart.commit) and navigates (Routes.receipt)
 suspend fun onBuy() {
-    val purchaseId = cart.commit(app.subject!!)  // ← suspend: persiste compra
+    val purchaseId = cart.commit(app.subject!!)  // ← suspend: persists the purchase
     val intent = app.newIntent()
     intent.setParameter(PlaceParameters.PURCHASE_ID, purchaseId)
-    Routes.receipt(app, intent)                  // ← suspend: navega
+    Routes.receipt(app, intent)                  // ← suspend: navigates
 }
 ```
 
-### Regras Práticas para o Desenvolvedor
+### Practical Rules for the Developer
 
-1. **Marque como `suspend` se e somente se** a função chama outra suspend (repositório, Routes, initialize). Não adicione `suspend` "por precaução".
+1. **Mark a function `suspend` if and only if** it calls another suspend function (repository, Routes, initialize). Do not add `suspend` "just in case".
 
-2. **Nunca chame `runBlocking` dentro de um presenter.** O `presenterScope` já é a coroutine — usar `runBlocking` dentro dele causa deadlock.
+2. **Never call `runBlocking` inside a presenter.** The `presenterScope` already is the coroutine; using `runBlocking` inside it causes a deadlock.
 
-3. **Views nunca são suspend.** Os métodos `update()`, `release()`, `setView()` e toda a construção de UI são síncronos. Use `safeCall` para despachar ações suspend a partir de eventos de UI.
+3. **Views are never suspend.** The `update()`, `release()` and `setView()` methods and all UI construction are synchronous. Use `safeCall` to dispatch suspend actions from UI events.
 
-4. **`safeCall` é fire-and-forget.** Não há valor de retorno. Se precisa do resultado de uma operação async para atualizar a UI, mute o `state` dentro do bloco e chame `update()`.
+4. **`safeCall` is fire-and-forget.** There is no return value. If you need the result of an async operation to update the UI, mutate `state` inside the block and call `update()`.
 
-5. **Listeners podem ser suspend.** O `CartManager` suporta `suspend () -> Unit` como listener de commit. O framework chama esses listeners sequencialmente com `await`.
+5. **Listeners can be suspend.** `CartManager` supports `suspend () -> Unit` as a commit listener. The framework calls these listeners sequentially with `await`.
 
-6. **`CubeViewSlot.setView()` é síncrono.** É uma atribuição de view ao slot do pai — nunca envolve I/O.
+6. **`CubeViewSlot.setView()` is synchronous.** It assigns a view to the parent's slot and never involves I/O.
 
-7. **Ações de navegação (Routes) são sempre suspend.** Qualquer método que pode navegar deve ser marcado como `suspend`, pois `CubeNavigation.execute()` é suspend.
+7. **Navigation actions (Routes) are always suspend.** Any method that may navigate must be marked `suspend`, because `CubeNavigation.execute()` is suspend.
 
-8. **O fluxo típico dentro de um `safeCall`:**
+8. **The typical flow inside a `safeCall`:**
 
 ```mermaid
 flowchart LR
-    A["safeCall { ... }"] --> B["I/O suspend\n(fetch, commit)"]
-    B --> C["Muta state\n(síncrono)"]
-    C --> D["update()\n(síncrono)"]
-    D --> E["flush()\n(processa dirty views)"]
+    A["safeCall { ... }"] --> B["suspend I/O\n(fetch, commit)"]
+    B --> C["Mutates state\n(synchronous)"]
+    C --> D["update()\n(synchronous)"]
+    D --> E["flush()\n(processes dirty views)"]
 
     style A fill:#fff3e0,stroke:#e65100
     style B fill:#e3f2fd,stroke:#1565c0
@@ -916,29 +916,29 @@ flowchart LR
     style E fill:#fce4ec,stroke:#880e4f
 ```
 
-### Disparo Assíncrono Paralelo — Fire-and-Forget com Retorno
+### Parallel Asynchronous Dispatch — Fire-and-Forget with a Result
 
-Há cenários em que o presenter precisa disparar uma operação de I/O **sem bloquear** a ação corrente — por exemplo, pré-carregar dados, enviar telemetria, ou buscar informações secundárias enquanto a UI já exibe o conteúdo principal.
+There are cases where the presenter needs to fire an I/O operation **without blocking** the current action: for example, preloading data, sending telemetry, or fetching secondary information while the UI already shows the main content.
 
-Como o `presenterScope` é serial (`limitedParallelism(1)`), usar `app.presenterScope.launch { ... }` apenas **enfileira** a tarefa para depois. Se o objetivo é execução **realmente paralela**, deve-se usar um scope separado e, ao obter o resultado, despachar de volta para o `presenterScope` para mutar o estado com segurança.
+Because `presenterScope` is serial (`limitedParallelism(1)`), `app.presenterScope.launch { ... }` only **queues** the task for later. If the goal is **truly parallel** execution, use a separate scope and, once the result is available, dispatch back to `presenterScope` to mutate the state safely.
 
-O `presenterScope` está acessível nos presenters via `app.presenterScope` (definido em `ShoppingApplication`).
+Presenters reach `presenterScope` through `app.presenterScope` (defined in `ShoppingApplication`).
 
-#### Padrão: Scope Paralelo com Retorno ao presenterScope
+#### Pattern: Parallel Scope with Return to presenterScope
 
 ```kotlin
-// Dentro de um presenter (app é ShoppingApplication)
+// Inside a presenter (app is ShoppingApplication)
 suspend fun onEnter() {
-    // Exibe imediatamente com dados parciais
+    // Show immediately with partial data
     state.loading = true
     update()
 
-    // Dispara operação pesada em paralelo — NÃO bloqueia
+    // Fire the heavy operation in parallel — does NOT block
     CoroutineScope(Dispatchers.Default).launch {
         try {
-            val extra = repository.fetchExtraInfo(id)  // I/O paralelo
+            val extra = repository.fetchExtraInfo(id)  // parallel I/O
 
-            // Retorna ao presenterScope para mutar estado
+            // Return to presenterScope to mutate state
             app.presenterScope.launch {
                 state.extraInfo = extra
                 state.loading = false
@@ -955,13 +955,13 @@ suspend fun onEnter() {
 }
 ```
 
-#### Diagrama de Sequência
+#### Sequence Diagram
 
 ```mermaid
 sequenceDiagram
     participant UI as View (UI thread)
     participant PS as presenterScope (serial)
-    participant BG as Scope paralelo
+    participant BG as Parallel scope
     participant Repo as Repository (I/O)
 
     UI->>PS: safeCall → presenter.onEnter()
@@ -969,33 +969,33 @@ sequenceDiagram
     PS->>PS: state.loading = true
     PS->>PS: update()
     PS->>BG: launch → repo.fetchExtraInfo()
-    Note over PS: Não espera — continua
+    Note over PS: Does not wait — continues
     deactivate PS
-    Note over PS: Ação corrente termina,<br/>UI já mostra conteúdo parcial
+    Note over PS: Current action ends,<br/>UI already shows partial content
 
     activate BG
     BG->>Repo: fetchExtraInfo() — suspend
-    Repo-->>BG: resultado
-    BG->>PS: launch → state.extra = resultado
+    Repo-->>BG: result
+    BG->>PS: launch → state.extra = result
     deactivate BG
 
     activate PS
-    Note over PS: Executa no presenterScope (seguro)
-    PS->>PS: state.extraInfo = resultado
+    Note over PS: Runs on presenterScope (safe)
+    PS->>PS: state.extraInfo = result
     PS->>PS: state.loading = false
     PS->>PS: update()
     deactivate PS
 ```
 
-#### Contraste com o Modo Serial (enfileirado)
+#### Contrast with Serial (Queued) Mode
 
-Se a operação não precisa ser paralela — apenas desacoplada da ação corrente — basta enfileirar no próprio `presenterScope`:
+If the operation does not need to be parallel, only decoupled from the current action, just queue it on `presenterScope` itself:
 
 ```kotlin
-// Enfileirado — executa APÓS a ação corrente terminar (serial, sem paralelismo)
+// Queued — runs AFTER the current action ends (serial, no parallelism)
 app.presenterScope.launch {
     val data = repository.sendAnalytics(payload)
-    // Pode mutar state diretamente aqui (já está no presenterScope)
+    // Can mutate state directly here (already on presenterScope)
     state.analyticsConfirmed = true
     update()
 }
@@ -1003,12 +1003,12 @@ app.presenterScope.launch {
 
 ```mermaid
 flowchart TD
-    Q{Precisa rodar em<br/>paralelo com a<br/>ação corrente?}
-    Q -->|Sim| PAR["Scope separado<br/>+ despacho via<br/>app.presenterScope.launch"]
-    Q -->|Não| SER["app.presenterScope.launch<br/>(enfileirado, serial)"]
+    Q{Must it run in<br/>parallel with the<br/>current action?}
+    Q -->|Yes| PAR["Separate scope<br/>+ dispatch via<br/>app.presenterScope.launch"]
+    Q -->|No| SER["app.presenterScope.launch<br/>(queued, serial)"]
 
-    PAR --> R1["⚠️ NÃO mute state<br/>fora do presenterScope"]
-    SER --> R2["✅ Pode mutar state<br/>diretamente"]
+    PAR --> R1["⚠️ Do NOT mutate state<br/>outside presenterScope"]
+    SER --> R2["✅ Can mutate state<br/>directly"]
 
     style PAR fill:#e3f2fd,stroke:#1565c0
     style SER fill:#e8f5e9,stroke:#2e7d32
@@ -1016,8 +1016,8 @@ flowchart TD
     style R2 fill:#e8f5e9,stroke:#2e7d32
 ```
 
-#### Regra de Segurança
+#### Safety Rule
 
-> **Toda mutação de `state` e chamada a `update()` deve acontecer dentro do `presenterScope`.**
+> **Every `state` mutation and `update()` call must happen inside `presenterScope`.**
 >
-> Se o código está executando em um scope paralelo, ele deve despachar de volta via `app.presenterScope.launch { ... }` antes de tocar no estado do presenter. Violar essa regra causa condições de corrida silenciosas.
+> If code is running on a parallel scope, it must dispatch back via `app.presenterScope.launch { ... }` before touching the presenter's state. Breaking this rule causes silent race conditions.

@@ -1,26 +1,26 @@
 # fontes
 
-Projeto Gradle raiz que contém todos os módulos da aplicação Shopping.
+Root Gradle project containing all modules of the Shopping application.
 
-## Módulos
+## Modules
 
 ### Framework
 
-- [br.com.wdc.kt.framework/](br.com.wdc.kt.framework/) — Bibliotecas base do framework
+- [br.com.wdc.kt.framework/](br.com.wdc.kt.framework/) — Framework base libraries
 
-### Aplicação Shopping
+### Shopping application
 
-- [br.com.wdc.kt.shopping/](br.com.wdc.kt.shopping/) — Módulos da aplicação Shopping
+- [br.com.wdc.kt.shopping/](br.com.wdc.kt.shopping/) — Shopping application modules
 
 ## Build
 
 ```bash
-# Compilar tudo
+# Build everything
 ./gradlew build
 
-# Rodar testes
+# Run tests
 ./gradlew test
 
-# Rodar backend
+# Run backend
 ./gradlew :backend:run
 ```
