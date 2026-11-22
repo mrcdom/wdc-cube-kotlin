@@ -49,16 +49,11 @@ internal object PurchaseApiController {
             // a purchase always belongs to whoever makes it
             ApiSecurity.ownerScope(request)?.let { owner -> purchase.user = User().apply { id = owner } }
         }
+        // the scope already keeps the update to the caller's own purchases; this keeps the purchase theirs
         rpc.beforeUpdate = { data, request ->
             val owner = ApiSecurity.ownerScope(request)
-            if (owner != null) {
-                val id = data.entity.id
-                if (id == null || repo().count(PurchaseCriteria().withPurchaseId(id).withUserId(owner)) == 0) {
-                    throw AccessDeniedException("Cannot modify other user's purchase")
-                }
-                if (data.entity.user != null && data.entity.userId != owner) {
-                    throw AccessDeniedException("Cannot reassign a purchase to another user")
-                }
+            if (owner != null && data.entity.user != null && data.entity.userId != owner) {
+                throw AccessDeniedException("Cannot reassign a purchase to another user")
             }
         }
         rpc.register(routes)

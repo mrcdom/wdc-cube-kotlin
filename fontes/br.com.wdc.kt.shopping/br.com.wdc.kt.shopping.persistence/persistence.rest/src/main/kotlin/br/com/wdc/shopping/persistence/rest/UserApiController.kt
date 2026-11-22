@@ -4,7 +4,6 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.rest.RequestContext
 import br.com.wdc.framework.rest.RestApi
 import br.com.wdc.framework.rest.rpc.RepositoryRpc
-import br.com.wdc.shopping.domain.exception.AccessDeniedException
 import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.user.UserCodec
 import br.com.wdc.shopping.domain.user.UserCriteria
@@ -49,13 +48,8 @@ internal object UserApiController {
         rpc.sanitizeProjection = { it.password = null }
         rpc.sanitizeOutput = { it.password = null }
         rpc.beforeInsert = { user, request -> decryptPasswordIfPresent(user, request) }
-        rpc.beforeUpdate = { data, request ->
-            val owner = ApiSecurity.ownerScope(request)
-            if (owner != null && data.entity.id != null && data.entity.id != owner) {
-                throw AccessDeniedException("Cannot modify other user's data")
-            }
-            decryptPasswordIfPresent(data.entity, request)
-        }
+        // the scope already keeps the update to the caller's own user
+        rpc.beforeUpdate = { data, request -> decryptPasswordIfPresent(data.entity, request) }
         rpc.register(routes)
     }
 

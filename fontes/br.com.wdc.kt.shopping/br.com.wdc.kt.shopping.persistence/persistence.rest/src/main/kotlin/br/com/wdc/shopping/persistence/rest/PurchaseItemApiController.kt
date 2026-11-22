@@ -56,16 +56,10 @@ internal object PurchaseItemApiController {
         rpc.beforeInsert = { item, request ->
             ApiSecurity.ownerScope(request)?.let { owner -> requireOwnPurchase(owner, item.purchaseId) }
         }
+        // the scope already keeps the update to the caller's own items; an item can only move to another purchase of theirs
         rpc.beforeUpdate = { data, request ->
             val owner = ApiSecurity.ownerScope(request)
-            if (owner != null) {
-                val id = data.entity.id
-                if (id == null || repo().count(PurchaseItemCriteria().withPurchaseItemId(id).withUserId(owner)) == 0) {
-                    throw AccessDeniedException("Cannot modify other user's purchase item")
-                }
-                // an item can only be moved to another purchase of the same user
-                data.entity.purchaseId?.let { requireOwnPurchase(owner, it) }
-            }
+            if (owner != null) data.entity.purchaseId?.let { requireOwnPurchase(owner, it) }
         }
         rpc.register(routes)
     }

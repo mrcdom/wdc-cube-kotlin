@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.codec.ModelCodec
+import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.repository.ReadOnlyRepository
 import br.com.wdc.framework.domain.repository.Repository
@@ -32,7 +33,7 @@ import io.javalin.http.NotFoundResponse
  * | `GET {id}` | — | entity with the default projection, or 404 |
  *
  * The writes only exist if the repository is a [Repository], and they are `transactional`. Access is up to the
- * application: [rule] per operation, [scope] to restrict the criteria to what belongs to the caller, and the write
+ * application: [rule] per operation, [scope] to restrict reads, delete and update to what belongs to the caller, and the write
  * hooks, which run inside the transaction. Fetching by key goes through the same rule and reach as the queries.
  *
  * Insert returns the entity as the repository left it (the generated key, the column defaults), passed through
@@ -77,7 +78,8 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     var rule: (Operation) -> AccessRule? = { null }
 
     /**
-     * Restricts the criteria of every read and of delete to what the caller can reach.
+     * Restricts what the caller can reach: the criteria of every read and of delete, and the row an update targets
+     * (an update outside it is refused with `AccessDeniedException`, 403, before [beforeUpdate]).
      *
      * **The criteria came from the caller**, including each field's disjunction. Add the reach with the conjunctive
      * field — `criteria.ownerId.and().eq(owner)` —, never with just `eq`: on a field the client marked with
@@ -85,6 +87,13 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
      * With `and()`, every client condition on that field is `AND`ed with the owner, and none reaches another row.
      */
     var scope: suspend (C, RequestContext) -> Unit = { _, _ -> }
+        set(value) {
+            field = value
+            scoped = true
+        }
+
+    /** Whether [scope] was set: without one, an update does not pay for the reach check. */
+    private var scoped = false
 
     /** Adjusts the requested projection before the query — remove what never goes out (the password, for example). */
     var sanitizeProjection: (E) -> Unit = {}
@@ -194,6 +203,13 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     private suspend fun update(call: RestCall): RawJson {
         val data = call.entityForUpdate(codec)
+        if (scoped) {
+            val id = idOf(data.entity) ?: throw InvalidRequestException("update without the id")
+            val target = newCriteria()
+            restrictToId(target, id)
+            scope(target, call.request)
+            if (repository().count(target) == 0) throw AccessDeniedException("Access denied")
+        }
         beforeUpdate(data, call.request)
         return RawJson.field("success", writable().update(data.entity, null, data.projection))
     }
