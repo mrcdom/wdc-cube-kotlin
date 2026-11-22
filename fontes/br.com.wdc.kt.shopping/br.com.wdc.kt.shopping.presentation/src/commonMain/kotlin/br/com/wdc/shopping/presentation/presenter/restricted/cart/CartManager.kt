@@ -47,9 +47,10 @@ class CartManager(private val repo: PurchaseRepository) {
 
         if (isNew) {
             cart.add(CartItem.create(product, quantity))
-            for (listener in ArrayList(changeListenerMap.values)) {
-                listener()
-            }
+        }
+        // nos dois casos o carrinho mudou: o contador do cabeçalho depende deste aviso
+        for (listener in ArrayList(changeListenerMap.values)) {
+            listener()
         }
     }
 
