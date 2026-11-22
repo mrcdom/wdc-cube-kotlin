@@ -2,11 +2,11 @@ package br.com.wdc.shopping.nativeui.android
 
 import br.com.wdc.framework.commons.storage.AndroidPersistentSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 
-internal class AndroidNativeShoppingApplication(
+internal class AndroidNativeRootPresenter(
     private val persistentStorage: AndroidPersistentSessionStorage
-) : ShoppingApplication() {
+) : RootPresenter() {
 
     override fun updateHistory() { /* No browser history on Android */ }
 

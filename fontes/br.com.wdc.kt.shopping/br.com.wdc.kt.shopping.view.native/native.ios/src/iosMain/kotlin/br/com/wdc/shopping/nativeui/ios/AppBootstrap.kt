@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.nativeui.ios
 
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.framework.commons.concurrent.IosScheduledExecutor
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
@@ -57,7 +57,7 @@ fun createRootViewController(baseUrl: String): UIViewController {
     registerViewFactories()
 
     // Create the application
-    val app = IosNativeShoppingApplication()
+    val app = IosNativeRootPresenter()
 
     // Create root ViewController
     val viewController = UIViewController()
@@ -101,7 +101,7 @@ private fun <T> onMainThread(block: () -> T): T {
  * Registers CubeView factory lambdas for all presenters.
  */
 private fun registerViewFactories() {
-    ShoppingApplication.createView = { presenter ->
+    RootPresenter.createView = { presenter ->
         onMainThread { RootViewIos(presenter).initialize() }
     }
 

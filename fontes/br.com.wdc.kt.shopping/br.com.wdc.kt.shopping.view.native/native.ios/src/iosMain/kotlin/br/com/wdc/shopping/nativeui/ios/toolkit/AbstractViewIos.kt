@@ -3,7 +3,7 @@ package br.com.wdc.shopping.nativeui.ios.toolkit
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.PresenterBase
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.launch
 import platform.Foundation.NSLog
@@ -145,9 +145,9 @@ abstract class AbstractViewIos<P : PresenterBase>(
         }
     }
 
-    /** The ShoppingApplication instance obtained from the presenter. */
-    private val app: ShoppingApplication
-        get() = presenter.app as ShoppingApplication
+    /** The RootPresenter instance obtained from the presenter. */
+    private val app: RootPresenter
+        get() = presenter.app as RootPresenter
 
     /**
      * Wrap a user-initiated action in error handling.

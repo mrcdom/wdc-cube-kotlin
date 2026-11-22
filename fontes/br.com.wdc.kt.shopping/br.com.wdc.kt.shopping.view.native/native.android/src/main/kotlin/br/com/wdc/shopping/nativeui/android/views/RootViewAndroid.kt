@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.nativeui.android.views
 
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -16,7 +16,7 @@ import br.com.wdc.shopping.nativeui.android.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 
-class RootViewAndroid(presenter: ShoppingApplication) : AbstractViewAndroid<ShoppingApplication>("root-view", presenter) {
+class RootViewAndroid(presenter: RootPresenter) : AbstractViewAndroid<RootPresenter>("root-view", presenter) {
 
     private lateinit var contentSlot: ViewSlot
     private val handler = Handler(Looper.getMainLooper())

@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.nativeui.ios.views
 
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.nativeui.ios.toolkit.*
 import br.com.wdc.shopping.nativeui.ios.theme.*
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -11,7 +11,7 @@ import platform.UIKit.*
  * Swaps between LoginView and HomeView based on presenter state.
  */
 @OptIn(ExperimentalForeignApi::class)
-class RootViewIos(presenter: ShoppingApplication) : AbstractViewIos<ShoppingApplication>("root-view", presenter) {
+class RootViewIos(presenter: RootPresenter) : AbstractViewIos<RootPresenter>("root-view", presenter) {
 
     private lateinit var contentSlot: ViewSlot
 

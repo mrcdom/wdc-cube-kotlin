@@ -2,14 +2,14 @@ package br.com.wdc.shopping.presentation.presenter.restricted.home
 
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeTreePlace
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootKeys
 
 /** The keys of the restricted branch (home and the places inside it). See [RootKeys]. */
-open class HomeKeys protected constructor(app: ShoppingApplication, intent: CubeIntent?, place: CubeTreePlace) :
+open class HomeKeys protected constructor(app: RootPresenter, intent: CubeIntent?, place: CubeTreePlace) :
     RootKeys(app, intent, place) {
 
-    constructor(app: ShoppingApplication, intent: CubeIntent? = null) : this(app, intent, PLACE)
+    constructor(app: RootPresenter, intent: CubeIntent? = null) : this(app, intent, PLACE)
 
     companion object {
         const val PREFIX = "hm"

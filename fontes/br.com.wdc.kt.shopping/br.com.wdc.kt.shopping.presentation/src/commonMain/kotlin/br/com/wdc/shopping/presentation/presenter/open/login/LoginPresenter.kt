@@ -8,10 +8,10 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.domain.security.AuthenticationService
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
-class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("LoginPresenter")

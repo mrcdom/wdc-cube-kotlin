@@ -7,7 +7,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 import kotlinx.coroutines.runBlocking
 
-class BrowserReactViewImpl(app: ApplicationReactImpl) : GenericViewImpl<ApplicationReactImpl>(VID, app, instanceId = 0) {
+class BrowserReactViewImpl(app: ReactRootPresenter) : GenericViewImpl<ReactRootPresenter>(VID, app, instanceId = 0) {
 
     companion object {
         const val VID = "7b32e816a191"

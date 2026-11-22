@@ -1,4 +1,4 @@
-package br.com.wdc.shopping.presentation
+package br.com.wdc.shopping.presentation.presenter
 
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
@@ -11,8 +11,6 @@ import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.SimpleSecurityContext
-import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.RootViewState
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
@@ -29,13 +27,15 @@ import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 
 /**
- * The Storefront application, and the root of its place tree ([RootKeys.PLACE] is [CubeTreePlace.ROOT]): it owns the
- * page frame — the slot where the first level shows its view, and the unexpected-error alert ([state]) — restores the
- * session on its first navigation, and takes part in every navigation before the first place
- * ([applyParameters]). It is the presenter of the root view ([PresenterBase]), so the view layers paint it like any
- * other.
+ * The root presenter of the Storefront: the root of its place tree ([RootKeys.PLACE] is [CubeTreePlace.ROOT]). It owns
+ * the page frame — the slot where the first level shows its view, and the unexpected-error alert ([state]) — restores
+ * the session on its first navigation, and takes part in every navigation before the first place
+ * ([applyParameters]); it is the presenter of the root view ([PresenterBase]), so the view layers paint it like any
+ * other. It extends [CubeApplication] because the root presenter is what holds the whole structure up: the presenters
+ * alive, the navigation, the places an address can name ([PLACES]). Each platform extends it with what it needs (session
+ * storage, history).
  */
-abstract class ShoppingApplication : CubeApplication(PLACES), PresenterBase {
+abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     /**
      * Single-threaded coroutine scope for presenter actions.
@@ -125,10 +125,10 @@ abstract class ShoppingApplication : CubeApplication(PLACES), PresenterBase {
     }
 
     companion object {
-        private val LOG = Log.getLogger("ShoppingApplication")
+        private val LOG = Log.getLogger("RootPresenter")
 
         /** Creates the root view; registered by each entry point, like the presenters' `createView`. */
-        var createView: ((ShoppingApplication) -> CubeView)? = null
+        var createView: ((RootPresenter) -> CubeView)? = null
 
         /**
          * Every place an address can name, given to [CubeApplication], which resolves addresses among them. Listed

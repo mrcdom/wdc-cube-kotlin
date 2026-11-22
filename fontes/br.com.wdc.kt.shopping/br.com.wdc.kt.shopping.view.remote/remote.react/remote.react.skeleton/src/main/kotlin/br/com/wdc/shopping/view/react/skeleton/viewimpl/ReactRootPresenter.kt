@@ -11,7 +11,7 @@ import br.com.wdc.framework.cube.CubeApplication
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.PresenterBase
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
@@ -33,19 +33,19 @@ import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), PresenterBase {
+class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBase {
 
     override val app: CubeApplication get() = this
 
     companion object {
-        private val LOG = Log.getLogger("ApplicationReactImpl")
+        private val LOG = Log.getLogger("ReactRootPresenter")
 
         val DEFAULT_TIME_SPAN: Duration = 3.minutes
 
-        private val instanceMap = ConcurrentHashMap<String, ApplicationReactImpl>()
+        private val instanceMap = ConcurrentHashMap<String, ReactRootPresenter>()
 
         init {
-            ShoppingApplication.createView = ::RootReactViewImpl
+            RootPresenter.createView = ::RootReactViewImpl
             LoginPresenter.createView = ::LoginReactViewImpl
             HomePresenter.createView = ::HomeReactViewImpl
             ProductPresenter.createView = ::ProductReactViewImpl
@@ -55,19 +55,19 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
             PurchasesPanelPresenter.createView = ::PurchasesPanelReactViewImpl
         }
 
-        fun get(appId: String?): ApplicationReactImpl? {
+        fun get(appId: String?): ReactRootPresenter? {
             if (appId.isNullOrBlank()) return null
             return instanceMap[appId]
         }
 
         fun getActiveSessionCount(): Int = instanceMap.size
 
-        fun getOrCreate(appId: String, request: Map<String, Any?>): ApplicationReactImpl {
+        fun getOrCreate(appId: String, request: Map<String, Any?>): ReactRootPresenter {
             return instanceMap.computeIfAbsent(appId) { createApp(appId, request) }
         }
 
-        private fun createApp(appId: String, request: Map<String, Any?>): ApplicationReactImpl {
-            val app = ApplicationReactImpl(appId)
+        private fun createApp(appId: String, request: Map<String, Any?>): ReactRootPresenter {
+            val app = ReactRootPresenter(appId)
             try {
                 app.addReleaseAction { instanceMap.remove(appId) }
 
@@ -246,7 +246,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
     fun sendResponse(request: Map<String, Any?>) {
         try {
             runBlocking {
-                DispatchPhaseBhv(this@ApplicationReactImpl).run(request)
+                DispatchPhaseBhv(this@ReactRootPresenter).run(request)
             }
             ResponsePhaseBhv(this).run(request)
         } catch (e: Exception) {
@@ -322,7 +322,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
         ws.sendText(text)
     }
 
-    private class DispatchPhaseBhv(private val me: ApplicationReactImpl) {
+    private class DispatchPhaseBhv(private val me: ReactRootPresenter) {
 
         @Throws(Exception::class)
         suspend fun run(request: Map<String, Any?>): Boolean {
@@ -405,7 +405,7 @@ class ApplicationReactImpl(internal val id: String) : ShoppingApplication(), Pre
         }
     }
 
-    private class ResponsePhaseBhv(private val me: ApplicationReactImpl) {
+    private class ResponsePhaseBhv(private val me: ReactRootPresenter) {
 
         fun run(request: Map<String, Any?>): Boolean {
             val requestId = getRequestId(request).also { me.lastRequestId = it }

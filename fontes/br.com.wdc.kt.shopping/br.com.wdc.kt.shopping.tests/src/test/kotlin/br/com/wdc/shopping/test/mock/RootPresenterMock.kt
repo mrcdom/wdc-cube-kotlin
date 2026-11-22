@@ -2,7 +2,7 @@ package br.com.wdc.shopping.test.mock
 
 import br.com.wdc.framework.commons.storage.JvmSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
@@ -19,15 +19,15 @@ import br.com.wdc.shopping.test.mock.viewimpl.ReceiptViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.RestrictedViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.RootViewMock
 
-class ShoppingApplicationMock : ShoppingApplication() {
+class RootPresenterMock : RootPresenter() {
 
     init {
-        ShoppingApplication.createView = { p -> RootViewMock(p.app as ShoppingApplicationMock, p) }
-        LoginPresenter.createView = { p -> LoginViewMock(p.app as ShoppingApplicationMock, p) }
-        HomePresenter.createView = { p -> RestrictedViewMock(p.app as ShoppingApplicationMock, p) }
-        CartPresenter.createView = { p -> CartViewMock(p.app as ShoppingApplicationMock, p) }
-        ProductPresenter.createView = { p -> ProductViewMock(p.app as ShoppingApplicationMock, p) }
-        ReceiptPresenter.createView = { p -> ReceiptViewMock(p.app as ShoppingApplicationMock, p) }
+        RootPresenter.createView = { p -> RootViewMock(p.app as RootPresenterMock, p) }
+        LoginPresenter.createView = { p -> LoginViewMock(p.app as RootPresenterMock, p) }
+        HomePresenter.createView = { p -> RestrictedViewMock(p.app as RootPresenterMock, p) }
+        CartPresenter.createView = { p -> CartViewMock(p.app as RootPresenterMock, p) }
+        ProductPresenter.createView = { p -> ProductViewMock(p.app as RootPresenterMock, p) }
+        ReceiptPresenter.createView = { p -> ReceiptViewMock(p.app as RootPresenterMock, p) }
         ProductsPanelPresenter.createView = { p -> ProductsPanelViewMock(p) }
         PurchasesPanelPresenter.createView = { p -> PurchasesPanelViewMock(p) }
     }

@@ -176,7 +176,7 @@ sequenceDiagram
     Browser->>Server: WebSocket /dispatcher/appId
     Browser->>Server: ping with secret=app_signature
     Server->>Server: Decrypts AES password with RSA priv
-    Server->>Server: Creates ApplicationReactImpl
+    Server->>Server: Creates ReactRootPresenter
     Server-->>Browser: Initial state (views)
 ```
 
@@ -289,7 +289,7 @@ The mapping between hexadecimal View IDs and views is fixed and shared between c
 
 ### Dirty Tracking
 
-When a presenter calls `view.update()`, the view is marked "dirty" in `ApplicationReactImpl`. In the response, only dirty views are serialized:
+When a presenter calls `view.update()`, the view is marked "dirty" in `ReactRootPresenter`. In the response, only dirty views are serialized:
 
 ```mermaid
 graph TB

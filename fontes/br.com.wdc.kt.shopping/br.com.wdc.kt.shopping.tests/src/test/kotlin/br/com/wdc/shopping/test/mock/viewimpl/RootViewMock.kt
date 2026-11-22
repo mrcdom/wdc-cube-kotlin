@@ -1,15 +1,15 @@
 package br.com.wdc.shopping.test.mock.viewimpl
 
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.RootViewState
-import br.com.wdc.shopping.test.mock.ShoppingApplicationMock
+import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 
 class RootViewMock(
-    app: ShoppingApplicationMock,
-    presenter: ShoppingApplication,
-) : AbstractViewMock<ShoppingApplication>(app, presenter) {
+    app: RootPresenterMock,
+    presenter: RootPresenter,
+) : AbstractViewMock<RootPresenter>(app, presenter) {
 
     companion object {
         fun cast(view: CubeView?): RootViewMock {

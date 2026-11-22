@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.nativeui.web.bridge
 
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.browser.window
 
 /**
@@ -15,9 +15,9 @@ object ViewUpdateScheduler {
 
     private val dirtyViews = linkedSetOf<ReactCubeView>()
     private var flushScheduled = false
-    private var appProvider: (() -> ShoppingApplication?)? = null
+    private var appProvider: (() -> RootPresenter?)? = null
 
-    fun initialize(appProvider: () -> ShoppingApplication?) {
+    fun initialize(appProvider: () -> RootPresenter?) {
         this.appProvider = appProvider
     }
 

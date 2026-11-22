@@ -2,12 +2,12 @@ package br.com.wdc.shopping.presentation.presenter.restricted.receipt
 
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeTreePlace
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
 /** The keys of the receipt place. See [RootKeys]. */
-class ReceiptKeys(app: ShoppingApplication, intent: CubeIntent? = null) : HomeKeys(app, intent, PLACE) {
+class ReceiptKeys(app: RootPresenter, intent: CubeIntent? = null) : HomeKeys(app, intent, PLACE) {
 
     companion object {
         const val PREFIX = "rc"

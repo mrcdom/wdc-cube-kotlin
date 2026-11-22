@@ -9,12 +9,12 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
 import br.com.wdc.shopping.domain.exception.OfflineException
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 import kotlin.time.Duration.Companion.seconds
 
-class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("CartPresenter")

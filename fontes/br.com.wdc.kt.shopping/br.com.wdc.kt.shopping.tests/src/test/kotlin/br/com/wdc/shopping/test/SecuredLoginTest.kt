@@ -4,7 +4,7 @@ import br.com.wdc.shopping.domain.security.SecurityContextHolder
 import br.com.wdc.shopping.domain.user.UserCriteria
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginService
 import br.com.wdc.shopping.scripts.sgbd.DBReset
-import br.com.wdc.shopping.test.mock.ShoppingApplicationMock
+import br.com.wdc.shopping.test.mock.RootPresenterMock
 import br.com.wdc.shopping.test.util.TestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
 import kotlinx.coroutines.runBlocking
@@ -27,7 +27,7 @@ class SecuredLoginTest {
         val envExtension = TestEnvironmentExtension(env)
     }
 
-    private val app = ShoppingApplicationMock()
+    private val app = RootPresenterMock()
 
     @AfterEach
     fun tearDown() {

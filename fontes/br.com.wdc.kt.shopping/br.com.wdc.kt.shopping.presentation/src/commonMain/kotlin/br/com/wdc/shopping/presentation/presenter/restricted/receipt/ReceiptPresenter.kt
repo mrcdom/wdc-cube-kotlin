@@ -5,12 +5,12 @@ import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptForm
 
-class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("ReceiptPresenter")

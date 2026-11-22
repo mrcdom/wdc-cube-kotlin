@@ -7,7 +7,7 @@ import br.com.wdc.shopping.domain.purchase.Purchase
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
 import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo

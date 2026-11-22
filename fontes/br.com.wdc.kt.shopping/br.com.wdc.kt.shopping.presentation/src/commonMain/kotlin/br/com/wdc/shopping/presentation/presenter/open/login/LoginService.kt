@@ -5,10 +5,10 @@ import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.PasswordUtil
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 
-class LoginService(private val app: ShoppingApplication?) {
+class LoginService(private val app: RootPresenter?) {
 
     suspend fun fetchSubject(userName: String, password: String): Subject? {
         val authService = AuthenticationService.BEAN.getOrNull()

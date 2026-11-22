@@ -5,7 +5,7 @@ import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
@@ -16,7 +16,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.Purc
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 
-class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("HomePresenter")

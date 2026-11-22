@@ -5,7 +5,7 @@ import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.shopping.view.react.skeleton.spi.WebSocketConnection
 import br.com.wdc.shopping.view.react.skeleton.util.AppSecurity
-import br.com.wdc.shopping.view.react.skeleton.viewimpl.ApplicationReactImpl
+import br.com.wdc.shopping.view.react.skeleton.viewimpl.ReactRootPresenter
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.ToNumberPolicy
@@ -192,15 +192,15 @@ class DispatcherHandler private constructor(private val appId: String) {
         }
     }
 
-    private fun getApp(): ApplicationReactImpl? = ApplicationReactImpl.get(appId)
+    private fun getApp(): ReactRootPresenter? = ReactRootPresenter.get(appId)
 
-    private fun getOrCreateApp(request: Map<String, Any?>): ApplicationReactImpl {
-        var app = ApplicationReactImpl.get(appId)
+    private fun getOrCreateApp(request: Map<String, Any?>): ReactRootPresenter {
+        var app = ReactRootPresenter.get(appId)
 
         if (app == null) {
             val mutableRequest = request.toMutableMap()
             mutableRequest["secret"] = appSignature
-            app = ApplicationReactImpl.getOrCreate(appId, mutableRequest)
+            app = ReactRootPresenter.getOrCreate(appId, mutableRequest)
         }
 
         app.wsSession = wsSession

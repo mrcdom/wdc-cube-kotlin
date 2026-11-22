@@ -3,15 +3,15 @@ package br.com.wdc.shopping.view.react.skeleton.util
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.PresenterBase
-import br.com.wdc.shopping.view.react.skeleton.viewimpl.ApplicationReactImpl
+import br.com.wdc.shopping.view.react.skeleton.viewimpl.ReactRootPresenter
 
 abstract class GenericViewImpl<P : PresenterBase> protected constructor(
     vid: String,
     protected val presenter: P,
-    instanceId: Int = (presenter.app as ApplicationReactImpl).nextInstanceId()
+    instanceId: Int = (presenter.app as ReactRootPresenter).nextInstanceId()
 ) : CubeView {
 
-    protected val app: ApplicationReactImpl = presenter.app as ApplicationReactImpl
+    protected val app: ReactRootPresenter = presenter.app as ReactRootPresenter
     private val _instanceId: String = "$vid:$instanceId"
 
     protected var alertId: Int = 0

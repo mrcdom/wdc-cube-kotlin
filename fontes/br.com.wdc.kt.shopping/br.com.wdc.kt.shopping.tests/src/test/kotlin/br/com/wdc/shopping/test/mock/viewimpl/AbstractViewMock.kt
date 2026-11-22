@@ -2,11 +2,11 @@ package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.test.mock.ShoppingApplicationMock
+import br.com.wdc.shopping.test.mock.RootPresenterMock
 import java.util.concurrent.atomic.AtomicInteger
 
 abstract class AbstractViewMock<P : PresenterBase>(
-    val app: ShoppingApplicationMock,
+    val app: RootPresenterMock,
     val presenter: P,
 ) : CubeView {
 

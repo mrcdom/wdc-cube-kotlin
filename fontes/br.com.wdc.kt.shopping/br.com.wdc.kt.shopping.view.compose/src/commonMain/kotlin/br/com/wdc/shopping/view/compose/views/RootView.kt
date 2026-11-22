@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.view.compose.views
 
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.bridge.RenderSlot
 
-class RootView(private val presenter: ShoppingApplication) : ComposeCubeView("root-view", presenter) {
+class RootView(private val presenter: RootPresenter) : ComposeCubeView("root-view", presenter) {
 
     @Composable
     override fun Render() {
