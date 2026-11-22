@@ -494,7 +494,7 @@ object RepositoryApiDocs {
 
     private fun refusals(write: Boolean): Map<String, Any> {
         val refusals = linkedMapOf<String, Any>(
-            "400" to error("Invalid request: unknown `orderBy`, delete with empty criteria, update without the id…"),
+            "400" to error("Invalid request: unknown `orderBy`, delete with empty criteria, update without the id, `limit` or `pageSize` above 1000, a query without `limit` that would bring more than 1000 rows…"),
             "401" to error("Missing or invalid token (security on)."),
             "403" to error("The caller lacks the permission, or the row is outside their scope."),
         )

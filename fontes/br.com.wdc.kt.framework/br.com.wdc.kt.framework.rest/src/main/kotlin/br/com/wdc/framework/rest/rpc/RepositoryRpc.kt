@@ -26,7 +26,7 @@ import io.javalin.http.NotFoundResponse
  * | `POST update` | fields to update (those present, including `null`) | `{"success"}` |
  * | `POST delete` | criteria | `{"count"}` |
  * | `POST count` | criteria | `{"count"}` |
- * | `POST fetch` | criteria + `projection`, `offset`, `limit` | `{"items"}` |
+ * | `POST fetch` | criteria + `projection`, `offset`, `limit` | `{"items"}` (at most [maxLimit]) |
  * | `POST fetch-page` | criteria + `projection`, `page`, `pageSize` | `{"items", "totalItems"}` |
  * | `POST fetch-by-id` | `{"id", "projection"?}` | entity, or 404 |
  * | `GET {id}` | — | entity with the default projection, or 404 |
@@ -98,6 +98,13 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     /** Before update, inside the transaction. */
     var beforeUpdate: suspend (ModelCodec.UpdateData<E>, RequestContext) -> Unit = { _, _ -> }
 
+    /**
+     * Most rows a query returns (`fetch`, `fetch-page`); `null` = no cap. A `limit` or `pageSize` above it is refused
+     * (400). A `fetch` without `limit` that would bring more rows is refused too, instead of cut short: the client
+     * pages it with `limit` and `offset`.
+     */
+    var maxLimit: Int? = DEFAULT_MAX_LIMIT
+
     /** Documentation of each operation; the default describes the contract above. */
     var doc: (Operation) -> (OperationDoc.() -> Unit)? = { null }
 
@@ -108,6 +115,11 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             is Number -> out.value(id.toLong())
             else -> out.value(id.toString())
         }
+    }
+
+    companion object {
+        /** The default of [maxLimit]. */
+        const val DEFAULT_MAX_LIMIT = 1000
     }
 
     /** Registers the routes on [routes]. */
@@ -200,14 +212,24 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     private suspend fun fetch(call: RestCall): RawJson {
         val request = readFetchRequest(call)
+        val cap = maxLimit
+        val unlimited = request.limit <= 0
+        if (cap != null && request.limit > cap) throw InvalidRequestException("limit above the maximum of $cap rows")
         scope(request.criteria, call.request)
-        val items = repository().fetch(request.criteria, request.offset, request.limit)
+        // without a limit, one row past the cap tells "exactly the cap" from "more than it"
+        val limit = if (cap != null && unlimited) cap + 1 else request.limit
+        val items = repository().fetch(request.criteria, request.offset, limit)
+        if (cap != null && unlimited && items.size > cap) {
+            throw InvalidRequestException("More than $cap rows: page the query with limit and offset")
+        }
         items.forEach(sanitizeOutput)
         return RawJson.write { writeItems(it, items, null) }
     }
 
     private suspend fun fetchPage(call: RestCall): RawJson {
         val request = readFetchRequest(call)
+        val cap = maxLimit
+        if (cap != null && request.pageSize !in 1..cap) throw InvalidRequestException("pageSize must be between 1 and $cap")
         scope(request.criteria, call.request)
         val page = repository().fetchPage(request.criteria, request.page, request.pageSize)
         page.items.forEach(sanitizeOutput)
