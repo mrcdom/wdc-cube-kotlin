@@ -112,7 +112,7 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
 
 As quatro entidades do Shopping têm repositório completo.
 
-- **`update` é parcial.** A `projection` diz quais campos considerar; com `oldBean`, só entram os que mudaram. Sem nenhuma das duas, vale a projeção padrão da entidade.
+- **`update` é parcial.** A `projection` diz quais campos considerar, e um campo marcado com valor nulo limpa a coluna. Com `oldBean`, só entram os que mudaram. Sem nenhuma das duas, só os campos com valor, como no `insert`: um bean lido com projeção estreita e devolvido não apaga o que não leu. Para limpar uma coluna, marque-a numa projeção.
 - **`insert` também aceita projeção.** Ela diz quais campos entram no `INSERT`; o que fica fora recebe o padrão da coluna. Sem projeção, entram os campos que têm valor (o nulo fica fora). O bean sai completo: a chave gerada e o que o banco preencheu.
 - **`insertOrUpdate`** insere quando `oldBean` é `null` e atualiza caso contrário — não consulta o banco para decidir. A projeção vale para os dois.
 - **`fetch`**: `0` em `offset` ou `limit` significa "sem salto" e "sem limite". Atenção à ordem posicional: `fetch(c, 10)` pula dez linhas; para limitar, nomeie — `fetch(c, limit = 10)`.

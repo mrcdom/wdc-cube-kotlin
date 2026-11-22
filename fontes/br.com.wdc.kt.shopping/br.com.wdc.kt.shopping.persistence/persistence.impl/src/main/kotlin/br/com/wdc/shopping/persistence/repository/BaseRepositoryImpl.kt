@@ -17,7 +17,8 @@ abstract class BaseRepositoryImpl {
     /**
      * Diz se um campo entra no `UPDATE`: a projeção o marca (valor não-nulo) e, havendo o estado anterior, o
      * valor mudou em relação a ele. Sem [oldBean], todo campo marcado é gravado — inclusive com `null`, que
-     * limpa o valor.
+     * limpa o valor. Por isso o `update` sem projeção nem `oldBean` passa a entidade vazia como [oldBean]: só
+     * os campos com valor entram, como no `insert`.
      */
     protected fun <E, V> changed(newBean: E, oldBean: E?, projection: E, getter: (E) -> V?): Boolean =
         getter(projection) != null && (oldBean == null || getter(newBean) != getter(oldBean))

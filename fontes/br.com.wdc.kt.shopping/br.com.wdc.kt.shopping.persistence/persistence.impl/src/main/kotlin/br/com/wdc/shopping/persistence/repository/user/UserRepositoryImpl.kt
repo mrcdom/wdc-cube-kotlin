@@ -30,22 +30,24 @@ class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
         val id = newBean.id ?: throw InvalidRequestException("update de usuário exige o id")
         // a projeção padrão não traz a senha; para regravá-la, marque-a na projeção (ou informe o oldBean)
         val prj = projection ?: ownFieldsProjection().apply { if (oldBean != null) password = ProjectionValues.str }
+        // sem projeção nem oldBean: compara com a entidade vazia, e só os campos com valor entram no UPDATE
+        val base = oldBean ?: if (projection == null) User() else null
 
         val step = dsl().update(EN_USER).set(EN_USER.ID, id)
         var hasChanges = false
-        if (changed(newBean, oldBean, prj) { it.userName }) {
+        if (changed(newBean, base, prj) { it.userName }) {
             step.set(EN_USER.USERNAME, newBean.userName)
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.password }) {
+        if (changed(newBean, base, prj) { it.password }) {
             step.set(EN_USER.PASSWORD, newBean.password)
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.name }) {
+        if (changed(newBean, base, prj) { it.name }) {
             step.set(EN_USER.NAME, newBean.name)
             hasChanges = true
         }
-        if (changed(newBean, oldBean, prj) { it.roles }) {
+        if (changed(newBean, base, prj) { it.roles }) {
             step.set(EN_USER.ROLES, newBean.roles)
             hasChanges = true
         }

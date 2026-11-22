@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.persistence.client
 
 import br.com.wdc.framework.commons.serialization.InputCoerceUtils
+import br.com.wdc.framework.commons.serialization.JsonStreamReader
 import br.com.wdc.framework.domain.codec.ModelCodec
 import br.com.wdc.framework.domain.repository.Repository
 
@@ -56,11 +57,11 @@ abstract class HttpRepository<E, C, K>(
     protected abstract fun fill(target: E, stored: E)
 
     /**
-     * Envia só os campos da projeção efetiva: a informada; senão, o que mudou em relação a [oldBean];
-     * senão, a padrão da entidade.
+     * Envia só os campos da projeção efetiva: a informada; senão, o que mudou em relação a [oldBean]; senão, os
+     * campos com valor (comparados com a entidade vazia), como no `insert` — um nulo não limpa a coluna.
      */
     override suspend fun update(newBean: E, oldBean: E?, projection: E?): Boolean {
-        val effective = projection ?: oldBean?.let { codec.computeProjection(newBean, it) } ?: ownFieldsProjection()
+        val effective = projection ?: codec.computeProjection(newBean, oldBean ?: codec.readEntity(JsonStreamReader("{}")))
         val response = post("update") { codec.writeEntityProjected(it, newBean, effective) }
         var success = false
         response.readObject { name ->
