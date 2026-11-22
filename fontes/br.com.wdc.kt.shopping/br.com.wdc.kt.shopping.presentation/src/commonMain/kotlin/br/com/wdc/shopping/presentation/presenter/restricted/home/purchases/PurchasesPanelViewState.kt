@@ -1,15 +1,15 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.purchases
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.ViewState
+import br.com.wdc.framework.cube.ObservableViewState
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 
-class PurchasesPanelViewState : ViewState {
+class PurchasesPanelViewState : ObservableViewState() {
 
-    var purchases: List<PurchaseInfo> = emptyList()
-    var page: Int = 0
-    var pageSize: Int = -1
-    var totalCount: Int = 0
+    var purchases: List<PurchaseInfo> by field(emptyList())
+    var page: Int by field(0)
+    var pageSize: Int by field(-1)
+    var totalCount: Int by field(0)
 
     override fun write(instanceId: String, json: ExtensibleObjectOutput) {
         json.beginObject()

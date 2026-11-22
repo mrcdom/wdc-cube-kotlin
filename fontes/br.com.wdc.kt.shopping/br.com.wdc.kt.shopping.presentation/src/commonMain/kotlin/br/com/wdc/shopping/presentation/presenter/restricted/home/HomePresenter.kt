@@ -26,7 +26,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     // :: Public Instance Fields
 
-    val state = HomeViewState()
+    val state = observed(HomeViewState())
 
     // :: Internal Instance Fields
 
@@ -208,25 +208,21 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     private fun alertProductNotFound() {
         state.errorCode = 3
         state.errorMessage = "Product code not found."
-        update()
     }
 
     private fun alertPurchaseNotFound() {
         state.errorCode = 5
         state.errorMessage = "Receipt code not found."
-        update()
     }
 
     private fun alertProductIdRequired() {
         state.errorCode = 6
         state.errorMessage = "Product code is a required argument."
-        update()
     }
 
     private fun alertPurchaseIdRequired() {
         state.errorCode = 7
         state.errorMessage = "Receipt code is a required argument."
-        update()
     }
 
     // :: Slots
@@ -234,7 +230,6 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     private fun setContentView(view: CubeView?) {
         if (state.contentView !== view) {
             state.contentView = view
-            update()
         }
     }
 

@@ -22,7 +22,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     // :: Public Instance Fields
 
-    val state = LoginViewState()
+    val state = observed(LoginViewState())
 
     // :: Internal Instance Fields
 
@@ -47,19 +47,16 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
     private fun alertUserOrPasswordNotRecognize() {
         state.errorCode = 1
         state.errorMessage = "Username or password not recognized!"
-        update()
     }
 
     private fun alertDatabaseIsOffline() {
         state.errorCode = 4
         state.errorMessage = "The database is offline!"
-        update()
     }
 
     private fun alertConnectionError(caught: Throwable) {
         state.errorCode = 5
         state.errorMessage = "Failed to communicate with the server. Check your connection."
-        update()
     }
 
     // :: User Actions
@@ -71,7 +68,6 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
         state.loading = true
         state.errorCode = 0
         state.errorMessage = null
-        update()
 
         try {
             val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")

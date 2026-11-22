@@ -21,7 +21,7 @@ class PurchasesPanelPresenter(
 
     // :: Public Instance Fields
 
-    val state = PurchasesPanelViewState()
+    val state = observed(PurchasesPanelViewState())
 
     // :: Internal Instance Fields
 
@@ -74,7 +74,6 @@ class PurchasesPanelPresenter(
             }
 
             state.purchases = page.items
-            update()
         }
     }
 }

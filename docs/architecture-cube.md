@@ -44,7 +44,7 @@
 
 ## Overview
 
-Cube is an **application state management** solution based on the MVP (Model-View-Presenter) pattern. Unlike approaches that require immutable, unidirectional state, Cube uses **mutable view states**: presenters manipulate state objects (`ViewState`) directly and notify the view to re-render. This decision simplifies presentation code by eliminating the ceremony of immutable copies and reducers.
+Cube is an **application state management** solution based on the MVP (Model-View-Presenter) pattern. Unlike approaches that require immutable, unidirectional state, Cube uses **mutable view states**: presenters manipulate state objects (`ViewState`) directly, and the view re-renders when they change. This decision simplifies presentation code by eliminating the ceremony of immutable copies and reducers.
 
 A central principle of the architecture is the **complete decoupling of presentation logic from the view technology**. Presenters are plain Kotlin classes with no dependency on any UI framework. The rendering technology (Compose Multiplatform, React, SwiftUI or anything else) is a **project choice**, not something the framework imposes. This lets the same presentation code be shared across different platforms, each implementing only the view layer.
 
@@ -118,6 +118,27 @@ fun interface CubeViewSlot {
     fun setView(view: CubeView)
 }
 ```
+
+### ViewState
+
+The state a presenter keeps for its view, as plain mutable fields. Extend `ObservableViewState` and declare each field with `field(...)`: assigning a value different from the current one (`!=`, so lists compare by content) asks for a repaint. The presenter wires it once, with `observed(...)`, and no longer calls `update()` after each change:
+
+```kotlin
+class CartViewState : ObservableViewState() {
+    var items: List<CartItem> by field(emptyList())
+    var errorMessage: String? by field(null)
+}
+
+class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+    val state = observed(CartViewState())
+
+    fun onAlert() {
+        state.errorMessage = "…" // the view repaints; several changes in a row still cost one paint
+    }
+}
+```
+
+**What the fields cannot see:** a change *inside* an object already assigned — an element added to a mutable list, a field of a nested object, or an object shared with someone who mutates it. Assign a new value (a copy), or call `state.changed()`. `CartManager.getCartItems()` returns copies for this reason. `update()` is still there for what is not in the state (the view was just created, or it shows something computed in `commitComputedState()`).
 
 ### CubeView
 
@@ -598,7 +619,7 @@ flowchart LR
     style SUSPEND fill:#e3f2fd,stroke:#1565c0
 ```
 
-**Principle:** suspend code **never mutates state directly in the view**. It does the I/O, gets the data, and then mutates the `ViewState` and calls `update()`, both synchronous.
+**Principle:** suspend code **never mutates state directly in the view**. It does the I/O, gets the data, and then mutates the `ViewState`, synchronously; the observed state asks for the repaint.
 
 ### The presenterScope — Serializing Actions
 
@@ -892,7 +913,7 @@ suspend fun onBuy() {
 
 3. **Views are never suspend.** The `update()`, `release()` and `setView()` methods and all UI construction are synchronous. Use `safeCall` to dispatch suspend actions from UI events.
 
-4. **`safeCall` is fire-and-forget.** There is no return value. If you need the result of an async operation to update the UI, mutate `state` inside the block and call `update()`.
+4. **`safeCall` is fire-and-forget.** There is no return value. If you need the result of an async operation to update the UI, mutate `state` inside the block: the observed state asks for the repaint.
 
 5. **Listeners can be suspend.** `CartManager` supports `suspend () -> Unit` as a commit listener. The framework calls these listeners sequentially with `await`.
 

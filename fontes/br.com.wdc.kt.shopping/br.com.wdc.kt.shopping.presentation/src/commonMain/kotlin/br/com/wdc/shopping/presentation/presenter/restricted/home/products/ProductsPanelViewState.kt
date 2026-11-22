@@ -1,12 +1,12 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.products
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.ViewState
+import br.com.wdc.framework.cube.ObservableViewState
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 
-class ProductsPanelViewState : ViewState {
+class ProductsPanelViewState : ObservableViewState() {
 
-    var products: List<ProductInfo>? = null
+    var products: List<ProductInfo>? by field(null)
 
     override fun write(instanceId: String, json: ExtensibleObjectOutput) {
         json.beginObject()

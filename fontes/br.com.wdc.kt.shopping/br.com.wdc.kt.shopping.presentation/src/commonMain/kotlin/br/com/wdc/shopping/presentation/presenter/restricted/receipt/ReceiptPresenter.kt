@@ -22,7 +22,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     // :: Public Instance Fields
 
-    val state = ReceiptViewState()
+    val state = observed(ReceiptViewState())
 
     // :: Internal Instance Fields
 
@@ -42,7 +42,6 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
             val receipt = loadReceipt(pPurchaseId)
             purchaseId = pPurchaseId
             state.receipt = receipt
-            update()
         }
 
         if (initialization) {

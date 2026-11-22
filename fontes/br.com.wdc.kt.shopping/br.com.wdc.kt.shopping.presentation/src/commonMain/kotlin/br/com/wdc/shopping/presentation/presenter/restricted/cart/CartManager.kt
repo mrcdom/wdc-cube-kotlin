@@ -33,7 +33,12 @@ class CartManager(private val repo: PurchaseRepository) {
         return { changeListenerMap.remove(listenerID) }
     }
 
-    fun getCartItems(): List<CartItem> = cart.toList()
+    /**
+     * A snapshot of the cart: copies, not the cart's own items. The view state that holds it then changes only when
+     * it is assigned again — an observed field sees the new list, and the cart's later changes don't leak into a
+     * list already painted.
+     */
+    fun getCartItems(): List<CartItem> = cart.map { it.copy() }
 
     fun addProduct(product: ProductInfo, quantity: Int) {
         var isNew = true

@@ -21,7 +21,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     // :: Public Instance Fields
 
-    val state = ProductViewState()
+    val state = observed(ProductViewState())
 
     // :: Internal Instance Fields
 
@@ -38,7 +38,6 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
         if (state.product == null || newProductId != oldProductId) {
             state.product = productService.loadProductById(newProductId)
-            update()
         }
 
         if (initialization) {
@@ -109,18 +108,15 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
     private fun alertDatabaseNotAvailable() {
         state.errorCode = 1
         state.errorMessage = "The cart is not available. Please wait a moment and try again."
-        update()
     }
 
     private fun alertCartItemWidthLessThanOneItem() {
         state.errorCode = 2
         state.errorMessage = "The quantity of items in the cart must be at least 1 (one)."
-        update()
     }
 
     private fun errorInvalidQuantity() {
         state.errorCode = 3
         state.errorMessage = "Invalid quantity format."
-        update()
     }
 }

@@ -1,14 +1,14 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.cart
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.ViewState
+import br.com.wdc.framework.cube.ObservableViewState
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
 
-class CartViewState : ViewState {
+class CartViewState : ObservableViewState() {
 
-    var items: List<CartItem> = emptyList()
-    var errorCode: Int = 0
-    var errorMessage: String? = null
+    var items: List<CartItem> by field(emptyList())
+    var errorCode: Int by field(0)
+    var errorMessage: String? by field(null)
 
     override fun write(instanceId: String, json: ExtensibleObjectOutput) {
         json.beginObject()

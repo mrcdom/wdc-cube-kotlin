@@ -26,7 +26,7 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     // :: Public Instance Fields
 
-    val state = RootViewState()
+    val state = observed(RootViewState())
 
     // :: Internal Instance Fields
 
@@ -72,7 +72,6 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
 
     fun alertUnexpectedError(logger: Log, message: String, caught: Throwable) {
         state.errorMessage = if (caught.message.isNullOrBlank()) message else "$message: ${caught.message}"
-        update()
         logger.error(state.errorMessage!!, caught)
     }
 
@@ -132,7 +131,6 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
     private fun setContentView(view: CubeView) {
         if (state.contentView !== view) {
             state.contentView = view
-            update()
         }
     }
 }
