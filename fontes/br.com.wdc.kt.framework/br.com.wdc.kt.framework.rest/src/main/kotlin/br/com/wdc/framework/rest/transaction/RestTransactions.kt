@@ -20,6 +20,9 @@ import br.com.wdc.framework.rest.RequestContext
  *
  * The header is optional: without a coordinator, or without an open remote transaction, the route is simply
  * transactional.
+ *
+ * A read is not `transactional`, but it may join the client's remote transaction ([joinRemote]): with the header,
+ * it sees what that transaction already wrote and is not blocked by the rows it locked.
  */
 class RestTransactions {
 
@@ -72,6 +75,24 @@ class RestTransactions {
     var quotaKey: (RequestContext) -> String? = { request ->
         request.principal?.let { "user:${it.id}" }
             ?: request.header(clientHeader)?.takeIf { it.isNotBlank() }?.let { "anon:$it" }
+    }
+
+    /**
+     * Runs a read in the client's remote transaction, if the request carries [txHeader] and there is a [coordinator]:
+     * as a participant, so it sees the transaction's own writes. Otherwise it runs directly, with no transaction (it
+     * sees only what is committed). The transaction is released when the read ends.
+     */
+    suspend fun <T> joinRemote(request: RequestContext, block: suspend () -> T): T {
+        val coordinator = coordinator ?: return block()
+        val txId = request.header(txHeader)
+        if (txId.isNullOrBlank()) return block()
+        coordinator.resume(txId, ownerKey(request))
+        try {
+            val service = service ?: return block()
+            return service.required { block() }
+        } finally {
+            coordinator.suspend(txId)
+        }
     }
 
     /** Runs [block] in the transaction that fits the request (see the class). */

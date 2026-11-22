@@ -275,14 +275,14 @@ A REST client that needs several atomic writes opens a transaction on the server
 - **Owner.** The transaction belongs to whoever opened it — the authenticated user **and** the client instance (`X-Client-Id`), or, without security, just the `X-Client-Id` — and no one else may use it (403). The same user on two clients (desktop and web) doesn't block themselves.
 - **Lost header.** A write **without** `X-Tx-Id` from someone who has an open transaction is refused (409), instead of committing on its own outside the transaction.
 - **Failing request.** The write runs as a participant in the remote transaction: if it fails halfway, the transaction is doomed, and the commit rolls it back and responds 409, instead of committing the partial write.
-- **Abandonment.** An idle transaction is rolled back by the server; there are caps on open transactions, in total and per user (429). An unknown or already rolled-back `txId` responds 410.
+- **Abandonment.** An idle transaction is rolled back by the server, by a sweep that runs every 15 seconds (`remoteTransaction.reapIntervalSeconds`) and on every `begin`; there are caps on open transactions, in total and per user (429). An unknown or already rolled-back `txId` responds 410.
 - **In use.** A rollback requested while a request is using the transaction takes effect immediately, but the connection only closes when the request finishes; a commit at that moment is a conflict (409).
 - **Repetition.** Repeating the same outcome is harmless; asking for the opposite is a conflict (409).
 - **Lost response.** If the commit fails in transport (timeout, dropped connection), the client asks for the `status` before deciding: committed is success, open is rolled back.
 
 Two limits to keep in mind:
 
-- **Reads don't participate** in the remote transaction: inside the block, a `fetch` sees only what has already been committed.
+- **Reads participate** in the remote transaction: inside the block, `fetch`, `count`, `fetch-page` and `fetch-by-id` carry the `X-Tx-Id` and see what the transaction already wrote. Another client keeps seeing only what is committed.
 - `notSupported` inside a remote transaction is for reading, not writing — the server can't tell "suspended transaction" from "lost header". To write outside it, use `requiresNew`.
 
 The client's current transaction is kept per service instance (one per application). Presentation actions run serially and HTTP is blocking; therefore, **the calls of a remote transaction must be sequential**.
@@ -352,6 +352,10 @@ With `security.jwt.secret` configured, the backend requires `Authorization: Bear
 - the **scope**: whoever lacks `data:all` only reads and writes what is theirs — the user themselves, their own purchases, and those purchases' items. A purchase inserted by a client always belongs to them. Fetching by key goes through the same restriction: what belongs to someone else "doesn't exist" (404).
 
 **The password never leaves through the API.** It is accepted when writing a user and stripped from every projection and every response, including when the user comes inside a purchase — with security enabled or not.
+
+**The price of a purchase item is the server's.** Through the API, an item gets its product's current price, whatever the client sent: on insert, alone or inside a purchase, and on an update that writes the price or the product. An item of a product that does not exist is refused with 400. The server-side presentation (remote view) writes through the repositories directly and already prices items from the products it loaded.
+
+**The password is stored as its digest**, the form the login compares, so a user created through the API can log in. With security on, it must come encrypted with the session's RSA public key (the `publicKey` of the login response; `RestAuthClient.encryptPassword` on the client): one that does not decrypt is refused with 400, never stored as it came. Without security there is no key, and the password comes as typed.
 
 Without the secret, the API is open and `/api/auth` doesn't exist: this is the development mode, and the mode of tests that don't deal with security.
 

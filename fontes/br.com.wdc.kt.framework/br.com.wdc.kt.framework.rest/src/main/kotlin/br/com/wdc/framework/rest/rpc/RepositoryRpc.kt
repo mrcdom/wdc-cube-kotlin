@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.codec.ModelCodec
+import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.repository.ReadOnlyRepository
 import br.com.wdc.framework.domain.repository.Repository
@@ -26,13 +27,14 @@ import io.javalin.http.NotFoundResponse
  * | `POST update` | fields to update (those present, including `null`) | `{"success"}` |
  * | `POST delete` | criteria | `{"count"}` |
  * | `POST count` | criteria | `{"count"}` |
- * | `POST fetch` | criteria + `projection`, `offset`, `limit` | `{"items"}` |
+ * | `POST fetch` | criteria + `projection`, `offset`, `limit` | `{"items"}` (at most [maxLimit]) |
  * | `POST fetch-page` | criteria + `projection`, `page`, `pageSize` | `{"items", "totalItems"}` |
  * | `POST fetch-by-id` | `{"id", "projection"?}` | entity, or 404 |
  * | `GET {id}` | — | entity with the default projection, or 404 |
  *
- * The writes only exist if the repository is a [Repository], and they are `transactional`. Access is up to the
- * application: [rule] per operation, [scope] to restrict the criteria to what belongs to the caller, and the write
+ * The writes only exist if the repository is a [Repository], and they are `transactional`. The reads run in the
+ * client's remote transaction when the request carries its `X-Tx-Id`, so they see what it already wrote. Access is up to the
+ * application: [rule] per operation, [scope] to restrict reads, delete and update to what belongs to the caller, and the write
  * hooks, which run inside the transaction. Fetching by key goes through the same rule and reach as the queries.
  *
  * Insert returns the entity as the repository left it (the generated key, the column defaults), passed through
@@ -77,7 +79,8 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     var rule: (Operation) -> AccessRule? = { null }
 
     /**
-     * Restricts the criteria of every read and of delete to what the caller can reach.
+     * Restricts what the caller can reach: the criteria of every read and of delete, and the row an update targets
+     * (an update outside it is refused with `AccessDeniedException`, 403, before [beforeUpdate]).
      *
      * **The criteria came from the caller**, including each field's disjunction. Add the reach with the conjunctive
      * field — `criteria.ownerId.and().eq(owner)` —, never with just `eq`: on a field the client marked with
@@ -85,6 +88,13 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
      * With `and()`, every client condition on that field is `AND`ed with the owner, and none reaches another row.
      */
     var scope: suspend (C, RequestContext) -> Unit = { _, _ -> }
+        set(value) {
+            field = value
+            scoped = true
+        }
+
+    /** Whether [scope] was set: without one, an update does not pay for the reach check. */
+    private var scoped = false
 
     /** Adjusts the requested projection before the query — remove what never goes out (the password, for example). */
     var sanitizeProjection: (E) -> Unit = {}
@@ -98,6 +108,13 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     /** Before update, inside the transaction. */
     var beforeUpdate: suspend (ModelCodec.UpdateData<E>, RequestContext) -> Unit = { _, _ -> }
 
+    /**
+     * Most rows a query returns (`fetch`, `fetch-page`); `null` = no cap. A `limit` or `pageSize` above it is refused
+     * (400). A `fetch` without `limit` that would bring more rows is refused too, instead of cut short: the client
+     * pages it with `limit` and `offset`.
+     */
+    var maxLimit: Int? = DEFAULT_MAX_LIMIT
+
     /** Documentation of each operation; the default describes the contract above. */
     var doc: (Operation) -> (OperationDoc.() -> Unit)? = { null }
 
@@ -110,6 +127,11 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         }
     }
 
+    companion object {
+        /** The default of [maxLimit]. */
+        const val DEFAULT_MAX_LIMIT = 1000
+    }
+
     /** Registers the routes on [routes]. */
     fun register(routes: RestApi.Routes) {
         if (writes) {
@@ -117,11 +139,14 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             post(routes, Operation.UPDATE, transactional = true, ::update)
             post(routes, Operation.DELETE, transactional = true, ::delete)
         }
-        post(routes, Operation.COUNT, transactional = false, ::count)
-        post(routes, Operation.FETCH, transactional = false, ::fetch)
-        post(routes, Operation.FETCH_PAGE, transactional = false, ::fetchPage)
-        post(routes, Operation.FETCH_BY_ID, transactional = false, ::fetchByIdPost)
-        routes.get("$basePath/{id}", rule = rule(Operation.GET_BY_ID), doc = doc(Operation.GET_BY_ID)) { fetchById(it) }
+        // reads are not transactional, but with X-Tx-Id they run in the client's remote transaction (its own writes)
+        post(routes, Operation.COUNT, transactional = false) { call -> call.inRemoteTransaction { count(call) } }
+        post(routes, Operation.FETCH, transactional = false) { call -> call.inRemoteTransaction { fetch(call) } }
+        post(routes, Operation.FETCH_PAGE, transactional = false) { call -> call.inRemoteTransaction { fetchPage(call) } }
+        post(routes, Operation.FETCH_BY_ID, transactional = false) { call -> call.inRemoteTransaction { fetchByIdPost(call) } }
+        routes.get("$basePath/{id}", rule = rule(Operation.GET_BY_ID), doc = doc(Operation.GET_BY_ID)) { call ->
+            call.inRemoteTransaction { fetchById(call) }
+        }
     }
 
     private fun post(routes: RestApi.Routes, op: Operation, transactional: Boolean, handler: suspend (RestCall) -> Any?) {
@@ -182,6 +207,13 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     private suspend fun update(call: RestCall): RawJson {
         val data = call.entityForUpdate(codec)
+        if (scoped) {
+            val id = idOf(data.entity) ?: throw InvalidRequestException("update without the id")
+            val target = newCriteria()
+            restrictToId(target, id)
+            scope(target, call.request)
+            if (repository().count(target) == 0) throw AccessDeniedException("Access denied")
+        }
         beforeUpdate(data, call.request)
         return RawJson.field("success", writable().update(data.entity, null, data.projection))
     }
@@ -200,14 +232,24 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     private suspend fun fetch(call: RestCall): RawJson {
         val request = readFetchRequest(call)
+        val cap = maxLimit
+        val unlimited = request.limit <= 0
+        if (cap != null && request.limit > cap) throw InvalidRequestException("limit above the maximum of $cap rows")
         scope(request.criteria, call.request)
-        val items = repository().fetch(request.criteria, request.offset, request.limit)
+        // without a limit, one row past the cap tells "exactly the cap" from "more than it"
+        val limit = if (cap != null && unlimited) cap + 1 else request.limit
+        val items = repository().fetch(request.criteria, request.offset, limit)
+        if (cap != null && unlimited && items.size > cap) {
+            throw InvalidRequestException("More than $cap rows: page the query with limit and offset")
+        }
         items.forEach(sanitizeOutput)
         return RawJson.write { writeItems(it, items, null) }
     }
 
     private suspend fun fetchPage(call: RestCall): RawJson {
         val request = readFetchRequest(call)
+        val cap = maxLimit
+        if (cap != null && request.pageSize !in 1..cap) throw InvalidRequestException("pageSize must be between 1 and $cap")
         scope(request.criteria, call.request)
         val page = repository().fetchPage(request.criteria, request.page, request.pageSize)
         page.items.forEach(sanitizeOutput)

@@ -1,6 +1,6 @@
 package br.com.wdc.framework.rest.transaction
 
-import br.com.wdc.framework.domain.exception.AccessDeniedException
+import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.persistence.transaction.RemoteTransactionCoordinator
 import br.com.wdc.framework.rest.RawJson
 import br.com.wdc.framework.rest.RestApi
@@ -14,7 +14,7 @@ import br.com.wdc.framework.rest.openapi.OperationDoc
  * - `POST <base>/commit`, `POST <base>/rollback` → `{"status": "committed" | "rolledback"}`;
  * - `GET <base>/status` → `{"status": "open" | "committed" | "rolledback" | "unknown"}`.
  *
- * The `txId` comes back in the `txHeader` header; without it, 403. The owner is the `ownerKey` of [transactions],
+ * The `txId` comes back in the `txHeader` header; without it, 400 (malformed request). The owner is the `ownerKey` of [transactions],
  * checked by the coordinator on every operation. Without a coordinator, the routes answer 500.
  */
 object RemoteTransactionRoutes {
@@ -29,7 +29,7 @@ object RemoteTransactionRoutes {
             transactions.coordinator ?: throw IllegalStateException("Remote transaction coordinator not initialized")
 
         fun txId(call: RestCall): String =
-            call.header(transactions.txHeader)?.takeIf { it.isNotBlank() } ?: throw AccessDeniedException("Missing ${transactions.txHeader} header")
+            call.header(transactions.txHeader)?.takeIf { it.isNotBlank() } ?: throw InvalidRequestException("Missing ${transactions.txHeader} header")
 
         routes.post("$basePath/begin", doc = doc("begin")) { call ->
             RawJson.field("txId", coordinator().begin(transactions.ownerKey(call.request), transactions.quotaKey(call.request)))

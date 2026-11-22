@@ -57,6 +57,13 @@ class RestCall internal constructor(
     suspend fun <T> inTransaction(block: suspend () -> T): T = api.transactions.run(request, block)
 
     /**
+     * Runs a read in the client's remote transaction, when the request carries its id (`X-Tx-Id`): it sees what the
+     * transaction already wrote. Without the header, it runs directly and sees only what is committed. See
+     * [br.com.wdc.framework.rest.transaction.RestTransactions.joinRemote].
+     */
+    suspend fun <T> inRemoteTransaction(block: suspend () -> T): T = api.transactions.joinRemote(request, block)
+
+    /**
      * Records a measurement for the `Server-Timing` header (see [ServerTimingOptions]): it goes out before `total`, in
      * registration order. Without the option on, it does nothing. It is a plain function: the route can pass it along
      * (`call::timing`) to whatever measures.

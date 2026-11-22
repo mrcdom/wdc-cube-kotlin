@@ -14,7 +14,8 @@ import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
 /**
  * Purchase item REST endpoints: the repository RPC, read and written with the [PurchaseItemCodec] — the same one
  * the client uses. Access is checked here ([ApiSecurity]): permission and, for callers who don't reach everyone's
- * data, restriction to the items of their own purchases — on reads and writes.
+ * data, restriction to the items of their own purchases — on reads and writes. The price is the server's
+ * ([ItemPrices]).
  *
  * **The password of the purchase's user never leaves through here**: it is stripped from the requested
  * projection and from every written entity, whether security is on or not.
@@ -55,17 +56,13 @@ internal object PurchaseItemApiController {
         rpc.sanitizeOutput = ::dropPassword
         rpc.beforeInsert = { item, request ->
             ApiSecurity.ownerScope(request)?.let { owner -> requireOwnPurchase(owner, item.purchaseId) }
+            ItemPrices.applyTo(item)
         }
+        // the scope already keeps the update to the caller's own items; an item can only move to another purchase of theirs
         rpc.beforeUpdate = { data, request ->
             val owner = ApiSecurity.ownerScope(request)
-            if (owner != null) {
-                val id = data.entity.id
-                if (id == null || repo().count(PurchaseItemCriteria().withPurchaseItemId(id).withUserId(owner)) == 0) {
-                    throw AccessDeniedException("Cannot modify other user's purchase item")
-                }
-                // an item can only be moved to another purchase of the same user
-                data.entity.purchaseId?.let { requireOwnPurchase(owner, it) }
-            }
+            if (owner != null) data.entity.purchaseId?.let { requireOwnPurchase(owner, it) }
+            ItemPrices.applyTo(data)
         }
         rpc.register(routes)
     }

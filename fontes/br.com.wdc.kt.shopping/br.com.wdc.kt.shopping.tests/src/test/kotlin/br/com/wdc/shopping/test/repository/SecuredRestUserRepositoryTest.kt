@@ -59,11 +59,36 @@ class SecuredRestUserRepositoryTest {
     fun admin_writesUsers() = runBlocking {
         env.loginAs("admin")
 
-        val user = User().apply { userName = "newbie"; password = "digest"; name = "Newbie"; roles = "CUSTOMER" }
+        val user = User().apply { userName = "newbie"; password = env.authClient!!.encryptPassword("s3cret"); name = "Newbie"; roles = "CUSTOMER" }
         assertTrue(repo().insert(user))
         assertTrue(repo().update(User().apply { id = user.id; name = "New Name" }, null, User().apply { name = ProjectionValues.str }))
         assertEquals("New Name", repo().fetchById(user.id!!)!!.name)
         assertEquals(1, repo().delete(UserCriteria().withUserId(user.id)))
+    }
+
+    @Test
+    fun userCreatedThroughTheApi_logsInWithTheirPassword() = runBlocking {
+        env.loginAs("admin")
+        // the client encrypts the password with the session's public key; the server stores its digest
+        val user = User().apply { userName = "newcomer"; password = env.authClient!!.encryptPassword("s3cret"); name = "Newcomer"; roles = "CUSTOMER" }
+        assertTrue(repo().insert(user))
+        env.loginAs("newcomer", "s3cret")
+        assertEquals(listOf<String?>("newcomer"), repo().fetch(UserCriteria()).map { it.userName })
+
+        env.loginAs("admin")
+        val update = User().apply { id = user.id; password = env.authClient!!.encryptPassword("changed") }
+        assertTrue(repo().update(update, null, User().apply { password = ProjectionValues.str }))
+        env.loginAs("newcomer", "changed")
+    }
+
+    @Test
+    fun passwordNotEncryptedWithTheSessionKey_isRefused() = runBlocking {
+        env.loginAs("admin")
+        assertHttp(400) { repo().insert(User().apply { userName = "plain"; password = "s3cret"; name = "Plain"; roles = "CUSTOMER" }) }
+        assertEquals(emptyList<User>(), repo().fetch(UserCriteria().withUserName("plain")))
+        assertHttp(400) { repo().update(User().apply { id = DBReset.FULANO_ID; password = "s3cret" }, null, User().apply { password = ProjectionValues.str }) }
+        // fulano's password is untouched
+        env.loginAs("fulano")
     }
 
     @Test

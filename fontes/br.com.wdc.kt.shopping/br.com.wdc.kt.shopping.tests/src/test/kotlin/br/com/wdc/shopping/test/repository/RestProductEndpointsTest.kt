@@ -1,9 +1,14 @@
 package br.com.wdc.shopping.test.repository
 
+import br.com.wdc.framework.rest.rpc.RepositoryRpc
 import br.com.wdc.shopping.domain.exception.BusinessException
+import br.com.wdc.shopping.domain.product.Product
+import br.com.wdc.shopping.domain.product.ProductCriteria
+import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.RestTestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -71,6 +76,34 @@ class RestProductEndpointsTest {
         assertTrue(response.startsWith("""{"items":[{"id":${DBReset.FLASH_DRIVE_2GB_ID},"name":"USB Flash Drive 2GB","price":16"""), response)
         assertTrue(""""description":""" in response, response)
         assertFalse(""""image"""" in response, response)
+    }
+
+    @Test
+    fun limitOrPageSizeAboveTheCap_isRefused() {
+        val over = RepositoryRpc.DEFAULT_MAX_LIMIT + 1
+        for ((operation, body) in listOf(
+            "fetch" to """{"limit":$over}""",
+            "fetch-page" to """{"page":0,"pageSize":$over}""",
+        )) {
+            val e = assertThrows(BusinessException::class.java, { post(operation, body) }, operation)
+            assertTrue(e.message!!.startsWith("HTTP 400"), e.message)
+        }
+        assertTrue(post("fetch", """{"limit":${RepositoryRpc.DEFAULT_MAX_LIMIT},"projection":{"id":1}}""").startsWith("""{"items":["""))
+    }
+
+    @Test
+    fun fetchWithoutLimit_overTheCap_isRefused_insteadOfCutShort() = runBlocking {
+        // the server-side (JDBC) repository: the seed has 4 products, this takes them just past the cap
+        val serverRepo = ProductRepository.BEAN.get()
+        val missing = RepositoryRpc.DEFAULT_MAX_LIMIT + 1 - serverRepo.count(ProductCriteria()).toInt()
+        repeat(missing) { serverRepo.insert(Product().apply { name = "bulk $it"; price = 1.5; description = "bulk" }) }
+
+        val e = assertThrows(BusinessException::class.java) { post("fetch", """{"projection":{"id":1}}""") }
+        assertTrue(e.message!!.startsWith("HTTP 400") && "limit" in e.message!!, e.message)
+        // paging through still works, and so does counting
+        val firstPage = post("fetch", """{"limit":${RepositoryRpc.DEFAULT_MAX_LIMIT},"projection":{"id":1}}""")
+        assertEquals(RepositoryRpc.DEFAULT_MAX_LIMIT, Regex("\"id\"").findAll(firstPage).count())
+        assertEquals("""{"count":${RepositoryRpc.DEFAULT_MAX_LIMIT + 1}}""", post("count", "{}"))
     }
 
     @Test

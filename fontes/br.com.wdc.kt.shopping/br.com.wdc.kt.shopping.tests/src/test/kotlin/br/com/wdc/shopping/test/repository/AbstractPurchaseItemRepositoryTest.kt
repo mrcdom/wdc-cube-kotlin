@@ -184,7 +184,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
     fun insert_newPurchaseItem() = runBlocking {
         val item = PurchaseItem()
         item.amount = 5
-        item.price = 15.50
+        item.price = 16.0 // the product's current price: through the API, the server sets it (RestPurchaseItemPriceTest)
         item.purchase = Purchase()
         item.purchase!!.id = DBReset.ADMIN_FIRST_PURCHASE_ID
         item.product = Product()
@@ -197,7 +197,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
         val fetched = repo().fetchById(item.id!!, projectionWithRelations())
         assertNotNull(fetched)
         assertEquals(5, fetched!!.amount)
-        assertEquals(15.50, fetched.price!!, 0.001)
+        assertEquals(16.0, fetched.price!!, 0.001)
         assertEquals(DBReset.FLASH_DRIVE_2GB_ID, fetched.product!!.id)
     }
 
@@ -211,7 +211,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
         val updated = PurchaseItem()
         updated.id = original!!.id
         updated.amount = 99
-        updated.price = 999.99
+        updated.price = 199.99 // bought at 200.00; the coffee maker's current price
         updated.purchase = original.purchase
         updated.product = original.product
 
@@ -220,7 +220,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
 
         val fetched = repo().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID, null)
         assertEquals(99, fetched!!.amount)
-        assertEquals(999.99, fetched.price!!, 0.001)
+        assertEquals(199.99, fetched.price!!, 0.001)
     }
 
     // :: insertOrUpdate
@@ -247,7 +247,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
         val item = PurchaseItem()
         item.id = DBReset.ADMIN_SECOND_PURCHASE_ITEM0_ID
         item.amount = 77
-        item.price = 77.77
+        item.price = 199.99 // the coffee maker's current price
         item.purchase = Purchase()
         item.purchase!!.id = DBReset.ADMIN_SECOND_PURCHASE_ID
         item.product = Product()
@@ -259,7 +259,7 @@ abstract class AbstractPurchaseItemRepositoryTest {
 
         val fetched = repo().fetchById(DBReset.ADMIN_SECOND_PURCHASE_ITEM0_ID, null)
         assertEquals(77, fetched!!.amount)
-        assertEquals(77.77, fetched.price!!, 0.001)
+        assertEquals(199.99, fetched.price!!, 0.001)
         assertEquals(DBReset.COFFEE_MAKER_ID, fetched.productId)
         assertEquals(DBReset.ADMIN_SECOND_PURCHASE_ID, fetched.purchaseId)
     }

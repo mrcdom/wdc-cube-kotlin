@@ -349,8 +349,8 @@ abstract class AbstractPurchaseRepositoryTest {
             buyDate = Clock.System.now()
             user = User().apply { id = DBReset.FULANO_ID }
             items = mutableListOf(
-                PurchaseItem().apply { product = Product().apply { id = DBReset.COFFEE_MAKER_ID }; amount = 2; price = 199.5 },
-                PurchaseItem().apply { product = Product().apply { id = DBReset.FLASH_DRIVE_2GB_ID }; amount = 1; price = 16.25 },
+                PurchaseItem().apply { product = Product().apply { id = DBReset.COFFEE_MAKER_ID }; amount = 2; price = 199.99 },
+                PurchaseItem().apply { product = Product().apply { id = DBReset.FLASH_DRIVE_2GB_ID }; amount = 1; price = 16.0 },
             )
         }
         assertTrue(repo().insert(purchase))
@@ -360,7 +360,8 @@ abstract class AbstractPurchaseRepositoryTest {
         )
         assertEquals(listOf<Long?>(DBReset.COFFEE_MAKER_ID, DBReset.FLASH_DRIVE_2GB_ID), stored.map { it.productId })
         assertEquals(listOf<Int?>(2, 1), stored.map { it.amount })
-        assertEquals(listOf<Double?>(199.5, 16.25), stored.map { it.price })
+        // the products' current prices: through the API, the server sets them (RestPurchaseItemPriceTest)
+        assertEquals(listOf<Double?>(199.99, 16.0), stored.map { it.price })
         assertTrue(stored.all { it.purchaseId == purchase.id })
         // the bean comes out complete: each item with the key it received
         assertEquals(stored.map { it.id }.toSet(), purchase.items!!.map { it.id }.toSet())

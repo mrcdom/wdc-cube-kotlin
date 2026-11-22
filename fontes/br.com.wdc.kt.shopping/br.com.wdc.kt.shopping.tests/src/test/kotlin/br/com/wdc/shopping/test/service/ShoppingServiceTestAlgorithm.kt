@@ -124,13 +124,13 @@ object ShoppingServiceTestAlgorithm {
         purchase.items!!.add(PurchaseItem().also { item ->
             item.product = Product()
             item.product!!.id = DBReset.FLASH_DRIVE_2GB_ID
-            item.price = 55.0
+            item.price = 16.0 // the products' current prices: through the API, the server sets them
             item.amount = 1
         })
         purchase.items!!.add(PurchaseItem().also { item ->
             item.product = Product()
             item.product!!.id = DBReset.THREAD_SEAL_TAPE_ID
-            item.price = 5.0
+            item.price = 2.67
             item.amount = 2
         })
 
@@ -146,11 +146,11 @@ object ShoppingServiceTestAlgorithm {
         val lastPurchase = purchases[0]
         assertEquals(purchaseId, lastPurchase.id)
         assertEquals(2, lastPurchase.items.size)
-        assertEquals(65.0, lastPurchase.total)
+        assertEquals(21.34, lastPurchase.total)
 
         val receipt = ReceiptService(env.purchaseRepo).loadReceipt(purchaseId, userId)
         assertNotNull(receipt)
-        assertEquals(65.0, receipt!!.total)
+        assertEquals(21.34, receipt!!.total)
         assertEquals(2, receipt.items.size)
 
         // the receipt belongs to the buyer: for another user, the purchase does not exist

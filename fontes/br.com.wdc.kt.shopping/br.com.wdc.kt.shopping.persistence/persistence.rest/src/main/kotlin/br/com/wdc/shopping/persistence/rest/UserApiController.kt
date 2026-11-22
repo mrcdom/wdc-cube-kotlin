@@ -1,16 +1,18 @@
 package br.com.wdc.shopping.persistence.rest
 
 import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.rest.RequestContext
 import br.com.wdc.framework.rest.RestApi
 import br.com.wdc.framework.rest.rpc.RepositoryRpc
-import br.com.wdc.shopping.domain.exception.AccessDeniedException
 import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.user.UserCodec
 import br.com.wdc.shopping.domain.user.UserCriteria
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
+import java.math.BigInteger
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.security.PrivateKey
 import java.util.Base64
 import javax.crypto.Cipher
@@ -21,7 +23,9 @@ import javax.crypto.Cipher
  * restriction to their own user.
  *
  * **The password is write-only in this API**: it goes in on insert and update, and is never returned — not the
- * digest, not with security off, not when requested in the projection.
+ * digest, not with security off, not when requested in the projection. It is stored as its digest, the form the
+ * login compares: with security on it must come encrypted with the session's RSA key (otherwise 400); without
+ * security there is no key, and it comes as typed.
  */
 internal object UserApiController {
 
@@ -48,28 +52,35 @@ internal object UserApiController {
         // the password is never projected, and is stripped from everything that goes out
         rpc.sanitizeProjection = { it.password = null }
         rpc.sanitizeOutput = { it.password = null }
-        rpc.beforeInsert = { user, request -> decryptPasswordIfPresent(user, request) }
-        rpc.beforeUpdate = { data, request ->
-            val owner = ApiSecurity.ownerScope(request)
-            if (owner != null && data.entity.id != null && data.entity.id != owner) {
-                throw AccessDeniedException("Cannot modify other user's data")
-            }
-            decryptPasswordIfPresent(data.entity, request)
-        }
+        rpc.beforeInsert = { user, request -> storablePassword(user, request) }
+        // the scope already keeps the update to the caller's own user
+        rpc.beforeUpdate = { data, request -> storablePassword(data.entity, request) }
         rpc.register(routes)
     }
 
-    /** Decrypts the password if it came encrypted with the session's RSA key; otherwise it stays as it came. */
-    private fun decryptPasswordIfPresent(user: User, request: RequestContext) {
+    /**
+     * Turns the password that came into the one stored: its digest. With a session, the password must come encrypted
+     * with the session's RSA key; one that does not decrypt is refused, never stored as it came.
+     */
+    private fun storablePassword(user: User, request: RequestContext) {
+        val password = user.password?.takeIf { it.isNotBlank() } ?: return
         val sc = ApiSecurity.context(request)
-        if (sc != null && !user.password.isNullOrBlank()) {
+        val plain = if (sc == null) {
+            password
+        } else {
             try {
-                user.password = rsaDecrypt(user.password!!, sc.privateKey!!)
-            } catch (_: Exception) {
-                LOG.debug("Password not RSA-encrypted or decryption failed, using as-is")
+                rsaDecrypt(password, sc.privateKey!!)
+            } catch (e: Exception) {
+                LOG.debug("Password not encrypted with the session key: {}", e.message)
+                throw InvalidRequestException("The password must come encrypted with the session key")
             }
         }
+        user.password = passwordDigest(plain)
     }
+
+    /** The stored form of a password, the one the login compares (MD5, base 36 — as in the seed data). */
+    private fun passwordDigest(plain: String): String =
+        BigInteger(1, MessageDigest.getInstance("MD5").digest(plain.toByteArray(StandardCharsets.UTF_8))).toString(36)
 
     private fun rsaDecrypt(encryptedBase64: String, privateKey: PrivateKey): String {
         val cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding")

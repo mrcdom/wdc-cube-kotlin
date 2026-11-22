@@ -30,9 +30,13 @@ class RestTransactionsTest {
         }
     }
 
-    private fun ids(): List<Int> = dataSource.connection.use { c ->
+    private fun ids(): List<Int> = dataSource.connection.use { idsOn(it) }
+
+    private fun idsOn(c: java.sql.Connection): List<Int> =
         c.createStatement().executeQuery("SELECT ID FROM T ORDER BY ID").use { rs -> buildList { while (rs.next()) add(rs.getInt(1)) } }
-    }
+
+    /** A read as a repository does it: on the current transaction's connection, if there is one. */
+    private fun idsInCurrentTxOrCommitted(): List<Int> = TransactionScope.current()?.connection()?.let { idsOn(it) } ?: ids()
 
     private val api = RestApi {
         transactions {
@@ -45,6 +49,7 @@ class RestTransactionsTest {
             if (call.query("fail") != null) throw IllegalStateException("failed after writing")
             mapOf("ok" to true)
         }
+        get("/rows") { call -> call.inRemoteTransaction { idsInCurrentTxOrCommitted() } }
         RemoteTransactionRoutes.register(this, transactions)
     }
 
@@ -82,13 +87,31 @@ class RestTransactionsTest {
     }
 
     @Test
+    fun readWithTheHeader_seesTheTransactionsOwnWrites() {
+        val client = server.client().header("X-Client-Id", "c1")
+        val txId = client.post("/api/tx/begin").json().asJsonObject["txId"].asString
+        client.header("X-Tx-Id", txId)
+        client.post("/rows/5")
+
+        assertEquals("[5,1005]", client.get("/rows").body, "inside the transaction")
+        assertEquals("[]", server.client().header("X-Client-Id", "c2").get("/rows").body, "outside it, only what is committed")
+        // a read does not hold the transaction: the commit right after is not "in use"
+        assertEquals("""{"status":"committed"}""", client.post("/api/tx/commit").body)
+        assertEquals("[5,1005]", server.client().get("/rows").body)
+    }
+
+    @Test
     fun remoteTransaction_rollback_andForeignOwner() {
         val client = server.client().header("X-Client-Id", "c1")
         val txId = client.post("/api/tx/begin").json().asJsonObject["txId"].asString
         client.header("X-Tx-Id", txId)
         client.post("/rows/9")
         assertEquals(403, server.client().header("X-Client-Id", "intruso").header("X-Tx-Id", txId).post("/api/tx/commit").status)
-        assertEquals(403, server.client().post("/api/tx/commit").status, "without X-Tx-Id")
+        // a request without the header is malformed (400), not a refusal of access (403)
+        for (op in listOf("commit", "rollback")) {
+            assertEquals(400, server.client().post("/api/tx/$op").status, "$op without X-Tx-Id")
+        }
+        assertEquals(400, server.client().get("/api/tx/status").status, "status without X-Tx-Id")
         assertEquals("""{"status":"rolledback"}""", client.post("/api/tx/rollback").body)
         assertEquals(emptyList(), ids())
     }

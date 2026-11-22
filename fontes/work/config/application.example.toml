@@ -49,6 +49,8 @@
 # Caps on open transactions: in total and per client.
 # remoteTransaction.maxOpen = 128
 # remoteTransaction.maxOpenPerOwner = 16
+# How often abandoned transactions are looked for (rolled back once past the times above).
+# remoteTransaction.reapIntervalSeconds = 15
 
 [server]
 # HTTP port.

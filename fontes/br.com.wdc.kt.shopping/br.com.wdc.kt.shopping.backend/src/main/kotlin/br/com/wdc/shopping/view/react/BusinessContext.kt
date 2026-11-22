@@ -55,10 +55,12 @@ class BusinessContext(private val config: AppConfig) {
             ShoppingRepositoryBootstrap.initialize(dataSource, dataSourceSupport.logSql, dataSourceSupport.dialect, cleanUp)
 
             // the transactions the REST clients open and close on their own
-            RemoteTransactions.COORDINATOR.set(
-                RemoteTransactionCoordinatorImpl({ dataSource }, RemoteTransactionOptions.fromConfig("", config::getInt))
-            )
+            val coordinator = RemoteTransactionCoordinatorImpl({ dataSource }, RemoteTransactionOptions.fromConfig("", config::getInt))
+            RemoteTransactions.COORDINATOR.set(coordinator)
             cleanUp.push { RemoteTransactions.COORDINATOR.set(null) }
+            // rolls back abandoned transactions even when no one opens a new one
+            val reaper = coordinator.startReaper(scheduledExecutor)
+            cleanUp.push { reaper.close() }
 
             val jwtSecret = ShoppingConfig.jwtSecret
             if (!jwtSecret.isNullOrBlank()) {

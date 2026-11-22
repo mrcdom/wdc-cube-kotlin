@@ -300,17 +300,6 @@ class RemoteTransactionRestTest {
         assertEquals(200, getImage(id, etag).statusCode(), "the old ETag no longer revalidates")
     }
 
-    @Test
-    fun readsInsideTheBlock_seeOnlyWhatIsCommitted() = runBlocking {
-        val before = env.productRepo.count(ProductCriteria())
-        tx().required {
-            env.productRepo.insert(product("rtx-not-yet-visible"))
-            // the read does not take part in the remote transaction
-            assertEquals(before, env.productRepo.count(ProductCriteria()))
-        }
-        assertEquals(before + 1, env.productRepo.count(ProductCriteria()))
-    }
-
     // :: The checkout, as the client runs it
 
     /** Runs the block with the transaction service that a REST client registers (`RestRepositoryBootstrap`). */
@@ -404,6 +393,24 @@ class RemoteTransactionRestTest {
             assertFalse(exists(inside))
             assertFalse(afterCommitRan, "a rolled-back transaction runs no afterCommit task")
         }
+    }
+
+    @Test
+    fun readsInsideTheTransaction_seeItsOwnWrites() = runBlocking {
+        val service = tx()
+        val p = product("rtx-read-own-write")
+        service.required {
+            env.productRepo.insert(p)
+            // count, fetch, fetch-page and fetch-by-id all run in the transaction
+            assertNotNull(env.productRepo.fetchById(p.id!!), "fetch-by-id sees the uncommitted insert")
+            assertEquals(1, env.productRepo.count(ProductCriteria().withProductId(p.id)))
+            assertEquals(listOf(p.id), env.productRepo.fetch(ProductCriteria().withProductId(p.id)).map { it.id })
+            assertEquals(1, env.productRepo.fetchPage(ProductCriteria().withProductId(p.id), 0, 10).items.size)
+            // another client still sees only what is committed
+            assertFalse(HttpProductRepository(anotherClient()).fetchById(p.id!!) != null, "outside the transaction")
+            it.setRollbackOnly()
+        }
+        assertFalse(exists(p))
     }
 
     @Test
@@ -524,7 +531,8 @@ class RemoteTransactionRestTest {
 
     @Test
     fun outcomeWithoutTheHeader_isRefused() {
-        assertThrows(AccessDeniedException::class.java) { anotherClient().postJson("/api/tx/commit", "{}") }
+        // malformed request (400), not a refusal of access (403)
+        assertThrows(InvalidRequestException::class.java) { anotherClient().postJson("/api/tx/commit", "{}") }
     }
 
     @Test

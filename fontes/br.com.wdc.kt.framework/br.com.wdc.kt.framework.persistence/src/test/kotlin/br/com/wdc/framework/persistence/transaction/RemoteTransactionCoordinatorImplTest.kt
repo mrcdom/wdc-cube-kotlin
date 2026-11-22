@@ -318,6 +318,44 @@ class RemoteTransactionCoordinatorImplTest {
     }
 
     @Test
+    fun reapExpired_reclaimsAnAbandonedTransaction_withoutANewBegin() {
+        val coordinator = coordinator(RemoteTransactionOptions(idleTimeoutMs = 1_000))
+        val abandoned = coordinator.begin("user:1")
+        coordinator.request(abandoned, "user:1") { db.insertInCurrentTx(1) }
+
+        now.addAndGet(1_001)
+        coordinator.reapExpired()
+
+        assertFalse(coordinator.exists(abandoned))
+        assertEquals("rolledback", coordinator.status(abandoned, "user:1"))
+        assertEquals(0, db.openConnections.get(), "the abandoned transaction's connection is returned")
+        assertEquals(1, coordinator.stats().reaped)
+    }
+
+    @Test
+    fun startReaper_sweepsPeriodically_untilClosed() {
+        val coordinator = coordinator(RemoteTransactionOptions(idleTimeoutMs = 1_000))
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        try {
+            val reaper = coordinator.startReaper(executor, intervalMs = 10)
+            val abandoned = coordinator.begin("user:1")
+            now.addAndGet(1_001)
+            val deadline = System.currentTimeMillis() + 5_000
+            while (coordinator.exists(abandoned) && System.currentTimeMillis() < deadline) Thread.sleep(10)
+            assertFalse(coordinator.exists(abandoned), "the reaper rolled back the abandoned transaction")
+
+            reaper.close()
+            val afterClose = coordinator.begin("user:2")
+            now.addAndGet(1_001)
+            Thread.sleep(100)
+            assertTrue(coordinator.exists(afterClose), "a closed reaper sweeps no more")
+            coordinator.rollback(afterClose, "user:2")
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
     fun usingTheTransaction_postponesTheIdleTimeout() {
         val coordinator = coordinator(RemoteTransactionOptions(idleTimeoutMs = 1_000))
         val txId = coordinator.begin(null)
@@ -471,11 +509,13 @@ class RemoteTransactionCoordinatorImplTest {
         val config = mapOf(
             "x.database.remoteTransaction.idleTimeoutSeconds" to 30,
             "x.database.remoteTransaction.maxOpen" to 7,
+            "x.database.remoteTransaction.reapIntervalSeconds" to 5,
         )
         val options = RemoteTransactionOptions.fromConfig("x.") { key, default -> config[key] ?: default }
 
         assertEquals(30_000L, options.idleTimeoutMs)
         assertEquals(7, options.maxOpen)
+        assertEquals(5_000L, options.reapIntervalMs)
         assertEquals(RemoteTransactionOptions.DEFAULT_MAX_LIFETIME_MS, options.maxLifetimeMs)
         assertEquals(RemoteTransactionOptions.DEFAULT_OUTCOME_RETENTION_MS, options.outcomeRetentionMs)
         assertEquals(RemoteTransactionOptions.DEFAULT_MAX_OPEN_PER_OWNER, options.maxOpenPerOwner)

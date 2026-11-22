@@ -26,7 +26,8 @@ import br.com.wdc.framework.domain.transaction.TransactionSystemException
  * other than its own HTTP leaves room for another action to inherit the `txId` (the server refuses concurrent
  * use of the same `txId` anyway).
  *
- * Reads made inside the block do not take part in the transaction: they only see what is already committed.
+ * Reads made inside the block run in the transaction too (the transport sends the `txId` on them): they see what it
+ * already wrote, and are not blocked by the rows it locked.
  *
  * `notSupported` inside a remote transaction is for **reading** outside it, not for writing: the server cannot
  * tell "suspended transaction" from "lost header" and refuses (409) a write without `X-Tx-Id` from someone who

@@ -11,6 +11,8 @@ package br.com.wdc.framework.persistence.transaction
  *                              commit/rollback idempotent
  * @property maxOpen            global cap of open remote transactions (each one holds a connection)
  * @property maxOpenPerOwner    cap of open remote transactions per owner
+ * @property reapIntervalMs     interval of the periodic sweep of expired transactions
+ *                              ([RemoteTransactionCoordinatorImpl.startReaper])
  */
 data class RemoteTransactionOptions(
     val idleTimeoutMs: Long = DEFAULT_IDLE_TIMEOUT_MS,
@@ -18,6 +20,7 @@ data class RemoteTransactionOptions(
     val outcomeRetentionMs: Long = DEFAULT_OUTCOME_RETENTION_MS,
     val maxOpen: Int = DEFAULT_MAX_OPEN,
     val maxOpenPerOwner: Int = DEFAULT_MAX_OPEN_PER_OWNER,
+    val reapIntervalMs: Long = DEFAULT_REAP_INTERVAL_MS,
 ) {
     companion object {
         const val DEFAULT_IDLE_TIMEOUT_MS = 60_000L
@@ -25,6 +28,7 @@ data class RemoteTransactionOptions(
         const val DEFAULT_OUTCOME_RETENTION_MS = 300_000L
         const val DEFAULT_MAX_OPEN = 128
         const val DEFAULT_MAX_OPEN_PER_OWNER = 16
+        const val DEFAULT_REAP_INTERVAL_MS = 15_000L
 
         /** All parameters at their defaults. */
         fun defaults(): RemoteTransactionOptions = RemoteTransactionOptions()
@@ -44,6 +48,7 @@ data class RemoteTransactionOptions(
                 outcomeRetentionMs = getInt(base + "outcomeRetentionSeconds", (d.outcomeRetentionMs / 1000).toInt()) * 1000L,
                 maxOpen = getInt(base + "maxOpen", d.maxOpen),
                 maxOpenPerOwner = getInt(base + "maxOpenPerOwner", d.maxOpenPerOwner),
+                reapIntervalMs = getInt(base + "reapIntervalSeconds", (d.reapIntervalMs / 1000).toInt()) * 1000L,
             )
         }
     }
