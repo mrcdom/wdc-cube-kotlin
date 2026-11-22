@@ -38,6 +38,15 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     }
 
     @Test
+    fun openingAReceiptThatDoesNotExist_saysSo() = runBlocking {
+        val restrictedView = gotoRestricted()
+        restrictedView.presenter.onOpenReceipt(Long.MIN_VALUE)
+        val home = RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
+        assertEquals(5, home.state.errorCode, "recibo não localizado")
+        assertEquals("Código do recibo não localizado.", home.state.errorMessage)
+    }
+
+    @Test
     fun testVisualizaProdutoInexistente() = runBlocking {
         var restrictedView = gotoRestricted()
         val rootView = app.getRootView()!!
