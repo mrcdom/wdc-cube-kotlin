@@ -16,6 +16,10 @@ import br.com.wdc.framework.domain.transaction.TransactionSystemException
  * sends the `txId` in `X-Tx-Id` and writes join the same physical transaction on the server; at the end, `commit`
  * (normal return, unless `setRollbackOnly`) or `rollback` (exception). This is what makes several REST writes atomic.
  *
+ * **A participant that fails dooms the transaction**, even if its caller catches the exception and carries on: the
+ * owner rolls back and throws [TransactionSystemException] instead of returning the block's result. Only an explicit
+ * `setRollbackOnly` rolls back without throwing. Same as the local transaction (`TransactionServiceImpl`).
+ *
  * **The current transaction is one per instance** — that is, per client application —, not per thread: the
  * presentation's actions run serially and HTTP is blocking, so no two run at the same time. Hence the rule for
  * users: **the calls of a remote transaction are serialized**; a block that suspends waiting for something
@@ -97,7 +101,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         try {
             return work(state)
         } catch (e: Throwable) {
-            state.rollbackOnly = true
+            state.failed = true
             throw e
         }
     }
@@ -115,12 +119,16 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
                 throw e
             }
             // the txId is still the current one: it goes in the commit/rollback header
-            if (state.rollbackOnly) transport.postJson("/api/tx/rollback", "{}") else commit()
+            if (state.isRollbackOnly()) transport.postJson("/api/tx/rollback", "{}") else commit()
         } finally {
             current.set(null)
         }
-        // the remote commit returned successfully, and there is no current transaction anymore: a task that needs one opens its own
         val tasks = state.afterCommit.drain()
+        if (state.failed) {
+            // a participant failed and the block carried on: it was rolled back, so the result is not a success
+            throw TransactionSystemException(PARTICIPANT_FAILED)
+        }
+        // the remote commit returned successfully, and there is no current transaction anymore: a task that needs one opens its own
         if (!state.rollbackOnly) AfterCommitTasks.runAll(tasks)
         return result
     }
@@ -185,16 +193,24 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         return txId
     }
 
+    private companion object {
+        const val PARTICIPANT_FAILED = "The transaction was rolled back: a call inside it failed."
+    }
+
     /** An active remote transaction. */
     private class TxState(val txId: String) : TransactionContext {
+        /** Rollback requested: rolled back without throwing. */
         var rollbackOnly = false
+
+        /** Doomed by a participant that failed: rolled back, and the owner throws. */
+        var failed = false
         val afterCommit = AfterCommitTasks()
 
         override fun setRollbackOnly() {
             rollbackOnly = true
         }
 
-        override fun isRollbackOnly(): Boolean = rollbackOnly
+        override fun isRollbackOnly(): Boolean = rollbackOnly || failed
 
         override fun isActive(): Boolean = true
     }

@@ -100,15 +100,29 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    fun required_nestedFailure_marksTheOuterTransaction_evenIfCaught() = runBlocking {
-        tx.required { ctx ->
-            db.insertInCurrentTx(1)
-            assertFailsWith<IllegalStateException> {
-                tx.required { db.insertInCurrentTx(2); throw IllegalStateException("inner") }
+    fun participantThatFails_rollsBackAndTheOwnerThrows_evenIfTheCallerCarriesOn() = runBlocking {
+        for (join in listOf<suspend (suspend () -> Unit) -> Unit>(
+            { block -> tx.required { block() } },
+            { block -> tx.mandatory { block() } },
+            { block -> tx.supports { block() } },
+        )) {
+            var afterCommitRan = false
+            val e = assertFailsWith<TransactionSystemException> {
+                tx.required { ctx ->
+                    db.insertInCurrentTx(1)
+                    tx.afterCommit { afterCommitRan = true }
+                    assertFailsWith<IllegalStateException> {
+                        join { db.insertInCurrentTx(2); throw IllegalStateException("inner") }
+                    }
+                    // the caller catches and carries on: the transaction is already doomed
+                    assertTrue(ctx.isRollbackOnly())
+                    "result that must not reach the caller"
+                }
             }
-            assertTrue(ctx.isRollbackOnly())
+            assertEquals("The transaction was rolled back: a call inside it failed.", e.message)
+            assertEquals(emptyList(), db.ids())
+            assertFalse(afterCommitRan, "a rolled-back transaction runs no afterCommit task")
         }
-        assertEquals(emptyList(), db.ids())
     }
 
     @Test

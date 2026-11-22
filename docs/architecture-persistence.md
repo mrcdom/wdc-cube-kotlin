@@ -250,6 +250,7 @@ ShoppingTransactions.BEAN.get().required { tx ->
 ```
 
 - **A normal return commits; any exception rolls back** and propagates intact, with its original type.
+- **A nested block that fails dooms the whole transaction.** If a `required` (or `mandatory`, `supports`) inside another one throws, everything is rolled back even when the caller catches the exception and carries on, and the outer `required` throws `TransactionSystemException` ("The transaction was rolled back: a call inside it failed.") instead of returning its result. Only `setRollbackOnly()` rolls back without throwing. The same holds on the server and in the client's remote transaction.
 - The use case must tolerate the service being absent — `ShoppingTransactions.BEAN.getOrNull()` — and run directly in that case (tests without persistence).
 - This is how checkout works: `CartManager.doPurchase` writes the purchase and its items inside `required`. A failure halfway doesn't leave an orphan purchase.
 - `afterCommit { … }` schedules a task for after the current physical transaction commits (notifying a background process, for example): it runs only if the transaction commits, in scheduling order, already outside it; if rolled back, the task is discarded. Without a transaction, it runs immediately. A task failure goes to the log and doesn't change the transaction's outcome. On the server, a task scheduled inside a remote transaction runs on its commit.

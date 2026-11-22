@@ -20,6 +20,11 @@ import kotlinx.coroutines.withContext
  * (rethrown intact — including `Error` and cancellation) or if [TransactionContext.setRollbackOnly] was
  * called. Failures opening or finishing the transaction become [TransactionSystemException].
  *
+ * **A participant that fails dooms the transaction**, even if its caller catches the exception and carries on:
+ * the owner rolls back and throws [TransactionSystemException] instead of returning the block's result, which
+ * would report as done a write that was undone. Only an explicit [TransactionContext.setRollbackOnly] rolls back
+ * without throwing.
+ *
  * [afterCommit] stores the task in the owner of the physical transaction ([TransactionScope.afterCommit]); whoever
  * opened the owner runs it after the commit, with the connection already returned and no current transaction.
  *
@@ -114,14 +119,15 @@ class TransactionServiceImpl(private val dataSource: () -> DataSource?) : Transa
     }
 
     /**
-     * Runs `work` in the frame: commits on success (only the owner commits; participant is a no-op), marks
-     * rollback on exception (rethrown) and ends the frame.
+     * Runs `work` in the frame: commits on success (only the owner commits; participant is a no-op), dooms the
+     * transaction on exception (rethrown) and ends the frame. The owner of a doomed transaction throws after
+     * rolling back.
      */
     private suspend fun <T> finish(scope: TransactionScope, work: suspend (TransactionContext) -> T): T {
         val result = try {
             work(HANDLE)
         } catch (e: Throwable) {
-            scope.setRollbackOnly()
+            scope.markFailed()
             try {
                 scope.close()
             } catch (suppressed: Exception) {
@@ -134,10 +140,18 @@ class TransactionServiceImpl(private val dataSource: () -> DataSource?) : Transa
         } catch (e: Exception) {
             throw TransactionSystemException("Failed to finish the transaction", e)
         }
+        if (scope.ownsTransaction() && scope.isFailed()) {
+            // a participant failed and the block carried on: it was rolled back, so the result is not a success
+            throw TransactionSystemException(PARTICIPANT_FAILED)
+        }
         return result
     }
 
     /** Handle given to `work`; reads the state of the ambient transaction. */
+    private companion object {
+        const val PARTICIPANT_FAILED = "The transaction was rolled back: a call inside it failed."
+    }
+
     private object HANDLE : TransactionContext {
 
         override fun setRollbackOnly() {

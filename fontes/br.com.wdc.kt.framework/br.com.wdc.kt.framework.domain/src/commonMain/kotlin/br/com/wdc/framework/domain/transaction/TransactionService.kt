@@ -8,6 +8,12 @@ package br.com.wdc.framework.domain.transaction
  * **any exception → rollback, and the original exception is rethrown intact**; failure while finishing →
  * [TransactionSystemException].
  *
+ * **A participant that fails dooms the transaction.** If a block that joined the current transaction ([required],
+ * [mandatory], [supports]) throws, the transaction is rolled back even if the caller catches the exception and
+ * carries on, and whoever opened it gets [TransactionSystemException] instead of the result: the use case does not
+ * report as done a write that was undone. Only an explicit [TransactionContext.setRollbackOnly] rolls back without
+ * throwing. [TransactionContext.isRollbackOnly] is `true` in both cases.
+ *
  * The contract is the same on the server (JDBC transaction) and on the client (remote transaction via REST).
  *
  * **The transactional block must not really suspend** — `delay`, dispatcher switch, waiting on network

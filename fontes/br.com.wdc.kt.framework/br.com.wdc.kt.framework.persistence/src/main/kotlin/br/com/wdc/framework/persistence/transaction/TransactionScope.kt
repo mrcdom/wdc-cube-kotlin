@@ -42,8 +42,13 @@ class TransactionScope private constructor(
 
     private val isOwner: Boolean get() = root === this
 
+    /** Rollback requested ([setRollbackOnly]): the owner rolls back without throwing. */
     @Volatile
     private var rollbackOnly = false
+
+    /** Doomed by a participant that failed ([markFailed]): the owner rolls back and its caller is told. */
+    @Volatile
+    private var failed = false
 
     @Volatile
     private var closed = false
@@ -64,12 +69,27 @@ class TransactionScope private constructor(
         return connection
     }
 
-    fun isRollbackOnly(): Boolean = root.rollbackOnly
+    /** Whether the owner's [close] will roll back: rollback requested or a participant failed. */
+    fun isRollbackOnly(): Boolean = root.rollbackOnly || root.failed
 
     /** Marks the transaction for rollback (irreversible). The commit will not run in the owner's [close]. */
     fun setRollbackOnly() {
         root.rollbackOnly = true
     }
+
+    /**
+     * Dooms the transaction because a call inside it failed (irreversible). Like [setRollbackOnly], the owner's
+     * [close] rolls back; unlike it, whoever opened the transaction is told ([TransactionServiceImpl] throws).
+     */
+    internal fun markFailed() {
+        root.failed = true
+    }
+
+    /** Whether a call inside this physical transaction failed ([markFailed]). */
+    internal fun isFailed(): Boolean = root.failed
+
+    /** Whether this frame owns the physical transaction (commits or rolls back in [close]). */
+    internal fun ownsTransaction(): Boolean = isOwner
 
     /**
      * Schedules [task] for after the commit of this physical transaction (the owner's, also when called on a
@@ -92,7 +112,7 @@ class TransactionScope private constructor(
 
     /**
      * Ends the frame. Participant: no-op (the connection belongs to the owner). Owner: commits (or rolls back, if
-     * marked), restores `autoCommit` and closes the connection.
+     * marked or doomed), restores `autoCommit` and closes the connection.
      */
     @Throws(SQLException::class)
     override fun close() {
@@ -107,7 +127,7 @@ class TransactionScope private constructor(
             CURRENT.remove()
         }
         try {
-            if (rollbackOnly) {
+            if (rollbackOnly || failed) {
                 connection.rollback()
             } else {
                 connection.commit()
