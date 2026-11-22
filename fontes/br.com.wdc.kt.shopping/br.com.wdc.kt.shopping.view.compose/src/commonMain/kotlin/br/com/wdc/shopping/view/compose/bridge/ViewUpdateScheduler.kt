@@ -8,8 +8,11 @@ import kotlinx.coroutines.launch
 /**
  * Centralized dirty-view scheduler for the Compose platform.
  *
- * When a presenter calls view.update(), the view is marked dirty here.
- * After safeCall completes, flush() is invoked — it calls commitComputedState()
+ * When a presenter calls view.update(), the view is marked dirty here, and a flush is
+ * scheduled on presenterScope (once per round, like requestAnimationFrame on the web and
+ * Handler.post on Android). An update made outside any view action — the initial navigation,
+ * the continuation of a parallel launch, a timer — therefore still reaches the screen.
+ * After safeCall completes, flush() is also invoked — it calls commitComputedState()
  * so each dirty view's presenter computes the derived fields the view reads (once
  * per paint cycle, right before painting), then
  * increments the revision counter for each dirty view (triggering recomposition).
@@ -23,6 +26,7 @@ object ViewUpdateScheduler {
     private val LOG = Log.getLogger("ViewUpdateScheduler")
 
     private val dirtyViews = linkedSetOf<ComposeCubeView>()
+    private var flushScheduled = false
     private var appProvider: (() -> ShoppingApplication?)? = null
 
     /**
@@ -49,6 +53,12 @@ object ViewUpdateScheduler {
      */
     fun markDirty(view: ComposeCubeView) {
         dirtyViews.add(view)
+        if (!flushScheduled) {
+            // sem agendamento, um update() fora de safeCall só aparecia na próxima ação do usuário
+            val scope = appProvider?.invoke()?.presenterScope ?: return
+            flushScheduled = true
+            scope.launch { flush() }
+        }
     }
 
     /**
@@ -65,6 +75,7 @@ object ViewUpdateScheduler {
      * Calls commitComputedState() per dirty view, then notifies (increments revision for) each.
      */
     internal fun flush() {
+        flushScheduled = false
         // Snapshot and clear
         val snapshot = dirtyViews.toList()
         dirtyViews.clear()
