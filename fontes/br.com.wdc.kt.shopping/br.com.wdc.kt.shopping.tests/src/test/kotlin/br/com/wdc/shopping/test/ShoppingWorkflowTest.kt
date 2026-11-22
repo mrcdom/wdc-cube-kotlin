@@ -138,8 +138,12 @@ class ShoppingWorkflowTest : BasePresentationTest() {
             "The product must be id==${DBReset.FLASH_DRIVE_2GB_ID}"
         )
 
+        val homeUpdatesBefore = homeView.updates
         productView.presenter.onAddToCart(1)
         homeView = RestrictedViewMock.cast(rootView.state.contentView)
+        // the header counter is a field of the home state, kept by the cart's change listener
+        assertEquals(1, homeView.presenter.state.cartItemCount)
+        assertTrue(homeView.updates > homeUpdatesBefore, "the cart change repaints the home header")
         var cartView = CartViewMock.cast(homeView.state.contentView)
         assertTrue(cartView.state.errorCode == 0, "There must be no error indication")
         assertTrue(cartView.state.items.size == 1, "One item in the cart")

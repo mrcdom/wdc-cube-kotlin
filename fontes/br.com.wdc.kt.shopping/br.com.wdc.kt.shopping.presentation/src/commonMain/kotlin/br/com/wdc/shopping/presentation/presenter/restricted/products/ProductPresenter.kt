@@ -40,9 +40,9 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
             state.product = productService.loadProductById(newProductId)
         }
 
+        // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
+        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
         if (initialization) {
-            ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
-
             state.errorCode = 0
             state.errorMessage = null
             if (state.product == null) {
@@ -50,7 +50,6 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
             }
 
             view = createView?.invoke(this)
-            update()
         }
 
         ownerSlot?.setView(view!!)

@@ -32,7 +32,7 @@ class PurchasesPanelPresenter(
     override fun onCreateView(): CubeView = createView!!.invoke(this)
 
     override suspend fun onInitialize() {
-        update()
+        // NOOP: a new view paints the current state; the page comes with onPageChange
     }
 
     // :: User Actions

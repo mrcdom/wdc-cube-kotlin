@@ -44,15 +44,14 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
             state.receipt = receipt
         }
 
+        // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
+        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
         if (initialization) {
-            ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
-
             if (state.receipt == null) {
                 throw AssertionError("Missing receipt")
             }
 
             view = createView?.invoke(this)
-            update()
         }
 
         ownerSlot?.setView(view!!)

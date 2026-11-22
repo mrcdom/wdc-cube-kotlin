@@ -281,12 +281,13 @@ See [architecture-react.md](architecture-react.md) for full details of this moda
 ```kotlin
 class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
-    val state = LoginViewState()
+    val state = observed(LoginViewState()) // a field change repaints the view: no update() calls
     private val loginService = LoginService(app)
 
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+        // read on every call: a reused presenter goes where its parent puts it now
+        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
         if (initialization) {
-            ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
             view = createView?.invoke(this)
         }
         ownerSlot?.setView(view!!)
@@ -295,7 +296,6 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     fun onEnter() {
         state.loading = true
-        update()
 
         val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")
         state.loading = false
@@ -305,21 +305,20 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
             Routes.home(app)
         } else {
             state.errorMessage = "Username or password not recognized!"
-            update()
         }
     }
 }
 ```
 
-The **ViewState** is a simple mutable object holding the data the view needs to render:
+The **ViewState** is a simple mutable object holding the data the view needs to render. Its fields are observed: assigning one a different value asks for a repaint ([details](architecture-cube.md#viewstate)):
 
 ```kotlin
-class LoginViewState : ViewState {
-    var userName: String? = null
-    var password: String? = null
-    var errorCode: Int = 0
-    var errorMessage: String? = null
-    var loading: Boolean = false
+class LoginViewState : ObservableViewState() {
+    var userName: String? by field(null)
+    var password: String? by field(null)
+    var errorCode: Int by field(0)
+    var errorMessage: String? by field(null)
+    var loading: Boolean by field(false)
 }
 ```
 
