@@ -118,7 +118,7 @@ class CartManager(private val repo: PurchaseRepository) {
 
         purchase.items = ArrayList()
         for (srcItem in request) {
-            if (srcItem.quantity < 0) {
+            if (srcItem.quantity < 1) {
                 throw InvalidCartItemException()
             }
 

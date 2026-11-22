@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.test.transaction
 
 import br.com.wdc.shopping.domain.ShoppingTransactions
+import br.com.wdc.shopping.domain.exception.InvalidCartItemException
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.purchase.Purchase
 import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
@@ -44,6 +45,29 @@ class CheckoutTransactionTest {
     private fun cartThatFailsOnTheSecondItem() = CartManager(env.purchaseRepo).apply {
         addProduct(product(DBReset.CAFETEIRA_ID, 200.5), 1)
         addProduct(product(NO_SUCH_PRODUCT, 10.5), 2)
+    }
+
+    @Test
+    fun addingMoreOfAProductAlreadyInTheCart_notifiesTheListeners() {
+        val cart = CartManager(env.purchaseRepo)
+        var changes = 0
+        cart.addChangeListener { changes++ }
+        cart.addProduct(product(DBReset.CAFETEIRA_ID, 200.5), 1)
+        cart.addProduct(product(DBReset.CAFETEIRA_ID, 200.5), 2)
+        assertEquals(2, changes, "o contador do cabeçalho depende do aviso nos dois casos")
+        assertEquals(3, cart.getCartItems().single().quantity)
+    }
+
+    @Test
+    fun checkout_withAZeroQuantity_isRefusedByTheCart_andWritesNothing() = runBlocking {
+        val before = purchases()
+        val cart = CartManager(env.purchaseRepo).apply {
+            addProduct(product(DBReset.CAFETEIRA_ID, 200.5), 1)
+            addProduct(product(DBReset.PEN_DRIVE2GB_ID, 16.25), 1)
+            modifyProductQuantity(DBReset.PEN_DRIVE2GB_ID, 0)
+        }
+        assertThrows(InvalidCartItemException::class.java) { runBlocking { cart.commit(fulano()) } }
+        assertEquals(before, purchases())
     }
 
     @Test
