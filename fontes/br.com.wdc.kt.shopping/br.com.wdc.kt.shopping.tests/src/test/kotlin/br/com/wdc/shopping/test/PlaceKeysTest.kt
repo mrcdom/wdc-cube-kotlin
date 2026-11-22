@@ -82,9 +82,9 @@ class PlaceKeysTest : BasePresentationTest() {
 
     @Test
     fun anAddress_resolvesToItsPlace_andAnUnknownOneToTheRoot() {
-        for (place in ShoppingApplication.PLACES) assertSame(place, ShoppingApplication.placeOf(place.placeName))
-        assertSame(RootKeys.PLACE, ShoppingApplication.placeOf("nowhere"))
-        assertSame(RootKeys.PLACE, ShoppingApplication.placeOf(null))
+        for (place in ShoppingApplication.PLACES) assertSame(place, app.placeOf(place.placeName))
+        assertSame(RootKeys.PLACE, app.placeOf("nowhere"))
+        assertSame(RootKeys.PLACE, app.placeOf(null))
     }
 
     @Test
