@@ -110,6 +110,33 @@ class CriterionCodecTest {
     }
 
     @Test
+    fun read_malformedPredicates_areRefused() {
+        // quantidade de valores que o operador não aceita: o pedido contaria como filtro e sumiria do SQL
+        for (p in listOf(
+            """{"o":"BETWEEN","v":[1]}""", """{"o":"BETWEEN","v":[1,2,3]}""", """{"o":"EQ"}""", """{"o":"GT","v":[1,2]}""",
+            """{"o":"IS_NULL","v":[1]}""",
+            // null onde a comparação nunca é verdadeira
+            """{"o":"GT","v":[null]}""", """{"o":"BETWEEN","v":[1,null]}""",
+        )) {
+            val c = SampleCriteria()
+            assertFailsWith<InvalidRequestException>(p) {
+                CriterionCodec.read(readerAtField("""{"id":{"p":[$p]}}"""), c.id, CriterionCodec.LONG_IN)
+            }
+        }
+        val c = SampleCriteria()
+        assertFailsWith<InvalidRequestException> {
+            CriterionCodec.read(readerAtField("""{"name":{"p":[{"o":"LIKE","v":[null]}]}}"""), c.name, CriterionCodec.STRING_IN)
+        }
+    }
+
+    @Test
+    fun read_nullEqualityAndEmptyIn_areStillAccepted() {
+        val c = SampleCriteria()
+        CriterionCodec.read(readerAtField("""{"id":{"p":[{"o":"EQ","v":[null]},{"o":"NE","v":[null]},{"o":"IN","v":[]}]}}"""), c.id, CriterionCodec.LONG_IN)
+        assertEquals(listOf(Operator.EQ, Operator.NE, Operator.IN), c.id.predicates.map { it.operator })
+    }
+
+    @Test
     fun read_unknownKeys_areSkipped() {
         val c = SampleCriteria()
         val json = """{"id":{"future":{"a":[1,2]},"p":[{"o":"EQ","x":true,"v":[7]}],"or":false}}"""

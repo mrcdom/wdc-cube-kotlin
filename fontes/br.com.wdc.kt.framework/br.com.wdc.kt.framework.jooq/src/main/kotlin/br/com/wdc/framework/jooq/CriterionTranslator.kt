@@ -108,10 +108,9 @@ object CriterionTranslator {
         if (op == Operator.IS_NOT_NULL) return column.isNotNull
 
         val values: List<Any?> = predicate.values.map { v -> if (v == null || converter == null) v else converter(v) }
-        if (!op.accepts(values.size)) {
-            // operador e valores em desacordo — ignorar é melhor do que emitir SQL que o banco recusaria
-            return null
-        }
+        // Operador e valores em desacordo: recusa. Ignorar tiraria o pedido do SQL com o campo ainda contando como
+        // filtro informado, e um delete "com critério" apagaria a tabela. Do transporte, Criterion.restore já recusa.
+        require(op.accepts(values.size)) { "critério: $op não aceita ${values.size} valor(es)" }
         return when (op) {
             Operator.EQ -> column.eq(values[0])
             Operator.NE -> column.ne(values[0])

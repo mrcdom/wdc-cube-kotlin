@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.test.repository
 
+import br.com.wdc.shopping.domain.exception.BusinessException
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.RestTestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
@@ -45,6 +46,23 @@ class RestProductEndpointsTest {
     fun unknownOperator_isDiscarded_andUnknownFieldsAreIgnored() {
         val response = post("count", """{"price":{"p":[{"o":"REGEXP","v":[1]},{"o":"LT","v":[10]}]},"fromTheFuture":{"a":[1]}}""")
         assertEquals("""{"count":1}""", response)
+    }
+
+    @Test
+    fun malformedCriterion_isRefused_andDeleteRemovesNothing() {
+        val before = post("count", "{}")
+        // operador e valores em desacordo: contava como filtro informado e sumia do SQL (DELETE sem WHERE)
+        for (criterion in listOf(
+            """{"price":{"p":[{"o":"BETWEEN","v":[1]}]}}""",
+            """{"price":{"p":[{"o":"EQ"}]}}""",
+            """{"price":{"p":[{"o":"GT","v":[1,2]}]}}""",
+            """{"name":{"p":[{"o":"LIKE","v":[null]}]}}""",
+        )) {
+            val e = assertThrows(BusinessException::class.java, { post("delete", criterion) }, criterion)
+            assertTrue(e.message!!.contains("critério"), e.message)
+            assertThrows(BusinessException::class.java, { post("fetch", criterion) }, criterion)
+        }
+        assertEquals(before, post("count", "{}"), "nenhum produto apagado")
     }
 
     @Test

@@ -1,6 +1,7 @@
 package br.com.wdc.framework.jooq
 
 import br.com.wdc.framework.domain.criteria.Operator
+import br.com.wdc.framework.domain.exception.InvalidRequestException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -159,11 +160,12 @@ class JsonQueryUnitTest {
     }
 
     @Test
-    fun translator_discardsPredicatesWithWrongArity() {
+    fun malformedPredicates_areRefused_neverDropped() {
         val c = BookCriteria()
-        c.id.restore(Operator.BETWEEN, listOf(1L))      // faltou um valor
-        c.id.restore(Operator.EQ, emptyList())          // faltou o valor
-        assertNull(CriterionTranslator.translate(BOOK.ID, c.id))
+        // do transporte: recusado na leitura (400), antes de chegar ao tradutor
+        assertFailsWith<InvalidRequestException> { c.id.restore(Operator.BETWEEN, listOf(1L)) }
+        assertFailsWith<InvalidRequestException> { c.id.restore(Operator.EQ, emptyList()) }
+        assertFalse(c.id.isSet(), "o pedido recusado não fica no critério")
 
         c.id.restore(Operator.GT, listOf(5L))
         val sql = dsl.renderInlined(CriterionTranslator.translate(BOOK.ID, c.id)!!)
