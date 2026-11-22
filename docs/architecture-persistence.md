@@ -353,6 +353,8 @@ With `security.jwt.secret` configured, the backend requires `Authorization: Bear
 
 **The password never leaves through the API.** It is accepted when writing a user and stripped from every projection and every response, including when the user comes inside a purchase — with security enabled or not.
 
+**The price of a purchase item is the server's.** Through the API, an item gets its product's current price, whatever the client sent: on insert, alone or inside a purchase, and on an update that writes the price or the product. An item of a product that does not exist is refused with 400. The server-side presentation (remote view) writes through the repositories directly and already prices items from the products it loaded.
+
 **The password is stored as its digest**, the form the login compares, so a user created through the API can log in. With security on, it must come encrypted with the session's RSA public key (the `publicKey` of the login response; `RestAuthClient.encryptPassword` on the client): one that does not decrypt is refused with 400, never stored as it came. Without security there is no key, and the password comes as typed.
 
 Without the secret, the API is open and `/api/auth` doesn't exist: this is the development mode, and the mode of tests that don't deal with security.
