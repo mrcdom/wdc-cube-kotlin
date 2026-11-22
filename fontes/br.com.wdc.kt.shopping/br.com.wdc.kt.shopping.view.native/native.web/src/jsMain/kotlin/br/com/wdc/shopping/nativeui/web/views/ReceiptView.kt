@@ -26,11 +26,17 @@ import mui.system.sx
 import react.FC
 import react.Props
 import react.ReactNode
+import react.dom.events.MouseEventHandler
 import react.useEffect
 import react.useState
 import web.cssom.*
+import web.html.HTMLButtonElement
 
 class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("receipt-view", presenter) {
+
+    // :: Emitters — created once per view, so they are the same function on every render
+
+    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onOpenProducts() } }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -230,7 +236,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
 
                         Button {
                             variant = ButtonVariant.contained
-                            onClick = { safeCall { presenter.onOpenProducts() } }
+                            onClick = onOpenProducts
                             asDynamic().style = ShoppingStyles.fontMedium
                             sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                             ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }

@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.shopping.nativeui.web.bridge.EmitterCache
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
@@ -26,11 +27,19 @@ import react.FC
 import react.Props
 import react.ReactNode
 import react.dom.html.ReactHTML.img
+import react.dom.events.MouseEventHandler
 import react.useEffect
 import react.useState
 import web.cssom.*
+import web.html.HTMLButtonElement
 
 class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCubeView("products-panel-view", presenter) {
+
+    // :: Emitters — created once per view (and once per list item), so they are the same function on every render
+
+    private val openProduct = EmitterCache<Long, MouseEventHandler<HTMLButtonElement>> { id ->
+        { safeCall { presenter.onOpenProduct(id) } }
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -121,6 +130,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                         gap = 12.px
                     }
 
+                    openProduct.retainOnly(products.map { it.id })
                     for (product in products) {
                         Card {
                             key = "${product.id}"
@@ -131,7 +141,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
                             }
 
                             CardActionArea {
-                                onClick = { safeCall { presenter.onOpenProduct(product.id) } }
+                                onClick = openProduct[product.id]
 
                                 // Product image
                                 img {

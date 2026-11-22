@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.nativeui.web.views
 
+import br.com.wdc.shopping.nativeui.web.bridge.EmitterCache
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
@@ -30,11 +31,38 @@ import mui.system.sx
 import react.FC
 import react.Props
 import react.ReactNode
+import react.dom.events.MouseEventHandler
 import react.useEffect
 import react.useState
 import web.cssom.*
+import web.html.HTMLButtonElement
 
 class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view", presenter) {
+
+    // :: Emitters — created once per view (and once per cart item), so they are the same function on every render
+
+    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onOpenProducts() } }
+
+    private val onBuy: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onBuy() } }
+
+    /** The emitters of one cart item. They read the item's current quantity from the state when they run. */
+    private inner class ItemEmitters(val id: Long) {
+        private fun quantity(): Int = presenter.state.items.firstOrNull { it.id == id }?.quantity ?: 1
+
+        val decrement: MouseEventHandler<HTMLButtonElement> = {
+            val next = (quantity() - 1).coerceAtLeast(1)
+            safeCall { presenter.onModifyQuantity(id, next) }
+        }
+
+        val increment: MouseEventHandler<HTMLButtonElement> = {
+            val next = quantity() + 1
+            safeCall { presenter.onModifyQuantity(id, next) }
+        }
+
+        val remove: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onRemoveProduct(id) } }
+    }
+
+    private val itemEmitters = EmitterCache<Long, ItemEmitters> { id -> ItemEmitters(id) }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -123,7 +151,9 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                             direction = responsive(StackDirection.column)
                             spacing = responsive(1)
 
+                            itemEmitters.retainOnly(state.items.map { it.id })
                             for (item in state.items) {
+                                val emitters = itemEmitters[item.id]
                                 Card {
                                     key = "${item.id}"
                                     sx {
@@ -177,14 +207,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                                         width = 32.px
                                                         height = 32.px
                                                     }
-                                                    onClick = {
-                                                        safeCall {
-                                                            presenter.onModifyQuantity(
-                                                                item.id,
-                                                                (item.quantity - 1).coerceAtLeast(1)
-                                                            )
-                                                        }
-                                                    }
+                                                    onClick = emitters.decrement
                                                     Remove { sx { fontSize = 16.px } }
                                                 }
 
@@ -201,9 +224,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                                         width = 32.px
                                                         height = 32.px
                                                     }
-                                                    onClick = {
-                                                        safeCall { presenter.onModifyQuantity(item.id, item.quantity + 1) }
-                                                    }
+                                                    onClick = emitters.increment
                                                     Add { sx { fontSize = 16.px } }
                                                 }
                                             }
@@ -212,7 +233,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                                             Button {
                                                 variant = ButtonVariant.text
                                                 color = ButtonColor.error
-                                                onClick = { safeCall { presenter.onRemoveProduct(item.id) } }
+                                                onClick = emitters.remove
                                                 asDynamic().style = ShoppingStyles.smallAction
                                                 +"Remove"
                                             }
@@ -265,7 +286,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
 
                     Button {
                         variant = ButtonVariant.outlined
-                        onClick = { safeCall { presenter.onOpenProducts() } }
+                        onClick = onOpenProducts
                         sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                         ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
                         +"Continue Shopping"
@@ -274,7 +295,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                     if (state.items.isNotEmpty()) {
                         Button {
                             variant = ButtonVariant.contained
-                            onClick = { safeCall { presenter.onBuy() } }
+                            onClick = onBuy
                             sx {
                                 borderRadius = 12.px
                                 height = 48.px

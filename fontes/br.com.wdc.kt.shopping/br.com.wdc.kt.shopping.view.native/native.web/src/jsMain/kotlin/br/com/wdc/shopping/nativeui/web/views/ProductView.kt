@@ -34,11 +34,37 @@ import react.FC
 import react.Props
 import react.ReactNode
 import react.dom.html.ReactHTML.img
+import react.dom.events.MouseEventHandler
 import react.useEffect
 import react.useState
 import web.cssom.*
+import web.html.HTMLButtonElement
 
 class ProductView(private val presenter: ProductPresenter) : ReactCubeView("product-view", presenter) {
+
+    /** The quantity being chosen: UI state of this view, changed by the emitters below. */
+    private var quantity = 1
+
+    // :: Emitters — created once per view, so they are the same function on every render
+
+    private val onDecrement: MouseEventHandler<HTMLButtonElement> = {
+        if (quantity > 1) {
+            quantity--
+            forceUpdate()
+        }
+    }
+
+    private val onIncrement: MouseEventHandler<HTMLButtonElement> = {
+        quantity++
+        forceUpdate()
+    }
+
+    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onOpenProducts() } }
+
+    private val onAddToCart: MouseEventHandler<HTMLButtonElement> = {
+        val chosen = quantity
+        safeCall { presenter.onAddToCart(chosen) }
+    }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -51,7 +77,6 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
 
         val state = presenter.state
         val product = state.product
-        var quantity by useState(1)
 
         Box {
             sx {
@@ -160,7 +185,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
 
                                         IconButton {
                                             disabled = quantity <= 1
-                                            onClick = { if (quantity > 1) quantity-- }
+                                            onClick = onDecrement
                                             size = mui.material.Size.small
                                             Remove {}
                                         }
@@ -172,7 +197,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                                         }
 
                                         IconButton {
-                                            onClick = { quantity++ }
+                                            onClick = onIncrement
                                             size = mui.material.Size.small
                                             Add {}
                                         }
@@ -204,7 +229,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
 
                             Button {
                                 variant = ButtonVariant.outlined
-                                onClick = { safeCall { presenter.onOpenProducts() } }
+                                onClick = onOpenProducts
                                 sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                                 ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
                                 +"Back"
@@ -212,7 +237,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
 
                             Button {
                                 variant = ButtonVariant.contained
-                                onClick = { safeCall { presenter.onAddToCart(quantity) } }
+                                onClick = onAddToCart
                                 sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
                                 AddShoppingCart { sx { marginRight = 6.px; fontSize = 18.px } }
                                 +"Add to Cart"
