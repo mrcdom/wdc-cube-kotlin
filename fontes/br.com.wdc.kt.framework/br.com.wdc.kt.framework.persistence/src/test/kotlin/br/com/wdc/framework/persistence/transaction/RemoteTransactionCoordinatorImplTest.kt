@@ -253,6 +253,23 @@ class RemoteTransactionCoordinatorImplTest {
     // :: Tetos
 
     @Test
+    fun quotaKey_countsTheCap_whileTheOwnerKeyGuardsTheTransaction() {
+        val coordinator = coordinator(RemoteTransactionOptions(maxOpenPerOwner = 2))
+        val a = coordinator.begin("user:1/client:a", "user:1")
+        val b = coordinator.begin("user:1/client:b", "user:1")
+        // o teto é do usuário: um terceiro cliente dele não abre
+        assertFailsWith<TransactionLimitExceededException> { coordinator.begin("user:1/client:c", "user:1") }
+        // a recusa de escrita sem txId é por dono (instância de cliente)
+        assertTrue(coordinator.hasOpenTransactionForOwner("user:1/client:a"))
+        assertFalse(coordinator.hasOpenTransactionForOwner("user:1/client:c"))
+        // outro cliente do mesmo usuário não usa a transação do primeiro
+        assertFailsWith<AccessDeniedException> { coordinator.resume(a, "user:1/client:b") }
+        coordinator.rollback(a, "user:1/client:a")
+        coordinator.begin("user:1/client:c", "user:1").also { coordinator.rollback(it, "user:1/client:c") }
+        coordinator.rollback(b, "user:1/client:b")
+    }
+
+    @Test
     fun exceedingMaxOpen_isRejected() {
         val coordinator = coordinator(RemoteTransactionOptions(maxOpen = 2))
         val a = coordinator.begin("user:1")

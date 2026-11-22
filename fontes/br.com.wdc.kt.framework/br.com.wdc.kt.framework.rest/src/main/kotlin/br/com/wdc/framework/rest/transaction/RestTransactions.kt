@@ -49,9 +49,24 @@ class RestTransactions {
 
     /**
      * A chave opaca do dono das transações remotas, em espaços de nome separados para um anônimo não se passar
-     * por usuário: com principal, `user:<id>`; sem, `anon:<clientHeader>`, ou `null` se o cabeçalho não veio.
+     * por usuário: com principal, `user:<id>/client:<clientHeader>` (ou `user:<id>`, se o cabeçalho não veio);
+     * sem, `anon:<clientHeader>`, ou `null` se o cabeçalho não veio.
+     *
+     * O cliente entra na chave para o mesmo usuário em dois clientes (desktop e web) não se bloquear: a recusa de
+     * escrita sem [txHeader] e a transação ficam por instância. O usuário continua na chave, e a transação de um
+     * usuário segue inalcançável por outro.
      */
     var ownerKey: (RequestContext) -> String? = { request ->
+        val client = request.header(clientHeader)?.takeIf { it.isNotBlank() }
+        request.principal?.let { principal -> "user:${principal.id}" + (client?.let { "/client:$it" } ?: "") }
+            ?: client?.let { "anon:$it" }
+    }
+
+    /**
+     * A chave do teto de transações abertas por dono: com principal, `user:<id>` — o teto é do usuário, e trocar o
+     * [clientHeader] não o contorna —; sem, a mesma do [ownerKey].
+     */
+    var quotaKey: (RequestContext) -> String? = { request ->
         request.principal?.let { "user:${it.id}" }
             ?: request.header(clientHeader)?.takeIf { it.isNotBlank() }?.let { "anon:$it" }
     }
