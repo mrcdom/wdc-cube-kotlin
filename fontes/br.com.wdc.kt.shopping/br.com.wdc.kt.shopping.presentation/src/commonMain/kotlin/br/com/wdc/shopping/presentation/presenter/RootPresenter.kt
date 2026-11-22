@@ -6,13 +6,11 @@ import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.PlaceAttributes
-import br.com.wdc.shopping.presentation.PlaceParameters
-import br.com.wdc.shopping.presentation.ShoppingApplication
-import br.com.wdc.shopping.presentation.exception.WrongPlace
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.SimpleSecurityContext
+import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
 class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
@@ -46,22 +44,13 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         }
 
         if (deepest) {
-            throw WrongPlace()
-        } else {
-            // Does not accept changing user id at URL
-            if (app.subject != null) {
-                intent.setParameter(PlaceParameters.USER_ID, app.subject!!.id)
-            }
-            intent.setViewSlot(PlaceAttributes.SLOT_OWNER, contentSlot)
+            // the root alone shows nothing: go to the home, with the intent in transit
+            HomeKeys(app, intent).go()
+            return false
         }
+        MainKeys(app, intent).parentSlot = contentSlot
 
         return true
-    }
-
-    override fun publishParameters(intent: CubeIntent) {
-        if (app.subject != null) {
-            intent.setParameter(PlaceParameters.USER_ID, app.subject!!.id)
-        }
     }
 
     // :: Messages

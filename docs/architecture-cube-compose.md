@@ -348,12 +348,12 @@ sequenceDiagram
     participant RootView as RootView Compose
 
     Note over Root: applyParameters deepest=false
-    Root->>Intent: setViewSlot(SLOT_OWNER, contentSlot)
-    Note over Root: contentSlot callback:<br/>view -> state.contentView = view then update()
+    Root->>Intent: parentSlot = contentSlot (MainKeys)
+    Note over Root: contentSlot callback:<br/>view -> state.contentView = view (observed state)
 
     Note over Home: applyParameters deepest=true, init=true
     Home->>Home: view = createView(this) HomeView
-    Home->>Intent: getViewSlot(SLOT_OWNER)
+    Home->>Intent: parentSlot (HomeKeys)
     Intent-->>Home: contentSlot
     Home->>Root: contentSlot.setView(homeView)
     Root->>RootState: state.contentView = homeView
@@ -366,7 +366,7 @@ sequenceDiagram
 ```kotlin
 class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
-    val state = RootViewState()
+    val state = observed(RootViewState())
 
     // Callback that receives the child view and stores it in the state
     private val contentSlot = CubeViewSlot { v -> setContentView(v) }
@@ -376,7 +376,7 @@ class RootPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             view = createView?.invoke(this)
         }
         // Publishes the slot in the intent so the next step can use it
-        intent.setViewSlot(PlaceAttributes.SLOT_OWNER, contentSlot)
+        MainKeys(app, intent).parentSlot = contentSlot
         return true
     }
 

@@ -4,9 +4,10 @@ import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.PlaceAttributes
-import br.com.wdc.shopping.presentation.PlaceParameters
+import br.com.wdc.shopping.presentation.presenter.MainKeys
 import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.mock.viewimpl.CartViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.LoginViewMock
@@ -30,7 +31,7 @@ class OwnerSlotTest : BasePresentationTest() {
         var placed: CubeView? = null
         val intent = app.newIntent()
         configure(intent)
-        intent.setViewSlot(PlaceAttributes.SLOT_OWNER, CubeViewSlot { placed = it })
+        MainKeys(app, intent).parentSlot = CubeViewSlot { placed = it }
         presenter.applyParameters(intent, false, true)
         return placed
     }
@@ -62,7 +63,7 @@ class OwnerSlotTest : BasePresentationTest() {
         val home = gotoRestricted()
         home.presenter.onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
         val productView = ProductViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.state.contentView).state.contentView)
-        val placed = reapplyWithANewSlot(productView.presenter) { it.setParameter(PlaceParameters.PRODUCT_ID, DBReset.FLASH_DRIVE_2GB_ID) }
+        val placed = reapplyWithANewSlot(productView.presenter) { ProductKeys(app, it).productId = DBReset.FLASH_DRIVE_2GB_ID }
         assertSame(productView, placed)
     }
 
@@ -79,7 +80,7 @@ class OwnerSlotTest : BasePresentationTest() {
         val home = gotoRestricted()
         home.presenter.onOpenReceipt(DBReset.ADMIN_SECOND_PURCHASE_ID)
         val receiptView = ReceiptViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.state.contentView).state.contentView)
-        val placed = reapplyWithANewSlot(receiptView.presenter) { it.setParameter(PlaceParameters.PURCHASE_ID, DBReset.ADMIN_SECOND_PURCHASE_ID) }
+        val placed = reapplyWithANewSlot(receiptView.presenter) { ReceiptKeys(app, it).purchaseId = DBReset.ADMIN_SECOND_PURCHASE_ID }
         assertSame(receiptView, placed)
     }
 }

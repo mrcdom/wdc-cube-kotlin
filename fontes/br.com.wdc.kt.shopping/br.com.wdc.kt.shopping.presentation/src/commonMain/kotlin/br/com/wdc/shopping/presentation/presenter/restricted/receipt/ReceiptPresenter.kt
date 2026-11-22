@@ -5,11 +5,10 @@ import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.PlaceAttributes
-import br.com.wdc.shopping.presentation.PlaceParameters
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptForm
 
 class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
@@ -33,10 +32,13 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
-        state.notifySuccess = intent.getAttribute(PlaceAttributes.ATTR_PURCHASE_MADE) == true
-
-        val pPurchaseId = intent.getParameterAsLong(PlaceParameters.PURCHASE_ID, purchaseId)
-            ?: throw AssertionError("Missing PURCHASE_ID")
+        val keys = ReceiptKeys(app, intent)
+        val pPurchaseId = keys.purchaseId ?: purchaseId ?: run {
+            // no usable id in the address: nothing to show; go to the home, with the intent in transit
+            HomeKeys(app, intent).go()
+            return false
+        }
+        state.notifySuccess = keys.purchaseMade
 
         if (state.receipt == null || pPurchaseId != purchaseId) {
             val receipt = loadReceipt(pPurchaseId)
@@ -45,7 +47,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
         }
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
-        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
+        ownerSlot = keys.parentSlot
         if (initialization) {
             if (state.receipt == null) {
                 throw AssertionError("Missing receipt")
@@ -60,9 +62,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
     }
 
     override fun publishParameters(intent: CubeIntent) {
-        purchaseId?.let {
-            intent.setParameter(PlaceParameters.PURCHASE_ID, it)
-        }
+        ReceiptKeys(app, intent).purchaseId = purchaseId
     }
 
     // :: User Actions

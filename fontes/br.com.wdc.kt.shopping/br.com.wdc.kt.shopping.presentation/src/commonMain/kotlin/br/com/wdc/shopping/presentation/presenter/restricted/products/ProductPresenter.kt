@@ -6,10 +6,9 @@ import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
-import br.com.wdc.shopping.presentation.PlaceAttributes
-import br.com.wdc.shopping.presentation.PlaceParameters
 import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.presenter.Routes
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
 class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
 
@@ -31,17 +30,21 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+        val keys = ProductKeys(app, intent)
         val oldProductId = state.product?.id
 
-        val newProductId = intent.getParameterAsLong(PlaceParameters.PRODUCT_ID, oldProductId)
-            ?: throw AssertionError("Missing PRODUCT_ID")
+        val newProductId = keys.productId ?: oldProductId ?: run {
+            // no usable id in the address: nothing to show; go to the home, with the intent in transit
+            HomeKeys(app, intent).go()
+            return false
+        }
 
         if (state.product == null || newProductId != oldProductId) {
             state.product = productService.loadProductById(newProductId)
         }
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
-        ownerSlot = intent.getViewSlot(PlaceAttributes.SLOT_OWNER)
+        ownerSlot = keys.parentSlot
         if (initialization) {
             state.errorCode = 0
             state.errorMessage = null
@@ -58,9 +61,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
     }
 
     override fun publishParameters(intent: CubeIntent) {
-        state.product?.let {
-            intent.setParameter(PlaceParameters.PRODUCT_ID, it.id)
-        }
+        ProductKeys(app, intent).productId = state.product?.id
     }
 
     // :: User Actions

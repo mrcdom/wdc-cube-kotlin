@@ -42,7 +42,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     @Test
     fun openingAReceiptThatDoesNotExist_saysSo() = runBlocking {
         val restrictedView = gotoRestricted()
-        restrictedView.presenter.onOpenReceipt(Long.MIN_VALUE)
+        restrictedView.presenter.onOpenReceipt(9_999_999L)
         val home = RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
         assertEquals(5, home.state.errorCode, "receipt not found")
         assertEquals("Receipt code not found.", home.state.errorMessage)
@@ -57,6 +57,15 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         cartView.presenter.onBuy()
         assertEquals(3, cartView.state.errorCode)
         assertEquals("There must be at least one item in the cart to complete a purchase.", cartView.state.errorMessage)
+    }
+
+    @Test
+    fun openingWithAnIdThatCannotExist_saysItIsRequired() = runBlocking {
+        val restrictedView = gotoRestricted()
+        restrictedView.presenter.onOpenProduct(Long.MIN_VALUE)
+        assertEquals(6, RestrictedViewMock.cast(app.getRootView()!!.state.contentView).state.errorCode)
+        restrictedView.presenter.onOpenReceipt(0)
+        assertEquals(7, RestrictedViewMock.cast(app.getRootView()!!.state.contentView).state.errorCode)
     }
 
     @Test
@@ -96,7 +105,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         val rootView = app.getRootView()!!
 
         // Product that does not exist
-        restrictedView.presenter.onOpenProduct(Long.MIN_VALUE)
+        restrictedView.presenter.onOpenProduct(9_999_999L)
         restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
         assertTrue(
             restrictedView.state.errorCode == 3,
