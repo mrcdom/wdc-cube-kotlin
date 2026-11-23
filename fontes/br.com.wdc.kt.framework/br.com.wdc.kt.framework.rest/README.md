@@ -166,7 +166,7 @@ To carry the context into a coroutine launched outside the pipeline, use `reques
 
 `transactions { service = …; coordinator = … }`. On a `transactional = true` route, everything the handler writes is committed together, or nothing is. `X-Tx-Id` is optional:
 
-1. If `X-Tx-Id` came and there is a coordinator, the write joins the client's remote transaction and is only committed on its commit.
+1. If `X-Tx-Id` came and there is a coordinator, the write joins the client's remote transaction and is only committed on its commit. A server without a coordinator refuses the header with 400, in reads and writes: the client believes it is in a transaction, and a write made outside it could not be undone.
 2. If the header didn't come but the owner has an open remote transaction, the write is refused with 409, so it isn't committed outside the transaction. `refuseWritesOutsideOpenTransaction = false` turns that off.
 3. Otherwise, there is one transaction per request (`TransactionService.required`).
 

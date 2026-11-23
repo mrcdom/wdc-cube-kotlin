@@ -1,5 +1,6 @@
 package br.com.wdc.framework.rest.transaction
 
+import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.transaction.TransactionService
 import br.com.wdc.framework.persistence.transaction.RemoteTransactionCoordinator
@@ -18,8 +19,9 @@ import br.com.wdc.framework.rest.RequestContext
  *    [refuseWritesOutsideOpenTransaction].
  * 3. Otherwise: [service] `required` — one transaction per request. Without a service, it runs directly.
  *
- * The header is optional: without a coordinator, or without an open remote transaction, the route is simply
- * transactional.
+ * The header is optional: without an open remote transaction, the route is simply transactional. But **a server
+ * without a [coordinator] refuses the header (400)**, in reads and writes: the client believes it is in a
+ * transaction, and a write made outside it could not be undone.
  *
  * A read is not `transactional`, but it may join the client's remote transaction ([joinRemote]): with the header,
  * it sees what that transaction already wrote and is not blocked by the rows it locked.
@@ -83,9 +85,8 @@ class RestTransactions {
      * sees only what is committed). The transaction is released when the read ends.
      */
     suspend fun <T> joinRemote(request: RequestContext, block: suspend () -> T): T {
-        val coordinator = coordinator ?: return block()
-        val txId = request.header(txHeader)
-        if (txId.isNullOrBlank()) return block()
+        val txId = remoteTxId(request) ?: return block()
+        val coordinator = coordinator ?: return block() // remoteTxId already refused the header without one
         coordinator.resume(txId, ownerKey(request))
         try {
             val service = service ?: return block()
@@ -97,11 +98,11 @@ class RestTransactions {
 
     /** Runs [block] in the transaction that fits the request (see the class). */
     suspend fun <T> run(request: RequestContext, block: suspend () -> T): T {
+        val txId = remoteTxId(request)
         val coordinator = coordinator
         if (coordinator != null) {
             val owner = ownerKey(request)
-            val txId = request.header(txHeader)
-            if (!txId.isNullOrBlank()) {
+            if (txId != null) {
                 coordinator.resume(txId, owner)
                 try {
                     val service = service ?: return block()
@@ -118,5 +119,14 @@ class RestTransactions {
         }
         val service = service ?: return block()
         return service.required { block() }
+    }
+
+    /** The [txHeader] of the request, or `null` if it didn't come. Refused (400) when there is no [coordinator]. */
+    private fun remoteTxId(request: RequestContext): String? {
+        val txId = request.header(txHeader)?.takeIf { it.isNotBlank() } ?: return null
+        if (coordinator == null) {
+            throw InvalidRequestException("$txHeader sent, but this server has no remote transactions")
+        }
+        return txId
     }
 }

@@ -61,6 +61,24 @@ class RestTransactionsTest {
     }
 
     @Test
+    fun theHeader_onAServerWithoutRemoteTransactions_isRefused() {
+        // the client believes it is in a transaction: a write made outside it could not be undone
+        val plain = RestApi {
+            transactions { service = TransactionServiceImpl { dataSource } }
+            post("/rows/{id}", transactional = true) { call -> insert(call.pathInt("id")); mapOf("ok" to true) }
+            get("/rows") { call -> call.inRemoteTransaction { idsInCurrentTxOrCommitted() } }
+        }
+        RestTestServer(plain).use { server ->
+            assertEquals(400, server.client().header("X-Tx-Id", "abc").post("/rows/1").status)
+            assertEquals(400, server.client().header("X-Tx-Id", "abc").get("/rows").status)
+            assertEquals(emptyList(), ids(), "nothing written")
+            // without the header, as before
+            assertEquals(200, server.client().post("/rows/2").status)
+            assertEquals(200, server.client().get("/rows").status)
+        }
+    }
+
+    @Test
     fun perRequest_commitsOnSuccess_andRollsBackOnFailure_withoutTheHeader() {
         assertEquals(200, server.client().post("/rows/1").status)
         assertEquals(500, server.client().post("/rows/2?fail=1").status)
