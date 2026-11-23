@@ -10,7 +10,6 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.domain.security.AuthenticationService
-import br.com.wdc.shopping.domain.security.SimpleSecurityContext
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
@@ -18,7 +17,6 @@ import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKey
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import br.com.wdc.shopping.domain.security.SecurityContext
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 
@@ -46,8 +44,6 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     var cart: CartManager? = null
 
-    private var securityContext: SecurityContext? = null
-
     // :: The page frame
 
     /** What the root view shows: the view of the first level, and the unexpected-error alert. */
@@ -70,11 +66,6 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     fun getRootPlace(): CubeTreePlace = RootKeys.PLACE
 
-    fun getSecurityContext(): SecurityContext? = securityContext
-
-    fun setSecurityContext(ctx: SecurityContext?) {
-        this.securityContext = ctx
-    }
 
     // :: API
 
@@ -150,25 +141,7 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
             sessionStorage.remove("subject")
         }
 
-        restoreSecurityContextFromSession()
         restoreAuthStateFromSession()
-    }
-
-    private fun restoreSecurityContextFromSession() {
-        if (securityContext != null) return
-
-        val json = sessionStorage.getString("securityContext") ?: return
-        try {
-            val inp = JsonInputFactory.createStringInput(json).input
-            val ctx = SimpleSecurityContext()
-            ctx.readExternal(inp)
-            if (ctx.userId != null) {
-                securityContext = ctx
-            }
-        } catch (e: Exception) {
-            LOG.error("restoreSecurityContextFromSession", e)
-            sessionStorage.remove("securityContext")
-        }
     }
 
     private fun restoreAuthStateFromSession() {

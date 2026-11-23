@@ -189,7 +189,6 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         try {
             cart!!.clear()
             app.subject = null
-            app.setSecurityContext(null)
             app.sessionStorage.clear()
             setContentView(null)
             reloadPurchasesIfNeeded()

@@ -25,7 +25,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
     // :: Internal Instance Fields
 
-    private val loginService = LoginService(app)
+    private val loginService = LoginService()
     private var ownerSlot: CubeViewSlot? = null
 
     // :: Cube API
@@ -84,14 +84,6 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
                 val out = JsonOutputFactory.createStringOutput()
                 subject.writeExternal(out.output)
                 app.sessionStorage.set("subject", out.resultString())
-
-                // Serialize securityContext to sessionStorage
-                val secCtx = app.getSecurityContext()
-                if (secCtx != null) {
-                    val ctxOut = JsonOutputFactory.createStringOutput()
-                    secCtx.writeExternal(ctxOut.output)
-                    app.sessionStorage.set("securityContext", ctxOut.resultString())
-                }
 
                 // Serialize auth tokens to sessionStorage
                 val authService = AuthenticationService.BEAN.getOrNull()

@@ -5,10 +5,9 @@ import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.PasswordUtil
-import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 
-class LoginService(private val app: RootPresenter?) {
+class LoginService {
 
     suspend fun fetchSubject(userName: String, password: String): Subject? {
         val authService = AuthenticationService.BEAN.getOrNull()
@@ -35,10 +34,7 @@ class LoginService(private val app: RootPresenter?) {
         // 4. Authenticate
         val authResult = authService.login(userName, digest, challenge.nonce) ?: return null
 
-        // 5. Keep the session context in the application (on the server; on a REST client there is nothing to resolve)
-        app!!.setSecurityContext(authService.resolveToken(authResult.accessToken))
-
-        // 6. Fetch the user's display name
+        // 5. Fetch the user's display name
         val users = UserRepository.BEAN.get().fetch(
             UserCriteria().withUserId(authResult.userId).withProjection(Subject.projection()),
             limit = 1,

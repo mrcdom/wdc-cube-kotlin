@@ -5,7 +5,6 @@ import br.com.wdc.shopping.domain.security.SecurityContextHolder
 import br.com.wdc.shopping.domain.user.UserCriteria
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginService
 import br.com.wdc.shopping.scripts.sgbd.DBReset
-import br.com.wdc.shopping.test.mock.RootPresenterMock
 import br.com.wdc.shopping.test.util.TestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
 import kotlinx.coroutines.runBlocking
@@ -28,15 +27,12 @@ class SecuredLoginTest {
         val envExtension = TestEnvironmentExtension(env)
     }
 
-    private val app = RootPresenterMock()
-
     @AfterEach
     fun tearDown() {
-        app.release()
         SecurityContextHolder.clear()
     }
 
-    private fun login(userName: String, password: String = userName) = runBlocking { LoginService(app).fetchSubject(userName, password) }
+    private fun login(userName: String, password: String = userName) = runBlocking { LoginService().fetchSubject(userName, password) }
 
     @Test
     fun admin_logsIn() {
@@ -56,16 +52,6 @@ class SecuredLoginTest {
     fun customerWhoseDigestHasTheSignBit_logsIn() {
         val subject = login("beotrano")
         assertEquals(DBReset.BEOTRANO_ID, subject!!.id)
-    }
-
-    @Test
-    fun afterLogin_theApplicationHoldsTheContextOfTheSession() {
-        login("fulano")
-        val context = app.getSecurityContext()!!
-        assertEquals(DBReset.FULANO_ID, context.userId)
-        assertFalse(context.hasDataAll())
-        assertTrue(context.hasPermission("purchase", "write"))
-        assertFalse(context.hasPermission("product", "write"))
     }
 
     @Test

@@ -146,8 +146,6 @@ fun main() {
         app.presenterScope.launch {
             platformConfig.authClient?.clearTokens()
             app.sessionStorage.remove("authState")
-            app.sessionStorage.remove("securityContext")
-            app.setSecurityContext(null)
             RootKeys(app).flip()
         }
     }
