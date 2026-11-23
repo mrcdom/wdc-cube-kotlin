@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.codec.ModelCodec
+import br.com.wdc.framework.domain.criteria.CriterionCodec
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.domain.repository.ReadOnlyRepository
@@ -320,10 +321,10 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             while (input.hasNext()) {
                 when (val name = input.nextName()) {
                     "projection" -> projection = codec.readEntity(input)
-                    "offset" -> request.offset = InputCoerceUtils.asInteger(input, 0) ?: 0
-                    "limit" -> request.limit = InputCoerceUtils.asInteger(input, 0) ?: 0
-                    "page" -> request.page = InputCoerceUtils.asInteger(input, 0) ?: 0
-                    "pageSize" -> request.pageSize = InputCoerceUtils.asInteger(input, 0) ?: 0
+                    "offset" -> request.offset = CriterionCodec.readSliceNumber(input, "offset") ?: 0
+                    "limit" -> request.limit = CriterionCodec.readSliceNumber(input, "limit") ?: 0
+                    "page" -> request.page = CriterionCodec.readSliceNumber(input, "page") ?: 0
+                    "pageSize" -> request.pageSize = CriterionCodec.readSliceNumber(input, "pageSize") ?: 0
                     else -> if (!codec.readCriteriaField(input, name, request.criteria)) input.skipValue()
                 }
             }
