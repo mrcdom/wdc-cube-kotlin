@@ -130,6 +130,27 @@ class CriterionCodecTest {
     }
 
     @Test
+    fun read_valueThatDoesNotRead_isRefused_notTakenForNull() {
+        // "" reads as null for a number: NE [""] would become IS NOT NULL, and a delete would wipe the table
+        for (field in listOf(
+            """{"id":{"p":[{"o":"NE","v":[""]}]}}""", """{"id":{"p":[{"o":"EQ","v":[""]}]}}""",
+            """{"id":{"p":[{"o":"IN","v":[1,""]}]}}""", """{"id":""}""",
+        )) {
+            val c = SampleCriteria()
+            assertFailsWith<InvalidRequestException>(field) {
+                CriterionCodec.read(readerAtField(field), c.id, CriterionCodec.LONG_IN)
+            }
+        }
+    }
+
+    @Test
+    fun read_emptyText_isAValue_forText() {
+        val c = SampleCriteria()
+        CriterionCodec.read(readerAtField("""{"name":{"p":[{"o":"EQ","v":[""]}]}}"""), c.name, CriterionCodec.STRING_IN)
+        assertEquals("", c.name.predicates.single().value)
+    }
+
+    @Test
     fun read_nullEqualityAndEmptyIn_areStillAccepted() {
         val c = SampleCriteria()
         CriterionCodec.read(readerAtField("""{"id":{"p":[{"o":"EQ","v":[null]},{"o":"NE","v":[null]},{"o":"IN","v":[]}]}}"""), c.id, CriterionCodec.LONG_IN)
