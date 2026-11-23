@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.client
 import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.BusinessException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
+import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
 import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
@@ -37,6 +38,7 @@ internal fun httpFailure(status: Int, body: String? = null): RuntimeException {
     return when (status) {
         400 -> InvalidRequestException(message)
         403 -> AccessDeniedException(message)
+        404 -> NotFoundException(message)
         409 -> TransactionConflictException(message)
         410 -> RemoteTransactionNotFoundException(message)
         429 -> TransactionLimitExceededException(message)

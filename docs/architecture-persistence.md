@@ -303,7 +303,7 @@ All entities have the same operations, under `/api/repo/<entity>` (`user`, `prod
 | `POST …/fetch-page` | no | criteria + `projection?` + `page` + `pageSize` | `{items, totalItems}` |
 | `POST …/fetch-by-id` | no | `{id, projection?}` | entity or 404 |
 | `GET …/{id}` | no | — | entity or 404 |
-| `GET product/{id}/image` | no (public) | — | bytes; 204 if no image |
+| `GET product/{id}/image` | no (public) | — | bytes; 204 if no image; 404 if no such product |
 | `PUT product/{id}/image` | yes | bytes | `{success}` |
 
 Every write is atomic: it runs in the remote transaction given by `X-Tx-Id` or, without it, in a transaction of the request's own.

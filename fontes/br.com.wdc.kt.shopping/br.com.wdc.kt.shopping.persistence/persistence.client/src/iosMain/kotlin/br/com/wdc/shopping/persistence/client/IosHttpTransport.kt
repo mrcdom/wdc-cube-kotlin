@@ -152,7 +152,8 @@ class IosHttpTransport(private val baseUrl: String) : HttpTransport {
 
         val (responseData, response) = sendSynchronous(request)
         val statusCode = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
-        if (statusCode == 404 || statusCode == 204) return null
+        // 204 = no content ("no image"); 404 = not found, an error like the others
+        if (statusCode == 204) return null
         if (statusCode in 200..299) {
             return responseData?.toKotlinByteArray()
         }

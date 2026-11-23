@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.persistence.repository.product
 
-import br.com.wdc.framework.domain.exception.BusinessException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
+import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.jooq.CriterionTranslator
 import br.com.wdc.framework.jooq.JsonChildQueryBuilder
 import br.com.wdc.framework.jooq.JsonQuery
@@ -78,7 +78,7 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
     override suspend fun fetchImage(productId: Long): ByteArray? {
         val projection = Product().apply { id = 0L; image = ByteArray(0) }
         val product = QUERY.fetchOne(projection) { t, q -> q.where(t.ID.eq(productId)) }
-            ?: throw BusinessException("Product not found: $productId")
+            ?: throw NotFoundException("Product not found: $productId")
         return product.image
     }
 

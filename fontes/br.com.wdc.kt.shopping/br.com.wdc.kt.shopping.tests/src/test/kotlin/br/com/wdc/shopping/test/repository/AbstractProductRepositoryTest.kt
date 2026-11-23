@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.test.repository
 
+import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.domain.exception.BusinessException
 import br.com.wdc.shopping.domain.product.Product
@@ -238,8 +239,9 @@ abstract class AbstractProductRepositoryTest {
     }
 
     @Test
-    fun fetchImage_nonExistent_throws() = runBlocking {
-        assertThrows(BusinessException::class.java) {
+    fun fetchImage_nonExistent_isNotFound_notNoImage() = runBlocking {
+        // by HTTP it was a 500, and the client took a 404 for "no image" (204)
+        assertThrows(NotFoundException::class.java) {
             runBlocking { repo().fetchImage(Long.MAX_VALUE) }
         }
     }
