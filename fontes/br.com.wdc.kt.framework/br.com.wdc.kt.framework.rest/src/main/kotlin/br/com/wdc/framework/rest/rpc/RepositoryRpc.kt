@@ -24,7 +24,7 @@ import io.javalin.http.NotFoundResponse
  *
  * | Route | Body | Response |
  * |---|---|---|
- * | `POST insert` | `{"entity", "projection"?}`, or the bare entity | `{"success", "id", "entity"}` (the complete bean) |
+ * | `POST insert` | `{"entity", "projection"?}`, or the bare entity | `{"success", "id", "entity"}` (the complete bean); `{"success": false}` alone when nothing was inserted |
  * | `POST update` | fields to update (those present, including `null`) | `{"success"}` |
  * | `POST delete` | criteria | `{"count"}` |
  * | `POST count` | criteria | `{"count"}` |
@@ -165,10 +165,12 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         val success = writable().insert(entity, projection)
         val id = idOf(entity)
         if (success) sanitizeOutput(entity)
+        // `id` and `entity` only on success: an id without a row would mislead (as in the C# version)
         return RawJson.write { out ->
-            out.beginObject().name("success").value(success).name("id")
-            writeId(out, id)
+            out.beginObject().name("success").value(success)
             if (success) {
+                out.name("id")
+                writeId(out, id)
                 out.name("entity")
                 codec.writeEntity(out, entity)
             }

@@ -235,7 +235,7 @@ openApi {
 
 **Queries have a cap**, `maxLimit` (1000 by default; `null` turns it off). A `limit` or `pageSize` above it is 400, and so is a `fetch` without `limit` that would bring more rows: it is refused, not cut short, so the client never takes a partial list for the whole one. Page with `limit` and `offset`, or with `fetch-page`.
 
-`insert` receives `{"entity", "projection"?}` (or, as before 0.4.0, the bare entity) and answers `{"success", "id", "entity"}`, with the entity as the repository left it — the generated key and the column defaults —, passed through `sanitizeOutput`.
+`insert` receives `{"entity", "projection"?}` (or, as before 0.4.0, the bare entity) and answers `{"success", "id", "entity"}`, with the entity as the repository left it — the generated key and the column defaults —, passed through `sanitizeOutput`. When nothing was inserted, only `{"success": false}`.
 
 ## Tests
 
