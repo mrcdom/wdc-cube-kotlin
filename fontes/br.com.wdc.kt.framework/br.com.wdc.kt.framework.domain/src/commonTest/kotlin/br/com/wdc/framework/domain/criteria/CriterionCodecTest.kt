@@ -117,6 +117,8 @@ class CriterionCodecTest {
             """{"o":"IS_NULL","v":[1]}""",
             // null where the comparison is never true
             """{"o":"GT","v":[null]}""", """{"o":"BETWEEN","v":[1,null]}""",
+            // LIKE on a field that is not text: the translator failed on a cast (500)
+            """{"o":"LIKE","v":[1]}""", """{"o":"ILIKE","v":[1]}""",
         )) {
             val c = SampleCriteria()
             assertFailsWith<InvalidRequestException>(p) {

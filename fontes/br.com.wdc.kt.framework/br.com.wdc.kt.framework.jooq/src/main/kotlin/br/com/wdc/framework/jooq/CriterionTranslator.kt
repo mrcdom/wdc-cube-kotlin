@@ -3,6 +3,7 @@ package br.com.wdc.framework.jooq
 import br.com.wdc.framework.domain.criteria.Criterion
 import br.com.wdc.framework.domain.criteria.Operator
 import br.com.wdc.framework.domain.criteria.TextCriterion
+import br.com.wdc.framework.domain.exception.InvalidRequestException
 import org.jooq.Condition
 import org.jooq.Field
 import org.jooq.Table
@@ -120,12 +121,16 @@ object CriterionTranslator {
             Operator.LE -> column.le(values[0])
             // like/ilike are only offered on TextCriterion, which whoever declares the field picks by the column type
             // The escape is declared: it is what containing/startingWith use, and some databases have no default escape.
-            Operator.LIKE -> column.like(values[0] as String, TextCriterion.ESCAPE)
-            Operator.ILIKE -> column.likeIgnoreCase(values[0] as String, TextCriterion.ESCAPE)
+            Operator.LIKE -> column.like(pattern(op, values[0]), TextCriterion.ESCAPE)
+            Operator.ILIKE -> column.likeIgnoreCase(pattern(op, values[0]), TextCriterion.ESCAPE)
             Operator.BETWEEN -> column.between(values[0], values[1])
             // empty set: nothing belongs. Explicit false condition, because jOOQ varies by dialect with `in()`
             Operator.IN -> if (values.isEmpty()) DSL.falseCondition() else column.`in`(values)
             Operator.IS_NULL, Operator.IS_NOT_NULL -> null
         }
     }
+
+    /** The pattern of a `LIKE`: text, or a refusal (400) — a cast failure here was a 500. Criterion.restore refuses first. */
+    private fun pattern(op: Operator, value: Any?): String =
+        value as? String ?: throw InvalidRequestException("criterion: $op only applies to text")
 }
