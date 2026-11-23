@@ -110,6 +110,7 @@ Repository entities travel through their `ModelCodec`, without reflection. The r
 | `InvalidRequestException`, including `RequestParameterException` and `RequestBodyException` | 400 |
 | `AuthenticationException` (no credential, or credential refused) | `unauthenticatedStatus` |
 | `AccessDeniedException` | 403 |
+| `NotFoundException` | 404 |
 | `TransactionConflictException` | 409 |
 | `TransactionLimitExceededException` | 429 |
 | `RateLimitedException` (per-minute limit) | 429, with `Retry-After` |
