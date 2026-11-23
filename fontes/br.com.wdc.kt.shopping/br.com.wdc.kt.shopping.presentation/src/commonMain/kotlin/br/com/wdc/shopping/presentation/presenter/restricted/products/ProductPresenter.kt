@@ -1,16 +1,17 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.products
 
+import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
-class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("ProductPresenter")
@@ -24,7 +25,7 @@ class ProductPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     // :: Internal Instance Fields
 
-    private val productService = ProductService(app.getProductRepository())
+    private val productService = ProductService(ProductRepository.BEAN.get())
     private var ownerSlot: CubeViewSlot? = null
 
     // :: Cube API

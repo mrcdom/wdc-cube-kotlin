@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.view.react
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.shopping.view.react.skeleton.viewimpl.ApplicationReactImpl
+import br.com.wdc.shopping.view.react.skeleton.viewimpl.ReactRootPresenter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -15,7 +15,7 @@ object ViewFlushScheduler {
 
     private var timer: ScheduledExecutorService? = null
 
-    private val dirtyApps = ConcurrentHashMap<String, ApplicationReactImpl>()
+    private val dirtyApps = ConcurrentHashMap<String, ReactRootPresenter>()
 
     fun start() {
         if (timer != null) return
@@ -37,7 +37,7 @@ object ViewFlushScheduler {
         LOG.info("Stopped")
     }
 
-    fun markDirty(app: ApplicationReactImpl) {
+    fun markDirty(app: ReactRootPresenter) {
         dirtyApps[app.id] = app
     }
 

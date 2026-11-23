@@ -3,11 +3,11 @@ package br.com.wdc.shopping.test.mock.viewimpl
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartViewState
-import br.com.wdc.shopping.test.mock.ShoppingApplicationMock
+import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 
 class CartViewMock(
-    app: ShoppingApplicationMock,
+    app: RootPresenterMock,
     presenter: CartPresenter,
 ) : AbstractViewMock<CartPresenter>(app, presenter) {
 

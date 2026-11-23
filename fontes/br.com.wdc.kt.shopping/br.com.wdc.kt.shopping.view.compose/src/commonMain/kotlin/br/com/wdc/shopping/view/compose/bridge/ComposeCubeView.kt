@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.PresenterBase
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.coroutines.launch
 
 /**
@@ -22,7 +22,7 @@ abstract class ComposeCubeView(
     internal val presenterBase: PresenterBase
 ) : CubeView {
 
-    protected val app: ShoppingApplication get() = presenterBase.app as ShoppingApplication
+    protected val app: RootPresenter get() = presenterBase.app as RootPresenter
 
     /** Revision counter — read this in @Composable functions to trigger recomposition. */
     val revision: MutableState<Int> = mutableIntStateOf(0)

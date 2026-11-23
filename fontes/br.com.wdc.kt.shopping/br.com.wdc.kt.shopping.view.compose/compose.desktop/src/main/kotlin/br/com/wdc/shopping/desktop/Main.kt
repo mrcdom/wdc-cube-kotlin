@@ -24,7 +24,7 @@ import br.com.wdc.shopping.domain.security.JceCryptoProvider
 import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
@@ -57,7 +57,7 @@ fun main() {
         }
     } catch (_: Exception) { }
 
-    val app = DesktopShoppingApplication()
+    val app = DesktopRootPresenter()
     ViewUpdateScheduler.initialize { app }
     kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
@@ -80,7 +80,7 @@ fun main() {
     }
 }
 
-private class DesktopShoppingApplication : ShoppingApplication() {
+private class DesktopRootPresenter : RootPresenter() {
 
     override fun createSessionStorage(): SessionStorage = JvmSessionStorage()
 }
@@ -97,7 +97,7 @@ private fun initializePlatform(baseUrl: String) {
     val config = RestConfig(transport)
     RestRepositoryBootstrap.initialize(config, JceCryptoProvider())
 
-    ShoppingApplication.createView = { p -> createView(RootView(p)) }
+    RootPresenter.createView = { p -> createView(RootView(p)) }
     LoginPresenter.createView = { p -> createView(LoginView(p)) }
     HomePresenter.createView = { p -> createView(HomeView(p)) }
     CartPresenter.createView = { p -> createView(CartView(p)) }

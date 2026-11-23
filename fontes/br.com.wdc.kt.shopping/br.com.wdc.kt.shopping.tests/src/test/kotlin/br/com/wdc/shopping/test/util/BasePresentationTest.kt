@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.test.util
 
-import br.com.wdc.shopping.test.mock.ShoppingApplicationMock
+import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.extension.RegisterExtension
 
 open class BasePresentationTest {
@@ -13,7 +13,7 @@ open class BasePresentationTest {
         val envExtension = TestEnvironmentExtension(env)
     }
 
-    protected val app = ShoppingApplicationMock()
+    protected val app = RootPresenterMock()
 
     @org.junit.jupiter.api.BeforeEach
     fun setUp() {

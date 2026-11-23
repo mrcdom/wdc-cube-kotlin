@@ -4,7 +4,24 @@ import br.com.wdc.framework.commons.concurrent.concurrentMutableMapOf
 import br.com.wdc.framework.commons.log.Log
 import kotlinx.coroutines.CompletableDeferred
 
-abstract class CubeApplication {
+/**
+ * The application: the presenters alive, the navigation in progress, and the root of the place tree.
+ *
+ * @param places every place an address can name ([flip] by address resolves names among them; an unknown name goes
+ *   to [CubeTreePlace.ROOT]). Listed by hand: a place declared in a keys class is only created when that class is
+ *   first used, and listing it creates it before the first navigation.
+ */
+abstract class CubeApplication(places: List<CubeTreePlace> = emptyList()) {
+
+    /** The places an address can name. */
+    val places: List<CubeTreePlace> = places.toList()
+
+    private val placesByName: Map<String, CubeTreePlace> = this.places.associateBy { it.placeName }
+
+    init {
+        require(placesByName.size == this.places.size) { "Two places with the same name: ${this.places}" }
+        require(this.places.none { it.isRoot }) { "The root is the application itself: do not list it" }
+    }
 
     internal var presenterMap: MutableMap<Int, CubePresenter> = concurrentMutableMapOf()
 
@@ -88,6 +105,15 @@ abstract class CubeApplication {
         for (step in place.path) navigation.step(step)
         return navigation.execute(intent)
     }
+
+    /** The place named [placeName] among [places], or [CubeTreePlace.ROOT] when none has it. */
+    fun placeOf(placeName: String?): CubeTreePlace = placesByName[placeName] ?: CubeTreePlace.ROOT
+
+    /** Navigates to an address (`product?pr-id=7`): the place it names, with its parameters. See [placeOf]. */
+    suspend fun flip(address: String): Boolean = flip(CubeIntent.parse(address))
+
+    /** Navigates to the place [intent] names, resolved by name ([placeOf]), with its parameters. */
+    suspend fun flip(intent: CubeIntent): Boolean = flip(placeOf(intent.place?.placeName), intent)
 
     /** Navigation [nav] becomes the current one, during an idle period. */
     internal fun startNavigation(nav: CubeNavigation<*>) {

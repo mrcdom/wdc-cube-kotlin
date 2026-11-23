@@ -1,4 +1,4 @@
-package br.com.wdc.shopping.presentation
+package br.com.wdc.shopping.presentation.presenter
 
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
@@ -10,9 +10,6 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.domain.security.AuthenticationService
-import br.com.wdc.shopping.domain.security.SimpleSecurityContext
-import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.RootViewState
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
@@ -20,22 +17,19 @@ import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKey
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import br.com.wdc.shopping.domain.product.ProductRepository
-import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
-import br.com.wdc.shopping.domain.purchase.PurchaseRepository
-import br.com.wdc.shopping.domain.user.UserRepository
-import br.com.wdc.shopping.domain.security.SecurityContext
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 
 /**
- * The Storefront application, and the root of its place tree ([RootKeys.PLACE] is [CubeTreePlace.ROOT]): it owns the
- * page frame — the slot where the first level shows its view, and the unexpected-error alert ([state]) — restores the
- * session on its first navigation, and takes part in every navigation before the first place
- * ([applyParameters]). It is the presenter of the root view ([PresenterBase]), so the view layers paint it like any
- * other.
+ * The root presenter of the Storefront: the root of its place tree ([RootKeys.PLACE] is [CubeTreePlace.ROOT]). It owns
+ * the page frame — the slot where the first level shows its view, and the unexpected-error alert ([state]) — restores
+ * the session on its first navigation, and takes part in every navigation before the first place
+ * ([applyParameters]); it is the presenter of the root view ([PresenterBase]), so the view layers paint it like any
+ * other. It extends [CubeApplication] because the root presenter is what holds the whole structure up: the presenters
+ * alive, the navigation, the places an address can name ([PLACES]). Each platform extends it with what it needs (session
+ * storage, history).
  */
-abstract class ShoppingApplication : CubeApplication(), PresenterBase {
+abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     /**
      * Single-threaded coroutine scope for presenter actions.
@@ -49,8 +43,6 @@ abstract class ShoppingApplication : CubeApplication(), PresenterBase {
     var subject: Subject? = null
 
     var cart: CartManager? = null
-
-    private var securityContext: SecurityContext? = null
 
     // :: The page frame
 
@@ -74,22 +66,6 @@ abstract class ShoppingApplication : CubeApplication(), PresenterBase {
 
     fun getRootPlace(): CubeTreePlace = RootKeys.PLACE
 
-    fun getSecurityContext(): SecurityContext? = securityContext
-
-    fun setSecurityContext(ctx: SecurityContext?) {
-        this.securityContext = ctx
-    }
-
-    // The repositories are the ones registered by the composition root: on the server, the ones that talk to the
-    // database; on a client, the ones that talk to the REST API — which is where access is checked.
-
-    fun getUserRepository(): UserRepository = UserRepository.BEAN.get()
-
-    fun getProductRepository(): ProductRepository = ProductRepository.BEAN.get()
-
-    fun getPurchaseRepository(): PurchaseRepository = PurchaseRepository.BEAN.get()
-
-    fun getPurchaseItemRepository(): PurchaseItemRepository = PurchaseItemRepository.BEAN.get()
 
     // :: API
 
@@ -124,22 +100,17 @@ abstract class ShoppingApplication : CubeApplication(), PresenterBase {
         super.release()
     }
 
-    /** Navigates to an address (`product?pr-id=7`): an unknown place goes to the root. */
-    suspend fun flip(address: String): Boolean = flip(CubeIntent.parse(address))
-
-    /** Navigates to the place [intent] names (an unknown one goes to the root), with its parameters. */
-    suspend fun flip(intent: CubeIntent): Boolean = flip(placeOf(intent.place?.placeName), intent)
-
     companion object {
-        private val LOG = Log.getLogger("ShoppingApplication")
+        private val LOG = Log.getLogger("RootPresenter")
 
         /** Creates the root view; registered by each entry point, like the presenters' `createView`. */
-        var createView: ((ShoppingApplication) -> CubeView)? = null
+        var createView: ((RootPresenter) -> CubeView)? = null
 
         /**
-         * Every place an address can name, listed by hand: each keys class declares its own place, and a place is
-         * created when its keys are first used — this list creates them all before the first navigation. The root
-         * (the application itself) is not in it: an address that names no place goes to the root.
+         * Every place an address can name, given to [CubeApplication], which resolves addresses among them. Listed
+         * by hand: each keys class declares its own place, and a place is created when its keys are first used —
+         * this list creates them all before the first navigation. The root (the application itself) is not in it:
+         * an address that names no place goes to the root, which goes on to the home.
          */
         val PLACES: List<CubeTreePlace> = listOf(
             LoginKeys.PLACE,
@@ -148,11 +119,6 @@ abstract class ShoppingApplication : CubeApplication(), PresenterBase {
             ProductKeys.PLACE,
             ReceiptKeys.PLACE,
         )
-
-        private val placesByName: Map<String, CubeTreePlace> = PLACES.associateBy { it.placeName }
-
-        /** The place with [placeName], or the root when no place has it. */
-        fun placeOf(placeName: String?): CubeTreePlace = placesByName[placeName] ?: RootKeys.PLACE
     }
 
     protected abstract fun createSessionStorage(): SessionStorage
@@ -175,25 +141,7 @@ abstract class ShoppingApplication : CubeApplication(), PresenterBase {
             sessionStorage.remove("subject")
         }
 
-        restoreSecurityContextFromSession()
         restoreAuthStateFromSession()
-    }
-
-    private fun restoreSecurityContextFromSession() {
-        if (securityContext != null) return
-
-        val json = sessionStorage.getString("securityContext") ?: return
-        try {
-            val inp = JsonInputFactory.createStringInput(json).input
-            val ctx = SimpleSecurityContext()
-            ctx.readExternal(inp)
-            if (ctx.userId != null) {
-                securityContext = ctx
-            }
-        } catch (e: Exception) {
-            LOG.error("restoreSecurityContextFromSession", e)
-            sessionStorage.remove("securityContext")
-        }
     }
 
     private fun restoreAuthStateFromSession() {

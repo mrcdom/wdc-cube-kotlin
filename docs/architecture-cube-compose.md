@@ -62,7 +62,7 @@ graph LR
 ```kotlin
 abstract class ComposeCubeView(
     private val id: String,
-    protected val app: ShoppingApplication
+    protected val app: RootPresenter
 ) : CubeView {
 
     val revision: MutableState<Int> = mutableIntStateOf(0)
@@ -132,7 +132,7 @@ This guarantees:
 | **Free UI thread** | The action runs in the background — the interface stays responsive |
 | **Serial execution** | `limitedParallelism(1)` — state mutations never run concurrently |
 | **Synchronous code in the presenter** | The presenter writes linear code, with no callbacks or suspending functions |
-| **Captured errors** | Unhandled exceptions are delegated to `ShoppingApplication.alertUnexpectedError()` |
+| **Captured errors** | Unhandled exceptions are delegated to `RootPresenter.alertUnexpectedError()` |
 
 ```mermaid
 sequenceDiagram
@@ -182,7 +182,7 @@ Each presenter declares a static `createView` variable that accepts a factory fu
 
 ```kotlin
 // In the presenter (pure Kotlin — no Compose dependency):
-class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         var createView: ((LoginPresenter) -> CubeView)? = null
@@ -201,7 +201,7 @@ In each platform's **entry point**, the factories are registered, binding presen
 
 ```kotlin
 // At startup (e.g. Desktop Main.kt):
-ShoppingApplication.createView = { p -> RootView(p) }  // the root view's presenter is the application
+RootPresenter.createView = { p -> RootView(p) }
 LoginPresenter.createView    = { p -> LoginView(p) }
 HomePresenter.createView     = { p -> HomeView(p) }
 CartPresenter.createView     = { p -> CartView(p) }
@@ -341,7 +341,7 @@ The slot connects parent and child views without direct coupling. The flow:
 
 ```mermaid
 sequenceDiagram
-    participant Root as ShoppingApplication
+    participant Root as RootPresenter
     participant Intent as CubeIntent
     participant Home as HomePresenter
     participant RootState as RootViewState
@@ -361,10 +361,10 @@ sequenceDiagram
     Note over RootView: Recomposes and renders:<br/>RenderSlot(state.contentView)
 ```
 
-**In the ShoppingApplication code** (the application is the root of the place tree and the presenter of the root view; there is no root presenter):
+**In the RootPresenter code** (the root presenter is the application: it extends `CubeApplication`, is the root of the place tree and the presenter of the root view):
 
 ```kotlin
-abstract class ShoppingApplication : CubeApplication(), PresenterBase {
+abstract class RootPresenter : CubeApplication(), PresenterBase {
 
     val state = RootViewState().also { it.observe(::update) }
 
@@ -394,7 +394,7 @@ abstract class ShoppingApplication : CubeApplication(), PresenterBase {
     }
 
     companion object {
-        var createView: ((ShoppingApplication) -> CubeView)? = null
+        var createView: ((RootPresenter) -> CubeView)? = null
     }
 }
 ```
@@ -402,7 +402,7 @@ abstract class ShoppingApplication : CubeApplication(), PresenterBase {
 **In the RootView code (Compose):**
 
 ```kotlin
-class RootView(private val presenter: ShoppingApplication)
+class RootView(private val presenter: RootPresenter)
     : ComposeCubeView("root-view", presenter) {
 
     @Composable
@@ -434,7 +434,7 @@ sequenceDiagram
     participant Main as Entry Point
     participant Plat as Platform Config
     participant Factories as View Factories
-    participant App as ShoppingApplication
+    participant App as RootPresenter
     participant Compose as Compose Runtime
 
     Main->>Plat: Configures JSON, HTTP, Crypto, Scheduler
@@ -450,7 +450,7 @@ sequenceDiagram
 fun main() {
     initializePlatform(baseUrl)  // JSON, HTTP, Crypto, Scheduler, View Factories
 
-    val app = DesktopShoppingApplication()
+    val app = DesktopRootPresenter()
     RootKeys(app).flip()
 
     application {
@@ -473,7 +473,7 @@ fun main() {
 fun main() {
     initializePlatform(baseUrl)
 
-    val app = ComposeShoppingApplication()
+    val app = ComposeRootPresenter()
     restoreAuthState(app)
 
     val hash = getLocationHash()
@@ -503,7 +503,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         initializePlatform(baseUrl)
 
-        val app = AndroidShoppingApplication(this)
+        val app = AndroidRootPresenter(this)
         RootKeys(app).flip()
 
         setContent {
@@ -525,7 +525,7 @@ class MainActivity : ComponentActivity() {
 fun MainViewController() = ComposeUIViewController {
     initializePlatform(baseUrl)
 
-    val app = IosShoppingApplication()
+    val app = IosRootPresenter()
     RootKeys(app).flip()
 
     ShoppingTheme {
@@ -548,7 +548,7 @@ On the Web platform, Cube navigation is synchronized with the browser's `locatio
 sequenceDiagram
     participant User as User
     participant Browser as Browser
-    participant App as ShoppingApplication
+    participant App as RootPresenter
     participant Nav as CubeNavigation
 
     Note over App: Internal navigation

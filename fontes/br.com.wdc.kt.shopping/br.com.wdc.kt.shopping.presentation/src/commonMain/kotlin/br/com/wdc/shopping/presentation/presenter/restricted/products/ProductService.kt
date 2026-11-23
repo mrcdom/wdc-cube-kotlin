@@ -2,7 +2,7 @@ package br.com.wdc.shopping.presentation.presenter.restricted.products
 
 import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.product.ProductRepository
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
 import br.com.wdc.shopping.presentation.exception.WrongParametersException
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo

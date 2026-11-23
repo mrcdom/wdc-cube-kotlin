@@ -3,11 +3,11 @@ package br.com.wdc.shopping.test.mock.viewimpl
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginViewState
-import br.com.wdc.shopping.test.mock.ShoppingApplicationMock
+import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 
 class LoginViewMock(
-    app: ShoppingApplicationMock,
+    app: RootPresenterMock,
     presenter: LoginPresenter,
 ) : AbstractViewMock<LoginPresenter>(app, presenter) {
 

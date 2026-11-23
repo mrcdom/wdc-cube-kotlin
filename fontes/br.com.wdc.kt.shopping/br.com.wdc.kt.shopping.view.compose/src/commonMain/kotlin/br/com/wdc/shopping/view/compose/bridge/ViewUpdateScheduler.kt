@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.view.compose.bridge
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -27,7 +27,7 @@ object ViewUpdateScheduler {
 
     private val dirtyViews = linkedSetOf<ComposeCubeView>()
     private var flushScheduled = false
-    private var appProvider: (() -> ShoppingApplication?)? = null
+    private var appProvider: (() -> RootPresenter?)? = null
 
     /**
      * Returns the presenter scope from the current application instance.
@@ -44,7 +44,7 @@ object ViewUpdateScheduler {
         presenterScope.launch { action() }
     }
 
-    fun initialize(appProvider: () -> ShoppingApplication?) {
+    fun initialize(appProvider: () -> RootPresenter?) {
         this.appProvider = appProvider
     }
 

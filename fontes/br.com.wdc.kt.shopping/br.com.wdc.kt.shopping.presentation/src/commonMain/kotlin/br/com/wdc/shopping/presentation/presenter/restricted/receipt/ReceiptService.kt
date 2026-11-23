@@ -2,13 +2,10 @@ package br.com.wdc.shopping.presentation.presenter.restricted.receipt
 
 import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
-import br.com.wdc.shopping.presentation.ShoppingApplication
 import br.com.wdc.shopping.presentation.exception.WrongParametersException
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptForm
 
 class ReceiptService(private val repo: PurchaseRepository) {
-
-    constructor(app: ShoppingApplication) : this(app.getPurchaseRepository())
 
     /**
      * The receipt of a purchase **of the given user**.

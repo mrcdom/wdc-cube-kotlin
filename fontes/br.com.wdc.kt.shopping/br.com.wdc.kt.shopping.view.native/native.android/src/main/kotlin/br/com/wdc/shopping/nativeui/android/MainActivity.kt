@@ -1,6 +1,6 @@
 package br.com.wdc.shopping.nativeui.android
 
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
         registerViewFactories()
 
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
-        val app = AndroidNativeShoppingApplication(AndroidPersistentSessionStorage(prefs))
+        val app = AndroidNativeRootPresenter(AndroidPersistentSessionStorage(prefs))
         ViewUpdateScheduler.initialize { app }
         runBlocking { RootKeys(app).flip() }
 
@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun registerViewFactories() {
-        ShoppingApplication.createView = { onMainThread { RootViewAndroid(it).initialize() } }
+        RootPresenter.createView = { onMainThread { RootViewAndroid(it).initialize() } }
         LoginPresenter.createView = { onMainThread { LoginViewAndroid(it).initialize() } }
         HomePresenter.createView = { onMainThread { HomeViewAndroid(it).initialize() } }
         ProductsPanelPresenter.createView = { onMainThread { ProductsPanelViewAndroid(it).initialize() } }

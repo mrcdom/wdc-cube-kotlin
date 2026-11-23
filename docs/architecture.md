@@ -279,7 +279,7 @@ See [architecture-react.md](architecture-react.md) for full details of this moda
 **Presenters** encapsulate all of a screen's business logic. They are plain Kotlin classes with no dependency on a UI framework:
 
 ```kotlin
-class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     val state = observed(LoginViewState()) // a field change repaints the view: no update() calls
     private val loginService = LoginService(app)
@@ -322,7 +322,7 @@ class LoginViewState : ObservableViewState() {
 }
 ```
 
-Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps. `ROOT` (`CubeTreePlace.ROOT`) is the application itself: it is not a step, but `ShoppingApplication.applyParameters` runs before the first step of every navigation (a navigation to the root alone goes on to the home):
+Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps. `ROOT` (`CubeTreePlace.ROOT`) is the application itself: it is not a step, but `RootPresenter.applyParameters` runs before the first step of every navigation (a navigation to the root alone goes on to the home):
 
 | Route                     | Steps                            |
 |---------------------------|----------------------------------|
@@ -352,7 +352,7 @@ The mechanism that connects parent and child views uses **ViewSlots** — functi
 
 ```mermaid
 sequenceDiagram
-    participant Root as ShoppingApplication
+    participant Root as RootPresenter
     participant Intent as CubeIntent
     participant Home as HomePresenter
     participant RootView as RootView
@@ -449,7 +449,7 @@ graph TB
 Errors are handled at **two levels**:
 
 1. **In the Presenter** — expected errors (failed login, database offline) are handled with friendly messages in the ViewState
-2. **In safeCall** — unexpected errors are caught and delegated to `ShoppingApplication.alertUnexpectedError()`, which sets the root view's `state.errorMessage`
+2. **In safeCall** — unexpected errors are caught and delegated to `RootPresenter.alertUnexpectedError()`, which sets the root view's `state.errorMessage`
 
 ```kotlin
 // Level 1: Specific handling in the Presenter
@@ -485,7 +485,7 @@ protected fun safeCall(action: () -> Unit) {
 Each platform has an entry point that:
 
 1. **Configures** platform-specific **dependencies** (JSON, HTTP, Crypto, Scheduler)
-2. **Registers view factories** (binding Presenters to Compose Views; the root view's is `ShoppingApplication.createView`)
+2. **Registers view factories** (binding Presenters to Compose Views; the root view's is `RootPresenter.createView`)
 3. **Creates the application** and triggers the initial navigation
 4. **Renders** using Compose
 
@@ -493,7 +493,7 @@ Each platform has an entry point that:
 sequenceDiagram
     participant Main as Entry Point
     participant Platform as Platform Config
-    participant App as ShoppingApplication
+    participant App as RootPresenter
     participant Keys as RootKeys
     participant Home as HomePresenter
     participant Compose as Compose Runtime
@@ -501,7 +501,7 @@ sequenceDiagram
     Main->>Platform: initializePlatform(baseUrl)
     Note over Platform: JSON, HTTP, Crypto,<br/>Scheduler, View Factories
 
-    Main->>App: create ShoppingApplication()
+    Main->>App: create RootPresenter()
     Main->>Keys: RootKeys(app).flip()
     Keys->>App: app.flip(CubeTreePlace.ROOT, intent) — no steps
     App->>App: applyParameters(init=true, deepest=true):<br/>creates the root view, restores the session

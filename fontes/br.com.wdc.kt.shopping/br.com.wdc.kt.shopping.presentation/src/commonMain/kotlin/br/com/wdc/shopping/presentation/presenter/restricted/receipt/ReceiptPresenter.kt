@@ -1,16 +1,17 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.receipt
 
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptForm
 
-class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("ReceiptPresenter")
@@ -24,7 +25,7 @@ class ReceiptPresenter(app: ShoppingApplication) : AbstractCubePresenter<Shoppin
 
     // :: Internal Instance Fields
 
-    private val receiptService = ReceiptService(app)
+    private val receiptService = ReceiptService(PurchaseRepository.BEAN.get())
     private var purchaseId: Long? = null
     private var ownerSlot: CubeViewSlot? = null
 

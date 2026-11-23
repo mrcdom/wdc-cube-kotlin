@@ -1,11 +1,12 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home
 
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
@@ -16,7 +17,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.Purc
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 
-class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("HomePresenter")
@@ -88,7 +89,7 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
             purchasesPanel = PurchasesPanelPresenter(app, this)
             state.purchasesPanelView = purchasesPanel!!.initialize()
 
-            cart = CartManager(app.getPurchaseRepository())
+            cart = CartManager(PurchaseRepository.BEAN.get())
             onCartCommitListenerRemover = cart!!.addCommitListener(::onCartCommited)
             onCartChangeListenerRemover = cart!!.addChangeListener(::onCartChanged)
             app.cart = cart
@@ -188,7 +189,6 @@ class HomePresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingAp
         try {
             cart!!.clear()
             app.subject = null
-            app.setSecurityContext(null)
             app.sessionStorage.clear()
             setContentView(null)
             reloadPurchasesIfNeeded()

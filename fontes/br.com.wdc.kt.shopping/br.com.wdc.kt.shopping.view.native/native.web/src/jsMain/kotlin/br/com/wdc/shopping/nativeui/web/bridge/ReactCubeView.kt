@@ -3,7 +3,7 @@ package br.com.wdc.shopping.nativeui.web.bridge
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.PresenterBase
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.coroutines.launch
 import react.FC
 import react.Props
@@ -20,7 +20,7 @@ abstract class ReactCubeView(
     internal val presenterBase: PresenterBase
 ) : CubeView {
 
-    val app: ShoppingApplication get() = presenterBase.app as ShoppingApplication
+    val app: RootPresenter get() = presenterBase.app as RootPresenter
 
     /** Revision counter — incremented during flush to signal state changes. */
     var revision: Int = 0

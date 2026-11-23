@@ -131,7 +131,7 @@ class CartViewState : ObservableViewState() {
     var errorMessage: String? by field(null)
 }
 
-class CartPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
     val state = observed(CartViewState())
 
     fun onAlert() {
@@ -148,7 +148,7 @@ A new view needs no `update()` either: every view layer paints the current state
 
 The names a place reads from and writes to the `CubeIntent` live in **one keys class per place**, named after it (`RootKeys`, `LoginKeys`, `HomeKeys`, `CartKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties, on the framework's `CubeKeys` (the application, the intent and `flip()`). **The keys class declares its place**: presenters never use a literal name, and navigate through the keys of the destination (`CartKeys(app).flip()`). A place with no names of its own still has its keys (`LoginKeys`, `CartKeys`): they declare the place, read its slot and navigate to it, and they are where its names will go.
 
-- **Each keys class declares its place**, in its companion, from the place of the keys it extends: `val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`; the root keys use `CubeTreePlace.ROOT` (the application itself, so `LoginKeys` and `HomeKeys` declare `RootKeys.PLACE.child(...)`). So the class tree is the place tree, by construction, and there is no separate table of places to keep in step. The application lists every place an address can name, by hand, in `ShoppingApplication.PLACES` (a place is created when its keys are first used; the list creates them all before the first navigation), and `ShoppingApplication.flip(address)` resolves an address to its place, or to the root (the root is not in the list: an address that names no place goes to the root, which goes on to the home). `PlaceKeysTest` checks that each place is declared by one keys class, child of the place of the keys it extends, and that they are the places of the list.
+- **Each keys class declares its place**, in its companion, from the place of the keys it extends: `val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`; the root keys use `CubeTreePlace.ROOT` (the application itself, so `LoginKeys` and `HomeKeys` declare `RootKeys.PLACE.child(...)`). So the class tree is the place tree, by construction, and there is no separate table of places to keep in step. The application lists every place an address can name, by hand, in `RootPresenter.PLACES` (a place is created when its keys are first used; the list creates them all before the first navigation) and hands it to `CubeApplication(places)`, whose `flip(address)` resolves an address to its place by name (`placeOf`), or to the root (the root is not in the list: an address that names no place goes to the root, which goes on to the home). `PlaceKeysTest` checks that each place is declared by one keys class, child of the place of the keys it extends, and that they are the places of the list.
 
 - **A two-letter prefix per class, unique in the application.** Every name the class declares starts with it (`pr-id`), in a private table: `P` for parameters, which go in the address, and `A` for attributes, which don't. To create a name, look only at your own file. `PlaceKeysTest` checks that the prefixes are unique.
 - **Inheritance is the place tree:** `RootKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.
@@ -159,7 +159,7 @@ The names a place reads from and writes to the `CubeIntent` live in **one keys c
 - **Redirecting from inside `applyParameters` uses the intent in transit**, as in `HomeKeys(app, intent).flip(); return false`, not a new intent: the presenter is not accepted yet, and a new intent would lose what the address brought. The Storefront does this when an address has no usable id: it goes to the home.
 
 ```kotlin
-class ProductKeys(app: ShoppingApplication, intent: CubeIntent? = null) : HomeKeys(app, intent, PLACE) {
+class ProductKeys(app: RootPresenter, intent: CubeIntent? = null) : HomeKeys(app, intent, PLACE) {
     companion object {
         const val PREFIX = "pr"
         val PLACE: CubeTreePlace = HomeKeys.PLACE.child("product", ::ProductPresenter)
@@ -211,7 +211,7 @@ abstract class CubeApplication {
 }
 ```
 
-**The application is the root of the place tree** (`CubeTreePlace.ROOT`) and takes part in every navigation, before the first step: `execute()` calls its `applyParameters`, in the same redirect-marked context as a presenter's (a navigation requested from in there is a redirect). `initialization` is `true` only the first time; `deepest` is `true` when there are no steps, that is, a flip to the root itself (`app.flip(CubeTreePlace.ROOT)` runs only this); `false` stops the navigation at the root. On rollback the application is restored first, with the source intent (`false, false`), then the presenters. The Storefront's `ShoppingApplication` uses it to own the page frame — it is the presenter of the root view: it creates that view and restores the session on initialization, goes on to the home when the root itself is the target, and otherwise offers the slot of the first level (`RootKeys(this, intent).parentSlot`).
+**The application is the root of the place tree** (`CubeTreePlace.ROOT`) and takes part in every navigation, before the first step: `execute()` calls its `applyParameters`, in the same redirect-marked context as a presenter's (a navigation requested from in there is a redirect). `initialization` is `true` only the first time; `deepest` is `true` when there are no steps, that is, a flip to the root itself (`app.flip(CubeTreePlace.ROOT)` runs only this); `false` stops the navigation at the root. On rollback the application is restored first, with the source intent (`false, false`), then the presenters. The Storefront's `RootPresenter` uses it to own the page frame — it is the presenter of the root view: it creates that view and restores the session on initialization, goes on to the home when the root itself is the target, and otherwise offers the slot of the first level (`RootKeys(this, intent).parentSlot`).
 
 ### CubeNavigation
 
@@ -395,7 +395,7 @@ sequenceDiagram
     box rgb(220,235,250) Navigation A: HOME → PRODUCT
         participant NavA as Nav A (execute)
     end
-    participant App as ShoppingApplication (root)
+    participant App as RootPresenter (root)
     participant Home as HomePresenter
     box rgb(235,250,220) Navigation B: LOGIN
         participant NavB as Nav B (execute)
@@ -519,7 +519,7 @@ Navigation: `HOME(1) → PRODUCT(3)`
 ```mermaid
 sequenceDiagram
     participant Nav as CubeNavigation
-    participant App as ShoppingApplication (root)
+    participant App as RootPresenter (root)
     participant Home as Home (id=1)
     participant Prod as Product (id=3)
 
@@ -550,7 +550,7 @@ Navigation A: `HOME(1)`, but HOME redirects to `LOGIN(0)`
 sequenceDiagram
     participant NavA as Nav A
     participant NavB as Nav B
-    participant App as ShoppingApplication (root)
+    participant App as RootPresenter (root)
     participant Login as Login (id=0)
     participant Home as Home (id=1)
 
@@ -588,7 +588,7 @@ Navigation: `HOME(1) → CART(2)`, but CART throws an exception
 ```mermaid
 sequenceDiagram
     participant Nav as CubeNavigation
-    participant App as ShoppingApplication (root)
+    participant App as RootPresenter (root)
     participant Home as Home (id=1)
     participant Cart as Cart (id=2)
 
@@ -657,7 +657,7 @@ flowchart LR
 
 ### The presenterScope — Serializing Actions
 
-`ShoppingApplication` defines a `CoroutineScope` with parallelism limited to 1:
+`RootPresenter` defines a `CoroutineScope` with parallelism limited to 1:
 
 ```kotlin
 val presenterScope = CoroutineScope(Dispatchers.Default.limitedParallelism(1))
@@ -977,12 +977,12 @@ There are cases where the presenter needs to fire an I/O operation **without blo
 
 Because `presenterScope` is serial (`limitedParallelism(1)`), `app.presenterScope.launch { ... }` only **queues** the task for later. If the goal is **truly parallel** execution, use a separate scope and, once the result is available, dispatch back to `presenterScope` to mutate the state safely.
 
-Presenters reach `presenterScope` through `app.presenterScope` (defined in `ShoppingApplication`).
+Presenters reach `presenterScope` through `app.presenterScope` (defined in `RootPresenter`).
 
 #### Pattern: Parallel Scope with Return to presenterScope
 
 ```kotlin
-// Inside a presenter (app is ShoppingApplication)
+// Inside a presenter (app is RootPresenter)
 suspend fun onEnter() {
     // Show immediately with partial data
     state.loading = true

@@ -25,7 +25,7 @@ import br.com.wdc.shopping.domain.security.IosCryptoProvider
 import br.com.wdc.shopping.persistence.client.IosHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
@@ -41,7 +41,7 @@ import br.com.wdc.shopping.view.compose.util.PlatformConfig
 import br.com.wdc.shopping.view.compose.views.*
 import platform.UIKit.UIViewController
 
-private class IosShoppingApplication : ShoppingApplication() {
+private class IosRootPresenter : RootPresenter() {
 
     override fun createSessionStorage(): SessionStorage = IosPersistentSessionStorage()
 }
@@ -63,7 +63,7 @@ private fun initializePlatform(baseUrl: String) {
     RestRepositoryBootstrap.initialize(config, IosCryptoProvider())
 
     // Wire view factories
-    ShoppingApplication.createView = { p -> createView(RootView(p)) }
+    RootPresenter.createView = { p -> createView(RootView(p)) }
     LoginPresenter.createView = { p -> createView(LoginView(p)) }
     HomePresenter.createView = { p -> createView(HomeView(p)) }
     CartPresenter.createView = { p -> createView(CartView(p)) }
@@ -80,7 +80,7 @@ private fun initializePlatform(baseUrl: String) {
 fun MainViewController(baseUrl: String): UIViewController {
     initializePlatform(baseUrl)
 
-    val app = IosShoppingApplication()
+    val app = IosRootPresenter()
     ViewUpdateScheduler.initialize { app }
     kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 

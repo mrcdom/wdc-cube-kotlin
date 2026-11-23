@@ -3,7 +3,7 @@ package br.com.wdc.shopping.test
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeKeys
 import br.com.wdc.framework.cube.CubeTreePlace
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
@@ -61,7 +61,7 @@ class PlaceKeysTest : BasePresentationTest() {
 
         val placeOf = keysClasses.associateWith(::placeOf)
         assertEquals(placeOf.size, placeOf.values.toSet().size, "a place declared by more than one keys class")
-        assertEquals(ShoppingApplication.PLACES.toSet() + CubeTreePlace.ROOT, placeOf.values.toSet(), "the places of the keys are the places of the application, and the root")
+        assertEquals(RootPresenter.PLACES.toSet() + CubeTreePlace.ROOT, placeOf.values.toSet(), "the places of the keys are the places of the application, and the root")
 
         for ((keys, place) in placeOf) {
             if (keys == RootKeys::class.java) {
@@ -78,13 +78,13 @@ class PlaceKeysTest : BasePresentationTest() {
         keys.getDeclaredField("PLACE").apply { isAccessible = true }.get(null) as CubeTreePlace
 
     private fun keysOf(keys: Class<*>): CubeKeys<*> =
-        keys.getConstructor(ShoppingApplication::class.java, CubeIntent::class.java).newInstance(app, CubeIntent()) as CubeKeys<*>
+        keys.getConstructor(RootPresenter::class.java, CubeIntent::class.java).newInstance(app, CubeIntent()) as CubeKeys<*>
 
     @Test
     fun anAddress_resolvesToItsPlace_andAnUnknownOneToTheRoot() {
-        for (place in ShoppingApplication.PLACES) assertSame(place, ShoppingApplication.placeOf(place.placeName))
-        assertSame(RootKeys.PLACE, ShoppingApplication.placeOf("nowhere"))
-        assertSame(RootKeys.PLACE, ShoppingApplication.placeOf(null))
+        for (place in RootPresenter.PLACES) assertSame(place, app.placeOf(place.placeName))
+        assertSame(RootKeys.PLACE, app.placeOf("nowhere"))
+        assertSame(RootKeys.PLACE, app.placeOf(null))
     }
 
     @Test

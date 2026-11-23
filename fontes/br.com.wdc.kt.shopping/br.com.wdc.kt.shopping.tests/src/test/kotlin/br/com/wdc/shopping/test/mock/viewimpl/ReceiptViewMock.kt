@@ -4,12 +4,12 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptViewState
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptItem
-import br.com.wdc.shopping.test.mock.ShoppingApplicationMock
+import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 import java.util.Date
 
 class ReceiptViewMock(
-    app: ShoppingApplicationMock,
+    app: RootPresenterMock,
     presenter: ReceiptPresenter,
 ) : AbstractViewMock<ReceiptPresenter>(app, presenter) {
 

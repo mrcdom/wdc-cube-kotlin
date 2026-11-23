@@ -15,7 +15,7 @@ Engine of the **Cube MVP** pattern — state management, hierarchical navigation
 | `CubeIntent` | Container of parameters (serializable) and attributes (ephemeral, such as `ViewSlot`) |
 | `CubeViewSlot` | Parent-child composition mechanism between views |
 | `CubeView` | Rendering interface (Compose, React, etc.) |
-| `CubeApplication` | Global state — map of active presenters, the `navigate()` entry point and `flip(place, intent)`, which steps through the path of a `CubeTreePlace`; the root of the tree: its `applyParameters(intent, initialization, deepest)` runs in every navigation before the first step (and first on rollback) |
+| `CubeApplication` | Global state — map of active presenters, the `navigate()` entry point and `flip(place, intent)`, which steps through the path of a `CubeTreePlace`; the root of the tree: its `applyParameters(intent, initialization, deepest)` runs in every navigation before the first step (and first on rollback); built with the places an address can name, it resolves an address to its place (`placeOf`, `flip(address)`) |
 | `CubeNavigation` | Transactional engine — orchestrates execute → commit/rollback with support for interruptions |
 
 ## Documentation

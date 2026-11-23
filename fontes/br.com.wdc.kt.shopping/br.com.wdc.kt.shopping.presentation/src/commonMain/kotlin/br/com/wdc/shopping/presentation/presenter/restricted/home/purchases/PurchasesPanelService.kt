@@ -3,7 +3,7 @@ package br.com.wdc.shopping.presentation.presenter.restricted.home.purchases
 import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
 import br.com.wdc.framework.domain.pagination.Page
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 
 class PurchasesPanelService(private val repo: PurchaseRepository) {

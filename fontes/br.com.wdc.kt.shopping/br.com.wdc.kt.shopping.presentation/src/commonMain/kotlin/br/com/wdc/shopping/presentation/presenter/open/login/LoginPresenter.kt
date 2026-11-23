@@ -8,10 +8,10 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.domain.security.AuthenticationService
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 
-class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingApplication>(app) {
+class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("LoginPresenter")
@@ -25,7 +25,7 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
 
     // :: Internal Instance Fields
 
-    private val loginService = LoginService(app)
+    private val loginService = LoginService()
     private var ownerSlot: CubeViewSlot? = null
 
     // :: Cube API
@@ -84,14 +84,6 @@ class LoginPresenter(app: ShoppingApplication) : AbstractCubePresenter<ShoppingA
                 val out = JsonOutputFactory.createStringOutput()
                 subject.writeExternal(out.output)
                 app.sessionStorage.set("subject", out.resultString())
-
-                // Serialize securityContext to sessionStorage
-                val secCtx = app.getSecurityContext()
-                if (secCtx != null) {
-                    val ctxOut = JsonOutputFactory.createStringOutput()
-                    secCtx.writeExternal(ctxOut.output)
-                    app.sessionStorage.set("securityContext", ctxOut.resultString())
-                }
 
                 // Serialize auth tokens to sessionStorage
                 val authService = AuthenticationService.BEAN.getOrNull()

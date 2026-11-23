@@ -4,7 +4,6 @@ import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeKeys
 import br.com.wdc.framework.cube.CubeTreePlace
 import br.com.wdc.framework.cube.CubeViewSlot
-import br.com.wdc.shopping.presentation.ShoppingApplication
 
 /**
  * The names a place reads from and writes to the [CubeIntent], typed, on the framework's [CubeKeys]. **Each place has
@@ -18,20 +17,20 @@ import br.com.wdc.shopping.presentation.ShoppingApplication
  * - **The keys declare the place**, in the companion, from the place of the keys they extend
  *   (`val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`), so the class tree is the place tree:
  *   `RootKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it; the places
- *   below inherit it to read. [ShoppingApplication.PLACES] lists them all; `PlaceKeysTest` checks the tree.
+ *   below inherit it to read. [RootPresenter.PLACES] lists them all; `PlaceKeysTest` checks the tree.
  * - **The one name reused on purpose is the composition slot** ([parentSlot]): each level reads the slot it got and
  *   republishes, under the same name, the slot of its content for the level below.
  * - **Validation is in the getter, which never throws**: the address is input from outside. A getter returns a usable
  *   value or `null`. A setter given the default (or `null`) removes the name from the address.
- * - **Navigating starts from the state:** without an intent, the keys start from [ShoppingApplication.newIntent],
+ * - **Navigating starts from the state:** without an intent, the keys start from [RootPresenter.newIntent],
  *   which asks every live presenter what it shows — `ProductKeys(app).apply { productId = id }.flip()`.
  * - **Redirecting from inside `applyParameters` uses the intent in transit** (`HomeKeys(app, intent).flip()`), not a new
  *   one: that presenter is not accepted yet, and a new intent would lose what the address just brought.
  */
-open class RootKeys protected constructor(app: ShoppingApplication, intent: CubeIntent?, place: CubeTreePlace) :
-    CubeKeys<ShoppingApplication>(app, intent, place) {
+open class RootKeys protected constructor(app: RootPresenter, intent: CubeIntent?, place: CubeTreePlace) :
+    CubeKeys<RootPresenter>(app, intent, place) {
 
-    constructor(app: ShoppingApplication, intent: CubeIntent? = null) : this(app, intent, PLACE)
+    constructor(app: RootPresenter, intent: CubeIntent? = null) : this(app, intent, PLACE)
 
     companion object {
         const val PREFIX = "rt"

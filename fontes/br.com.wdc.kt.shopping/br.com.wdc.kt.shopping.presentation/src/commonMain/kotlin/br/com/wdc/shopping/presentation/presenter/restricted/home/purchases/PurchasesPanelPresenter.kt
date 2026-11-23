@@ -1,17 +1,18 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.purchases
 
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractChildPresenter
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
 import kotlin.math.ceil
 import kotlin.math.max
 
 class PurchasesPanelPresenter(
-    app: ShoppingApplication,
+    app: RootPresenter,
     val owner: HomePresenter,
-) : AbstractChildPresenter<ShoppingApplication>(app) {
+) : AbstractChildPresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("PurchasesPanelPresenter")
@@ -25,7 +26,7 @@ class PurchasesPanelPresenter(
 
     // :: Internal Instance Fields
 
-    private val purchasesPanelService = PurchasesPanelService(app.getPurchaseRepository())
+    private val purchasesPanelService = PurchasesPanelService(PurchaseRepository.BEAN.get())
 
     // :: Life cycle
 

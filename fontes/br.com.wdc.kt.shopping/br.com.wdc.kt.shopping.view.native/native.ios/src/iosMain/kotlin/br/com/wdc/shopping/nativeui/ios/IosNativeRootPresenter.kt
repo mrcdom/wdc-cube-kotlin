@@ -2,12 +2,12 @@ package br.com.wdc.shopping.nativeui.ios
 
 import br.com.wdc.framework.commons.storage.IosPersistentSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 
 /**
- * iOS-specific ShoppingApplication implementation.
+ * iOS-specific RootPresenter implementation.
  */
-internal class IosNativeShoppingApplication : ShoppingApplication() {
+internal class IosNativeRootPresenter : RootPresenter() {
 
     override fun createSessionStorage(): SessionStorage = IosPersistentSessionStorage()
 }

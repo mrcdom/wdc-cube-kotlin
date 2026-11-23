@@ -1,16 +1,17 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.products
 
+import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractChildPresenter
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductService
 
 class ProductsPanelPresenter(
-    app: ShoppingApplication,
+    app: RootPresenter,
     val owner: HomePresenter,
-) : AbstractChildPresenter<ShoppingApplication>(app) {
+) : AbstractChildPresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("ProductsPanelPresenter")
@@ -24,7 +25,7 @@ class ProductsPanelPresenter(
 
     // :: Internal Instance Fields
 
-    private val productService = ProductService(app.getProductRepository())
+    private val productService = ProductService(ProductRepository.BEAN.get())
 
     // :: Life cycle
 

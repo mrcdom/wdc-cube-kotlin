@@ -26,7 +26,7 @@ import br.com.wdc.shopping.domain.security.WasmCryptoProvider
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.persistence.client.WasmHttpTransport
-import br.com.wdc.shopping.presentation.ShoppingApplication
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
@@ -50,7 +50,7 @@ private const val ANONYMOUS_SIGN_KEY = "wdc-shopping-anonymous-intent-key"
 /** REST configuration holding the auth client with per-session intent signing secret. */
 private lateinit var platformConfig: RestConfig
 
-private class ComposeShoppingApplication : ShoppingApplication() {
+private class ComposeRootPresenter : RootPresenter() {
 
     override fun updateHistory() {
         val intent = CubeIntent()
@@ -109,7 +109,7 @@ private fun initializePlatform(baseUrl: String) {
     RestRepositoryBootstrap.initialize(config, WasmCryptoProvider())
 
     // Wire view factories
-    ShoppingApplication.createView = { p -> createView(RootView(p)) }
+    RootPresenter.createView = { p -> createView(RootView(p)) }
     LoginPresenter.createView = { p -> createView(LoginView(p)) }
     HomePresenter.createView = { p -> createView(HomeView(p)) }
     CartPresenter.createView = { p -> createView(CartView(p)) }
@@ -124,7 +124,7 @@ fun main() {
     val baseUrl = getBaseUrl()
     initializePlatform(baseUrl)
 
-    val app = ComposeShoppingApplication()
+    val app = ComposeRootPresenter()
     ViewUpdateScheduler.initialize { app }
 
     // On irrecoverable auth failure (401 + refresh failed), clear session and go to login
@@ -132,8 +132,6 @@ fun main() {
         ViewUpdateScheduler.launchPresenterAction {
             platformConfig.authClient?.clearTokens()
             app.sessionStorage.remove("authState")
-            app.sessionStorage.remove("securityContext")
-            app.setSecurityContext(null)
             RootKeys(app).flip()
         }
     }
@@ -187,7 +185,7 @@ private external fun jsLocationOrigin(): JsString
  * Eagerly restores auth state from session storage so that the per-session
  * intentSignSecret is available before the first [safeGo] call.
  */
-private fun restoreAuthState(app: ComposeShoppingApplication) {
+private fun restoreAuthState(app: ComposeRootPresenter) {
     val authService = AuthenticationService.BEAN.getOrNull() ?: return
     val json = app.sessionStorage.getString("authState") ?: return
     try {

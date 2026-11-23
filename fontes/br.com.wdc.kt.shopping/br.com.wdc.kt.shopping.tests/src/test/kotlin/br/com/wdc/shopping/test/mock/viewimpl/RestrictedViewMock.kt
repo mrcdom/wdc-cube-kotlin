@@ -7,12 +7,12 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.products.Produ
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelViewState
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
-import br.com.wdc.shopping.test.mock.ShoppingApplicationMock
+import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 import java.util.Date
 
 class RestrictedViewMock(
-    app: ShoppingApplicationMock,
+    app: RootPresenterMock,
     presenter: HomePresenter,
 ) : AbstractViewMock<HomePresenter>(app, presenter) {
 
