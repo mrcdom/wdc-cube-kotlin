@@ -80,6 +80,9 @@ Not yet published. Fixes defects found while reviewing a port of the architectur
 | `framework-domain` + `framework-jooq` | `LIKE`/`ILIKE` on a field that is not a `TextCriterion` is refused (400) by `Criterion.restore`; the translator refuses a pattern that is not text instead of failing on a cast (500). | Behavior | Nothing. |
 | `framework-domain` | A negative `limit` or `offset` in the envelope of a projected collection is refused (400); the database refused the query (500). | Behavior | Nothing. |
 | `framework-domain` + `framework-rest` | **`NotFoundException`** (a `BusinessException`), mapped to 404 by the default `ExceptionMapping`. | No | Use it for "what the request names doesn't exist". |
+| `framework-domain` + `framework-rest` | Slice numbers (`limit`, `offset`, `page`, `pageSize`, and `limit`/`offset` of a projected collection) must be JSON integers: text (`"10"`), a boolean or a fraction is refused (400), not converted. `null` still means "not given". `CriterionCodec.readSliceNumber` reads them. | Behavior | A client that sent the numbers as text gets 400; send numbers. |
+| `framework-rest` | `X-Tx-Id` on a server without a remote transaction coordinator is refused (400), in reads and writes; it was ignored, and a write ran outside the transaction the client believed it was in. | Behavior | Don't send the header to a server without remote transactions. |
+| `framework-rest` | `insert` that inserts nothing answers only `{"success":false}`; `id` and `entity` come only on success. | Behavior | Nothing, unless the client read the `id` of a failed insert. |
 
 ## 0.4.0 release notes
 

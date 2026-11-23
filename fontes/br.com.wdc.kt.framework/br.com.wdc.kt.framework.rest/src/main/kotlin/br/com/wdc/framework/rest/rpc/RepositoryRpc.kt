@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.codec.ModelCodec
+import br.com.wdc.framework.domain.criteria.CriterionCodec
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.domain.repository.ReadOnlyRepository
@@ -23,7 +24,7 @@ import io.javalin.http.NotFoundResponse
  *
  * | Route | Body | Response |
  * |---|---|---|
- * | `POST insert` | `{"entity", "projection"?}`, or the bare entity | `{"success", "id", "entity"}` (the complete bean) |
+ * | `POST insert` | `{"entity", "projection"?}`, or the bare entity | `{"success", "id", "entity"}` (the complete bean); `{"success": false}` alone when nothing was inserted |
  * | `POST update` | fields to update (those present, including `null`) | `{"success"}` |
  * | `POST delete` | criteria | `{"count"}` |
  * | `POST count` | criteria | `{"count"}` |
@@ -164,10 +165,12 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         val success = writable().insert(entity, projection)
         val id = idOf(entity)
         if (success) sanitizeOutput(entity)
+        // `id` and `entity` only on success: an id without a row would mislead (as in the C# version)
         return RawJson.write { out ->
-            out.beginObject().name("success").value(success).name("id")
-            writeId(out, id)
+            out.beginObject().name("success").value(success)
             if (success) {
+                out.name("id")
+                writeId(out, id)
                 out.name("entity")
                 codec.writeEntity(out, entity)
             }
@@ -320,10 +323,10 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             while (input.hasNext()) {
                 when (val name = input.nextName()) {
                     "projection" -> projection = codec.readEntity(input)
-                    "offset" -> request.offset = InputCoerceUtils.asInteger(input, 0) ?: 0
-                    "limit" -> request.limit = InputCoerceUtils.asInteger(input, 0) ?: 0
-                    "page" -> request.page = InputCoerceUtils.asInteger(input, 0) ?: 0
-                    "pageSize" -> request.pageSize = InputCoerceUtils.asInteger(input, 0) ?: 0
+                    "offset" -> request.offset = CriterionCodec.readSliceNumber(input, "offset") ?: 0
+                    "limit" -> request.limit = CriterionCodec.readSliceNumber(input, "limit") ?: 0
+                    "page" -> request.page = CriterionCodec.readSliceNumber(input, "page") ?: 0
+                    "pageSize" -> request.pageSize = CriterionCodec.readSliceNumber(input, "pageSize") ?: 0
                     else -> if (!codec.readCriteriaField(input, name, request.criteria)) input.skipValue()
                 }
             }

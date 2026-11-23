@@ -295,7 +295,7 @@ All entities have the same operations, under `/api/repo/<entity>` (`user`, `prod
 
 | Route | Transactional | Body | Response |
 |---|---|---|---|
-| `POST …/insert` | yes | `{entity, projection?}`, or the bare entity | `{success, id, entity}` |
+| `POST …/insert` | yes | `{entity, projection?}`, or the bare entity | `{success, id, entity}`; only `{success: false}` when nothing was inserted |
 | `POST …/update` | yes | partial entity — the keys present are the fields to update | `{success}` |
 | `POST …/delete` | yes | criteria fields | `{count}` |
 | `POST …/count` | no | criteria fields | `{count}` |

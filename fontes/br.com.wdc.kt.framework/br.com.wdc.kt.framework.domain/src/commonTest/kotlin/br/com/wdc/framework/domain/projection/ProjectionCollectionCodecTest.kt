@@ -133,9 +133,15 @@ class ProjectionCollectionCodecTest {
     }
 
     @Test
-    fun read_negativeSlice_isRefused() {
+    fun read_sliceThatIsNotANonNegativeInteger_isRefused() {
         // the database refuses a negative LIMIT/OFFSET, and the API answered 500
         for (slice in listOf(""""limit":-1""", """"offset":-1""")) {
+            assertFailsWith<InvalidRequestException>(slice) {
+                ProjectionCollectionCodec.read(readerAtField("""{"items":{"shape":{},$slice}}"""), shapeReader, criteriaReader)
+            }
+        }
+        // text, a boolean or a fraction is refused, not converted (as in the C# version)
+        for (slice in listOf(""""limit":"5"""", """"offset":"0"""", """"limit":true""", """"limit":1.5""")) {
             assertFailsWith<InvalidRequestException>(slice) {
                 ProjectionCollectionCodec.read(readerAtField("""{"items":{"shape":{},$slice}}"""), shapeReader, criteriaReader)
             }

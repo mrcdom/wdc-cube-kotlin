@@ -2,8 +2,8 @@ package br.com.wdc.framework.domain.projection
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.commons.serialization.SerializationToken
+import br.com.wdc.framework.domain.criteria.CriterionCodec
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 
 /**
@@ -67,7 +67,7 @@ object ProjectionCollectionCodec {
 
     /**
      * Reads the envelope and returns the ready projection collection — shape, criteria and slice rehydrated.
-     * A negative `limit` or `offset` is refused ([InvalidRequestException], 400 in the API): the database would refuse
+     * A `limit` or `offset` that is not a JSON integer (`"10"`), or is negative, is refused ([InvalidRequestException], 400 in the API): the database would refuse
      * the query and answer 500.
      *
      * @param shapeReader    reads the shape of one item
@@ -91,8 +91,8 @@ object ProjectionCollectionCodec {
                     hasShape = true
                 }
                 "where" -> criteria = criteriaReader(input)
-                "limit" -> limit = notNegative("limit", InputCoerceUtils.asInteger(input))
-                "offset" -> offset = notNegative("offset", InputCoerceUtils.asInteger(input))
+                "limit" -> limit = notNegative("limit", CriterionCodec.readSliceNumber(input, "limit"))
+                "offset" -> offset = notNegative("offset", CriterionCodec.readSliceNumber(input, "offset"))
                 else -> input.skipValue()
             }
         }

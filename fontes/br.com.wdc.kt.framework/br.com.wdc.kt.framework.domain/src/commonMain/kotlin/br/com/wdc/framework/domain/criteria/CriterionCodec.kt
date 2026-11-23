@@ -174,6 +174,21 @@ object CriterionCodec {
         input.endArray()
     }
 
+    /**
+     * Reads a slice number of a request (`limit`, `offset`, `page`, `pageSize`): a JSON integer, or `null` for "not
+     * given". Anything else — text (`"10"`), a boolean, a fraction — is refused ([InvalidRequestException], 400 in the
+     * API): a value of the wrong type is refused, not interpreted, as the C# version does.
+     */
+    fun readSliceNumber(input: ExtensibleObjectInput, name: String): Int? = when (input.peek()) {
+        SerializationToken.NULL -> input.nextNull()
+        SerializationToken.NUMBER -> try {
+            input.nextInt()
+        } catch (_: NumberFormatException) {
+            throw InvalidRequestException("'$name' must be an integer")
+        }
+        else -> throw InvalidRequestException("'$name' must be an integer")
+    }
+
     /** Reads a value that is not the JSON `null`; a reader that makes nothing of it means a malformed request. */
     private fun <T : Any> readValue(
         input: ExtensibleObjectInput,
