@@ -226,7 +226,7 @@ openApi {
 
 `RepositoryRpc(basePath, codec, repository, …)` publishes a repository's operations: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}`. It is the protocol the Storefront `HttpRepository` client speaks. Access stays with the application, through `rule` (per operation), `scope` (restricts the criteria to the caller), `sanitizeProjection`, `sanitizeOutput`, `beforeInsert` and `beforeUpdate`. The two write hooks run inside the transaction. For a read-only repository, use `writes = false`.
 
-**`scope` also guards `update`**: before `beforeUpdate`, the RPC checks that the target row is within the caller's reach (the key plus `scope`) and refuses with 403 otherwise. What the scope cannot see — moving the row to another owner — stays with `beforeUpdate`.
+**`scope` also guards `update`**: before `beforeUpdate`, the RPC checks that the target row is within the caller's reach (the key plus `scope`) and answers 404 otherwise — the same as a row that doesn't exist, so the refusal doesn't tell the row is there. What the scope cannot see — moving the row to another owner — stays with `beforeUpdate`.
 
 **`scope` adds the reach to criteria that came from the caller**, with the disjunction the caller chose on each field. Use the conjunctive field, `criteria.ownerId.and().eq(owner)`, and never just `eq`: on a field sent with `"or": true`, `eq` becomes one more alternative (`ownerId IS NOT NULL OR ownerId = :owner`) and the caller reaches everything.
 

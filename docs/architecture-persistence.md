@@ -316,7 +316,8 @@ Errors come back as `{"error": "…"}`:
 |---|---|
 | 400 | Invalid request: unknown `orderBy`, `delete` without a filter, `update` without an id |
 | 401 | Missing or invalid token (with security enabled). A path with no route responds 404, with or without a token |
-| 403 | Missing permission, or the row is outside the user's scope |
+| 403 | Missing permission, or a write the controller refuses (such as moving a row to another owner) |
+| 404 | Not found: the image of a product that doesn't exist, or an update whose row is outside the user's scope (told the same way as a missing row) |
 | 409 | Remote transaction conflict |
 | 429 | Too many open remote transactions |
 | 500 | Unexpected failure: `{"error": "Internal server error"}`, with the error recorded in the log |

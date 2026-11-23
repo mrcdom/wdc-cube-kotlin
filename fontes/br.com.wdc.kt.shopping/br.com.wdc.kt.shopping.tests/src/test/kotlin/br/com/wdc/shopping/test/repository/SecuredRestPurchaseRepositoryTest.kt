@@ -143,7 +143,8 @@ class SecuredRestPurchaseRepositoryTest {
 
         assertHttp(403) { items().insert(newItem(DBReset.FLASH_DRIVE_2GB_ID, DBReset.ADMIN_FIRST_PURCHASE_ID)) }
         assertHttp(403) { items().insert(newItem(DBReset.FLASH_DRIVE_2GB_ID)) }
-        assertHttp(403) {
+        // a row outside the caller's reach is answered as not found: a 403 would tell it exists
+        assertHttp(404) {
             items().update(PurchaseItem().apply { id = DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID; amount = 50 }, null, PurchaseItem().apply { amount = ProjectionValues.i32 })
         }
         // nor move one of their items to someone else's purchase
@@ -154,7 +155,7 @@ class SecuredRestPurchaseRepositoryTest {
                 PurchaseItem().apply { purchase = Purchase().apply { id = ProjectionValues.i64 } },
             )
         }
-        assertHttp(403) {
+        assertHttp(404) {
             purchases().update(Purchase().apply { id = DBReset.ADMIN_FIRST_PURCHASE_ID; buyDate = Clock.System.now() }, null, Purchase().apply { buyDate = ProjectionValues.instant })
         }
         assertHttp(403) {
