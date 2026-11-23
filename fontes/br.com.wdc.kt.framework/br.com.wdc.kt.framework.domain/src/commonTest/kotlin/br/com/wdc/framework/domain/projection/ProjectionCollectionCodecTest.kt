@@ -133,6 +133,21 @@ class ProjectionCollectionCodecTest {
     }
 
     @Test
+    fun read_negativeSlice_isRefused() {
+        // the database refuses a negative LIMIT/OFFSET, and the API answered 500
+        for (slice in listOf(""""limit":-1""", """"offset":-1""")) {
+            assertFailsWith<InvalidRequestException>(slice) {
+                ProjectionCollectionCodec.read(readerAtField("""{"items":{"shape":{},$slice}}"""), shapeReader, criteriaReader)
+            }
+        }
+        val zero = ProjectionCollectionCodec.read(
+            readerAtField("""{"items":{"shape":{},"limit":0,"offset":0}}"""), shapeReader, criteriaReader,
+        )
+        assertEquals(0, zero.limit)
+        assertEquals(0, zero.offset)
+    }
+
+    @Test
     fun isProjectionEnvelope_distinguishesObjectFromArray() {
         assertTrue(ProjectionCollectionCodec.isProjectionEnvelope(readerAtField("""{"items":{"shape":{}}}""")))
         assertFalse(ProjectionCollectionCodec.isProjectionEnvelope(readerAtField("""{"items":[{"id":1}]}""")))

@@ -67,6 +67,8 @@ object ProjectionCollectionCodec {
 
     /**
      * Reads the envelope and returns the ready projection collection — shape, criteria and slice rehydrated.
+     * A negative `limit` or `offset` is refused ([InvalidRequestException], 400 in the API): the database would refuse
+     * the query and answer 500.
      *
      * @param shapeReader    reads the shape of one item
      * @param criteriaReader reads the embedded criteria — whole object, `begin/endObject` included
@@ -89,8 +91,8 @@ object ProjectionCollectionCodec {
                     hasShape = true
                 }
                 "where" -> criteria = criteriaReader(input)
-                "limit" -> limit = InputCoerceUtils.asInteger(input)
-                "offset" -> offset = InputCoerceUtils.asInteger(input)
+                "limit" -> limit = notNegative("limit", InputCoerceUtils.asInteger(input))
+                "offset" -> offset = notNegative("offset", InputCoerceUtils.asInteger(input))
                 else -> input.skipValue()
             }
         }
@@ -100,5 +102,12 @@ object ProjectionCollectionCodec {
         }
         @Suppress("UNCHECKED_CAST")
         return ProjectionList(shape as E, criteria, limit, offset)
+    }
+
+    private fun notNegative(name: String, value: Int?): Int? {
+        if (value != null && value < 0) {
+            throw InvalidRequestException("projected collection: '$name' can't be negative ($value)")
+        }
+        return value
     }
 }
