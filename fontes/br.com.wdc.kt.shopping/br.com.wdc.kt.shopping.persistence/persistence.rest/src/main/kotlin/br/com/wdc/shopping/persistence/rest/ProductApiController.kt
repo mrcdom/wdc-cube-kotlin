@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.rest
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
+import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
 import br.com.wdc.framework.rest.RestApi
@@ -82,6 +83,8 @@ internal object ProductApiController {
             } else {
                 originalBytes
             }
+        } catch (e: NotFoundException) {
+            throw e // 404: the product doesn't exist (204 is "no image")
         } catch (e: Exception) {
             LOG.error("Fetching product image", e)
             return RestResponse.status(500, mapOf("error" to "Failed to fetch image"))

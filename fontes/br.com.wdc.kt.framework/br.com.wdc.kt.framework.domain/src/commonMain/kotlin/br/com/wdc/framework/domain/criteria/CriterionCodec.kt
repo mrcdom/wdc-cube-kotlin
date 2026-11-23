@@ -115,13 +115,18 @@ object CriterionCodec {
      *
      * **Also accepts the bare value** (`"price": 10.0`), reading it as equality — the minimal shape of an
      * equality filter, and the one clients older than this format send. A bare `null` is discarded.
+     *
+     * **A value that doesn't read is refused** ([InvalidRequestException], 400 in the API): only the JSON `null` is a
+     * null operand. A token the reader turns into `null` — `""` for a number — would otherwise become `IS NULL`/
+     * `IS NOT NULL`, and `NE [""]` in a `delete` would wipe the table.
      */
     fun <T : Any> read(input: ExtensibleObjectInput, criterion: Criterion<*, T>, valueReader: CriterionValueReader<T>) {
         if (input.peek() != SerializationToken.BEGIN_OBJECT) {
-            val value = valueReader(input)
-            if (value != null) {
-                criterion.restore(Operator.EQ, listOf(value))
+            if (input.peek() == SerializationToken.NULL) {
+                input.nextNull<Any>()
+                return
             }
+            criterion.restore(Operator.EQ, listOf(readValue(input, criterion, valueReader)))
             return
         }
         input.beginObject()
@@ -152,7 +157,8 @@ object CriterionCodec {
                         input.beginArray()
                         while (input.hasNext()) {
                             values.add(
-                                if (input.peek() == SerializationToken.NULL) input.nextNull() else valueReader(input)
+                                if (input.peek() == SerializationToken.NULL) input.nextNull()
+                                else readValue(input, criterion, valueReader)
                             )
                         }
                         input.endArray()
@@ -167,6 +173,14 @@ object CriterionCodec {
         }
         input.endArray()
     }
+
+    /** Reads a value that is not the JSON `null`; a reader that makes nothing of it means a malformed request. */
+    private fun <T : Any> readValue(
+        input: ExtensibleObjectInput,
+        criterion: Criterion<*, T>,
+        valueReader: CriterionValueReader<T>,
+    ): T = valueReader(input)
+        ?: throw InvalidRequestException("criterion '${criterion.name}': a value that is not null doesn't read as one")
 
     /**
      * An unknown operator is discarded, not translated by approximation.

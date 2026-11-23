@@ -5,8 +5,8 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.codec.ModelCodec
-import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
+import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.domain.repository.ReadOnlyRepository
 import br.com.wdc.framework.domain.repository.Repository
 import br.com.wdc.framework.rest.RawJson
@@ -80,7 +80,8 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     /**
      * Restricts what the caller can reach: the criteria of every read and of delete, and the row an update targets
-     * (an update outside it is refused with `AccessDeniedException`, 403, before [beforeUpdate]).
+     * (an update outside it is answered with `NotFoundException`, 404, before [beforeUpdate] — the same as a row that
+     * doesn't exist: a 403 would tell the caller the row is there, which a fetch already hides).
      *
      * **The criteria came from the caller**, including each field's disjunction. Add the reach with the conjunctive
      * field — `criteria.ownerId.and().eq(owner)` —, never with just `eq`: on a field the client marked with
@@ -212,7 +213,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             val target = newCriteria()
             restrictToId(target, id)
             scope(target, call.request)
-            if (repository().count(target) == 0) throw AccessDeniedException("Access denied")
+            if (repository().count(target) == 0) throw NotFoundException("Not found")
         }
         beforeUpdate(data, call.request)
         return RawJson.field("success", writable().update(data.entity, null, data.projection))

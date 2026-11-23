@@ -152,7 +152,8 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
         xhr.send()
 
         val status = xhr.status.toInt()
-        if (status == 404 || status == 204) return null
+        // 204 = no content ("no image"); 404 = not found, an error like the others
+        if (status == 204) return null
         if (status in 200..299) {
             val buffer = xhr.asDynamic().response ?: return null
             val uint8Array = js("new Uint8Array(buffer)")

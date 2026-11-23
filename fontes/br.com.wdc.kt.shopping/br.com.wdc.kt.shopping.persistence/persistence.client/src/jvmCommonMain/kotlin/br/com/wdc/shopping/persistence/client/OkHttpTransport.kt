@@ -75,7 +75,8 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
 
     override fun getBytes(path: String): ByteArray? =
         authenticated("GET $path", { Request.Builder().url(baseUrl + path).get() }) { response ->
-            if (response.code == 404 || response.code == 204) return@authenticated null
+            // 204 = no content ("no image"); 404 = not found, an error like the others
+            if (response.code == 204) return@authenticated null
             if (!response.isSuccessful) {
                 throw httpFailure(response.code)
             }

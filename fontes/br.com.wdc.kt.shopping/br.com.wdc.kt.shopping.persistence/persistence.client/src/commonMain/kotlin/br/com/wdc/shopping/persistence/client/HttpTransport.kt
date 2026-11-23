@@ -32,6 +32,7 @@ interface HttpTransport {
 
     fun getJson(path: String): String
 
+    /** The bytes at [path]; `null` for 204 (no content). Any other failure, 404 included, throws ([httpFailure]). */
     fun getBytes(path: String): ByteArray?
 
     fun putBytes(path: String, data: ByteArray): Boolean

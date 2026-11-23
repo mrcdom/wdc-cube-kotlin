@@ -62,6 +62,11 @@ class RestProductEndpointsTest {
             """{"price":{"p":[{"o":"EQ"}]}}""",
             """{"price":{"p":[{"o":"GT","v":[1,2]}]}}""",
             """{"name":{"p":[{"o":"LIKE","v":[null]}]}}""",
+            // "" for a number read as null: NE [""] became IS NOT NULL and the delete wiped the table
+            """{"productId":{"p":[{"o":"NE","v":[""]}]}}""",
+            """{"price":{"p":[{"o":"EQ","v":[""]}]}}""",
+            // LIKE on a number: the translator failed on a cast (500)
+            """{"price":{"p":[{"o":"LIKE","v":[1]}]}}""",
         )) {
             val e = assertThrows(BusinessException::class.java, { post("delete", criterion) }, criterion)
             assertTrue(e.message!!.contains("criterion"), e.message)

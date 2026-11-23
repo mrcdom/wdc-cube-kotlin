@@ -129,7 +129,7 @@ open class Criterion<C, T : Any>(owner: C?, val name: String) {
      *
      * **Rejects a malformed request** with [InvalidRequestException] (400 in the API): a number of values the
      * operator doesn't accept (`BETWEEN` with one, `EQ` with none) and `null` in an ordering comparison, `LIKE`
-     * or `BETWEEN`. If accepted, such a request would count as a provided filter and vanish from the SQL — a
+     * or `BETWEEN`; and `LIKE`/`ILIKE` on a field that is not text (a [TextCriterion]). If accepted, such a request would count as a provided filter and vanish from the SQL — a
      * `delete` "with criteria" would wipe the whole table. `EQ`/`NE` with `null` are valid
      * (`IS NULL`/`IS NOT NULL`).
      */
@@ -140,6 +140,9 @@ open class Criterion<C, T : Any>(owner: C?, val name: String) {
         }
         if (operator in NOT_NULL_OPERANDS && list.any { it == null }) {
             throw InvalidRequestException("criterion '$name': $operator doesn't accept a null value")
+        }
+        if ((operator == Operator.LIKE || operator == Operator.ILIKE) && this !is TextCriterion<*>) {
+            throw InvalidRequestException("criterion '$name': $operator only applies to text")
         }
         requests.add(Predicate(operator, list))
     }

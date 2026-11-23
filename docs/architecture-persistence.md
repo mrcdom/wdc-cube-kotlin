@@ -303,7 +303,7 @@ All entities have the same operations, under `/api/repo/<entity>` (`user`, `prod
 | `POST …/fetch-page` | no | criteria + `projection?` + `page` + `pageSize` | `{items, totalItems}` |
 | `POST …/fetch-by-id` | no | `{id, projection?}` | entity or 404 |
 | `GET …/{id}` | no | — | entity or 404 |
-| `GET product/{id}/image` | no (public) | — | bytes; 204 if no image |
+| `GET product/{id}/image` | no (public) | — | bytes; 204 if no image; 404 if no such product |
 | `PUT product/{id}/image` | yes | bytes | `{success}` |
 
 Every write is atomic: it runs in the remote transaction given by `X-Tx-Id` or, without it, in a transaction of the request's own.
@@ -316,7 +316,8 @@ Errors come back as `{"error": "…"}`:
 |---|---|
 | 400 | Invalid request: unknown `orderBy`, `delete` without a filter, `update` without an id |
 | 401 | Missing or invalid token (with security enabled). A path with no route responds 404, with or without a token |
-| 403 | Missing permission, or the row is outside the user's scope |
+| 403 | Missing permission, or a write the controller refuses (such as moving a row to another owner) |
+| 404 | Not found: the image of a product that doesn't exist, or an update whose row is outside the user's scope (told the same way as a missing row) |
 | 409 | Remote transaction conflict |
 | 429 | Too many open remote transactions |
 | 500 | Unexpected failure: `{"error": "Internal server error"}`, with the error recorded in the log |

@@ -117,6 +117,8 @@ class CriterionCodecTest {
             """{"o":"IS_NULL","v":[1]}""",
             // null where the comparison is never true
             """{"o":"GT","v":[null]}""", """{"o":"BETWEEN","v":[1,null]}""",
+            // LIKE on a field that is not text: the translator failed on a cast (500)
+            """{"o":"LIKE","v":[1]}""", """{"o":"ILIKE","v":[1]}""",
         )) {
             val c = SampleCriteria()
             assertFailsWith<InvalidRequestException>(p) {
@@ -127,6 +129,27 @@ class CriterionCodecTest {
         assertFailsWith<InvalidRequestException> {
             CriterionCodec.read(readerAtField("""{"name":{"p":[{"o":"LIKE","v":[null]}]}}"""), c.name, CriterionCodec.STRING_IN)
         }
+    }
+
+    @Test
+    fun read_valueThatDoesNotRead_isRefused_notTakenForNull() {
+        // "" reads as null for a number: NE [""] would become IS NOT NULL, and a delete would wipe the table
+        for (field in listOf(
+            """{"id":{"p":[{"o":"NE","v":[""]}]}}""", """{"id":{"p":[{"o":"EQ","v":[""]}]}}""",
+            """{"id":{"p":[{"o":"IN","v":[1,""]}]}}""", """{"id":""}""",
+        )) {
+            val c = SampleCriteria()
+            assertFailsWith<InvalidRequestException>(field) {
+                CriterionCodec.read(readerAtField(field), c.id, CriterionCodec.LONG_IN)
+            }
+        }
+    }
+
+    @Test
+    fun read_emptyText_isAValue_forText() {
+        val c = SampleCriteria()
+        CriterionCodec.read(readerAtField("""{"name":{"p":[{"o":"EQ","v":[""]}]}}"""), c.name, CriterionCodec.STRING_IN)
+        assertEquals("", c.name.predicates.single().value)
     }
 
     @Test

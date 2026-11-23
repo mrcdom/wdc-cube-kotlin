@@ -24,5 +24,8 @@ open class BusinessException : RuntimeException {
 /** Malformed request or one rejected by validation — the REST layer returns 400. */
 open class InvalidRequestException(message: String) : BusinessException(message)
 
+/** What the request names doesn't exist (or is out of the caller's reach, which is told the same way) — the REST layer returns 404. */
+open class NotFoundException(message: String) : BusinessException(message)
+
 /** The operation required the server and it is not reachable. */
 open class OfflineException(cause: Throwable?) : BusinessException(cause)

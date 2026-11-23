@@ -3,6 +3,7 @@ package br.com.wdc.framework.rest.error
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
+import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
 import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
@@ -30,6 +31,7 @@ fun interface ExceptionHandler<in E : Throwable> {
  * | `InvalidRequestException` (includes malformed parameters and bodies) | 400 |
  * | `AuthenticationException` (no credential, or credential refused) | `unauthenticatedStatus` (default 401) |
  * | `AccessDeniedException` | 403 |
+ * | `NotFoundException` | 404 |
  * | `TransactionConflictException` (including a remote transaction in use by another request) | 409 |
  * | `RemoteTransactionNotFoundException` (unknown or expired remote transaction) | 410 |
  * | `TransactionLimitExceededException` | 429 |
@@ -57,6 +59,7 @@ class ExceptionMapping {
         status(InvalidRequestException::class.java, 400)
         on(AuthenticationException::class.java) { e, r -> ErrorResponse(unauthenticatedStatus, errorBody(unauthenticatedStatus, e.message, r)) }
         status(AccessDeniedException::class.java, 403)
+        status(NotFoundException::class.java, 404)
         status(TransactionConflictException::class.java, 409)
         status(RemoteTransactionNotFoundException::class.java, 410)
         status(TransactionLimitExceededException::class.java, 429)

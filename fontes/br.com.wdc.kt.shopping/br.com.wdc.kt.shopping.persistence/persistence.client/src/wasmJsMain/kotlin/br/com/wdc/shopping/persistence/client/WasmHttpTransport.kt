@@ -165,7 +165,8 @@ class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
             (txId ?: "").toJsString()
         )
         val status = xhrBytesResultStatus(result)
-        if (status == 404 || status == 204) return null
+        // 204 = no content ("no image"); 404 = not found, an error like the others
+        if (status == 204) return null
         if (status in 200..299) {
             val jsArray = xhrBytesResultData(result) ?: return null
             return jsUint8ArrayToByteArray(jsArray)
