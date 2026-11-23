@@ -1,6 +1,10 @@
 package br.com.wdc.shopping.nativeui.web.util
 
 import kotlinx.browser.window
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 fun productImageUrl(productId: Long): String {
     return "${window.location.origin}/api/repo/product/$productId/image"
@@ -28,11 +32,11 @@ fun stripHtml(html: String): String {
         .trim()
 }
 
+/**
+ * The purchase date as MM/DD/YYYY, in UTC — the same calendar date the iOS and Android views show. Uses the real
+ * calendar: it was approximated with 365-day years and 30-day months, and the dates came out shifted.
+ */
 fun formatDate(epochMs: Long): String {
-    val totalSeconds = epochMs / 1000
-    val days = totalSeconds / 86400
-    val year = 1970 + (days / 365).toInt()
-    val month = ((days % 365) / 30 + 1).toInt().coerceIn(1, 12)
-    val day = ((days % 365) % 30 + 1).toInt().coerceIn(1, 31)
-    return "${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/$year"
+    val date = Instant.fromEpochMilliseconds(epochMs).toLocalDateTime(TimeZone.UTC).date
+    return "${date.month.number.toString().padStart(2, '0')}/${date.day.toString().padStart(2, '0')}/${date.year}"
 }

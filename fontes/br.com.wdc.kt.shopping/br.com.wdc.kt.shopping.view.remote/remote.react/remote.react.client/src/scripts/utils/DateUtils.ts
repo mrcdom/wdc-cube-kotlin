@@ -6,9 +6,10 @@ export function formatDate(dateOrMillis: number | Date | null | undefined) {
 
   const purchaseDate = typeof dateOrMillis === 'number' ? new Date(dateOrMillis) : dateOrMillis
 
-  let purchaseDay = purchaseDate.getDay() + 1 //The first day returns zero
-  let purchaseMonth = purchaseDate.getMonth() + 1 //January returns zero
-  let purchaseFullYear = purchaseDate.getFullYear()
+  // The calendar date in UTC, as the other views show it. getDay() is the day of the week, not of the month.
+  let purchaseDay = purchaseDate.getUTCDate()
+  let purchaseMonth = purchaseDate.getUTCMonth() + 1 // January is zero
+  let purchaseFullYear = purchaseDate.getUTCFullYear()
 
   let dayOutput = purchaseDay < 10 ? '0' + purchaseDay : purchaseDay
   let monthOutput = purchaseMonth < 10 ? '0' + purchaseMonth : purchaseMonth

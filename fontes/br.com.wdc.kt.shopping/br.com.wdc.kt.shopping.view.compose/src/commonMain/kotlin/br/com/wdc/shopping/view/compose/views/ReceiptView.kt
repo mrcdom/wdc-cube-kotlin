@@ -22,6 +22,7 @@ import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.theme.SuccessColor
 import br.com.wdc.shopping.view.compose.theme.SuccessContainer
+import br.com.wdc.shopping.view.compose.util.formatDate
 import br.com.wdc.shopping.view.compose.util.formatPrice
 
 class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("receipt-view", presenter) {
@@ -220,13 +221,4 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                 }
         }
     }
-}
-
-private fun formatDate(epochMs: Long): String {
-    val totalSeconds = epochMs / 1000
-    val days = totalSeconds / 86400
-    val year = 1970 + (days / 365).toInt()
-    val month = ((days % 365) / 30 + 1).toInt().coerceIn(1, 12)
-    val day = ((days % 365) % 30 + 1).toInt().coerceIn(1, 31)
-    return "${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/$year"
 }
