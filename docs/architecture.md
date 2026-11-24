@@ -67,7 +67,7 @@ graph TB
     end
 
     subgraph "Domain Layer"
-        SVC[Services]
+        SVC["Resource calls<br/>(Query, Create, …)"]
         REPO[Repositories]
         MODEL[Domain Models]
     end
@@ -249,7 +249,7 @@ graph LR
     subgraph "Client (all platforms)"
         VIEW["Compose View"] --> PRES["Presenter"]
         PRES --> SCOPE["Scope"]
-        PRES --> SVC["Service"]
+        PRES --> SVC["Resource calls<br/>→ HTTP repositories"]
     end
     SVC -->|HTTP/REST| BACK["Backend"]
 ```
@@ -282,7 +282,6 @@ See [architecture-react.md](architecture-react.md) for full details of this moda
 class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     val scope = bind(LoginScope()) // a field change repaints the view: no update() calls
-    private val loginService = LoginService()
     private var ownerSlot: ScopeSlot? = null
 
     init {
@@ -302,7 +301,8 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         if (password != null) scope.password = password
         scope.loading = true
 
-        val subject = loginService.fetchSubject(scope.userName ?: "", scope.password ?: "")
+        // a resource call: a new instance per use, the request in its constructor
+        val subject = CredentialsCheck(scope.userName ?: "", scope.password ?: "").run()
         scope.loading = false
 
         if (subject?.id != null) {
@@ -388,9 +388,10 @@ The domain layer contains:
 
 - **Models** — business entities (`Product`, `Purchase`, `Subject`, etc.)
 - **Repository interfaces** — contracts with search criteria (Query Object Pattern)
-- **Services** — business operations that coordinate repositories
 
 Models and interfaces are shared across all platforms (`commonMain`). Repository implementations vary: REST client for local views, jOOQ for the backend.
+
+The presentation reaches the repositories through **resource calls** (`framework-domain`, package `resource`): one class per operation, named by its verb (`ProductQuery`, `PurchaseCreate`, …), in a `calls/` package next to the presenter; a write's `run()` opens a transaction. See the [framework-domain README](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.domain/README.md#resource-calls).
 
 See [architecture-persistence.md](architecture-persistence.md) for details of the criteria-based repository pattern.
 
@@ -537,7 +538,7 @@ sequenceDiagram
     participant LV as LoginView
     participant SC as safeCall
     participant LP as LoginPresenter
-    participant LS as LoginService
+    participant LS as CredentialsCheck
     participant API as Backend REST
     participant Keys as HomeKeys
     participant Nav as CubeNavigation
@@ -552,7 +553,7 @@ sequenceDiagram
     LP->>LP: scope.loading = true (the scope asks for the repaint)
     Note over LV: Recomposes: spinner + disabled fields
 
-    LP->>LS: fetchSubject(admin, ***)
+    LP->>LS: CredentialsCheck(admin, ***).run()
     LS->>API: POST /auth/login
     API-->>LS: Subject id=1, nick=Admin
     LS-->>LP: Subject(id=1, nick=Admin)

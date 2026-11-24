@@ -252,7 +252,7 @@ ShoppingTransactions.BEAN.get().required { tx ->
 - **A normal return commits; any exception rolls back** and propagates intact, with its original type.
 - **A nested block that fails dooms the whole transaction.** If a `required` (or `mandatory`, `supports`) inside another one throws, everything is rolled back even when the caller catches the exception and carries on, and the outer `required` throws `TransactionSystemException` ("The transaction was rolled back: a call inside it failed.") instead of returning its result. Only `setRollbackOnly()` rolls back without throwing. The same holds on the server and in the client's remote transaction.
 - The use case must tolerate the service being absent — `ShoppingTransactions.BEAN.getOrNull()` — and run directly in that case (tests without persistence).
-- This is how checkout works: `CartManager.doPurchase` writes the purchase and its items inside `required`. A failure halfway doesn't leave an orphan purchase.
+- In the presentation, a write is a resource call (`ResourceCreate`, `ResourceSave`, `ResourceUpdate`, `ResourceDelete`, in `framework-domain`), whose `run()` does exactly this: `required` on the module's service when there is one, directly otherwise. This is how checkout works: `CartManager.commit` runs `PurchaseCreate`, which inserts the purchase and its items in one transaction. A failure halfway doesn't leave an orphan purchase.
 - `afterCommit { … }` schedules a task for after the current physical transaction commits (notifying a background process, for example): it runs only if the transaction commits, in scheduling order, already outside it; if rolled back, the task is discarded. Without a transaction, it runs immediately. A task failure goes to the log and doesn't change the transaction's outcome. On the server, a task scheduled inside a remote transaction runs on its commit.
 
 There are two implementations, and the use case doesn't know which one it is using:
@@ -354,13 +354,13 @@ With `security.jwt.secret` configured, the backend requires `Authorization: Bear
 
 **The password never leaves through the API.** It is accepted when writing a user and stripped from every projection and every response, including when the user comes inside a purchase — with security enabled or not.
 
-**The price of a purchase item is the server's.** Through the API, an item gets its product's current price, whatever the client sent: on insert, alone or inside a purchase, and on an update that writes the price or the product. An item of a product that does not exist is refused with 400. The server-side presentation (remote view) writes through the repositories directly and already prices items from the products it loaded.
+**The price of a purchase item is the server's.** On insert, alone or inside a purchase, the item repository (`PurchaseItemRepositoryImpl`) reads the product's current price itself, inside the caller's transaction, whatever price came — on every path: through the API, and in process (the remote view's checkout, the desktop). An item without a product, or of one that does not exist, is refused with 400. Through the API, an update that writes the price or the product also gets the product's current price (`ItemPrices`, in `:persistence-rest`).
 
 **The password is stored as its digest**, the form the login compares, so a user created through the API can log in. With security on, it must come encrypted with the session's RSA public key (the `publicKey` of the login response; `RestAuthClient.encryptPassword` on the client): one that does not decrypt is refused with 400, never stored as it came. Without security there is no key, and the password comes as typed.
 
 Without the secret, the API is open and `/api/auth` doesn't exist: this is the development mode, and the mode of tests that don't deal with security.
 
-**In the presentation**, the care is with what arrives through navigation: a route parameter is chosen by the user. When it identifies a piece of data — the receipt's `purchaseId`, for example —, the service fetches it restricted to whoever is logged in (`ReceiptService.loadReceipt(purchaseId, userId)`), and never by key alone.
+**In the presentation**, the care is with what arrives through navigation: a route parameter is chosen by the user. When it identifies a piece of data — the receipt's `purchaseId`, for example —, the query fetches it restricted to whoever is logged in (`ReceiptQuery(purchaseId, userId)`), and never by key alone.
 
 ---
 
@@ -405,7 +405,7 @@ cd fontes
 3. **Server** (`:shopping-persistence`): the `XxxRepositoryImpl` with the `QUERY` mapping, the conditions, and the ordering; registration in `ShoppingRepositoryBootstrap`.
 4. **REST** (`:persistence-rest`): the `XxxApiController`, which configures a `RepositoryRpc` **with the permission and scope checks** (`rule` with `ApiSecurity.permission`, `scope`, `beforeInsert`/`beforeUpdate`), and its call in `RepositoryApiRoutes.create()`; the permissions in `Role`; the entity in `RepositoryApiDocs`.
 5. **Client** (`:shopping-persistence-client`): the `HttpXxxRepository` and its registration in `RestRepositoryBootstrap`.
-6. **Presentation**: access in `RootPresenter`. In services, always ask for the data of whoever is logged in.
+6. **Presentation**: resource calls (`XxxQuery`, `XxxCreate`, …) in the `calls/` package next to the presenter that uses them, reaching the repository through `XxxRepository.BEAN.get()`. Always ask for the data of whoever is logged in.
 7. **Tests**: an `AbstractXxxRepositoryTest` with the local and REST subclasses, and a REST test with security enabled.
 
 For read-only data (a dashboard, for example), the interface extends `ReadOnlyRepository`, the client extends `HttpReadOnlyRepository`, and the controller registers the RPC with `writes = false` (only `count`, `fetch`, `fetch-page`, `fetch-by-id`, and `GET {id}`).

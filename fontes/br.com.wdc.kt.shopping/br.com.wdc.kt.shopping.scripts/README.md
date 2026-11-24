@@ -49,7 +49,7 @@ Clears all tables in the right order (respecting foreign keys) and inserts sampl
 - **Products**: Italian Design Coffee Maker, Wilson Ball, Thread Seal Tape, USB Flash Drive 2GB — with HTML descriptions and images loaded from `resources/META-INF/images/`
 - **Purchases**: 2 purchases by admin with 3 items in total
 
-The generated IDs are available as static fields (`DBReset.ADMIN_ID`, `DBReset.COFFEE_MAKER_ID`, etc.) for use in tests.
+Every table's ids start at 1 (the Home refuses a non-positive product id); existing databases keep their ids until a reset. The generated IDs are available as static fields (`DBReset.ADMIN_ID`, `DBReset.COFFEE_MAKER_ID`, etc.) for use in tests.
 
 Passwords are stored as an unsigned MD5 digest in base 36 — the same that `PasswordUtil.hashPassword` computes. Dates are stored in UTC.
 

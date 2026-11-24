@@ -253,7 +253,7 @@ sequenceDiagram
     Rev->>CR: Snapshot change → recomposition
     Note over View: Renders: spinner + disabled fields
 
-    P->>API: loginService.fetchSubject()
+    P->>API: CredentialsCheck(userName, password).run()
     API-->>P: Subject(id=1, nick=Admin)
 
     P->>S: scope.loading = false
@@ -596,7 +596,7 @@ private suspend fun enter(userName: String?, password: String?) {
     scope.loading = true  // → UI shows spinner (the scope is observed: no update() call)
 
     try {
-        val subject = loginService.fetchSubject(scope.userName ?: "", scope.password ?: "")
+        val subject = CredentialsCheck(scope.userName ?: "", scope.password ?: "").run()
         scope.loading = false
 
         if (subject?.id != null) {
