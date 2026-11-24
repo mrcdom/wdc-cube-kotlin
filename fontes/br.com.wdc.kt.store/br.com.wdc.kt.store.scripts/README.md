@@ -26,7 +26,7 @@ This module is responsible for the whole lifecycle of the database schema:
 
 Entry point, and **source of truth of the schema**: the DDL is written here, with the type variants of each database. It queries the JDBC metadata to find out which tables exist and creates the missing ones, with their sequences and indexes.
 
-Then it runs the pending migrations (`MigrationRunner`) and, last, if any table was created or if `withReset()` was called, loads the demo data (`DBReset`). The seed comes after the migrations because it already writes in the current format.
+Then it runs the pending migrations (`MigrationRunner`) and, last, if any table was created or if `withReset()` was called, loads the demo data (`DBReset`) — unless `withSkipReset()` was called, as the jOOQ class generator does. The seed comes after the migrations because it already writes in the current format.
 
 ```kotlin
 // At backend startup (BusinessContext)
@@ -46,7 +46,7 @@ DBCreate()
 Clears all tables in the right order (respecting foreign keys) and inserts sample data:
 
 - **Users**: `admin` (role ADMIN), `fulano` and `beotrano` (role CUSTOMER)
-- **Products**: Italian Design Coffee Maker, Wilson Ball, Thread Seal Tape, USB Flash Drive 2GB — with HTML descriptions and images loaded from `resources/META-INF/images/`
+- **Products**: Italian Design Coffee Maker, Wilson Ball, Thread Seal Tape, USB Flash Drive 2GB — with HTML descriptions and images read from the classpath (`META-INF/images/`, in the resources of `:store-persistence`)
 - **Purchases**: 2 purchases by admin with 3 items in total
 
 Every table's ids start at 1 (the Home refuses a non-positive product id); existing databases keep their ids until a reset. The generated IDs are available as static fields (`DBReset.ADMIN_ID`, `DBReset.COFFEE_MAKER_ID`, etc.) for use in tests.
@@ -127,6 +127,6 @@ Rules for steps:
 
 ## Dependencies
 
-- `store-persistence` — target of the generated jOOQ classes
-- `framework-jooq` — database dialect and generator
+- `store-persistence` — target of the generated jOOQ classes (and, through it, jOOQ and `framework-jooq`)
+- `jooq-codegen` — the class generator
 - `h2` — database used by the class generator

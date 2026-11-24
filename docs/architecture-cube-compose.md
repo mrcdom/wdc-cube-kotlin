@@ -223,7 +223,7 @@ This mechanism lets:
 - The presenter **not know** any view: it only shows its scope
 - Different view layers register **different views** for the same scope (Compose, native, the remote React skeleton)
 - A new screen be registered **once per view layer**, not once per entry point; a scope with no view in the catalog fails naming its class
-- Tests register a catalog of mocks (`RootPresenterMock`) and call the scope's actions directly
+- Tests register a catalog of mocks (`RootPresenterMock`, in `:store-tests`) and call the scope's actions directly
 
 ---
 
@@ -254,7 +254,7 @@ sequenceDiagram
     Note over View: Renders: spinner + disabled fields
 
     P->>API: CredentialsCheck(userName, password).run()
-    API-->>P: Subject(id=1, nick=Admin)
+    API-->>P: Subject(id, nickName)
 
     P->>S: scope.loading = false
     P->>S: app.subject = subject
@@ -448,7 +448,7 @@ fun main() {
 ```
 
 - `ScheduledExecutor`: Swing `javax.swing.Timer`
-- `SessionStorage`: `java.util.prefs.Preferences`
+- `SessionStorage`: `JvmSessionStorage` (in memory, lost when the app closes)
 - `updateHistory()`: no-op (no browser)
 
 ### Web (wasmJs)
@@ -462,12 +462,18 @@ fun main() {
     ViewUpdateScheduler.initialize { app }
     restoreAuthState(app)
 
-    val hash = getLocationHash()
-    if (hash.isNotBlank()) app.safeGo(hash) else RootKeys(app).flip()
+    ViewUpdateScheduler.launchPresenterAction {
+        val hash = getLocationHash()
+        if (hash.isNotBlank()) app.safeGo(hash) else RootKeys(app).flip()
+    }
 
     jsOnHashChange {
-        val newHash = getLocationHash()
-        if (newHash != app.fragment) app.safeGo(newHash)
+        ViewUpdateScheduler.launchPresenterAction {
+            val newHash = getLocationHash()
+            if (newHash != app.fragment) {
+                if (newHash.isNotBlank()) app.safeGo(newHash) else RootKeys(app).flip()
+            }
+        }
     }
 
     ComposeViewport(document.getElementById("ComposeTarget")!!) {
@@ -478,7 +484,7 @@ fun main() {
 }
 ```
 
-- `ScheduledExecutor`: `setTimeout` / `setInterval`
+- `ScheduledExecutor`: `setTimeout`
 - `SessionStorage`: `window.sessionStorage`
 - `updateHistory()`: updates `window.location.hash` with an HMAC-signed intent
 
@@ -487,9 +493,10 @@ fun main() {
 ```kotlin
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        initializePlatform(baseUrl)
+        initializePlatform(BuildConfig.BASE_URL)
 
-        val app = AndroidRootPresenter(this)
+        val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
+        app = AndroidRootPresenter(AndroidPersistentSessionStorage(prefs))
         app.scopeViews = composeScopeViews(app)
         ViewUpdateScheduler.initialize { app }
         runBlocking { RootKeys(app).flip() }
@@ -504,13 +511,13 @@ class MainActivity : ComponentActivity() {
 ```
 
 - `ScheduledExecutor`: Android `Handler` + `Looper`
-- `SessionStorage`: `SharedPreferences`
+- `SessionStorage`: `AndroidPersistentSessionStorage` (`SharedPreferences`)
 - `updateHistory()`: no-op
 
 ### iOS
 
 ```kotlin
-fun MainViewController() = ComposeUIViewController {
+fun MainViewController(baseUrl: String): UIViewController {
     initializePlatform(baseUrl)
 
     val app = IosRootPresenter()
@@ -518,14 +525,16 @@ fun MainViewController() = ComposeUIViewController {
     ViewUpdateScheduler.initialize { app }
     runBlocking { RootKeys(app).flip() }
 
-    StoreTheme {
-        (app.view as? RootView)?.Render()
+    return ComposeUIViewController {
+        StoreTheme {
+            (app.view as? RootView)?.Render()
+        }
     }
 }
 ```
 
-- `ScheduledExecutor`: `dispatch_queue`
-- `SessionStorage`: `NSUserDefaults`
+- `ScheduledExecutor`: `dispatch_async` / `dispatch_after` on the main queue
+- `SessionStorage`: `IosPersistentSessionStorage` (`NSUserDefaults`)
 - `updateHistory()`: no-op
 
 ---
@@ -542,7 +551,7 @@ sequenceDiagram
     participant Nav as CubeNavigation
 
     Note over App: Internal navigation
-    App->>Nav: navigate().step(HOME).step(PRODUCT).execute(intent)
+    App->>Nav: ProductKeys(app).flip() → steps RESTRICTED, HOME, PRODUCT
     Nav->>Nav: commit() → updateHistory()
     App->>App: publishParameters(intent)
     App->>App: signIntent(intentStr) → HMAC-SHA256

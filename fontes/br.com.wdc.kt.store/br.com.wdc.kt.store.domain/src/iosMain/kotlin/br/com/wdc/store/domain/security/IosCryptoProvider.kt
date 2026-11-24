@@ -1,14 +1,14 @@
 package br.com.wdc.store.domain.security
 
 /**
- * CryptoProvider implementation for wasmJs using Web Crypto API.
+ * CryptoProvider implementation for iOS, in pure Kotlin (MD5 and HMAC-SHA256, no platform crypto API).
  * For the client side, only md5 and hmacSha256 are typically needed.
  * rsaEncryptOaep is provided as a stub since RSA operations are handled server-side.
  */
 class IosCryptoProvider : CryptoProvider {
 
     override fun md5(input: ByteArray): ByteArray {
-        // Simple MD5 implementation in pure Kotlin for wasmJs
+        // Simple MD5 implementation in pure Kotlin
         return md5Hash(input)
     }
 
@@ -17,7 +17,7 @@ class IosCryptoProvider : CryptoProvider {
     }
 
     override fun rsaEncryptOaep(publicKeyBase64: String, data: ByteArray): ByteArray {
-        throw UnsupportedOperationException("RSA encryption is not supported in wasmJs client")
+        throw UnsupportedOperationException("RSA encryption is not supported in the iOS client")
     }
 }
 

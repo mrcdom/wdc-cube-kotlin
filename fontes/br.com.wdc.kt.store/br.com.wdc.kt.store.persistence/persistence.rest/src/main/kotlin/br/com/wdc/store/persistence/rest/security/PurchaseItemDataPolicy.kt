@@ -18,7 +18,7 @@ import br.com.wdc.store.domain.user.User
  *
  * - **ADMIN** reads every item, creates, updates and deletes them.
  * - **CUSTOMER** reads the items of its own purchases, and creates items in them — without a price: the price of an
- *   item is the price of its product when it is created, read by the repository in the INSERT.
+ *   item is the price of its product when it is created, read by the repository before the INSERT.
  * - **MANAGER** reads the items of its own purchases.
  *
  * What a read asks inside `purchase` goes through [PurchaseDataPolicy], and inside `product` through

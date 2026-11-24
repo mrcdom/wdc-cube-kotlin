@@ -12,7 +12,7 @@ The cost is building with what the target platform offers — which may have no 
 
 | Subproject | Platform | UI technology |
 |---|---|---|
-| [native.web/](native.web/) | Web (Kotlin/JS) | DOM API + React/MUI |
+| [native.web/](native.web/) | Web (Kotlin/JS) | React + MUI through kotlin-wrappers |
 | [native.android/](native.android/) | Android | Android Views (programmatic) |
 | [native.ios/](native.ios/) | iOS | UIKit through Kotlin/Native |
 
@@ -36,11 +36,11 @@ graph TD
 ### Cross-cutting Patterns
 
 - **View catalog**: each platform fills a `ScopeViews` catalog (scope class → native view) and gives it to the application when it boots; presenters never create views, and views take `(app, scope)`
-- **ViewSlot**: container that manages swapping child views on navigation
-- **ListSlot**: efficient list synchronization with view recycling (grow/shrink/update-in-place)
-- **FlowLayout**: responsive grid that redistributes children according to the available width
-- **Dirty-flag coalescing**: several `update()` calls are merged into a single `doUpdate()` per frame
-- **Responsive layout**: breakpoints detect the available width and switch between compact (mobile) and wide (tablet/desktop) layouts
+- **Slots**: a child view is shown through a slot — `ViewSlot` on Android and iOS, the memoized `RenderSlot` component on the web; the slot swaps the view on navigation
+- **ListSlot** (Android, iOS): efficient list synchronization with view recycling (grow/shrink/update-in-place)
+- **FlowLayout** (Android `FlowLayout`, iOS `FlowLayoutView`): responsive grid that redistributes children according to the available width
+- **Dirty-flag coalescing**: each platform has a `ViewUpdateScheduler`; several `update()` calls are merged into a single repaint per flush, which first runs `app.commitComputedState()` once
+- **Responsive layout**: breakpoints (web 518px, Android 480dp, iOS 700pt) detect the available width and switch between compact (mobile) and wide (tablet/desktop) layouts
 
 ## Screens (Native Web version as reference)
 

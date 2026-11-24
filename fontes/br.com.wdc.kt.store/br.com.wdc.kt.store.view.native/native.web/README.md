@@ -14,7 +14,9 @@ inside `safeCall`:
 class ProductsPanelView(app: RootPresenter, scope: ProductsPanelScope)
     : ReactCubeView<ProductsPanelScope>("products-panel-view", app, scope) {
 
-    override fun ChildrenScope.render() {
+    override val component = FC<Props> {
+        var rev by useState(revision)
+        useEffect(this@ProductsPanelView) { onUpdate = { rev = revision } }
         // JSX through Kotlin/JS wrappers
         Typography { +"Products" }
         Box { /* ... */ }
@@ -23,8 +25,8 @@ class ProductsPanelView(app: RootPresenter, scope: ProductsPanelScope)
 ```
 
 The lifecycle is:
-1. `render()` — declarative function that produces the UI through React/MUI
-2. `ViewUpdateScheduler` increments a `revision` → React detects the state change → re-render
+1. `component` — the React function component that produces the UI through React/MUI, reading the scope
+2. `ViewUpdateScheduler` increments the view's `revision` and calls its `onUpdate` → the component's state changes → re-render
 3. Since React is already reactive, there is no need for manual guards (the virtual DOM optimizes automatically)
 
 ### Technology Stack
@@ -32,17 +34,17 @@ The lifecycle is:
 | Layer | Technology |
 |--------|-----------|
 | **Language** | Kotlin/JS (compiled to JavaScript) |
-| **UI Library** | React 18 (through kotlin-wrappers) |
+| **UI Library** | React 19 (through kotlin-wrappers) |
 | **Component Library** | Material UI 5 (MUI) |
 | **Bundler** | Webpack (through the Gradle plugin) |
-| **Routing** | Hash-based (`#home`, `#product?id=1`) through Cube navigation |
+| **Routing** | Hash-based (`#home`, `#product?pr-id=1`, signed with HMAC as in compose.web) through Cube navigation |
 
 ### Cube ↔ React Integration
 
 The bridge between the Cube framework (imperative) and React (declarative) is the `ViewUpdateScheduler`:
 
 1. A scope change calls the view's `update()` → marks the view as dirty
-2. On the next microtask (`Promise.resolve().then {}`), the scheduler flushes
+2. On the next animation frame (`window.requestAnimationFrame`), the scheduler flushes; a `safeCall` also flushes when its action ends
 3. The flush first runs `app.commitComputedState()` once (every live presenter's), then increments the `revision` (React state) of each dirty view
 4. React re-renders only the components whose state changed
 
@@ -51,10 +53,10 @@ The bridge between the Cube framework (imperative) and React (declarative) is th
 | Pattern | Description |
 |--------|-----------|
 | **RenderSlot** | React component that renders a child `CubeView` (navigation) |
-| **Responsive breakpoints** | `window.innerWidth` to switch between mobile and desktop layouts |
-| **Hash routing** | `window.location.hash` kept in sync with Cube navigation |
-| **MUI theming** | Colors and typography through constants (`StoreColors`, `StoreTheme`) |
-| **useEffect + revision** | Each view uses `useState(revision)` to trigger a re-render |
+| **Responsive breakpoints** | `window.innerWidth` against 518px (`COMPACT_BREAKPOINT`, in `HomeView`) to switch between compact and wide layouts |
+| **Hash routing** | `window.location.hash` kept in sync with Cube navigation (in `Main.kt`) |
+| **MUI theming** | Colors, styles and the MUI theme through constants (`StoreColors`, `StoreStyles`, `StoreTheme`) |
+| **useEffect + revision** | Each view's component keeps `useState(revision)` and sets the view's `onUpdate` in a `useEffect`, to trigger a re-render |
 
 ### Navigation and Slots
 
@@ -96,49 +98,42 @@ class ReceiptView(app: RootPresenter, scope: ReceiptScope) : ReactCubeView<Recei
 - List items get their own emitters, kept per key by `EmitterCache` (the products panel: `openProduct[product.id]`); `retainOnly(keys)` drops the keys no longer shown. A list whose rows have actions of their own (the cart) is better drawn as one view per row scope (`CartItemView`), whose emitters are fields like any view's.
 - Text fields are uncontrolled where the value is only needed on submit (login): `inputRef` + `defaultValue`, read when the emitter runs, so typing repaints nothing.
 
-### Web Worker (optional)
-
-The project supports running the presenters in a separate **Web Worker**, isolating the business logic from the rendering thread. In this mode:
-- Presenters run on the worker thread
-- The view communicates through serialized `postMessage`
-- `bridge/` holds the adapters for that communication
-
 ## How to build and run
 
 ```bash
 cd fontes
 
-# Development with hot reload
+# Development with hot reload (port 8083; /api goes to the backend on 8080)
 ./gradlew :view-native-web:jsBrowserDevelopmentRun --continuous
 
 # Production build
-./gradlew :view-native-web:jsBrowserProductionWebpack
-
-# Web Worker build (if needed)
-./gradlew :view-native-web-worker:jsBrowserDevelopmentWebpack
+./gradlew :view-native-web:jsBrowserDistribution
 ```
 
-The application will be available at `http://localhost:8080/native/index.html`.
+`./deploy.sh` builds the production bundle and copies it, with gzip copies of the JS and CSS, to
+`fontes/work/deployment/native/`; the backend then serves it at `http://localhost:8080/native/`.
 
 ## File Structure
 
 ```
 src/jsMain/kotlin/br/com/wdc/store/nativeui/web/
-├── Main.kt                # Entry point — bootstrap and the view catalog (ScopeViews)
-├── bridge/                # Web Worker adapters (serialized communication)
+├── Main.kt                # Entry point — bootstrap, the view catalog (ScopeViews), signed hash routing
+├── bridge/
+│   ├── ReactCubeView.kt        # Base class of the views (revision, onUpdate, safeCall, forceUpdate)
+│   ├── ViewUpdateScheduler.kt  # Update coalescing per animation frame
+│   ├── RenderSlot.kt           # Memoized slot for a child view
+│   └── EmitterCache.kt         # Per-key event handlers for list items
 ├── theme/
-│   ├── Colors.kt          # Material Design palette
-│   └── Theme.kt           # MUI theme configuration
+│   └── StoreTheme.kt      # Palette (StoreColors), styles (StoreStyles) and the MUI theme
 ├── util/
-│   ├── ViewUpdateScheduler.kt  # Update coalescing through a microtask
-│   └── ViewUtils.kt            # Formatting, image URLs
+│   └── FormatUtils.kt     # Price and date formatting, image URLs
 └── views/
-    ├── RootView.kt              # App shell + hash router
+    ├── RootView.kt              # App shell
     ├── LoginView.kt             # Login screen
     ├── HomeView.kt              # Responsive layout with panels/tabs
-    ├── ProductsPanelView.kt     # Product grid (CSS Grid/Flow)
+    ├── ProductsPanelView.kt     # Product grid
     ├── PurchasesPanelView.kt    # Paginated purchase list
     ├── ProductView.kt           # Product detail
-    ├── CartView.kt              # WDC Store cart and its row view (CartItemView)
+    ├── CartView.kt              # Cart and its row view (CartItemView)
     └── ReceiptView.kt           # Purchase receipt
 ```

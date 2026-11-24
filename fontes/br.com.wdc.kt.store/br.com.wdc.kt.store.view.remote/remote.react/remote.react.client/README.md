@@ -2,7 +2,7 @@
 
 SPA frontend of the WDC Store system, built with **React 19**, **TypeScript** and **MUI 9**. It talks to the backend over a **bidirectional WebSocket**, receiving the presenters' scopes serialized and sending events back.
 
-See the [architecture documentation](../../../../docs/architecture-react.md) for details of the protocol and the communication cycle.
+See the [architecture documentation](../../../../../docs/architecture-react.md) for details of the protocol and the communication cycle.
 
 ## Stack
 
@@ -45,14 +45,14 @@ graph TD
 
     scripts --> views["views/ — Components"]
     views --> BrowserView["BrowserView.tsx<br/><small>Connection, alerts, loading</small>"]
-    views --> RootView["RootView.tsx<br/><small>Container auth</small>"]
+    views --> RootView["RootView.tsx<br/><small>Root container</small>"]
     views --> SlotView["SlotView.tsx<br/><small>Generic slot</small>"]
     views --> LoginView["LoginView.tsx"]
     views --> HomeView["HomeView.tsx"]
     views --> ProductView["ProductView.tsx"]
-    views --> CartView["CartView.tsx"]
+    views --> CartView["CartView.tsx<br/><small>CartView, CartItemView</small>"]
     views --> ReceiptView["ReceiptView.tsx"]
-    views --> home["home/<br/><small>HeaderPanel, ContentPanel,<br/>ProductsPanel, PurchasesPanel</small>"]
+    views --> home["home/<br/><small>HeaderPanel,<br/>ProductsPanel, PurchasesPanel</small>"]
 ```
 
 ## How It Works
@@ -96,7 +96,7 @@ export default BaseViewClass.FC(LoginViewClass, 'c677cda52d14')
 A `LinearProgress` (MUI) shows at the top of the page during user submits. Characteristics:
 
 - `position: fixed` — does not affect the layout
-- 50ms debounce — does not flicker on fast operations
+- 200ms delay — does not flicker on fast operations
 - 15s timeout — clears itself if the response never arrives
 - User actions only — keep-alive and ping are silent
 
@@ -139,13 +139,3 @@ npm run format
 # Check formatting
 npm run format:check
 ```
-
-## Formatting (Prettier)
-
-| Rule | Value |
-|-------|-------|
-| Semicolons | No |
-| Quotes | Single |
-| Trailing comma | All |
-| Width | 120 columns |
-| Indentation | 2 spaces |

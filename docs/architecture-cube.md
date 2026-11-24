@@ -24,6 +24,8 @@
 - [Interruption and Redirect](#interruption-and-redirect)
   - [The Problem](#the-problem)
   - [The Solution — Presenter Migration](#the-solution--presenter-migration)
+  - [Request from outside during a navigation](#request-from-outside-during-a-navigation)
+  - [`false` in applyParameters](#false-in-applyparameters)
   - [Detailed Flow of an Interruption](#detailed-flow-of-an-interruption)
   - [Chained Interruptions](#chained-interruptions)
 - [Mechanism Guarantees](#mechanism-guarantees)
@@ -105,7 +107,7 @@ interface CubePresenter : PresenterBase {
 | `commitComputedState` | Once per paint cycle, right before the scopes are read for painting | Compute the derived fields the view reads. The view layer's scheduler calls `CubeApplication.commitComputedState()`, which runs every live presenter's. |
 | `release` | When the presenter is discarded | Free resources (listeners, connections) and the views of its scope and segments. **Called exactly once.** |
 
-Presenters extend **`AbstractCubePresenter`**, which extends **`AbstractPresenter`**: the application, the bound scope (`bind`), the segments (`segment`, `detach`) and the guarded actions (`action`, `actionOf`, `actionOf2`, `onEvent`). A presenter never creates a view.
+Presenters with a screen extend **`AbstractCubePresenter`**, which extends **`AbstractPresenter`**: the application, the bound scope (`bind`), the segments (`segment`, `detach`) and the guarded actions (`action`, `actionOf`, `actionOf2`, `onEvent`). A presenter never creates a view. A presenter with nothing to show (the WDC Store's guard places, below) can implement `CubePresenter` directly.
 
 ### CubeIntent
 
@@ -192,7 +194,7 @@ init {
 }
 ```
 
-The view calls the field, inside its own launch: `safeCall { scope.onBuy() }` (Compose, native web, iOS), `safeAction("buy") { scope.onBuy() }` (native Android). A test calls it directly and sees the result on the next line. The body is a private method of the presenter; presenters no longer have public `onXxx` methods.
+The view calls the field, inside its own launch: `safeCall { scope.onBuy() }` (Compose, native web), `safeAction("buy") { scope.onBuy() }` (native Android and iOS). A test calls it directly and sees the result on the next line. The body is a private method of the presenter; presenters no longer have public `onXxx` methods.
 
 **The guard.** Every bound action catches what its body did not handle and hands it to `onActionFailure`, which by default calls `CubeApplication.alertUnexpectedError` (in the WDC Store the user sees `"Unexpected error: <cause>"` and the log gets the stack trace). At the end, failing or not, it calls `app.updateHistory()`, since the action may have changed what the presenters publish. Expected failures (an invalid item, an offline database) stay in the body, which turns them into messages of its own. `CancellationException` passes through.
 
@@ -279,27 +281,32 @@ A parent view draws a child by asking for the view of the scope in its field: `s
 
 Abstract base class that holds the global application state:
 
+- **`places`**: the places an address can name, given to the constructor (two with the same name, or the root, fail)
 - **`presenterMap`**: `<Int, CubePresenter>` map of the active presenters (key = `Place.id`)
 - **`lastPlace`**: last place navigated to (for deep-linking)
 - **`navigation`**: reference to the navigation in progress (or `null` if none)
-- **`navigate()`**: entry point for starting a navigation
+- **`navigate()`**: creates a navigation; **`flip(place, intent)`**, **`flip(address)`** and **`flip(intent)`** build and run one (an address or an intent is resolved by name with `placeOf`, an unknown name going to the root)
 - **`applyParameters(intent, initialization, deepest)`**: the application's own part in every navigation (below)
 - **`scopeViews`, `viewOf(scope)`, `viewOrNull(scope)`, `releaseView(scope)`**: the view catalog and the views alive, one per scope
 - **`commitComputedState()`**: runs every live presenter's; the view layer calls it once per paint cycle
 - **`alertUnexpectedError(logger, message, e)`**: where the guard of an action sends a failure nobody handled (only logged by default)
 
 ```kotlin
-abstract class CubeApplication {
+abstract class CubeApplication(places: List<CubeTreePlace> = emptyList()) {
+    val places: List<CubeTreePlace>
     internal var presenterMap: MutableMap<Int, CubePresenter>
     internal var lastPlace: CubePlace?
     internal var navigation: CubeNavigation<*>?
 
     fun <T : CubeApplication> navigate(): CubeNavigation<T>
     suspend fun flip(place: CubeTreePlace, intent: CubeIntent = newIntent()): Boolean
+    suspend fun flip(address: String): Boolean
+    suspend fun flip(intent: CubeIntent): Boolean
+    fun placeOf(placeName: String?): CubeTreePlace
     open suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean = true
     fun newIntent(): CubeIntent
     fun getPresenter(placeId: Int): CubePresenter?
-    fun release()
+    open fun release()
     open fun updateHistory()
 
     var scopeViews: ScopeViews
@@ -380,14 +387,14 @@ flowchart TD
     FOUND -->|No| CREATE["Create via factory\nnewPresenterMap[place.id] = new\ninitialize = true"]
     REUSE --> APPLY["applyParameters(intent, initialize, deepest)"]
     CREATE --> APPLY
-    APPLY --> GOAHEAD{Returned true?}
-    GOAHEAD -->|false| STOP_PARTIAL(["Stop iterating\n— partial commit"])
-    GOAHEAD -->|true| INTERRUPTED{notInterrupted?}
-    INTERRUPTED -->|false| STOP_INTERRUPT(["Navigation interrupted\n— NO commit"])
-    INTERRUPTED -->|true| NEXT([Next step])
+    APPLY --> GOAHEAD{"Returned true\nand notInterrupted?"}
+    GOAHEAD -->|yes| NEXT([Next step])
+    GOAHEAD -->|no| INTERRUPTED{notInterrupted?}
+    INTERRUPTED -->|true| STOP_PARTIAL(["Returned false: stop iterating\n— commit up to this step"])
+    INTERRUPTED -->|false| STOP_INTERRUPT(["Navigation interrupted (a redirect)\n— NO commit: the redirect commits"])
 ```
 
-The `deepest` parameter is `true` only for the last step of the route.
+The `deepest` parameter is `true` only for the last step of the route. A presenter that redirects returns `false` after the redirect has already run and interrupted this navigation, so that `false` does not commit anything.
 
 ### 3. Commit — Successful Navigation
 
@@ -397,8 +404,8 @@ When all steps complete without interruption:
 flowchart TD
     C1["1 — Build finalMap\nFor each holder in nextPresenters:\nfinalMap[id] = presenter\nnewPresenterMap.remove(id)\ncurPresenterMap.remove(id)"] --> C2["2 — Merge remaining maps\ncurPresenterMap.putAll(newPresenterMap)\n(replaced old ones + created but not accepted)"]
     C2 --> C3["3 — Release the non-accepted (leaf-first)\nreleasePresenters(curPresenterMap)"]
-    C3 --> C4["4 — Update application state\napp.presenterMap = finalMap\napp.lastPlace = targetPlace"]
-    C4 --> C5["5 — Finish\napp.navigation = null\napp.updateHistory()"]
+    C3 --> C4["4 — Update application state\napp.presenterMap = finalMap\napp.lastPlace = last accepted step"]
+    C4 --> C5["5 — Finish\napp.navigation = null (wakes a waiting request)\napp.updateHistory()"]
 ```
 
 **Why merge the maps before releasing?** This guarantees a **single release pass** with global leaf-first ordering (descending IDs), covering both old presenters and created presenters that did not make it into the final route.
@@ -450,18 +457,18 @@ runs each `applyParameters` with its own navigation marked in the coroutine cont
 request came from:
 
 ```kotlin
-// CubeNavigation.join(), called at the start of execute()
+// CubeNavigation.join(), called at the start of execute() (simplified)
 val current = app.navigation
 when {
     current == null -> app.startNavigation(this)                    // none in progress: start
-    coroutineContext.navigation === current -> {                     // from inside: it is a redirect
+    currentCoroutineContext()[Marker]?.navigation === current -> {   // from inside: it is a redirect
         current.interrupt()                                          // (1) the current one stops
         if (current.reflowCount > 10) throw AssertionError("Navigation recursion detected")
         reflowCount = current.reflowCount + 1
         newPresenterMap.putAll(current.newPresenterMap)              // (2) inherits what it created
         app.replaceNavigation(this)
     }
-    else -> waitForCurrentToFinish()                                 // from outside: see below
+    else -> { /* app.waitingNavigation = this; await the current one */ } // from outside: see below
 }
 ```
 
@@ -510,8 +517,9 @@ sequenceDiagram
     end
     participant Login as LoginPresenter
 
-    Note over NavA: The application first
-    NavA->>App: applyParameters(init=false, deepest=false)
+    Note over NavA: The application first (the page load: its first navigation)
+    NavA->>App: applyParameters(init=true, deepest=false)
+    Note over App: creates the root view, restores the session (no subject)
     App-->>NavA: true ✓ (offers the content slot)
 
     Note over NavA: Step RESTRICTED (id=2) — does not exist, create
@@ -855,6 +863,7 @@ The table below summarizes which framework operations are `suspend` and which ar
 | `Action` / `ActionOf` / `ActionOf2` `invoke` | ✅ | Runs the guarded body, which may do I/O or navigate |
 | `XxxKeys(app).flip()` | ✅ | Calls `navigate().execute()` |
 | `repository.fetch/insert/update()` | ✅ | Network or database access |
+| Calls (`ProductQuery(id).run()`, `PurchaseCreate(…).run()`) | ✅ | Reach a repository |
 | Action bodies with I/O (`buy()`) | ✅ | Call repositories or navigate |
 | Action bodies without I/O (`modifyQuantity()`) | ❌ | Only mutate the scope (the action field itself is still `suspend`) |
 
@@ -886,7 +895,7 @@ sequenceDiagram
     deactivate Scope
 ```
 
-The `safeCall` implementation is the same on all platforms (`ComposeCubeView`, `ReactCubeView`, `AbstractViewIos`; `safeAction` in `AbstractViewAndroid`):
+`ComposeCubeView` and `ReactCubeView` (native web) implement `safeCall` the same way; `AbstractViewIos` and `AbstractViewAndroid` have `safeAction(context) { … }`, which launches on `app.presenterScope` with the same `catch` and no flush of its own:
 
 ```kotlin
 // ComposeCubeView
@@ -911,7 +920,7 @@ The actions already have their own guard, so the `catch` here only sees failures
 // Compose
 Button(onClick = { safeCall { scope.onBuy() } }) { Text("Buy") }
 
-// Native Android
+// Native Android (iOS calls the same safeAction from its target's method)
 setOnClickListener { safeAction("buy") { scope.onBuy() } }
 
 // Native Web (React/MUI via Kotlin/JS), products panel
@@ -988,14 +997,14 @@ sequenceDiagram
     participant Seg as ProductsPanelScope (segment)
     participant App as CubeApplication
     participant View as HomeView
-    participant Repo as ProductRepository
+    participant Repo as ProductListQuery (→ ProductRepository)
 
     Note over Home: constructor
     Home->>Seg: products = segment(ProductsPanelScope())
     Home->>Seg: products.onOpenProduct = actionOf(1, …, target = products)
 
     Note over Home: applyParameters() — SUSPEND
-    Home->>Repo: loadProductsWithoutDescription() — SUSPEND (I/O)
+    Home->>Repo: ProductListQuery(limit = 1000).run() — SUSPEND (I/O)
     Repo-->>Home: List<ProductInfo>
     Home->>Seg: products.products = result — SYNC
     Home->>Home: scope.productsPanel = products — SYNC
@@ -1085,7 +1094,7 @@ The action fields that call them (`action { … }`, `actionOf { … }`) are alwa
 
 4. **`safeCall` is fire-and-forget.** There is no return value. If you need the result of an async operation to update the UI, mutate `scope` inside the block: the scope asks for the repaint.
 
-5. **Listeners can be suspend.** `CartManager` supports `suspend () -> Unit` as a commit listener. The framework calls these listeners sequentially with `await`.
+5. **Listeners can be suspend.** `CartManager` takes `suspend () -> Unit` commit listeners; `CartManager.commit` calls them one after the other, suspending on each.
 
 6. **`ScopeSlot.setScope()` is synchronous.** It assigns a scope to the parent's slot and never involves I/O.
 

@@ -9,7 +9,7 @@ import br.com.wdc.store.domain.purchaseitem.PurchaseItem
 import br.com.wdc.store.domain.purchaseitem.PurchaseItemRepository
 
 /**
- * **The price of a purchase item is the server's.** On insert the repository reads it (the item repository's INSERT,
+ * **The price of a purchase item is the server's.** On insert the repository reads it (right before the item repository's INSERT,
  * on every path); here, on an update through the API that touches the price or the product, the item gets its
  * product's current price. An item of a product that does not exist is refused (400).
  */

@@ -20,7 +20,7 @@ Modules of the WDC Store application, organized in layers: domain, persistence, 
 ### Views
 
 - [br.com.wdc.kt.store.view.compose/](br.com.wdc.kt.store.view.compose/) — Compose Multiplatform view (local) — [architecture](../../docs/architecture.md)
-- [br.com.wdc.kt.store.view.remote/](br.com.wdc.kt.store.view.remote/) — Remote (server-side) views — React, Vaadin, ZK
+- [br.com.wdc.kt.store.view.remote/](br.com.wdc.kt.store.view.remote/) — Remote (server-side) views — React (Vaadin and ZK planned)
 - [br.com.wdc.kt.store.view.native/](br.com.wdc.kt.store.view.native/) — Native views per platform (Android Views, UIKit, React/MUI)
 
 ### Server and Tests

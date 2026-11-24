@@ -8,7 +8,7 @@ View implementation using **UIKit** via Kotlin/Native — no SwiftUI, no Storybo
 
 Every view extends `AbstractViewIos<S>`, which implements the framework's `CubeView` interface. A view receives the
 application and the scope it paints — never the presenter — and calls the scope's actions (`scope.onX(...)`) inside
-`safeCall`:
+`safeAction`:
 
 ```kotlin
 class ProductsPanelViewIos(app: RootPresenter, scope: ProductsPanelScope)
@@ -57,7 +57,7 @@ UIKitDom.build {
 }
 ```
 
-Available components: `vStack`, `hStack`, `view`, `scrollView`, `flowLayout`, `label`, `button`, `textField`, `imageView`.
+Available components: `vStack`, `hStack`, `view`, `scrollView`, `flowLayout`, `label`, `button`, `textField`, `imageView`, `activityIndicator`, `segmentedControl`, `spacer`, `flexSpacer`.
 
 All views use `translatesAutoresizingMaskIntoConstraints = false` (set automatically by the DSL) and are positioned with Auto Layout constraints.
 
@@ -105,7 +105,7 @@ Breakpoints:
 
 ### Navigation and Slots
 
-Parent views declare a `ViewSlot` (a `UIView`). The parent scope holds the child's scope (`content`, and
+Parent views declare a `ViewSlot` over a container `UIView` (`newViewSlot(container)`). The parent scope holds the child's scope (`content`, and
 `productsPanel`/`purchasesPanel` in Home); the parent asks the application for that scope's view, which is created once
 per scope and reused. The slot pins the child view with constraints on all 4 edges:
 
@@ -153,10 +153,12 @@ The Xcode project (`StoreNativeApp.xcodeproj`) is generated with [XcodeGen](http
 ```
 src/iosMain/kotlin/br/com/wdc/store/nativeui/ios/
 ├── AppBootstrap.kt        # Entry point: platform setup and the view catalog (ScopeViews)
+├── IosNativeRootPresenter.kt
 ├── theme/
 │   ├── Colors.kt          # Material Design palette adapted to UIColor
 │   ├── Icons.kt           # SVG path icons → UIBezierPath
-│   └── UIK.kt             # UIKit constants (alignments, content modes)
+│   ├── Styles.kt          # Style helpers (StoreStyles)
+│   └── UIKitConstants.kt  # UIKit constants (object UIK: alignments, content modes)
 ├── toolkit/
 │   ├── AbstractViewIos.kt       # Base class + ListSlot + ViewSlot
 │   ├── UIKitDom.kt              # DSL for building UIViews

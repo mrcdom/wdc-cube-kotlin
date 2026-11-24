@@ -6,7 +6,9 @@
 cd fontes && ./gradlew :view-compose-web:wasmJsBrowserDevelopmentRun
 ```
 
-The webpack proxy forwards `/api/*` to the backend on port 8080.
+The webpack proxy forwards `/api/*` to the backend on port 8080 (another one: the `BASE_URL` environment variable).
+
+`./deploy.sh` builds the production bundle (`wasmJsBrowserDistribution`) and copies it, pre-compressed with gzip, to `fontes/work/deployment/compose/`; the backend serves it at `http://localhost:8080/compose/`.
 
 ## Navigation Security — HMAC Signing of Intents
 
@@ -52,7 +54,7 @@ sequenceDiagram
    persists it in session storage (through `writeAuthState`/`readAuthState`).
 3. **When navigating**, `Main.kt` computes `HMAC-SHA256(key, intentString)` and
    encodes the result in Base62 (URL-safe). The resulting hash looks like:
-   `#restricted/product?id=42&sign=7kT9x...`
+   `#product?pr-id=42&sign=7kT9x...`
 4. **When verifying** (hashchange, F5, back/forward), the HMAC is recomputed and
    compared — all locally, with no call to the server.
 
@@ -93,8 +95,8 @@ correctly, without falling back to the anonymous key.
 
 ### Session Persistence
 
-Authentication sessions (RSA key pairs, refresh tokens, role names) are
-persisted in the H2 `EN_USER_SESSION` table. This means that **restarting the
+Authentication sessions (RSA key pairs, the private key encrypted; refresh
+tokens; role names) are persisted in the database's `EN_USER_SESSION` table. This means that **restarting the
 server does not invalidate existing sessions** — the client keeps navigating
 normally without having to re-authenticate.
 

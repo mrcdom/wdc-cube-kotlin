@@ -2,7 +2,9 @@
 
 Engine of the **Cube MVP** pattern — state management, hierarchical navigation with Places, and presenter lifecycle.
 
-**Platforms:** JVM, Android, iOS, wasmJs
+**Platforms:** JVM, Android, iOS, JS, wasmJs
+
+**Main dependencies:** `framework-commons`, `kotlinx-coroutines-core`
 
 ## Components
 

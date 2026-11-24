@@ -10,4 +10,4 @@ Main components:
 - `BrowserScope` + `BrowserPresenter` — the browser tab as a scope of the remote layer (the alert, the root view sent as `contentViewId`, start, history, keep-alive); `BrowserPresenter` binds its actions with their event codes like any presenter, and its view is a plain `ScopeViewImpl` (instance 0)
 - `LoginReactViewImpl` (deciphers the password) and `ReceiptReactViewImpl` (one-time success notice) — the only scopes with a class of their own
 
-See the [architecture documentation](../../../../docs/architecture-react.md) for the full communication cycle.
+See the [architecture documentation](../../../../../docs/architecture-react.md) for the full communication cycle.

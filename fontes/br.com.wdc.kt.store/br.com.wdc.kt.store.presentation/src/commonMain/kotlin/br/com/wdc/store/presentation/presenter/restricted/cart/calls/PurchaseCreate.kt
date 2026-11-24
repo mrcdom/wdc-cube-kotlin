@@ -13,7 +13,7 @@ import kotlin.time.Clock
 
 /**
  * The checkout: the purchase of [userId] with one item per cart entry, in one transaction (the purchase and its items
- * commit together, or nothing does). The items carry no price: the repository reads each product's in the INSERT.
+ * commit together, or nothing does). The items carry no price: the repository reads each product's before the INSERT.
  * Answers the purchase id.
  */
 class PurchaseCreate(private val userId: Long, private val cartItems: List<CartItem>) :

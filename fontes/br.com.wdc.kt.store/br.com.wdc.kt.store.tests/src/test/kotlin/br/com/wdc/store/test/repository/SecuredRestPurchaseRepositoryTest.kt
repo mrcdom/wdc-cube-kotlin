@@ -46,7 +46,7 @@ class SecuredRestPurchaseRepositoryTest {
         assertTrue(e.message!!.startsWith("HTTP $status"), "esperava HTTP $status, veio: ${e.message}")
     }
 
-    /** An item as a customer sends it: no price — the repository reads the product's in the INSERT. */
+    /** An item as a customer sends it: no price — the repository reads the product's before the INSERT. */
     private fun newItem(productId: Long, purchaseId: Long? = null) = PurchaseItem().apply {
         product = Product().apply { id = productId }
         amount = 1

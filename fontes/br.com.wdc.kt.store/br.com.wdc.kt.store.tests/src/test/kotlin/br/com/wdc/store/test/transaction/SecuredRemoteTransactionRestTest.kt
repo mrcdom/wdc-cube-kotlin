@@ -37,7 +37,7 @@ class SecuredRemoteTransactionRestTest {
         this.purchase = purchase
         product = Product().apply { id = productId }
         amount = 1
-        // no price: a customer does not send it — the repository reads the product's in the INSERT
+        // no price: a customer does not send it — the repository reads the product's before the INSERT
     }
 
     /** A purchase of fulano's, made by himself: a customer buys only for themselves. */

@@ -10,6 +10,8 @@ dependencies {
 }
 ```
 
+This README describes the code in this repository, which is ahead of the last published version (0.4.0): the data policy, `NotFoundException` (404), `RemoteTransactionNotFoundException` (410), `inRemoteTransaction` and the query cap of `RepositoryRpc` come with 0.5.0, not yet published. See the [0.5.0 release notes](../README.md#050-release-notes).
+
 ## Example
 
 ```kotlin

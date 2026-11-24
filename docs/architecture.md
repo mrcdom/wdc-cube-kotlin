@@ -164,7 +164,7 @@ graph TB
 | `:framework-cube` | MVP engine — transactional navigation, presenter lifecycle, Places, Intent |
 | `:framework-commons` | Shared utilities — logging, JSON, HTTP, crypto, schedulers |
 | `:store-presentation` | Presenters and their scopes — pure presentation logic (no UI) |
-| `:store-domain` | Domain models, repository interfaces, services |
+| `:store-domain` | Domain models, repository interfaces, security contracts |
 | `:store-persistence-client` | REST implementation of the repositories and of the transaction service (HTTP client) |
 | `:store-persistence` | jOOQ implementation of the repositories (direct database access) |
 | `:view-compose` | Shared Compose Multiplatform views |
@@ -172,8 +172,10 @@ graph TB
 | `:view-compose-android` | Android entry point |
 | `:view-compose-web` | wasmJs (WebAssembly) entry point |
 | `:view-compose-ios` | iOS entry point (via Xcode) |
-| `:store-backend` | Javalin server — REST API, WebSocket, H2 |
-| `:store-scripts` | Database migrations and scripts |
+| `:persistence-rest` | The WDC Store's REST API (repository RPC per entity, authentication, data policies) over `:framework-rest` |
+| `:view-remote-react-skeleton` | Server side of the remote React view (WebSocket, one view per scope) |
+| `:backend` | Javalin server — REST API, WebSocket, H2 or PostgreSQL |
+| `:store-scripts` | Database creation (`DBCreate`), migrations and jOOQ schema generation |
 
 ---
 
@@ -186,15 +188,15 @@ graph TB
     subgraph "Shared Code (commonMain)"
         FW[Framework Cube + Commons]
         PRES[Presenters + Scopes]
-        DOM[Domain Models + Services]
+        DOM[Domain Models + Resource calls]
         VIEW[Compose Views]
     end
 
     subgraph "Platforms"
-        JVM["Desktop (JVM)<br/>Gson, OkHttp, JCE"]
-        AND["Android<br/>Gson, OkHttp, JCE"]
-        WASM["Web (wasmJs)<br/>Kotlinx-serialization<br/>Fetch API, Web Crypto"]
-        IOSN["iOS (Native)<br/>NSJSONSerialization<br/>URLSession, CommonCrypto"]
+        JVM["Desktop (JVM)<br/>OkHttp, JCE"]
+        AND["Android<br/>OkHttp, JCE"]
+        WASM["Web (wasmJs)<br/>XMLHttpRequest, pure-Kotlin crypto"]
+        IOSN["iOS (Native)<br/>NSURLSession, pure-Kotlin crypto"]
     end
 
     FW --> JVM
@@ -226,13 +228,13 @@ graph TB
 
 ### Per-Platform Implementations
 
-| Component          | JVM / Android         | wasmJs                  | iOS                     |
-|--------------------|-----------------------|-------------------------|-------------------------|
-| JSON               | Gson                  | Kotlinx-serialization   | NSJSONSerialization     |
-| HTTP               | OkHttp                | Fetch API               | URLSession              |
-| Crypto             | JCE                   | Web Crypto API          | CommonCrypto            |
-| Scheduler          | ScheduledThreadPool   | setTimeout/setInterval  | dispatch_queue          |
-| ThreadLocal        | java.lang.ThreadLocal | Global variable         | pthread_key             |
+| Component          | JVM / Android                                   | wasmJs                                   | iOS                                   |
+|--------------------|-------------------------------------------------|------------------------------------------|---------------------------------------|
+| JSON               | Framework's pure-Kotlin reader/writer (`installCommon()`) | same                           | same                                  |
+| HTTP               | `OkHttpTransport` (OkHttp)                      | `WasmHttpTransport` (synchronous XMLHttpRequest) | `IosHttpTransport` (NSURLSession) |
+| Crypto             | `JceCryptoProvider` (JCE)                       | `WasmCryptoProvider` (pure Kotlin MD5/HMAC, no RSA) | `IosCryptoProvider` (pure Kotlin MD5/HMAC, no RSA) |
+| Scheduler          | Swing `Timer` (desktop), `Handler` (Android)    | `setTimeout`                             | `dispatch_after` on the main queue    |
+| ThreadLocalRef     | `java.lang.ThreadLocal`                         | Plain field                              | Plain field                           |
 
 ---
 
@@ -417,9 +419,9 @@ Both implement the same contract. The REST implementation sends the criteria and
 
 HTTP server based on **Javalin** (Java 21) with:
 
-- **REST API** — endpoints for products, cart, purchases, authentication
+- **REST API** — repository RPC per entity (`/api/repo/…`: users, products, purchases, purchase items), remote transactions (`/api/tx/…`) and authentication (`/api/auth/…`, only with security on)
 - **WebSocket** — support for the remote view modality (React)
-- **H2 Database** — embedded database with versioned migrations
+- **Database** — embedded H2 (or PostgreSQL) with versioned migrations
 - **JWT** — authentication with access token + refresh token, sessions persisted in the database
 - **Data policies** — per role, the rows and fields of each entity the REST API reads and writes ([security architecture](security-architecture.md))
 
@@ -445,10 +447,10 @@ See [architecture-cube-compose.md](architecture-cube-compose.md) for full detail
 
 ```mermaid
 graph TB
-    EX[Exception]
-    EX --> OE[OfflineException<br/>Server unavailable]
-    EX --> ICE[InvalidCartItemException<br/>Invalid cart item]
+    EX[RuntimeException]
     EX --> BE[BusinessException<br/>Business rule violated]
+    BE --> OE[OfflineException<br/>Server unavailable]
+    BE --> ICE[InvalidCartItemException<br/>Invalid cart item]
     EX --> PNF[ProductNotFoundException<br/>Product not found]
     EX --> PUNF[PurchaseNotFoundException<br/>Purchase not found]
     EX --> WPE[WrongParametersException<br/>Invalid parameters]
@@ -458,7 +460,6 @@ graph TB
     style BE fill:#ffa726,color:#000
     style PNF fill:#ffa726,color:#000
     style PUNF fill:#ffa726,color:#000
-    style WP fill:#78909c,color:#fff
     style WPE fill:#78909c,color:#fff
 ```
 
@@ -563,9 +564,9 @@ sequenceDiagram
     Note over LV: Recomposes: spinner + disabled fields
 
     LP->>LS: CredentialsCheck(admin, ***).run()
-    LS->>API: POST /auth/login
-    API-->>LS: Subject id=1, nick=Admin
-    LS-->>LP: Subject(id=1, nick=Admin)
+    LS->>API: GET /api/auth/challenge, POST /api/auth/login
+    API-->>LS: tokens + user id (then the name, via the user repository)
+    LS-->>LP: Subject(id, nickName)
 
     LP->>LP: scope.loading = false
     LP->>LP: app.subject = subject

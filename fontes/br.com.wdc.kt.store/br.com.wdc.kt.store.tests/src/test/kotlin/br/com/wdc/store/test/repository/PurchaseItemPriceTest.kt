@@ -17,7 +17,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * The price of a purchase item is the server's on every path: in process too (the checkout of the remote React
- * view and the desktop), the repository's INSERT reads it from the product, whatever the caller sent.
+ * view and the desktop), the repository reads it from the product right before the INSERT, whatever the caller sent.
  */
 class PurchaseItemPriceTest {
 

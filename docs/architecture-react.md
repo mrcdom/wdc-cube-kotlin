@@ -32,7 +32,7 @@ graph LR
         SKEL["Skeleton<br/>(bridge view)"]
         PRES["Presenters<br/>(presentation logic)"]
         REPO["Repositories<br/>(JDBC data access)"]
-        DB[(H2 Database)]
+        DB[(H2 or PostgreSQL)]
     end
 
     REACT <-->|"WebSocket<br/>bidirectional JSON"| SKEL
@@ -113,12 +113,12 @@ graph TB
 
 | Module | Role |
 |--------|-------|
-| **react.client** | Pure rendering in React/TypeScript with Material UI. Receives the views' scopes as JSON and sends user events. Bundled with Parcel. |
-| **react.skeleton** | Server-side bridge: one `ScopeViewImpl` per scope dispatches the client's events to the actions the presenter bound with their codes and writes the scope as JSON; the view catalog (`ScopeViews`) holds each client component's vid. |
-| **backend** | Javalin server that hosts the WebSocket (`/dispatcher/{id}`), serves the React static files, and exposes the REST API for Compose clients. |
-| **presentation** | Shared presenters (KMP commonMain) — the same code used by both React and Compose. |
-| **persistence** | jOOQ implementation of the repositories (H2 or PostgreSQL) — used directly by the presenters in the React architecture. |
-| **persistence.rest** | REST endpoints — used by Compose clients via `persistence.client`. |
+| **react.client** (`remote.react.client`, npm) | Pure rendering in React/TypeScript with Material UI. Receives the views' scopes as JSON and sends user events. Bundled with Parcel (`npm run build`) into the skeleton's resources. |
+| **react.skeleton** (`:view-remote-react-skeleton`) | Server-side bridge: one `ScopeViewImpl` per scope dispatches the client's events to the actions the presenter bound with their codes and writes the scope as JSON; the view catalog (`ScopeViews`) holds each client component's vid. |
+| **backend** (`:backend`) | Javalin server that hosts the WebSocket (`/dispatcher/{id}`), serves the React static files, and exposes the REST API for Compose clients. |
+| **presentation** (`:store-presentation`) | Shared presenters (KMP commonMain) — the same code used by both React and Compose. |
+| **persistence** (`:store-persistence`) | jOOQ implementation of the repositories (H2 or PostgreSQL) — used directly by the presenters in the React architecture. |
+| **persistence.rest** (`:persistence-rest`) | REST endpoints — used by Compose clients via `persistence.client` (`:store-persistence-client`). |
 
 ---
 
@@ -140,7 +140,7 @@ sequenceDiagram
     ViewImpl->>Presenter: scope.userName = formData.userName
     Dispatch->>ViewImpl: submit(eventCode=1, ...)
     ViewImpl->>Presenter: scope.dispatch(1, formData) → onEnter
-    Presenter->>Repo: findByCredentials(user, pass)
+    Presenter->>Repo: CredentialsCheck(user, pass).run()
     Note over Repo: Direct JDBC access<br/>no network round trip
     Repo-->>Presenter: Subject
     Presenter->>ViewImpl: update() via markDirty (the scope asks)
@@ -165,22 +165,21 @@ sequenceDiagram
     participant Server as Server
 
     Browser->>Server: GET /index.html
-    Server->>Server: Generates appId = random.HMAC(random)
-    Server->>Server: Generates RSA key pair (pub/priv)
-    Server-->>Browser: Cookies: app_id, app_skey (RSA pub)
+    Server->>Server: Generates appId = random.sign(random)
+    Server-->>Browser: Cookies: app_id, app_skey (the server's RSA public key)
 
-    Browser->>Browser: Generates random AES-256-GCM password
-    Browser->>Browser: Encrypts AES password with RSA pub
-    Browser->>Browser: Sets app_signature cookie
+    Browser->>Browser: Generates a random password, salt and IV
+    Browser->>Browser: Encrypts the password with the RSA public key
+    Browser->>Browser: Sets the app_signature cookie
 
-    Browser->>Server: WebSocket /dispatcher/appId
+    Browser->>Server: WebSocket /dispatcher/appId (checks the appId and the cookie)
     Browser->>Server: ping with secret=app_signature
-    Server->>Server: Decrypts AES password with RSA priv
-    Server->>Server: Creates ReactRootPresenter
+    Server->>Server: Decrypts the password with the RSA private key,<br/>derives the AES-256-GCM key (PBKDF2)
+    Server->>Server: Creates ReactRootPresenter (first message)
     Server-->>Browser: Initial scopes (views)
 ```
 
-The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging session IDs.
+The `appId` is self-signed: `{random}.{signature(random)}` (`AppSecurity.signAsHash`, Base62) — this prevents forging session IDs. The RSA key pair is the server's, fixed (`wdc.web.public_key` / `wdc.web.private_key`, with a development fallback), not one per session.
 
 ---
 
@@ -208,14 +207,15 @@ The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging 
 ```json
 {
   "requestId": 42,
-  "uri": "/home",
+  "uri": "home?sign=…",
   "scopes": [
     {
       "id": "473dbdd7a36a:3",
-      "nickName": "Admin",
-      "cartItemCount": 0,
       "productsPanelViewId": "a1b2c3d4e5f6:4",
-      "purchasesPanelViewId": "b3c4d5e6f7a8:5"
+      "purchasesPanelViewId": "b3c4d5e6f7a8:5",
+      "nickName": "John Smith",
+      "cartItemCount": 0,
+      "errorCode": 0
     },
     {
       "id": "a1b2c3d4e5f6:4",
@@ -226,7 +226,8 @@ The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging 
 ```
 
 - **`scopes`**: only the views that changed (dirty tracking)
-- **`uri`**: new navigation fragment (for the browser history)
+- **`uri`**: the current navigation fragment, signed (for the browser history)
+- **Fields**: in the scope's declaration order, after `id`; `null` and blank strings are left out, numbers and booleans always go, fields declared with `sent = false` (the login's password) never go
 - **References between views**: `*ViewId` fields point to other views, `*ViewIds` fields to a list of views (the cart rows, `rowsViewIds`, empty included). A view created while writing a message (a scope sent for the first time) goes out in the same message
 
 ---
@@ -380,16 +381,14 @@ stateDiagram-v2
     Connected --> Active: Initial ping
     Active --> Active: User events
     Active --> Disconnected: WebSocket closed
-    Disconnected --> Connected: Reconnection
-    Disconnected --> Expired: 3-minute timeout
-    Active --> Expired: 3-minute timeout without WS
-    Expired --> [*]: release()
+    Disconnected --> Connected: Reconnection (signed in)
+    Disconnected --> [*]: release() when not signed in
 ```
 
 - **Creation**: when `/index.html` is accessed, session cookies are set
-- **Lifetime**: 3 minutes (`DEFAULT_TIME_SPAN`) — extended on every interaction
+- **Lifetime**: 3 minutes (`DEFAULT_TIME_SPAN`) — extended on every message, including the keep-alive event (every 15 s)
 - **Reconnection**: if the WebSocket drops, the client reconnects and finds the same session (if it has not expired)
-- **Cleanup**: expired sessions without an active WebSocket are removed periodically
+- **Cleanup**: `ReactRootPresenter.removeExpireds()` releases expired sessions without an active WebSocket, but nothing schedules it at present: in practice a session ends when its WebSocket closes unauthenticated
 - **Logout/Disconnection**: an unauthenticated session is released immediately when the WebSocket closes
 
 ---
@@ -494,21 +493,21 @@ sequenceDiagram
     Disp->>LView: submit(eventCode=1, ...)
     LView->>LPres: scope.dispatch(1) → scope.onEnter(null, null)
 
-    LPres->>URepo: findByCredentials(admin, password)
-    Note over URepo: Direct SQL on H2<br/>no intermediate REST
-    URepo-->>LPres: Subject(id=1, nick=Admin)
+    LPres->>URepo: CredentialsCheck(admin, password).run()
+    Note over URepo: Direct SQL (H2 or PostgreSQL)<br/>no intermediate REST
+    URepo-->>LPres: Subject(id, nickName)
 
     LPres->>LPres: app.subject = subject
-    LPres->>LPres: Navigates to /home
+    LPres->>LPres: HomeKeys(app).flip()
 
     Note over LPres: Creates HomePresenter<br/>(its panels are segments of HomeScope)
 
     Resp->>LPres: app.commitComputedState()
     Resp->>Resp: Collects dirty views
 
-    Resp-->>WS: JSON with scopes of Home,<br/>ProductsPanel, PurchasesPanel
+    Resp-->>WS: JSON with scopes of Root, Home,<br/>ProductsPanel, PurchasesPanel
 
-    WS-->>React: uri=/home + scopes=[...]
+    WS-->>React: uri=home?sign=… + scopes=[...]
     React->>React: Updates browser history
     React->>React: Renders Home screen
 

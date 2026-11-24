@@ -188,11 +188,11 @@ Each `RowScope` is written twice, and both must agree: `restrict(group, requeste
 **Writing.**
 
 - Create: one grant allows every field sent, and reaches the new row. The server **does not force the owner**: a CUSTOMER's purchase for someone else, or without a user, is a 403.
-- Update: one grant reaches the **stored** row, allows every changed field, and **still reaches the row after the change** — a grant over one's own rows cannot hand a row to someone else. A caller with no update grant on the entity gets a 403 at once. When they have one but it does not reach the row, the answer is **404 if they cannot read the row either** (the same answer as a missing row: a 403 would tell the row exists) and **403 if they can**. In the WDC Store only ADMIN updates, and over every row, so a CUSTOMER or MANAGER update is always a 403 — their own purchase included.
+- Update: one grant reaches the **stored** row, allows every changed field, and **still reaches the row after the change** — a grant over one's own rows cannot hand a row to someone else. A caller with no update grant on the entity gets a 403 at once. When they have one but it does not reach the row, the answer is **404 if they cannot read the row either** (the same answer as a missing row: a 403 would tell the row exists) and **403 if they can**. In the WDC Store purchases and items are updated only by ADMIN, over every row, so a CUSTOMER or MANAGER update of them is always a 403 — their own purchase included.
 - Delete: only the rows of grants that delete, filtered by fields those grants read; a caller with no delete grant gets a 403.
 - A grant that masks a field cannot write it, so a masked value echoed back is a 403, never an overwrite.
 - A relation is written by its key only.
-- What the server decides is not writable: the price of an item a customer buys is the price of its product, read by the repository in the `INSERT` itself (`PurchaseItemRepositoryImpl`), on every path; a CUSTOMER that sends a price gets a 403 naming `price`. An update that touches an item's price or product gets the product's current price (`ItemPrices`, a `beforeUpdate` hook — only ADMIN updates items).
+- What the server decides is not writable: the price of an item a customer buys is the price of its product, read by the item repository right before each `INSERT` (`PurchaseItemRepositoryImpl`), on every path; a CUSTOMER that sends a price gets a 403 naming `price`. An update that touches an item's price or product gets the product's current price (`ItemPrices`, a `beforeUpdate` hook — only ADMIN updates items).
 
 **Refusing, not trimming.** A forbidden request is a **403 naming the fields** (`{"error": "not allowed to read user fields [password]"}`). Quietly trimming would make a screen show blanks with nobody knowing why. The client is not sent the policy: a correct client never asks for what its roles do not allow, so a 403 is an unexpected error, and the field list serves whoever reads the log.
 
@@ -289,7 +289,7 @@ In the Compose web view, every navigation in the address is signed with HMAC-SHA
 
 ## Remote transactions
 
-A REST client can make several calls atomic (`/api/tx/begin`, `commit`, `rollback`, `status`, with the `X-Tx-Id` header). A transaction belongs to whoever opened it — `user:<id>/client:<X-Client-Id>` when authenticated, the `X-Client-Id` alone without security — and no one else may use it (403); the cap on open transactions counts per user. The policies check each call inside the transaction like any other: a row created earlier in it is seen by the row checks. Details: [Persistence architecture — Remote transaction](architecture-persistence.md#remote-transaction).
+A REST client can make several calls atomic (`/api/tx/begin`, `commit`, `rollback`, `status`, with the `X-Tx-Id` header). A transaction belongs to whoever opened it — `user:<id>/client:<X-Client-Id>` when authenticated, the `X-Client-Id` alone without security — and no one else may use it (403); an unknown or expired one answers 410; the cap on open transactions counts per user. The policies check each call inside the transaction like any other: a row created earlier in it is seen by the row checks. Details: [Persistence architecture — Remote transaction](architecture-persistence.md#remote-transaction).
 
 ---
 
@@ -324,5 +324,5 @@ The reference implementation favors clarity over a hardened deployment. Before p
 | No projection | The entity's default shape, trimmed to what the requester may read |
 | Password | Write-only, with or without security; stored as its digest; sent encrypted with the session key |
 | Purchases | A receipt: customers read and create their own; only an ADMIN changes or deletes them or their items |
-| Price of an item | Decided by the server, from the product, in the `INSERT`; `ItemPrices` on update |
+| Price of an item | Decided by the server, from the product, on every insert; `ItemPrices` on update |
 | Disjunction of row scopes | Alternative groups (`anyOf`), server side only; a client's search over columns is a field of its own (`translateAny`) |

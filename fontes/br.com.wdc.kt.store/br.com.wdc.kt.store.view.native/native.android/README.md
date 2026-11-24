@@ -12,7 +12,7 @@ inside `safeAction`:
 
 ```kotlin
 class ProductsPanelViewAndroid(app: RootPresenter, scope: ProductsPanelScope)
-    : AbstractViewAndroid<ProductsPanelScope>("products-panel", app, scope) {
+    : AbstractViewAndroid<ProductsPanelScope>("products-panel-view", app, scope) {
 
     override fun createView(): View = AndroidDom.build(ctx) {
         // DSL for building the UI programmatically
@@ -35,13 +35,13 @@ Kotlin DSL that replaces XML/Compose with programmatic calls:
 
 ```kotlin
 AndroidDom.build(ctx) {
-    vStack(spacing = 8.dp) {
-        hStack { 
-            label { text = "Title"; textSize = 17f }
-            spacer()
+    vStack(spacing = dp(8)) {
+        hStack {
+            textView { text = "Title"; textSize = 17f }
+            flexSpacer()
         }
         scrollView {
-            flowLayout(minChildWidth = 160.dp) {
+            flowLayout(minChildWidth = dp(160)) {
                 // product cards
             }
         }
@@ -49,7 +49,7 @@ AndroidDom.build(ctx) {
 }
 ```
 
-Available components: `vStack`, `hStack`, `frame`, `scrollView`, `flowLayout`, `spacer`, `label`/`textView`, `button`, `imageView`, `editText`.
+Available components: `vStack`, `hStack`, `frame`, `scrollView`, `flowLayout`, `spacer`, `flexSpacer`, `textView`, `button`, `imageView`, `editText`, `progressBar`.
 
 ### View Updates: `ViewUpdateScheduler`
 
@@ -72,7 +72,7 @@ The scheduler works via `Handler(Looper.getMainLooper())`:
 
 ### Navigation and Slots
 
-Parent views declare a `ViewSlot` (a `FrameLayout`). The parent scope holds the child's scope (`content`, and
+Parent views declare a `ViewSlot` over a `FrameLayout` (`newViewSlot(container)`). The parent scope holds the child's scope (`content`, and
 `productsPanel`/`purchasesPanel` in Home); the parent asks the application for that scope's view, which is created once
 per scope and reused:
 
@@ -105,13 +105,17 @@ cd br.com.wdc.kt.store/br.com.wdc.kt.store.view.native/native.android
 ## File Structure
 
 ```
-src/androidMain/kotlin/br/com/wdc/store/nativeui/android/
+src/main/kotlin/br/com/wdc/store/nativeui/android/
+├── MainActivity.kt        # Entry point: bootstrap and the view catalog (ScopeViews)
+├── AndroidNativeRootPresenter.kt
+├── AndroidScheduledExecutor.kt
 ├── theme/
 │   ├── Colors.kt          # Material Design palette
 │   ├── Dimens.kt          # Default dimensions
+│   ├── Icons.kt           # Icons
 │   └── Styles.kt          # Style helpers (cards, buttons)
 ├── toolkit/
-│   ├── AbstractViewAndroid.kt   # Base class + ListSlot
+│   ├── AbstractViewAndroid.kt   # Base class + ViewSlot and ListSlot
 │   ├── AndroidDom.kt           # DSL for building views
 │   ├── FlowLayout.kt           # Responsive grid ViewGroup
 │   ├── ViewUpdateScheduler.kt  # Update coalescing

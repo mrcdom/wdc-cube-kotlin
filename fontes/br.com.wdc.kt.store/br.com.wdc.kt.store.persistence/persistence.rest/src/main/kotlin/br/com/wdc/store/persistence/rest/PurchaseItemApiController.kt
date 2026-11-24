@@ -12,7 +12,7 @@ import br.com.wdc.store.persistence.rest.security.PurchaseItemDataPolicy
 /**
  * Purchase item REST endpoints: the repository RPC, read and written with the [PurchaseItemCodec] — the same one
  * the client uses. Access is decided by [PurchaseItemDataPolicy]. The price is the server's: the repository reads it
- * in the INSERT, and an update that touches the price or the product gets the product's current one ([ItemPrices]).
+ * before the INSERT, and an update that touches the price or the product gets the product's current one ([ItemPrices]).
  */
 internal object PurchaseItemApiController {
 

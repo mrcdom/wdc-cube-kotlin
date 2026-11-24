@@ -14,7 +14,7 @@ import br.com.wdc.store.persistence.rest.security.PurchaseDataPolicy
  * client uses. Access is decided by [PurchaseDataPolicy]: a purchase is a receipt, which its buyer creates and reads,
  * and only an administrator changes. A read without a projection gets the receipt (date, buyer's name, items).
  *
- * The items that come with a new purchase are priced by the repository, in the INSERT.
+ * The items that come with a new purchase are priced by the repository, before the INSERT.
  */
 internal object PurchaseApiController {
 
