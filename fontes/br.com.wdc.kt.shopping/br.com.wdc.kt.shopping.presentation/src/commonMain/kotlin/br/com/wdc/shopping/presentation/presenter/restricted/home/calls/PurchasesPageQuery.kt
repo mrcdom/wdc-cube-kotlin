@@ -13,12 +13,14 @@ import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.Purcha
 class PurchasesPageQuery(private val userId: Long, private val page: Int, private val pageSize: Int) :
     ResourceQuery<Page<PurchaseInfo>>() {
 
+    private val purchaseRepo: PurchaseRepository get() = PurchaseRepository.BEAN.get()
+
     override suspend fun run(): Page<PurchaseInfo> {
         val criteria = PurchaseCriteria()
             .withUserId(userId)
             .withProjection(PurchaseInfo.projectionWithItems())
             .withOrderBy(PurchaseCriteria.OrderBy.MOST_RECENT_PURCHASE_FIRST)
-        val result = PurchaseRepository.BEAN.get().fetchPage(criteria, page, pageSize)
+        val result = purchaseRepo.fetchPage(criteria, page, pageSize)
         return Page.of(result.items.mapNotNull { PurchaseInfo.create(it) }, page, pageSize, result.totalItems)
     }
 }

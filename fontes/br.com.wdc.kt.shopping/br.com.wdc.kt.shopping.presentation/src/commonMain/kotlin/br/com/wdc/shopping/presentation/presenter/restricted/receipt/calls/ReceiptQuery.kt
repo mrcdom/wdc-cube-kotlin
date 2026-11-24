@@ -14,12 +14,14 @@ import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.Rec
  */
 class ReceiptQuery(private val purchaseId: Long, private val userId: Long) : ResourceQuery<ReceiptForm?>() {
 
+    private val purchaseRepo: PurchaseRepository get() = PurchaseRepository.BEAN.get()
+
     override suspend fun run(): ReceiptForm? {
         val criteria = PurchaseCriteria()
             .withPurchaseId(purchaseId)
             .withUserId(userId)
             .withProjection(ReceiptForm.projection())
-        val receipt = ReceiptForm.create(PurchaseRepository.BEAN.get().fetch(criteria, limit = 1).firstOrNull())
+        val receipt = ReceiptForm.create(purchaseRepo.fetch(criteria, limit = 1).firstOrNull())
         receipt?.items?.sortBy { it.id }
         return receipt
     }

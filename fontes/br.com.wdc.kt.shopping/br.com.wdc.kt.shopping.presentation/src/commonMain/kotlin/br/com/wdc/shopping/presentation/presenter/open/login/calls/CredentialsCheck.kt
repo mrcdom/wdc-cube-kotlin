@@ -15,6 +15,8 @@ import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
  */
 class CredentialsCheck(private val userName: String, private val password: String) : ResourceCall<Subject?>() {
 
+    private val userRepo: UserRepository get() = UserRepository.BEAN.get()
+
     override suspend fun run(): Subject? {
         val authService = AuthenticationService.BEAN.getOrNull()
         if (authService != null) {
@@ -41,7 +43,7 @@ class CredentialsCheck(private val userName: String, private val password: Strin
         val authResult = authService.login(userName, digest, challenge.nonce) ?: return null
 
         // 5. Fetch the user's display name
-        val users = UserRepository.BEAN.get().fetch(
+        val users = userRepo.fetch(
             UserCriteria().withUserId(authResult.userId).withProjection(Subject.projection()),
             limit = 1,
         )
@@ -55,7 +57,7 @@ class CredentialsCheck(private val userName: String, private val password: Strin
      */
     private suspend fun authenticateViaRepository(userName: String, password: String): Subject? {
         val projection = Subject.projection().apply { this.password = ProjectionValues.str }
-        val stored = UserRepository.BEAN.get()
+        val stored = userRepo
             .fetch(UserCriteria().withUserName(userName).withProjection(projection), limit = 1)
             .firstOrNull() ?: return null
         // the column is CHAR(32): the digest comes padded with spaces

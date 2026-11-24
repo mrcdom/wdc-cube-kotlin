@@ -19,6 +19,8 @@ import kotlin.time.Clock
 class PurchaseCreate(private val userId: Long, private val cartItems: List<CartItem>) :
     ResourceCreate<Long>({ ShoppingTransactions.BEAN.getOrNull() }) {
 
+    private val purchaseRepo: PurchaseRepository get() = PurchaseRepository.BEAN.get()
+
     override suspend fun create(): Long {
         // built without apply: inside it, Purchase's own userId would shadow this call's
         val purchase = Purchase()
@@ -31,7 +33,7 @@ class PurchaseCreate(private val userId: Long, private val cartItems: List<CartI
                 it.amount = item.quantity
             }
         }
-        check(PurchaseRepository.BEAN.get().insert(purchase)) { "Record not inserted" }
+        check(purchaseRepo.insert(purchase)) { "Record not inserted" }
         return purchase.id!!
     }
 }

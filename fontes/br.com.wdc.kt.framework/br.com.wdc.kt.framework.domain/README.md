@@ -28,8 +28,11 @@ The four write verbs are closed (their base, `ResourceWrite`, can't be extended 
 
 ```kotlin
 class ProductQuery(private val productId: Long) : ResourceQuery<ProductInfo>() {
+
+    private val productRepo: ProductRepository get() = ProductRepository.BEAN.get()
+
     override suspend fun run(): ProductInfo =
-        ProductInfo.create(ProductRepository.BEAN.get().fetchById(productId, ProductInfo.projection())
+        ProductInfo.create(productRepo.fetchById(productId, ProductInfo.projection())
             ?: throw ProductNotFoundException())!!
 }
 

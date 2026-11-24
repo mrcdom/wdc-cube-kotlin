@@ -11,7 +11,7 @@ The same presenters are reused in the three architectures:
 
 Contains: `RootPresenter` (the application), `LoginPresenter`, `HomePresenter`, `ProductPresenter`, `CartPresenter`, `ReceiptPresenter`, each with its scope (`XxxScope`) and keys class (`XxxKeys`). A presenter shows its scope and binds the scope's actions in its constructor (`scope.onBuy = action(1) { buy() }`); it never creates a view. The Home's products and purchases panels and the cart rows (`CartItemScope`) are segments: scopes of their own, without presenters.
 
-The presenters reach the data through **resource calls** (`framework-domain`, package `resource`), in a `calls/` package next to the presenter that uses them; each reaches its repositories through `XxxRepository.BEAN.get()`:
+The presenters reach the data through **resource calls** (`framework-domain`, package `resource`), in a `calls/` package next to the presenter that uses them; each reaches its repositories through a private property per repository, read when used: `private val productRepo: ProductRepository get() = ProductRepository.BEAN.get()`:
 
 | Call | Verb | What it does |
 |---|---|---|
