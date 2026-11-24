@@ -21,7 +21,7 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     // :: Public Instance Fields
 
-    val state = observed(ReceiptViewState())
+    val scope = bind(ReceiptScope())
 
     // :: Internal Instance Fields
 
@@ -38,18 +38,18 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
             HomeKeys(app, intent).flip()
             return false
         }
-        state.notifySuccess = keys.purchaseMade
+        scope.notifySuccess = keys.purchaseMade
 
-        if (state.receipt == null || pPurchaseId != purchaseId) {
+        if (scope.receipt == null || pPurchaseId != purchaseId) {
             val receipt = loadReceipt(pPurchaseId)
             purchaseId = pPurchaseId
-            state.receipt = receipt
+            scope.receipt = receipt
         }
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = keys.parentSlot
         if (initialization) {
-            if (state.receipt == null) {
+            if (scope.receipt == null) {
                 throw AssertionError("Missing receipt")
             }
 

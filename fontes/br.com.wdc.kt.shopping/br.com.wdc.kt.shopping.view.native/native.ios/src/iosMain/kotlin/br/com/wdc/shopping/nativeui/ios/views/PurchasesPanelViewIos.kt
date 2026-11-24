@@ -174,7 +174,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
     }
 
     override fun doUpdate() {
-        val state = presenter.state
+        val scope = presenter.scope
 
         // Calculate capacity based on available scroll height
         val availableHeight = scrollView.frame.useContents { size.height }
@@ -193,10 +193,10 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
             }
             return
         }
-        val purchases = state.purchases
-        val page = state.page
-        val totalCount = state.totalCount
-        val pageSize = if (state.pageSize > 0) state.pageSize else 5
+        val purchases = scope.purchases
+        val page = scope.page
+        val totalCount = scope.totalCount
+        val pageSize = if (scope.pageSize > 0) scope.pageSize else 5
         val totalPages = max(1, ceil(totalCount.toDouble() / pageSize).toInt())
 
         // Sync list with recycling
@@ -228,16 +228,16 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
 
     internal fun onPrevPage() {
         safeAction("prevPage") {
-            val state = presenter.state
-            if (state.page > 0) {
-                presenter.onPageChange(state.page - 1)
+            val scope = presenter.scope
+            if (scope.page > 0) {
+                presenter.onPageChange(scope.page - 1)
             }
         }
     }
 
     internal fun onNextPage() {
         safeAction("nextPage") {
-            presenter.onPageChange(presenter.state.page + 1)
+            presenter.onPageChange(presenter.scope.page + 1)
         }
     }
 }

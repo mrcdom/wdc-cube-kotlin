@@ -30,7 +30,7 @@ sealed class ActionScenario(val name: String) {
     }
 
     /**
-     * Resolves the full instance ID for a VID by searching the client's tracked view states.
+     * Resolves the full instance ID for a VID by searching the client's tracked scopes.
      * Returns null if the view is not currently present in state.
      */
     protected fun resolveView(client: VirtualClient, vid: String): String? {
@@ -63,9 +63,9 @@ sealed class ActionScenario(val name: String) {
      * Product IDs currently listed by the products panel (IDs are not contiguous).
      */
     protected fun productIds(client: VirtualClient): List<Long> {
-        val state = client.getViewStateByVid(Vid.PRODUCTS_PANEL)
+        val scope = client.getScopeByVid(Vid.PRODUCTS_PANEL)
         @Suppress("UNCHECKED_CAST")
-        val products = state["products"] as? List<Map<String, Any?>> ?: return emptyList()
+        val products = scope["products"] as? List<Map<String, Any?>> ?: return emptyList()
         return products.mapNotNull { (it["id"] as? Number)?.toLong() }
     }
 }

@@ -56,5 +56,5 @@ abstract class GenericViewImpl<P : PresenterBase> protected constructor(
     @Throws(Exception::class)
     abstract suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>)
 
-    abstract fun writeState(json: ExtensibleObjectOutput)
+    abstract fun writeScope(json: ExtensibleObjectOutput)
 }

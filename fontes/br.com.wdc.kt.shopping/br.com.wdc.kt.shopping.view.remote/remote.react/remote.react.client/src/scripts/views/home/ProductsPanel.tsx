@@ -27,16 +27,16 @@ export type Product = {
   price: number
 }
 
-type ProductsPanelState = {
+type ProductsPanelScope = {
   products?: Product[]
 }
 
 // :: View
 
-class ProductPanelClass extends BaseViewClass<ViewProps, ProductsPanelState> {
+class ProductPanelClass extends BaseViewClass<ViewProps, ProductsPanelScope> {
   override render({ className }: ViewProps): React.ReactNode {
-    const { vsid, state } = this
-    const products = state.products
+    const { vsid, scope } = this
+    const products = scope.products
 
     return (
       <Box className={className} sx={{ p: '12px 6px 12px 12px' }}>

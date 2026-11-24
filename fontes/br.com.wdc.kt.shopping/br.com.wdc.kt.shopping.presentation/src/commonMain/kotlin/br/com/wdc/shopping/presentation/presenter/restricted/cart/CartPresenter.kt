@@ -24,7 +24,7 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     // :: Public Instance Fields
 
-    val state = observed(CartViewState())
+    val scope = bind(CartScope())
 
     // :: Internal Instance Fields
 
@@ -33,13 +33,13 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private var pendingErrorClear: Registration? = null
 
     init {
-        state.items = emptyList()
+        scope.items = emptyList()
     }
 
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
-        state.items = cart.getCartItems()
+        scope.items = cart.getCartItems()
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = CartKeys(app, intent).parentSlot
@@ -58,28 +58,28 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         try {
             if (productId == null) {
                 errorMalformedProductId()
-                LOG.warn("onModifyQuantity.errorMalformedProductId: {}", state.errorMessage)
+                LOG.warn("onModifyQuantity.errorMalformedProductId: {}", scope.errorMessage)
                 return
             }
 
             if (quantity == null) {
                 errorMalformedQuantity()
-                LOG.warn("onModifyQuantity.errorMalformedQuantity: {}", state.errorMessage)
+                LOG.warn("onModifyQuantity.errorMalformedQuantity: {}", scope.errorMessage)
                 return
             }
 
             if (quantity < 1) {
                 alertThereIsItemWhichValueIsLessThanOne()
-                LOG.warn("onModifyQuantity.alertThereIsItemWhichValueIsLessThanOne: {}", state.errorMessage)
+                LOG.warn("onModifyQuantity.alertThereIsItemWhichValueIsLessThanOne: {}", scope.errorMessage)
                 return
             }
 
             val found = cart.modifyProductQuantity(productId, quantity)
             if (!found) {
                 alertProductNotFound()
-                LOG.warn("onModifyQuantity.alertProductNotFound: {}", state.errorMessage)
+                LOG.warn("onModifyQuantity.alertProductNotFound: {}", scope.errorMessage)
             } else {
-                state.items = cart.getCartItems()
+                scope.items = cart.getCartItems()
             }
         } catch (caught: Exception) {
             app.alertUnexpectedError(LOG, "Modifying a product quantity", caught)
@@ -90,7 +90,7 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         try {
             if (productId == null) {
                 errorMalformedProductId()
-                LOG.warn("onRemoveProduct: {}", state.errorMessage)
+                LOG.warn("onRemoveProduct: {}", scope.errorMessage)
                 return
             }
 
@@ -99,7 +99,7 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
                 if (cart.getSize() == 0) {
                     HomeKeys(app).flip()
                 } else {
-                    state.items = cart.getCartItems()
+                    scope.items = cart.getCartItems()
                 }
             }
         } catch (caught: Exception) {
@@ -111,7 +111,7 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         try {
             if (cart.getSize() == 0) {
                 alertPurchaseOfEmptyCart()
-                LOG.warn("onBuy: {}", state.errorMessage)
+                LOG.warn("onBuy: {}", scope.errorMessage)
                 return
             }
 
@@ -124,13 +124,13 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         } catch (caught: Exception) {
             if (caught is InvalidCartItemException) {
                 alertThereIsItemWhichValueIsLessThanOne()
-                LOG.error("onBuy.alertThereIsItemWhichValueIsLessThanOne: {}", state.errorMessage, caught)
+                LOG.error("onBuy.alertThereIsItemWhichValueIsLessThanOne: {}", scope.errorMessage, caught)
                 return
             }
 
             if (caught is OfflineException) {
                 alertDatabaseOffline()
-                LOG.error("onBuy.alertDatabaseOffline: {}", state.errorMessage, caught)
+                LOG.error("onBuy.alertDatabaseOffline: {}", scope.errorMessage, caught)
                 return
             }
 
@@ -151,44 +151,44 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private fun clearErrorAfterDelay() {
         pendingErrorClear?.remove()
         pendingErrorClear = ScheduledExecutor.BEAN.get().schedule({
-            state.errorCode = 0
-            state.errorMessage = null
+            scope.errorCode = 0
+            scope.errorMessage = null
         }, 3.seconds)
     }
 
     private fun alertThereIsItemWhichValueIsLessThanOne() {
-        state.errorCode = 1
-        state.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
+        scope.errorCode = 1
+        scope.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
         clearErrorAfterDelay()
     }
 
     private fun alertProductNotFound() {
-        state.errorCode = 2
-        state.errorMessage = "Product not found in the database."
+        scope.errorCode = 2
+        scope.errorMessage = "Product not found in the database."
         clearErrorAfterDelay()
     }
 
     private fun alertPurchaseOfEmptyCart() {
-        state.errorCode = 3
-        state.errorMessage = "There must be at least one item in the cart to complete a purchase."
+        scope.errorCode = 3
+        scope.errorMessage = "There must be at least one item in the cart to complete a purchase."
         clearErrorAfterDelay()
     }
 
     private fun alertDatabaseOffline() {
-        state.errorCode = 4
-        state.errorMessage = "The database is currently offline. Please wait a moment and try again."
+        scope.errorCode = 4
+        scope.errorMessage = "The database is currently offline. Please wait a moment and try again."
         clearErrorAfterDelay()
     }
 
     private fun errorMalformedProductId() {
-        state.errorCode = 5
-        state.errorMessage = "Malformed product code."
+        scope.errorCode = 5
+        scope.errorMessage = "Malformed product code."
         clearErrorAfterDelay()
     }
 
     private fun errorMalformedQuantity() {
-        state.errorCode = 6
-        state.errorMessage = "Malformed quantity value."
+        scope.errorCode = 6
+        scope.errorMessage = "Malformed quantity value."
         clearErrorAfterDelay()
     }
 }

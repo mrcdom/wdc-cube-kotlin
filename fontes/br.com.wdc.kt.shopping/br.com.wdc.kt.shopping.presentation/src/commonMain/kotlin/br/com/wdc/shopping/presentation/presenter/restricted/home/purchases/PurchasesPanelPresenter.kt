@@ -22,7 +22,7 @@ class PurchasesPanelPresenter(
 
     // :: Public Instance Fields
 
-    val state = observed(PurchasesPanelViewState())
+    val scope = bind(PurchasesPanelScope())
 
     // :: Internal Instance Fields
 
@@ -44,13 +44,13 @@ class PurchasesPanelPresenter(
      */
     suspend fun restorePage(page: Int) {
         val requested = max(0, page)
-        if (requested == state.page) return
-        state.page = requested
-        if (state.pageSize > 0) loadPurchases()
+        if (requested == scope.page) return
+        scope.page = requested
+        if (scope.pageSize > 0) loadPurchases()
     }
 
     suspend fun onPageChange(page: Int) {
-        state.page = max(0, page)
+        scope.page = max(0, page)
         loadPurchases()
         // not a navigation: the address follows the page here
         app.updateHistory()
@@ -58,10 +58,10 @@ class PurchasesPanelPresenter(
 
     suspend fun onItemSizeCapacityChanged(capacity: Int) {
         val newPageSize = max(1, capacity)
-        if (newPageSize != state.pageSize) {
+        if (newPageSize != scope.pageSize) {
             // the first capacity keeps the page the address asked for; a later change goes back to the first page
-            if (state.pageSize > 0) state.page = 0
-            state.pageSize = newPageSize
+            if (scope.pageSize > 0) scope.page = 0
+            scope.pageSize = newPageSize
             loadPurchases()
             app.updateHistory()
         }
@@ -75,21 +75,21 @@ class PurchasesPanelPresenter(
 
     suspend fun loadPurchases() {
         val subject = app.subject
-        if (subject != null && state.pageSize > 0) {
-            var page = purchasesPanelService.fetchPageOfUser(subject.id!!, state.page, state.pageSize)
+        if (subject != null && scope.pageSize > 0) {
+            var page = purchasesPanelService.fetchPageOfUser(subject.id!!, scope.page, scope.pageSize)
 
-            state.totalCount = page.totalItems
+            scope.totalCount = page.totalItems
 
-            val totalPages = max(1, ceil(state.totalCount.toDouble() / state.pageSize).toInt())
-            if (state.page >= totalPages) {
+            val totalPages = max(1, ceil(scope.totalCount.toDouble() / scope.pageSize).toInt())
+            if (scope.page >= totalPages) {
                 // the requested page is past the end (the view capacity changed, or purchases disappeared): show the
                 // last one, with its items — the result above is the one of the page that does not exist
-                state.page = totalPages - 1
-                page = purchasesPanelService.fetchPageOfUser(subject.id!!, state.page, state.pageSize)
-                state.totalCount = page.totalItems
+                scope.page = totalPages - 1
+                page = purchasesPanelService.fetchPageOfUser(subject.id!!, scope.page, scope.pageSize)
+                scope.totalCount = page.totalItems
             }
 
-            state.purchases = page.items
+            scope.purchases = page.items
         }
     }
 }

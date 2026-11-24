@@ -21,7 +21,7 @@ class ProductsPanelPresenter(
 
     // :: Public Instance Fields
 
-    val state = observed(ProductsPanelViewState())
+    val scope = bind(ProductsPanelScope())
 
     // :: Internal Instance Fields
 
@@ -45,7 +45,7 @@ class ProductsPanelPresenter(
 
     suspend fun loadProducts() {
         try {
-            state.products = productService.loadProductsWithoutDescription(1000)
+            scope.products = productService.loadProductsWithoutDescription(1000)
         } catch (caught: Exception) {
             LOG.error("Failed to load products", caught)
         }

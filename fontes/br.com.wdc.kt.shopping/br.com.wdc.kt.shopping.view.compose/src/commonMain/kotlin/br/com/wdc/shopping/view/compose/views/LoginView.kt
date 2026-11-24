@@ -30,10 +30,10 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val state = presenter.state
-        val loading = state.loading
-        var userName by remember { mutableStateOf(state.userName ?: "") }
-        var password by remember { mutableStateOf(state.password ?: "") }
+        val scope = presenter.scope
+        val loading = scope.loading
+        var userName by remember { mutableStateOf(scope.userName ?: "") }
+        var password by remember { mutableStateOf(scope.password ?: "") }
 
         Box(
             modifier = Modifier
@@ -73,7 +73,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                         value = userName,
                         onValueChange = {
                             userName = it
-                            state.userName = it
+                            scope.userName = it
                         },
                         label = { Text("Username") },
                         modifier = Modifier.fillMaxWidth(),
@@ -87,7 +87,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                         value = password,
                         onValueChange = {
                             password = it
-                            state.password = it
+                            scope.password = it
                         },
                         label = { Text("Password") },
                         modifier = Modifier.fillMaxWidth(),
@@ -99,7 +99,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                         keyboardActions = KeyboardActions(onDone = { safeCall { presenter.onEnter() } })
                     )
 
-                    val errorMessage = state.errorMessage
+                    val errorMessage = scope.errorMessage
                     if (!errorMessage.isNullOrBlank()) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),

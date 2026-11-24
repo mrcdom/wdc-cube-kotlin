@@ -36,15 +36,15 @@ type CartItem = {
 
 // :: View
 
-export type CartViewState = {
+export type CartScope = {
   items: CartItem[]
   errorMessage?: string
 }
 
-class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
+class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
   override render({ className }: ViewProps) {
-    const { vsid, state } = this
-    const items = state.items ?? []
+    const { vsid, scope } = this
+    const items = scope.items ?? []
     let totalValue = 0
     items.forEach((prod) => {
       totalValue += prod.price * prod.quantity
@@ -64,9 +64,9 @@ class CartViewClass extends BaseViewClass<ViewProps, CartViewState> {
           <Divider />
 
           {/* Error message */}
-          {state.errorMessage && (
+          {scope.errorMessage && (
             <Alert severity="error" sx={{ mt: 1.5, borderRadius: '8px' }}>
-              {state.errorMessage}
+              {scope.errorMessage}
             </Alert>
           )}
 

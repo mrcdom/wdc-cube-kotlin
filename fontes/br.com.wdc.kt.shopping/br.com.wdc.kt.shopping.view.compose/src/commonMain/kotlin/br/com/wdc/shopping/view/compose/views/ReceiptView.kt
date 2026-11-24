@@ -32,8 +32,8 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val state = presenter.state
-        val receipt = state.receipt
+        val scope = presenter.scope
+        val receipt = scope.receipt
 
         Box(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -44,7 +44,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                     // Success banner
-                    if (state.notifySuccess) {
+                    if (scope.notifySuccess) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),

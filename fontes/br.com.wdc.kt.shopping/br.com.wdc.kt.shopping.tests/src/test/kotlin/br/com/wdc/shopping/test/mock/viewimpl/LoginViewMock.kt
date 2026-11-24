@@ -2,7 +2,7 @@ package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginViewState
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
 import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 
@@ -20,5 +20,5 @@ class LoginViewMock(
         }
     }
 
-    var state: LoginViewState = presenter.state
+    var scope: LoginScope = presenter.scope
 }

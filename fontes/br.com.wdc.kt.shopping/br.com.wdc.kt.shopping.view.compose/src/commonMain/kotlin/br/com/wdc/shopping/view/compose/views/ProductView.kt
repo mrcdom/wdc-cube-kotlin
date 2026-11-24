@@ -36,8 +36,8 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val state = presenter.state
-        val product = state.product
+        val scope = presenter.scope
+        val product = scope.product
         var quantity by remember { mutableIntStateOf(1) }
 
         Box(
@@ -52,7 +52,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                         .verticalScroll(scrollState),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                        val errorMessage = state.errorMessage
+                        val errorMessage = scope.errorMessage
                         if (!errorMessage.isNullOrBlank()) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),

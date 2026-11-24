@@ -14,7 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Cube views are independent: a view recomposes only when its own view state changes ([ComposeCubeView.revision]).
+ * Cube views are independent: a view recomposes only when its own scope changes ([ComposeCubeView.revision]).
  *
  * Unlike the native web view, nothing in this module does that by hand: the Compose compiler (strong skipping)
  * skips [RenderSlot] when it gets the same view, and remembers the lambdas created in a render, so a child that

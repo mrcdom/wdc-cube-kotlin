@@ -126,7 +126,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
     }
 
     override fun doUpdate() {
-        val products = presenter.state.products
+        val products = presenter.scope.products
         if (products === lastProducts) return
         lastProducts = products
 

@@ -1,10 +1,10 @@
 import type { Application } from './Application'
-import { ViewScope } from './ViewScope'
+import { ViewBinding } from './ViewBinding'
 import { BROWSER_VSID } from './constants'
 
 export class ViewGarbageCollector {
   private readonly app: Application
-  private readonly garbageViewMap = new Map<string, ViewScope>()
+  private readonly garbageViewMap = new Map<string, ViewBinding>()
   private readonly holdCount = new Map<string, number>()
   private readonly autoHeldByScope = new Map<string, Set<string>>()
 
@@ -29,13 +29,13 @@ export class ViewGarbageCollector {
   }
 
   /**
-   * Updates automatic holds based on ViewId references in a ViewScope's state.
+   * Updates automatic holds based on ViewId references in a view's scope.
    * Releases holds for references that were removed, holds new references.
    */
-  updateAutoHolds(scope: ViewScope) {
-    const scopeId = scope.getId()
+  updateAutoHolds(binding: ViewBinding) {
+    const scopeId = binding.getId()
     const prevRefs = this.autoHeldByScope.get(scopeId) ?? new Set()
-    const newRefs = scope.getReferencedViewIds()
+    const newRefs = binding.getReferencedViewIds()
 
     for (const vsid of prevRefs) {
       if (!newRefs.has(vsid)) {
@@ -69,21 +69,21 @@ export class ViewGarbageCollector {
     }
   }
 
-  mark(scope: ViewScope) {
-    const vsid = scope.getId()
+  mark(binding: ViewBinding) {
+    const vsid = binding.getId()
     if (vsid !== BROWSER_VSID) {
-      this.garbageViewMap.set(vsid, scope)
+      this.garbageViewMap.set(vsid, binding)
       this.scheduleCollection()
     }
   }
 
   recover(vsid: string) {
-    const scope = this.garbageViewMap.get(vsid)
-    if (scope) {
-      this.app.viewMap.set(vsid, scope)
+    const binding = this.garbageViewMap.get(vsid)
+    if (binding) {
+      this.app.viewMap.set(vsid, binding)
       this.garbageViewMap.delete(vsid)
       this.cancelSchedulingIfEmpty()
-      return scope
+      return binding
     } else {
       return null
     }

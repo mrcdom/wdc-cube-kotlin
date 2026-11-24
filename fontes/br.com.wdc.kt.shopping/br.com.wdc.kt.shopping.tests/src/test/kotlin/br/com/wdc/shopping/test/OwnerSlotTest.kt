@@ -39,17 +39,17 @@ class OwnerSlotTest : BasePresentationTest() {
 
     private suspend fun gotoRestricted(): RestrictedViewMock {
         LoginKeys(app).flip()
-        val loginView = LoginViewMock.cast(app.getRootView()!!.state.contentView)
-        loginView.state.userName = "admin"
-        loginView.state.password = "admin"
+        val loginView = LoginViewMock.cast(app.getRootView()!!.scope.contentView)
+        loginView.scope.userName = "admin"
+        loginView.scope.password = "admin"
         loginView.presenter.onEnter()
-        return RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
+        return RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
     }
 
     @Test
     fun login_followsTheSlotOfferedNow() = runBlocking {
         LoginKeys(app).flip()
-        val loginView = LoginViewMock.cast(app.getRootView()!!.state.contentView)
+        val loginView = LoginViewMock.cast(app.getRootView()!!.scope.contentView)
         assertSame(loginView, reapplyWithANewSlot(loginView.presenter))
     }
 
@@ -63,7 +63,7 @@ class OwnerSlotTest : BasePresentationTest() {
     fun product_followsTheSlotOfferedNow() = runBlocking {
         val home = gotoRestricted()
         home.presenter.onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
-        val productView = ProductViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.state.contentView).state.contentView)
+        val productView = ProductViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).scope.contentView)
         val placed = reapplyWithANewSlot(productView.presenter) { ProductKeys(app, it).productId = DBReset.FLASH_DRIVE_2GB_ID }
         assertSame(productView, placed)
     }
@@ -72,7 +72,7 @@ class OwnerSlotTest : BasePresentationTest() {
     fun cart_followsTheSlotOfferedNow() = runBlocking {
         gotoRestricted()
         CartKeys(app).flip()
-        val cartView = CartViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.state.contentView).state.contentView)
+        val cartView = CartViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).scope.contentView)
         assertSame(cartView, reapplyWithANewSlot(cartView.presenter))
     }
 
@@ -80,7 +80,7 @@ class OwnerSlotTest : BasePresentationTest() {
     fun receipt_followsTheSlotOfferedNow() = runBlocking {
         val home = gotoRestricted()
         home.presenter.onOpenReceipt(DBReset.ADMIN_SECOND_PURCHASE_ID)
-        val receiptView = ReceiptViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.state.contentView).state.contentView)
+        val receiptView = ReceiptViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).scope.contentView)
         val placed = reapplyWithANewSlot(receiptView.presenter) { ReceiptKeys(app, it).purchaseId = DBReset.ADMIN_SECOND_PURCHASE_ID }
         assertSame(receiptView, placed)
     }

@@ -4,9 +4,9 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ObservableViewStateTest {
+class ScopeTest {
 
-    private class TestState : ObservableViewState() {
+    private class TestScope : Scope() {
         var name: String? by field(null)
         var count: Int by field(0)
         var items: List<String> by field(emptyList())
@@ -25,7 +25,7 @@ class ObservableViewStateTest {
     }
 
     private class TestPresenter : AbstractCubePresenter<CubeApplication>(object : CubeApplication() {}) {
-        val state = observed(TestState())
+        val scope = bind(TestScope())
 
         fun attach(v: CubeView) {
             view = v
@@ -34,33 +34,33 @@ class ObservableViewStateTest {
 
     @Test
     fun assigningADifferentValue_notifies_andTheSameValueDoesNot() {
-        val state = TestState()
+        val scope = TestScope()
         var changes = 0
-        state.observe { changes++ }
+        scope.observe { changes++ }
 
-        state.name = "a"
-        state.count = 1
+        scope.name = "a"
+        scope.count = 1
         assertEquals(2, changes)
 
-        state.name = "a"
-        state.count = 1
-        state.items = emptyList()
+        scope.name = "a"
+        scope.count = 1
+        scope.items = emptyList()
         assertEquals(2, changes, "equal values are not a change")
 
-        state.items = listOf("x")
-        state.items = listOf("x")
+        scope.items = listOf("x")
+        scope.items = listOf("x")
         assertEquals(3, changes, "lists compare by content")
     }
 
     @Test
     fun aChangeInsideAnObject_needsChanged() {
-        val state = TestState()
+        val scope = TestScope()
         var changes = 0
-        state.observe { changes++ }
+        scope.observe { changes++ }
 
-        state.tags += "inside"
+        scope.tags += "inside"
         assertEquals(0, changes, "the field cannot see a mutation inside the object")
-        state.changed()
+        scope.changed()
         assertEquals(1, changes)
     }
 
@@ -69,10 +69,10 @@ class ObservableViewStateTest {
         val presenter = TestPresenter()
         val view = TestView()
 
-        presenter.state.name = "before the view"
+        presenter.scope.name = "before the view"
         presenter.attach(view)
-        presenter.state.name = "with the view"
-        presenter.state.count = 7
+        presenter.scope.name = "with the view"
+        presenter.scope.count = 7
 
         assertEquals(2, view.updates)
     }

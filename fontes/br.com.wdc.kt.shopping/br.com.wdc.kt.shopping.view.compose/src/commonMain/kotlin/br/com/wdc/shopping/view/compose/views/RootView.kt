@@ -17,24 +17,24 @@ class RootView(private val presenter: RootPresenter) : ComposeCubeView("root-vie
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value // subscribe to updates
 
-        val state = presenter.state
+        val scope = presenter.scope
 
         Box(modifier = Modifier.fillMaxSize()) {
             // Render content view
-            val contentView = state.contentView
+            val contentView = scope.contentView
             if (contentView != null) {
                 RenderSlot(contentView)
             }
 
             // Error snackbar
-            val errorMessage = state.errorMessage
+            val errorMessage = scope.errorMessage
             if (!errorMessage.isNullOrBlank()) {
                 Snackbar(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(16.dp),
                     action = {
-                        TextButton(onClick = { state.errorMessage = null; presenter.update() }) {
+                        TextButton(onClick = { scope.errorMessage = null; presenter.update() }) {
                             Text("OK")
                         }
                     }

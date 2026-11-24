@@ -47,13 +47,13 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
     // :: The page frame
 
     /** What the root view shows: the view of the first level, and the unexpected-error alert. */
-    val state = RootViewState().also { it.observe(::update) }
+    val scope = RootScope().also { it.observe(::update) }
 
     /** The root view, created on the first navigation by [createView]. */
     var view: CubeView? = null
         private set
 
-    private val contentSlot = CubeViewSlot { v -> if (state.contentView !== v) state.contentView = v }
+    private val contentSlot = CubeViewSlot { v -> if (scope.contentView !== v) scope.contentView = v }
 
     override val app: CubeApplication get() = this
 
@@ -71,8 +71,8 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     /** Logs the failure with its stack trace and shows the user only what failed and the cause's message. */
     open fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
-        state.errorMessage = errorText(message, e)
-        logger.error(state.errorMessage!!, e)
+        scope.errorMessage = errorText(message, e)
+        logger.error(scope.errorMessage!!, e)
     }
 
     /** The text the user sees for an unexpected error: what failed, and the cause's message when there is one. */
@@ -99,7 +99,7 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
     }
 
     override fun release() {
-        state.contentView = null
+        scope.contentView = null
         view?.release()
         view = null
         super.release()

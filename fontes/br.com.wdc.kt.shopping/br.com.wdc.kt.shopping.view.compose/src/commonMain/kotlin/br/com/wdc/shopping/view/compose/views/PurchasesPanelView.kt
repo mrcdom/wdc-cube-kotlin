@@ -32,7 +32,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val state = presenter.state
+        val scope = presenter.scope
         val density = LocalDensity.current
         var lastReportedCapacity by remember { mutableIntStateOf(-1) }
 
@@ -60,13 +60,13 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                if (state.totalCount > 0) {
+                if (scope.totalCount > 0) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer
                     ) {
                         Text(
-                            "${state.totalCount} ${if (state.totalCount == 1) "item" else "items"}",
+                            "${scope.totalCount} ${if (scope.totalCount == 1) "item" else "items"}",
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -87,9 +87,9 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                     .fillMaxWidth()
                     .then(sizeChangedModifier)
             ) {
-                val purchases = state.purchases
+                val purchases = scope.purchases
                 if (purchases.isEmpty()) {
-                    if (lastReportedCapacity >= 1 && state.totalCount == 0) {
+                    if (lastReportedCapacity >= 1 && scope.totalCount == 0) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
@@ -164,8 +164,8 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
             }
 
             // Pagination
-            if (state.totalCount > state.pageSize && state.pageSize > 0) {
-                val totalPages = (state.totalCount + state.pageSize - 1) / state.pageSize
+            if (scope.totalCount > scope.pageSize && scope.pageSize > 0) {
+                val totalPages = (scope.totalCount + scope.pageSize - 1) / scope.pageSize
                 Spacer(Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -173,22 +173,22 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilledTonalIconButton(
-                        onClick = { safeCall { presenter.onPageChange(state.page - 1) } },
-                        enabled = state.page > 0,
+                        onClick = { safeCall { presenter.onPageChange(scope.page - 1) } },
+                        enabled = scope.page > 0,
                         modifier = Modifier.size(36.dp)
                     ) { Text("‹", fontWeight = FontWeight.Bold) }
 
                     Spacer(Modifier.width(16.dp))
                     Text(
-                        "${state.page + 1} / $totalPages",
+                        "${scope.page + 1} / $totalPages",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(Modifier.width(16.dp))
 
                     FilledTonalIconButton(
-                        onClick = { safeCall { presenter.onPageChange(state.page + 1) } },
-                        enabled = state.page < totalPages - 1,
+                        onClick = { safeCall { presenter.onPageChange(scope.page + 1) } },
+                        enabled = scope.page < totalPages - 1,
                         modifier = Modifier.size(36.dp)
                     ) { Text("›", fontWeight = FontWeight.Bold) }
                 }

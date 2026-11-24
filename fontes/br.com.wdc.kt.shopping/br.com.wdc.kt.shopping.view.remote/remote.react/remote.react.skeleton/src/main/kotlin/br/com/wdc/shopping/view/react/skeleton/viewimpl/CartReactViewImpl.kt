@@ -16,7 +16,7 @@ class CartReactViewImpl(presenter: CartPresenter) : GenericViewImpl<CartPresente
         }
     }
 
-    override fun writeState(json: ExtensibleObjectOutput) {
-        presenter.state.write(instanceId, json)
+    override fun writeScope(json: ExtensibleObjectOutput) {
+        presenter.scope.write(instanceId, json)
     }
 }

@@ -13,7 +13,7 @@ import react.Props
  *
  * Each view keeps a revision counter. When a presenter calls [update],
  * the counter increments and the React root is re-rendered, picking up
- * the new presenter state.
+ * the new presenter's scope.
  */
 abstract class ReactCubeView(
     private val id: String,

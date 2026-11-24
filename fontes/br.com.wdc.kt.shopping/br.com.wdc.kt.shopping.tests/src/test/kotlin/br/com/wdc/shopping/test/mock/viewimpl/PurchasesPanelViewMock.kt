@@ -2,7 +2,7 @@ package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelViewState
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
 import org.junit.jupiter.api.Assertions
 
 class PurchasesPanelViewMock(
@@ -20,7 +20,7 @@ class PurchasesPanelViewMock(
 
     override val instanceId: String = AbstractViewMock.INSTANCE_ID_GEN.incrementAndGet().toString()
 
-    var state: PurchasesPanelViewState = presenter.state
+    var scope: PurchasesPanelScope = presenter.scope
 
     override fun release() {
         // NOOP

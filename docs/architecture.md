@@ -29,7 +29,7 @@ This project is a demo application (**Storefront Demo**) built on the **Cube MVP
 
 The architecture is centered on three fundamental decisions:
 
-1. **State management with mutable objects** — the Cube framework uses mutable `ViewState`s, eliminating the ceremony of immutable copies and reducers
+1. **State management with mutable objects** — the Cube framework keeps what each presenter shows in a mutable `Scope`, eliminating the ceremony of immutable copies and reducers
 2. **Full decoupling between presentation and UI technology** — presenters are plain Kotlin classes with no dependency on a UI framework; the rendering technology is a project choice
 3. **Transactional navigation** — `CubeNavigation` treats each screen transition as an atomic transaction with commit/rollback
 
@@ -41,7 +41,7 @@ The architecture is centered on three fundamental decisions:
 |-----------|-----------|
 | **Separation of concerns** | View renders, Presenter controls, Domain models, Persistence accesses data |
 | **UI-agnostic presentation** | Presenters know nothing about Compose, React or any other UI technology |
-| **Simple mutable state** | ViewState is a POJO with mutable properties — no reducers, no events, no unidirectional flow |
+| **Simple mutable state** | A presenter's scope is a plain object with mutable properties — no reducers, no events, no unidirectional flow |
 | **Navigation as a transaction** | Each navigation creates/reuses/discards presenters atomically |
 | **True multiplatform** | The same presentation code runs on JVM, Android, iOS and WebAssembly |
 | **State serialization** | Each screen persists and restores its state via URL/parameters (deep-linking) |
@@ -61,9 +61,9 @@ graph TB
         LP[LoginPresenter]
         HP[HomePresenter]
         PP[ProductPresenter]
-        LS[LoginViewState]
-        HS[HomeViewState]
-        PS[ProductViewState]
+        LS[LoginScope]
+        HS[HomeScope]
+        PS[ProductScope]
     end
 
     subgraph "Domain Layer"
@@ -163,7 +163,7 @@ graph TB
 |--------|-----------------|
 | `:framework-cube` | MVP engine — transactional navigation, presenter lifecycle, Places, Intent |
 | `:framework-commons` | Shared utilities — logging, JSON, HTTP, crypto, schedulers |
-| `:shopping-presentation` | Presenters and ViewStates — pure presentation logic (no UI) |
+| `:shopping-presentation` | Presenters and their scopes — pure presentation logic (no UI) |
 | `:shopping-domain` | Domain models, repository interfaces, services |
 | `:shopping-persistence-client` | REST implementation of the repositories and of the transaction service (HTTP client) |
 | `:shopping-persistence` | jOOQ implementation of the repositories (direct database access) |
@@ -185,7 +185,7 @@ graph TB
 graph TB
     subgraph "Shared Code (commonMain)"
         FW[Framework Cube + Commons]
-        PRES[Presenters + ViewStates]
+        PRES[Presenters + Scopes]
         DOM[Domain Models + Services]
         VIEW[Compose Views]
     end
@@ -242,13 +242,13 @@ The project demonstrates two distinct ways of implementing the view layer, both 
 
 ### Local View — Compose Multiplatform
 
-Presenters run on the **client**. The Compose view renders the local presenter's `ViewState` directly. Communication with the backend goes through REST.
+Presenters run on the **client**. The Compose view renders the local presenter's `scope` directly. Communication with the backend goes through REST.
 
 ```mermaid
 graph LR
     subgraph "Client (all platforms)"
         VIEW["Compose View"] --> PRES["Presenter"]
-        PRES --> STATE["ViewState"]
+        PRES --> SCOPE["Scope"]
         PRES --> SVC["Service"]
     end
     SVC -->|HTTP/REST| BACK["Backend"]
@@ -256,7 +256,7 @@ graph LR
 
 ### Remote View — React + WebSocket
 
-Presenters run on the **server**. The React client is responsible only for rendering. Every user interaction is sent to the server over WebSocket, and the server responds with the new state serialized as JSON.
+Presenters run on the **server**. The React client is responsible only for rendering. Every user interaction is sent to the server over WebSocket, and the server responds with the new scopes serialized as JSON.
 
 ```mermaid
 graph LR
@@ -265,7 +265,7 @@ graph LR
     end
     subgraph "Server"
         SKEL["Skeleton"] --> PRES["Presenter"]
-        PRES --> STATE["ViewState"]
+        PRES --> SCOPE["Scope"]
     end
     REACT <-->|WebSocket| SKEL
 ```
@@ -281,8 +281,8 @@ See [architecture-react.md](architecture-react.md) for full details of this moda
 ```kotlin
 class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
-    val state = observed(LoginViewState()) // a field change repaints the view: no update() calls
-    private val loginService = LoginService(app)
+    val scope = bind(LoginScope()) // a field change repaints the view: no update() calls
+    private val loginService = LoginService()
 
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         // read on every call: a reused presenter goes where its parent puts it now
@@ -295,30 +295,32 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     }
 
     fun onEnter() {
-        state.loading = true
+        scope.loading = true
 
-        val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")
-        state.loading = false
+        val subject = loginService.fetchSubject(scope.userName ?: "", scope.password ?: "")
+        scope.loading = false
 
         if (subject?.id != null) {
             app.subject = subject
             HomeKeys(app).flip()
         } else {
-            state.errorMessage = "Username or password not recognized!"
+            scope.errorMessage = "Username or password not recognized!"
         }
     }
 }
 ```
 
-The **ViewState** is a simple mutable object holding the data the view needs to render. Its fields are observed: assigning one a different value asks for a repaint ([details](architecture-cube.md#viewstate)):
+The **scope** is what a presenter shows: a simple mutable object holding the data its view paints. Its fields are observed: assigning one a different value asks for a repaint; it also writes itself as JSON for the remote view ([details](architecture-cube.md#scope)):
 
 ```kotlin
-class LoginViewState : ObservableViewState() {
+class LoginScope : Scope() {
     var userName: String? by field(null)
     var password: String? by field(null)
     var errorCode: Int by field(0)
     var errorMessage: String? by field(null)
     var loading: Boolean by field(false)
+
+    override fun write(instanceId: String, json: ExtensibleObjectOutput) { /* the fields the remote view needs */ }
 }
 ```
 
@@ -448,8 +450,8 @@ graph TB
 
 Errors are handled at **two levels**:
 
-1. **In the Presenter** — expected errors (failed login, database offline) are handled with friendly messages in the ViewState
-2. **In safeCall** — unexpected errors are caught and delegated to `RootPresenter.alertUnexpectedError()`, which sets the root view's `state.errorMessage`
+1. **In the Presenter** — expected errors (failed login, database offline) are handled with friendly messages in the presenter's scope
+2. **In safeCall** — unexpected errors are caught and delegated to `RootPresenter.alertUnexpectedError()`, which sets the root view's `scope.errorMessage`
 
 ```kotlin
 // Level 1: Specific handling in the Presenter
@@ -458,11 +460,9 @@ fun onBuy() {
         val purchaseId = cart.commit(app.subject!!)
         ReceiptKeys(app).apply { this.purchaseId = purchaseId }.flip()
     } catch (caught: InvalidCartItemException) {
-        state.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
-        update()
+        scope.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
     } catch (caught: OfflineException) {
-        state.errorMessage = "The database is currently offline. Please wait a moment and try again."
-        update()
+        scope.errorMessage = "The database is currently offline. Please wait a moment and try again."
     }
 }
 
@@ -537,7 +537,7 @@ sequenceDiagram
     Note over LV: UI thread released
 
     SC->>LP: onEnter() on background thread
-    LP->>LP: state.loading = true, update()
+    LP->>LP: scope.loading = true, update()
     Note over LV: Recomposes: spinner + disabled fields
 
     LP->>LS: fetchSubject(admin, ***)
@@ -545,7 +545,7 @@ sequenceDiagram
     API-->>LS: Subject id=1, nick=Admin
     LS-->>LP: Subject(id=1, nick=Admin)
 
-    LP->>LP: state.loading = false
+    LP->>LP: scope.loading = false
     LP->>LP: app.subject = subject
 
     LP->>Keys: HomeKeys(app).flip()
@@ -572,7 +572,7 @@ sequenceDiagram
 |-----------|----------|
 | [architecture-cube.md](architecture-cube.md) | Cube framework — transactional navigation mechanism, presenter lifecycle, interruption and migration, commit/rollback, guarantees |
 | [architecture-cube-compose.md](architecture-cube-compose.md) | Cube + Compose integration — ComposeCubeView, revision counter, safeCall, RenderSlot, view factories, per-platform initialization |
-| [architecture-react.md](architecture-react.md) | Remote view modality — React + WebSocket, Skeletons, state synchronization, security |
+| [architecture-react.md](architecture-react.md) | Remote view modality — React + WebSocket, Skeletons, scope synchronization, security |
 | [architecture-persistence.md](architecture-persistence.md) | Persistence layer — repositories, criteria, projection, transactions (local and remote), REST API |
 
 ---
@@ -585,10 +585,10 @@ sequenceDiagram
 | **CubeIntent**       | Container of parameters (serializable) and attributes (ephemeral) for a navigation transaction |
 | **CubeViewSlot**     | Functional callback for injecting a child view into a parent view |
 | **Presenter**        | Controller that encapsulates a screen's presentation logic (plain Kotlin, no UI dependency) |
-| **ViewState**        | Mutable object with the data the view needs to render |
+| **Scope**            | What a presenter shows: a mutable object with the data its view paints, observed (a change asks for a repaint) and serializable to JSON |
 | **ComposeCubeView**  | Bridge between CubeView and Jetpack Compose, with a revision counter mechanism |
 | **safeCall**         | Serialized asynchronous dispatch (limitedParallelism=1) for presenter actions |
 | **CubeNavigation**   | Atomic navigation transaction with commit, rollback and support for interruptions |
 | **CubeApplication**  | Global container of active presenters and entry point for navigation |
-| **Skeleton**         | Server-client bridge in the React modality — serializes ViewState for WebSocket |
+| **Skeleton**         | Server-client bridge in the React modality — serializes each view's scope for WebSocket |
 | **revision**         | MutableState counter that triggers Compose recomposition |

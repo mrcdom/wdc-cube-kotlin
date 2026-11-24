@@ -58,13 +58,13 @@ class RootViewAndroid(presenter: RootPresenter) : AbstractViewAndroid<RootPresen
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        contentSlot.sync(state.contentView)
+        val scope = presenter.scope
+        contentSlot.sync(scope.contentView)
 
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             showErrorToast(errorMessage)
-            state.errorMessage = null
+            scope.errorMessage = null
         }
     }
 

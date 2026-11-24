@@ -44,7 +44,7 @@
 
 ## Overview
 
-Cube is an **application state management** solution based on the MVP (Model-View-Presenter) pattern. Unlike approaches that require immutable, unidirectional state, Cube uses **mutable view states**: presenters manipulate state objects (`ViewState`) directly, and the view re-renders when they change. This decision simplifies presentation code by eliminating the ceremony of immutable copies and reducers.
+Cube is an **application state management** solution based on the MVP (Model-View-Presenter) pattern. Unlike approaches that require immutable, unidirectional state, Cube uses **mutable scopes**: presenters manipulate the values their views show (a `Scope`) directly, and the view re-renders when they change. This decision simplifies presentation code by eliminating the ceremony of immutable copies and reducers.
 
 A central principle of the architecture is the **complete decoupling of presentation logic from the view technology**. Presenters are plain Kotlin classes with no dependency on any UI framework. The rendering technology (Compose Multiplatform, React, SwiftUI or anything else) is a **project choice**, not something the framework imposes. This lets the same presentation code be shared across different platforms, each implementing only the view layer.
 
@@ -121,28 +121,30 @@ fun interface CubeViewSlot {
 }
 ```
 
-### ViewState
+### Scope
 
-The state a presenter keeps for its view, as plain mutable fields. Extend `ObservableViewState` and declare each field with `field(...)`: assigning a value different from the current one (`!=`, so lists compare by content) asks for a repaint. The presenter wires it once, with `observed(...)`, and no longer calls `update()` after each change:
+A scope is what a presenter shows: the values its view paints, as plain mutable fields. Extend `Scope` and declare each field with `field(...)`: assigning a value different from the current one (`!=`, so lists compare by content) asks for a repaint. The presenter binds it once, with `bind(...)`, and no longer calls `update()` after each change. A scope also writes itself as JSON (`write(instanceId, json)`, `toJson(instanceId)`), for views that receive it serialized:
 
 ```kotlin
-class CartViewState : ObservableViewState() {
+class CartScope : Scope() {
     var items: List<CartItem> by field(emptyList())
     var errorMessage: String? by field(null)
+
+    override fun write(instanceId: String, json: ExtensibleObjectOutput) { /* … */ }
 }
 
 class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
-    val state = observed(CartViewState())
+    val scope = bind(CartScope())
 
     fun onAlert() {
-        state.errorMessage = "…" // the view repaints; several changes in a row still cost one paint
+        scope.errorMessage = "…" // the view repaints; several changes in a row still cost one paint
     }
 }
 ```
 
-**What the fields cannot see:** a change *inside* an object already assigned — an element added to a mutable list, a field of a nested object, or an object shared with someone who mutates it. Assign a new value (a copy), or call `state.changed()`. `CartManager.getCartItems()` returns copies for this reason.
+**What the fields cannot see:** a change *inside* an object already assigned — an element added to a mutable list, a field of a nested object, or an object shared with someone who mutates it. Assign a new value (a copy), or call `scope.changed()`. `CartManager.getCartItems()` returns copies for this reason.
 
-A new view needs no `update()` either: every view layer paints the current state when the view is created. Keep in the state what the view shows — the Storefront home keeps the cart count as a field, set by the cart's change listener — and the presenter never calls `update()`. It is still there for state the view reads from somewhere else.
+A new view needs no `update()` either: every view layer paints the current scope when the view is created. Keep in the scope what the view shows — the Storefront home keeps the cart count as a field, set by the cart's change listener — and the presenter never calls `update()`. It is still there for state the view reads from somewhere else.
 
 ### Keys classes
 
@@ -617,7 +619,7 @@ sequenceDiagram
 
 ## Suspend and Coroutines in Cube MVP
 
-Cube MVP uses **Kotlin coroutines** as its concurrency mechanism. Which methods are `suspend` and which are synchronous follows one fundamental rule: **suspend marks operations that cross I/O or navigation boundaries; state mutation and view notification are always synchronous.**
+Cube MVP uses **Kotlin coroutines** as its concurrency mechanism. Which methods are `suspend` and which are synchronous follows one fundamental rule: **suspend marks operations that cross I/O or navigation boundaries; scope mutation and view notification are always synchronous.**
 
 ### The Execution Model
 
@@ -627,7 +629,7 @@ The architecture defines two complementary execution "worlds":
 flowchart LR
     subgraph SYNC["Synchronous World"]
         direction TB
-        S1["state.x = value"]
+        S1["scope.x = value"]
         S2["update()"]
         S3["view.update()"]
         S4["CubeViewSlot.setView()"]
@@ -646,14 +648,14 @@ flowchart LR
         A3 --> A4
     end
 
-    SUSPEND -->|"after await\nmutates state"| SYNC
+    SUSPEND -->|"after await\nmutates the scope"| SYNC
     SYNC -->|"UI event\nvia safeCall"| SUSPEND
 
     style SYNC fill:#e8f5e9,stroke:#2e7d32
     style SUSPEND fill:#e3f2fd,stroke:#1565c0
 ```
 
-**Principle:** suspend code **never mutates state directly in the view**. It does the I/O, gets the data, and then mutates the `ViewState`, synchronously; the observed state asks for the repaint.
+**Principle:** suspend code **never mutates state directly in the view**. It does the I/O, gets the data, and then mutates the presenter's `scope`, synchronously; the scope asks for the repaint.
 
 ### The presenterScope — Serializing Actions
 
@@ -680,7 +682,7 @@ sequenceDiagram
     activate Q
     Q->>IO: cart.commit() — suspend
     IO-->>Q: result
-    Q->>Q: state.x = ... (synchronous)
+    Q->>Q: scope.x = ... (synchronous)
     Q->>Q: update() (synchronous)
     deactivate Q
 
@@ -691,7 +693,7 @@ sequenceDiagram
     deactivate Q
 ```
 
-**Practical consequence:** developers can write presenters as if they were single-threaded, reading and writing `state` without concurrency concerns.
+**Practical consequence:** developers can write presenters as if they were single-threaded, reading and writing `scope` without concurrency concerns.
 
 ### The Suspend / Synchronous Boundary
 
@@ -699,7 +701,7 @@ The table below summarizes which framework operations are `suspend` and which ar
 
 | Operation | Suspend? | Why |
 |----------|:--------:|---------|
-| `state.field = value` | ❌ | Plain in-memory assignment |
+| `scope.field = value` | ❌ | Plain in-memory assignment |
 | `update()` | ❌ | Notifies the view to re-render (synchronous) |
 | `CubeView.update()` | ❌ | Only marks dirty / recomposes |
 | `CubeViewSlot.setView(view)` | ❌ | Connects the view to the parent's slot (assignment) |
@@ -711,7 +713,7 @@ The table below summarizes which framework operations are `suspend` and which ar
 | `XxxKeys(app).flip()` | ✅ | Calls `navigate().execute()` |
 | `repository.fetch/insert/update()` | ✅ | Network or database access |
 | User actions with I/O (`onBuy()`) | ✅ | Call repositories or navigate |
-| User actions without I/O (`onModifyQuantity()`) | ❌ | Only mutate local state |
+| User actions without I/O (`onModifyQuantity()`) | ❌ | Only mutate the scope |
 
 ### The safeCall Pattern — Bridge between View and Presenter
 
@@ -735,7 +737,7 @@ sequenceDiagram
     Scope->>Pres: onBuy()
     Pres->>Repo: cart.commit(subject) — suspend
     Repo-->>Pres: purchaseId
-    Pres->>Pres: state.receipt = ...
+    Pres->>Pres: scope.receipt = ...
     Pres->>Pres: update()
     Note over Scope: flush() — processes dirty views
     deactivate Scope
@@ -796,7 +798,7 @@ flowchart TD
         AP2["Create view if initialization — SYNC"]
         AP3["Initialize child presenters — SUSPEND"]
         AP4["Load data — SUSPEND"]
-        AP5["Mutate state — SYNC"]
+        AP5["Mutate the scope — SYNC"]
         AP6["update() — SYNC"]
         AP7["Connect slot — SYNC"]
 
@@ -817,10 +819,10 @@ override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean
     }
 
     // (1) Load data from the server — SUSPEND (I/O)
-    if (state.receipt == null || pPurchaseId != purchaseId) {
+    if (scope.receipt == null || pPurchaseId != purchaseId) {
         val receipt = receiptService.loadReceipt(pPurchaseId)  // ← suspend
         purchaseId = pPurchaseId
-        state.receipt = receipt   // ← sync: mutates state, which asks the view to repaint
+        scope.receipt = receipt   // ← sync: mutates the scope, which asks the view to repaint
     }
 
     // (2) Create view and connect slot — SYNC. The slot is read on every call: a reused presenter goes where its
@@ -859,12 +861,12 @@ sequenceDiagram
     Child->>Child: onInitialize() — SUSPEND
     Child->>Repo: loadProducts() — SUSPEND (I/O)
     Repo-->>Child: List<Product>
-    Child->>Child: state.products = result — SYNC
+    Child->>Child: scope.products = result — SYNC
     Child->>Child: update() — SYNC
     deactivate Child
 
     Child-->>Parent: CubeView (returned by initialize)
-    Parent->>Parent: state.productsPanelView = view — SYNC
+    Parent->>Parent: scope.productsPanelView = view — SYNC
 ```
 
 ```kotlin
@@ -892,7 +894,7 @@ flowchart TD
     Q1{Does the function do I/O?\nnetwork, disk, database}
     Q2{Does the function navigate?\ncall XxxKeys.flip}
     Q3{Does the function initialize\na child presenter?}
-    Q4{Does the function only\nmutate local state?}
+    Q4{Does the function only\nmutate the scope?}
 
     Q1 -->|Yes| SUSPEND["✅ suspend"]
     Q1 -->|No| Q2
@@ -914,7 +916,7 @@ flowchart TD
 fun onModifyQuantity(productId: Long?, quantity: Int?) {
     val found = cart.modifyProductQuantity(productId, quantity)  // sync
     if (found) {
-        state.items = cart.getCartItems()  // sync
+        scope.items = cart.getCartItems()  // sync
         update()                            // sync
     }
 }
@@ -926,7 +928,7 @@ suspend fun onRemoveProduct(productId: Long?) {
         if (cart.getSize() == 0) {
             HomeKeys(app).flip()  // ← suspend: navigates
         } else {
-            state.items = cart.getCartItems()
+            scope.items = cart.getCartItems()
             update()
         }
     }
@@ -947,7 +949,7 @@ suspend fun onBuy() {
 
 3. **Views are never suspend.** The `update()`, `release()` and `setView()` methods and all UI construction are synchronous. Use `safeCall` to dispatch suspend actions from UI events.
 
-4. **`safeCall` is fire-and-forget.** There is no return value. If you need the result of an async operation to update the UI, mutate `state` inside the block: the observed state asks for the repaint.
+4. **`safeCall` is fire-and-forget.** There is no return value. If you need the result of an async operation to update the UI, mutate `scope` inside the block: the scope asks for the repaint.
 
 5. **Listeners can be suspend.** `CartManager` supports `suspend () -> Unit` as a commit listener. The framework calls these listeners sequentially with `await`.
 
@@ -960,7 +962,7 @@ suspend fun onBuy() {
 ```mermaid
 flowchart LR
     A["safeCall { ... }"] --> B["suspend I/O\n(fetch, commit)"]
-    B --> C["Mutates state\n(synchronous)"]
+    B --> C["Mutates the scope\n(synchronous)"]
     C --> D["update()\n(synchronous)"]
     D --> E["flush()\n(processes dirty views)"]
 
@@ -975,7 +977,7 @@ flowchart LR
 
 There are cases where the presenter needs to fire an I/O operation **without blocking** the current action: for example, preloading data, sending telemetry, or fetching secondary information while the UI already shows the main content.
 
-Because `presenterScope` is serial (`limitedParallelism(1)`), `app.presenterScope.launch { ... }` only **queues** the task for later. If the goal is **truly parallel** execution, use a separate scope and, once the result is available, dispatch back to `presenterScope` to mutate the state safely.
+Because `presenterScope` is serial (`limitedParallelism(1)`), `app.presenterScope.launch { ... }` only **queues** the task for later. If the goal is **truly parallel** execution, use a separate scope and, once the result is available, dispatch back to `presenterScope` to mutate the scope safely.
 
 Presenters reach `presenterScope` through `app.presenterScope` (defined in `RootPresenter`).
 
@@ -985,7 +987,7 @@ Presenters reach `presenterScope` through `app.presenterScope` (defined in `Root
 // Inside a presenter (app is RootPresenter)
 suspend fun onEnter() {
     // Show immediately with partial data
-    state.loading = true
+    scope.loading = true
     update()
 
     // Fire the heavy operation in parallel — does NOT block
@@ -993,16 +995,16 @@ suspend fun onEnter() {
         try {
             val extra = repository.fetchExtraInfo(id)  // parallel I/O
 
-            // Return to presenterScope to mutate state
+            // Return to presenterScope to mutate the scope
             app.presenterScope.launch {
-                state.extraInfo = extra
-                state.loading = false
+                scope.extraInfo = extra
+                scope.loading = false
                 update()
             }
         } catch (e: Exception) {
             app.presenterScope.launch {
-                state.errorMessage = e.message
-                state.loading = false
+                scope.errorMessage = e.message
+                scope.loading = false
                 update()
             }
         }
@@ -1021,7 +1023,7 @@ sequenceDiagram
 
     UI->>PS: safeCall → presenter.onEnter()
     activate PS
-    PS->>PS: state.loading = true
+    PS->>PS: scope.loading = true
     PS->>PS: update()
     PS->>BG: launch → repo.fetchExtraInfo()
     Note over PS: Does not wait — continues
@@ -1031,13 +1033,13 @@ sequenceDiagram
     activate BG
     BG->>Repo: fetchExtraInfo() — suspend
     Repo-->>BG: result
-    BG->>PS: launch → state.extra = result
+    BG->>PS: launch → scope.extra = result
     deactivate BG
 
     activate PS
     Note over PS: Runs on presenterScope (safe)
-    PS->>PS: state.extraInfo = result
-    PS->>PS: state.loading = false
+    PS->>PS: scope.extraInfo = result
+    PS->>PS: scope.loading = false
     PS->>PS: update()
     deactivate PS
 ```
@@ -1050,9 +1052,8 @@ If the operation does not need to be parallel, only decoupled from the current a
 // Queued — runs AFTER the current action ends (serial, no parallelism)
 app.presenterScope.launch {
     val data = repository.sendAnalytics(payload)
-    // Can mutate state directly here (already on presenterScope)
-    state.analyticsConfirmed = true
-    update()
+    // Can mutate the scope directly here (already on presenterScope)
+    scope.analyticsConfirmed = true // the scope asks for the repaint
 }
 ```
 
@@ -1062,8 +1063,8 @@ flowchart TD
     Q -->|Yes| PAR["Separate scope<br/>+ dispatch via<br/>app.presenterScope.launch"]
     Q -->|No| SER["app.presenterScope.launch<br/>(queued, serial)"]
 
-    PAR --> R1["⚠️ Do NOT mutate state<br/>outside presenterScope"]
-    SER --> R2["✅ Can mutate state<br/>directly"]
+    PAR --> R1["⚠️ Do NOT mutate the scope<br/>outside presenterScope"]
+    SER --> R2["✅ Can mutate the scope<br/>directly"]
 
     style PAR fill:#e3f2fd,stroke:#1565c0
     style SER fill:#e8f5e9,stroke:#2e7d32
@@ -1073,6 +1074,6 @@ flowchart TD
 
 #### Safety Rule
 
-> **Every `state` mutation and `update()` call must happen inside `presenterScope`.**
+> **Every `scope` mutation and `update()` call must happen inside `presenterScope`.**
 >
-> If code is running on a parallel scope, it must dispatch back via `app.presenterScope.launch { ... }` before touching the presenter's state. Breaking this rule causes silent race conditions.
+> If code is running on a parallel scope, it must dispatch back via `app.presenterScope.launch { ... }` before touching the presenter's scope. Breaking this rule causes silent race conditions.

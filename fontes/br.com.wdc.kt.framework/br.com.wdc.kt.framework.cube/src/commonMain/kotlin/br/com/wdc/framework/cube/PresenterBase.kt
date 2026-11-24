@@ -11,7 +11,7 @@ interface PresenterBase {
     val app: CubeApplication
 
     /**
-     * Computes the calculated/derived fields the view reads from the presenter state.
+     * Computes the calculated/derived fields the view reads from the presenter's scope.
      *
      * Called by the view layer exactly once per paint cycle, right before the view
      * state is read for rendering. The view ignores its own `update()` during this call.

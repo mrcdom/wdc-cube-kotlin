@@ -18,8 +18,8 @@ class ShoppingLoginTest : BasePresentationTest() {
 
         val rootView = app.getRootView()!!
 
-        val mainContent = LoginViewMock.cast(rootView.state.contentView)
-        assertTrue(mainContent.state.errorCode == 0, "The user should not have been validated")
+        val mainContent = LoginViewMock.cast(rootView.scope.contentView)
+        assertTrue(mainContent.scope.errorCode == 0, "The user should not have been validated")
     }
 
     @Test
@@ -28,14 +28,14 @@ class ShoppingLoginTest : BasePresentationTest() {
 
         val rootView = app.getRootView()!!
 
-        var loginView = LoginViewMock.cast(rootView.state.contentView)
-        loginView.state.userName = "admin"
-        loginView.state.password = "unrecognized password"
+        var loginView = LoginViewMock.cast(rootView.scope.contentView)
+        loginView.scope.userName = "admin"
+        loginView.scope.password = "unrecognized password"
         loginView.presenter.onEnter()
 
         // Check if it keeps bean login view
-        loginView = LoginViewMock.cast(rootView.state.contentView)
-        assertTrue(loginView.state.errorCode == 1, "The user should not have been validated")
+        loginView = LoginViewMock.cast(rootView.scope.contentView)
+        assertTrue(loginView.scope.errorCode == 1, "The user should not have been validated")
     }
 
     @Test
@@ -44,16 +44,16 @@ class ShoppingLoginTest : BasePresentationTest() {
 
         val rootView = app.getRootView()!!
 
-        val loginView = LoginViewMock.cast(rootView.state.contentView)
-        loginView.state.userName = "admin"
-        loginView.state.password = "admin"
+        val loginView = LoginViewMock.cast(rootView.scope.contentView)
+        loginView.scope.userName = "admin"
+        loginView.scope.password = "admin"
         loginView.presenter.onEnter()
 
-        val restrictedView = RestrictedViewMock.cast(rootView.state.contentView)
+        val restrictedView = RestrictedViewMock.cast(rootView.scope.contentView)
 
-        assertTrue(!restrictedView.state.nickName.isNullOrBlank(), "Invalid user name")
-        assertTrue(restrictedView.state.cartItemCount >= 0, "The number of items in the cart cannot be negative")
-        assertTrue(restrictedView.state.errorCode == 0, "The user should have been validated")
+        assertTrue(!restrictedView.scope.nickName.isNullOrBlank(), "Invalid user name")
+        assertTrue(restrictedView.scope.cartItemCount >= 0, "The number of items in the cart cannot be negative")
+        assertTrue(restrictedView.scope.errorCode == 0, "The user should have been validated")
 
         val purchasesState = restrictedView.getPurchasesPanelState()
         val productsState = restrictedView.getProductsPanelState()
@@ -62,11 +62,11 @@ class ShoppingLoginTest : BasePresentationTest() {
         assertNotNull(productsState.products, "Missing product list")
 
         // Simulate the view reporting capacity (no real view in tests)
-        val purchasesMock = PurchasesPanelViewMock.cast(restrictedView.state.purchasesPanelView)
+        val purchasesMock = PurchasesPanelViewMock.cast(restrictedView.scope.purchasesPanelView)
         purchasesMock.presenter.onItemSizeCapacityChanged(3)
 
-        assertEquals("John Smith", restrictedView.state.nickName)
-        assertEquals(0, restrictedView.state.cartItemCount)
+        assertEquals("John Smith", restrictedView.scope.nickName)
+        assertEquals(0, restrictedView.scope.cartItemCount)
 
         // Pagination metadata
         assertEquals(0, purchasesState.page)

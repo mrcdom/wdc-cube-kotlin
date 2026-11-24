@@ -1,10 +1,10 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.products
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.ObservableViewState
+import br.com.wdc.framework.cube.Scope
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 
-class ProductViewState : ObservableViewState() {
+class ProductScope : Scope() {
 
     var product: ProductInfo? by field(null)
     var errorCode: Int by field(0)

@@ -26,7 +26,7 @@ class RootView(private val presenter: RootPresenter) : ReactCubeView("root-view"
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
+        val scope = presenter.scope
 
         Box {
             sx {
@@ -36,21 +36,21 @@ class RootView(private val presenter: RootPresenter) : ReactCubeView("root-view"
                 flexDirection = FlexDirection.column
             }
 
-            val contentView = state.contentView
+            val contentView = scope.contentView
             if (contentView != null) {
                 RenderSlot {
                     view = contentView
                 }
             }
 
-            val errorMessage = state.errorMessage
+            val errorMessage = scope.errorMessage
             if (!errorMessage.isNullOrBlank()) {
                 Snackbar {
                     open = true
                     message = ReactNode(errorMessage)
                     autoHideDuration = 6000
                     onClose = { _, _ ->
-                        state.errorMessage = null
+                        scope.errorMessage = null
                         presenter.update()
                     }
                 }

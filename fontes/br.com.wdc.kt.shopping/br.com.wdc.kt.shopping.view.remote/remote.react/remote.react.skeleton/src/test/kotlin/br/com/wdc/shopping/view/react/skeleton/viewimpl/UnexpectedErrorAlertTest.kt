@@ -16,10 +16,10 @@ class UnexpectedErrorAlertTest {
     @AfterTest
     fun release() = app.release()
 
-    private fun browserState(): String {
+    private fun browserScope(): String {
         val out = StringWriter()
         app.browserView
-            .writeState(JsonExtensibleObjectOutput(JsonWriter(out)))
+            .writeScope(JsonExtensibleObjectOutput(JsonWriter(out)))
         return out.toString()
     }
 
@@ -28,13 +28,13 @@ class UnexpectedErrorAlertTest {
         app.alertUnexpectedError(log, "Buying a product", IllegalStateException("connection refused"))
         assertEquals(
             """{"id":"${BrowserReactViewImpl.VSID}","alertMessage":{"id":-1,"args":["Buying a product: connection refused"]}}""",
-            browserState(),
+            browserScope(),
         )
     }
 
     @Test
     fun withoutACauseMessage_onlyWhatFailed() {
         app.alertUnexpectedError(log, "Buying a product", IllegalStateException())
-        assertEquals("""{"id":"${BrowserReactViewImpl.VSID}","alertMessage":{"id":-1,"args":["Buying a product"]}}""", browserState())
+        assertEquals("""{"id":"${BrowserReactViewImpl.VSID}","alertMessage":{"id":-1,"args":["Buying a product"]}}""", browserScope())
     }
 }

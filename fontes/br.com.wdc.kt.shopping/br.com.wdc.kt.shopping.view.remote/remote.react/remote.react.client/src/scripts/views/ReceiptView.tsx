@@ -36,22 +36,22 @@ type ReceiptForm = {
 
 // :: View
 
-export type ReceiptViewState = {
+export type ReceiptScope = {
   receipt: ReceiptForm
   notifySuccess?: boolean
 }
 
-class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptViewState> {
+class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
   override render({ className }: ViewProps) {
-    const { state } = this
-    const receipt = state.receipt
+    const { scope } = this
+    const receipt = scope.receipt
 
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: '16px 10px 16px 16px' }}>
         <Box sx={{ maxWidth: 600, width: '100%' }}>
           <Stack direction="column" spacing={2}>
             {/* Success banner */}
-            {state.notifySuccess && (
+            {scope.notifySuccess && (
               <Paper
                 elevation={0}
                 sx={{ p: 2.5, borderRadius: '12px', bgcolor: Colors.SuccessContainer, textAlign: 'center' }}

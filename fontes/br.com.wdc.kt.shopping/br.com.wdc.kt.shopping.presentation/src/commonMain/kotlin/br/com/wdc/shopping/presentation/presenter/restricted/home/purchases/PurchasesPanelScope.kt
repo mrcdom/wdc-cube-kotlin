@@ -1,10 +1,10 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.purchases
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.ObservableViewState
+import br.com.wdc.framework.cube.Scope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 
-class PurchasesPanelViewState : ObservableViewState() {
+class PurchasesPanelScope : Scope() {
 
     var purchases: List<PurchaseInfo> by field(emptyList())
     var page: Int by field(0)

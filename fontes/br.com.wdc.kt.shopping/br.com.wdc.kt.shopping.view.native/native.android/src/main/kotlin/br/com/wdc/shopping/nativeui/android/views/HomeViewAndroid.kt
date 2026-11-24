@@ -635,10 +635,10 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
     }
 
     override fun doUpdate() {
-        val state = presenter.state
+        val scope = presenter.scope
 
         // Nickname
-        val nick = state.nickName
+        val nick = scope.nickName
         if (nick != lastNick) {
             lastNick = nick
             val greeting = if (!nick.isNullOrBlank()) "Hello, $nick" else ""
@@ -647,7 +647,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
         }
 
         // Cart badge
-        val cartCount = state.cartItemCount
+        val cartCount = scope.cartItemCount
         if (cartCount != lastCartCount) {
             lastCartCount = cartCount
             val show = cartCount > 0
@@ -659,8 +659,8 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
         }
 
         // Mount panels
-        val productsPanel = state.productsPanelView
-        val purchasesPanel = state.purchasesPanelView
+        val productsPanel = scope.productsPanelView
+        val purchasesPanel = scope.purchasesPanelView
 
         if (productsPanel != null && mountedProductsPanel !== productsPanel) {
             mountedProductsPanel = productsPanel
@@ -685,7 +685,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
         }
 
         // Detail overlay
-        val contentView = state.contentView
+        val contentView = scope.contentView
         detailSlot.sync(contentView)
         if (contentView != null) {
             detailContainer.visibility = View.VISIBLE
@@ -696,7 +696,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
         }
 
         // Error
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             errorLabel.text = errorMessage
             errorLabel.visibility = View.VISIBLE

@@ -1,6 +1,6 @@
 # react.skeleton
 
-Server-side bridge between the presenters and the React client. Each `*ReactViewImpl` turns WebSocket events into presenter calls and serializes the ViewState to JSON.
+Server-side bridge between the presenters and the React client. Each `*ReactViewImpl` turns WebSocket events into presenter calls and serializes the presenter's scope to JSON (`writeScope`).
 
 Main components:
 - `ReactRootPresenter` — manages the session, dirty tracking and server push

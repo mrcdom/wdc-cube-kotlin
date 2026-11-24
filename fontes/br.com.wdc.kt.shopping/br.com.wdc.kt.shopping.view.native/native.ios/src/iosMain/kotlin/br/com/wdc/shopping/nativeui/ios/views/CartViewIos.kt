@@ -283,8 +283,8 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val items = state.items
+        val scope = presenter.scope
+        val items = scope.items
 
         // Items list (guard by reference)
         if (items !== lastItems) {
@@ -310,7 +310,7 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
         }
 
         // Error (guard)
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (errorMessage != lastError) {
             lastError = errorMessage
             if (!errorMessage.isNullOrBlank()) {

@@ -21,7 +21,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
     // :: Public Instance Fields
 
-    val state = observed(LoginViewState())
+    val scope = bind(LoginScope())
 
     // :: Internal Instance Fields
 
@@ -45,34 +45,34 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     // :: Messages
 
     private fun alertUserOrPasswordNotRecognize() {
-        state.errorCode = 1
-        state.errorMessage = "Username or password not recognized!"
+        scope.errorCode = 1
+        scope.errorMessage = "Username or password not recognized!"
     }
 
     private fun alertDatabaseIsOffline() {
-        state.errorCode = 4
-        state.errorMessage = "The database is offline!"
+        scope.errorCode = 4
+        scope.errorMessage = "The database is offline!"
     }
 
     private fun alertConnectionError(caught: Throwable) {
-        state.errorCode = 5
-        state.errorMessage = "Failed to communicate with the server. Check your connection."
+        scope.errorCode = 5
+        scope.errorMessage = "Failed to communicate with the server. Check your connection."
     }
 
     // :: User Actions
 
     suspend fun onEnter(userName: String? = null, password: String? = null) {
-        if (userName != null) state.userName = userName
-        if (password != null) state.password = password
+        if (userName != null) scope.userName = userName
+        if (password != null) scope.password = password
 
-        state.loading = true
-        state.errorCode = 0
-        state.errorMessage = null
+        scope.loading = true
+        scope.errorCode = 0
+        scope.errorMessage = null
 
         try {
-            val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")
+            val subject = loginService.fetchSubject(scope.userName ?: "", scope.password ?: "")
 
-            state.loading = false
+            scope.loading = false
 
             if (subject == null || subject.id == null) {
                 app.subject = null
@@ -96,7 +96,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
                 HomeKeys(app).flip()
             }
         } catch (caught: Exception) {
-            state.loading = false
+            scope.loading = false
 
             if (caught is OfflineException) {
                 alertDatabaseIsOffline()

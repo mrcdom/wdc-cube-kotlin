@@ -91,7 +91,7 @@ class BrowserReactViewImpl(app: ReactRootPresenter) : GenericViewImpl<ReactRootP
         }
     }
 
-    override fun writeState(json: ExtensibleObjectOutput) {
+    override fun writeScope(json: ExtensibleObjectOutput) {
         json.beginObject()
         run {
             json.name("id").value(instanceId)

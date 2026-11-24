@@ -24,7 +24,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter)
 
 The lifecycle is:
 1. `createView()` — builds the `UIView` hierarchy programmatically via `UIKitDom`
-2. `doUpdate()` — called by the scheduler when the presenter signals a state change
+2. `doUpdate()` — called by the scheduler when the presenter's scope changes
 3. Guards (`lastX != newX`) avoid unnecessary UIKit manipulation
 
 ### DSL: `UIKitDom`

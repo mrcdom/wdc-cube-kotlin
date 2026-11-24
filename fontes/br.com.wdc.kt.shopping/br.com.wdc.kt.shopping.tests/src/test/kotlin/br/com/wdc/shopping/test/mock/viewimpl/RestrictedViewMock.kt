@@ -2,9 +2,9 @@ package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeViewState
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelViewState
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelViewState
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 import br.com.wdc.shopping.test.mock.RootPresenterMock
@@ -25,20 +25,20 @@ class RestrictedViewMock(
         }
     }
 
-    var state: HomeViewState = presenter.state
+    var scope: HomeScope = presenter.scope
 
-    fun getProductsPanelState(): ProductsPanelViewState {
-        return ProductsPanelViewMock.cast(state.productsPanelView).state
+    fun getProductsPanelState(): ProductsPanelScope {
+        return ProductsPanelViewMock.cast(scope.productsPanelView).scope
     }
 
-    fun getPurchasesPanelState(): PurchasesPanelViewState {
-        return PurchasesPanelViewMock.cast(state.purchasesPanelView).state
+    fun getPurchasesPanelState(): PurchasesPanelScope {
+        return PurchasesPanelViewMock.cast(scope.purchasesPanelView).scope
     }
 
     fun render() {
-        println("Welcome, ${state.nickName}!")
+        println("Welcome, ${scope.nickName}!")
         println()
-        println("Cart[${state.cartItemCount}]")
+        println("Cart[${scope.cartItemCount}]")
         println()
         printPurchases()
         printProducts()

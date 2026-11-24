@@ -34,8 +34,8 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val state = presenter.state
-        val products = state.products
+        val scope = presenter.scope
+        val products = scope.products
 
         Column(
             modifier = Modifier.fillMaxSize().padding(12.dp)

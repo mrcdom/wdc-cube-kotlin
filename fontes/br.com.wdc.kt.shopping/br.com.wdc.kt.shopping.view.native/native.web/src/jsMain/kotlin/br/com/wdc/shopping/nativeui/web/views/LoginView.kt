@@ -69,8 +69,8 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
-        val loading = state.loading
+        val scope = presenter.scope
+        val loading = scope.loading
 
         // Full-screen gradient background
         Box {
@@ -147,7 +147,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             fullWidth = true
                             label = ReactNode("Username")
                             inputRef = userNameRef
-                            defaultValue = state.userName ?: ""
+                            defaultValue = scope.userName ?: ""
                             disabled = loading
                             asDynamic().autoComplete = "off"
                         }
@@ -157,7 +157,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             fullWidth = true
                             label = ReactNode("Password")
                             inputRef = passwordRef
-                            defaultValue = state.password ?: ""
+                            defaultValue = scope.password ?: ""
                             asDynamic().type = "text"
                             asDynamic().autoComplete = "off"
                             asDynamic().InputProps = js("""({
@@ -170,7 +170,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                         }
 
                         // Error message
-                        val errorMessage = state.errorMessage
+                        val errorMessage = scope.errorMessage
                         if (!errorMessage.isNullOrBlank()) {
                             Alert {
                                 severity = "error"

@@ -1,9 +1,9 @@
 import * as LangUtils from '../utils/LangUtils'
 import { NOOP_VOID } from './constants'
 
-export class ViewScope {
+export class ViewBinding {
   private readonly __svid: string
-  private readonly __viewState: Record<string, unknown> = {}
+  private readonly __scope: Record<string, unknown> = {}
   private __referencedViewIds: Set<string> = new Set()
 
   forceUpdate = NOOP_VOID
@@ -16,28 +16,28 @@ export class ViewScope {
     return this.__svid
   }
 
-  getState() {
-    return this.__viewState
+  getScope() {
+    return this.__scope
   }
 
   getReferencedViewIds() {
     return this.__referencedViewIds
   }
 
-  setState(newViewState: Record<string, unknown>) {
-    const newRefs = ViewScope.extractViewIdRefs(newViewState)
+  setScope(newScope: Record<string, unknown>) {
+    const newRefs = ViewBinding.extractViewIdRefs(newScope)
     this.__referencedViewIds = newRefs
 
-    LangUtils.deleteProperties(this.__viewState)
-    Object.assign(this.__viewState, newViewState)
+    LangUtils.deleteProperties(this.__scope)
+    Object.assign(this.__scope, newScope)
     this.forceUpdate()
   }
 
-  private static extractViewIdRefs(state: Record<string, unknown>): Set<string> {
+  private static extractViewIdRefs(scope: Record<string, unknown>): Set<string> {
     const refs = new Set<string>()
-    for (const key in state) {
+    for (const key in scope) {
       if (key.endsWith('ViewId')) {
-        const value = state[key]
+        const value = scope[key]
         if (typeof value === 'string' && value.length > 0) {
           refs.add(value)
         }

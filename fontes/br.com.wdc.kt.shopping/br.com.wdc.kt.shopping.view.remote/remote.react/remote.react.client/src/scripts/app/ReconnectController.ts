@@ -1,5 +1,5 @@
 import type { Application } from './Application'
-import type { BrowserViewState } from './types'
+import type { BrowserScope } from './types'
 import { BROWSER_VSID } from './constants'
 
 export class ReconnectController {
@@ -28,15 +28,15 @@ export class ReconnectController {
     this.cause = cause
 
     {
-      const bvScope = app.viewMap.get(BROWSER_VSID)
-      if (bvScope) {
-        const bvState = bvScope.getState() as BrowserViewState
-        bvState.error = {
+      const bvBinding = app.viewMap.get(BROWSER_VSID)
+      if (bvBinding) {
+        const bvScope = bvBinding.getScope() as BrowserScope
+        bvScope.error = {
           cause: this.cause,
           numAttempt: this.count,
           delay: this.delay,
         }
-        bvScope.forceUpdate()
+        bvBinding.forceUpdate()
       }
     }
 
@@ -47,8 +47,8 @@ export class ReconnectController {
 
   check() {
     const app = this.app
-    const bvScope = app.viewMap.get(BROWSER_VSID)
-    if (!bvScope) {
+    const bvBinding = app.viewMap.get(BROWSER_VSID)
+    if (!bvBinding) {
       this.reset()
       return
     }
@@ -58,8 +58,8 @@ export class ReconnectController {
       return
     }
 
-    const bvState = bvScope.getState() as BrowserViewState
-    bvState.error = {
+    const bvScope = bvBinding.getScope() as BrowserScope
+    bvScope.error = {
       cause: this.cause,
       numAttempt: this.count,
       delay: this.delay,
@@ -68,10 +68,10 @@ export class ReconnectController {
     if (this.delay > 0) {
       this.delay -= 1000
       this.delay < 0 && (this.delay = 0)
-      bvState.error.delay = this.delay
+      bvScope.error.delay = this.delay
     }
 
-    bvScope.forceUpdate()
+    bvBinding.forceUpdate()
 
     if (this.delay <= 0) {
       window.setTimeout(app.assureContextExchangerIsConnected, 16)
@@ -82,9 +82,9 @@ export class ReconnectController {
     const app = this.app
     const browserView = app.viewMap.get(BROWSER_VSID)
     if (browserView) {
-      const browserViewState = browserView.getState()
-      browserViewState.error = undefined
-      browserView.setState(browserViewState)
+      const browserScope = browserView.getScope()
+      browserScope.error = undefined
+      browserView.setScope(browserScope)
     }
 
     this.count = 0

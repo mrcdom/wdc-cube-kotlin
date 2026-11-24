@@ -181,11 +181,11 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val receipt = state.receipt
+        val scope = presenter.scope
+        val receipt = scope.receipt
 
         // Success banner
-        if (state.notifySuccess && !successShown) {
+        if (scope.notifySuccess && !successShown) {
             successBanner.visibility = View.VISIBLE
             successShown = true
         }

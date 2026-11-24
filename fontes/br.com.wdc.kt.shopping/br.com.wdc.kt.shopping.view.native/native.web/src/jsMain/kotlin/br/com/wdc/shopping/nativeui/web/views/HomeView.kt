@@ -64,7 +64,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
+        val scope = presenter.scope
         var isCompact by useState(kotlinx.browser.window.innerWidth < COMPACT_BREAKPOINT)
 
         // Track window width for responsiveness
@@ -163,13 +163,13 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                             Typography {
                                 variant = TypographyVariant.body2
                                 sx { color = ShoppingColors.WhiteOverlay85.unsafeCast<Color>() }
-                                +"Hello, ${state.nickName ?: ""}"
+                                +"Hello, ${scope.nickName ?: ""}"
                             }
 
                             Badge {
-                                badgeContent = ReactNode("${state.cartItemCount}")
+                                badgeContent = ReactNode("${scope.cartItemCount}")
                                 color = BadgeColor.error
-                                invisible = state.cartItemCount <= 0
+                                invisible = scope.cartItemCount <= 0
 
                                 Button {
                                     variant = ButtonVariant.contained
@@ -256,15 +256,15 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                             Typography {
                                 variant = TypographyVariant.body2
                                 sx { color = NamedColor.white.unsafeCast<Color>() }
-                                +"Hello, ${state.nickName ?: ""}"
+                                +"Hello, ${scope.nickName ?: ""}"
                             }
                         }
 
                         // Cart button
                         Badge {
-                            badgeContent = ReactNode("${state.cartItemCount}")
+                            badgeContent = ReactNode("${scope.cartItemCount}")
                             color = BadgeColor.error
-                            invisible = state.cartItemCount <= 0
+                            invisible = scope.cartItemCount <= 0
 
                             Button {
                                 variant = ButtonVariant.contained
@@ -285,7 +285,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
             }
 
             // Error message
-            val errorMessage = state.errorMessage
+            val errorMessage = scope.errorMessage
             if (!errorMessage.isNullOrBlank()) {
                 Alert {
                     severity = "error"
@@ -295,7 +295,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
             }
 
             // Content area
-            val contentView = state.contentView
+            val contentView = scope.contentView
             if (contentView != null) {
                 Box {
                     sx {
@@ -372,13 +372,13 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                         when (selectedTab) {
                             0 -> {
-                                val productsView = state.productsPanelView
+                                val productsView = scope.productsPanelView
                                 if (productsView != null) {
                                     RenderSlot { view = productsView }
                                 }
                             }
                             1 -> {
-                                val purchasesView = state.purchasesPanelView
+                                val purchasesView = scope.purchasesPanelView
                                 if (purchasesView != null) {
                                     RenderSlot { view = purchasesView }
                                 }
@@ -412,7 +412,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                         }
                         elevation = 0
 
-                        val productsView = state.productsPanelView
+                        val productsView = scope.productsPanelView
                         if (productsView != null) {
                             RenderSlot { view = productsView }
                         }
@@ -427,7 +427,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                         }
                         elevation = 0
 
-                        val purchasesView = state.purchasesPanelView
+                        val purchasesView = scope.purchasesPanelView
                         if (purchasesView != null) {
                             RenderSlot { view = purchasesView }
                         }

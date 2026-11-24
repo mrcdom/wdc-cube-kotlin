@@ -24,7 +24,7 @@ class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter)
 
 The lifecycle is:
 1. `createView()` — builds the view tree programmatically via `AndroidDom`
-2. `doUpdate()` — called by the scheduler when the presenter signals a state change
+2. `doUpdate()` — called by the scheduler when the presenter's scope changes
 3. Guards (`lastX != newX`) avoid unnecessary recomputation
 
 ### DSL: `AndroidDom`

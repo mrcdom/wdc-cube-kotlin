@@ -30,7 +30,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val state = presenter.state
+        val scope = presenter.scope
 
         Box(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -60,7 +60,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                    val errorMessage = state.errorMessage
+                    val errorMessage = scope.errorMessage
                     if (!errorMessage.isNullOrBlank()) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
@@ -75,7 +75,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                         }
                     }
 
-                    if (state.items.isEmpty()) {
+                    if (scope.items.isEmpty()) {
                         // Empty state
                         Box(
                             modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -103,7 +103,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                             modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            for (item in state.items) {
+                            for (item in scope.items) {
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(8.dp),
@@ -206,7 +206,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            val total = state.items.sumOf { it.price * it.quantity }
+                            val total = scope.items.sumOf { it.price * it.quantity }
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
                                 color = PriceColor.copy(alpha = 0.1f)
@@ -239,7 +239,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                 Text("Continue Shopping", fontWeight = FontWeight.Medium)
                             }
                         }
-                        if (state.items.isNotEmpty()) {
+                        if (scope.items.isNotEmpty()) {
                             Button(
                                 onClick = { safeCall { presenter.onBuy() } },
                                 shape = RoundedCornerShape(12.dp),

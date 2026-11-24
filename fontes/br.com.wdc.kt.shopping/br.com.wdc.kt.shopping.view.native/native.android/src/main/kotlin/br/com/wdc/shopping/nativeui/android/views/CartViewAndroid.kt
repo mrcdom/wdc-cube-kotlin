@@ -228,8 +228,8 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val items = state.items
+        val scope = presenter.scope
+        val items = scope.items
 
         if (items !== lastItems) {
             lastItems = items
@@ -251,7 +251,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
             }
         }
 
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (errorMessage != lastError) {
             lastError = errorMessage
             if (!errorMessage.isNullOrBlank()) {

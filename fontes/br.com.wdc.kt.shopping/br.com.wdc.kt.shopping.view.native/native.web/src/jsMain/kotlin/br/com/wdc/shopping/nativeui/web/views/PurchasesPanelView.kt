@@ -47,12 +47,12 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
     }
 
     private val onPreviousPage: MouseEventHandler<HTMLButtonElement> = {
-        val page = presenter.state.page - 1
+        val page = presenter.scope.page - 1
         safeCall { presenter.onPageChange(page) }
     }
 
     private val onNextPage: MouseEventHandler<HTMLButtonElement> = {
-        val page = presenter.state.page + 1
+        val page = presenter.scope.page + 1
         safeCall { presenter.onPageChange(page) }
     }
 
@@ -65,7 +65,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
+        val scope = presenter.scope
         val containerRef = useRef<HTMLDivElement>()
         val lastCapacityRef = useRef(-1)
 
@@ -108,7 +108,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                     +"Purchases"
                 }
 
-                if (state.totalCount > 0) {
+                if (scope.totalCount > 0) {
                     Box {
                         sx {
                             backgroundColor = ShoppingColors.SecondaryContainer.unsafeCast<BackgroundColor>()
@@ -120,7 +120,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                             sx {
                                 color = ShoppingColors.OnPrimaryContainer.unsafeCast<Color>()
                             }
-                            +"${state.totalCount} ${if (state.totalCount == 1) "item" else "items"}"
+                            +"${scope.totalCount} ${if (scope.totalCount == 1) "item" else "items"}"
                         }
                     }
                 }
@@ -133,9 +133,9 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                 ref = containerRef
                 style = js("({flex: '1 1 auto', overflow: 'hidden'})").unsafeCast<react.CSSProperties>()
 
-                val purchases = state.purchases
+                val purchases = scope.purchases
                 if (purchases.isEmpty()) {
-                    if ((lastCapacityRef.current ?: -1) >= 1 && state.totalCount == 0) {
+                    if ((lastCapacityRef.current ?: -1) >= 1 && scope.totalCount == 0) {
                         Box {
                             sx {
                                 display = Display.flex
@@ -220,8 +220,8 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
             }
 
             // Pagination
-            if (state.totalCount > state.pageSize && state.pageSize > 0) {
-                val totalPages = (state.totalCount + state.pageSize - 1) / state.pageSize
+            if (scope.totalCount > scope.pageSize && scope.pageSize > 0) {
+                val totalPages = (scope.totalCount + scope.pageSize - 1) / scope.pageSize
 
                 Stack {
                     direction = responsive(StackDirection.row)
@@ -233,7 +233,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                     spacing = responsive(2)
 
                     IconButton {
-                        disabled = state.page <= 0
+                        disabled = scope.page <= 0
                         onClick = onPreviousPage
                         ChevronLeft {}
                     }
@@ -241,11 +241,11 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                     Typography {
                         variant = TypographyVariant.body2
                         sx { fontWeight = FontWeight.bold }
-                        +"${state.page + 1} / $totalPages"
+                        +"${scope.page + 1} / $totalPages"
                     }
 
                     IconButton {
-                        disabled = state.page >= totalPages - 1
+                        disabled = scope.page >= totalPages - 1
                         onClick = onNextPage
                         ChevronRight {}
                     }

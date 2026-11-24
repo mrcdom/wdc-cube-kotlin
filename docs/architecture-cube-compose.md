@@ -34,7 +34,7 @@ The presenter stays **pure Kotlin** — it knows nothing about Compose and impor
 ```mermaid
 graph LR
     subgraph "Pure Kotlin (commonMain)"
-        P[Presenter] --> S[ViewState]
+        P[Presenter] --> S[Scope]
         P --> CV[CubeView interface]
     end
 
@@ -88,14 +88,14 @@ sequenceDiagram
     participant UI as UI Thread
 
     BG->>P: action() via safeCall
-    P->>P: state.field = newValue
+    P->>P: scope.field = newValue
     P->>V: update()
     V->>REV: revision.value++
     REV->>C: Snapshot change detected
     C->>UI: Schedule recomposition
     UI->>V: Render()
     V->>REV: val rev = revision.value
-    Note over UI: Reads updated state and renders
+    Note over UI: Reads the updated scope and renders
 ```
 
 1. Compose's `MutableState` is **thread-safe** — changes on any thread are detected by the snapshot system
@@ -130,7 +130,7 @@ This guarantees:
 | Property | How |
 |----------|-----|
 | **Free UI thread** | The action runs in the background — the interface stays responsive |
-| **Serial execution** | `limitedParallelism(1)` — state mutations never run concurrently |
+| **Serial execution** | `limitedParallelism(1)` — scope mutations never run concurrently |
 | **Synchronous code in the presenter** | The presenter writes linear code, with no callbacks or suspending functions |
 | **Captured errors** | Unhandled exceptions are delegated to `RootPresenter.alertUnexpectedError()` |
 
@@ -164,11 +164,11 @@ fun RenderSlot(view: CubeView) {
 }
 ```
 
-Parent views use it to render child views without knowing their concrete type. The parent view only knows that the `ViewState` holds a `CubeView`:
+Parent views use it to render child views without knowing their concrete type. The parent view only knows that the presenter's `scope` holds a `CubeView`:
 
 ```kotlin
 // Inside RootView.Render():
-val contentView = state.contentView
+val contentView = scope.contentView
 if (contentView != null) {
     RenderSlot(contentView)
 }
@@ -227,7 +227,7 @@ graph TD
 
     EP -->|registers factory| LP
     LP -->|"createView?.invoke(this)"| LV
-    LV -->|"reads state"| LP
+    LV -->|"reads scope"| LP
 ```
 
 This mechanism lets:
@@ -249,7 +249,7 @@ sequenceDiagram
     participant View as LoginView (Compose)
     participant SC as safeCall (BG thread)
     participant P as LoginPresenter
-    participant S as LoginViewState
+    participant S as LoginScope
     participant API as REST Backend
     participant Rev as revision MutableState
     participant CR as Compose Runtime
@@ -259,7 +259,7 @@ sequenceDiagram
     Note over View: UI thread released
 
     SC->>P: onEnter()
-    P->>S: state.loading = true
+    P->>S: scope.loading = true
     P->>View: update()
     View->>Rev: revision.value++
     Rev->>CR: Snapshot change → recomposition
@@ -268,7 +268,7 @@ sequenceDiagram
     P->>API: loginService.fetchSubject()
     API-->>P: Subject(id=1, nick=Admin)
 
-    P->>S: state.loading = false
+    P->>S: scope.loading = false
     P->>S: app.subject = subject
     P->>P: HomeKeys(app).flip() → navigation
     Note over P: CubeNavigation commit → HomePresenter created
@@ -291,19 +291,19 @@ class LoginView(private val presenter: LoginPresenter)
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        // (2) Reads the presenter state
-        val state = presenter.state
-        val loading = state.loading
+        // (2) Reads the presenter's scope
+        val scope = presenter.scope
+        val loading = scope.loading
 
         // (3) Uses remember for local UI state (text fields)
-        var userName by remember { mutableStateOf(state.userName ?: "") }
+        var userName by remember { mutableStateOf(scope.userName ?: "") }
 
-        // (4) Renders the UI by reading the ViewState
+        // (4) Renders the UI by reading the scope
         OutlinedTextField(
             value = userName,
             onValueChange = {
                 userName = it
-                state.userName = it  // ← direct mutation of the ViewState
+                scope.userName = it  // ← direct mutation of the scope
             },
             enabled = !loading,
         )
@@ -328,9 +328,9 @@ class LoginView(private val presenter: LoginPresenter)
 | Step | What it does | Why |
 |------|--------------|-----|
 | `revision.value` | Creates a Compose subscription | Without it, the view does not recompose when `update()` is called |
-| `presenter.state` | Accesses the mutable ViewState | The state is read directly — no copies, no mapping |
+| `presenter.scope` | Accesses the presenter's mutable scope | The scope is read directly — no copies, no mapping |
 | `remember` | Keeps local UI state | Text fields need local state for smooth typing |
-| `state.userName = it` | Direct mutation | The ViewState is mutable by design — simplicity > ceremony |
+| `scope.userName = it` | Direct mutation | The scope is mutable by design — simplicity > ceremony |
 | `safeCall { ... }` | Dispatches the action to the background | Free UI thread, guaranteed serial execution |
 
 ---
@@ -344,21 +344,21 @@ sequenceDiagram
     participant Root as RootPresenter
     participant Intent as CubeIntent
     participant Home as HomePresenter
-    participant RootState as RootViewState
+    participant RootScope
     participant RootView as RootView Compose
 
     Note over Root: applyParameters deepest=false
     Root->>Intent: parentSlot = contentSlot (RootKeys)
-    Note over Root: contentSlot callback:<br/>view -> state.contentView = view (observed state)
+    Note over Root: contentSlot callback:<br/>view -> scope.contentView = view (the scope is observed)
 
     Note over Home: applyParameters deepest=true, init=true
     Home->>Home: view = createView(this) HomeView
     Home->>Intent: parentSlot (HomeKeys)
     Intent-->>Home: contentSlot
     Home->>Root: contentSlot.setView(homeView)
-    Root->>RootState: state.contentView = homeView
+    Root->>RootScope: scope.contentView = homeView
     Root->>RootView: update() revision++
-    Note over RootView: Recomposes and renders:<br/>RenderSlot(state.contentView)
+    Note over RootView: Recomposes and renders:<br/>RenderSlot(scope.contentView)
 ```
 
 **In the RootPresenter code** (the root presenter is the application: it extends `CubeApplication`, is the root of the place tree and the presenter of the root view):
@@ -366,13 +366,13 @@ sequenceDiagram
 ```kotlin
 abstract class RootPresenter : CubeApplication(), PresenterBase {
 
-    val state = RootViewState().also { it.observe(::update) }
+    val scope = RootScope().also { it.observe(::update) }
 
     var view: CubeView? = null
         private set
 
-    // Callback that receives the child view and stores it in the state (observed: the root view repaints)
-    private val contentSlot = CubeViewSlot { v -> if (state.contentView !== v) state.contentView = v }
+    // Callback that receives the child view and stores it in the scope (observed: the root view repaints)
+    private val contentSlot = CubeViewSlot { v -> if (scope.contentView !== v) scope.contentView = v }
 
     fun update() {
         view?.update()
@@ -409,19 +409,19 @@ class RootView(private val presenter: RootPresenter)
     override fun Render() {
         val rev = revision.value
 
-        val state = presenter.state
+        val scope = presenter.scope
         Box(modifier = Modifier.fillMaxSize()) {
-            val contentView = state.contentView
+            val contentView = scope.contentView
             if (contentView != null) {
                 RenderSlot(contentView)  // ← renders the child view
             }
-            // state.errorMessage → Snackbar (the unexpected-error alert)
+            // scope.errorMessage → Snackbar (the unexpected-error alert)
         }
     }
 }
 ```
 
-`RootViewState.contentView` has type `CubeView` — the parent view does not know whether it is `HomeView`, `LoginView` or another one. It just calls `RenderSlot`, and Compose renders the right content.
+`RootScope.contentView` has type `CubeView` — the parent view does not know whether it is `HomeView`, `LoginView` or another one. It just calls `RenderSlot`, and Compose renders the right content.
 
 ---
 
@@ -601,21 +601,21 @@ stateDiagram-v2
 
 ```kotlin
 fun onEnter() {
-    state.loading = true  // → UI shows spinner (the state is observed: no update() call)
+    scope.loading = true  // → UI shows spinner (the scope is observed: no update() call)
 
     try {
-        val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")
-        state.loading = false
+        val subject = loginService.fetchSubject(scope.userName ?: "", scope.password ?: "")
+        scope.loading = false
 
         if (subject?.id != null) {
             app.subject = subject
             HomeKeys(app).flip()
         } else {
-            state.errorMessage = "Username or password not recognized!"
+            scope.errorMessage = "Username or password not recognized!"
         }
     } catch (caught: Exception) {
-        state.loading = false
-        state.errorMessage = "Failed to communicate with the server. Check your connection."
+        scope.loading = false
+        scope.errorMessage = "Failed to communicate with the server. Check your connection."
     }
 }
 ```
@@ -631,4 +631,4 @@ Button(
 }
 ```
 
-The presenter changes `state.loading`; the observed state (`ObservableViewState`) calls `update()`, and Compose recomposes. No callbacks, no observers, no explicit bindings.
+The presenter changes `scope.loading`; the observed `Scope` calls `update()`, and Compose recomposes. No callbacks, no observers, no explicit bindings.

@@ -10,20 +10,20 @@ class RootReactViewImpl(presenter: RootPresenter) : GenericViewImpl<RootPresente
         // NOOP
     }
 
-    override fun writeState(json: ExtensibleObjectOutput) {
-        val state = presenter.state
+    override fun writeScope(json: ExtensibleObjectOutput) {
+        val scope = presenter.scope
 
         json.beginObject()
         run {
             json.name("id").value(instanceId)
 
-            val contentView = state.contentView
+            val contentView = scope.contentView
             if (contentView is GenericViewImpl<*>) {
                 json.name("contentViewId").value(contentView.instanceId)
             }
 
-            if (!state.errorMessage.isNullOrBlank()) {
-                json.name("errorMessage").value(state.errorMessage)
+            if (!scope.errorMessage.isNullOrBlank()) {
+                json.name("errorMessage").value(scope.errorMessage)
             }
         }
         json.endObject()

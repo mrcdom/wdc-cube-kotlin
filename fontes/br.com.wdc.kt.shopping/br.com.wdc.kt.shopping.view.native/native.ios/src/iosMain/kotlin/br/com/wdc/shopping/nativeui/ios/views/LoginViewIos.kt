@@ -156,9 +156,9 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val loading = state.loading
-        val error = state.errorMessage
+        val scope = presenter.scope
+        val loading = scope.loading
+        val error = scope.errorMessage
 
         // Guard: loading state
         if (loading != lastLoading) {
@@ -184,9 +184,9 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
 
     internal fun performLogin() {
         safeAction("login") {
-            val state = presenter.state
-            state.userName = userField.text ?: ""
-            state.password = passwordField.text ?: ""
+            val scope = presenter.scope
+            scope.userName = userField.text ?: ""
+            scope.password = passwordField.text ?: ""
             presenter.onEnter()
         }
     }

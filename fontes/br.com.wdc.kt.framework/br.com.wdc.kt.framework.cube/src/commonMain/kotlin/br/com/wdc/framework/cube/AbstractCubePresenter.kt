@@ -18,10 +18,10 @@ open class AbstractCubePresenter<A : CubeApplication>(
     }
 
     /**
-     * Makes [state] repaint this presenter's view on its own: each change of an [ObservableViewState] field calls
-     * [update]. Use it on the presenter's state: `val state = observed(CartViewState())`.
+     * Makes [scope] repaint this presenter's view on its own: each change of a [Scope] field calls
+     * [update]. Use it on the presenter's scope: `val scope = bind(CartScope())`.
      */
-    protected fun <S : ObservableViewState> observed(state: S): S = state.also { it.observe(::update) }
+    protected fun <S : Scope> bind(scope: S): S = scope.also { it.observe(::update) }
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean = true
 

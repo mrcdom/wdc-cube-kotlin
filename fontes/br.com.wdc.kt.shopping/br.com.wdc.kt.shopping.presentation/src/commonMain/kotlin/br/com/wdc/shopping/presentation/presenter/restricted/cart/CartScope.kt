@@ -1,10 +1,10 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.cart
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.ObservableViewState
+import br.com.wdc.framework.cube.Scope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
 
-class CartViewState : ObservableViewState() {
+class CartScope : Scope() {
 
     var items: List<CartItem> by field(emptyList())
     var errorCode: Int by field(0)

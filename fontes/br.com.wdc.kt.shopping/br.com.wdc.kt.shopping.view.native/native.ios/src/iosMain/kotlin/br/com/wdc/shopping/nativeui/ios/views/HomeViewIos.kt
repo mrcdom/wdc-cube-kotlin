@@ -592,10 +592,10 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
     override fun doUpdate() {
         detectLayout()
 
-        val state = presenter.state
+        val scope = presenter.scope
 
         // Nickname
-        val nick = state.nickName
+        val nick = scope.nickName
         if (nick != lastNick) {
             lastNick = nick
             val greeting = if (!nick.isNullOrBlank()) "Hello, $nick" else ""
@@ -604,7 +604,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Cart badge
-        val cartCount = state.cartItemCount
+        val cartCount = scope.cartItemCount
         if (cartCount != lastCartCount) {
             lastCartCount = cartCount
             val show = cartCount > 0
@@ -616,8 +616,8 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Mount panels
-        val productsPanel = state.productsPanelView
-        val purchasesPanel = state.purchasesPanelView
+        val productsPanel = scope.productsPanelView
+        val purchasesPanel = scope.purchasesPanelView
 
         if (productsPanel != null && mountedProductsPanel !== productsPanel) {
             mountedProductsPanel = productsPanel
@@ -639,7 +639,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Detail overlay
-        val newContentView = state.contentView
+        val newContentView = scope.contentView
         detailSlot.sync(newContentView)
         val hasDetail = (newContentView != null)
         detailContainer.hidden = !hasDetail
@@ -663,7 +663,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Error
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             errorLabel.text = errorMessage
             errorLabel.hidden = false

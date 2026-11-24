@@ -7,7 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import LinearProgress from '@mui/material/LinearProgress'
 import Link from '@mui/material/Link'
 import Typography from '@mui/material/Typography'
-import app, { type ViewProps, BROWSER_VID, type BrowserViewState } from '@root/App'
+import app, { type ViewProps, BROWSER_VID, type BrowserScope } from '@root/App'
 import { BaseViewClass } from '@root/utils/ViewUtils'
 
 // :: Actions
@@ -16,11 +16,11 @@ const ON_ALERT_OK = 1
 
 // :: View
 
-class BrowserViewClass extends BaseViewClass<ViewProps, BrowserViewState> {
+class BrowserViewClass extends BaseViewClass<ViewProps, BrowserScope> {
   // :: Renderes
 
   override render({ className }: ViewProps) {
-    const { state } = this
+    const { scope } = this
 
     React.useEffect(() => {
       app.onStart()
@@ -30,13 +30,13 @@ class BrowserViewClass extends BaseViewClass<ViewProps, BrowserViewState> {
     }, [])
 
     let connectionAlert: ReactNode
-    if (state.error) {
-      connectionAlert = <ConnectionAlert delay={state.error.delay} onReconnectNow={this.onRecconectNow} />
+    if (scope.error) {
+      connectionAlert = <ConnectionAlert delay={scope.error.delay} onReconnectNow={this.onRecconectNow} />
     }
 
     let rootView: ReactNode
-    if (state.contentViewId) {
-      rootView = app.createView(state.contentViewId)
+    if (scope.contentViewId) {
+      rootView = app.createView(scope.contentViewId)
     } else {
       rootView = (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -46,15 +46,15 @@ class BrowserViewClass extends BaseViewClass<ViewProps, BrowserViewState> {
     }
 
     let alertView: ReactNode
-    if (state.alertMessage) {
+    if (scope.alertMessage) {
       alertView = (
-        <AppAlert code={state.alertMessage.id} args={state.alertMessage.args ?? []} onDismiss={this.emitAlertOk} />
+        <AppAlert code={scope.alertMessage.id} args={scope.alertMessage.args ?? []} onDismiss={this.emitAlertOk} />
       )
     }
 
     return (
       <Box className={className}>
-        {state.submitting && (
+        {scope.submitting && (
           <LinearProgress
             sx={{
               position: 'fixed',

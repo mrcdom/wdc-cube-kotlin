@@ -47,7 +47,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
 
     /** The emitters of one cart item. They read the item's current quantity from the state when they run. */
     private inner class ItemEmitters(val id: Long) {
-        private fun quantity(): Int = presenter.state.items.firstOrNull { it.id == id }?.quantity ?: 1
+        private fun quantity(): Int = presenter.scope.items.firstOrNull { it.id == id }?.quantity ?: 1
 
         val decrement: MouseEventHandler<HTMLButtonElement> = {
             val next = (quantity() - 1).coerceAtLeast(1)
@@ -73,7 +73,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
+        val scope = presenter.scope
 
         Box {
             sx {
@@ -107,7 +107,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                 Divider {}
 
                 // Error message
-                val errorMessage = state.errorMessage
+                val errorMessage = scope.errorMessage
                 if (!errorMessage.isNullOrBlank()) {
                     Alert {
                         severity = "error"
@@ -116,7 +116,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                     }
                 }
 
-                if (state.items.isEmpty()) {
+                if (scope.items.isEmpty()) {
                     // Empty state
                     Box {
                         sx {
@@ -151,8 +151,8 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                             direction = responsive(StackDirection.column)
                             spacing = responsive(1)
 
-                            itemEmitters.retainOnly(state.items.map { it.id })
-                            for (item in state.items) {
+                            itemEmitters.retainOnly(scope.items.map { it.id })
+                            for (item in scope.items) {
                                 val emitters = itemEmitters[item.id]
                                 Card {
                                     key = "${item.id}"
@@ -258,7 +258,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                             +"Total: "
                         }
 
-                        val total = state.items.sumOf { it.price * it.quantity }
+                        val total = scope.items.sumOf { it.price * it.quantity }
                         Box {
                             sx {
                                 backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
@@ -292,7 +292,7 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
                         +"Continue Shopping"
                     }
 
-                    if (state.items.isNotEmpty()) {
+                    if (scope.items.isNotEmpty()) {
                         Button {
                             variant = ButtonVariant.contained
                             onClick = onBuy

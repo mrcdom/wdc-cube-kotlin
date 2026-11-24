@@ -1,5 +1,5 @@
 import type { Application } from './Application'
-import type { BrowserViewState, FormMapType } from './types'
+import type { BrowserScope, FormMapType } from './types'
 import { BROWSER_VSID, KEEP_ALIVE_INTERVAL } from './constants'
 
 export class FlushRequestContext {
@@ -176,8 +176,8 @@ export class FlushRequestContext {
         window.location.href = `#${response.uri}`
       }
 
-      if (response.states) {
-        app.applyViewStates(response.states)
+      if (response.scopes) {
+        app.applyScopes(response.scopes)
       }
 
       me.flush()
@@ -254,12 +254,12 @@ export class FlushRequestContext {
   }
 
   private applySubmitting(value: boolean) {
-    const scope = this.app.viewMap.get(BROWSER_VSID)
-    if (scope) {
-      const state = scope.getState() as BrowserViewState
-      if (state.submitting !== value) {
-        state.submitting = value
-        scope.forceUpdate()
+    const binding = this.app.viewMap.get(BROWSER_VSID)
+    if (binding) {
+      const scope = binding.getScope() as BrowserScope
+      if (scope.submitting !== value) {
+        scope.submitting = value
+        binding.forceUpdate()
       }
     }
   }

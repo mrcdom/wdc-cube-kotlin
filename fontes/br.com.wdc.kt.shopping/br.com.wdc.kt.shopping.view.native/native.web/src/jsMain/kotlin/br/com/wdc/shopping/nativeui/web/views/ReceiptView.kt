@@ -47,8 +47,8 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
-        val receipt = state.receipt
+        val scope = presenter.scope
+        val receipt = scope.receipt
 
         Box {
             sx {
@@ -65,7 +65,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
                     spacing = responsive(2)
 
                     // Success banner
-                    if (state.notifySuccess) {
+                    if (scope.notifySuccess) {
                         Paper {
                             sx {
                                 padding = 20.px

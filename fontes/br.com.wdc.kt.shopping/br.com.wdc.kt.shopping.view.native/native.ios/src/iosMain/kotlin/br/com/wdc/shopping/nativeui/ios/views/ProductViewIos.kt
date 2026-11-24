@@ -210,8 +210,8 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val product = state.product
+        val scope = presenter.scope
+        val product = scope.product
 
         if (product != null) {
             nameLabel.text = product.name ?: ""
@@ -223,7 +223,7 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
         }
 
         // Error
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             errorLabel.text = errorMessage
             errorLabel.hidden = false

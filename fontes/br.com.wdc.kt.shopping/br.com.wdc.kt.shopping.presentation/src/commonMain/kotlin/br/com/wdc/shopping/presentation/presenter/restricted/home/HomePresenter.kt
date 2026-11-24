@@ -33,7 +33,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     // :: Public Instance Fields
 
-    val state = observed(HomeViewState())
+    val scope = bind(HomeScope())
 
     // :: Internal Instance Fields
 
@@ -49,18 +49,18 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     // :: Cube API
 
     override fun release() {
-        state.contentView = null
+        scope.contentView = null
 
         productsPanel?.let {
             it.release()
             productsPanel = null
-            state.productsPanelView = null
+            scope.productsPanelView = null
         }
 
         purchasesPanel?.let {
             it.release()
             purchasesPanel = null
-            state.purchasesPanelView = null
+            scope.purchasesPanelView = null
         }
 
         app.cart = null
@@ -86,20 +86,20 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         if (initialization || view == null) {
             view = createView?.invoke(this)
 
-            state.nickName = app.subject?.nickName
+            scope.nickName = app.subject?.nickName
 
             productsPanel = ProductsPanelPresenter(app, this)
-            state.productsPanelView = productsPanel!!.initialize()
+            scope.productsPanelView = productsPanel!!.initialize()
 
             purchasesPanel = PurchasesPanelPresenter(app, this)
-            state.purchasesPanelView = purchasesPanel!!.initialize()
+            scope.purchasesPanelView = purchasesPanel!!.initialize()
 
             cart = CartManager(PurchaseRepository.BEAN.get())
             restoreCart()
             onCartCommitListenerRemover = cart!!.addCommitListener(::onCartCommited)
             onCartChangeListenerRemover = cart!!.addChangeListener(::onCartChanged)
             app.cart = cart
-            state.cartItemCount = cart!!.getItemCount()
+            scope.cartItemCount = cart!!.getItemCount()
         }
 
         if (ownerSlot == null) {
@@ -122,7 +122,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     override fun publishParameters(intent: CubeIntent) {
-        HomeKeys(app, intent).purchasesPage = purchasesPanel?.state?.page ?: 0
+        HomeKeys(app, intent).purchasesPage = purchasesPanel?.scope?.page ?: 0
     }
 
     // :: User Actions
@@ -133,7 +133,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     private fun onCartChanged() {
-        state.cartItemCount = cart?.getItemCount() ?: 0
+        scope.cartItemCount = cart?.getItemCount() ?: 0
         saveCart()
     }
 
@@ -168,7 +168,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         try {
             if (purchaseId == null || purchaseId <= 0) {
                 alertPurchaseIdRequired()
-                LOG.warn("onOpenReceipt: {}", state.errorMessage)
+                LOG.warn("onOpenReceipt: {}", scope.errorMessage)
                 return
             }
 
@@ -176,7 +176,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         } catch (caught: Exception) {
             if (caught is PurchaseNotFoundException) {
                 alertPurchaseNotFound()
-                LOG.warn("{}: purchaseId={}", state.errorMessage, purchaseId)
+                LOG.warn("{}: purchaseId={}", scope.errorMessage, purchaseId)
                 return
             }
 
@@ -192,7 +192,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         try {
             if (productId == null || productId <= 0) {
                 alertProductIdRequired()
-                LOG.warn("onOpenProduct: {}", state.errorMessage)
+                LOG.warn("onOpenProduct: {}", scope.errorMessage)
                 return
             }
 
@@ -200,7 +200,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         } catch (caught: Exception) {
             if (caught is ProductNotFoundException) {
                 alertProductNotFound()
-                LOG.warn("{}: productId={}", state.errorMessage, productId)
+                LOG.warn("{}: productId={}", scope.errorMessage, productId)
                 return
             }
 
@@ -237,30 +237,30 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     // :: Messages
 
     private fun alertProductNotFound() {
-        state.errorCode = 3
-        state.errorMessage = "Product code not found."
+        scope.errorCode = 3
+        scope.errorMessage = "Product code not found."
     }
 
     private fun alertPurchaseNotFound() {
-        state.errorCode = 5
-        state.errorMessage = "Receipt code not found."
+        scope.errorCode = 5
+        scope.errorMessage = "Receipt code not found."
     }
 
     private fun alertProductIdRequired() {
-        state.errorCode = 6
-        state.errorMessage = "Product code is a required argument."
+        scope.errorCode = 6
+        scope.errorMessage = "Product code is a required argument."
     }
 
     private fun alertPurchaseIdRequired() {
-        state.errorCode = 7
-        state.errorMessage = "Receipt code is a required argument."
+        scope.errorCode = 7
+        scope.errorMessage = "Receipt code is a required argument."
     }
 
     // :: Slots
 
     private fun setContentView(view: CubeView?) {
-        if (state.contentView !== view) {
-            state.contentView = view
+        if (scope.contentView !== view) {
+            scope.contentView = view
         }
     }
 

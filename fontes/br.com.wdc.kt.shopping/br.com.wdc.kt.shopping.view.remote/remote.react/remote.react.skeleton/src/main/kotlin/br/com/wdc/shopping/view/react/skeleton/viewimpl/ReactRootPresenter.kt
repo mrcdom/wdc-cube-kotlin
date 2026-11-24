@@ -73,9 +73,9 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
                 var path = app.fragment
                 @Suppress("UNCHECKED_CAST")
-                val browserViewState = request[BrowserReactViewImpl.VSID] as? Map<String, Any?>
-                if (browserViewState != null) {
-                    val p = browserViewState["p.path"] as? String
+                val browserScope = request[BrowserReactViewImpl.VSID] as? Map<String, Any?>
+                if (browserScope != null) {
+                    val p = browserScope["p.path"] as? String
                     if (!p.isNullOrBlank()) {
                         path = p
                     }
@@ -224,9 +224,9 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         viewMap[view.instanceId] = view
     }
 
-    fun removeView(stateId: String): GenericViewImpl<*>? {
-        dirtyViewMap.remove(stateId)
-        return viewMap.remove(stateId)
+    fun removeView(scopeId: String): GenericViewImpl<*>? {
+        dirtyViewMap.remove(scopeId)
+        return viewMap.remove(scopeId)
     }
 
     fun markDirty(view: GenericViewImpl<*>) {
@@ -264,15 +264,15 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
     /**
      * Single paint point of a view: the presenter computes its derived fields right
-     * before the ViewState is read, once per paint cycle.
+     * before the Scope is read, once per paint cycle.
      */
-    private fun writeViewState(json: ExtensibleObjectOutput, view: GenericViewImpl<*>) {
+    private fun writeScope(json: ExtensibleObjectOutput, view: GenericViewImpl<*>) {
         try {
             view.prepareForPaint()
         } catch (e: Exception) {
             LOG.error("commitComputedState for view {}", view.instanceId, e)
         }
-        view.writeState(json)
+        view.writeScope(json)
     }
 
     @Synchronized
@@ -307,10 +307,10 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
                 json.name("uri").value(fragment)
             }
 
-            json.name("states")
+            json.name("scopes")
             json.beginArray()
             for (view in allViews) {
-                writeViewState(json, view)
+                writeScope(json, view)
             }
             json.endArray()
             json.endObject()
@@ -468,10 +468,10 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
                 }
 
                 if (views.isNotEmpty()) {
-                    json.name("states")
+                    json.name("scopes")
                     json.beginArray()
                     for (view in views) {
-                        me.writeViewState(json, view)
+                        me.writeScope(json, view)
                     }
                     json.endArray()
                 }

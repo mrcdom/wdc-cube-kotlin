@@ -160,7 +160,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
-                        setOnClickListener { safeAction("prevPage") { presenter.onPageChange(presenter.state.page - 1) } }
+                        setOnClickListener { safeAction("prevPage") { presenter.onPageChange(presenter.scope.page - 1) } }
                     }
                     pageLabel = textView {
                         textSize = 14f
@@ -185,7 +185,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
-                        setOnClickListener { safeAction("nextPage") { presenter.onPageChange(presenter.state.page + 1) } }
+                        setOnClickListener { safeAction("nextPage") { presenter.onPageChange(presenter.scope.page + 1) } }
                     }
                 }
             }
@@ -250,11 +250,11 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
             return
         }
 
-        val state = presenter.state
-        val purchases = state.purchases
-        val page = state.page
-        val totalCount = state.totalCount
-        val pageSize = state.pageSize
+        val scope = presenter.scope
+        val purchases = scope.purchases
+        val page = scope.page
+        val totalCount = scope.totalCount
+        val pageSize = scope.pageSize
 
         if (purchases !== lastPurchases) {
             lastPurchases = purchases

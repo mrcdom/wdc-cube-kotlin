@@ -25,7 +25,7 @@ interface Releasable {
  *
  * Subclasses implement:
  * - createView(): build the UIView hierarchy (called once — the "template")
- * - doUpdate(): reconcile presenter state → UIKit (called at most once per frame)
+ * - doUpdate(): reconcile presenter's scope → UIKit (called at most once per frame)
  *
  * The doUpdate() should use guards to only update components whose data has actually changed.
  */
@@ -104,7 +104,7 @@ abstract class AbstractViewIos<P : PresenterBase>(
     abstract fun createView(): UIView
 
     /**
-     * Reconcile presenter state to UIKit views. Called at most once per frame.
+     * Reconcile presenter's scope to UIKit views. Called at most once per frame.
      * Only runs when dirty flag is set.
      *
      * Implementations should guard each section with change detection:

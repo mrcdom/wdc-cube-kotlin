@@ -1,6 +1,6 @@
 # WDC Storefront — React Client
 
-SPA frontend of the Storefront system, built with **React 19**, **TypeScript** and **MUI 9**. It talks to the backend over a **bidirectional WebSocket**, receiving serialized presenter states and sending events back.
+SPA frontend of the Storefront system, built with **React 19**, **TypeScript** and **MUI 9**. It talks to the backend over a **bidirectional WebSocket**, receiving the presenters' scopes serialized and sending events back.
 
 See the [architecture documentation](../../../../docs/architecture-react.md) for details of the protocol and the communication cycle.
 
@@ -33,7 +33,7 @@ graph TD
     app --> Flush["FlushRequestContext.ts<br/><small>WS communication</small>"]
     app --> Reconnect["ReconnectController.ts<br/><small>Progressive backoff</small>"]
     app --> DataSec["DataSecurity.ts<br/><small>RSA + AES-GCM</small>"]
-    app --> ViewScope["ViewScope.ts<br/><small>Reactive state</small>"]
+    app --> ViewBinding["ViewBinding.ts<br/><small>Per-view scope holder</small>"]
     app --> ViewGC["ViewGarbageCollector.ts"]
     app --> constants["constants.ts + types.ts"]
 
@@ -61,25 +61,25 @@ graph TD
 
 1. **Bootstrap** (`index.tsx`): Creates the MUI theme, registers all views and renders the `BrowserView`
 2. **Connection** (`BrowserView`): On mount, calls `app.onStart()`, which opens the WebSocket
-3. **Receiving state**: The backend sends serialized `ViewStates` over the WebSocket → `Application.applyViewStates()` updates the `ViewScope`s → React re-renders
+3. **Receiving scopes**: The backend sends the serialized scopes (`scopes`) over the WebSocket → `Application.applyScopes()` updates the `ViewBinding`s → React re-renders
 4. **Sending events**: User actions call `app.submit(vsid, eventId)`, which sends the event to the matching presenter on the backend over the WebSocket
 
 ### View Pattern
 
-Each view is a class that extends `BaseViewClass<Props, State>` and is turned into a Functional Component via `BaseViewClass.FC()`:
+Each view is a class that extends `BaseViewClass<Props, Scope>` and is turned into a Functional Component via `BaseViewClass.FC()`:
 
 ```typescript
-class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
+class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
   override render({ className }: ViewProps): React.ReactNode {
-    const { state } = this
-    // ... rendering based on the state received from the backend
+    const { scope } = this
+    // ... rendering based on the scope received from the backend
   }
 }
 
 export default BaseViewClass.FC(LoginViewClass, 'c677cda52d14')
 ```
 
-- The **state** (`state`) comes from the backend (presenter); it is not managed locally
+- The **scope** (`scope`) comes from the backend (presenter); it is not managed locally
 - **Events** are sent to the backend via `app.submit(vsid, eventId)`
 - **Form data** is attached via `app.setFormField(vsid, field, value)` before the submit
 - Each view is identified by a unique **VIEW_ID** (hash) that maps to the presenter on the backend

@@ -50,8 +50,8 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
-        val products = state.products
+        val scope = presenter.scope
+        val products = scope.products
 
         Box {
             sx { padding = Padding(12.px, 6.px, 12.px, 12.px) }

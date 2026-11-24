@@ -8,7 +8,7 @@ import platform.UIKit.*
 
 /**
  * Root view — full-screen container with a single content slot.
- * Swaps between LoginView and HomeView based on presenter state.
+ * Swaps between LoginView and HomeView based on presenter's scope.
  */
 @OptIn(ExperimentalForeignApi::class)
 class RootViewIos(presenter: RootPresenter) : AbstractViewIos<RootPresenter>("root-view", presenter) {
@@ -26,16 +26,16 @@ class RootViewIos(presenter: RootPresenter) : AbstractViewIos<RootPresenter>("ro
     }
 
     override fun doUpdate() {
-        val state = presenter.state
+        val scope = presenter.scope
 
         // Sync content slot
-        contentSlot.sync(state.contentView)
+        contentSlot.sync(scope.contentView)
 
         // Show error toast if any
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             showErrorToast(errorMessage)
-            state.errorMessage = null
+            scope.errorMessage = null
         }
     }
 

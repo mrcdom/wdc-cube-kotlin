@@ -8,16 +8,16 @@ import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 class LoginReactViewImpl(presenter: LoginPresenter) : GenericViewImpl<LoginPresenter>("c677cda52d14", presenter) {
 
     override fun syncClientToServer(formData: Map<String, Any?>) {
-        val state = presenter.state
+        val scope = presenter.scope
 
         var fn = "userName"
         if (formData.containsKey(fn)) {
-            state.userName = CoerceUtils.asString(formData[fn])
+            scope.userName = CoerceUtils.asString(formData[fn])
         }
 
         fn = "password"
         if (formData.containsKey(fn)) {
-            state.password = app.getDataSecurity().b64Decipher(CoerceUtils.asString(formData[fn]) ?: "")
+            scope.password = app.getDataSecurity().b64Decipher(CoerceUtils.asString(formData[fn]) ?: "")
         }
     }
 
@@ -27,7 +27,7 @@ class LoginReactViewImpl(presenter: LoginPresenter) : GenericViewImpl<LoginPrese
         }
     }
 
-    override fun writeState(json: ExtensibleObjectOutput) {
-        presenter.state.write(instanceId, json)
+    override fun writeScope(json: ExtensibleObjectOutput) {
+        presenter.scope.write(instanceId, json)
     }
 }

@@ -9,7 +9,7 @@
 - [Session Establishment](#session-establishment)
 - [WebSocket Protocol](#websocket-protocol)
 - [Skeleton — The Bridge Between Presenter and Client](#skeleton--the-bridge-between-presenter-and-client)
-- [State Synchronization](#state-synchronization)
+- [Scope Synchronization](#scope-synchronization)
 - [Security](#security)
 - [Session Management and Lifecycle](#session-management-and-lifecycle)
 - [Advantages of the Remote View](#advantages-of-the-remote-view)
@@ -20,7 +20,7 @@
 
 ## Overview
 
-The React architecture implements a **remote view** in which the presentation layer (presenters) runs entirely on the server. The React client is responsible only for **rendering the interface**, with no business or presentation logic. All user interaction is sent to the server over WebSocket, and the server responds with the new state serialized as JSON.
+The React architecture implements a **remote view** in which the presentation layer (presenters) runs entirely on the server. The React client is responsible only for **rendering the interface**, with no business or presentation logic. All user interaction is sent to the server over WebSocket, and the server responds with the new scopes serialized as JSON.
 
 ```mermaid
 graph LR
@@ -113,8 +113,8 @@ graph TB
 
 | Module | Role |
 |--------|-------|
-| **react.client** | Pure rendering in React/TypeScript with Material UI. Receives JSON states and sends user events. Bundled with Parcel. |
-| **react.skeleton** | Server-side bridge: each `*ReactViewImpl` translates client events into presenter calls and serializes the ViewState to JSON. |
+| **react.client** | Pure rendering in React/TypeScript with Material UI. Receives the views' scopes as JSON and sends user events. Bundled with Parcel. |
+| **react.skeleton** | Server-side bridge: each `*ReactViewImpl` translates client events into presenter calls and serializes the presenter's scope to JSON. |
 | **backend** | Javalin server that hosts the WebSocket (`/dispatcher/{id}`), serves the React static files, and exposes the REST API for Compose clients. |
 | **presentation** | Shared presenters (KMP commonMain) — the same code used by both React and Compose. |
 | **persistence** | jOOQ implementation of the repositories (H2 or PostgreSQL) — used directly by the presenters in the React architecture. |
@@ -137,7 +137,7 @@ sequenceDiagram
     Browser->>WS: JSON with event and formData
     WS->>Dispatch: parses request
     Dispatch->>ViewImpl: syncClientToServer(formData)
-    ViewImpl->>Presenter: state.userName = formData.userName
+    ViewImpl->>Presenter: scope.userName = formData.userName
     Dispatch->>ViewImpl: submit(eventCode=1, ...)
     ViewImpl->>Presenter: onEnter()
     Presenter->>Repo: findByCredentials(user, pass)
@@ -145,13 +145,13 @@ sequenceDiagram
     Repo-->>Presenter: Subject
     Presenter->>ViewImpl: update() via markDirty
     Response->>Presenter: commitComputedState()
-    Response->>ViewImpl: writeState(json)
-    ViewImpl-->>WS: JSON with updated states
-    WS-->>Browser: states of the dirty views
-    Browser->>Browser: applies states and re-renders
+    Response->>ViewImpl: writeScope(json)
+    ViewImpl-->>WS: JSON with updated scopes
+    WS-->>Browser: scopes of the dirty views
+    Browser->>Browser: applies scopes and re-renders
 ```
 
-The whole cycle happens in a single WebSocket exchange — the client sends the event, the server processes it and responds with the new state. There are no intermediate REST calls.
+The whole cycle happens in a single WebSocket exchange — the client sends the event, the server processes it and responds with the new scopes. There are no intermediate REST calls.
 
 ---
 
@@ -177,7 +177,7 @@ sequenceDiagram
     Browser->>Server: ping with secret=app_signature
     Server->>Server: Decrypts AES password with RSA priv
     Server->>Server: Creates ReactRootPresenter
-    Server-->>Browser: Initial state (views)
+    Server-->>Browser: Initial scopes (views)
 ```
 
 The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging session IDs.
@@ -203,13 +203,13 @@ The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging 
 - **`vsid`**: view instance identifier (`hexVID:instanceNumber`)
 - **Form data**: indexed by `vsid`, sensitive fields encrypted
 
-### Server → Client (State Response)
+### Server → Client (Scope Response)
 
 ```json
 {
   "requestId": 42,
   "uri": "/home",
-  "states": [
+  "scopes": [
     {
       "id": "473dbdd7a36a:3",
       "nickName": "Admin",
@@ -225,7 +225,7 @@ The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging 
 }
 ```
 
-- **`states`**: only the views that changed (dirty tracking)
+- **`scopes`**: only the views that changed (dirty tracking)
 - **`uri`**: new navigation fragment (for the browser history)
 - **References between views**: `*ViewId` fields point to other views
 
@@ -239,13 +239,13 @@ Each presenter has a matching `*ReactViewImpl` in the skeleton module. This clas
 
 ```kotlin
 override fun syncClientToServer(formData: Map<String, Any?>) {
-    val state = presenter.state
+    val scope = presenter.scope
     if (formData.containsKey("userName")) {
-        state.userName = CoerceUtils.asString(formData["userName"])
+        scope.userName = CoerceUtils.asString(formData["userName"])
     }
     if (formData.containsKey("password")) {
         // Sensitive data is decrypted with AES
-        state.password = app.getDataSecurity()
+        scope.password = app.getDataSecurity()
             .b64Decipher(CoerceUtils.asString(formData["password"]) ?: "")
     }
 }
@@ -261,11 +261,11 @@ override fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>)
 }
 ```
 
-### 3. Serializes the state to JSON
+### 3. Serializes the scope to JSON
 
 ```kotlin
-override fun writeState(json: ExtensibleObjectOutput) {
-    presenter.state.write(instanceId(), json)
+override fun writeScope(json: ExtensibleObjectOutput) {
+    presenter.scope.write(instanceId, json)
 }
 ```
 
@@ -285,7 +285,7 @@ The mapping between hexadecimal View IDs and views is fixed and shared between c
 
 ---
 
-## State Synchronization
+## Scope Synchronization
 
 ### Dirty Tracking
 
@@ -299,7 +299,7 @@ graph TB
 
     subgraph "In the response"
         DM --> IT["Iterates dirtyViewMap"]
-        IT --> WS["writeState(json) for each view"]
+        IT --> WS["writeScope(json) for each view"]
         WS --> CL["Removes from dirtyViewMap"]
     end
 ```
@@ -319,7 +319,7 @@ fun markDirty(view: GenericViewImpl) {
 
 ### View Garbage Collection
 
-The client keeps a reference system for views. When a `*ViewId` field changes in a parent view's state, the previous child view is released automatically after 4 seconds of inactivity.
+The client keeps a reference system for views. When a `*ViewId` field changes in a parent view's scope, the previous child view is released automatically after 4 seconds of inactivity.
 
 ---
 
@@ -348,7 +348,7 @@ graph LR
 
 ### Security Inherent to the Architecture
 
-In the remote view, repository data **never travels directly to the client**. The presenter on the server decides exactly which fields to expose in the ViewState. This eliminates entire classes of vulnerabilities:
+In the remote view, repository data **never travels directly to the client**. The presenter on the server decides exactly which fields to expose in its scope. This eliminates entire classes of vulnerabilities:
 
 - There is no REST API exposed to the React client — no endpoint to attack
 - There are no JWT tokens on the client — authentication is managed in the server session
@@ -421,7 +421,7 @@ Changes to the presentation logic take effect immediately on server deployment, 
 
 ### 6. Native Server Push
 
-The bidirectional WebSocket lets the server send state updates to the client without the client having to ask. This enables real-time notifications, dashboard updates, and synchronization across tabs/users.
+The bidirectional WebSocket lets the server send scope updates to the client without the client having to ask. This enables real-time notifications, dashboard updates, and synchronization across tabs/users.
 
 ---
 
@@ -437,7 +437,7 @@ The remote view architecture is especially suited for:
 | **Systems with regulated data (LGPD/GDPR)** | Personal data stays on the server, client is stateless |
 | **Real-time dashboards** | Server push over WebSocket is native |
 | **Applications that require strong consistency** | JDBC transactions coordinated on the server |
-| **Low-bandwidth environments** | Only state JSON is transferred, not raw data |
+| **Low-bandwidth environments** | Only the scopes JSON is transferred, not raw data |
 
 ### When NOT to use it
 
@@ -472,9 +472,9 @@ sequenceDiagram
     WS->>Disp: parses request JSON
 
     Disp->>LView: syncClientToServer(formData)
-    LView->>LPres: state.userName = admin
-    LView->>LView: state.password = decipher(AES)
-    LView->>LPres: state.password = real_password
+    LView->>LPres: scope.userName = admin
+    LView->>LView: scope.password = decipher(AES)
+    LView->>LPres: scope.password = real_password
 
     Disp->>LView: submit(eventCode=1, ...)
     LView->>LPres: onEnter()
@@ -491,9 +491,9 @@ sequenceDiagram
     Resp->>LPres: commitComputedState()
     Resp->>Resp: Collects dirty views
 
-    Resp-->>WS: JSON with states of Home,<br/>ProductsPanel, PurchasesPanel
+    Resp-->>WS: JSON with scopes of Home,<br/>ProductsPanel, PurchasesPanel
 
-    WS-->>React: uri=/home + states=[...]
+    WS-->>React: uri=/home + scopes=[...]
     React->>React: Updates browser history
     React->>React: Renders Home screen
 
@@ -503,5 +503,5 @@ sequenceDiagram
 Note that throughout the flow:
 1. The **password never travels in clear text** — it is encrypted with AES-GCM on the client and decrypted on the server
 2. **Database access is direct** — `UserRepository` runs SQL in the same JVM as the presenter
-3. The **client does not know how to navigate** — the server decides that the next screen is Home and sends the corresponding states
+3. The **client does not know how to navigate** — the server decides that the next screen is Home and sends the corresponding scopes
 4. Only **views that changed** are included in the response (dirty tracking)

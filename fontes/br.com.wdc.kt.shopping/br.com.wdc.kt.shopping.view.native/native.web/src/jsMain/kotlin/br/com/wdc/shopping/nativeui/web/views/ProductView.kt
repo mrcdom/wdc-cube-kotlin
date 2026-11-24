@@ -75,8 +75,8 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
-        val product = state.product
+        val scope = presenter.scope
+        val product = scope.product
 
         Box {
             sx {
@@ -94,7 +94,7 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
                         spacing = responsive(2)
 
                         // Error message
-                        val errorMessage = state.errorMessage
+                        val errorMessage = scope.errorMessage
                         if (!errorMessage.isNullOrBlank()) {
                             Alert {
                                 severity = "error"

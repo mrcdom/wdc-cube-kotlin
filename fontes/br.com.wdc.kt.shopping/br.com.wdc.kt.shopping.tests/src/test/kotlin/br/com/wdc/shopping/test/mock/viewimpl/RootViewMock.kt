@@ -2,7 +2,7 @@ package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.presenter.RootViewState
+import br.com.wdc.shopping.presentation.presenter.RootScope
 import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 
@@ -20,5 +20,5 @@ class RootViewMock(
         }
     }
 
-    var state: RootViewState = presenter.state
+    var scope: RootScope = presenter.scope
 }

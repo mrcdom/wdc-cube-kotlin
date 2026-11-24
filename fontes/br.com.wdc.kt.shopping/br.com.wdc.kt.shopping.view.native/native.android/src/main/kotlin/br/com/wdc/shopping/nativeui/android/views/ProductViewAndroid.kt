@@ -218,7 +218,7 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
     }
 
     override fun doUpdate() {
-        val product = presenter.state.product ?: return
+        val product = presenter.scope.product ?: return
         if (product.id == lastProductId) return
         lastProductId = product.id
 

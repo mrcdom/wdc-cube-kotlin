@@ -1,9 +1,9 @@
 package br.com.wdc.shopping.presentation.presenter.open.login
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.framework.cube.ObservableViewState
+import br.com.wdc.framework.cube.Scope
 
-class LoginViewState : ObservableViewState() {
+class LoginScope : Scope() {
 
     var userName: String? by field(null)
     var password: String? by field(null)
