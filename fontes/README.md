@@ -1,6 +1,6 @@
 # fontes
 
-Root Gradle project containing all modules of the Storefront application.
+Root Gradle project containing all modules of the WDC Store application.
 
 ## Modules
 
@@ -8,9 +8,9 @@ Root Gradle project containing all modules of the Storefront application.
 
 - [br.com.wdc.kt.framework/](br.com.wdc.kt.framework/) — Framework base libraries
 
-### Storefront application
+### WDC Store application
 
-- [br.com.wdc.kt.shopping/](br.com.wdc.kt.shopping/) — Storefront application modules
+- [br.com.wdc.kt.store/](br.com.wdc.kt.store/) — WDC Store application modules
 
 ## Build
 
@@ -22,7 +22,7 @@ Root Gradle project containing all modules of the Storefront application.
 ./gradlew test
 
 # Build the React client bundle the backend serves (not versioned; again after changing the client)
-(cd br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.remote/remote.react/remote.react.client && npm install && npm run build)
+(cd br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.react/remote.react.client && npm install && npm run build)
 
 # Run backend
 ./gradlew :backend:run

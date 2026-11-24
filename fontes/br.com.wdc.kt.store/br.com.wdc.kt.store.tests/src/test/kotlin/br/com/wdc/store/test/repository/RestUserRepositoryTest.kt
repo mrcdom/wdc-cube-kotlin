@@ -1,0 +1,69 @@
+package br.com.wdc.store.test.repository
+
+import br.com.wdc.framework.domain.exception.AccessDeniedException
+import br.com.wdc.framework.domain.projection.ProjectionValues
+import br.com.wdc.store.domain.user.User
+import br.com.wdc.store.domain.user.UserCriteria
+import br.com.wdc.store.domain.user.UserRepository
+import br.com.wdc.store.scripts.sgbd.DBReset
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+import br.com.wdc.store.test.util.RestTestEnvironment
+import br.com.wdc.store.test.util.TestEnvironmentExtension
+import org.junit.jupiter.api.extension.RegisterExtension
+
+/**
+ * Runs the same tests as [UserRepositoryTest], but over the REST path:
+ * HTTP client → in-process Javalin → persistence repositories → H2.
+ */
+class RestUserRepositoryTest : AbstractUserRepositoryTest() {
+
+    companion object {
+        private val env = RestTestEnvironment("wedocode-store-rest-user")
+
+        @JvmField
+        @RegisterExtension
+        val envExtension = TestEnvironmentExtension(env)
+    }
+
+    override fun repo(): UserRepository = env.userRepo
+
+    // -- REST mode only --
+
+    @Test
+    fun password_isNeverReturned_evenWithoutSecurity() = runBlocking {
+        // asking for it is refused, naming it — not quietly left out
+        val projection = User().apply { id = ProjectionValues.i64; userName = ProjectionValues.str; password = ProjectionValues.str }
+        for (read in listOf<suspend () -> Unit>(
+            { repo().fetch(UserCriteria().withProjection(projection)) },
+            { repo().fetchById(DBReset.ADMIN_ID, projection) },
+            { repo().fetchPage(UserCriteria().withProjection(projection), 0, 10) },
+        )) {
+            val e = assertThrows(AccessDeniedException::class.java) { runBlocking { read() } }
+            assertTrue("[password]" in e.message!!, e.message)
+        }
+
+        // without a projection, the repository's default: no password
+        assertTrue(repo().fetch(UserCriteria()).all { it.password == null })
+        val raw = env.transport.postJson("/api/repo/user/fetch", "{}")
+        assertFalse("password" in raw, raw)
+    }
+
+    @Test
+    fun password_isWriteOnly_andStoredAsItsDigest() = runBlocking {
+        val user = User().apply { userName = "stored"; password = "s3cret"; name = "Stored" }
+        assertTrue(repo().insert(user))
+        assertNull(repo().fetchById(user.id!!)!!.password)
+        // without security there is no session key: the password comes as typed, and the server stores its digest
+        assertEquals(DBReset.passwordDigest("s3cret"), storedPassword(user.id!!))
+
+        assertTrue(repo().update(User().apply { id = user.id; password = "other" }, null, User().apply { password = ProjectionValues.str }))
+        assertNull(repo().fetchById(user.id!!)!!.password)
+        assertEquals(DBReset.passwordDigest("other"), storedPassword(user.id!!))
+    }
+
+    /** The password column as the server stored it, read by the server-side repository (fixed width: padded). */
+    private suspend fun storedPassword(id: Long): String? =
+        UserRepository.BEAN.get().fetchById(id, User().apply { this.id = ProjectionValues.i64; password = ProjectionValues.str })?.password?.trim()
+}

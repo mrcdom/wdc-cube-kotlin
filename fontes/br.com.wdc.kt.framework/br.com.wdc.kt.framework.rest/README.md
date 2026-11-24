@@ -10,6 +10,8 @@ dependencies {
 }
 ```
 
+This README describes the code in this repository, which is ahead of the last published version (0.4.0): the data policy, `NotFoundException` (404), `RemoteTransactionNotFoundException` (410), `inRemoteTransaction` and the query cap of `RepositoryRpc` come with 0.5.0, not yet published. See the [0.5.0 release notes](../README.md#050-release-notes).
+
 ## Example
 
 ```kotlin
@@ -225,7 +227,7 @@ openApi {
 
 ## Generic RPC per entity
 
-`RepositoryRpc(basePath, codec, repository, …)` publishes a repository's operations: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}`. It is the protocol the Storefront `HttpRepository` client speaks. Access stays with the application, in one of two ways: a **data policy** (`policy`, below), or `rule` (per operation), `scope` (restricts the criteria to the caller), `sanitizeProjection` and `sanitizeOutput`. The write hooks, `beforeInsert` and `beforeUpdate`, run inside the transaction either way. For a read-only repository, use `writes = false`. The criteria's alternative groups (`anyOf`) do not travel: the key is refused (400).
+`RepositoryRpc(basePath, codec, repository, …)` publishes a repository's operations: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}`. It is the protocol the WDC Store `HttpRepository` client speaks. Access stays with the application, in one of two ways: a **data policy** (`policy`, below), or `rule` (per operation), `scope` (restricts the criteria to the caller), `sanitizeProjection` and `sanitizeOutput`. The write hooks, `beforeInsert` and `beforeUpdate`, run inside the transaction either way. For a read-only repository, use `writes = false`. The criteria's alternative groups (`anyOf`) do not travel: the key is refused (400).
 
 **`scope` also guards `update`** (without a policy; a policy has [its own rule](#data-policy)): before `beforeUpdate`, the RPC checks that the target row is within the caller's reach (the key plus `scope`) and answers 404 otherwise — the same as a row that doesn't exist, so the refusal doesn't tell the row is there. What the scope cannot see — moving the row to another owner — stays with `beforeUpdate`.
 

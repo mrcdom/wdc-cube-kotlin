@@ -1,6 +1,6 @@
 # Persistence Architecture
 
-How Storefront stores and queries data: the repository contract, criteria, projection, transactions, and the REST path. The same use case runs on the server, talking to the database, and on a client, talking HTTP — guaranteeing that is why this architecture exists.
+How WDC Store stores and queries data: the repository contract, criteria, projection, transactions, and the REST path. The same use case runs on the server, talking to the database, and on a client, talking HTTP — guaranteeing that is why this architecture exists.
 
 ## Contents
 
@@ -29,7 +29,7 @@ graph TB
         ENT["Entity + XxxCriteria"]
         REPO["XxxRepository : Repository&lt;E, C, K&gt;"]
         CODEC["XxxCodec (JSON)"]
-        TX["ShoppingTransactions.BEAN"]
+        TX["StoreTransactions.BEAN"]
     end
 
     subgraph "Server — JVM"
@@ -58,7 +58,7 @@ graph TB
 
 Three ideas underpin the design:
 
-1. **One contract, two implementations.** `Repository<E, C, K>` is implemented on the server on top of jOOQ and on the client on top of HTTP. Whoever writes a presenter or a service doesn't know which side they are on.
+1. **One contract, two implementations.** `Repository<E, C, K>` is implemented on the server on top of jOOQ and on the client on top of HTTP. Whoever writes a presenter or a resource call doesn't know which side they are on.
 2. **The same codec on both sides.** Each entity has an `XxxCodec` that reads and writes the entity and the criteria as JSON. The REST controller and the HTTP client use the same class, without reflection — what one writes, the other reads.
 3. **The transaction belongs to whoever knows the unit of work.** Repositories neither open nor close transactions: they join whichever one is open. The use case draws the boundaries.
 
@@ -72,13 +72,13 @@ Three ideas underpin the design:
 | `:framework-persistence` | JVM | `TransactionServiceImpl` (JDBC), `TransactionScope`, remote transaction coordinator |
 | `:framework-jooq` | JVM | `JsonQueryBuilder`, H2 and PostgreSQL dialects, `CriterionTranslator` |
 | `:framework-rest` | JVM | REST APIs on Javalin: routes, pluggable security, exception map, per-request context and transaction, OpenAPI, `RepositoryRpc` |
-| `:shopping-domain` | KMP | Entities, `XxxCriteria`, `XxxCodec`, `XxxRepository`, `ShoppingTransactions` |
-| `:shopping-persistence` | JVM | `XxxRepositoryImpl`, generated jOOQ classes, authentication, bootstrap |
-| `:persistence-rest` | JVM | The Storefront API on `framework-rest`: each entity's RPC with access control, `/api/tx`, `/api/auth`, `/openapi.json` |
-| `:shopping-persistence-client` | KMP | `HttpRepository`, per-platform transports, `RestTransactionService` |
-| `:shopping-scripts` | JVM | `DBCreate`, `DBReset`, migrations, jOOQ class generator |
+| `:store-domain` | KMP | Entities, `XxxCriteria`, `XxxCodec`, `XxxRepository`, `StoreTransactions` |
+| `:store-persistence` | JVM | `XxxRepositoryImpl`, generated jOOQ classes, authentication, bootstrap |
+| `:persistence-rest` | JVM | The WDC Store API on `framework-rest`: each entity's RPC with access control, `/api/tx`, `/api/auth`, `/openapi.json` |
+| `:store-persistence-client` | KMP | `HttpRepository`, per-platform transports, `RestTransactionService` |
+| `:store-scripts` | JVM | `DBCreate`, `DBReset`, migrations, jOOQ class generator |
 
-The three Storefront persistence modules are grouped under the `br.com.wdc.kt.shopping.persistence/` directory, as `persistence.impl` (`:shopping-persistence`), `persistence.rest`, and `persistence.client`.
+The three WDC Store persistence modules are grouped under the `br.com.wdc.kt.store.persistence/` directory, as `persistence.impl` (`:store-persistence`), `persistence.rest`, and `persistence.client`.
 
 In the domain, each entity has its own package: `domain.product`, `domain.user`, `domain.purchase`, `domain.purchaseitem`.
 
@@ -108,9 +108,9 @@ interface Repository<E, C, K> : ReadOnlyRepository<E, C, K> {
 `ReadOnlyRepository` serves two situations:
 
 - **Data that isn't written through here** — a dashboard view, a report, an aggregate computed in the database. The repository implements only the queries, without having to invent what to do with an `insert`.
-- **Code that only reads** — a service that declares a dependency on `ReadOnlyRepository` states, through the type, that it changes nothing, and accepts either a read-only repository or a full one.
+- **Code that only reads** — code that declares a dependency on `ReadOnlyRepository` states, through the type, that it changes nothing, and accepts either a read-only repository or a full one.
 
-All four Storefront entities have a full repository.
+All four WDC Store entities have a full repository.
 
 - **`update` is partial.** The `projection` says which fields to consider, and a marked field with a null value clears the column. With `oldBean`, only the fields that changed are included. With neither, only fields with a value, as in `insert`: a bean read with a narrow projection and handed back does not erase what it didn't read. To clear a column, mark it in a projection.
 - **`insert` also accepts a projection.** It says which fields go into the `INSERT`; whatever is left out gets the column default. Without a projection, the fields that have a value go in (null ones are left out). The bean comes back complete: the generated key and whatever the database filled in.
@@ -156,7 +156,7 @@ In JSON, a criteria is the object with the requests, and a bare value is a short
   "orderBy": "CHEAPEST_FIRST" }
 ```
 
-An operator the server doesn't know is ignored; an unknown `orderBy` is refused with 400, stating the value received and the accepted ones.
+An operator the server doesn't know is ignored; an unknown `orderBy` is refused with 400, stating the value received and the accepted ones. So is a request whose values do not fit its operator (`BETWEEN` with one value, `EQ` with none, `null` in an ordering comparison, `LIKE` or `BETWEEN`) or a value that does not read as the field's type (`""` for a number): only the JSON `null` is a null operand.
 
 ---
 
@@ -211,9 +211,9 @@ From that mapping and a projection, `JsonQuery` builds **a single query** that r
 
 - Relations live inside `lazy { }` because purchase and item reference each other.
 - `CriterionTranslator` translates each criteria field into a jOOQ condition; values are always *bind values*.
-- The module's `DSLContext` (`ShoppingDSLContext.BEAN`) uses the current transaction's connection or, outside a transaction, a standalone connection in autocommit.
+- The module's `DSLContext` (`StoreDSLContext.BEAN`) uses the current transaction's connection or, outside a transaction, a standalone connection in autocommit.
 - Repositories don't wrap exceptions: the real one propagates, and the REST layer translates it into a status.
-- **`insert` also comes from the mapping:** `QUERY.insert(bean, projection)` builds the `INSERT` from the mapping's columns (associations by the foreign key declared in `key`; derived fields and identity columns are left out) and reads the inserted row back through the same JSON projection as fetch. On PostgreSQL it is a single statement (`WITH … INSERT … RETURNING`); on H2, a plain `INSERT` followed by a `SELECT` by key — H2 2.4's `FINAL TABLE` leaves the row written when the statement fails on a constraint. The Storefront repository only fills in the id from the sequence before calling it.
+- **`insert` also comes from the mapping:** `QUERY.insert(bean, projection)` builds the `INSERT` from the mapping's columns (associations by the foreign key declared in `key`; derived fields and identity columns are left out) and reads the inserted row back through the same JSON projection as fetch. On PostgreSQL it is a single statement (`WITH … INSERT … RETURNING`); on H2, a plain `INSERT` followed by a `SELECT` by key — H2 2.4's `FINAL TABLE` leaves the row written when the statement fails on a constraint. The WDC Store repositories only fill in the id from the sequence before calling it (the item repository also the price, below).
 
 ---
 
@@ -227,14 +227,14 @@ To change the schema:
 2. Write a `Migration_NNNN_…` that brings existing databases to the same result and register it in `DBCreate.run()`.
 3. Regenerate the jOOQ classes and commit whatever changes:
    ```bash
-   cd fontes && ./gradlew :shopping-scripts:generateJooqSchema
+   cd fontes && ./gradlew :store-scripts:generateJooqSchema
    ```
 
 Two tests guard this: `JooqSchemaTest` fails if the generated classes diverge from the DDL, and `SchemaMigrationTest` compares a migrated old database with a new one.
 
 **Dates.** Date/time columns are `TIMESTAMP` without time zone and store the instant **in UTC**, on write and on read. In the domain, the date is `kotlin.time.Instant`.
 
-Migration details in [shopping-scripts](../fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.scripts/README.md).
+Migration details in [store-scripts](../fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.scripts/README.md).
 
 ---
 
@@ -243,7 +243,7 @@ Migration details in [shopping-scripts](../fontes/br.com.wdc.kt.shopping/br.com.
 The contract is `TransactionService`, with the six usual propagations (`required`, `requiresNew`, `mandatory`, `supports`, `notSupported`, `never`). The block receives a `TransactionContext`.
 
 ```kotlin
-ShoppingTransactions.BEAN.get().required { tx ->
+StoreTransactions.BEAN.get().required { tx ->
     purchaseRepo.insert(purchase)
     purchaseItemRepo.insert(item)
     // tx.setRollbackOnly() rolls everything back without throwing
@@ -252,7 +252,7 @@ ShoppingTransactions.BEAN.get().required { tx ->
 
 - **A normal return commits; any exception rolls back** and propagates intact, with its original type.
 - **A nested block that fails dooms the whole transaction.** If a `required` (or `mandatory`, `supports`) inside another one throws, everything is rolled back even when the caller catches the exception and carries on, and the outer `required` throws `TransactionSystemException` ("The transaction was rolled back: a call inside it failed.") instead of returning its result. Only `setRollbackOnly()` rolls back without throwing. The same holds on the server and in the client's remote transaction.
-- The use case must tolerate the service being absent — `ShoppingTransactions.BEAN.getOrNull()` — and run directly in that case (tests without persistence).
+- The use case must tolerate the service being absent — `StoreTransactions.BEAN.getOrNull()` — and run directly in that case (tests without persistence).
 - In the presentation, a write is a resource call (`ResourceCreate`, `ResourceSave`, `ResourceUpdate`, `ResourceDelete`, in `framework-domain`), whose `run()` does exactly this: `required` on the module's service when there is one, directly otherwise. This is how checkout works: `CartManager.commit` runs `PurchaseCreate`, which inserts the purchase and its items in one transaction. A failure halfway doesn't leave an orphan purchase.
 - `afterCommit { … }` schedules a task for after the current physical transaction commits (notifying a background process, for example): it runs only if the transaction commits, in scheduling order, already outside it; if rolled back, the task is discarded. Without a transaction, it runs immediately. A task failure goes to the log and doesn't change the transaction's outcome. On the server, a task scheduled inside a remote transaction runs on its commit.
 
@@ -276,7 +276,7 @@ A REST client that needs several atomic writes opens a transaction on the server
 - **Owner.** The transaction belongs to whoever opened it — the authenticated user **and** the client instance (`X-Client-Id`), or, without security, just the `X-Client-Id` — and no one else may use it (403). The same user on two clients (desktop and web) doesn't block themselves.
 - **Lost header.** A write **without** `X-Tx-Id` from someone who has an open transaction is refused (409), instead of committing on its own outside the transaction.
 - **Failing request.** The write runs as a participant in the remote transaction: if it fails halfway, the transaction is doomed, and the commit rolls it back and responds 409, instead of committing the partial write.
-- **Abandonment.** An idle transaction is rolled back by the server, by a sweep that runs every 15 seconds (`remoteTransaction.reapIntervalSeconds`) and on every `begin`; there are caps on open transactions, in total and per user (429). An unknown or already rolled-back `txId` responds 410.
+- **Abandonment.** An idle transaction is rolled back by the server, by a sweep that runs every 15 seconds (`remoteTransaction.reapIntervalSeconds` in `[database]`) and on every `begin`; there are caps on open transactions, in total and per user (429). An unknown or already rolled-back `txId` responds 410.
 - **In use.** A rollback requested while a request is using the transaction takes effect immediately, but the connection only closes when the request finishes; a commit at that moment is a conflict (409).
 - **Repetition.** Repeating the same outcome is harmless; asking for the opposite is a conflict (409).
 - **Lost response.** If the commit fails in transport (timeout, dropped connection), the client asks for the `status` before deciding: committed is success, open is rolled back.
@@ -315,12 +315,13 @@ Errors come back as `{"error": "…"}`:
 
 | Status | When |
 |---|---|
-| 400 | Invalid request: unknown `orderBy`, `delete` without a filter, `update` without an id, an `anyOf` key in the criteria, a password that does not decrypt with the session key |
+| 400 | Invalid request: unknown `orderBy`, a malformed criterion (values that do not fit the operator, a value that does not read), `limit`/`offset`/`page`/`pageSize` that are not JSON integers, `limit` or `pageSize` above 1000 or a `fetch` without `limit` that would bring more than 1000 rows, `delete` without a filter, `update` without an id, an `anyOf` key in the criteria, an item without a product, of an unknown product or with a quantity below 1, a password that does not decrypt with the session key, `X-Tx-Id` missing on `/api/tx` commit, rollback or status |
 | 401 | Missing or invalid token (with security enabled). A path with no route responds 404, with or without a token |
 | 403 | Refused by the data policy, with the fields at fault named in the message (`not allowed to read user fields [password]`): a field the caller's roles do not read, filter or sort by; an operation no role allows; a write of a field not granted; a row created for someone else; an update or delete by a role that does not update or delete the entity |
-| 404 | Not found: the image of a product that doesn't exist, or an update of a row the caller's update grants do not reach and they cannot read either (told the same way as a missing row; no Storefront role has such a grant today) |
+| 404 | Not found: `fetch-by-id` or `GET {id}` of a row that doesn't exist or that the caller doesn't reach, the image of a product that doesn't exist, or an update of a row the caller's update grants do not reach and they cannot read either (told the same way as a missing row; no WDC Store role has such a grant today) |
 | 409 | Remote transaction conflict |
-| 429 | Too many open remote transactions |
+| 410 | Unknown or expired remote transaction |
+| 429 | Too many open remote transactions; `/api/auth` requests from one address above `security.auth.requestsPerMinute` (with `Retry-After`) |
 | 500 | Unexpected failure: `{"error": "Internal server error"}`, with the error recorded in the log |
 
 **The full description is at `GET /openapi.json`** (OpenAPI 3). The criteria fields, orderings, and operators it lists are read from the domain at runtime, and `OpenApiSpecTest` checks that every documented route exists.
@@ -335,7 +336,7 @@ Errors come back as `{"error": "…"}`:
 
 - sends the access token and, on 401, renews the session and retries the call once;
 - always sends `X-Client-Id`, and `X-Tx-Id` when there is a current remote transaction;
-- turns the error response into the exception the server threw — 400 `InvalidRequestException`, 403 `AccessDeniedException`, 409 `TransactionConflictException`, 429 `TransactionLimitExceededException`; anything else, `BusinessException`. The message is always `HTTP <status>: <body>`.
+- turns the error response into the exception the server threw — 400 `InvalidRequestException`, 403 `AccessDeniedException`, 404 `NotFoundException`, 409 `TransactionConflictException`, 410 `RemoteTransactionNotFoundException`, 429 `TransactionLimitExceededException`; anything else, `BusinessException`. The message is always `HTTP <status>: <body>` (`HTTP <status>` when the body is empty).
 
 `RestRepositoryBootstrap.initialize(config, cryptoProvider)` registers the four HTTP repositories, the authentication service, and the `RestTransactionService`. Every client entry point calls it.
 
@@ -390,14 +391,14 @@ How the policies decide:
 - **Relations follow their own entity's policy.** What a projection asks inside `purchase.user` goes through `UserDataPolicy`, inside `purchase.items` through `PurchaseItemDataPolicy`, inside `item.product` through `ProductDataPolicy`. A relation is written by its key only; the items sent with a new purchase are checked as new items of that purchase.
 - **Default shapes.** A read without a projection, with security on, gets the entity's default shape cut to the role — never refused: a purchase is its receipt (date, buyer's name, items with quantity, price, and the product's name and price); an item is its quantity, price, and product (name and price); a user or a product, every field the role reads. Without security, the repository's own default (`ownFieldsProjection()`).
 - **Creating**: one grant must allow every field sent and reach the new row. The server **does not force the owner**: a purchase for someone else, or without a user, is 403 for a CUSTOMER.
-- **Updating**: one grant must reach the stored row, allow every changed field, and still reach the row after the change (an owner cannot hand a row to someone else). A caller with no update grant on the entity gets 403. One whose update grants do not reach the row gets **404 when they cannot read it either** — the same answer as a missing row — and **403 when they can**. In the Storefront only ADMIN updates, over every row, so a CUSTOMER or MANAGER update is always 403, their own purchase included: a purchase is a receipt, only an ADMIN changes it or its items.
+- **Updating**: one grant must reach the stored row, allow every changed field, and still reach the row after the change (an owner cannot hand a row to someone else). A caller with no update grant on the entity gets 403. One whose update grants do not reach the row gets **404 when they cannot read it either** — the same answer as a missing row — and **403 when they can**. Purchases and items are updated only by ADMIN, over every row, so a CUSTOMER or MANAGER update of them is always 403, their own purchase included: a purchase is a receipt, only an ADMIN changes it or its items.
 - **Deleting**: only the rows of the grants that delete; without a delete grant, 403.
 - **Masks** (`Mask.keepFirst`, `Mask.keepLast`) apply to text fields; a masked field cannot be filtered, sorted by, or written by the grant that masks it.
 - **`anyOf` is server side only**: the policies use it to restrict rows; in a request, the key is refused (400).
 
 **The password is write-only.** It is declared `writeOnly` in the user's description: no grant reads it, so projecting it — directly or through `purchase.user` — is 403 (`[password]`), **with security on or off**, and it never comes back in a response. It is accepted when writing a user and **stored as its digest**, the form the login compares, so a user created through the API can log in: the `beforeInsert`/`beforeUpdate` hooks of `UserApiController` turn it, after the policy's check. With security on, it must come encrypted with the session's RSA public key (the `publicKey` of the login response; `RestAuthClient.encryptPassword` on the client): one that does not decrypt is refused with 400, never stored as it came. Without security there is no key, and the password comes as typed.
 
-**The price of a purchase item is the server's.** On insert, alone or inside a purchase, the item repository (`PurchaseItemRepositoryImpl`) reads the product's current price itself, in the `INSERT`, inside the caller's transaction — on every path: through the API, and in process (the remote view's checkout, the desktop). A CUSTOMER that sends a price is refused (403, `[price]`: the field is not in their create grant). An item without a product, or of one that does not exist, is refused with 400. Through the API, an update that writes the price or the product also gets the product's current price (`ItemPrices`, in `PurchaseItemApiController`'s `beforeUpdate`, after the policy's check).
+**The price of a purchase item is the server's.** On insert, alone or inside a purchase, the item repository (`PurchaseItemRepositoryImpl`) reads the product's current price itself, right before each `INSERT`, inside the caller's transaction — on every path: through the API, and in process (the remote view's checkout, the desktop). A CUSTOMER that sends a price is refused (403, `[price]`: the field is not in their create grant). An item without a product, or of one that does not exist, is refused with 400, and so is a quantity below 1. Through the API, an update that writes the price or the product also gets the product's current price (`ItemPrices`, in `PurchaseItemApiController`'s `beforeUpdate`, after the policy's check).
 
 **The product image** is read through its own public route, and written through `PUT …/image`, checked as an update of the `image` field by `ProductDataPolicy`.
 
@@ -415,14 +416,14 @@ The backend runs on **H2** (default: a file in the data directory) or on **Postg
 
 The keys live in the `[database]` section of `config/application.toml`, in the backend's working directory: `url`, `username`, `password`, `schema` (PostgreSQL only), `reset`, `logSql`, `pool.*`, and `remoteTransaction.*`. All of them, with their defaults, are in [`application.example.toml`](../fontes/work/config/application.example.toml).
 
-The startup order, in `BusinessContext`:
+The startup order (`JavalinApplication`, then `BusinessContext`):
 
-1. Working directory (required: `--workdir=<folder>` or `SHOPPING_WORKDIR`), logging, and configuration (`config/application.toml`); then cryptography and executor.
+1. Working directory (required: `--workdir=<folder>` or `STORE_WORKDIR`), logging, and configuration (`config/application.toml`); then cryptography and the scheduled executor.
 2. `SqlDataSourceSupport` builds the pool.
 3. `DBCreate` creates what is missing and runs the migrations.
-4. `ShoppingRepositoryBootstrap.initialize(…)` registers the `DSLContext`, the `TransactionService`, and the repositories.
-5. The remote transaction coordinator is registered.
-6. `ShoppingRepositoryBootstrap.initializeSecurity(…)`, if there is a JWT secret: registers the authentication service.
+4. `StoreRepositoryBootstrap.initialize(…)` registers the `DSLContext`, the `TransactionService`, and the repositories.
+5. The remote transaction coordinator is registered, and its periodic sweep started (`startReaper`).
+6. `StoreRepositoryBootstrap.initializeSecurity(…)`, if there is a JWT secret: registers the authentication service, and starts its periodic cleanup of expired sessions and nonces (`AuthenticationServiceImpl.startCleanup`).
 
 ---
 
@@ -433,23 +434,23 @@ Repository tests are written once, in `AbstractXxxRepositoryTest` classes, and r
 ```bash
 cd fontes
 ./gradlew test                              # suite on H2
-./gradlew :shopping-tests:testPostgres      # the same suite on embedded PostgreSQL
+./gradlew :store-tests:testPostgres      # the same suite on embedded PostgreSQL
 ./gradlew check                             # both
 ```
 
-- `testPostgres` starts an embedded PostgreSQL by itself. With `SHOPPING_TEST_PG_URL` (and `SHOPPING_TEST_PG_USER`, `SHOPPING_TEST_PG_PASSWORD`) it uses that server — **and deletes its data**; point it at a dedicated schema with `?currentSchema=…`.
+- `testPostgres` starts an embedded PostgreSQL by itself. With `STORE_TEST_PG_URL` (and `STORE_TEST_PG_USER`, `STORE_TEST_PG_PASSWORD`) it uses that server — **and deletes its data**; point it at a dedicated schema with `?currentSchema=…`.
 - `RestTestEnvironment(name, jwtSecret = "…")` starts the server with security enabled; `env.loginAs("admin")` authenticates the client.
-- `LiveBackendSmokeTest` exercises a running backend the way a REST client would (login, catalog, checkout, statement). It only runs with `SHOPPING_LIVE_BACKEND_URL` set, and writes a purchase to that backend.
+- `LiveBackendSmokeTest` exercises a running backend the way a REST client would (login, catalog, checkout, statement). It only runs with `STORE_LIVE_BACKEND_URL` set, and writes a purchase to that backend.
 
 ---
 
 ## How to add an entity
 
-1. **Domain** (`:shopping-domain`, package `domain.<entity>`): the entity (`KeyedEntity`, nullable fields), the `XxxCriteria` with the filter fields and the `OrderBy`, the `XxxCodec`, and the `XxxRepository` interface with `ownFieldsProjection()`, `fetchById`, and the `BEAN` holder.
-2. **Schema** (`:shopping-scripts`): the table, the sequence, and the ordering indexes in `DBCreate`; the migration for existing databases; the seed data in `DBReset`, if applicable. Regenerate the jOOQ classes.
-3. **Server** (`:shopping-persistence`): the `XxxRepositoryImpl` with the `QUERY` mapping, the conditions, and the ordering; registration in `ShoppingRepositoryBootstrap`.
+1. **Domain** (`:store-domain`, package `domain.<entity>`): the entity (`KeyedEntity`, nullable fields), the `XxxCriteria` with the filter fields and the `OrderBy`, the `XxxCodec`, and the `XxxRepository` interface with `ownFieldsProjection()`, `fetchById`, and the `BEAN` holder.
+2. **Schema** (`:store-scripts`): the table, the sequence, and the ordering indexes in `DBCreate`; the migration for existing databases; the seed data in `DBReset`, if applicable. Regenerate the jOOQ classes.
+3. **Server** (`:store-persistence`): the `XxxRepositoryImpl` with the `QUERY` mapping, the conditions, and the ordering; registration in `StoreRepositoryBootstrap`.
 4. **REST** (`:persistence-rest`): the entity's **data policy** in the `security` package — an `EntityDescriptor` (fields by property reference, criteria fields, orderings, default shape) and a `DataPolicy` with a grant per role, plus a `RowScope` if a role reaches only some rows; the `XxxApiController`, which configures a `RepositoryRpc` with `rpc.policy` (and `beforeInsert`/`beforeUpdate` only for transformations, such as a digest), and its call in `RepositoryApiRoutes.create()`; the entity in `RepositoryApiDocs`. Its criteria gets `anyOf`/`withAnyOf`, the codec refuses the key, and the repository translates the groups (`CriterionTranslator.anyOf`).
-5. **Client** (`:shopping-persistence-client`): the `HttpXxxRepository` and its registration in `RestRepositoryBootstrap`.
+5. **Client** (`:store-persistence-client`): the `HttpXxxRepository` and its registration in `RestRepositoryBootstrap`.
 6. **Presentation**: resource calls (`XxxQuery`, `XxxCreate`, …) in the `calls/` package next to the presenter that uses them, reaching the repository through a private property, `private val xxxRepo: XxxRepository get() = XxxRepository.BEAN.get()`. Always ask for the data of whoever is logged in.
 7. **Tests**: an `AbstractXxxRepositoryTest` with the local and REST subclasses, and a REST test with security enabled that covers what the policy refuses.
 

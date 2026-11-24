@@ -1,6 +1,6 @@
 # Security Architecture
 
-How Storefront protects its data and its sessions, and why it is built this way: the trust boundaries of each kind of view, authentication, the authorization of the REST API by data policies, what the presenters must do where they run on the server, and the limitations an adopter has to weigh. It is written for whoever evaluates or extends the design; the API reference of the policies is in [`framework-rest`'s README](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md#data-policy), and the persistence side in [Persistence architecture — Security](architecture-persistence.md#security).
+How WDC Store protects its data and its sessions, and why it is built this way: the trust boundaries of each kind of view, authentication, the authorization of the REST API by data policies, what the presenters must do where they run on the server, and the limitations an adopter has to weigh. It is written for whoever evaluates or extends the design; the API reference of the policies is in [`framework-rest`'s README](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md#data-policy), and the persistence side in [Persistence architecture — Security](architecture-persistence.md#security).
 
 ## Contents
 
@@ -72,7 +72,7 @@ Hence the two authorization mechanisms below: **data policies** where the client
 
 ## Two modes: with and without security
 
-Security is switched on by `security.jwt.secret` in `config/application.toml` of the backend's working directory. With it, `ShoppingRepositoryBootstrap.initializeSecurity` registers the `AuthenticationService`, and `RepositoryApiRoutes.create()` builds the API with a bearer authenticator: `Authorization: Bearer` on everything except `/api/auth/**`, `GET /api/repo/product/{id}/image` and `GET /openapi.json`.
+Security is switched on by `security.jwt.secret` in `config/application.toml` of the backend's working directory. With it, `StoreRepositoryBootstrap.initializeSecurity` registers the `AuthenticationService`, and `RepositoryApiRoutes.create()` builds the API with a bearer authenticator: `Authorization: Bearer` on everything except `/api/auth/**`, `GET /api/repo/product/{id}/image` and `GET /openapi.json`.
 
 Without the secret — a fresh clone, and the tests that don't deal with security — the API is open, `/api/auth` does not exist, and there is no caller: the data policies reach every row and every field and do not check writes, **except the password, which is refused and never returned in either mode**.
 
@@ -103,7 +103,7 @@ The password digest is MD5 in base 36 (`PasswordUtil.hashPassword` on the client
 
 Each login creates a **session** (`AccessContext`): user id, login, the user's **role names**, an RSA-2048 key pair of its own, and the refresh token. Sessions are kept in memory (`AccessContextCache`) and persisted in the `EN_USER_SESSION` table (`SessionStore`), so a server restart does not sign anyone out. A token is accepted only while **its own session** (the `sid` claim) is alive and unexpired; logout removes the session of its refresh token, and that session's access token stops working at once.
 
-On the server, the authenticated caller is a `ShoppingPrincipal` over the session's `SecurityContext`; the data policies read its `roles`. The role names are taken when the user signs in and carried on refresh: a change in a user's roles takes effect at the next sign-in. Sessions stored before the role names (with `entity:operation` permissions) are not restored — their clients sign in again.
+On the server, the authenticated caller is a `StorePrincipal` over the session's `SecurityContext`; the data policies read its `roles`. The role names are taken when the user signs in and carried on refresh: a change in a user's roles takes effect at the next sign-in. Sessions stored before the role names (with `entity:operation` permissions) are not restored — their clients sign in again.
 
 ### Passwords sent by clients
 
@@ -165,7 +165,7 @@ val POLICY: DataPolicy<User, UserCriteria> = DataPolicy(USER) {
 }
 ```
 
-The Storefront's policies (`:persistence-rest`, package `security`):
+The WDC Store's policies (`:persistence-rest`, package `security`):
 
 | Role | Users | Products | Purchases and items |
 |------|-------|----------|---------------------|
@@ -188,17 +188,17 @@ Each `RowScope` is written twice, and both must agree: `restrict(group, requeste
 **Writing.**
 
 - Create: one grant allows every field sent, and reaches the new row. The server **does not force the owner**: a CUSTOMER's purchase for someone else, or without a user, is a 403.
-- Update: one grant reaches the **stored** row, allows every changed field, and **still reaches the row after the change** — a grant over one's own rows cannot hand a row to someone else. A caller with no update grant on the entity gets a 403 at once. When they have one but it does not reach the row, the answer is **404 if they cannot read the row either** (the same answer as a missing row: a 403 would tell the row exists) and **403 if they can**. In the Storefront only ADMIN updates, and over every row, so a CUSTOMER or MANAGER update is always a 403 — their own purchase included.
+- Update: one grant reaches the **stored** row, allows every changed field, and **still reaches the row after the change** — a grant over one's own rows cannot hand a row to someone else. A caller with no update grant on the entity gets a 403 at once. When they have one but it does not reach the row, the answer is **404 if they cannot read the row either** (the same answer as a missing row: a 403 would tell the row exists) and **403 if they can**. In the WDC Store purchases and items are updated only by ADMIN, over every row, so a CUSTOMER or MANAGER update of them is always a 403 — their own purchase included.
 - Delete: only the rows of grants that delete, filtered by fields those grants read; a caller with no delete grant gets a 403.
 - A grant that masks a field cannot write it, so a masked value echoed back is a 403, never an overwrite.
 - A relation is written by its key only.
-- What the server decides is not writable: the price of an item a customer buys is the price of its product, read by the repository in the `INSERT` itself (`PurchaseItemRepositoryImpl`), on every path; a CUSTOMER that sends a price gets a 403 naming `price`. An update that touches an item's price or product gets the product's current price (`ItemPrices`, a `beforeUpdate` hook — only ADMIN updates items).
+- What the server decides is not writable: the price of an item a customer buys is the price of its product, read by the item repository right before each `INSERT` (`PurchaseItemRepositoryImpl`), on every path; a CUSTOMER that sends a price gets a 403 naming `price`. An update that touches an item's price or product gets the product's current price (`ItemPrices`, a `beforeUpdate` hook — only ADMIN updates items).
 
 **Refusing, not trimming.** A forbidden request is a **403 naming the fields** (`{"error": "not allowed to read user fields [password]"}`). Quietly trimming would make a screen show blanks with nobody knowing why. The client is not sent the policy: a correct client never asks for what its roles do not allow, so a 403 is an unexpected error, and the field list serves whoever reads the log.
 
 **No projection means "the default shape, trimmed".** A read without a projection gets the entity's default shape (`defaultShape` in the descriptor; every field but the collections and write-only ones when none is declared), trimmed to what the requester may read — never refused, since the client asked for nothing in particular. A purchase's default shape is its receipt (date, buyer's name, and the items with quantity, price, and the product's name and price); an item's is its quantity, price, and product. Without security, the repository's own default (`ownFieldsProjection()`).
 
-**Hooks are transformations.** `RepositoryRpc.policy`, when set, is the only authorization of the routes: `rule`, `scope` and the `sanitize*` hooks are not consulted. `beforeInsert`/`beforeUpdate` still run, after the policy's check, inside the write's transaction — the Storefront keeps two: the password digest (`UserApiController`) and `ItemPrices` (`PurchaseItemApiController`).
+**Hooks are transformations.** `RepositoryRpc.policy`, when set, is the only authorization of the routes: `rule`, `scope` and the `sanitize*` hooks are not consulted. `beforeInsert`/`beforeUpdate` still run, after the policy's check, inside the write's transaction — the WDC Store keeps two: the password digest (`UserApiController`) and `ItemPrices` (`PurchaseItemApiController`).
 
 ### Relations
 
@@ -247,13 +247,13 @@ sequenceDiagram
 | `DataPolicy`, `DataGrant`, `DataAccess`, `RowScope`, `Mask`, `EntityDescriptor` | `framework-rest` (`policy`) | They apply at the REST boundary, next to `RestPrincipal` and `RepositoryRpc` |
 | `Criteria.anyOf`, `CriterionCodec.refuseAnyOf` | `framework-domain` (`criteria`) | Every criteria may have them on the server; the wire refuses them |
 | `CriterionTranslator.anyOf`, `translateAny` | `framework-jooq` | The single translation to SQL |
-| `UserDataPolicy`, `ProductDataPolicy`, `PurchaseDataPolicy`, `PurchaseItemDataPolicy` | `:persistence-rest` (`security`) | The Storefront's rules, applied only at its REST API |
-| Price of a new item | `:shopping-persistence` (`PurchaseItemRepositoryImpl`) | The server decides it, in every view |
-| `Role`, `SecurityContext` | `:shopping-domain` (`security`) | Role names only; no permissions |
+| `UserDataPolicy`, `ProductDataPolicy`, `PurchaseDataPolicy`, `PurchaseItemDataPolicy` | `:persistence-rest` (`security`) | The WDC Store's rules, applied only at its REST API |
+| Price of a new item | `:store-persistence` (`PurchaseItemRepositoryImpl`) | The server decides it, in every view |
+| `Role`, `SecurityContext` | `:store-domain` (`security`) | Role names only; no permissions |
 
 ### What the policies refuse (tested)
 
-`SecuredRestUserRepositoryTest`, `SecuredRestPurchaseRepositoryTest`, `SecuredRestProductRepositoryTest` and `RestUserRepositoryTest` (in `:shopping-tests`) run against the REST API, and `DataPolicyTest` covers the framework:
+`SecuredRestUserRepositoryTest`, `SecuredRestPurchaseRepositoryTest`, `SecuredRestProductRepositoryTest` and `RestUserRepositoryTest` (in `:store-tests`) run against the REST API, and `DataPolicyTest` covers the framework:
 
 | Request | Answer |
 |---------|--------|
@@ -277,19 +277,19 @@ In the remote React view there is no policy: the presenter is server code, and i
 
 The remote channel itself — the HMAC-signed session id, the RSA handshake that sets up an AES-256-GCM key for sensitive values, signed navigation — is described in [React architecture — Security](architecture-react.md#security).
 
-Access to the restricted screens goes through the Home: `HomePresenter.applyParameters` redirects to the login when there is no signed-in subject.
+Access to the restricted screens goes through a guard place, as in the Java version: every restricted screen is below `restricted` (`RestrictedKeys`), whose `RestrictedPresenter` — no scope, no view — redirects to the open area (`OpenKeys`, and from there to the login) when there is no signed-in subject. Its counterpart, `OpenPresenter`, sends a signed-in user back to the restricted area.
 
 ---
 
 ## Navigation signing
 
-In the Compose web view, every navigation in the address is signed with HMAC-SHA256 (Base62, the `sign` parameter), with the per-user `intentSignKey` returned at login (`IntentSecretStore`, table `EN_USER_INTENT_SECRET`) or, for public screens, a fixed anonymous key. The client signs and verifies by itself, with no call to the server. It guards against hand-edited addresses in the UI; **it does not replace the server's authorization** — the data policies are what protect the data. Details: [compose.web README](../fontes/br.com.wdc.kt.shopping/br.com.wdc.kt.shopping.view.compose/compose.web/README.md#navigation-security--hmac-signing-of-intents).
+In the Compose web view, every navigation in the address is signed with HMAC-SHA256 (Base62, the `sign` parameter), with the per-user `intentSignKey` returned at login (`IntentSecretStore`, table `EN_USER_INTENT_SECRET`) or, for public screens, a fixed anonymous key. The client signs and verifies by itself, with no call to the server. It guards against hand-edited addresses in the UI; **it does not replace the server's authorization** — the data policies are what protect the data. Details: [compose.web README](../fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.view.compose/compose.web/README.md#navigation-security--hmac-signing-of-intents).
 
 ---
 
 ## Remote transactions
 
-A REST client can make several calls atomic (`/api/tx/begin`, `commit`, `rollback`, `status`, with the `X-Tx-Id` header). A transaction belongs to whoever opened it — `user:<id>/client:<X-Client-Id>` when authenticated, the `X-Client-Id` alone without security — and no one else may use it (403); the cap on open transactions counts per user. The policies check each call inside the transaction like any other: a row created earlier in it is seen by the row checks. Details: [Persistence architecture — Remote transaction](architecture-persistence.md#remote-transaction).
+A REST client can make several calls atomic (`/api/tx/begin`, `commit`, `rollback`, `status`, with the `X-Tx-Id` header). A transaction belongs to whoever opened it — `user:<id>/client:<X-Client-Id>` when authenticated, the `X-Client-Id` alone without security — and no one else may use it (403); an unknown or expired one answers 410; the cap on open transactions counts per user. The policies check each call inside the transaction like any other: a row created earlier in it is seen by the row checks. Details: [Persistence architecture — Remote transaction](architecture-persistence.md#remote-transaction).
 
 ---
 
@@ -324,5 +324,5 @@ The reference implementation favors clarity over a hardened deployment. Before p
 | No projection | The entity's default shape, trimmed to what the requester may read |
 | Password | Write-only, with or without security; stored as its digest; sent encrypted with the session key |
 | Purchases | A receipt: customers read and create their own; only an ADMIN changes or deletes them or their items |
-| Price of an item | Decided by the server, from the product, in the `INSERT`; `ItemPrices` on update |
+| Price of an item | Decided by the server, from the product, on every insert; `ItemPrices` on update |
 | Disjunction of row scopes | Alternative groups (`anyOf`), server side only; a client's search over columns is a field of its own (`translateAny`) |

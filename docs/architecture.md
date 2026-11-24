@@ -25,7 +25,7 @@
 
 ## Introduction
 
-This project is a demo application (**Storefront Demo**) built on the **Cube MVP** framework in **Kotlin Multiplatform**. Its goal is to show how a single presentation codebase can be shared across multiple platforms and distinct view technologies.
+This project is a demo application (**WDC Store Demo**) built on the **Cube MVP** framework in **Kotlin Multiplatform**. Its goal is to show how a single presentation codebase can be shared across multiple platforms and distinct view technologies.
 
 The architecture is centered on three fundamental decisions:
 
@@ -116,12 +116,12 @@ graph TB
     end
 
     subgraph "Presentation"
-        PRES[":shopping-presentation<br/>(Plain Kotlin)"]
+        PRES[":store-presentation<br/>(Plain Kotlin)"]
     end
 
     subgraph "Domain"
-        DOM[":shopping-domain<br/>(Models & Interfaces)"]
-        PCLI[":shopping-persistence-client<br/>(REST Client)"]
+        DOM[":store-domain<br/>(Models & Interfaces)"]
+        PCLI[":store-persistence-client<br/>(REST Client)"]
     end
 
     subgraph "Framework"
@@ -163,17 +163,19 @@ graph TB
 |--------|-----------------|
 | `:framework-cube` | MVP engine — transactional navigation, presenter lifecycle, Places, Intent |
 | `:framework-commons` | Shared utilities — logging, JSON, HTTP, crypto, schedulers |
-| `:shopping-presentation` | Presenters and their scopes — pure presentation logic (no UI) |
-| `:shopping-domain` | Domain models, repository interfaces, services |
-| `:shopping-persistence-client` | REST implementation of the repositories and of the transaction service (HTTP client) |
-| `:shopping-persistence` | jOOQ implementation of the repositories (direct database access) |
+| `:store-presentation` | Presenters and their scopes — pure presentation logic (no UI) |
+| `:store-domain` | Domain models, repository interfaces, security contracts |
+| `:store-persistence-client` | REST implementation of the repositories and of the transaction service (HTTP client) |
+| `:store-persistence` | jOOQ implementation of the repositories (direct database access) |
 | `:view-compose` | Shared Compose Multiplatform views |
 | `:view-compose-desktop` | JVM Desktop entry point |
 | `:view-compose-android` | Android entry point |
 | `:view-compose-web` | wasmJs (WebAssembly) entry point |
 | `:view-compose-ios` | iOS entry point (via Xcode) |
-| `:shopping-backend` | Javalin server — REST API, WebSocket, H2 |
-| `:shopping-scripts` | Database migrations and scripts |
+| `:persistence-rest` | The WDC Store's REST API (repository RPC per entity, authentication, data policies) over `:framework-rest` |
+| `:view-remote-react-skeleton` | Server side of the remote React view (WebSocket, one view per scope) |
+| `:backend` | Javalin server — REST API, WebSocket, H2 or PostgreSQL |
+| `:store-scripts` | Database creation (`DBCreate`), migrations and jOOQ schema generation |
 
 ---
 
@@ -186,15 +188,15 @@ graph TB
     subgraph "Shared Code (commonMain)"
         FW[Framework Cube + Commons]
         PRES[Presenters + Scopes]
-        DOM[Domain Models + Services]
+        DOM[Domain Models + Resource calls]
         VIEW[Compose Views]
     end
 
     subgraph "Platforms"
-        JVM["Desktop (JVM)<br/>Gson, OkHttp, JCE"]
-        AND["Android<br/>Gson, OkHttp, JCE"]
-        WASM["Web (wasmJs)<br/>Kotlinx-serialization<br/>Fetch API, Web Crypto"]
-        IOSN["iOS (Native)<br/>NSJSONSerialization<br/>URLSession, CommonCrypto"]
+        JVM["Desktop (JVM)<br/>OkHttp, JCE"]
+        AND["Android<br/>OkHttp, JCE"]
+        WASM["Web (wasmJs)<br/>XMLHttpRequest, pure-Kotlin crypto"]
+        IOSN["iOS (Native)<br/>NSURLSession, pure-Kotlin crypto"]
     end
 
     FW --> JVM
@@ -226,13 +228,13 @@ graph TB
 
 ### Per-Platform Implementations
 
-| Component          | JVM / Android         | wasmJs                  | iOS                     |
-|--------------------|-----------------------|-------------------------|-------------------------|
-| JSON               | Gson                  | Kotlinx-serialization   | NSJSONSerialization     |
-| HTTP               | OkHttp                | Fetch API               | URLSession              |
-| Crypto             | JCE                   | Web Crypto API          | CommonCrypto            |
-| Scheduler          | ScheduledThreadPool   | setTimeout/setInterval  | dispatch_queue          |
-| ThreadLocal        | java.lang.ThreadLocal | Global variable         | pthread_key             |
+| Component          | JVM / Android                                   | wasmJs                                   | iOS                                   |
+|--------------------|-------------------------------------------------|------------------------------------------|---------------------------------------|
+| JSON               | Framework's pure-Kotlin reader/writer (`installCommon()`) | same                           | same                                  |
+| HTTP               | `OkHttpTransport` (OkHttp)                      | `WasmHttpTransport` (synchronous XMLHttpRequest) | `IosHttpTransport` (NSURLSession) |
+| Crypto             | `JceCryptoProvider` (JCE)                       | `WasmCryptoProvider` (pure Kotlin MD5/HMAC, no RSA) | `IosCryptoProvider` (pure Kotlin MD5/HMAC, no RSA) |
+| Scheduler          | Swing `Timer` (desktop), `Handler` (Android)    | `setTimeout`                             | `dispatch_after` on the main queue    |
+| ThreadLocalRef     | `java.lang.ThreadLocal`                         | Plain field                              | Plain field                           |
 
 ---
 
@@ -332,25 +334,29 @@ class LoginScope : Scope() {
 
 The view calls the action inside its own launch: `safeCall { scope.onEnter(null, null) }`. A piece of the screen without navigation of its own — the Home's products and purchases panels, each cart row — is a **segment**: a smaller scope in a field of the owner's, with a view of its own and no presenter ([details](architecture-cube.md#segments)).
 
-Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps. `ROOT` (`CubeTreePlace.ROOT`) is the application itself: it is not a step, but `RootPresenter.applyParameters` runs before the first step of every navigation (a navigation to the root alone goes on to the home):
+Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps. `ROOT` (`CubeTreePlace.ROOT`) is the application itself: it is not a step, but `RootPresenter.applyParameters` runs before the first step of every navigation (a navigation to the root alone goes on to the restricted area). The first level holds two **guard places**, as in the Java version: `OPEN` (`OpenPresenter`) and `RESTRICTED` (`RestrictedPresenter`), with no scope and no view. `RESTRICTED` sends a user without a subject to `OPEN`; `OPEN` sends a signed-in user to `RESTRICTED`; each, as the deepest step, goes on to its area's screen (the home, the login). The screens' addresses are still `public/login`, `home`, …:
 
 | Route                     | Steps                            |
 |---------------------------|----------------------------------|
-| Login                     | `ROOT → LOGIN`                   |
-| Home (product list)       | `ROOT → HOME`                    |
-| Product detail            | `ROOT → HOME → PRODUCT`          |
-| Cart                      | `ROOT → HOME → CART`             |
-| Purchase receipt          | `ROOT → HOME → RECEIPT`          |
+| Login                     | `ROOT → OPEN → LOGIN`                   |
+| Home (product list)       | `ROOT → RESTRICTED → HOME`              |
+| Product detail            | `ROOT → RESTRICTED → HOME → PRODUCT`    |
+| Cart                      | `ROOT → RESTRICTED → HOME → CART`       |
+| Purchase receipt          | `ROOT → RESTRICTED → HOME → RECEIPT`    |
 
 ```mermaid
 graph TD
-    ROOT --> LOGIN
-    ROOT --> HOME
+    ROOT --> OPEN
+    ROOT --> RESTRICTED
+    OPEN --> LOGIN
+    RESTRICTED --> HOME
     HOME --> CART
     HOME --> PRODUCT
     HOME --> RECEIPT
 
     style ROOT fill:#4a90d9,color:#fff
+    style OPEN fill:#9e9e9e,color:#fff
+    style RESTRICTED fill:#9e9e9e,color:#fff
     style LOGIN fill:#7cb342,color:#fff
     style HOME fill:#7cb342,color:#fff
     style CART fill:#f9a825,color:#000
@@ -370,6 +376,7 @@ sequenceDiagram
     Note over Root: applyParameters(deepest=false)
     Root->>Intent: parentSlot = contentSlot (RootKeys)
 
+    Note over Intent: RestrictedPresenter (the guard) passes the slot through untouched
     Note over Home: applyParameters(deepest=true)
     Home->>Intent: parentSlot (HomeKeys)
     Intent-->>Home: contentSlot
@@ -401,8 +408,8 @@ See [architecture-persistence.md](architecture-persistence.md) for details of th
 
 | Implementation | Module | Use |
 |---------------|--------|-----|
-| **REST Client** | `:shopping-persistence-client` | Local views (Compose) — calls the backend over HTTP |
-| **jOOQ** | `:shopping-persistence` | Backend — direct database access (H2 or PostgreSQL) |
+| **REST Client** | `:store-persistence-client` | Local views (Compose) — calls the backend over HTTP |
+| **jOOQ** | `:store-persistence` | Backend — direct database access (H2 or PostgreSQL) |
 
 Both implement the same contract. The REST implementation sends the criteria and the projection as JSON, using the same codec the server uses to read them; the jOOQ implementation translates them into a single SQL query with bind parameters.
 
@@ -412,9 +419,9 @@ Both implement the same contract. The REST implementation sends the criteria and
 
 HTTP server based on **Javalin** (Java 21) with:
 
-- **REST API** — endpoints for products, cart, purchases, authentication
+- **REST API** — repository RPC per entity (`/api/repo/…`: users, products, purchases, purchase items), remote transactions (`/api/tx/…`) and authentication (`/api/auth/…`, only with security on)
 - **WebSocket** — support for the remote view modality (React)
-- **H2 Database** — embedded database with versioned migrations
+- **Database** — embedded H2 (or PostgreSQL) with versioned migrations
 - **JWT** — authentication with access token + refresh token, sessions persisted in the database
 - **Data policies** — per role, the rows and fields of each entity the REST API reads and writes ([security architecture](security-architecture.md))
 
@@ -440,10 +447,10 @@ See [architecture-cube-compose.md](architecture-cube-compose.md) for full detail
 
 ```mermaid
 graph TB
-    EX[Exception]
-    EX --> OE[OfflineException<br/>Server unavailable]
-    EX --> ICE[InvalidCartItemException<br/>Invalid cart item]
+    EX[RuntimeException]
     EX --> BE[BusinessException<br/>Business rule violated]
+    BE --> OE[OfflineException<br/>Server unavailable]
+    BE --> ICE[InvalidCartItemException<br/>Invalid cart item]
     EX --> PNF[ProductNotFoundException<br/>Product not found]
     EX --> PUNF[PurchaseNotFoundException<br/>Purchase not found]
     EX --> WPE[WrongParametersException<br/>Invalid parameters]
@@ -453,7 +460,6 @@ graph TB
     style BE fill:#ffa726,color:#000
     style PNF fill:#ffa726,color:#000
     style PUNF fill:#ffa726,color:#000
-    style WP fill:#78909c,color:#fff
     style WPE fill:#78909c,color:#fff
 ```
 
@@ -508,7 +514,8 @@ sequenceDiagram
     participant Platform as Platform Config
     participant App as RootPresenter
     participant Keys as RootKeys
-    participant Home as HomePresenter
+    participant Rs as RestrictedPresenter
+    participant Op as OpenPresenter
     participant Compose as Compose Runtime
 
     Main->>Platform: initializePlatform(baseUrl)
@@ -519,9 +526,11 @@ sequenceDiagram
     Main->>Keys: RootKeys(app).flip()
     Keys->>App: app.flip(CubeTreePlace.ROOT, intent) — no steps
     App->>App: applyParameters(init=true, deepest=true):<br/>viewOf(scope) creates the root view, restores the session
-    App->>Home: HomeKeys(app, intent).flip() (redirect)
-    Home->>Home: Checks subject
-    Home->>Keys: LoginKeys(app, intent).flip() when there is none
+    App->>Rs: RestrictedKeys(app, intent).flip() (redirect)
+    Rs->>Rs: Checks subject
+    Rs->>Keys: HomeKeys(app, intent).flip() when there is one
+    Rs->>Op: OpenKeys(app, intent).flip() when there is none
+    Op->>Keys: LoginKeys(app, intent).flip() (deepest step)
 
     Main->>Compose: Renders (app.view as? RootView)
     Compose->>App: rootView.Render()
@@ -555,22 +564,23 @@ sequenceDiagram
     Note over LV: Recomposes: spinner + disabled fields
 
     LP->>LS: CredentialsCheck(admin, ***).run()
-    LS->>API: POST /auth/login
-    API-->>LS: Subject id=1, nick=Admin
-    LS-->>LP: Subject(id=1, nick=Admin)
+    LS->>API: GET /api/auth/challenge, POST /api/auth/login
+    API-->>LS: tokens + user id (then the name, via the user repository)
+    LS-->>LP: Subject(id, nickName)
 
     LP->>LP: scope.loading = false
     LP->>LP: app.subject = subject
 
     LP->>Keys: HomeKeys(app).flip()
-    Keys->>Nav: navigate().step(HOME).execute()
+    Keys->>Nav: navigate().step(RESTRICTED).step(HOME).execute()
 
     Nav->>Nav: app.applyParameters() — offers the content slot
+    Nav->>Nav: RestrictedPresenter — there is a subject: goes on
     Nav->>HP: applyParameters(init=true, deepest=true)
     Note over HP: Creates CartManager, loads the products<br/>(its panels are segments of HomeScope)
     HP->>HP: Hands its scope to the Root slot
 
-    Nav->>Nav: release LoginPresenter
+    Nav->>Nav: release LoginPresenter, then OpenPresenter
     Nav->>Nav: updateHistory()
     Note over HV: Next paint: app.commitComputedState(),<br/>then app.viewOf(HomeScope) = HomeView
 

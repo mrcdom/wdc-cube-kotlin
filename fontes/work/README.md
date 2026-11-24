@@ -2,7 +2,7 @@
 
 The backend's **work directory** in development.
 
-The backend does not start without knowing its work directory: it is given with the `--workdir=<folder>` argument or the `SHOPPING_WORKDIR` environment variable. `./gradlew :backend:run` passes this folder (another one: `-Pworkdir=/path`). Everything the service reads from and writes to disk comes from it:
+The backend does not start without knowing its work directory: it is given with the `--workdir=<folder>` argument or the `STORE_WORKDIR` environment variable. `./gradlew :backend:run` passes this folder (another one: `-Pworkdir=/path`). Everything the service reads from and writes to disk comes from it:
 
 | Folder | Purpose | In git |
 |---|---|---|
