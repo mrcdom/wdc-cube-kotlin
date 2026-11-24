@@ -15,6 +15,33 @@ import kotlin.time.Clock
 
 class CartManager(private val repo: PurchaseRepository) {
 
+    /**
+     * What a cart keeps between page reloads: whose it is and how many of each product, in the cart's order. Written
+     * as `userId|productId:quantity,productId:quantity`; names and prices are read again from the products.
+     */
+    data class Snapshot(val userId: Long, val quantities: Map<Long, Int>) {
+
+        fun format(): String =
+            "$userId|" + quantities.entries.joinToString(",") { (productId, quantity) -> "$productId:$quantity" }
+
+        companion object {
+            /** The snapshot written by [format], or `null` if the text is not one. */
+            fun parse(text: String?): Snapshot? {
+                if (text.isNullOrBlank()) return null
+                val userId = text.substringBefore('|', "").toLongOrNull() ?: return null
+                val items = text.substringAfter('|')
+                val quantities = LinkedHashMap<Long, Int>()
+                if (items.isNotEmpty()) {
+                    for (item in items.split(',')) {
+                        val productId = item.substringBefore(':', "").toLongOrNull() ?: return null
+                        quantities[productId] = item.substringAfter(':').toIntOrNull() ?: return null
+                    }
+                }
+                return Snapshot(userId, quantities)
+            }
+        }
+    }
+
     private val cart: MutableList<CartItem> = ArrayList()
 
     private var listenerIdGen: Int = 0
@@ -147,6 +174,9 @@ class CartManager(private val repo: PurchaseRepository) {
     private suspend fun insert(purchase: Purchase) {
         check(repo.insert(purchase)) { "Record not inserted" }
     }
+
+    /** The cart's [Snapshot], for the given owner. */
+    fun snapshot(userId: Long): Snapshot = Snapshot(userId, cart.associateTo(LinkedHashMap()) { it.id to it.quantity })
 
     fun getItemCount(): Int {
         var count = 0

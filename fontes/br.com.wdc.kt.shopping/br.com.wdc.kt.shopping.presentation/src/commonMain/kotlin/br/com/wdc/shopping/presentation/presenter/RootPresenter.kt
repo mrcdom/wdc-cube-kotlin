@@ -69,10 +69,15 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     // :: API
 
+    /** Logs the failure with its stack trace and shows the user only what failed and the cause's message. */
     open fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
-        state.errorMessage = if (e.message.isNullOrBlank()) message else "$message: ${e.message}"
+        state.errorMessage = errorText(message, e)
         logger.error(state.errorMessage!!, e)
     }
+
+    /** The text the user sees for an unexpected error: what failed, and the cause's message when there is one. */
+    protected fun errorText(message: String, e: Throwable): String =
+        if (e.message.isNullOrBlank()) message else "$message: ${e.message}"
 
     /**
      * The application's part in every navigation: on the first one, creates the root view and restores the session;

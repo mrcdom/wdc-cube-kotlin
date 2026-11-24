@@ -126,7 +126,8 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
     private val viewMap = HashMap<String, GenericViewImpl<*>>()
     private var lastRequestId: Long = 0L
     private var historyDirty: Boolean = false
-    private lateinit var browserView: BrowserReactViewImpl
+    internal lateinit var browserView: BrowserReactViewImpl
+        private set
     private var instanceIdGen: Int = 1
 
     init {
@@ -237,8 +238,11 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         viewMap.forEach { (_, v) -> markDirty(v) }
     }
 
+    /** The browser's alert shows the error; the stack trace goes to the server log, never to the client. */
     override fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
-        browserView.alertUnexpectedError(message, e)
+        val text = errorText(message, e)
+        logger.error(text, e)
+        browserView.alertUnexpectedError(text)
     }
 
     @Synchronized
@@ -368,7 +372,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
                         view.submit(eventCode, eventQtde, formData)
                     } catch (e: Throwable) {
-                        me.alertUnexpectedError(LOG, e.message ?: "", e)
+                        me.alertUnexpectedError(LOG, "Unexpected error", e)
                         view.update()
                     }
                 } else {

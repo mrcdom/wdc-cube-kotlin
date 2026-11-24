@@ -19,7 +19,8 @@ import br.com.wdc.shopping.test.mock.viewimpl.ReceiptViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.RestrictedViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.RootViewMock
 
-class RootPresenterMock : RootPresenter() {
+/** [storage] is the session: a page reload is a new application on the same session. */
+class RootPresenterMock(private val storage: SessionStorage = JvmSessionStorage()) : RootPresenter() {
 
     init {
         RootPresenter.createView = { p -> RootViewMock(p.app as RootPresenterMock, p) }
@@ -32,7 +33,7 @@ class RootPresenterMock : RootPresenter() {
         PurchasesPanelPresenter.createView = { p -> PurchasesPanelViewMock(p) }
     }
 
-    override fun createSessionStorage(): SessionStorage = JvmSessionStorage()
+    override fun createSessionStorage(): SessionStorage = storage
 
     fun getRootView(): RootViewMock? {
         val v = view
