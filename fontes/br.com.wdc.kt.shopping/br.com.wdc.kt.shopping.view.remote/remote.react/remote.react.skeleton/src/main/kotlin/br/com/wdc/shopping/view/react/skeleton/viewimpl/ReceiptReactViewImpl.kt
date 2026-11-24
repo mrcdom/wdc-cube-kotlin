@@ -15,5 +15,7 @@ class ReceiptReactViewImpl(presenter: ReceiptPresenter) : GenericViewImpl<Receip
 
     override fun writeScope(json: ExtensibleObjectOutput) {
         presenter.scope.write(instanceId, json)
+        // the success notice shows once: sent, it is consumed
+        presenter.scope.notifySuccess = false
     }
 }

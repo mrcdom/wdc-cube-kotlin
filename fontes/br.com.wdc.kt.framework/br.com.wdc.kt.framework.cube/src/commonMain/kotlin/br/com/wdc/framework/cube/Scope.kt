@@ -1,13 +1,15 @@
 package br.com.wdc.framework.cube
 
+import br.com.wdc.framework.commons.serialization.Externalizable
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
+import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 /**
  * What a presenter shows: the values its view paints. It tells its presenter when it changes, so the presenter need
- * not call `update()` by hand, and it writes itself as JSON for views that receive it serialized.
+ * not call `update()` by hand, and it writes itself as JSON for views that receive it serialized ([write]).
  *
  * Declare each field with [field]: assigning it a value different from the current one (`!=`, so lists compare by
  * content) notifies the observer — the presenter, through `bind(...)` in [AbstractCubePresenter] and
@@ -26,13 +28,28 @@ import kotlin.reflect.KProperty
  * is not observed either.
  *
  * Changes made in `commitComputedState()` notify too, but the view being painted ignores its own `update()` then.
+ *
+ * **As JSON** ([write]), the fields go out in declaration order, after `"id"` (the view instance): `null` and blank
+ * strings are left out; numbers and booleans always go; a [CubeView] goes as `"<name>Id"` with its instance id;
+ * lists, maps, enums, [ScopeValue] and [Externalizable] values are written as themselves. A field declared with
+ * `sent = false` never goes (a password the user types, for example). Override [write] only for a shape these
+ * rules can't give.
  */
 abstract class Scope {
 
     private var observer: (() -> Unit)? = null
 
-    /** Writes this scope as the JSON object of the view instance [instanceId]. */
-    abstract fun write(instanceId: String, json: ExtensibleObjectOutput)
+    private val fields = mutableListOf<Field<*>>()
+
+    /** Writes this scope as the JSON object of the view instance [instanceId]: see the rules above. */
+    open fun write(instanceId: String, json: ExtensibleObjectOutput) {
+        json.beginObject()
+        json.name("id").value(instanceId)
+        for (field in fields) {
+            if (field.sent) writeField(json, field.name, field.value)
+        }
+        json.endObject()
+    }
 
     /** This scope as JSON, for the view instance [instanceId]. */
     fun toJson(instanceId: String): String {
@@ -51,16 +68,70 @@ abstract class Scope {
         observer?.invoke()
     }
 
-    /** An observed field, starting at [initial]. */
-    protected fun <T> field(initial: T): ReadWriteProperty<Scope, T> = Field(initial)
+    /**
+     * An observed field, starting at [initial]. With [sent] `false`, the field stays out of the JSON a remote view
+     * receives.
+     */
+    protected fun <T> field(initial: T, sent: Boolean = true): PropertyDelegateProvider<Scope, ReadWriteProperty<Scope, T>> =
+        PropertyDelegateProvider { scope, property -> Field(property.name, initial, sent).also { scope.fields += it } }
 
-    private class Field<T>(private var value: T) : ReadWriteProperty<Scope, T> {
+    private class Field<T>(val name: String, var value: T, val sent: Boolean) : ReadWriteProperty<Scope, T> {
         override fun getValue(thisRef: Scope, property: KProperty<*>): T = value
 
         override fun setValue(thisRef: Scope, property: KProperty<*>, value: T) {
             if (this.value == value) return
             this.value = value
             thisRef.changed()
+        }
+    }
+
+    private companion object {
+
+        fun writeField(json: ExtensibleObjectOutput, name: String, value: Any?) {
+            when (value) {
+                null -> {}
+                is String -> if (value.isNotBlank()) json.name(name).value(value)
+                is CubeView -> json.name(name + "Id").value(value.instanceId)
+                else -> {
+                    json.name(name)
+                    writeValue(json, name, value)
+                }
+            }
+        }
+
+        fun writeValue(json: ExtensibleObjectOutput, name: String, value: Any?) {
+            when (value) {
+                null -> json.nullValue()
+                is String -> json.value(value)
+                is Boolean -> json.value(value)
+                // fractions first: in Kotlin/JS every number also passes `is Short`/`is Byte`
+                is Double -> json.value(value)
+                is Float -> json.value(value.toDouble())
+                is Int -> json.value(value.toLong())
+                is Long -> json.value(value)
+                is Short -> json.value(value.toLong())
+                is Byte -> json.value(value.toLong())
+                is Enum<*> -> json.value(value.name)
+                is ScopeValue -> value.writeJson(json)
+                is Externalizable -> value.writeExternal(json)
+                is CubeView -> json.value(value.instanceId)
+                is Iterable<*> -> {
+                    json.beginArray()
+                    for (item in value) writeValue(json, name, item)
+                    json.endArray()
+                }
+                is Map<*, *> -> {
+                    json.beginObject()
+                    for ((key, item) in value) {
+                        json.name(key.toString())
+                        writeValue(json, name, item)
+                    }
+                    json.endObject()
+                }
+                else -> throw IllegalStateException(
+                    "Scope field '$name': a ${value::class.simpleName} can't be written as JSON; make it a ScopeValue"
+                )
+            }
         }
     }
 }

@@ -1,15 +1,27 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.products.structs
 
+import br.com.wdc.framework.cube.ScopeValue
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.framework.domain.projection.ProjectionValues
 
-class ProductInfo {
+class ProductInfo : ScopeValue {
 
     var id: Long = 0
     var image: String? = null
     var name: String? = null
     var description: String? = null
     var price: Double = 0.0
+
+    override fun writeJson(json: ExtensibleObjectOutput) {
+        json.beginObject()
+        json.name("id").value(id)
+        json.name("image").value(image)
+        json.name("name").value(name)
+        json.name("description").value(description)
+        json.name("price").value(price)
+        json.endObject()
+    }
 
     companion object {
         fun projection(): Product {
