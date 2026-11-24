@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home
 
+import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
@@ -15,6 +16,7 @@ import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductService
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 
 class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
@@ -22,6 +24,9 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     companion object {
         private val LOG = Log.getLogger("HomePresenter")
         private val NOOP: () -> Unit = {}
+
+        /** The session entry that keeps the cart across page reloads. */
+        const val CART_KEY = "cart"
 
         var createView: ((HomePresenter) -> CubeView)? = null
     }
@@ -90,9 +95,11 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
             state.purchasesPanelView = purchasesPanel!!.initialize()
 
             cart = CartManager(PurchaseRepository.BEAN.get())
+            restoreCart()
             onCartCommitListenerRemover = cart!!.addCommitListener(::onCartCommited)
             onCartChangeListenerRemover = cart!!.addChangeListener(::onCartChanged)
             app.cart = cart
+            state.cartItemCount = cart!!.getItemCount()
         }
 
         if (ownerSlot == null) {
@@ -127,6 +134,34 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private fun onCartChanged() {
         state.cartItemCount = cart?.getItemCount() ?: 0
+        saveCart()
+    }
+
+    /**
+     * Restores the cart the session kept: a page reload starts the application again, not the session. The products
+     * are read again, so names and prices are current; a cart kept for another user is ignored.
+     */
+    private suspend fun restoreCart() {
+        val snapshot = CartManager.Snapshot.parse(app.sessionStorage.getString(CART_KEY)) ?: return
+        if (snapshot.userId != app.subject?.id) return
+        val products = ProductService(ProductRepository.BEAN.get())
+        for ((productId, quantity) in snapshot.quantities) {
+            try {
+                cart!!.addProduct(products.loadProductById(productId), quantity)
+            } catch (_: ProductNotFoundException) {
+                LOG.info("restoreCart: product {} is no longer available", productId)
+            }
+        }
+    }
+
+    private fun saveCart() {
+        val cart = cart ?: return
+        val userId = app.subject?.id ?: return
+        if (cart.getSize() == 0) {
+            app.sessionStorage.remove(CART_KEY)
+        } else {
+            app.sessionStorage.set(CART_KEY, cart.snapshot(userId).format())
+        }
     }
 
     suspend fun onOpenReceipt(purchaseId: Long?) {
