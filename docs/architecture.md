@@ -416,6 +416,7 @@ HTTP server based on **Javalin** (Java 21) with:
 - **WebSocket** — support for the remote view modality (React)
 - **H2 Database** — embedded database with versioned migrations
 - **JWT** — authentication with access token + refresh token, sessions persisted in the database
+- **Data policies** — per role, the rows and fields of each entity the REST API reads and writes ([security architecture](security-architecture.md))
 
 ---
 
@@ -587,6 +588,7 @@ sequenceDiagram
 | [architecture-cube-compose.md](architecture-cube-compose.md) | Cube + Compose integration — ComposeCubeView, revision counter, safeCall, RenderSlot, the view catalog, per-platform initialization |
 | [architecture-react.md](architecture-react.md) | Remote view modality — React + WebSocket, Skeletons, scope synchronization, security |
 | [architecture-persistence.md](architecture-persistence.md) | Persistence layer — repositories, criteria, projection, transactions (local and remote), REST API |
+| [security-architecture.md](security-architecture.md) | Security — trust boundaries, authentication, data policies of the REST API, limitations |
 
 ---
 

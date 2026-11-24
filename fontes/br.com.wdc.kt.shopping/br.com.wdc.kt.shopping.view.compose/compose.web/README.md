@@ -84,14 +84,16 @@ correctly, without falling back to the anonymous key.
 
 ### Limitations
 
-- **It does not replace server-side authorization.** Each REST endpoint validates
-  permissions through JWT. Intent signing is a defense-in-depth layer in the UI.
+- **It does not replace server-side authorization.** Each REST call carries the
+  JWT, and the entity's data policy decides what the caller's roles may read and
+  write (see [Security architecture](../../../../docs/security-architecture.md)).
+  Intent signing is a defense-in-depth layer in the UI.
 - **The anonymous key is fixed and known.** Public screens have no real protection
   against URL tampering — which is acceptable, since they are public.
 
 ### Session Persistence
 
-Authentication sessions (RSA key pairs, refresh tokens, permissions) are
+Authentication sessions (RSA key pairs, refresh tokens, role names) are
 persisted in the H2 `EN_USER_SESSION` table. This means that **restarting the
 server does not invalidate existing sessions** — the client keeps navigating
 normally without having to re-authenticate.

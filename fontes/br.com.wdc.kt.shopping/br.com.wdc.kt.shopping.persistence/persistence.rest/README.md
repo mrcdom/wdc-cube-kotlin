@@ -27,4 +27,4 @@ Each controller configures the `RepositoryRpc` of its entity, which reads and wr
 
 `RepositoryApiRoutes.create()` builds the `RestApi`; `RepositoryApiRoutes.configure(config)` installs it on a Javalin. Used by the backend and the tests. Security is on if an `AuthenticationService` is registered when the API is built.
 
-See the [persistence architecture](../../../../docs/architecture-persistence.md#rest-api).
+See the [persistence architecture](../../../../docs/architecture-persistence.md#rest-api) and the [security architecture](../../../../docs/security-architecture.md).
