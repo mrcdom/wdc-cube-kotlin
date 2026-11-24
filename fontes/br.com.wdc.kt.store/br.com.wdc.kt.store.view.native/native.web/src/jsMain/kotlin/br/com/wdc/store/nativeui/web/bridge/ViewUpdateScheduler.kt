@@ -6,10 +6,10 @@ import kotlinx.browser.window
 /**
  * The paint cycle of the native.web platform.
  *
- * A scope that changes marks dirty the views on screen that read it ([useScope]); a single requestAnimationFrame
- * callback is scheduled to paint them. Each flush first runs the application's commitComputedState() — once per paint
- * cycle, right before painting — so every presenter computes the derived fields its view reads; whatever that changes
- * marks views dirty and is painted in the same flush.
+ * A scope that changes marks dirty the view on screen that draws it (its updater, installed by [useScope]); a single
+ * requestAnimationFrame callback is scheduled to paint them. Each flush first runs the application's
+ * commitComputedState() — once per paint cycle, right before painting — so every presenter computes the derived
+ * fields its view reads; whatever that changes marks views dirty and is painted in the same flush.
  */
 object ViewUpdateScheduler {
 

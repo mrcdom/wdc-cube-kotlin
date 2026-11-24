@@ -10,11 +10,11 @@ import br.com.wdc.store.nativeui.android.theme.*
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.store.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
 
 /** A row of the cart: one product, its quantity controls and its remove button. Hosted by [CartViewAndroid]. */
-class CartItemViewAndroid(app: RootPresenter, scope: CartItemScope) :
+class CartItemViewAndroid(app: AndroidNativeRootPresenter, scope: CartItemScope) :
     AbstractViewAndroid<CartItemScope>("cart-item", app, scope) {
 
     private lateinit var imageView: ImageView

@@ -9,11 +9,11 @@ import br.com.wdc.store.nativeui.android.theme.*
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.store.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
 import br.com.wdc.store.presentation.presenter.restricted.receipt.structs.ReceiptItem
 
-class ReceiptViewAndroid(app: RootPresenter, scope: ReceiptScope) : AbstractViewAndroid<ReceiptScope>("receipt-view", app, scope) {
+class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) : AbstractViewAndroid<ReceiptScope>("receipt-view", app, scope) {
 
     private lateinit var successBanner: LinearLayout
     private lateinit var dateLabel: TextView

@@ -7,7 +7,7 @@ import br.com.wdc.store.nativeui.ios.theme.StoreColors
 import br.com.wdc.store.nativeui.ios.theme.StoreIcons
 import br.com.wdc.store.nativeui.ios.theme.UIK
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.receipt.structs.ReceiptItem
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -19,7 +19,7 @@ import platform.darwin.NSObject
  * Receipt view — shows purchase confirmation with success banner, item list, and total.
  */
 @OptIn(ExperimentalForeignApi::class)
-class ReceiptViewIos(app: RootPresenter, scope: ReceiptScope) : AbstractViewIos<ReceiptScope>("receipt-view", app, scope) {
+class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : AbstractViewIos<ReceiptScope>("receipt-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var contentStack: UIStackView

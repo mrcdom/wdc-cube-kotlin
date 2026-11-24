@@ -5,7 +5,8 @@ import br.com.wdc.store.presentation.presenter.open.login.LoginScope
 import br.com.wdc.store.view.react.skeleton.util.ScopeViewImpl
 
 /** The login: the password arrives ciphered with the session's key, which only this layer knows. */
-class LoginReactViewImpl(app: ReactRootPresenter, scope: LoginScope) : ScopeViewImpl<LoginScope>(VID, app, scope) {
+class LoginReactViewImpl(private val session: ReactRootPresenter, scope: LoginScope) :
+    ScopeViewImpl<LoginScope>(VID, session, scope) {
 
     companion object {
         const val VID = "c677cda52d14"
@@ -19,7 +20,7 @@ class LoginReactViewImpl(app: ReactRootPresenter, scope: LoginScope) : ScopeView
 
         fn = "password"
         if (formData.containsKey(fn)) {
-            scope.password = app.getDataSecurity().b64Decipher(CoerceUtils.asString(formData[fn]) ?: "")
+            scope.password = session.getDataSecurity().b64Decipher(CoerceUtils.asString(formData[fn]) ?: "")
         }
     }
 }

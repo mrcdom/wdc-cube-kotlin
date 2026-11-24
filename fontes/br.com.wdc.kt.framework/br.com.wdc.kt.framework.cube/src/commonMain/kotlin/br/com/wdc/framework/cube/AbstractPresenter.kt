@@ -4,7 +4,9 @@ import br.com.wdc.framework.commons.log.Log
 import kotlinx.coroutines.CancellationException
 
 /**
- * What every presenter has: the application, the bound scope and the guarded actions.
+ * What every presenter has: the application, the bound scope and the guarded actions. The presenter only makes
+ * scopes: drawing them, and letting go of what drew them once they leave the screen, is up to the rendering
+ * technology.
  *
  * An action is bound once, in the constructor, into a field of the scope (`scope.onBuy = action { buy() }`). The
  * guard catches whatever the body did not handle and hands it to [onActionFailure] (by default
@@ -20,43 +22,25 @@ abstract class AbstractPresenter<A : CubeApplication>(override val app: A) : Pre
 
     private var boundScope: Scope? = null
 
-    private val segments = mutableListOf<Scope>()
-
     private val log by lazy { Log.getLogger(this::class.simpleName ?: "Presenter") }
 
-    /** Releases the bound scope and its segments: the view layer drops their views ([Scope.onRelease]). */
-    override fun release() {
-        segments.forEach { it.release() }
-        segments.clear()
-        boundScope?.release()
-    }
+    /** Nothing to let go of by default; a presenter that listens to something stops listening here. */
+    override fun release() {}
 
     /** The bound scope ([bind]). */
     fun scope(): Scope? = boundScope
 
     /**
-     * Ties [scope] to this presenter: the actions bound with an event code go to it, and it is released with the
-     * presenter. Used on the field: `val scope = bind(CartScope())`.
+     * Ties [scope] to this presenter: the actions bound with an event code go to it. Used on the field:
+     * `val scope = bind(CartScope())`.
+     *
+     * A smaller scope inside it (a panel, the rows of a list: a *segment*) needs no binding: the presenter creates
+     * it, binds its actions (`actionOf(1, FormParam.long("p.productId"), target = products) { … }`) and puts it in a
+     * field of the bound scope.
      */
     protected fun <S : Scope> bind(scope: S): S {
         boundScope = scope
         return scope
-    }
-
-    /**
-     * A segment: a piece of the screen without navigation of its own (a panel), kept as a smaller scope in a field
-     * of the bound one, with its own view and no presenter — this presenter binds its actions
-     * (`actionOf(1, FormParam.long("p.productId"), target = products) { … }`). It is released with this presenter.
-     */
-    protected fun <S : Scope> segment(scope: S): S {
-        segments += scope
-        return scope
-    }
-
-    /** Releases a segment that left the screen (a row removed from a list): its view goes with it. */
-    protected fun detach(segment: Scope) {
-        segments.remove(segment)
-        segment.release()
     }
 
     // :: Actions

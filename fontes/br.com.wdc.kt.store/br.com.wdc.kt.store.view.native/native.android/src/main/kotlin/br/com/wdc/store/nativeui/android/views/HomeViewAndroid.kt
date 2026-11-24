@@ -1,6 +1,5 @@
 package br.com.wdc.store.nativeui.android.views
 
-import br.com.wdc.framework.cube.ScopeViews
 import android.graphics.Color
 import android.graphics.Typeface
 import android.view.GestureDetector
@@ -9,14 +8,13 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.store.nativeui.android.theme.*
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
 
-class HomeViewAndroid(app: RootPresenter, private val views: ScopeViews, scope: HomeScope) : AbstractViewAndroid<HomeScope>("home-view", app, scope) {
+class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : AbstractViewAndroid<HomeScope>("home-view", app, scope) {
 
     // Compact header
     private lateinit var compactHeader: LinearLayout
@@ -45,8 +43,8 @@ class HomeViewAndroid(app: RootPresenter, private val views: ScopeViews, scope: 
     private lateinit var errorLabel: TextView
     private lateinit var detailSlot: ViewSlot
 
-    private var mountedProductsPanel: CubeView? = null
-    private var mountedPurchasesPanel: CubeView? = null
+    private var mountedProductsPanel: AbstractViewAndroid<*>? = null
+    private var mountedPurchasesPanel: AbstractViewAndroid<*>? = null
     private var selectedTab = 0
     private var lastTab = -1
     private var lastNick: String? = null
@@ -616,7 +614,7 @@ class HomeViewAndroid(app: RootPresenter, private val views: ScopeViews, scope: 
         purchView.visibility = if (selectedTab == 1) View.VISIBLE else View.GONE
     }
 
-    private fun mountPanel(panel: CubeView, isProducts: Boolean) {
+    private fun mountPanel(panel: AbstractViewAndroid<*>, isProducts: Boolean) {
         val childView = (panel as AbstractViewAndroid<*>).rootView
         (childView.parent as? ViewGroup)?.removeView(childView)
 
@@ -660,8 +658,8 @@ class HomeViewAndroid(app: RootPresenter, private val views: ScopeViews, scope: 
         }
 
         // Mount panels
-        val productsPanel = scope.productsPanel?.let(views::viewOf)
-        val purchasesPanel = scope.purchasesPanel?.let(views::viewOf)
+        val productsPanel = scope.productsPanel?.let(::viewOf)
+        val purchasesPanel = scope.purchasesPanel?.let(::viewOf)
 
         if (productsPanel != null && mountedProductsPanel !== productsPanel) {
             mountedProductsPanel = productsPanel
@@ -679,14 +677,14 @@ class HomeViewAndroid(app: RootPresenter, private val views: ScopeViews, scope: 
             (mountedPurchasesPanel as? AbstractViewAndroid<*>)?.let {
                 it.rootView.visibility = if (selectedTab == 1) View.VISIBLE else View.GONE
                 if (selectedTab == 1) {
-                    it.rootView.post { it.forceUpdate() }
+                    it.rootView.post { it.redraw() }
                 }
             }
             updateTabAppearance()
         }
 
         // Detail overlay
-        val contentView = scope.content?.let(views::viewOf)
+        val contentView = scope.content?.let(::viewOf)
         detailSlot.sync(contentView)
         if (contentView != null) {
             detailContainer.visibility = View.VISIBLE
@@ -742,7 +740,7 @@ class HomeViewAndroid(app: RootPresenter, private val views: ScopeViews, scope: 
             (mountedProductsPanel as? AbstractViewAndroid<*>)?.rootView?.visibility = View.GONE
             (mountedPurchasesPanel as? AbstractViewAndroid<*>)?.let {
                 it.rootView.visibility = View.VISIBLE
-                it.forceUpdate()
+                it.redraw()
             }
             updateTabAppearance()
         }

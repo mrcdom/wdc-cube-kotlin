@@ -98,7 +98,6 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
     override fun release() {
         scope.content = null
         super.release()
-        scope.release()
     }
 
     companion object {

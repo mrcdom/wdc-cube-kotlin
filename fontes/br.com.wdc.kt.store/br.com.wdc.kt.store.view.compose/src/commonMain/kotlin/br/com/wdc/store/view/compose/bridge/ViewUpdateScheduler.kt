@@ -9,15 +9,15 @@ import kotlinx.coroutines.launch
 /**
  * The paint cycle of the Compose platform.
  *
- * A scope that changes marks dirty the views on screen that read it ([useScope]), and a flush is scheduled on the
- * presenters' dispatcher (once per round, like requestAnimationFrame on the web). An update made outside any view
- * action — the initial navigation, the continuation of a parallel launch, a timer — therefore still reaches the
- * screen; [safeCall] also flushes when the action ends. The flush runs the application's commitComputedState() once,
+ * A scope that changes marks dirty the view on screen that draws it (its updater, installed by [useScope]), and a
+ * flush is scheduled on the presenters' dispatcher (once per round, like requestAnimationFrame on the web). An update
+ * made outside any view action — the initial navigation, the continuation of a parallel launch, a timer — therefore
+ * still reaches the screen; [safeCall] also flushes when the action ends. The flush runs the application's commitComputedState() once,
  * so the presenters compute the derived fields the views read, and then bumps the paint counter of each dirty view,
  * which recomposes it.
  *
  * Thread safety: the dirty set is touched only on the presenters' single-threaded dispatcher; a caller on another
- * thread (the composition) goes through [markDirtyLater] and [removeDirty], which launch on it.
+ * thread (the composition, when a view leaves it) goes through [removeDirty], which launches on it.
  */
 object ViewUpdateScheduler {
 
@@ -52,11 +52,6 @@ object ViewUpdateScheduler {
             flushScheduled = true
             scope.launch { flush() }
         }
-    }
-
-    /** Marks a view dirty from another thread. */
-    internal fun markDirtyLater(view: MutableIntState) {
-        appProvider?.invoke()?.presenterScope?.launch { markDirty(view) }
     }
 
     /** A view left the screen. Safe to call from any thread. */

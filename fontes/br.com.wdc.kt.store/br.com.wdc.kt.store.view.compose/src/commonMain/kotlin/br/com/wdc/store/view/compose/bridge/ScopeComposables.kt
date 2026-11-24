@@ -63,20 +63,19 @@ fun RenderSlot(scope: Scope?) {
 
 /**
  * Ties the calling composable to [scope]: it recomposes when the scope changes, once per paint cycle
- * ([ViewUpdateScheduler]). Subscribes when it enters the composition and unsubscribes when it leaves, so a view on
- * screen needs nothing else to start or stop: there is no view to release. A change between the first paint and the
- * subscription is not lost: the scope's [version][Scope.version] tells it.
+ * ([ViewUpdateScheduler]). The view installs itself as the scope's updater as it starts drawing, before it reads the
+ * scope — so no change is lost — and takes the updater back when it leaves the composition: there is no view to
+ * release, Compose drops what leaves the screen.
  */
 @Composable
 fun <S : Scope> useScope(scope: S): S {
     val painted = remember(scope) { mutableIntStateOf(0) }
+    val updater: () -> Unit = remember(scope) { { ViewUpdateScheduler.markDirty(painted) } }
     painted.intValue // read here, so the scheduler's bump recomposes this view
-    val seen = scope.version
+    scope.setUpdater(updater)
     DisposableEffect(scope) {
-        val unsubscribe = scope.subscribe { ViewUpdateScheduler.markDirty(painted) }
-        if (scope.version != seen) ViewUpdateScheduler.markDirtyLater(painted)
         onDispose {
-            unsubscribe()
+            scope.clearUpdater(updater)
             ViewUpdateScheduler.removeDirty(painted)
         }
     }

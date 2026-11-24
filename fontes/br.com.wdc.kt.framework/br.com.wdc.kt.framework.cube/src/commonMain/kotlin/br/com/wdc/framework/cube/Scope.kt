@@ -3,22 +3,19 @@ package br.com.wdc.framework.cube
 import br.com.wdc.framework.commons.serialization.Externalizable
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
-import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 /**
- * What a presenter shows: the values its view paints. It tells whoever subscribed ([subscribe]) when it changes, so
- * the presenter need not ask for a repaint, and it writes itself as JSON for views that receive it serialized
- * ([write]).
+ * What a presenter shows: the values its view paints, and the actions the view calls. The framework knows nothing
+ * else of views: drawing a scope, and letting go of what drew it, is up to each rendering technology.
  *
  * Declare each field with [field]: assigning it a value different from the current one (`!=`, so lists compare by
- * content) is a change. Several changes in a row cost one repaint: the view layer collects them and paints once per
- * cycle.
+ * content) is a change, and a change tells the updater ([setUpdater]) — so the presenter need not ask for a repaint.
+ * Several changes in a row cost one repaint: the technology collects them and paints once per cycle.
  *
  * ```kotlin
  * class CartScope : Scope() {
@@ -31,32 +28,25 @@ import kotlin.reflect.KProperty
  * field of a nested object). Assign a new value instead, or call [changed]. A plain `var` (not declared with [field])
  * is not observed either.
  *
- * Changes made in `commitComputedState()` count too: the view layer runs it before it picks the views to paint, so
+ * Changes made in `commitComputedState()` count too: the technology runs it before it picks the views to paint, so
  * they are painted in the same cycle.
  *
- * **Lifecycle:** the view layer owns the views. A view that draws this scope subscribes to it ([subscribe]) and
- * unsubscribes when it leaves the screen; a layer that keeps view objects drops them when the scope is released
- * ([onRelease]). The presenter releases its scope and its segments ([release]) when it is released, and a segment
- * when it leaves the screen.
+ * **Scopes inside scopes:** a scope held in a field (a presenter's below, a panel) or in a list declared with
+ * [scopes] (the rows) is drawn by a view of its own. A scope leaves the screen when it leaves the field of its parent:
+ * that change repaints the parent's view, and the technology lets go of the child's view there. The presenter only
+ * takes the scope out of the field.
  *
  * **As JSON** ([write]), the fields go out in declaration order, after `"id"` (the view instance): `null` and blank
- * strings are left out; numbers and booleans always go; a [Scope] (a presenter's below, a segment) goes as
- * `"<name>ViewId"` with the instance id of the view that draws it (the `viewOf` the layer passes), and a list declared
- * with [scopes] as `"<name>ViewIds"`; a [CubeView] goes as `"<name>Id"`; lists, maps, enums, [ScopeValue] and
- * [Externalizable] values are written as themselves. Plain `var`s (the actions) never go. A field declared with
- * `sent = false` never goes (a password the user types, for example). Override [write] only for a shape these
- * rules can't give.
+ * strings are left out; numbers and booleans always go; a [Scope] goes as `"<name>ViewId"` with the instance id of the
+ * view that draws it (the `viewIdOf` the technology passes), and a list declared with [scopes] as `"<name>ViewIds"`;
+ * lists, maps, enums, [ScopeValue] and [Externalizable] values are written as themselves. Plain `var`s (the actions)
+ * never go. A field declared with `sent = false` never goes (a password the user types, for example). Override [write]
+ * only for a shape these rules can't give.
  */
 @OptIn(ExperimentalAtomicApi::class)
 abstract class Scope {
 
-    private val listeners = AtomicReference<List<Listener>>(emptyList())
-
-    private val releaseListeners = AtomicReference<List<Listener>>(emptyList())
-
-    private val changes = AtomicInt(0)
-
-    private val releasedFlag = AtomicInt(0)
+    private val updater = AtomicReference<(() -> Unit)?>(null)
 
     private val fields = mutableListOf<Field<*>>()
 
@@ -65,24 +55,24 @@ abstract class Scope {
     private var syncScope: ((Map<String, Any?>) -> Unit)? = null
 
     /**
-     * Writes this scope as the JSON object of the view instance [instanceId]: see the rules above. [viewOf] gives the
-     * view of a scope held in a field (without it, such a field is left out).
+     * Writes this scope as the JSON object of the view instance [instanceId]: see the rules above. [viewIdOf] gives the
+     * instance id of the view of a scope held in a field (without it, such a field is left out).
      */
-    open fun write(instanceId: String, json: ExtensibleObjectOutput, viewOf: ((Scope) -> CubeView)? = null) {
+    open fun write(instanceId: String, json: ExtensibleObjectOutput, viewIdOf: ((Scope) -> String)? = null) {
         json.beginObject()
         json.name("id").value(instanceId)
         for (field in fields) {
             if (!field.sent) continue
-            if (field.scopes) writeScopes(json, field.name, field.value as List<*>, viewOf)
-            else writeField(json, field.name, field.value, viewOf)
+            if (field.scopes) writeScopes(json, field.name, field.value as List<*>, viewIdOf)
+            else writeField(json, field.name, field.value, viewIdOf)
         }
         json.endObject()
     }
 
     /** This scope as JSON, for the view instance [instanceId]. */
-    fun toJson(instanceId: String, viewOf: ((Scope) -> CubeView)? = null): String {
+    fun toJson(instanceId: String, viewIdOf: ((Scope) -> String)? = null): String {
         val jsonOutput = JsonOutputFactory.createStringOutput()
-        write(instanceId, jsonOutput.output, viewOf)
+        write(instanceId, jsonOutput.output, viewIdOf)
         return jsonOutput.resultString()
     }
 
@@ -111,46 +101,27 @@ abstract class Scope {
         syncScope?.invoke(formData)
     }
 
-    // :: Observation
+    // :: Who is told of a change
 
     /**
-     * Calls [listener] after each change, on the thread that made it, until the returned function is called. Many
-     * may subscribe (a view on screen, a layer that keeps view objects).
+     * Who is told when a field changes: what draws this scope. The technology installs it when it starts drawing the
+     * scope and takes it back ([clearUpdater]) when it stops; `null` tells no one.
      */
-    fun subscribe(listener: () -> Unit): () -> Unit = add(listeners, listener)
-
-    /**
-     * How many changes this scope has had: a view that read it while painting and subscribes afterwards compares it
-     * to see whether it missed one in between.
-     */
-    val version: Int get() = changes.load()
-
-    /** Tells the subscribers of a change the fields cannot see: inside an object already assigned. */
-    fun changed() {
-        changes.incrementAndFetch()
-        for (listener in listeners.load()) listener.fn()
+    fun setUpdater(updater: (() -> Unit)?) {
+        this.updater.store(updater)
     }
 
-    // :: Release
-
-    /** Whether [release] was called. */
-    val released: Boolean get() = releasedFlag.load() != 0
-
     /**
-     * Calls [listener] once, when the scope is released (a layer that keeps a view of it drops the view), unless the
-     * returned function is called before.
+     * Takes the updater back, if it is still the one given (the same instance): what drew this scope no longer does.
+     * A view that stopped drawing the scope does not take the updater of a view that started.
      */
-    fun onRelease(listener: () -> Unit): () -> Unit = add(releaseListeners, listener)
+    fun clearUpdater(updater: () -> Unit) {
+        this.updater.compareAndSet(updater, null)
+    }
 
-    /**
-     * The scope left the screen for good: tells who registered with [onRelease] and drops every subscriber. Called by
-     * the presenter for its scope and its segments; a second call does nothing.
-     */
-    fun release() {
-        if (!releasedFlag.compareAndSet(0, 1)) return
-        val toCall = releaseListeners.exchange(emptyList())
-        listeners.store(emptyList())
-        for (listener in toCall) listener.fn()
+    /** Asks for a repaint: for a change the fields cannot see, inside an object already assigned. */
+    fun changed() {
+        updater.load()?.invoke()
     }
 
     /**
@@ -162,8 +133,8 @@ abstract class Scope {
 
     /**
      * An observed list of scopes (the rows of a list, each one a view of its own): goes out as `"<name>ViewIds"`,
-     * empty included. Replace the list to change it; the presenter reuses the rows that stay (`segment`) and releases
-     * the ones that leave (`detach`).
+     * empty included. Replace the list to change it; the presenter reuses the rows that stay, by identity, and a row
+     * that leaves the list leaves the screen.
      */
     protected fun <S : Scope> scopes(): PropertyDelegateProvider<Scope, ReadWriteProperty<Scope, List<S>>> =
         PropertyDelegateProvider { scope, property ->
@@ -181,38 +152,20 @@ abstract class Scope {
         }
     }
 
-    /** A wrapper, so the same function subscribed twice is two subscriptions. */
-    private class Listener(val fn: () -> Unit)
-
     private companion object {
 
-        fun add(list: AtomicReference<List<Listener>>, fn: () -> Unit): () -> Unit {
-            val listener = Listener(fn)
-            while (true) {
-                val current = list.load()
-                if (list.compareAndSet(current, current + listener)) break
-            }
-            return {
-                while (true) {
-                    val current = list.load()
-                    if (listener !in current || list.compareAndSet(current, current - listener)) break
-                }
-            }
-        }
-
-        fun writeScopes(json: ExtensibleObjectOutput, name: String, rows: List<*>, viewOf: ((Scope) -> CubeView)?) {
-            if (viewOf == null) return
+        fun writeScopes(json: ExtensibleObjectOutput, name: String, rows: List<*>, viewIdOf: ((Scope) -> String)?) {
+            if (viewIdOf == null) return
             json.name(name + "ViewIds").beginArray()
-            for (row in rows) json.value(viewOf(row as Scope).instanceId)
+            for (row in rows) json.value(viewIdOf(row as Scope))
             json.endArray()
         }
 
-        fun writeField(json: ExtensibleObjectOutput, name: String, value: Any?, viewOf: ((Scope) -> CubeView)?) {
+        fun writeField(json: ExtensibleObjectOutput, name: String, value: Any?, viewIdOf: ((Scope) -> String)?) {
             when {
                 value == null -> {}
                 value is String -> if (value.isNotBlank()) json.name(name).value(value)
-                value is Scope -> if (viewOf != null) json.name(name + "ViewId").value(viewOf(value).instanceId)
-                value is CubeView -> json.name(name + "Id").value(value.instanceId)
+                value is Scope -> if (viewIdOf != null) json.name(name + "ViewId").value(viewIdOf(value))
                 else -> {
                     json.name(name)
                     writeValue(json, name, value)
@@ -235,7 +188,6 @@ abstract class Scope {
                 is Enum<*> -> json.value(value.name)
                 is ScopeValue -> value.writeJson(json)
                 is Externalizable -> value.writeExternal(json)
-                is CubeView -> json.value(value.instanceId)
                 is Iterable<*> -> {
                     json.beginArray()
                     for (item in value) writeValue(json, name, item)

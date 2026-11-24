@@ -1,7 +1,5 @@
 package br.com.wdc.store.nativeui.ios.views
 
-import br.com.wdc.framework.cube.ScopeViews
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.store.nativeui.ios.toolkit.ViewUtils
@@ -10,7 +8,7 @@ import br.com.wdc.store.nativeui.ios.theme.StoreIcons
 import br.com.wdc.store.nativeui.ios.theme.UIK
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import platform.UIKit.*
@@ -20,10 +18,10 @@ import platform.darwin.NSObject
 /**
  * Cart view — the rows, the total, and the buy button.
  * Each row is a view of its own ([CartItemViewIos], from the catalog): the cart only places them, in order.
- * A row that stays keeps its view; the presenter releases the views of the rows that leave.
+ * A row that stays keeps its view; the view of a row that leaves is released when the cart is drawn without it.
  */
 @OptIn(ExperimentalForeignApi::class)
-class CartViewIos(app: RootPresenter, private val views: ScopeViews, scope: CartScope) : AbstractViewIos<CartScope>("cart-view", app, scope) {
+class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewIos<CartScope>("cart-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: UIStackView
@@ -34,8 +32,6 @@ class CartViewIos(app: RootPresenter, private val views: ScopeViews, scope: Cart
     private lateinit var errorLabel: UILabel
     private lateinit var footerContainer: UIView
 
-    /** The row views currently in [stackView], in order. */
-    private var rowViews: List<CubeView> = emptyList()
 
     private val actions = CartActions(this).also { retainForGC(it) }
 
@@ -285,6 +281,8 @@ class CartViewIos(app: RootPresenter, private val views: ScopeViews, scope: Cart
 
     override fun doUpdate() {
         val rows = scope.rows
+        // Asked for on every drawing: a row view not asked for is released
+        val rowViews = rows.map(::viewOf)
 
         // Rows (guard by reference: the presenter assigns a new list when the rows change)
         if (rows !== lastRows) {
@@ -293,7 +291,7 @@ class CartViewIos(app: RootPresenter, private val views: ScopeViews, scope: Cart
             emptyContainer.hidden = !empty
             scrollView.hidden = empty
             backButton.hidden = !empty
-            syncRows(rows.map(views::viewOf))
+            syncRows(rowViews)
         }
 
         // Total (guard), computed by the presenter
@@ -317,21 +315,16 @@ class CartViewIos(app: RootPresenter, private val views: ScopeViews, scope: Cart
     }
 
     /**
-     * Places the row views in [stackView] in the given order. Views that stay are moved, not rebuilt;
-     * views that left are only detached (releasing them is the presenter's job, through `app.releaseView`).
+     * Places the row views in [stackView] in the given order. Views that stay are moved, not rebuilt; the views of
+     * rows that left are released when this drawing ends (they were not asked for), which takes them off the screen.
      */
-    private fun syncRows(views: List<CubeView>) {
-        val next = views.filterIsInstance<AbstractViewIos<*>>()
-        for (old in rowViews) {
-            if (next.none { it === old }) (old as? AbstractViewIos<*>)?.rootView?.removeFromSuperview()
-        }
+    private fun syncRows(next: List<AbstractViewIos<*>>) {
         next.forEachIndexed { index, view ->
             val arranged = stackView.arrangedSubviews
             if (index >= arranged.size || arranged[index] !== view.rootView) {
                 stackView.insertArrangedSubview(view.rootView, atIndex = index.toULong())
             }
         }
-        rowViews = next
         stackView.setNeedsLayout()
     }
 

@@ -131,6 +131,7 @@ export class Application {
 
     React.useEffect(() => {
       // attached
+      this.viewGarbageCollector.mount(vsid)
       return () => {
         // detached
         this.viewGarbageCollector.mark(binding)

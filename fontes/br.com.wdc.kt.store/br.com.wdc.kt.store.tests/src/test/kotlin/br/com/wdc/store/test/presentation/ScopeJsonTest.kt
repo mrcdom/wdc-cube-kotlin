@@ -2,7 +2,6 @@ package br.com.wdc.store.test.presentation
 
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.Scope
 import br.com.wdc.store.presentation.presenter.open.login.LoginScope
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
@@ -25,11 +24,6 @@ class ScopeJsonTest {
         JsonOutputFactory.installCommon()
     }
 
-    private class View(override val instanceId: String) : CubeView {
-        override fun update() {}
-        override fun release() {}
-    }
-
     @Test
     fun login_neverSendsThePassword() {
         val scope = LoginScope().apply { userName = "admin"; password = "admin"; loading = true }
@@ -42,7 +36,7 @@ class ScopeJsonTest {
     fun home_sendsTheScopesItHolds_asTheIdsOfTheirViews() {
         val product = ProductsPanelScope()
         val cart = CartScope()
-        val views = mapOf<Scope, CubeView>(cart to View("p:7"), product to View("a:2"))
+        val views = mapOf<Scope, String>(cart to "p:7", product to "a:2")
         val scope = HomeScope().apply { content = cart; productsPanel = product; nickName = "John"; cartItemCount = 3 }
         assertEquals(
             """{"id":"h:1","contentViewId":"p:7","productsPanelViewId":"a:2","nickName":"John","cartItemCount":3,"errorCode":0}""",
@@ -53,7 +47,7 @@ class ScopeJsonTest {
     @Test
     fun cart_sendsItsRows_asTheIdsOfTheirViews_andTheTotal() {
         val row = CartItemScope().apply { productId = 4; name = "Ball"; price = 12.5; quantity = 2; image = "x.png" }
-        val views = mapOf<Scope, CubeView>(row to View("i:9"))
+        val views = mapOf<Scope, String>(row to "i:9")
         assertEquals(
             """{"id":"c:2","rowsViewIds":["i:9"],"total":25.0,"errorCode":0}""",
             CartScope().apply { rows = listOf(row); total = 25.0 }.toJson("c:2") { views.getValue(it) },

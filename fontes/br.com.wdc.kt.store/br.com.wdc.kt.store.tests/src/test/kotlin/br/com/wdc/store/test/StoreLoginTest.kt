@@ -62,7 +62,7 @@ class StoreLoginTest : BasePresentationTest() {
         assertNotNull(productsState.products, "Missing product list")
 
         // Simulate the view reporting capacity (no real view in tests)
-        val purchasesMock = PurchasesPanelViewMock.cast(restrictedView.scope.purchasesPanel?.let(app.views::viewOf))
+        val purchasesMock = PurchasesPanelViewMock.cast(restrictedView.scope.purchasesPanel?.let(app::viewOf))
         purchasesMock.scope.onItemSizeCapacityChanged(3)
 
         assertEquals("John Smith", restrictedView.scope.nickName)

@@ -2,7 +2,6 @@ package br.com.wdc.store.test
 
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.AbstractPresenter
 import br.com.wdc.framework.cube.Scope
 import br.com.wdc.framework.cube.ScopeSlot

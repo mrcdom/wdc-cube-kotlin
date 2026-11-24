@@ -5,8 +5,6 @@ import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertSame
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
@@ -24,30 +22,15 @@ class ScopeTest {
 
     }
 
-    private class TestView : CubeView {
-        var updates = 0
-        var onRelease: () -> Unit = {}
-        override val instanceId: String = "test"
-        override fun update() {
-            updates++
-        }
-        override fun release() = onRelease()
-    }
-
-    private class TestPresenter(app: CubeApplication) : AbstractCubePresenter<CubeApplication>(app) {
-        val scope = bind(TestScope())
-    }
-
     @Test
-    fun assigningADifferentValue_notifies_andTheSameValueDoesNot() {
+    fun assigningADifferentValue_tellsTheUpdater_andTheSameValueDoesNot() {
         val scope = TestScope()
         var changes = 0
-        scope.subscribe { changes++ }
+        scope.setUpdater { changes++ }
 
         scope.name = "a"
         scope.count = 1
         assertEquals(2, changes)
-        assertEquals(2, scope.version)
 
         scope.name = "a"
         scope.count = 1
@@ -63,7 +46,7 @@ class ScopeTest {
     fun aChangeInsideAnObject_needsChanged() {
         val scope = TestScope()
         var changes = 0
-        scope.subscribe { changes++ }
+        scope.setUpdater { changes++ }
 
         scope.tags += "inside"
         assertEquals(0, changes, "the field cannot see a mutation inside the object")
@@ -72,62 +55,33 @@ class ScopeTest {
     }
 
     @Test
-    fun manySubscribers_eachUntilItUnsubscribes() {
+    fun aScopeWithNoUpdater_justKeepsTheValues() {
         val scope = TestScope()
-        var first = 0
-        var second = 0
-        val unsubscribeFirst = scope.subscribe { first++ }
-        scope.subscribe { second++ }
+        scope.count = 3
+        scope.changed()
+        assertEquals(3, scope.count)
+    }
 
+    @Test
+    fun clearUpdater_takesBackOnlyTheUpdaterGiven() {
+        val scope = TestScope()
+        var old = 0
+        var new = 0
+        val oldUpdater: () -> Unit = { old++ }
+        val newUpdater: () -> Unit = { new++ }
+
+        scope.setUpdater(oldUpdater)
         scope.count = 1
-        unsubscribeFirst()
-        unsubscribeFirst()
+        // another view starts drawing the scope; the old one stops afterwards
+        scope.setUpdater(newUpdater)
+        scope.clearUpdater(oldUpdater)
         scope.count = 2
-        assertEquals(1, first)
-        assertEquals(2, second)
-    }
+        assertEquals(1, old)
+        assertEquals(1, new, "the old view did not take the new view's updater")
 
-    @Test
-    fun release_tellsOnce_andDropsTheSubscribers() {
-        val scope = TestScope()
-        var changes = 0
-        var releases = 0
-        var cancelled = 0
-        scope.subscribe { changes++ }
-        scope.onRelease { releases++ }
-        val cancel = scope.onRelease { cancelled++ }
-        cancel()
-
-        scope.release()
-        scope.release()
-        scope.count = 1
-        assertTrue(scope.released)
-        assertEquals(1, releases)
-        assertEquals(0, cancelled, "removed before the release")
-        assertEquals(0, changes, "no subscriber after the release")
-    }
-
-    @Test
-    fun theLayersViews_repaintWithTheScope_andAreReleasedWithIt() {
-        val app = object : CubeApplication() {}
-        val view = TestView()
-        var released = 0
-        val views = ScopeViews().register<TestScope> { view.also { it.onRelease = { released++ } } }
-        val presenter = TestPresenter(app)
-
-        presenter.scope.name = "before the view"
-        assertSame(view, views.viewOf(presenter.scope), "the catalog's view, created once")
-        assertSame(view, views.viewOf(presenter.scope))
-        presenter.scope.name = "with the view"
-        presenter.scope.count = 7
-        assertEquals(2, view.updates)
-
-        presenter.release()
-        assertTrue(presenter.scope.released, "the presenter releases its scope")
-        assertNull(views.viewOrNull(presenter.scope), "dropped with its scope")
-        assertEquals(1, released)
-        presenter.scope.count = 8
-        assertEquals(2, view.updates)
+        scope.clearUpdater(newUpdater)
+        scope.count = 3
+        assertEquals(1, new, "no one is told after the updater is taken back")
     }
 
     private class Holder : Scope() {
@@ -137,19 +91,15 @@ class ScopeTest {
 
     @Test
     fun aScopeInAField_goesAsTheIdOfItsView() {
-        val views = ScopeViews().register<TestScope> { TestView() }.fallback { s -> TestView().takeIf { s is Holder } }
+        val ids = mutableMapOf<Scope, String>()
+        val viewIdOf = { s: Scope -> ids.getOrPut(s) { "v:${ids.size + 1}" } }
         val holder = Holder().apply { content = TestScope(); rows = listOf(TestScope(), TestScope()) }
         assertEquals(
-            """{"id":"h:1","contentViewId":"test","rowsViewIds":["test","test"]}""",
-            holder.toJson("h:1", views::viewOf),
+            """{"id":"h:1","contentViewId":"v:1","rowsViewIds":["v:2","v:3"]}""",
+            holder.toJson("h:1", viewIdOf),
         )
-        assertEquals("""{"id":"h:1","rowsViewIds":[]}""", Holder().toJson("h:1", views::viewOf), "an empty list still goes")
-    }
-
-    @Test
-    fun aScopeWithNoViewInTheCatalog_failsNamingIt() {
-        val e = assertFailsWith<IllegalStateException> { ScopeViews().viewOf(TestScope()) }
-        assertTrue("TestScope" in e.message!!, e.message)
+        assertEquals("""{"id":"h:1","rowsViewIds":[]}""", Holder().toJson("h:1", viewIdOf), "an empty list still goes")
+        assertEquals("""{"id":"h:1"}""", holder.toJson("h:1"), "without viewIdOf, the scopes are left out")
     }
 
     private enum class Color { RED }
@@ -169,7 +119,6 @@ class ScopeTest {
         var price: Double by field(2.5)
         var open: Boolean by field(false)
         var color: Color by field(Color.RED)
-        var content: CubeView? by field(TestView())
         var points: List<Point> by field(listOf(Point(1, 2)))
         var tags: Map<String, Long> by field(mapOf("a" to 1L))
     }
@@ -178,7 +127,7 @@ class ScopeTest {
     fun write_sendsTheFieldsInOrder_byTheirRules() {
         assertEquals(
             """{"id":"v:1","title":"Cart","count":0,"price":2.5,"open":false,"color":"RED",""" +
-                """"contentId":"test","points":[{"x":1,"y":2}],"tags":{"a":1}}""",
+                """"points":[{"x":1,"y":2}],"tags":{"a":1}}""",
             WireScope().toJson("v:1"),
         )
     }
@@ -190,30 +139,5 @@ class ScopeTest {
         }
         val e = assertFailsWith<IllegalStateException> { Odd().toJson("v:1") }
         assertTrue("thing" in e.message!!, e.message)
-    }
-
-    private class OwnerPresenter(app: CubeApplication) : AbstractCubePresenter<CubeApplication>(app) {
-        val scope = bind(Holder())
-        val panel = segment(TestScope())
-    }
-
-    @Test
-    fun aSegment_hasItsOwnView_andIsReleasedWithThePresenter() {
-        val app = object : CubeApplication() {}
-        val ownerView = TestView()
-        val panelView = TestView()
-        val views = ScopeViews().register<Holder> { ownerView }.register<TestScope> { panelView }
-        val presenter = OwnerPresenter(app)
-        views.viewOf(presenter.scope)
-        views.viewOf(presenter.panel)
-
-        presenter.panel.name = "changed"
-        assertEquals(1, panelView.updates)
-        assertEquals(0, ownerView.updates, "the owner does not repaint for its segment")
-
-        presenter.release()
-        assertTrue(presenter.panel.released)
-        assertNull(views.viewOrNull(presenter.panel))
-        assertEquals(0, views.size)
     }
 }

@@ -43,8 +43,8 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private var cart: CartManager? = null
 
     // the two panels: segments of the home scope, without presenters of their own
-    private val products = segment(ProductsPanelScope())
-    private val purchases = segment(PurchasesPanelScope())
+    private val products = ProductsPanelScope()
+    private val purchases = PurchasesPanelScope()
     private var onCartCommitListenerRemover: () -> Unit = NOOP
     private var onCartChangeListenerRemover: () -> Unit = NOOP
 
@@ -76,8 +76,6 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
         onCartChangeListenerRemover()
         onCartChangeListenerRemover = NOOP
-
-        super.release()
     }
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {

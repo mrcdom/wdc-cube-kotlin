@@ -7,7 +7,7 @@ import br.com.wdc.store.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.store.nativeui.ios.theme.StoreColors
 import br.com.wdc.store.nativeui.ios.theme.UIK
 import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.products.structs.ProductInfo
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -22,7 +22,7 @@ import platform.darwin.NSObject
  * Uses ListSlot with ProductCardView sub-views for efficient recycling.
  */
 @OptIn(ExperimentalForeignApi::class)
-class ProductsPanelViewIos(app: RootPresenter, scope: ProductsPanelScope) : AbstractViewIos<ProductsPanelScope>("products-panel-view", app, scope) {
+class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScope) : AbstractViewIos<ProductsPanelScope>("products-panel-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: FlowLayoutView
@@ -122,7 +122,7 @@ class ProductsPanelViewIos(app: RootPresenter, scope: ProductsPanelScope) : Abst
         productsSlot = newListSlot(
             stackView,
             factory = { ProductCardView(app, scope).also { it.initialize() } },
-            updater = { view, item -> view.setState(item); view.forceUpdate() }
+            updater = { view, item -> view.setState(item); view.redraw() }
         )
     }
 
@@ -155,7 +155,7 @@ class ProductsPanelViewIos(app: RootPresenter, scope: ProductsPanelScope) : Abst
 // --- Item sub-view: ProductCardView ---
 
 @OptIn(ExperimentalForeignApi::class)
-private class ProductCardView(app: RootPresenter, scope: ProductsPanelScope) : AbstractViewIos<ProductsPanelScope>("product-card", app, scope) {
+private class ProductCardView(app: IosNativeRootPresenter, scope: ProductsPanelScope) : AbstractViewIos<ProductsPanelScope>("product-card", app, scope) {
 
     private lateinit var imageView: UIImageView
     private lateinit var nameLabel: UILabel

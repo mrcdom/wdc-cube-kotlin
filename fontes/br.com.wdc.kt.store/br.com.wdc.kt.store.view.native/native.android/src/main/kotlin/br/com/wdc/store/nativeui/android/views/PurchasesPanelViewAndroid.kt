@@ -10,11 +10,11 @@ import br.com.wdc.store.nativeui.android.theme.*
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.store.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelScope
 import br.com.wdc.store.presentation.presenter.restricted.home.structs.PurchaseInfo
 
-class PurchasesPanelViewAndroid(app: RootPresenter, scope: PurchasesPanelScope) : AbstractViewAndroid<PurchasesPanelScope>("purchases-panel-view", app, scope) {
+class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: PurchasesPanelScope) : AbstractViewAndroid<PurchasesPanelScope>("purchases-panel-view", app, scope) {
 
     private lateinit var stackView: LinearLayout
     private lateinit var emptyLabel: TextView
@@ -204,7 +204,7 @@ class PurchasesPanelViewAndroid(app: RootPresenter, scope: PurchasesPanelScope) 
             purchasesSlot = newListSlot(
                 stackView,
                 factory = { PurchaseCardView(app, scope).also { it.initialize() } },
-                updater = { view, item -> view.setState(item); view.forceUpdate() }
+                updater = { view, item -> view.setState(item); view.redraw() }
             )
 
             // Recalculate capacity when stackView height changes (e.g. orientation change)
@@ -247,7 +247,7 @@ class PurchasesPanelViewAndroid(app: RootPresenter, scope: PurchasesPanelScope) 
             safeAction("capacityInit") { scope.onItemSizeCapacityChanged(capacity) }
         } else if (lastCapacity < 0) {
             // stackView not yet laid out, schedule recalculation
-            stackView.post { forceUpdate() }
+            stackView.post { redraw() }
             return
         }
 
@@ -294,7 +294,7 @@ class PurchasesPanelViewAndroid(app: RootPresenter, scope: PurchasesPanelScope) 
 
 // --- Purchase Card sub-view ---
 
-private class PurchaseCardView(app: RootPresenter, scope: PurchasesPanelScope) : AbstractViewAndroid<PurchasesPanelScope>("purchase-card", app, scope) {
+private class PurchaseCardView(app: AndroidNativeRootPresenter, scope: PurchasesPanelScope) : AbstractViewAndroid<PurchasesPanelScope>("purchase-card", app, scope) {
 
     private lateinit var dateLabel: TextView
     private lateinit var totalLabel: TextView

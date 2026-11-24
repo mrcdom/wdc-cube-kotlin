@@ -26,7 +26,7 @@ import web.html.HTMLButtonElement
 /**
  * A slot repaints only when the parent puts a different scope in it; a view repaints itself when its own scope
  * changes. Cube views are independent: a parent repaint is no reason to repaint the views in its slots. A view that
- * left the screen is not painted again: it unsubscribed when it unmounted.
+ * left the screen is not painted again: it took its updater back from the scope when it unmounted.
  */
 class RenderSlotTest {
 

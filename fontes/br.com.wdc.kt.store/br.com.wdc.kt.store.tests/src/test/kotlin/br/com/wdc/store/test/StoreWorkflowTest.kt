@@ -117,7 +117,7 @@ class StoreWorkflowTest : BasePresentationTest() {
     @Test
     fun purchasesPanel_pagePastTheEnd_showsTheLastPageWithItsItems() = runBlocking {
         val restrictedView = gotoRestricted()
-        val panel = PurchasesPanelViewMock.cast(restrictedView.scope.purchasesPanel?.let(app.views::viewOf))
+        val panel = PurchasesPanelViewMock.cast(restrictedView.scope.purchasesPanel?.let(app::viewOf))
         panel.scope.pageSize = 1
         panel.scope.onPageChange(50) // admin has two purchases: page 50 does not exist
         assertEquals(1, panel.scope.page, "adjusted to the last one")
@@ -127,7 +127,7 @@ class StoreWorkflowTest : BasePresentationTest() {
     @Test
     fun productsPanel_doesNotShowAMadeUpDescription_andComesInAStableOrder() = runBlocking {
         val restrictedView = gotoRestricted()
-        val panel = ProductsPanelViewMock.cast(restrictedView.scope.productsPanel?.let(app.views::viewOf))
+        val panel = ProductsPanelViewMock.cast(restrictedView.scope.productsPanel?.let(app::viewOf))
         val products = panel.scope.products!!
         assertTrue(products.none { it.description == "unknown" }, "the description was not read: it must not travel made up")
         assertEquals(products.map { it.name }.sortedBy { it!!.lowercase() }, products.map { it.name }, "ordered by name")

@@ -1,9 +1,8 @@
 package br.com.wdc.store.nativeui.ios.toolkit
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.Scope
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.launch
 import platform.Foundation.NSLog
@@ -19,13 +18,14 @@ interface Releasable {
 /**
  * Base class for all iOS native views in the Cube MVP architecture.
  *
- * A view draws one [Scope]; it knows the application ([app]) and its scope, never the presenter.
- * The layer's [br.com.wdc.framework.cube.ScopeViews] creates it the first time the scope is asked for, and releases
- * it with the scope.
+ * A view draws one [Scope]; it knows the application ([app]) and its scope, never the presenter. The application
+ * makes it the first time the scope is asked for ([IosNativeRootPresenter.viewOf]) and installs its [updater] in the
+ * scope: a change marks the view dirty, and the scheduler redraws it once per run-loop pass ([ViewUpdateScheduler]).
  *
- * Implements dirty-flag update throttling: when the scope changes (update()),
- * a dirty flag is set and the actual doUpdate() is scheduled on the main
- * run-loop via DispatchQueue.main.async (coalesces multiple calls in the same frame).
+ * A view that holds other scopes (a slot, the rows of a list) asks for their views with [viewOf] while it draws
+ * ([redraw]); the views it did not ask for in a drawing are the ones whose scope left, and they are released — with
+ * the views they held in turn, unless another view still holds them. That is how a scope that leaves the screen lets
+ * go of its UIKit views: the presenters do not take part.
  *
  * Subclasses implement:
  * - createView(): build the UIView hierarchy (called once — the "template")
@@ -36,9 +36,9 @@ interface Releasable {
 @OptIn(ExperimentalForeignApi::class)
 abstract class AbstractViewIos<S : Scope>(
     private val viewId: String,
-    protected val app: RootPresenter,
-    protected val scope: S
-) : CubeView {
+    protected val app: IosNativeRootPresenter,
+    val scope: S
+) {
 
     companion object {
         /**
@@ -59,28 +59,71 @@ abstract class AbstractViewIos<S : Scope>(
         gcRoots.add(obj)
     }
 
-    /** The root UIView for this CubeView */
+    /** The root UIView of this view. */
     lateinit var rootView: UIView
         protected set
 
-    private var released = false
+    /** What the scope is told to call on a change: kept to take back only this one. */
+    val updater: () -> Unit = { update() }
+
+    /** The views of the scopes this one holds. */
+    private val children = LinkedHashSet<AbstractViewIos<*>>()
+
+    /** The views that hold this one. */
+    private val holders = HashSet<AbstractViewIos<*>>()
+
+    /** The views asked for during the drawing under way; `null` outside one. */
+    private var drawn: MutableSet<AbstractViewIos<*>>? = null
+
+    /** Whether this view was let go of ([release]): it is never marked dirty nor drawn again. */
+    var released = false
+        private set
+
     private var firstRender = true
 
-    override val instanceId: String get() = viewId
+    val instanceId: String get() = viewId
 
-    override fun update() {
+    /** The scope changed: draw it again. */
+    fun update() {
         if (released) return
         ViewUpdateScheduler.markDirty(this, app)
     }
 
-    override fun release() {
+    /** The view of a scope this one holds (a presenter's below, a panel, a row), asked for while drawing. */
+    protected fun viewOf(held: Scope): AbstractViewIos<*> {
+        val child = app.viewOf(held)
+        child.holders += this
+        children += child
+        drawn?.add(child)
+        return child
+    }
+
+    /**
+     * Lets go of this view: the scope no longer tells it of changes, its UIView leaves the screen, and so do the views
+     * it held that no other view holds.
+     */
+    fun release() {
         if (released) return
         released = true
-        ViewUpdateScheduler.removeDirty(this)
+        scope.clearUpdater(updater)
+        app.forgetView(this)
+        if (::rootView.isInitialized) rootView.removeFromSuperview()
+        onRelease()
         myListSlots.forEach { it.releaseAll() }
         myListSlots.clear()
         myGcRetained.forEach { gcRoots.remove(it) }
         myGcRetained.clear()
+        val held = children.toList()
+        children.clear()
+        for (child in held) child.dropHolder(this)
+    }
+
+    /** The view's own cleanup when it is released (observers, timers). */
+    protected open fun onRelease() {}
+
+    private fun dropHolder(holder: AbstractViewIos<*>) {
+        holders -= holder
+        if (holders.isEmpty()) release()
     }
 
     /**
@@ -111,23 +154,34 @@ abstract class AbstractViewIos<S : Scope>(
     }
 
     /**
-     * Initialize the view: creates the hierarchy and forces the first update.
+     * Initialize the view: creates the hierarchy and draws it the first time.
      */
     fun initialize(): AbstractViewIos<S> {
         rootView = createView()
-        forceUpdate()
+        redraw()
         return this
     }
 
     /**
-     * Force immediate update (bypasses scheduler).
+     * Draws the scope now (the scheduler calls it for the dirty views); the held views not asked for while drawing
+     * are released.
      */
-    fun forceUpdate() {
+    fun redraw() {
         if (released) return
+        val asked = HashSet<AbstractViewIos<*>>()
+        drawn = asked
         try {
             doUpdate()
         } catch (e: Exception) {
             NSLog("AbstractViewIos[$viewId] doUpdate error: ${e.message}")
+        } finally {
+            drawn = null
+            for (child in children.toList()) {
+                if (child !in asked) {
+                    children -= child
+                    child.dropHolder(this)
+                }
+            }
         }
     }
 
@@ -159,18 +213,18 @@ abstract class AbstractViewIos<S : Scope>(
      * A single-child view slot backed by a UIView container.
      */
     class ViewSlot(private val container: UIView) {
-        var current: CubeView? = null
+        var current: AbstractViewIos<*>? = null
             private set
 
         /**
          * Synchronize the slot: if newView differs from current, swap.
          * Returns true if the view changed.
          */
-        fun sync(newView: CubeView?): Boolean {
+        fun sync(newView: AbstractViewIos<*>?): Boolean {
             if (current === newView) return false
             val oldSubviews = container.subviews.toList()
             oldSubviews.forEach { (it as? UIView)?.removeFromSuperview() }
-            if (newView is AbstractViewIos<*>) {
+            if (newView != null) {
                 val childView = newView.rootView
                 childView.translatesAutoresizingMaskIntoConstraints = false
                 container.addSubview(childView)

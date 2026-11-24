@@ -8,6 +8,7 @@ import react.Props
 import react.createRequiredContext
 import react.memo
 import react.useEffectWithCleanup
+import react.useMemo
 import react.useRequired
 import react.useState
 import kotlin.reflect.KClass
@@ -81,23 +82,26 @@ private var nextScopeKey = 0
 
 /**
  * Ties the calling component to [scope]: it repaints when the scope changes, once per paint cycle
- * ([ViewUpdateScheduler]). Subscribes when it mounts and unsubscribes when it unmounts, so a view on screen needs
- * nothing else to start or stop: there is no view to release. A change between the first render and the
- * subscription is not lost: the scope's [version][Scope.version] tells it.
+ * ([ViewUpdateScheduler]). The component installs itself as the scope's updater as it starts rendering, before it
+ * reads the scope — so no change is lost — and takes the updater back when it unmounts: there is no view to release,
+ * React drops what leaves the screen.
  */
 fun <S : Scope> useScope(scope: S): S {
     val setPainted = useState(0).component2()
-    val seen = scope.version
+    val painter = useMemo(scope) { Painter { setPainted { it + 1 } } }
+    scope.setUpdater(painter.updater)
     useEffectWithCleanup(scope) {
-        val repaint: () -> Unit = { setPainted { it + 1 } }
-        val unsubscribe = scope.subscribe { ViewUpdateScheduler.markDirty(repaint) }
-        if (scope.version != seen) ViewUpdateScheduler.markDirty(repaint)
         onCleanup {
-            unsubscribe()
-            ViewUpdateScheduler.removeDirty(repaint)
+            scope.clearUpdater(painter.updater)
+            ViewUpdateScheduler.removeDirty(painter.repaint)
         }
     }
     return scope
+}
+
+/** The repaint of one component, and the updater a scope calls to ask for it. */
+private class Painter(val repaint: () -> Unit) {
+    val updater: () -> Unit = { ViewUpdateScheduler.markDirty(repaint) }
 }
 
 /**

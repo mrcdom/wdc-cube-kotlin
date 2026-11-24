@@ -1,34 +1,18 @@
 package br.com.wdc.store.nativeui.ios
 
-import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.framework.commons.concurrent.IosScheduledExecutor
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
-import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.store.domain.security.IosCryptoProvider
 import br.com.wdc.store.nativeui.ios.theme.StoreColors
-import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.ViewUtils
-import br.com.wdc.store.nativeui.ios.views.*
 import br.com.wdc.store.persistence.client.IosHttpTransport
 import br.com.wdc.store.persistence.client.RestConfig
 import br.com.wdc.store.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.store.presentation.presenter.RootKeys
-import br.com.wdc.store.presentation.presenter.RootScope
-import br.com.wdc.store.presentation.presenter.open.login.LoginScope
-import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
-import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
-import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
-import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScope
-import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelScope
-import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
-import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import platform.Foundation.NSThread
 import platform.UIKit.*
 
 /**
@@ -56,9 +40,8 @@ fun createRootViewController(baseUrl: String): UIViewController {
     // Configure view utilities
     ViewUtils.baseUrl = baseUrl
 
-    // Create the application and its view catalog (before the first navigation)
+    // Create the application (it holds the view catalog)
     val app = IosNativeRootPresenter()
-    val views = createScopeViews(app)
 
     // Create root ViewController
     val viewController = UIViewController()
@@ -67,11 +50,9 @@ fun createRootViewController(baseUrl: String): UIViewController {
     // Start navigation
     kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
-    // Mount root view
-    val rootView = views.viewOf(app.scope) as? AbstractViewIos<*>
-
-    if (rootView != null) {
-        val rv = rootView.rootView
+    // Mount the root view: every other view is asked for by the view that holds its scope
+    run {
+        val rv = app.viewOf(app.scope).rootView
         rv.translatesAutoresizingMaskIntoConstraints = false
         viewController.view.addSubview(rv)
 
@@ -84,35 +65,4 @@ fun createRootViewController(baseUrl: String): UIViewController {
     }
 
     return viewController
-}
-
-/**
- * Ensures the given block runs on the main thread.
- * If already on main, executes directly; otherwise dispatches synchronously.
- */
-private fun <T> onMainThread(block: () -> T): T {
-    return if (NSThread.isMainThread) {
-        block()
-    } else {
-        runBlocking(Dispatchers.Main) { block() }
-    }
-}
-
-/**
- * The iOS views: which view draws each kind of scope, and the view of each scope on screen — created the first time
- * its scope is asked for ([ScopeViews.viewOf]) and released with it. Views are UIKit objects, so they are built on the
- * main thread.
- */
-private fun createScopeViews(app: RootPresenter): ScopeViews {
-    val views = ScopeViews()
-    return views
-        .register<RootScope> { onMainThread { RootViewIos(app, views, it).initialize() } }
-        .register<LoginScope> { onMainThread { LoginViewIos(app, it).initialize() } }
-        .register<HomeScope> { onMainThread { HomeViewIos(app, views, it).initialize() } }
-        .register<ProductsPanelScope> { onMainThread { ProductsPanelViewIos(app, it).initialize() } }
-        .register<PurchasesPanelScope> { onMainThread { PurchasesPanelViewIos(app, it).initialize() } }
-        .register<ProductScope> { onMainThread { ProductViewIos(app, it).initialize() } }
-        .register<CartScope> { onMainThread { CartViewIos(app, views, it).initialize() } }
-        .register<CartItemScope> { onMainThread { CartItemViewIos(app, it).initialize() } }
-        .register<ReceiptScope> { onMainThread { ReceiptViewIos(app, it).initialize() } }
 }

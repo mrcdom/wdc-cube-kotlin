@@ -3,7 +3,7 @@ package br.com.wdc.store.nativeui.ios.views
 import br.com.wdc.store.nativeui.ios.toolkit.*
 import br.com.wdc.store.nativeui.ios.theme.*
 import br.com.wdc.store.presentation.presenter.open.login.LoginScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import platform.CoreGraphics.CGSizeMake
@@ -16,7 +16,7 @@ import platform.darwin.NSObject
  * Matches the web reference exactly.
  */
 @OptIn(ExperimentalForeignApi::class)
-class LoginViewIos(app: RootPresenter, scope: LoginScope) : AbstractViewIos<LoginScope>("login-view", app, scope) {
+class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractViewIos<LoginScope>("login-view", app, scope) {
 
     // UI references for doUpdate()
     private lateinit var userField: UITextField
