@@ -56,7 +56,7 @@ internal object PurchaseItemApiController {
         rpc.sanitizeOutput = ::dropPassword
         rpc.beforeInsert = { item, request ->
             ApiSecurity.ownerScope(request)?.let { owner -> requireOwnPurchase(owner, item.purchaseId) }
-            ItemPrices.applyTo(item)
+            // the price is set by the repository, in the INSERT
         }
         // the scope already keeps the update to the caller's own items; an item can only move to another purchase of theirs
         rpc.beforeUpdate = { data, request ->

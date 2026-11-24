@@ -48,8 +48,7 @@ internal object PurchaseApiController {
         rpc.beforeInsert = { purchase, request ->
             // a purchase always belongs to whoever makes it
             ApiSecurity.ownerScope(request)?.let { owner -> purchase.user = User().apply { id = owner } }
-            // the items that come with it are priced by the server
-            purchase.items?.forEach { ItemPrices.applyTo(it) }
+            // the items that come with it are priced by the repository, in the INSERT
         }
         // the scope already keeps the update to the caller's own purchases; this keeps the purchase theirs
         rpc.beforeUpdate = { data, request ->

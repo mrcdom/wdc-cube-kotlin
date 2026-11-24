@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.persistence.repository.purchaseitem
 
 import br.com.wdc.framework.domain.exception.InvalidRequestException
+import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.framework.jooq.CriterionTranslator
 import br.com.wdc.framework.jooq.JsonChildQueryBuilder
 import br.com.wdc.framework.jooq.JsonQuery
@@ -14,6 +15,7 @@ import br.com.wdc.shopping.persistence.repository.product.ProductRepositoryImpl
 import br.com.wdc.shopping.persistence.repository.purchase.PurchaseRepositoryImpl
 import br.com.wdc.shopping.persistence.scheme.sequences.SQ_PURCHASEITEM
 import br.com.wdc.shopping.persistence.scheme.tables.EnPurchaseitem
+import br.com.wdc.shopping.persistence.scheme.tables.references.EN_PRODUCT
 import br.com.wdc.shopping.persistence.scheme.tables.references.EN_PURCHASE
 import br.com.wdc.shopping.persistence.scheme.tables.references.EN_PURCHASEITEM
 import java.math.BigDecimal
@@ -132,10 +134,24 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
             cq.criteriaAs<PurchaseItemCriteria>()?.let { conditions(cq.childTable, it, cq.uniqueName("xp")) } ?: DSL.noCondition()
 
         /** Writes the item row — also used by the purchase insert cascade. */
+        /**
+         * Inserts an item (alone or with its purchase). **Its price is the product's, read here**, whatever the
+         * caller sent: the server prices every item, on every path (in process, REST, checkout). An item without a
+         * product, or of one that does not exist, is refused.
+         */
         internal fun insertRow(bean: PurchaseItem, projection: PurchaseItem?): Boolean {
             bean.amount?.let(::checkAmount)
+            bean.price = productPrice(bean.productId)
+            projection?.let { if (it.price == null) it.price = ProjectionValues.f64 }
             if (bean.id == null) bean.id = BaseRepositoryImpl.dsl().nextval(SQ_PURCHASEITEM)
             return QUERY.insert(bean, projection)
+        }
+
+        private fun productPrice(productId: Long?): Double {
+            val id = productId ?: throw InvalidRequestException("purchase item without the product")
+            val row = BaseRepositoryImpl.dsl().select(EN_PRODUCT.PRICE).from(EN_PRODUCT).where(EN_PRODUCT.ID.eq(id))
+                .fetchOne() ?: throw InvalidRequestException("unknown product: $id")
+            return row.value1()?.toDouble() ?: throw InvalidRequestException("product $id has no price")
         }
 
         private fun checkAmount(amount: Int) {
