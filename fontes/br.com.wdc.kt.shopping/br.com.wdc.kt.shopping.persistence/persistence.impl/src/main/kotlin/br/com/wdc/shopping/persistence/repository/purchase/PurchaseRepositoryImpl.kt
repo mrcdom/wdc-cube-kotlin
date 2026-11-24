@@ -155,6 +155,7 @@ class PurchaseRepositoryImpl : BaseRepositoryImpl(), PurchaseRepository {
                 CriterionTranslator.translate(t.USERID, criteria.userId),
                 CriterionTranslator.translate(t.BUYDATE, criteria.buyDate, ::toColumn),
                 existsItemMatching(t, criteria, itemAlias),
+                CriterionTranslator.anyOf(criteria.anyOf) { conditions(t, it, itemAlias) },
             )
         )
 

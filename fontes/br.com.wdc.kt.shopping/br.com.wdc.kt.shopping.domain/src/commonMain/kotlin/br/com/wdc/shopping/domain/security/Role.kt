@@ -1,51 +1,30 @@
 package br.com.wdc.shopping.domain.security
 
-enum class Role(val permissions: Set<String>) {
-
-    ADMIN(setOf(
-        "user:*",
-        "product:*",
-        "purchase:*",
-        "purchase-item:*",
-        "data:all",
-    )),
-
-    // user:read without data:all reaches only the user themself (see UserApiController)
-    CUSTOMER(setOf(
-        "user:read",
-        "product:read",
-        "purchase:read", "purchase:write",
-        "purchase-item:read", "purchase-item:write",
-    )),
-
-    MANAGER(setOf(
-        "user:read",
-        "product:read", "product:write",
-        "purchase:read",
-        "purchase-item:read",
-    ));
+/**
+ * The access roles of the Storefront.
+ *
+ * A role carries no permissions of its own: what each one may do with the data, through the REST API, is declared by
+ * the data policies of the REST layer (`UserDataPolicy`, `PurchaseDataPolicy`, …), by the role name. A user may have
+ * several roles; the model is *allow-wins*.
+ */
+enum class Role {
+    ADMIN,
+    CUSTOMER,
+    MANAGER;
 
     companion object {
 
-        fun effectivePermissions(roles: Set<Role>): Set<String> =
-            roles.flatMapTo(mutableSetOf()) { it.permissions }
+        /** The names of the roles, as a [SecurityContext] carries them. */
+        fun names(roles: Set<Role>): Set<String> = roles.mapTo(LinkedHashSet()) { it.name }
 
+        /** Parses comma-separated roles (`"ADMIN,CUSTOMER"`); unknown names are ignored. */
         fun parse(rolesStr: String?): Set<Role> {
             if (rolesStr.isNullOrBlank()) return emptySet()
             return rolesStr.split(",")
                 .map { it.trim() }
                 .filter { it.isNotEmpty() }
-                .mapNotNull {
-                    try { valueOf(it) }
-                    catch (_: IllegalArgumentException) { null }
-                }
+                .mapNotNull { name -> entries.firstOrNull { it.name == name } }
                 .toSet()
         }
-
-        fun hasPermission(permissions: Set<String>, entity: String, operation: String): Boolean =
-            permissions.contains("$entity:$operation") || permissions.contains("$entity:*")
-
-        fun hasDataAll(permissions: Set<String>): Boolean =
-            permissions.contains("data:all")
     }
 }

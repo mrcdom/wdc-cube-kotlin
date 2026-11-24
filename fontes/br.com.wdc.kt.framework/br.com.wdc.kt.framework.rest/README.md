@@ -225,7 +225,7 @@ openApi {
 
 ## Generic RPC per entity
 
-`RepositoryRpc(basePath, codec, repository, …)` publishes a repository's operations: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}`. It is the protocol the Storefront `HttpRepository` client speaks. Access stays with the application, through `rule` (per operation), `scope` (restricts the criteria to the caller), `sanitizeProjection`, `sanitizeOutput`, `beforeInsert` and `beforeUpdate`. The two write hooks run inside the transaction. For a read-only repository, use `writes = false`.
+`RepositoryRpc(basePath, codec, repository, …)` publishes a repository's operations: `insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}`. It is the protocol the Storefront `HttpRepository` client speaks. Access stays with the application, in one of two ways: a **data policy** (`policy`, below), or `rule` (per operation), `scope` (restricts the criteria to the caller), `sanitizeProjection` and `sanitizeOutput`. The write hooks, `beforeInsert` and `beforeUpdate`, run inside the transaction either way. For a read-only repository, use `writes = false`. The criteria's alternative groups (`anyOf`) do not travel: the key is refused (400).
 
 **`scope` also guards `update`**: before `beforeUpdate`, the RPC checks that the target row is within the caller's reach (the key plus `scope`) and answers 404 otherwise — the same as a row that doesn't exist, so the refusal doesn't tell the row is there. What the scope cannot see — moving the row to another owner — stays with `beforeUpdate`.
 
@@ -235,7 +235,58 @@ openApi {
 
 **Queries have a cap**, `maxLimit` (1000 by default; `null` turns it off). A `limit` or `pageSize` above it is 400, and so is a `fetch` without `limit` that would bring more rows: it is refused, not cut short, so the client never takes a partial list for the whole one. Page with `limit` and `offset`, or with `fetch-page`.
 
-`insert` receives `{"entity", "projection"?}` (or, as before 0.4.0, the bare entity) and answers `{"success", "id", "entity"}`, with the entity as the repository left it — the generated key and the column defaults —, passed through `sanitizeOutput`. When nothing was inserted, only `{"success": false}`.
+`insert` receives `{"entity", "projection"?}` (or, as before 0.4.0, the bare entity) and answers `{"success", "id", "entity"}`, with the entity as the repository left it — the generated key and the column defaults —, passed through `sanitizeOutput` (with a policy, shaped as a read of what it carries). When nothing was inserted, only `{"success": false}`.
+
+## Data policy
+
+The client of a repository RPC assembles the request: any criteria, any projection. A **data policy** (package `policy`) says, per role, what it may do with an entity's data — the rows it reaches, the fields it reads as they are or masked, the fields it writes, whether it deletes —, and the RPC applies it to every request. Set `rpc.policy` before `register`; it then takes over the authorization of the routes (`rule`, `scope` and the `sanitize*` hooks are not consulted) and the routes only require an authenticated caller. The model is **allow-wins**: a caller gets the grants of all their roles (`RestPrincipal.roles`), and the fields are decided **per row**, by the grants that reach that row.
+
+```kotlin
+val ORDER = EntityDescriptor("order", ::Order, ::OrderCriteria) {
+    projection(OrderCriteria::projection, OrderCriteria::withProjection)
+    anyOf(OrderCriteria::anyOf, OrderCriteria::withAnyOf)
+    key(Order::id, ProjectionValues.i64)
+    value(Order::status, ProjectionValues.str)
+    value(Order::document, ProjectionValues.str)
+    relation(Order::customer) { CustomerPolicy.POLICY }                     // read through the customer's policy
+    collection(Order::items, inverse = OrderItem::order) { ItemPolicy.POLICY }
+    criterion("orderId", Order::id)                                          // criteria field → entity field
+    criterion("customerId", Order::customer)
+    orderings { c -> if (c.orderBy == OrderBy.BY_STATUS) setOf(Order::status) else emptySet() }
+    defaultShape { Order().apply { status = ProjectionValues.str; items = ProjectionValues.singletonList(ItemPolicy.defaultShape(), null) } }
+}
+
+object OwnOrders : RowScope<Order, OrderCriteria> {
+    override fun restrict(group: OrderCriteria, requester: RestPrincipal) { group.customerId.eq(requester.id.toLong()) }
+    override suspend fun covers(row: Order, requester: RestPrincipal) = row.customer?.id == requester.id.toLong()
+    override fun projection() = Order().apply { customer = Customer().apply { id = ProjectionValues.i64 } }
+}
+
+val POLICY = DataPolicy(ORDER) {
+    grant("ADMIN") {
+        read(Order::status, Order::document, Order::customer, Order::items)
+        update(Order::status)
+        delete()
+    }
+    grant("CUSTOMER") {
+        rows(OwnOrders)
+        read(Order::status, Order::customer, Order::items)
+        mask(Mask.keepLast(2), Order::document)
+        create(Order::status, Order::customer, Order::items)
+    }
+}
+
+rpc.policy = POLICY
+```
+
+- **The entity description** names each field by its property reference (the wire name defaults to the property's): a **value**, a **relation** to one row of another entity, or a **collection** of rows of another entity — the latter two read through the other entity's policy, so an entity has one set of rules wherever it appears. `writeOnly(...)` declares a field no one reads through the API (a password): no grant may read it, and asking for it is refused even with security off. Every criteria field must map to an entity field (`criterion`, or the same name), checked when the description is built.
+- **Reading** (`fetch`, `fetch-page`, `fetch-by-id`, `GET {id}`, `count`): a projected field no grant reads is refused with 403, **naming the fields**; filtering or sorting by a field counts as reading it, and takes a grant that reads it as it is — only the rows of such grants are returned. The rows of scoped grants are added to the criteria as alternative groups (`Criteria.anyOf`, translated by the repository as an `OR` of the groups, each the `AND` of its fields, joined with the rest of the criteria by `AND`). Each row then shows, per field, what the grants that reach it allow: as it is, masked, or nothing. What is asked inside a relation or a collection goes through the related policy; the rows of a collection are restricted by it too. **Without a projection**, the entity's default shape (`defaultShape`, or every field but collections and write-only ones), cut to what the caller reads — never refused.
+- **Creating**: one grant must allow every field sent and reach the new row; a relation is written by its key only; the rows of a collection are created through their entity's policy, as rows of the new one. The answer's `entity` is shaped as a read.
+- **Updating**: one grant must reach the stored row, allow every changed field, and still reach the row after the change (an owner cannot hand a row to someone else). A row no updating grant reaches is 404 when the caller cannot read it either, 403 when it can.
+- **Deleting**: only the rows of the grants that delete, filtered by fields they read.
+- **Security off** (no principal): every row and field is reached and the writes are not checked, but write-only fields are still refused and never returned; a read without a projection keeps the repository's default.
+
+`DataAccess` (from `policy.accessFor(principal)`) also serves a handler of your own: `prepareRead`, `restrictCount`, `checkCreate`, `checkUpdate`, `restrictDelete` and `readBack`.
 
 ## Tests
 

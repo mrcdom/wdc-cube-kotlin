@@ -13,7 +13,7 @@ class AccessContext(
     val sessionId: String,
     override val userId: Long?,
     override val userName: String?,
-    override val permissions: Set<String>,
+    override val roles: Set<String>,
     val rsaKeyPair: KeyPair,
     val expiresAt: Instant,
     val refreshToken: String,
@@ -29,19 +29,14 @@ class AccessContext(
 
     val isExpired: Boolean get() = Instant.now().isAfter(expiresAt)
 
-    override fun hasPermission(entity: String, operation: String): Boolean =
-        permissions.contains("$entity:$operation") || permissions.contains("$entity:*")
-
-    override fun hasDataAll(): Boolean = permissions.contains("data:all")
-
     override fun writeExternal(out: ExtensibleObjectOutput) {
         out.beginObject()
         userId?.let { out.name("userId").value(it) }
         userName?.let { out.name("userName").value(it) }
         out.name("publicKeyBase64").value(publicKeyBase64)
-        if (permissions.isNotEmpty()) {
-            out.name("permissions").beginArray()
-            permissions.forEach { out.value(it) }
+        if (roles.isNotEmpty()) {
+            out.name("roles").beginArray()
+            roles.forEach { out.value(it) }
             out.endArray()
         }
         out.endObject()

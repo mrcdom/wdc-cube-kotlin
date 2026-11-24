@@ -17,8 +17,11 @@ import java.util.Base64
 /**
  * Persistent store for user sessions.
  *
- * Each session is stored with its full state (RSA key pair, permissions, refresh token, etc.)
+ * Each session is stored with its full state (RSA key pair, role names, refresh token, etc.)
  * so that it can be reconstructed after a server restart. `EXPIRES_AT` is stored in UTC.
+ *
+ * The role names go in the `PERMISSIONS` column, which kept `entity:operation` permissions before the data policies
+ * (0.5.0). A session stored in that form is not restored: it is treated as missing, so its client signs in again.
  */
 class SessionStore {
 
@@ -38,13 +41,16 @@ class SessionStore {
             return KeyPair(publicKey, privateKey)
         }
 
-        private fun permissionsToString(permissions: Set<String>): String? {
-            return if (permissions.isEmpty()) null else permissions.joinToString(",")
+        private fun rolesToString(roles: Set<String>): String? {
+            return if (roles.isEmpty()) null else roles.joinToString(",")
         }
 
-        private fun stringToPermissions(s: String?): Set<String> {
+        private fun stringToRoles(s: String?): Set<String> {
             return if (s.isNullOrBlank()) emptySet() else s.split(",").toSet()
         }
+
+        /** A session stored before 0.5.0 keeps `entity:operation` permissions instead of role names. */
+        private fun isLegacy(s: String?): Boolean = s != null && ':' in s
     }
 
     private fun dsl(): DSLContext = ShoppingDSLContext.BEAN.get()
@@ -53,7 +59,7 @@ class SessionStore {
         val t = EN_USER_SESSION
         val (pubKey, privKey) = encodeKeyPair(session.rsaKeyPair)
         val expiresAt = LocalDateTime.ofInstant(session.expiresAt, ZoneOffset.UTC)
-        val permissions = permissionsToString(session.permissions)
+        val roles = rolesToString(session.roles)
 
         dsl().insertInto(t)
             .set(t.SESSION_ID, session.sessionId)
@@ -61,7 +67,7 @@ class SessionStore {
             .set(t.USERNAME, session.userName!!)
             .set(t.REFRESH_TOKEN, session.refreshToken)
             .set(t.EXPIRES_AT, expiresAt)
-            .set(t.PERMISSIONS, permissions)
+            .set(t.PERMISSIONS, roles)
             .set(t.RSA_PUBLIC_KEY, pubKey)
             .set(t.RSA_PRIVATE_KEY, privKey)
             .onConflict(t.SESSION_ID)
@@ -70,7 +76,7 @@ class SessionStore {
             .set(t.USERNAME, session.userName!!)
             .set(t.REFRESH_TOKEN, session.refreshToken)
             .set(t.EXPIRES_AT, expiresAt)
-            .set(t.PERMISSIONS, permissions)
+            .set(t.PERMISSIONS, roles)
             .set(t.RSA_PUBLIC_KEY, pubKey)
             .set(t.RSA_PRIVATE_KEY, privKey)
             .execute()
@@ -99,14 +105,18 @@ class SessionStore {
         }
     }
 
-    private fun mapRow(row: Record): AccessContext {
+    private fun mapRow(row: Record): AccessContext? {
         val t = EN_USER_SESSION
+        if (isLegacy(row.get(t.PERMISSIONS))) {
+            LOG.info("Session {} predates the role names: not restored", row.get(t.SESSION_ID))
+            return null
+        }
         val keyPair = decodeKeyPair(row.get(t.RSA_PUBLIC_KEY)!!, row.get(t.RSA_PRIVATE_KEY)!!)
         return AccessContext(
             row.get(t.SESSION_ID)!!,
             row.get(t.USERID)!!,
             row.get(t.USERNAME)!!,
-            stringToPermissions(row.get(t.PERMISSIONS)),
+            stringToRoles(row.get(t.PERMISSIONS)),
             keyPair,
             row.get(t.EXPIRES_AT)!!.toInstant(ZoneOffset.UTC),
             row.get(t.REFRESH_TOKEN)!!,

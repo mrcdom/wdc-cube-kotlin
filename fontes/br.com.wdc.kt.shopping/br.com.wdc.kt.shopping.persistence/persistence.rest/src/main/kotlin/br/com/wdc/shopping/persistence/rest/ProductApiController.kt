@@ -16,6 +16,8 @@ import br.com.wdc.shopping.domain.product.ProductCodec
 import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
+import br.com.wdc.shopping.persistence.rest.security.ProductDataPolicy
+import br.com.wdc.framework.domain.projection.ProjectionValues
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -26,12 +28,12 @@ import javax.imageio.ImageIO
 
 /**
  * Product REST endpoints: the repository RPC, read and written with the [ProductCodec] — the same one the client
- * uses —, plus the image. Reading requires `product:read`, writing `product:write`; reading the image is public.
+ * uses —, plus the image. Access is decided by [ProductDataPolicy]; writing the image is checked as an update of the
+ * `image` field, and reading it is public.
  */
 internal object ProductApiController {
 
     private val LOG = Log.getLogger("ProductApiController")
-    private const val ENTITY = "product"
     private const val IMAGE_CACHE_MAX_SIZE = 200
 
     // Key: "id" for original, "id_size" for resized
@@ -50,13 +52,12 @@ internal object ProductApiController {
             parseId = String::toLongOrNull,
             idOf = { it.id },
         )
-        // the catalog belongs to everyone: no per-user restriction
-        rpc.rule = { op -> ApiSecurity.permission(ENTITY, op) }
+        rpc.policy = ProductDataPolicy.POLICY
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("product", op) }
         rpc.register(routes)
 
         routes.get("/api/repo/product/{id}/image", doc = RepositoryApiDocs.imageDoc("get")) { fetchImage(it) }
-        routes.put("/api/repo/product/{id}/image", rule = ApiSecurity.permission(ENTITY, "write"), doc = RepositoryApiDocs.imageDoc("put")) {
+        routes.put("/api/repo/product/{id}/image", doc = RepositoryApiDocs.imageDoc("put")) {
             updateImage(it)
         }
     }
@@ -135,6 +136,11 @@ internal object ProductApiController {
         val id = imageId(call)
         try {
             val imageBytes = call.bodyBytes()
+            // an update of the image field, by the product policy
+            ProductDataPolicy.POLICY.accessFor(call.request.principal).checkUpdate(
+                Product().apply { this.id = id; image = imageBytes },
+                Product().apply { image = ProjectionValues.bin },
+            ) { _, projection -> repo().fetchById(id, projection) }
             val success = call.inTransaction {
                 val updated = repo().updateImage(id, imageBytes)
                 // Only after commit: clearing earlier would let a GET in between (which reads the committed, old
@@ -146,7 +152,7 @@ internal object ProductApiController {
             return mapOf("success" to success)
         } catch (e: Exception) {
             // transaction and access refusals answer with their own status
-            if (e is TransactionConflictException || e is TransactionLimitExceededException || e is AccessDeniedException) throw e
+            if (e is TransactionConflictException || e is TransactionLimitExceededException || e is AccessDeniedException || e is NotFoundException) throw e
             LOG.error("Updating product image", e)
             return RestResponse.status(500, mapOf("error" to "Failed to update image"))
         }

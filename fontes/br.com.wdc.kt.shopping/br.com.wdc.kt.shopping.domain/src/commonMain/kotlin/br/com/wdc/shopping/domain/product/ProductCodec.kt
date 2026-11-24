@@ -88,6 +88,7 @@ class ProductCodec : ModelCodec<Product, ProductCriteria> {
     }
 
     override fun writeCriteriaFields(out: ExtensibleObjectOutput, criteria: ProductCriteria) {
+        CriterionCodec.refuseAnyOf(criteria)
         CriterionCodec.write(out, "productId", criteria.productId, CriterionCodec.LONG_OUT)
         CriterionCodec.write(out, "name", criteria.name, CriterionCodec.STRING_OUT)
         CriterionCodec.write(out, "price", criteria.price, CriterionCodec.DOUBLE_OUT)
@@ -102,6 +103,7 @@ class ProductCodec : ModelCodec<Product, ProductCriteria> {
             "price" -> CriterionCodec.read(input, criteria.price, CriterionCodec.DOUBLE_IN)
             "description" -> CriterionCodec.read(input, criteria.description, CriterionCodec.STRING_IN)
             "orderBy" -> CriterionCodec.readOrderBy(input, ProductCriteria.OrderBy.entries)?.let { criteria.withOrderBy(it) }
+            CriterionCodec.ANY_OF -> throw CriterionCodec.anyOfDoesNotTravel()
             else -> return false
         }
         return true

@@ -7,6 +7,7 @@ import br.com.wdc.shopping.domain.purchase.Purchase
 import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemCriteria
+import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.persistence.client.RestTransactionService
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.RestTestEnvironment
@@ -36,7 +37,13 @@ class SecuredRemoteTransactionRestTest {
         this.purchase = purchase
         product = Product().apply { id = productId }
         amount = 1
-        price = 10.5
+        // no price: a customer does not send it — the repository reads the product's in the INSERT
+    }
+
+    /** A purchase of fulano's, made by himself: a customer buys only for themselves. */
+    private fun fulanosPurchase() = Purchase().apply {
+        buyDate = Clock.System.now()
+        user = User().apply { id = DBReset.FULANO_ID }
     }
 
     @Test
@@ -48,7 +55,7 @@ class SecuredRemoteTransactionRestTest {
     @Test
     fun customer_buysInOneTransaction_underTheirOwnScope() = runBlocking {
         env.loginAs("fulano")
-        val purchase = Purchase().apply { buyDate = Clock.System.now() }
+        val purchase = fulanosPurchase()
         RestTransactionService(env.transport).required {
             assertTrue(env.purchaseRepo.insert(purchase))
             // the check that the purchase belongs to the user sees the purchase opened in this same transaction
@@ -65,7 +72,7 @@ class SecuredRemoteTransactionRestTest {
         assertThrows(AccessDeniedException::class.java) {
             runBlocking {
                 RestTransactionService(env.transport).required {
-                    val purchase = Purchase().apply { buyDate = Clock.System.now() }
+                    val purchase = fulanosPurchase()
                     assertTrue(env.purchaseRepo.insert(purchase))
                     // item in an admin purchase: 403
                     env.purchaseItemRepo.insert(item(DBReset.COFFEE_MAKER_ID, Purchase().apply { id = DBReset.ADMIN_FIRST_PURCHASE_ID }))

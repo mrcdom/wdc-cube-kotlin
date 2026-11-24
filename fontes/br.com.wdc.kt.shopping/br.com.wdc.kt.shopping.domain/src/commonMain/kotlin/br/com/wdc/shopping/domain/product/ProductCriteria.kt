@@ -36,6 +36,19 @@ class ProductCriteria : Criteria {
 
     override fun criterions(): List<Criterion<*, *>> = listOf(productId, name, price, description)
 
+    /**
+     * The alternative groups (see [Criteria.anyOf]): server-side only — the REST data policies restrict the rows a
+     * role reaches with them, and the codec refuses them on the wire.
+     */
+    override var anyOf: List<ProductCriteria> = emptyList()
+        private set
+
+    /** Replaces the alternative groups. */
+    fun withAnyOf(groups: List<ProductCriteria>?) = apply { anyOf = groups?.toList() ?: emptyList() }
+
+    /** Replaces the alternative groups. */
+    fun withAnyOf(vararg groups: ProductCriteria) = withAnyOf(groups.asList())
+
     var orderBy: OrderBy? = null
         private set
 

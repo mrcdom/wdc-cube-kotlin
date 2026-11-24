@@ -169,6 +169,7 @@ class PurchaseItemRepositoryImpl : BaseRepositoryImpl(), PurchaseItemRepository 
                     CriterionTranslator.translate(t.AMOUNT, criteria.amount),
                     CriterionTranslator.translate(t.PRICE, criteria.price) { BigDecimal.valueOf(it) },
                     existsPurchaseOfUser(t, criteria, purchaseAlias),
+                    CriterionTranslator.anyOf(criteria.anyOf) { conditions(t, it, purchaseAlias) },
                 )
             )
 

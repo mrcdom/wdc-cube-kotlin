@@ -130,6 +130,7 @@ class ProductRepositoryImpl : BaseRepositoryImpl(), ProductRepository {
                 CriterionTranslator.translate(t.NAME, criteria.name),
                 CriterionTranslator.translate(t.PRICE, criteria.price) { BigDecimal.valueOf(it) },
                 CriterionTranslator.translate(t.DESCRIPTION, criteria.description),
+                CriterionTranslator.anyOf(criteria.anyOf) { conditions(t, it) },
             )
         )
     }

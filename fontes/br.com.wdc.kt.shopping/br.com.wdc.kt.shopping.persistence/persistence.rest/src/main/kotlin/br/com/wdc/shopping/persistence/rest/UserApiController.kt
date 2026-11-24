@@ -10,6 +10,7 @@ import br.com.wdc.shopping.domain.user.UserCodec
 import br.com.wdc.shopping.domain.user.UserCriteria
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
+import br.com.wdc.shopping.persistence.rest.security.UserDataPolicy
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -19,19 +20,16 @@ import javax.crypto.Cipher
 
 /**
  * User REST endpoints: the repository RPC, read and written with the [UserCodec] — the same one the client uses.
- * Access is checked here ([ApiSecurity]): permission and, for callers who don't reach everyone's data,
- * restriction to their own user.
+ * Access is decided by [UserDataPolicy].
  *
- * **The password is write-only in this API**: it goes in on insert and update, and is never returned — not the
- * digest, not with security off, not when requested in the projection. It is stored as its digest, the form the
- * login compares: with security on it must come encrypted with the session's RSA key (otherwise 400); without
+ * **The password is write-only in this API**: it goes in on insert and update, and is never returned — asking for it
+ * in a projection is refused (403, naming `password`), with security on or off. It is stored as its digest, the form
+ * the login compares: with security on it must come encrypted with the session's RSA key (otherwise 400); without
  * security there is no key, and it comes as typed.
  */
 internal object UserApiController {
 
     private val LOG = Log.getLogger("UserApiController")
-    private const val ENTITY = "user"
-
     private fun repo(): UserRepository = UserRepository.BEAN.get()
 
     fun register(routes: RestApi.Routes) {
@@ -45,15 +43,10 @@ internal object UserApiController {
             parseId = String::toLongOrNull,
             idOf = { it.id },
         )
-        rpc.rule = { op -> ApiSecurity.permission(ENTITY, op) }
+        rpc.policy = UserDataPolicy.POLICY
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("user", op) }
-        // callers who don't reach everyone's data only reach their own user, whatever they ask for
-        rpc.scope = { criteria, request -> ApiSecurity.ownerScope(request)?.let { criteria.userId.and().eq(it) } }
-        // the password is never projected, and is stripped from everything that goes out
-        rpc.sanitizeProjection = { it.password = null }
-        rpc.sanitizeOutput = { it.password = null }
+        // transformations, after the policy's check: the password is stored as its digest
         rpc.beforeInsert = { user, request -> storablePassword(user, request) }
-        // the scope already keeps the update to the caller's own user
         rpc.beforeUpdate = { data, request -> storablePassword(data.entity, request) }
         rpc.register(routes)
     }

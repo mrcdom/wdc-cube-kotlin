@@ -72,9 +72,7 @@ class AuthenticationServiceImpl(
             return null
         }
 
-        val roles = Role.parse(user.roles)
-        val permissions = Role.effectivePermissions(roles)
-        val session = cache.createSession(user.id!!, user.userName!!, permissions)
+        val session = cache.createSession(user.id!!, user.userName!!, Role.names(Role.parse(user.roles)))
         val accessToken = JwtUtil.create(session.sessionId, user.id!!, user.userName!!, cache.accessTokenTtl, cache.jwtSecret)
 
         return AuthResult(user.id!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64, session.intentSignSecret)

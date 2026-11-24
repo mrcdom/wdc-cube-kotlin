@@ -38,6 +38,19 @@ class UserCriteria : Criteria {
 
     override fun criterions(): List<Criterion<*, *>> = listOf(userId, userName, name, roles)
 
+    /**
+     * The alternative groups (see [Criteria.anyOf]): server-side only — the REST data policies restrict the rows a
+     * role reaches with them, and the codec refuses them on the wire.
+     */
+    override var anyOf: List<UserCriteria> = emptyList()
+        private set
+
+    /** Replaces the alternative groups. */
+    fun withAnyOf(groups: List<UserCriteria>?) = apply { anyOf = groups?.toList() ?: emptyList() }
+
+    /** Replaces the alternative groups. */
+    fun withAnyOf(vararg groups: UserCriteria) = withAnyOf(groups.asList())
+
     var orderBy: OrderBy? = null
         private set
 

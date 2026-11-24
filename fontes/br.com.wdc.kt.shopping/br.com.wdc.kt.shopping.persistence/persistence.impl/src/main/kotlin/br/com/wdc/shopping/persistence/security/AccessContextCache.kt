@@ -34,14 +34,14 @@ class AccessContextCache(
 
     val accessTokenTtl: Duration get() = ACCESS_TOKEN_TTL
 
-    fun createSession(userId: Long, userName: String, permissions: Set<String>): AccessContext {
+    fun createSession(userId: Long, userName: String, roles: Set<String>): AccessContext {
         val keyPair = generateRsaKeyPair()
         val sessionId = UUID.randomUUID().toString()
         val refreshToken = UUID.randomUUID().toString()
         val expiresAt = Instant.now().plus(ACCESS_TOKEN_TTL)
         val intentSignSecret = intentSecretStore.getOrCreate(userId)
 
-        val ctx = AccessContext(sessionId, userId, userName, permissions, keyPair, expiresAt, refreshToken, intentSignSecret)
+        val ctx = AccessContext(sessionId, userId, userName, roles, keyPair, expiresAt, refreshToken, intentSignSecret)
 
         bySessionId[sessionId] = ctx
         refreshTokenIndex[refreshToken] = sessionId
@@ -66,7 +66,7 @@ class AccessContextCache(
             val intentSignSecret = intentSecretStore.getOrCreate(existing.userId!!)
             existing = AccessContext(
                 existing.sessionId, existing.userId, existing.userName,
-                existing.permissions, existing.rsaKeyPair, existing.expiresAt,
+                existing.roles, existing.rsaKeyPair, existing.expiresAt,
                 existing.refreshToken, intentSignSecret
             )
         }
@@ -81,7 +81,7 @@ class AccessContextCache(
         val expiresAt = Instant.now().plus(ACCESS_TOKEN_TTL)
 
         val intentSignSecret = intentSecretStore.getOrCreate(existing.userId!!)
-        val ctx = AccessContext(newSessionId, existing.userId, existing.userName, existing.permissions,
+        val ctx = AccessContext(newSessionId, existing.userId, existing.userName, existing.roles,
             generateRsaKeyPair(), expiresAt, newRefreshToken, intentSignSecret)
 
         // Remove old session
@@ -120,7 +120,7 @@ class AccessContextCache(
         val intentSignSecret = intentSecretStore.getOrCreate(ctx.userId!!)
         ctx = AccessContext(
             ctx.sessionId, ctx.userId, ctx.userName,
-            ctx.permissions, ctx.rsaKeyPair, ctx.expiresAt,
+            ctx.roles, ctx.rsaKeyPair, ctx.expiresAt,
             ctx.refreshToken, intentSignSecret
         )
 

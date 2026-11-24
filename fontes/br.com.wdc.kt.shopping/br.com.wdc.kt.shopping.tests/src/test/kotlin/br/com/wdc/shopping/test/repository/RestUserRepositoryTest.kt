@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.test.repository
 
+import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.domain.user.UserCriteria
@@ -31,14 +32,21 @@ class RestUserRepositoryTest : AbstractUserRepositoryTest() {
     // -- REST mode only --
 
     @Test
-    fun password_isNeverReturned_evenWithoutSecurity_evenWhenProjected() = runBlocking {
+    fun password_isNeverReturned_evenWithoutSecurity() = runBlocking {
+        // asking for it is refused, naming it — not quietly left out
         val projection = User().apply { id = ProjectionValues.i64; userName = ProjectionValues.str; password = ProjectionValues.str }
+        for (read in listOf<suspend () -> Unit>(
+            { repo().fetch(UserCriteria().withProjection(projection)) },
+            { repo().fetchById(DBReset.ADMIN_ID, projection) },
+            { repo().fetchPage(UserCriteria().withProjection(projection), 0, 10) },
+        )) {
+            val e = assertThrows(AccessDeniedException::class.java) { runBlocking { read() } }
+            assertTrue("[password]" in e.message!!, e.message)
+        }
 
-        assertTrue(repo().fetch(UserCriteria().withProjection(projection)).all { it.password == null })
-        assertNull(repo().fetchById(DBReset.ADMIN_ID, projection)!!.password)
-        assertTrue(repo().fetchPage(UserCriteria().withProjection(projection), 0, 10).items.all { it.password == null })
-
-        val raw = env.transport.postJson("/api/repo/user/fetch", """{"projection":{"userName":"~","password":"~"}}""")
+        // without a projection, the repository's default: no password
+        assertTrue(repo().fetch(UserCriteria()).all { it.password == null })
+        val raw = env.transport.postJson("/api/repo/user/fetch", "{}")
         assertFalse("password" in raw, raw)
     }
 

@@ -5,6 +5,7 @@ import br.com.wdc.shopping.domain.exception.BusinessException
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.product.ProductRepository
+import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.RestTestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
@@ -15,8 +16,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * Product over the REST path **with security on**: JWT authentication and the access control of the
- * `Secured*` decorators, going through HTTP client, filter, controller and repository.
+ * Product over the REST path **with security on**: JWT authentication and the product data policy, going through
+ * HTTP client, route pipeline, controller and repository.
  */
 class SecuredRestProductRepositoryTest {
 
@@ -89,6 +90,22 @@ class SecuredRestProductRepositoryTest {
         assertEquals(4, repo().count(ProductCriteria()))
     }
 
+    @Test
+    fun manager_writesAndDeletesProducts() = runBlocking {
+        env.loginAs("admin")
+        val manager = User().apply { userName = "manager"; password = env.authClient!!.encryptPassword("m4nager"); name = "Mary Major"; roles = "MANAGER" }
+        assertTrue(env.userRepo.insert(manager))
+        env.loginAs("manager", "m4nager")
+
+        val product = newProduct()
+        assertTrue(repo().insert(product))
+        assertTrue(repo().update(Product().apply { id = product.id; price = 75.5 }, null, Product().apply { price = ProjectionValues.f64 }))
+        assertEquals(75.5, repo().fetchById(product.id!!)!!.price)
+        assertTrue(repo().updateImage(product.id!!, ByteArray(16) { it.toByte() }))
+        assertEquals(1, repo().delete(ProductCriteria().withProductId(product.id)))
+        assertEquals(4, repo().count(ProductCriteria()))
+    }
+
     // :: Image
 
     @Test
@@ -100,7 +117,7 @@ class SecuredRestProductRepositoryTest {
         assertHttp(401) { repo().updateImage(DBReset.COFFEE_MAKER_ID, replacement) }
 
         env.loginAs("fulano")
-        // refused by permission, as in the other writes (it used to come out as a generic upload error)
+        // refused by the policy, as in the other writes (it used to come out as a generic upload error)
         assertHttp(403) { repo().updateImage(DBReset.COFFEE_MAKER_ID, replacement) }
         assertArrayEquals(original, repo().fetchImage(DBReset.COFFEE_MAKER_ID))
 

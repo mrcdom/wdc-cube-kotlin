@@ -35,7 +35,9 @@ object RepositoryApiDocs {
         equality: `{"name": "Ball"}`.
 
         **Projection.** `projection` names the fields to bring: a present field is requested, an absent
-        one is not. Without it, each entity has a default. A to-many field may be a
+        one is not. Without it, each entity has a default shape — a purchase is its receipt (date,
+        buyer's name, items with their products), an item its quantity, price and product, the others
+        every field but the collections —, cut to what the caller's roles read. A to-many field may be a
         `ProjectedCollection`, which filters, orders and slices the collection.
 
         **Transactions.** Every write is atomic. To make several writes atomic, open a remote
@@ -44,7 +46,11 @@ object RepositoryApiDocs {
 
         **Security.** When the server has a JWT secret, `/api/repo` and `/api/tx` require
         `Authorization: Bearer <accessToken>` (the product image is public to read) and `/api/auth`
-        exists. Without the secret the API is open and `/api/auth` is not served.
+        exists. Without the secret the API is open and `/api/auth` is not served. What each role may
+        do with each entity — the rows it reaches, the fields it reads (as they are or masked), the
+        fields it writes — is the entity's data policy. Projecting, filtering or sorting by a field the
+        caller's roles do not read is refused with 403, naming the field; the alternative groups of a
+        criteria (`anyOf`) are server-side only, and refused with 400.
         """.trimIndent()
 
     private class Entity(
@@ -109,19 +115,19 @@ object RepositoryApiDocs {
                 "price" to number("Current price."),
                 "description" to string("Long description (may contain HTML)."),
             ),
-            "Everyone authenticated reads; writing requires `product:write`.",
+            "Every role reads the catalog; `ADMIN` and `MANAGER` create, update and delete products, image included.",
         ),
         Entity(
             "User", "user", "user", UserCriteria(), UserCriteria.OrderBy.entries,
             mapOf(
                 "id" to long("Primary key. Generated on insert when absent."),
                 "userName" to string("Login."),
-                "password" to string("**Write-only.** Accepted on insert and update; never returned, not even when projected.") +
+                "password" to string("**Write-only.** Accepted on insert and update; never returned — projecting it is refused (403).") +
                     mapOf("writeOnly" to true),
                 "name" to string("Display name."),
                 "roles" to string("Comma-separated roles (`ADMIN`, `MANAGER`, `CUSTOMER`)."),
             ),
-            "Without `data:all`, a user only reaches their own record.",
+            "`ADMIN` reads and writes every user; `CUSTOMER` reads their own; `MANAGER` reads their own, and the others by name with the login masked.",
         ),
         Entity(
             "Purchase", "purchase", "purchase", PurchaseCriteria(), PurchaseCriteria.OrderBy.entries,
@@ -139,7 +145,7 @@ object RepositoryApiDocs {
                     ),
                 ),
             ),
-            "Without `data:all`, a user only reaches their own purchases; a purchase they insert is always theirs.",
+            "A purchase is a receipt: `CUSTOMER` reads and creates their own (for themselves only), `MANAGER` reads their own, only `ADMIN` updates and deletes.",
         ),
         Entity(
             "PurchaseItem", "purchase-item", "purchase item", PurchaseItemCriteria(), PurchaseItemCriteria.OrderBy.entries,
@@ -150,7 +156,7 @@ object RepositoryApiDocs {
                 "product" to ref("Product", "The product. Only the key is needed on writes."),
                 "purchaseId" to long("Key of the purchase the item belongs to. Absent when the item travels inside its purchase."),
             ),
-            "Without `data:all`, a user only reads and writes items of their own purchases.",
+            "`CUSTOMER` reads the items of their own purchases and adds items to them (the price is the server's); `MANAGER` reads them; only `ADMIN` updates and deletes.",
         ),
     )
 
@@ -496,7 +502,7 @@ object RepositoryApiDocs {
         val refusals = linkedMapOf<String, Any>(
             "400" to error("Invalid request: unknown `orderBy`, delete with empty criteria, update without the id, `limit` or `pageSize` above 1000, a query without `limit` that would bring more than 1000 rows…"),
             "401" to error("Missing or invalid token (security on)."),
-            "403" to error("The caller lacks the permission, or the row is outside their scope."),
+            "403" to error("The caller's roles do not allow the operation, or a field it names (the message lists them)."),
         )
         if (write) {
             refusals["409"] = error("The caller has a remote transaction open and the write came without `X-Tx-Id`; or the transaction is in use.")

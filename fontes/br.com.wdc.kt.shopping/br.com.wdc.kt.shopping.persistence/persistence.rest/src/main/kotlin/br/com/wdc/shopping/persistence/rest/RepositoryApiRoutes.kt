@@ -13,7 +13,8 @@ import io.javalin.config.JavalinConfig
  *
  * If the [AuthenticationService] is initialized (via `ShoppingRepositoryBootstrap.initializeSecurity`), the API
  * starts secured: `Authorization: Bearer` on everything, except the `/api/auth` routes, reading a product image
- * and `/openapi.json`. The permission and reach of each operation are checked by the routes ([ApiSecurity]).
+ * and `/openapi.json`. What each role may do with each entity is decided by its data policy (`security.XxxDataPolicy`),
+ * set on the entity's RPC.
  * Without the service, the API is open and `/api/auth` does not exist.
  *
  * Transactions come from the holders on each request: [ShoppingTransactions] (one per write request) and
