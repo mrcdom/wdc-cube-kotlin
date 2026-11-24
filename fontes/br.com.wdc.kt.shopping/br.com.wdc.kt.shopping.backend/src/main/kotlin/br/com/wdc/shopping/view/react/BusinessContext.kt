@@ -16,6 +16,8 @@ import br.com.wdc.shopping.scripts.sgbd.DBCreate
 import br.com.wdc.shopping.view.react.supports.SqlDataSourceSupport
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
+import br.com.wdc.shopping.persistence.security.AuthenticationServiceImpl
+import br.com.wdc.shopping.domain.security.AuthenticationService
 
 /**
  * @param config the service configuration, already loaded from the work directory
@@ -65,6 +67,11 @@ class BusinessContext(private val config: AppConfig) {
             val jwtSecret = ShoppingConfig.jwtSecret
             if (!jwtSecret.isNullOrBlank()) {
                 ShoppingRepositoryBootstrap.initializeSecurity(jwtSecret, ShoppingConfig.refreshTokenTtlDays, cleanUp)
+                // drops the expired sessions and the unanswered login challenges, even when no one signs in
+                (AuthenticationService.BEAN.getOrNull() as? AuthenticationServiceImpl)?.let { auth ->
+                    val cleanup = auth.startCleanup(scheduledExecutor)
+                    cleanUp.push { cleanup.close() }
+                }
             }
 
             LOG.info("Storefront backend context initialized with database {}", dataSourceSupport.jdbcUrl)

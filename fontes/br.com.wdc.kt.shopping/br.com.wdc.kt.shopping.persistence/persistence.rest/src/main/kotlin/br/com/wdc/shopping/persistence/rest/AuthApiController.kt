@@ -20,13 +20,17 @@ internal object AuthApiController {
 
     class RefreshRequest(val refreshToken: String? = null)
 
-    fun register(routes: RestApi.Routes, authService: AuthenticationService) {
-        routes.get("/api/auth/challenge", doc = RepositoryApiDocs.authDoc("challenge")) { _ ->
+    /** [requestsPerMinute]: challenge, login and refresh per client address and minute (`0` = no limit). */
+    fun register(routes: RestApi.Routes, authService: AuthenticationService, requestsPerMinute: Int = 60) {
+        val limit = AuthRateLimit(requestsPerMinute)
+        routes.get("/api/auth/challenge", doc = RepositoryApiDocs.authDoc("challenge")) { call ->
+            limit.check(call.http.ip())
             val result = authService.challenge()
             mapOf("nonce" to result.nonce, "expiresAt" to result.expiresAt.toString())
         }
 
         routes.post("/api/auth/login", doc = RepositoryApiDocs.authDoc("login")) { call ->
+            limit.check(call.http.ip())
             val body = call.bodyOrNull<LoginRequest>() ?: LoginRequest()
             if (body.userName == null || body.digest == null || body.nonce == null) {
                 return@post RestResponse.status(400, mapOf("error" to "Missing required fields: userName, digest, nonce"))
@@ -37,6 +41,7 @@ internal object AuthApiController {
         }
 
         routes.post("/api/auth/refresh", doc = RepositoryApiDocs.authDoc("refresh")) { call ->
+            limit.check(call.http.ip())
             val refreshToken = call.bodyOrNull<RefreshRequest>()?.refreshToken
                 ?: return@post RestResponse.status(400, mapOf("error" to "Missing refreshToken"))
             val result = authService.refresh(refreshToken)

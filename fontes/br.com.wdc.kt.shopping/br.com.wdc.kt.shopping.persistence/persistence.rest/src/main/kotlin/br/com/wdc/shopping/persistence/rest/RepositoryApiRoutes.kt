@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.rest
 import br.com.wdc.framework.rest.RestApi
 import br.com.wdc.framework.rest.security.BearerAuthenticator
 import br.com.wdc.framework.rest.transaction.RemoteTransactionRoutes
+import br.com.wdc.shopping.domain.ShoppingConfig
 import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
@@ -22,8 +23,11 @@ import io.javalin.config.JavalinConfig
  */
 object RepositoryApiRoutes {
 
-    /** Builds the API from what is registered in the holders now (the authentication service decides security). */
-    fun create(): RestApi {
+    /**
+     * Builds the API from what is registered in the holders now (the authentication service decides security).
+     * [authRequestsPerMinute] limits `/api/auth` per client address (`0` = no limit).
+     */
+    fun create(authRequestsPerMinute: Int = ShoppingConfig.authRequestsPerMinute): RestApi {
         val authService = AuthenticationService.BEAN.getOrNull()
         return RestApi {
             if (authService != null) {
@@ -39,7 +43,7 @@ object RepositoryApiRoutes {
             openApi { RepositoryApiDocs.configure(this) }
 
             if (authService != null) {
-                AuthApiController.register(this, authService)
+                AuthApiController.register(this, authService, authRequestsPerMinute)
             }
             UserApiController.register(this)
             ProductApiController.register(this)
