@@ -1,7 +1,5 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home
 
-import br.com.wdc.shopping.domain.product.ProductRepository
-import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
@@ -16,13 +14,14 @@ import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelService
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductService
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 
 import kotlin.math.ceil
 import kotlin.math.max
+import br.com.wdc.shopping.presentation.presenter.restricted.products.calls.ProductQuery
+import br.com.wdc.shopping.presentation.presenter.restricted.products.calls.ProductListQuery
+import br.com.wdc.shopping.presentation.presenter.restricted.home.calls.PurchasesPageQuery
 
 class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
@@ -44,8 +43,6 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private var ownerSlot: ScopeSlot? = null
     private var cart: CartManager? = null
-    private val productService = ProductService(ProductRepository.BEAN.get())
-    private val purchasesService = PurchasesPanelService(PurchaseRepository.BEAN.get())
 
     // the two panels: segments of the home scope, without presenters of their own
     private val products = segment(ProductsPanelScope())
@@ -101,7 +98,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
             // the purchases come with the view's first capacity
             scope.purchasesPanel = purchases
 
-            cart = CartManager(PurchaseRepository.BEAN.get())
+            cart = CartManager()
             restoreCart()
             onCartCommitListenerRemover = cart!!.addCommitListener(::onCartCommited)
             onCartChangeListenerRemover = cart!!.addChangeListener(::onCartChanged)
@@ -151,10 +148,9 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private suspend fun restoreCart() {
         val snapshot = CartManager.Snapshot.parse(app.sessionStorage.getString(CART_KEY)) ?: return
         if (snapshot.userId != app.subject?.id) return
-        val products = ProductService(ProductRepository.BEAN.get())
         for ((productId, quantity) in snapshot.quantities) {
             try {
-                cart!!.addProduct(products.loadProductById(productId), quantity)
+                cart!!.addProduct(ProductQuery(productId).run(), quantity)
             } catch (_: ProductNotFoundException) {
                 LOG.info("restoreCart: product {} is no longer available", productId)
             }
@@ -251,7 +247,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private suspend fun loadProducts() {
         try {
-            products.products = productService.loadProductsWithoutDescription(1000)
+            products.products = ProductListQuery(limit = 1000).run()
         } catch (caught: Exception) {
             LOG.error("Failed to load products", caught)
         }
@@ -288,7 +284,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private suspend fun loadPurchases() {
         val subject = app.subject
         if (subject != null && purchases.pageSize > 0) {
-            var page = purchasesService.fetchPageOfUser(subject.id!!, purchases.page, purchases.pageSize)
+            var page = PurchasesPageQuery(subject.id!!, purchases.page, purchases.pageSize).run()
 
             purchases.totalCount = page.totalItems
 
@@ -297,7 +293,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
                 // the requested page is past the end (the view capacity changed, or purchases disappeared): show the
                 // last one, with its items — the result above is the one of the page that does not exist
                 purchases.page = totalPages - 1
-                page = purchasesService.fetchPageOfUser(subject.id!!, purchases.page, purchases.pageSize)
+                page = PurchasesPageQuery(subject.id!!, purchases.page, purchases.pageSize).run()
                 purchases.totalCount = page.totalItems
             }
 

@@ -1,6 +1,5 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.receipt
 
-import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
@@ -9,6 +8,8 @@ import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptForm
+import br.com.wdc.shopping.presentation.exception.WrongParametersException
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.calls.ReceiptQuery
 
 class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
@@ -22,7 +23,6 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     // :: Internal Instance Fields
 
-    private val receiptService = ReceiptService(PurchaseRepository.BEAN.get())
     private var purchaseId: Long? = null
     private var ownerSlot: ScopeSlot? = null
 
@@ -68,6 +68,7 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
     // :: Data Loaders
 
     private suspend fun loadReceipt(purchaseId: Long): ReceiptForm {
-        return receiptService.loadReceipt(purchaseId, app.subject?.id) ?: throw PurchaseNotFoundException()
+        val userId = app.subject?.id ?: throw WrongParametersException()
+        return ReceiptQuery(purchaseId, userId).run() ?: throw PurchaseNotFoundException()
     }
 }

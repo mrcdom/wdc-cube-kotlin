@@ -1,15 +1,21 @@
-package br.com.wdc.shopping.presentation.presenter.open.login
+package br.com.wdc.shopping.presentation.presenter.open.login.calls
 
-import br.com.wdc.shopping.domain.user.UserCriteria
-import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.framework.domain.projection.ProjectionValues
+import br.com.wdc.framework.domain.resource.ResourceCall
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.PasswordUtil
+import br.com.wdc.shopping.domain.user.UserCriteria
+import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
 
-class LoginService {
+/**
+ * Checks a user name and password, and gives who it is: the login. Not a read nor a write of a resource, so a verb of
+ * its own on [ResourceCall]. With the authentication service (security on), a challenge and an HMAC of the password
+ * digest; without it, the digest is compared here.
+ */
+class CredentialsCheck(private val userName: String, private val password: String) : ResourceCall<Subject?>() {
 
-    suspend fun fetchSubject(userName: String, password: String): Subject? {
+    override suspend fun run(): Subject? {
         val authService = AuthenticationService.BEAN.getOrNull()
         if (authService != null) {
             return authenticateViaAuthService(authService, userName, password)

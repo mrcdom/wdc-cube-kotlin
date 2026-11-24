@@ -3,7 +3,7 @@ package br.com.wdc.shopping.test
 import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.SecurityContextHolder
 import br.com.wdc.shopping.domain.user.UserCriteria
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginService
+import br.com.wdc.shopping.presentation.presenter.open.login.calls.CredentialsCheck
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.TestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
@@ -32,7 +32,7 @@ class SecuredLoginTest {
         SecurityContextHolder.clear()
     }
 
-    private fun login(userName: String, password: String = userName) = runBlocking { LoginService().fetchSubject(userName, password) }
+    private fun login(userName: String, password: String = userName) = runBlocking { CredentialsCheck(userName, password).run() }
 
     @Test
     fun admin_logsIn() {

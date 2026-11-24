@@ -1,6 +1,5 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.products
 
-import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
@@ -10,6 +9,7 @@ import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.framework.cube.FormParam
+import br.com.wdc.shopping.presentation.presenter.restricted.products.calls.ProductQuery
 
 class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
@@ -23,7 +23,6 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     // :: Internal Instance Fields
 
-    private val productService = ProductService(ProductRepository.BEAN.get())
     private var ownerSlot: ScopeSlot? = null
 
     init {
@@ -44,7 +43,7 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
         }
 
         if (scope.product == null || newProductId != oldProductId) {
-            scope.product = productService.loadProductById(newProductId)
+            scope.product = ProductQuery(productId = newProductId).run()
         }
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put

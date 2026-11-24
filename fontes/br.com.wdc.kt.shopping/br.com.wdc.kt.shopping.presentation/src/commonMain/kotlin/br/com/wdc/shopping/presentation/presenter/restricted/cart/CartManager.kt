@@ -1,19 +1,11 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.cart
 
-import br.com.wdc.shopping.domain.ShoppingTransactions
-import br.com.wdc.shopping.domain.exception.InvalidCartItemException
-import br.com.wdc.shopping.domain.product.Product
-import br.com.wdc.shopping.domain.purchase.Purchase
-import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
-import br.com.wdc.shopping.domain.user.User
-import br.com.wdc.shopping.domain.purchase.PurchaseRepository
-import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.calls.PurchaseCreate
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
-import kotlin.time.Clock
 
-class CartManager(private val repo: PurchaseRepository) {
+class CartManager {
 
     /**
      * What a cart keeps between page reloads: whose it is and how many of each product, in the cart's order. Written
@@ -128,8 +120,9 @@ class CartManager(private val repo: PurchaseRepository) {
         return modified
     }
 
-    suspend fun commit(subject: Subject): Long? {
-        val purchaseId = doPurchase(subject.id!!, cart)
+    /** Buys what is in the cart ([PurchaseCreate]), empties it and tells the listeners; answers the purchase id. */
+    suspend fun commit(subject: Subject): Long {
+        val purchaseId = PurchaseCreate(subject.id!!, cart.map { it.copy() }).run()
         clear()
 
         for (listener in ArrayList(changeListenerMap.values)) {
@@ -140,39 +133,6 @@ class CartManager(private val repo: PurchaseRepository) {
             listener()
         }
         return purchaseId
-    }
-
-    private suspend fun doPurchase(userId: Long, request: List<CartItem>): Long? {
-        val purchase = Purchase()
-        purchase.user = User()
-        purchase.user!!.id = userId
-        purchase.buyDate = Clock.System.now()
-
-        purchase.items = ArrayList()
-        for (srcItem in request) {
-            if (srcItem.quantity < 1) {
-                throw InvalidCartItemException()
-            }
-
-            val purchaseItem = PurchaseItem()
-            purchaseItem.product = Product()
-            purchaseItem.product!!.id = srcItem.id
-            purchaseItem.price = srcItem.price
-            purchaseItem.amount = srcItem.quantity
-
-            purchase.items!!.add(purchaseItem)
-        }
-
-        // The purchase and its items commit together, or nothing commits. Without a transaction service (tests
-        // without persistence), runs directly.
-        val transactions = ShoppingTransactions.BEAN.getOrNull()
-        if (transactions == null) insert(purchase) else transactions.required { insert(purchase) }
-
-        return purchase.id
-    }
-
-    private suspend fun insert(purchase: Purchase) {
-        check(repo.insert(purchase)) { "Record not inserted" }
     }
 
     /** The cart's [Snapshot], for the given owner. */

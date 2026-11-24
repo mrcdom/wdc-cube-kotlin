@@ -9,6 +9,7 @@ import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
+import br.com.wdc.shopping.presentation.presenter.open.login.calls.CredentialsCheck
 
 class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
@@ -22,7 +23,6 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
     // :: Internal Instance Fields
 
-    private val loginService = LoginService()
     private var ownerSlot: ScopeSlot? = null
 
     init {
@@ -70,7 +70,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         scope.errorMessage = null
 
         try {
-            val subject = loginService.fetchSubject(scope.userName ?: "", scope.password ?: "")
+            val subject = CredentialsCheck(scope.userName ?: "", scope.password ?: "").run()
 
             scope.loading = false
 
