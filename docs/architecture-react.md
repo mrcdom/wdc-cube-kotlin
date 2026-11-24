@@ -234,10 +234,10 @@ The `appId` is self-signed: `{random}.{signature(random)}` (`AppSecurity.signAsH
 
 ## Skeleton — The Bridge Between Presenter and Client
 
-Presenters do not create views. The skeleton fills the application's **view catalog** (`ScopeViews`, in `ReactRootPresenter`): one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it. Only the login (deciphers the password) and the receipt (one-time notice) have classes of their own:
+Presenters do not create views, and the application keeps none. Each session (`ReactRootPresenter`) owns a **`ScopeViews`** registry (`views`): which view draws each kind of scope — one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it — and the view of each scope on the client's screen. Only the login (deciphers the password) and the receipt (one-time notice) have classes of their own:
 
 ```kotlin
-scopeViews = ScopeViews()
+views = ScopeViews()
     .register<RootScope> { ScopeViewImpl("f2d345c4a610", this, it) }
     .register<LoginScope> { LoginReactViewImpl(this, it) }
     .register<HomeScope> { ScopeViewImpl("473dbdd7a36a", this, it) }
@@ -248,6 +248,8 @@ scopeViews = ScopeViews()
     .register<ProductsPanelScope> { ScopeViewImpl("a1b2c3d4e5f6", this, it) }
     .register<PurchasesPanelScope> { ScopeViewImpl("b3c4d5e6f7a8", this, it) }
 ```
+
+A view is created the first time its scope is written (`views.viewOf`, which `Scope.write` calls for the scopes inside the one it writes), repaints on each change of its scope (it is marked dirty and goes out in the next message), and is dropped when the presenter releases the scope: the registry calls its `release()`, which removes it from the session's view map.
 
 `ScopeViewImpl` extends `GenericViewImpl` and does three things, all generic:
 
@@ -266,7 +268,7 @@ open class ScopeViewImpl<S : Scope>(vid: String, app: ReactRootPresenter, val sc
 
     // 3. The scope as JSON, with the ids of the views of the scopes inside it
     override fun writeScope(json: ExtensibleObjectOutput) {
-        scope.write(instanceId, json, app::viewOf)
+        scope.write(instanceId, json, app.views::viewOf)
     }
 }
 ```

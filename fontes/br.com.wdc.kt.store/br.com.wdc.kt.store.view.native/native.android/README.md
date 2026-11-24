@@ -73,21 +73,22 @@ The scheduler works via `Handler(Looper.getMainLooper())`:
 ### Navigation and Slots
 
 Parent views declare a `ViewSlot` over a `FrameLayout` (`newViewSlot(container)`). The parent scope holds the child's scope (`content`, and
-`productsPanel`/`purchasesPanel` in Home); the parent asks the application for that scope's view, which is created once
-per scope and reused:
+`productsPanel`/`purchasesPanel` in Home); the parent asks the layer's registry (`ScopeViews`, created in `MainActivity` and
+passed to the views that have slots) for that scope's view, which is created once per scope, reused, and released
+with the scope:
 
 ```kotlin
 // In HomeViewAndroid
 detailSlot = newViewSlot(detailContainer)
 
 // In doUpdate(): the slot swaps the visible view when the child scope changes
-detailSlot.sync(scope.content?.let(app::viewOf))
+detailSlot.sync(scope.content?.let(views::viewOf))
 ```
 
 A child view repaints only when its own scope changes, never along with its parent.
 
-The catalog of views (`ScopeViews`, scope class → view) is set on the application in `MainActivity` before the first
-navigation.
+The registry (`ScopeViews`, scope class → view) is filled in `MainActivity` before the first navigation; the root view
+is `views.viewOf(app.scope)`.
 
 ## Building and running
 

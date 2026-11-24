@@ -4,30 +4,26 @@ View implementation using **React + Material UI** through Kotlin/JS — no Compo
 
 ## Architecture
 
-### Base Class: `ReactCubeView<S>`
+### Views: function components of the scope
 
-Every view extends `ReactCubeView<S>`, which ties the Cube lifecycle to React's rendering mechanism. A view receives
-the application and the scope it paints — never the presenter — and calls the scope's actions (`scope.onX(...)`)
-inside `safeCall`:
+A view is a React function component of the scope it paints — no class, no object behind it, as in the TypeScript
+version of the framework. It receives the scope in its props (never the presenter), subscribes to it with
+`useScope`, and calls the scope's actions (`scope.onX(...)`) inside `safeCall`:
 
 ```kotlin
-class ProductsPanelView(app: RootPresenter, scope: ProductsPanelScope)
-    : ReactCubeView<ProductsPanelScope>("products-panel-view", app, scope) {
-
-    override val component = FC<Props> {
-        var rev by useState(revision)
-        useEffect(this@ProductsPanelView) { onUpdate = { rev = revision } }
-        // JSX through Kotlin/JS wrappers
-        Typography { +"Products" }
-        Box { /* ... */ }
+val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
+    val scope = useScope(props.scope)
+    // JSX through Kotlin/JS wrappers
+    Typography { +"Products" }
+    for (product in scope.products) {
+        CardActionArea { onClick = { safeCall { scope.onOpenProduct(product.id) } } }
     }
 }
 ```
 
-The lifecycle is:
-1. `component` — the React function component that produces the UI through React/MUI, reading the scope
-2. `ViewUpdateScheduler` increments the view's `revision` and calls its `onUpdate` → the component's state changes → re-render
-3. Since React is already reactive, there is no need for manual guards (the virtual DOM optimizes automatically)
+`useScope(scope)` subscribes the component to its scope when it mounts and unsubscribes when it unmounts: the
+component's lifecycle is the view's, and nothing is released by hand. A change between the first render and the
+subscription is not lost (the scope's `version` tells it).
 
 ### Technology Stack
 
@@ -43,60 +39,54 @@ The lifecycle is:
 
 The bridge between the Cube framework (imperative) and React (declarative) is the `ViewUpdateScheduler`:
 
-1. A scope change calls the view's `update()` → marks the view as dirty
+1. A scope change reaches the components subscribed to it (`useScope`) → each marks itself dirty
 2. On the next animation frame (`window.requestAnimationFrame`), the scheduler flushes; a `safeCall` also flushes when its action ends
-3. The flush first runs `app.commitComputedState()` once (every live presenter's), then increments the `revision` (React state) of each dirty view
-4. React re-renders only the components whose state changed
+3. The flush first runs `app.commitComputedState()` once (every live presenter's), then bumps a state counter of each dirty component
+4. React re-renders only those components
 
 ### Implementation Patterns
 
 | Pattern | Description |
 |--------|-----------|
-| **RenderSlot** | React component that renders a child `CubeView` (navigation) |
+| **RenderSlot** | Memoized component that draws the view of a child scope, from the catalog |
 | **Responsive breakpoints** | `window.innerWidth` against 518px (`COMPACT_BREAKPOINT`, in `HomeView`) to switch between compact and wide layouts |
 | **Hash routing** | `window.location.hash` kept in sync with Cube navigation (in `Main.kt`) |
 | **MUI theming** | Colors, styles and the MUI theme through constants (`StoreColors`, `StoreStyles`, `StoreTheme`) |
-| **useEffect + revision** | Each view's component keeps `useState(revision)` and sets the view's `onUpdate` in a `useEffect`, to trigger a re-render |
+| **useScope** | Each view subscribes to its scope while mounted, to repaint when it changes |
 
 ### Navigation and Slots
 
 Parent views use the `RenderSlot` component. The parent scope holds the child's scope (`content`, and
-`productsPanel`/`purchasesPanel` in Home); the parent asks the application for that scope's view, created once per
-scope and reused:
+`productsPanel`/`purchasesPanel` in Home), and the slot draws it with the component the catalog registers for its
+class:
 
 ```kotlin
 // In HomeView
-val contentView = scope.content?.let(app::viewOf)
-RenderSlot { view = contentView }
+RenderSlot { this.scope = scope.content }
 
 // When the presenter navigates, the scope in the field changes
 // and RenderSlot renders the new view automatically
 ```
 
-The cart draws each row (`CartScope.rows`) with the view of the row's scope (`CartItemView`), so changing a quantity
-repaints that row and the total, not the list. The catalog of views (`ScopeViews`, scope class → view) is set on the
-application in `Main.kt` before the first navigation.
+The catalog (`ScopeComponents`, scope class → component) is `storeViews`, in `views/StoreViews.kt`; `Main.kt`
+provides it around the root (`ScopeComponentsContext.Provider`) and draws the root scope in a slot.
 
-`RenderSlot` is memoized: a parent repaint does not repaint the view in its slot. Cube views are independent of each other — a view repaints itself when its own scope changes (its component subscribes to `onUpdate`), and the slot repaints only when the parent puts a different view in it.
+`RenderSlot` is memoized: a parent repaint does not repaint the view in its slot. Cube views are independent of each
+other — a view repaints itself when its own scope changes, and the slot repaints only when the parent puts a different
+scope in it. The slot keys the component by the scope, so another scope in the same slot is a new component, with
+fresh UI state. The cart draws each row (`CartScope.rows`) in a slot of its own, keyed where the list calls it
+(`key = scopeKey(row)`), so changing a quantity repaints that row and the total, not the list.
+`RenderSlotTest` (jsTest, Chrome headless) covers this.
 
-### Emitters (event handlers)
+### Event handlers and UI state
 
-Event handlers are properties of the view class, created once per view — the same function on every render, like the `readonly emitXxx` fields of the remote React client:
-
-```kotlin
-class ReceiptView(app: RootPresenter, scope: ReceiptScope) : ReactCubeView<ReceiptScope>("receipt-view", app, scope) {
-    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
-
-    override val component = FC<Props> {
-        Button { onClick = onOpenProducts }
-    }
-}
-```
-
-- An emitter does not capture values of the render: it reads what it needs from the scope, from a field of the view, or from an element ref, when it runs.
-- UI state that belongs to the view (a quantity being chosen, the selected tab) lives in a field; the emitter changes it and calls `forceUpdate()`, which repaints this view only.
-- List items get their own emitters, kept per key by `EmitterCache` (the products panel: `openProduct[product.id]`); `retainOnly(keys)` drops the keys no longer shown. A list whose rows have actions of their own (the cart) is better drawn as one view per row scope (`CartItemView`), whose emitters are fields like any view's.
-- Text fields are uncontrolled where the value is only needed on submit (login): `inputRef` + `defaultValue`, read when the emitter runs, so typing repaints nothing.
+- Event handlers are lambdas in the component: `onClick = { safeCall { scope.onBuy() } }`. They read what they need
+  from the scope, from component state or from an element ref when they run.
+- UI state that belongs to the view (a quantity being chosen, the selected tab) is component state (`useState`),
+  fresh for each scope the slot shows.
+- Text fields are uncontrolled where the value is only needed on submit (login): `useRef` + `inputRef` +
+  `defaultValue`, read when the handler runs, so typing repaints nothing.
+- A listener on the window (the Home's resize) is added in `useEffectWithCleanup` and removed when the view unmounts.
 
 ## How to build and run
 
@@ -117,17 +107,16 @@ cd fontes
 
 ```
 src/jsMain/kotlin/br/com/wdc/store/nativeui/web/
-├── Main.kt                # Entry point — bootstrap, the view catalog (ScopeViews), signed hash routing
+├── Main.kt                # Entry point — bootstrap, the catalog around the root, signed hash routing
 ├── bridge/
-│   ├── ReactCubeView.kt        # Base class of the views (revision, onUpdate, safeCall, forceUpdate)
-│   ├── ViewUpdateScheduler.kt  # Update coalescing per animation frame
-│   ├── RenderSlot.kt           # Memoized slot for a child view
-│   └── EmitterCache.kt         # Per-key event handlers for list items
+│   ├── RenderSlot.kt           # ScopeProps, the catalog (ScopeComponents), RenderSlot, useScope, safeCall
+│   └── ViewUpdateScheduler.kt  # The paint cycle, once per animation frame
 ├── theme/
 │   └── StoreTheme.kt      # Palette (StoreColors), styles (StoreStyles) and the MUI theme
 ├── util/
 │   └── FormatUtils.kt     # Price and date formatting, image URLs
 └── views/
+    ├── StoreViews.kt            # The catalog: which component draws each scope
     ├── RootView.kt              # App shell
     ├── LoginView.kt             # Login screen
     ├── HomeView.kt              # Responsive layout with panels/tabs

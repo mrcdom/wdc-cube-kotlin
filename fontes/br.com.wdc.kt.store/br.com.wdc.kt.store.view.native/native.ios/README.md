@@ -106,15 +106,16 @@ Breakpoints:
 ### Navigation and Slots
 
 Parent views declare a `ViewSlot` over a container `UIView` (`newViewSlot(container)`). The parent scope holds the child's scope (`content`, and
-`productsPanel`/`purchasesPanel` in Home); the parent asks the application for that scope's view, which is created once
-per scope and reused. The slot pins the child view with constraints on all 4 edges:
+`productsPanel`/`purchasesPanel` in Home); the parent asks the layer's registry (`ScopeViews`, created in `AppBootstrap` and
+passed to the views that have slots) for that scope's view, which is created once per scope, reused, and released
+with the scope. The slot pins the child view with constraints on all 4 edges:
 
 ```kotlin
 // In HomeViewIos
 detailSlot = newViewSlot(detailContainer)
 
 // In doUpdate(): the slot swaps the visible view when the child scope changes
-detailSlot.sync(scope.content?.let(app::viewOf))
+detailSlot.sync(scope.content?.let(views::viewOf))
 ```
 
 The cart draws each row (`CartScope.rows`) with the view of the row's scope (`CartItemViewIos`), so changing a

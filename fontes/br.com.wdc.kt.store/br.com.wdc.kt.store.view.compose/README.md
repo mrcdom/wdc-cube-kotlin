@@ -4,7 +4,7 @@ Shared UI in **Compose Multiplatform** with Material 3. Holds all the screens an
 
 **Platforms:** JVM, Android, iOS, wasmJs
 
-See the [Cube + Compose architecture](../../../docs/architecture-cube-compose.md) for details on the integration (ComposeCubeView, revision counter, safeCall, slots, the view catalog, per-platform startup) and the [architecture overview](../../../docs/architecture.md) for the project context.
+See the [Cube + Compose architecture](../../../docs/architecture-cube-compose.md) for details on the integration (views as functions of the scope, `useScope`, the paint cycle, safeCall, slots, the view catalog, per-platform startup) and the [architecture overview](../../../docs/architecture.md) for the project context.
 
 ## Platform Subprojects
 

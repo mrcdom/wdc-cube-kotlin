@@ -364,7 +364,7 @@ graph TD
     style RECEIPT fill:#f9a825,color:#000
 ```
 
-The mechanism that connects parent and child presenters uses **ScopeSlots** — functional callbacks that fully decouple the parent from the child. The child hands its scope to the parent, which keeps it in a field of its own scope; the parent's view asks the application for the view of that scope (`app.viewOf`), created by the view layer's catalog (`ScopeViews`):
+The mechanism that connects parent and child presenters uses **ScopeSlots** — functional callbacks that fully decouple the parent from the child. The child hands its scope to the parent, which keeps it in a field of its own scope; the parent's view draws that scope with the view its layer registered for it:
 
 ```mermaid
 sequenceDiagram
@@ -382,7 +382,7 @@ sequenceDiagram
     Intent-->>Home: contentSlot
     Home->>Root: contentSlot.setScope(homeScope)
     Root->>Root: scope.content = homeScope
-    Note over RootView: Recomposes and renders app.viewOf(scope.content) = HomeView
+    Note over RootView: Recomposes: RenderSlot(scope.content) draws HomeView
 ```
 
 For full details of the transactional navigation mechanism (commit, rollback, interruption, presenter migration), see [architecture-cube.md](architecture-cube.md).
@@ -429,15 +429,15 @@ HTTP server based on **Javalin** (Java 21) with:
 
 ## Compose Multiplatform Integration
 
-Cube is integrated with Compose through the `ComposeCubeView` class, which solves three fundamental problems:
+A Compose view is a **function of its scope** (`@Composable fun CartView(scope: CartScope)`), with no object behind it. A small bridge solves the rest:
 
-- **Recomposition** — a `revision` counter (`MutableState<Int>`) is incremented when a field of the view's scope changes (once per paint cycle, after `app.commitComputedState()`), triggering Compose's automatic recomposition
+- **Recomposition and lifecycle** — `useScope(scope)` subscribes the view to its scope when it enters the composition and unsubscribes when it leaves; a change marks the view dirty and the paint cycle (once per cycle, after `app.commitComputedState()`) recomposes it. No view is released by hand
 - **Threading** — `safeCall` dispatches presenter actions to a coroutine with `limitedParallelism(1)`, keeping the UI thread free and guaranteeing serial execution
-- **Hierarchical composition** — `RenderSlot(view)` renders a child `CubeView` inside a parent view, with no type coupling
+- **Hierarchical composition** — `RenderSlot(scope)` draws the view of a child scope inside a parent view, with no type coupling
 
-The **view catalog** (`ScopeViews`, scope class → view; `composeScopeViews(app)` in the Compose layer) is given to the application by each entry point, keeping presenters free of UI dependencies: presenters never create views.
+The **view catalog** (`storeViews`: scope class → composable) is provided by `StoreApp(app)`, which every Compose entry point shows; presenters never create views, and the application keeps none.
 
-See [architecture-cube-compose.md](architecture-cube-compose.md) for full details: the ComposeCubeView bridge, revision counter, safeCall, RenderSlot, the view catalog, per-platform initialization, deep-linking and the loading pattern.
+See [architecture-cube-compose.md](architecture-cube-compose.md) for full details: `useScope`, the paint cycle, safeCall, RenderSlot, the view catalog, per-platform initialization, deep-linking and the loading pattern.
 
 ---
 
@@ -504,9 +504,9 @@ private suspend fun guard(block: suspend () -> Unit) {
 Each platform has an entry point that:
 
 1. **Configures** platform-specific **dependencies** (JSON, HTTP, Crypto, Scheduler)
-2. **Creates the application** and gives it the view catalog (`app.scopeViews = composeScopeViews(app)`)
+2. **Creates the application** and hands it to the paint cycle (`ViewUpdateScheduler.initialize { app }`)
 3. Triggers the initial navigation
-4. **Renders** using Compose
+4. **Renders** using Compose (`StoreApp(app)`)
 
 ```mermaid
 sequenceDiagram
@@ -522,10 +522,10 @@ sequenceDiagram
     Note over Platform: JSON, HTTP, Crypto,<br/>Scheduler
 
     Main->>App: create RootPresenter()
-    Main->>App: app.scopeViews = composeScopeViews(app)
+    Main->>App: ViewUpdateScheduler.initialize { app }
     Main->>Keys: RootKeys(app).flip()
     Keys->>App: app.flip(CubeTreePlace.ROOT, intent) — no steps
-    App->>App: applyParameters(init=true, deepest=true):<br/>viewOf(scope) creates the root view, restores the session
+    App->>App: applyParameters(init=true, deepest=true):<br/>restores the session
     App->>Rs: RestrictedKeys(app, intent).flip() (redirect)
     Rs->>Rs: Checks subject
     Rs->>Keys: HomeKeys(app, intent).flip() when there is one
@@ -582,7 +582,7 @@ sequenceDiagram
 
     Nav->>Nav: release LoginPresenter, then OpenPresenter
     Nav->>Nav: updateHistory()
-    Note over HV: Next paint: app.commitComputedState(),<br/>then app.viewOf(HomeScope) = HomeView
+    Note over HV: Next paint: app.commitComputedState(),<br/>then RenderSlot(HomeScope) draws HomeView
 
     Note over HV: Compose recomposes:<br/>renders Home with products
     HV->>User: Shows main screen
@@ -595,7 +595,7 @@ sequenceDiagram
 | Document | Content |
 |-----------|----------|
 | [architecture-cube.md](architecture-cube.md) | Cube framework — transactional navigation mechanism, presenter lifecycle, interruption and migration, commit/rollback, guarantees |
-| [architecture-cube-compose.md](architecture-cube-compose.md) | Cube + Compose integration — ComposeCubeView, revision counter, safeCall, RenderSlot, the view catalog, per-platform initialization |
+| [architecture-cube-compose.md](architecture-cube-compose.md) | Cube + Compose integration — views as functions of the scope, useScope, the paint cycle, safeCall, RenderSlot, the view catalog, per-platform initialization |
 | [architecture-react.md](architecture-react.md) | Remote view modality — React + WebSocket, Skeletons, scope synchronization, security |
 | [architecture-persistence.md](architecture-persistence.md) | Persistence layer — repositories, criteria, projection, transactions (local and remote), REST API |
 | [security-architecture.md](security-architecture.md) | Security — trust boundaries, authentication, data policies of the REST API, limitations |
@@ -609,14 +609,13 @@ sequenceDiagram
 | **Place**            | Navigation destination with id, name and presenter factory; declared by the keys class of the place (`CubeTreePlace`, child of the place of the keys it extends) |
 | **CubeIntent**       | Container of parameters (serializable) and attributes (ephemeral) for a navigation transaction |
 | **ScopeSlot**        | Functional callback through which a child presenter hands its scope to the parent |
-| **ScopeViews**       | The view layer's catalog: which view draws each kind of scope; `app.viewOf(scope)` creates the view once |
+| **ScopeViews**       | The registry of a view layer that keeps view objects (native iOS/Android, remote React, test mocks): which view draws each kind of scope, and the view of each scope on screen, dropped when the scope is released |
 | **Action**           | An entry point of a presenter kept in a field of its scope (`Action`, `ActionOf`, `ActionOf2`), bound with a guard and, for remote views, an event code |
 | **Segment**          | A smaller scope inside the owner's (a panel, a list row), with its own view and no presenter |
 | **Presenter**        | Controller that encapsulates a screen's presentation logic (plain Kotlin, no UI dependency) |
-| **Scope**            | What a presenter shows: a mutable object with the data its view paints, observed (a change asks for a repaint) and serializable to JSON |
-| **ComposeCubeView**  | Bridge between CubeView and Jetpack Compose, with a revision counter mechanism |
+| **Scope**            | What a presenter shows: a mutable object with the data its view paints, with subscribers (a change repaints the views that read it), released with its presenter, and serializable to JSON |
+| **useScope**         | The hook of Compose and the native web that subscribes a view to its scope while it is on screen |
 | **safeCall**         | Serialized asynchronous dispatch (limitedParallelism=1) of the scope's actions from the view |
 | **CubeNavigation**   | Atomic navigation transaction with commit, rollback and support for interruptions |
 | **CubeApplication**  | Global container of active presenters and entry point for navigation |
 | **Skeleton**         | Server-client bridge in the React modality — serializes each view's scope for WebSocket |
-| **revision**         | MutableState counter that triggers Compose recomposition |
