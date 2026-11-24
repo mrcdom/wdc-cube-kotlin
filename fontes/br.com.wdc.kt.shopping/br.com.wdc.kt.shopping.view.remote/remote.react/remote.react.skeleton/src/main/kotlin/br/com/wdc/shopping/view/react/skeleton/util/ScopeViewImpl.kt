@@ -9,7 +9,12 @@ import br.com.wdc.shopping.view.react.skeleton.viewimpl.ReactRootPresenter
  * ([Scope.dispatch]), what the user typed to [Scope.sync], and the scope goes out as JSON with the ids of the views of
  * the scopes inside it. [vid] names the client component that paints it.
  */
-open class ScopeViewImpl<S : Scope>(vid: String, app: ReactRootPresenter, val scope: S) : GenericViewImpl(vid, app) {
+open class ScopeViewImpl<S : Scope>(
+    vid: String,
+    app: ReactRootPresenter,
+    val scope: S,
+    instanceId: Int = app.nextInstanceId(),
+) : GenericViewImpl(vid, app, instanceId) {
 
     override fun syncClientToServer(formData: Map<String, Any?>) {
         scope.sync(formData)

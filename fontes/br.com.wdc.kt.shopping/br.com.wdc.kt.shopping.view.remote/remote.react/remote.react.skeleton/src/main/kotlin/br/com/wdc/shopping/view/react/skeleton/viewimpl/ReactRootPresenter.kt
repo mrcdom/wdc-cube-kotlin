@@ -67,7 +67,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
                 var path = app.fragment
                 @Suppress("UNCHECKED_CAST")
-                val browserScope = request[BrowserReactViewImpl.VSID] as? Map<String, Any?>
+                val browserScope = request[BrowserPresenter.VSID] as? Map<String, Any?>
                 if (browserScope != null) {
                     val p = browserScope["p.path"] as? String
                     if (!p.isNullOrBlank()) {
@@ -120,13 +120,18 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
     private val viewMap = HashMap<String, GenericViewImpl>()
     private var lastRequestId: Long = 0L
     private var historyDirty: Boolean = false
-    internal lateinit var browserView: BrowserReactViewImpl
+    /** The browser tab: its scope's view is the client's top view ("<vid>:0"). */
+    internal lateinit var browser: BrowserPresenter
+        private set
+
+    internal lateinit var browserView: GenericViewImpl
         private set
     private var instanceIdGen: Int = 1
 
     init {
         // which client component paints each scope (the vid); the login and the receipt have their own server side
         scopeViews = ScopeViews()
+            .register<BrowserScope> { ScopeViewImpl(BrowserPresenter.VID, this, it, instanceId = 0) }
             .register<RootScope> { ScopeViewImpl("f2d345c4a610", this, it) }
             .register<LoginScope> { LoginReactViewImpl(this, it) }
             .register<HomeScope> { ScopeViewImpl("473dbdd7a36a", this, it) }
@@ -138,7 +143,8 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
             .register<PurchasesPanelScope> { ScopeViewImpl("b3c4d5e6f7a8", this, it) }
 
         this.dataSecurity = DataSecurity()
-        this.browserView = BrowserReactViewImpl(this)
+        this.browser = BrowserPresenter(this)
+        this.browserView = viewOf(browser.scope) as GenericViewImpl
         this.viewMap[browserView.instanceId] = browserView
         this.dirtyViewMap[browserView.instanceId] = browserView
         this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.inWholeMilliseconds
@@ -147,7 +153,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
     override fun release() {
         try {
             try {
-                this.browserView.release()
+                this.browser.release()
                 this.removeInstanceAction()
                 this.removeInstanceAction = {}
                 super.release()
@@ -248,7 +254,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
     override fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
         val text = errorText(message, e)
         logger.error(text, e)
-        browserView.alertUnexpectedError(text)
+        browser.alertUnexpectedError(text)
     }
 
     @Synchronized

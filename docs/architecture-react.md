@@ -280,11 +280,13 @@ scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
 
 The login is the exception: its values arrive by sync (the password ciphered with the session key, which only the skeleton knows), so `LoginReactViewImpl` overrides `syncClientToServer`, and the presenter handles the event by hand: `onEvent(1) { scope.onEnter(null, null) }`.
 
+The browser tab itself is a scope of the remote layer (`BrowserScope`: the alert and the root scope, sent as `contentViewId`), whose actions `BrowserPresenter` binds with their codes like any presenter; the presentation knows nothing of it.
+
 The mapping between hexadecimal View IDs and views is fixed and shared between client and server:
 
 | View | Hex VID | Client (TSX) | Server (Kotlin) | Events |
 |------|---------|---------------|-------------------|--------|
-| Browser | `7b32e816a191` | BrowserView.tsx | BrowserReactViewImpl.kt | |
+| Browser | `7b32e816a191` | BrowserView.tsx | `ScopeViewImpl` (`BrowserScope`, actions bound by `BrowserPresenter`; instance `:0`) | 1 alert OK, 2 keep-alive, -1 start (`p.path`), -2 history changed (`p.path`) |
 | Root | `f2d345c4a610` | RootView.tsx | `ScopeViewImpl` (`RootScope`) | |
 | Login | `c677cda52d14` | LoginView.tsx | LoginReactViewImpl.kt | 1 enter |
 | Home | `473dbdd7a36a` | HomeView.tsx | `ScopeViewImpl` (`HomeScope`) | 1 exit, 2 open cart |

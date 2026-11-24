@@ -27,7 +27,7 @@ class UnexpectedErrorAlertTest {
     fun theClientGetsOnlyWhatFailed_neverTheStackTrace() {
         app.alertUnexpectedError(log, "Buying a product", IllegalStateException("connection refused"))
         assertEquals(
-            """{"id":"${BrowserReactViewImpl.VSID}","alertMessage":{"id":-1,"args":["Buying a product: connection refused"]}}""",
+            """{"id":"${BrowserPresenter.VSID}","alertMessage":{"id":-1,"args":["Buying a product: connection refused"]},"contentViewId":"f2d345c4a610:1"}""",
             browserScope(),
         )
     }
@@ -35,6 +35,13 @@ class UnexpectedErrorAlertTest {
     @Test
     fun withoutACauseMessage_onlyWhatFailed() {
         app.alertUnexpectedError(log, "Buying a product", IllegalStateException())
-        assertEquals("""{"id":"${BrowserReactViewImpl.VSID}","alertMessage":{"id":-1,"args":["Buying a product"]}}""", browserScope())
+        assertEquals("""{"id":"${BrowserPresenter.VSID}","alertMessage":{"id":-1,"args":["Buying a product"]},"contentViewId":"f2d345c4a610:1"}""", browserScope())
+    }
+
+    @Test
+    fun theAlertsOk_dismissesIt_byItsEventCode() = kotlinx.coroutines.runBlocking {
+        app.alertUnexpectedError(log, "Buying a product", IllegalStateException())
+        app.browser.scope.dispatch(1, emptyMap())
+        assertEquals("""{"id":"${BrowserPresenter.VSID}","contentViewId":"f2d345c4a610:1"}""", browserScope())
     }
 }

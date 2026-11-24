@@ -16,8 +16,6 @@ abstract class GenericViewImpl protected constructor(
 
     private val _instanceId: String = "$vid:$instanceId"
 
-    protected var alertId: Int = 0
-
     init {
         this.app.putView(this)
         this.app.markDirty(this)
