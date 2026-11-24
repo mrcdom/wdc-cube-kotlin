@@ -2,6 +2,7 @@ package br.com.wdc.shopping.test
 
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.mock.viewimpl.CartViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.LoginViewMock
@@ -56,6 +57,20 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         assertSame(row, cart.rows.single(), "the row that stays is reused")
         assertEquals(3 * row.price, cart.total, 1e-9, "the total is computed on the server")
         assertEquals(3, home.scope.cartItemCount)
+    }
+
+    @Test
+    fun everyProductOfTheSeed_opens() = runBlocking {
+        // the seed started its ids at 0, and the home refuses a non-positive id: the first product never opened
+        val home = gotoRestricted()
+        val ids = home.getProductsPanelScope().products!!.map { it.id }
+        assertTrue(ids.all { it > 0 }, "seed ids start at 1: $ids")
+        for (id in ids) {
+            RestrictedViewMock.cast(app.getRootView()!!.contentView).getProductsPanelScope().onOpenProduct(id)
+            val now = RestrictedViewMock.cast(app.getRootView()!!.contentView)
+            assertEquals(id, ProductViewMock.cast(now.contentView).scope.product!!.id)
+            HomeKeys(app).flip()
+        }
     }
 
     @Test
