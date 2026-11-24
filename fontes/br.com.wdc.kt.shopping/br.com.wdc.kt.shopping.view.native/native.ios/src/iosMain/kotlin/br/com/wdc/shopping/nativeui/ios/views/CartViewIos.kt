@@ -1,13 +1,15 @@
 package br.com.wdc.shopping.nativeui.ios.views
 
+import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.shopping.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingIcons
 import br.com.wdc.shopping.nativeui.ios.theme.UIK
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import platform.UIKit.*
@@ -15,11 +17,12 @@ import platform.objc.sel_registerName
 import platform.darwin.NSObject
 
 /**
- * Cart view — list of items with quantity controls, remove button, total, and buy button.
- * Uses ListSlot with CartItemView sub-views for efficient recycling.
+ * Cart view — the rows, the total, and the buy button.
+ * Each row is a view of its own ([CartItemViewIos], from the catalog): the cart only places them, in order.
+ * A row that stays keeps its view; the presenter releases the views of the rows that leave.
  */
 @OptIn(ExperimentalForeignApi::class)
-class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("cart-view", presenter) {
+class CartViewIos(app: RootPresenter, scope: CartScope) : AbstractViewIos<CartScope>("cart-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: UIStackView
@@ -29,12 +32,15 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
     private lateinit var backButton: UIButton
     private lateinit var errorLabel: UILabel
     private lateinit var footerContainer: UIView
-    private lateinit var itemsSlot: ListSlot<CartItem, CartItemView>
+
+    /** The row views currently in [stackView], in order. */
+    private var rowViews: List<CubeView> = emptyList()
 
     private val actions = CartActions(this).also { retainForGC(it) }
 
     // Guards
-    private var lastItems: List<CartItem>? = null
+    private var lastRows: List<CartItemScope>? = null
+    private var lastTotal: Double = -1.0
     private var lastError: String? = null
 
     private lateinit var titleLabel: UILabel
@@ -274,43 +280,30 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
                 trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0)
             ))
         }
-
-        itemsSlot = newListSlot(
-            stackView,
-            factory = { CartItemView(presenter).also { it.initialize() } },
-            updater = { view, item -> view.setState(item); view.forceUpdate() }
-        )
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val items = state.items
+        val rows = scope.rows
 
-        // Items list (guard by reference)
-        if (items !== lastItems) {
-            lastItems = items
+        // Rows (guard by reference: the presenter assigns a new list when the rows change)
+        if (rows !== lastRows) {
+            lastRows = rows
+            val empty = rows.isEmpty()
+            emptyContainer.hidden = !empty
+            scrollView.hidden = empty
+            backButton.hidden = !empty
+            syncRows(rows.map(app::viewOf))
+        }
 
-            if (items.isEmpty()) {
-                emptyContainer.hidden = false
-                scrollView.hidden = true
-                backButton.hidden = false
-                itemsSlot.sync(emptyList())
-            } else {
-                emptyContainer.hidden = true
-                scrollView.hidden = false
-                backButton.hidden = true
-                itemsSlot.sync(items)
-
-                var total = 0.0
-                for (item in items) {
-                    total += item.price * item.quantity
-                }
-                totalLabel.text = "\$${ViewUtils.formatPrice(total)}"
-            }
+        // Total (guard), computed by the presenter
+        val total = scope.total
+        if (total != lastTotal) {
+            lastTotal = total
+            totalLabel.text = "\$${ViewUtils.formatPrice(total)}"
         }
 
         // Error (guard)
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (errorMessage != lastError) {
             lastError = errorMessage
             if (!errorMessage.isNullOrBlank()) {
@@ -322,12 +315,31 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
         }
     }
 
+    /**
+     * Places the row views in [stackView] in the given order. Views that stay are moved, not rebuilt;
+     * views that left are only detached (releasing them is the presenter's job, through `app.releaseView`).
+     */
+    private fun syncRows(views: List<CubeView>) {
+        val next = views.filterIsInstance<AbstractViewIos<*>>()
+        for (old in rowViews) {
+            if (next.none { it === old }) (old as? AbstractViewIos<*>)?.rootView?.removeFromSuperview()
+        }
+        next.forEachIndexed { index, view ->
+            val arranged = stackView.arrangedSubviews
+            if (index >= arranged.size || arranged[index] !== view.rootView) {
+                stackView.insertArrangedSubview(view.rootView, atIndex = index.toULong())
+            }
+        }
+        rowViews = next
+        stackView.setNeedsLayout()
+    }
+
     internal fun goBack() {
-        safeAction("back") { presenter.onOpenProducts() }
+        safeAction("back") { scope.onOpenProducts() }
     }
 
     internal fun buy() {
-        safeAction("buy") { presenter.onBuy() }
+        safeAction("buy") { scope.onBuy() }
     }
 }
 
@@ -342,146 +354,5 @@ private class CartActions(private val view: CartViewIos) : NSObject() {
     @ObjCAction
     fun onBuy() {
         view.buy()
-    }
-}
-
-// --- Item sub-view: CartItemView ---
-
-@OptIn(ExperimentalForeignApi::class)
-private class CartItemView(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("cart-item", presenter) {
-
-    private lateinit var imageView: UIImageView
-    private lateinit var nameLabel: UILabel
-    private lateinit var priceLabel: UILabel
-    private lateinit var qtyLabel: UILabel
-
-    var item: CartItem? = null
-        private set
-
-    // Retained action target (UIKit uses weak ref to control target)
-    private lateinit var itemActions: CartItemActions
-
-    // Guards
-    private var lastItemId: Long = -1
-    private var lastName: String? = null
-    private var lastPrice: Double = -1.0
-    private var lastQuantity: Int = -1
-
-    fun setState(cartItem: CartItem) {
-        this.item = cartItem
-    }
-
-    override fun createView(): UIView = UIKitDom.build {
-        val card = parent()
-        card.backgroundColor = ShoppingColors.SurfaceVariant40
-        card.layer.cornerRadius = 8.0
-
-        hStack(spacing = 12.0, configure = {
-            alignment = UIK.StackAlignCenter
-            layoutMarginsRelativeArrangement = true
-            layoutMargins = UIEdgeInsetsMake(10.0, 10.0, 10.0, 10.0)
-        }) {
-            imageView = imageView {
-                contentMode = UIK.ContentModeScaleAspectFill
-                backgroundColor = ShoppingColors.SurfaceVariant
-                layer.cornerRadius = 6.0
-            }
-            vStack(spacing = 2.0) {
-                nameLabel = label {
-                    font = UIFont.boldSystemFontOfSize(14.0)
-                    textColor = ShoppingColors.OnSurface
-                }
-                priceLabel = label {
-                    font = UIFont.systemFontOfSize(13.0)
-                    textColor = ShoppingColors.PriceColor
-                }
-            }
-            hStack(spacing = 4.0, configure = { alignment = UIK.StackAlignCenter }) {
-                itemActions = CartItemActions(this@CartItemView).also { retainForGC(it) }
-                button("−") {
-                    backgroundColor = ShoppingColors.SecondaryContainer
-                    layer.cornerRadius = 4.0
-                    addGestureRecognizer(UITapGestureRecognizer(target = itemActions, action = sel_registerName("onMinus")))
-                }.also { size(it, width = 28.0, height = 28.0) }
-                qtyLabel = label {
-                    font = UIFont.boldSystemFontOfSize(14.0)
-                    textAlignment = UIK.TextAlignCenter
-                    widthAnchor.constraintEqualToConstant(30.0).active = true
-                }
-                button("+") {
-                    backgroundColor = ShoppingColors.SecondaryContainer
-                    layer.cornerRadius = 4.0
-                    addGestureRecognizer(UITapGestureRecognizer(target = itemActions, action = sel_registerName("onPlus")))
-                }.also { size(it, width = 28.0, height = 28.0) }
-                button("✕") {
-                    setTitleColor(ShoppingColors.Error, forState = UIControlStateNormal)
-                    addGestureRecognizer(UITapGestureRecognizer(target = itemActions, action = sel_registerName("onRemove")))
-                }.also { size(it, width = 28.0, height = 28.0) }
-            }
-        }.also { pin(it) }
-
-        NSLayoutConstraint.activateConstraints(listOf(
-            imageView.widthAnchor.constraintEqualToConstant(50.0),
-            imageView.heightAnchor.constraintEqualToConstant(50.0)
-        ))
-    }
-
-    override fun doUpdate() {
-        val i = item ?: return
-
-        if (i.id != lastItemId) {
-            lastItemId = i.id
-            ViewUtils.loadImageAsync(imageView, ViewUtils.productImageUrl(i.id))
-            // Reset guards on identity change
-            lastName = null
-            lastPrice = -1.0
-            lastQuantity = -1
-        }
-        if (i.name != lastName) {
-            lastName = i.name
-            nameLabel.text = i.name ?: ""
-        }
-        if (i.price != lastPrice || i.quantity != lastQuantity) {
-            lastPrice = i.price
-            lastQuantity = i.quantity
-            priceLabel.text = "\$${ViewUtils.formatPrice(i.price)} × ${i.quantity}"
-            qtyLabel.text = i.quantity.toString()
-        }
-    }
-
-    fun onMinus() {
-        val i = item ?: return
-        if (i.quantity > 1) {
-            safeAction("minus") { presenter.onModifyQuantity(i.id, i.quantity - 1) }
-        }
-    }
-
-    fun onPlus() {
-        val i = item ?: return
-        safeAction("plus") { presenter.onModifyQuantity(i.id, i.quantity + 1) }
-    }
-
-    fun onRemove() {
-        val i = item ?: return
-        safeAction("remove") { presenter.onRemoveProduct(i.id) }
-    }
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private class CartItemActions(private val cardView: CartItemView) : NSObject() {
-
-    @ObjCAction
-    fun onMinus() {
-        cardView.onMinus()
-    }
-
-    @ObjCAction
-    fun onPlus() {
-        cardView.onPlus()
-    }
-
-    @ObjCAction
-    fun onRemove() {
-        cardView.onRemove()
     }
 }

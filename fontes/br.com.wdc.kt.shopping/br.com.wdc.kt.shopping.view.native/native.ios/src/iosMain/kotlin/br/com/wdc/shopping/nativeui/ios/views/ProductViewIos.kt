@@ -6,7 +6,8 @@ import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingIcons
 import br.com.wdc.shopping.nativeui.ios.theme.UIK
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import platform.UIKit.*
@@ -18,7 +19,7 @@ import platform.darwin.NSObject
  * Product detail view — image, name, description, price, quantity selector, add-to-cart button.
  */
 @OptIn(ExperimentalForeignApi::class)
-class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPresenter>("product-view", presenter) {
+class ProductViewIos(app: RootPresenter, scope: ProductScope) : AbstractViewIos<ProductScope>("product-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var contentStack: UIStackView
@@ -210,8 +211,7 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val product = state.product
+        val product = scope.product
 
         if (product != null) {
             nameLabel.text = product.name ?: ""
@@ -223,7 +223,7 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
         }
 
         // Error
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             errorLabel.text = errorMessage
             errorLabel.hidden = false
@@ -247,11 +247,11 @@ class ProductViewIos(presenter: ProductPresenter) : AbstractViewIos<ProductPrese
     }
 
     internal fun addToCart() {
-        safeAction("addToCart") { presenter.onAddToCart(quantity) }
+        safeAction("addToCart") { scope.onAddToCart(quantity) }
     }
 
     internal fun goBack() {
-        safeAction("back") { presenter.onOpenProducts() }
+        safeAction("back") { scope.onOpenProducts() }
     }
 }
 

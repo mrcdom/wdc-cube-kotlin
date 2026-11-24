@@ -1,15 +1,14 @@
 package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductViewState
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
 import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 
 class ProductViewMock(
     app: RootPresenterMock,
-    presenter: ProductPresenter,
-) : AbstractViewMock<ProductPresenter>(app, presenter) {
+    scope: ProductScope,
+) : AbstractViewMock<ProductScope>(app, scope) {
 
     companion object {
         fun cast(view: CubeView?): ProductViewMock {
@@ -20,14 +19,13 @@ class ProductViewMock(
         }
     }
 
-    var state: ProductViewState = presenter.state
 
     fun printProduct() {
-        println("PRODUCT #${state.product?.id}")
-        println("Name: ${state.product?.name}")
-        println("Price: ${state.product?.price}")
-        println("Description: ${state.product?.description}")
-        println("Image: ${state.product?.image}")
+        println("PRODUCT #${scope.product?.id}")
+        println("Name: ${scope.product?.name}")
+        println("Price: ${scope.product?.price}")
+        println("Description: ${scope.product?.description}")
+        println("Image: ${scope.product?.image}")
         println()
     }
 }

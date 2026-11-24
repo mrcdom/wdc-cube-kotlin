@@ -1,19 +1,18 @@
 package br.com.wdc.shopping.view.react.skeleton.viewimpl
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
-import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
+import br.com.wdc.shopping.view.react.skeleton.util.ScopeViewImpl
 
-class ReceiptReactViewImpl(presenter: ReceiptPresenter) : GenericViewImpl<ReceiptPresenter>("e8d0bd8ae3bc", presenter) {
+class ReceiptReactViewImpl(app: ReactRootPresenter, scope: ReceiptScope) : ScopeViewImpl<ReceiptScope>(VID, app, scope) {
 
-    @Throws(Exception::class)
-    override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
-        if (eventCode == 1) {
-            presenter.onOpenProducts()
-        }
+    companion object {
+        const val VID = "e8d0bd8ae3bc"
     }
 
-    override fun writeState(json: ExtensibleObjectOutput) {
-        presenter.state.write(instanceId, json)
+    override fun writeScope(json: ExtensibleObjectOutput) {
+        super.writeScope(json)
+        // the success notice shows once: sent, it is consumed
+        scope.notifySuccess = false
     }
 }

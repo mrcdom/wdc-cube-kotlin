@@ -8,7 +8,6 @@ import br.com.wdc.framework.domain.transaction.TransactionNotAllowedException
 import br.com.wdc.framework.domain.transaction.TransactionRequiredException
 import br.com.wdc.framework.domain.transaction.TransactionSystemException
 import br.com.wdc.framework.persistence.transaction.RemoteTransactionOptions
-import br.com.wdc.shopping.domain.ShoppingTransactions
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.purchase.Purchase
@@ -20,9 +19,6 @@ import br.com.wdc.shopping.persistence.client.HttpProductRepository
 import br.com.wdc.shopping.persistence.client.OkHttpTransport
 import br.com.wdc.shopping.persistence.client.RestTransactionService
 import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
-import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
-import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.RestTestEnvironment
 import br.com.wdc.shopping.test.util.TestEnvironmentExtension
@@ -300,40 +296,29 @@ class RemoteTransactionRestTest {
         assertEquals(200, getImage(id, etag).statusCode(), "the old ETag no longer revalidates")
     }
 
-    // :: The checkout, as the client runs it
+    // :: The checkout, as a client application runs it: the purchase and its items in one remote transaction
 
-    /** Runs the block with the transaction service that a REST client registers (`RestRepositoryBootstrap`). */
-    private suspend fun <T> asAClientApplication(block: suspend () -> T): T {
-        val serverSide = ShoppingTransactions.BEAN.get()
-        ShoppingTransactions.BEAN.set(tx())
-        try {
-            return block()
-        } finally {
-            ShoppingTransactions.BEAN.set(serverSide)
+    private fun purchaseOf(vararg products: Pair<Long, Int>) = Purchase().apply {
+        user = User().apply { id = DBReset.FULANO_ID }
+        buyDate = Clock.System.now()
+        items = products.mapTo(ArrayList()) { (productId, amount) ->
+            PurchaseItem().apply { product = Product().apply { id = productId }; this.amount = amount }
         }
     }
 
-    private fun productInfo(id: Long) = ProductInfo().apply { this.id = id; price = 10.5; name = "p$id" }
-
     @Test
     fun checkoutOverRest_commitsThePurchaseAndItsItems() = runBlocking {
-        val cart = CartManager(env.purchaseRepo).apply {
-            addProduct(productInfo(DBReset.COFFEE_MAKER_ID), 1)
-            addProduct(productInfo(DBReset.FLASH_DRIVE_2GB_ID), 2)
-        }
-        val purchaseId = asAClientApplication { cart.commit(Subject().apply { id = DBReset.FULANO_ID }) }
+        val purchase = purchaseOf(DBReset.COFFEE_MAKER_ID to 1, DBReset.FLASH_DRIVE_2GB_ID to 2)
+        tx().required { assertTrue(env.purchaseRepo.insert(purchase)) }
 
-        assertEquals(2, env.purchaseItemRepo.count(PurchaseItemCriteria().withPurchaseId(purchaseId)))
+        assertEquals(2, env.purchaseItemRepo.count(PurchaseItemCriteria().withPurchaseId(purchase.id)))
     }
 
     @Test
     fun checkoutOverRest_thatFailsInTheMiddle_leavesNoOrphanPurchase() = runBlocking {
-        val cart = CartManager(env.purchaseRepo).apply {
-            addProduct(productInfo(DBReset.COFFEE_MAKER_ID), 1)
-            addProduct(productInfo(987_654L), 1)
-        }
+        val purchase = purchaseOf(DBReset.COFFEE_MAKER_ID to 1, 987_654L to 1)
         assertThrows(RuntimeException::class.java) {
-            runBlocking { asAClientApplication { cart.commit(Subject().apply { id = DBReset.FULANO_ID }) } }
+            runBlocking { tx().required { env.purchaseRepo.insert(purchase) } }
         }
         assertEquals(2, env.purchaseRepo.count(PurchaseCriteria()))
         assertEquals(3, env.purchaseItemRepo.count(PurchaseItemCriteria()))

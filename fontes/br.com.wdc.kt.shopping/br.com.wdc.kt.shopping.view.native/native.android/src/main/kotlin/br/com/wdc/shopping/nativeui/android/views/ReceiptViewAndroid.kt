@@ -9,10 +9,11 @@ import br.com.wdc.shopping.nativeui.android.theme.*
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.shopping.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptItem
 
-class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<ReceiptPresenter>("receipt-view", presenter) {
+class ReceiptViewAndroid(app: RootPresenter, scope: ReceiptScope) : AbstractViewAndroid<ReceiptScope>("receipt-view", app, scope) {
 
     private lateinit var successBanner: LinearLayout
     private lateinit var dateLabel: TextView
@@ -172,7 +173,7 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 height = (48 * density).toInt()
                             }
-                            setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
+                            setOnClickListener { safeAction("back") { scope.onOpenProducts() } }
                         }
                     }
                 }
@@ -181,11 +182,10 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val receipt = state.receipt
+        val receipt = scope.receipt
 
         // Success banner
-        if (state.notifySuccess && !successShown) {
+        if (scope.notifySuccess && !successShown) {
             successBanner.visibility = View.VISIBLE
             successShown = true
         }

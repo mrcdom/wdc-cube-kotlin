@@ -5,48 +5,30 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.PresenterBase
+import br.com.wdc.framework.cube.Scope
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.coroutines.launch
 
 /**
- * Base class for Compose-backed CubeView implementations.
+ * Base class for Compose-backed CubeView implementations: draws one [scope] of the application [app].
  *
  * Coalesces multiple update() calls within the same cycle into a single
  * Compose recomposition via the centralized ViewUpdateScheduler. The scheduler
- * batches dirty views, calls commitComputedState() per dirty view, then
- * increments revision — triggering a single recomposition pass.
+ * runs the application's commitComputedState() once per paint cycle, then
+ * increments the revision of each dirty view — triggering a single recomposition pass.
  */
-abstract class ComposeCubeView(
+abstract class ComposeCubeView<S : Scope>(
     private val id: String,
-    internal val presenterBase: PresenterBase
+    protected val app: RootPresenter,
+    protected val scope: S,
 ) : CubeView {
-
-    protected val app: RootPresenter get() = presenterBase.app as RootPresenter
 
     /** Revision counter — read this in @Composable functions to trigger recomposition. */
     val revision: MutableState<Int> = mutableIntStateOf(0)
 
     override val instanceId: String get() = id
 
-    // True while the presenter computes derived state for the paint about to happen;
-    // update() is ignored meanwhile, since this view is already being painted.
-    private var updateMuted = false
-
-    /**
-     * Runs the presenter's commitComputedState() right before this view is painted.
-     */
-    internal fun prepareForPaint() {
-        updateMuted = true
-        try {
-            presenterBase.commitComputedState()
-        } finally {
-            updateMuted = false
-        }
-    }
-
     override fun update() {
-        if (updateMuted) return
         ViewUpdateScheduler.markDirty(this)
     }
 
@@ -58,7 +40,7 @@ abstract class ComposeCubeView(
     }
 
     /**
-     * Wraps a presenter call with error protection and dispatches it off the UI thread.
+     * Wraps a scope action call with error protection and dispatches it off the UI thread.
      *
      * Uses the ViewUpdateScheduler's single-threaded presenterScope to ensure serial
      * execution of presenter actions, preserving the synchronous semantics of the
@@ -83,9 +65,11 @@ abstract class ComposeCubeView(
 }
 
 /**
- * Renders a CubeView slot by casting to ComposeCubeView and calling Render().
+ * Renders a CubeView slot by casting to ComposeCubeView and calling Render(). Views come from
+ * [RootPresenter.viewOf][br.com.wdc.framework.cube.CubeApplication.viewOf], which gives the same instance for the same
+ * scope, so the Compose compiler (strong skipping) skips this call while the slot keeps its scope.
  */
 @Composable
 fun RenderSlot(view: CubeView) {
-    (view as? ComposeCubeView)?.Render()
+    (view as? ComposeCubeView<*>)?.Render()
 }

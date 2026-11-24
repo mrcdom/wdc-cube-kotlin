@@ -20,8 +20,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
- * Purchase and purchase item over the REST path with security on: permission, scope (each one only reaches their
- * own purchases, on reads and writes) and the password of the purchase's user, which never leaves the server.
+ * Purchase and purchase item over the REST path with security on, by their data policies: a purchase is a receipt —
+ * its buyer creates and reads it, only an administrator changes it —, each one only reaches their own purchases, and
+ * the password of the purchase's user never leaves the server.
  */
 class SecuredRestPurchaseRepositoryTest {
 
@@ -45,10 +46,10 @@ class SecuredRestPurchaseRepositoryTest {
         assertTrue(e.message!!.startsWith("HTTP $status"), "esperava HTTP $status, veio: ${e.message}")
     }
 
+    /** An item as a customer sends it: no price — the repository reads the product's in the INSERT. */
     private fun newItem(productId: Long, purchaseId: Long? = null) = PurchaseItem().apply {
         product = Product().apply { id = productId }
         amount = 1
-        price = 10.5
         purchaseId?.let { purchase = Purchase().apply { id = it } }
     }
 
@@ -57,6 +58,7 @@ class SecuredRestPurchaseRepositoryTest {
         env.loginAs("fulano")
         val purchase = Purchase().apply {
             buyDate = Clock.System.now()
+            user = User().apply { id = DBReset.FULANO_ID }
             items = mutableListOf(newItem(DBReset.FLASH_DRIVE_2GB_ID))
         }
         assertTrue(purchases().insert(purchase))
@@ -86,17 +88,35 @@ class SecuredRestPurchaseRepositoryTest {
     fun customer_buysOnlyForThemselves() = runBlocking {
         env.loginAs("fulano")
 
-        // asks for the purchase on someone else's behalf: it stays in their own name
-        val purchase = Purchase().apply {
+        // on someone else's behalf, or on no one's: refused
+        val forAdmin = Purchase().apply {
             buyDate = Clock.System.now()
             user = User().apply { id = DBReset.ADMIN_ID }
             items = mutableListOf(newItem(DBReset.COFFEE_MAKER_ID))
         }
-        assertTrue(purchases().insert(purchase))
-        assertEquals(DBReset.FULANO_ID, purchases().fetchById(purchase.id!!)!!.userId)
+        assertHttp(403) { purchases().insert(forAdmin) }
+        assertHttp(403) { purchases().insert(Purchase().apply { buyDate = Clock.System.now() }) }
+        // the price is the server's: a customer does not send it
+        val priced = Purchase().apply {
+            buyDate = Clock.System.now()
+            user = User().apply { id = DBReset.FULANO_ID }
+            items = mutableListOf(newItem(DBReset.COFFEE_MAKER_ID).apply { price = 0.01 })
+        }
+        val e = assertThrows(RuntimeException::class.java) { runBlocking { purchases().insert(priced) } }
+        assertTrue(e.message!!.startsWith("HTTP 403") && "[price]" in e.message!!, e.message)
+        // the buyer is written by its key only
+        val renamed = Purchase().apply {
+            buyDate = Clock.System.now()
+            user = User().apply { id = DBReset.FULANO_ID; name = "Someone Else" }
+        }
+        assertHttp(403) { purchases().insert(renamed) }
+
+        val own = fulanoBuys()
+        assertEquals(DBReset.FULANO_ID, purchases().fetchById(own.id!!)!!.userId)
 
         env.loginAs("admin")
         assertEquals(2, purchases().count(PurchaseCriteria().withUserId(DBReset.ADMIN_ID)))
+        assertEquals(1, purchases().count(PurchaseCriteria().withUserId(DBReset.FULANO_ID)))
     }
 
     @Test
@@ -112,7 +132,8 @@ class SecuredRestPurchaseRepositoryTest {
         assertEquals(1, purchases().fetchPage(PurchaseCriteria(), 0, 10).totalItems)
 
         assertEquals(1, items().count(PurchaseItemCriteria()))
-        assertEquals(listOf<Long?>(own.id), items().fetch(PurchaseItemCriteria()).map { it.purchaseId })
+        val withPurchase = PurchaseItem().apply { id = ProjectionValues.i64; purchase = Purchase().apply { id = ProjectionValues.i64 } }
+        assertEquals(listOf<Long?>(own.id), items().fetch(PurchaseItemCriteria().withProjection(withPurchase)).map { it.purchaseId })
         assertEquals(emptyList<PurchaseItem>(), items().fetch(PurchaseItemCriteria().withPurchaseId(DBReset.ADMIN_FIRST_PURCHASE_ID)))
         assertNull(items().fetchById(DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID))
     }
@@ -143,8 +164,8 @@ class SecuredRestPurchaseRepositoryTest {
 
         assertHttp(403) { items().insert(newItem(DBReset.FLASH_DRIVE_2GB_ID, DBReset.ADMIN_FIRST_PURCHASE_ID)) }
         assertHttp(403) { items().insert(newItem(DBReset.FLASH_DRIVE_2GB_ID)) }
-        // a row outside the caller's reach is answered as not found: a 403 would tell it exists
-        assertHttp(404) {
+        // a customer updates no item — a purchase is a receipt
+        assertHttp(403) {
             items().update(PurchaseItem().apply { id = DBReset.ADMIN_FIRST_PURCHASE_ITEM0_ID; amount = 50 }, null, PurchaseItem().apply { amount = ProjectionValues.i32 })
         }
         // nor move one of their items to someone else's purchase
@@ -155,7 +176,7 @@ class SecuredRestPurchaseRepositoryTest {
                 PurchaseItem().apply { purchase = Purchase().apply { id = ProjectionValues.i64 } },
             )
         }
-        assertHttp(404) {
+        assertHttp(403) {
             purchases().update(Purchase().apply { id = DBReset.ADMIN_FIRST_PURCHASE_ID; buyDate = Clock.System.now() }, null, Purchase().apply { buyDate = ProjectionValues.instant })
         }
         assertHttp(403) {
@@ -177,29 +198,128 @@ class SecuredRestPurchaseRepositoryTest {
     }
 
     @Test
-    fun customer_writesOnTheirOwnPurchases() = runBlocking {
+    fun customer_addsItemsToTheirOwnPurchases_butChangesNothingOnce_written() = runBlocking {
         val own = fulanoBuys()
 
         val extra = newItem(DBReset.COFFEE_MAKER_ID, own.id)
         assertTrue(items().insert(extra))
+        assertEquals(2, items().count(PurchaseItemCriteria()))
+        // a purchase is a receipt: not even its buyer changes it
+        assertHttp(403) { items().update(PurchaseItem().apply { id = extra.id; amount = 3 }, null, PurchaseItem().apply { amount = ProjectionValues.i32 }) }
+        assertHttp(403) { purchases().update(Purchase().apply { id = own.id; buyDate = Clock.System.now() }, null, Purchase().apply { buyDate = ProjectionValues.instant }) }
+        assertEquals(1, items().fetchById(extra.id!!)!!.amount)
+
+        // the administrator does
+        env.loginAs("admin")
         assertTrue(items().update(PurchaseItem().apply { id = extra.id; amount = 3 }, null, PurchaseItem().apply { amount = ProjectionValues.i32 }))
         assertEquals(3, items().fetchById(extra.id!!)!!.amount)
         assertTrue(purchases().update(Purchase().apply { id = own.id; buyDate = Clock.System.now() }, null, Purchase().apply { buyDate = ProjectionValues.instant }))
-        assertEquals(2, items().count(PurchaseItemCriteria()))
+    }
+
+    @Test
+    fun withoutProjection_aPurchaseIsItsReceipt_cutToWhatTheRoleReads() = runBlocking {
+        val own = fulanoBuys()
+
+        // a query without a projection (fetchById would send the client's default: the own fields)
+        val receipt = purchases().fetch(PurchaseCriteria().withPurchaseId(own.id)).single()
+        assertNotNull(receipt.buyDate)
+        assertEquals("John Doe", receipt.user!!.name)
+        assertNull(receipt.user!!.userName, "the buyer by name only")
+        val line = receipt.items!!.single()
+        assertEquals(1, line.amount)
+        assertEquals(16.0, line.price)
+        assertEquals("USB Flash Drive 2GB", line.product!!.name)
+        assertEquals(16.0, line.product!!.price)
+        assertNull(line.product!!.description)
+
+        // an item alone: quantity, price and product — the same line as in the receipt
+        val item = items().fetch(PurchaseItemCriteria()).single()
+        assertEquals(1, item.amount)
+        assertEquals("USB Flash Drive 2GB", item.product!!.name)
+        assertNull(item.purchase, "not in the default shape")
+    }
+
+    @Test
+    fun theItemsOfAReceipt_areRestrictedToTheRequester_too() = runBlocking {
+        env.loginAs("admin")
+        // the administrator's receipts: their items come with them
+        val adminReceipt = purchases().fetch(PurchaseCriteria().withPurchaseId(DBReset.ADMIN_SECOND_PURCHASE_ID)).single()
+        assertEquals(2, adminReceipt.items!!.size)
+
+        // a customer projecting the items of their purchases sees only theirs (and has only their purchases)
+        val own = fulanoBuys()
+        val pv = ProjectionValues
+        val projection = Purchase().apply {
+            id = pv.i64
+            items = mutableListOf(PurchaseItem().apply { id = pv.i64; amount = pv.i32 })
+        }
+        val receipts = purchases().fetch(PurchaseCriteria().withProjection(projection))
+        assertEquals(listOf(own.id), receipts.map { it.id })
+        assertEquals(1, receipts.single().items!!.size)
+    }
+
+    @Test
+    fun manager_readsTheirOwnPurchases_andWritesNone() = runBlocking {
+        env.loginAs("admin")
+        val manager = User().apply { userName = "manager"; password = env.authClient!!.encryptPassword("m4nager"); name = "Mary Major"; roles = "MANAGER" }
+        assertTrue(env.userRepo.insert(manager))
+        val bought = Purchase().apply {
+            buyDate = Clock.System.now()
+            user = User().apply { id = manager.id }
+            items = mutableListOf(newItem(DBReset.WILSON_BALL_ID))
+        }
+        assertTrue(purchases().insert(bought))
+
+        env.loginAs("manager", "m4nager")
+        assertEquals(listOf(bought.id), purchases().fetch(PurchaseCriteria()).map { it.id })
+        assertEquals(1, items().count(PurchaseItemCriteria()))
+        assertHttp(403) {
+            purchases().insert(Purchase().apply { buyDate = Clock.System.now(); user = User().apply { id = manager.id } })
+        }
+        assertHttp(403) { items().insert(newItem(DBReset.WILSON_BALL_ID, bought.id)) }
+        assertHttp(403) { purchases().delete(PurchaseCriteria().withPurchaseId(bought.id)) }
+    }
+
+    @Test
+    fun alternativeGroups_doNotTravel() {
+        env.loginAs("admin")
+        for (path in listOf("purchase/fetch", "purchase/count", "purchase-item/fetch", "user/fetch", "product/delete")) {
+            val e = assertThrows(BusinessException::class.java) {
+                env.transport.postJson("/api/repo/$path", """{"anyOf":[{"userId":${DBReset.FULANO_ID}}]}""")
+            }
+            assertTrue(e.message!!.startsWith("HTTP 400") && "anyOf" in e.message!!, e.message)
+        }
+        // nor leave the client
+        assertThrows(BusinessException::class.java) {
+            runBlocking { purchases().fetch(PurchaseCriteria().withAnyOf(PurchaseCriteria().withUserId(DBReset.FULANO_ID))) }
+        }
     }
 
     @Test
     fun rawResponses_neverCarryAPasswordKey() {
         env.loginAs("admin")
-        val user = """"user":{"id":1,"userName":"~","password":"~"}"""
+        // asking for the buyer's password goes through the user policy, which reads it to no one: refused, naming it
+        val withPassword = """"user":{"id":1,"userName":"~","password":"~"}"""
+        val refused = listOf(
+            "/api/repo/purchase/fetch" to """{"projection":{"id":1,$withPassword}}""",
+            "/api/repo/purchase/fetch-page" to """{"page":0,"pageSize":10,"projection":{"id":1,$withPassword}}""",
+            "/api/repo/purchase/fetch-by-id" to """{"id":${DBReset.ADMIN_FIRST_PURCHASE_ID},"projection":{"id":1,$withPassword}}""",
+        )
+        for ((path, body) in refused) {
+            val e = assertThrows(RuntimeException::class.java) { env.transport.postJson(path, body) }
+            assertTrue(e.message!!.startsWith("HTTP 403") && "[password]" in e.message!!, e.message)
+        }
+
+        val user = """"user":{"id":1,"userName":"~"}"""
         val bodies = listOf(
             env.transport.postJson("/api/repo/purchase/fetch", """{"projection":{"id":1,$user}}"""),
             env.transport.postJson("/api/repo/purchase/fetch-page", """{"page":0,"pageSize":10,"projection":{"id":1,$user}}"""),
             env.transport.postJson("/api/repo/purchase/fetch-by-id", """{"id":${DBReset.ADMIN_FIRST_PURCHASE_ID},"projection":{"id":1,$user}}"""),
+            env.transport.postJson("/api/repo/purchase/fetch", "{}"),
             env.transport.postJson("/api/repo/purchase-item/fetch", """{"projection":{"id":1,"purchaseId":1}}"""),
         )
         for (body in bodies) {
-            assertTrue("admin" in body || "purchaseId" in body, body)
+            assertTrue("admin" in body || "purchaseId" in body || "John Smith" in body, body)
             assertFalse("password" in body, body)
         }
     }

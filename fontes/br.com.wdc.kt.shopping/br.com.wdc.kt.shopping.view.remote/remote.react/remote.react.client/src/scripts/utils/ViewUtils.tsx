@@ -1,5 +1,5 @@
 import React from 'react'
-import app, { type ViewProps, type ViewScope } from '@root/App'
+import app, { type ViewProps, type ViewBinding } from '@root/App'
 
 const ZERO_DEPS: React.DependencyList = []
 
@@ -7,14 +7,14 @@ const ZERO_DEPS: React.DependencyList = []
 
 export abstract class BaseViewClass<P extends ViewProps, S> {
   vsid!: string
-  state!: S
-  scope!: ViewScope
+  scope!: S
+  binding!: ViewBinding
   initialized!: boolean
 
   abstract render(props: P, initial?: boolean): React.ReactNode
 
   protected forceUpdate() {
-    this.scope.forceUpdate()
+    this.binding.forceUpdate()
   }
 
   static FC<P extends ViewProps, S>(ctor: new (props: P) => BaseViewClass<P, S>, viewId: string) {
@@ -25,10 +25,10 @@ export abstract class BaseViewClass<P extends ViewProps, S> {
     function View(props: P) {
       const memo = React.useMemo(memoFactory.bind(undefined, props), ZERO_DEPS)
 
-      const { state, scope } = app.bindView<S>(props.vsid)
+      const { scope, binding } = app.bindView<S>(props.vsid)
       memo.vsid = props.vsid
-      memo.state = state
       memo.scope = scope
+      memo.binding = binding
 
       if (memo.initialized) {
         return memo.render(props, false)

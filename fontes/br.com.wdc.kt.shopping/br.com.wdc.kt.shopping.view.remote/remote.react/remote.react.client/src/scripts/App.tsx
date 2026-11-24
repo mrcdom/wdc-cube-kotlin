@@ -4,11 +4,11 @@ import { BROWSER_VSID } from './app/constants'
 import type { IViewFactory, ViewComponent } from './app/types'
 
 export { BROWSER_VID } from './app/constants'
-export type { BrowserViewState, ViewComponent, ViewProps } from './app/types'
-export { ViewScope } from './app/ViewScope'
+export type { BrowserScope, ViewComponent, ViewProps } from './app/types'
+export { ViewBinding } from './app/ViewBinding'
 
-async function static_updateAllViewStates(app: Application, vsids: string[]) {
-  var url = `view-state`
+async function static_updateAllScopes(app: Application, vsids: string[]) {
+  var url = `view-scope`
 
   const resp = await fetch(url, {
     method: 'POST',
@@ -20,8 +20,8 @@ async function static_updateAllViewStates(app: Application, vsids: string[]) {
     body: JSON.stringify(vsids),
   })
 
-  const viewStates = (await resp.json()) as { id: string }[]
-  app.applyViewStates(viewStates)
+  const scopes = (await resp.json()) as { id: string }[]
+  app.applyScopes(scopes)
 }
 
 const privateApp = new Application()
@@ -31,9 +31,9 @@ const publicApp = new (class {
     return privateApp.baseWebSocketUtl
   }
 
-  getViewState<T>(vsid: string) {
-    var viewScope = privateApp.viewMap.get(vsid)
-    return viewScope ? (viewScope.getState() as T) : ({} as T)
+  getScope<T>(vsid: string) {
+    var binding = privateApp.viewMap.get(vsid)
+    return binding ? (binding.getScope() as T) : ({} as T)
   }
 
   connect() {
@@ -92,8 +92,8 @@ const publicApp = new (class {
     privateApp.holdView(vsid)
   }
 
-  updateViewState(vsid: string) {
-    static_updateAllViewStates(privateApp, [vsid])
+  updateScope(vsid: string) {
+    static_updateAllScopes(privateApp, [vsid])
   }
 
   onStart() {

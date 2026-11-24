@@ -1,10 +1,9 @@
 package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeViewState
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelViewState
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelViewState
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.PurchasesPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 import br.com.wdc.shopping.test.mock.RootPresenterMock
@@ -13,8 +12,8 @@ import java.util.Date
 
 class RestrictedViewMock(
     app: RootPresenterMock,
-    presenter: HomePresenter,
-) : AbstractViewMock<HomePresenter>(app, presenter) {
+    scope: HomeScope,
+) : AbstractViewMock<HomeScope>(app, scope) {
 
     companion object {
         fun cast(view: CubeView?): RestrictedViewMock {
@@ -25,20 +24,19 @@ class RestrictedViewMock(
         }
     }
 
-    var state: HomeViewState = presenter.state
 
-    fun getProductsPanelState(): ProductsPanelViewState {
-        return ProductsPanelViewMock.cast(state.productsPanelView).state
+    fun getProductsPanelScope(): ProductsPanelScope {
+        return ProductsPanelViewMock.cast(scope.productsPanel?.let(app::viewOf)).scope
     }
 
-    fun getPurchasesPanelState(): PurchasesPanelViewState {
-        return PurchasesPanelViewMock.cast(state.purchasesPanelView).state
+    fun getPurchasesPanelScope(): PurchasesPanelScope {
+        return PurchasesPanelViewMock.cast(scope.purchasesPanel?.let(app::viewOf)).scope
     }
 
     fun render() {
-        println("Welcome, ${state.nickName}!")
+        println("Welcome, ${scope.nickName}!")
         println()
-        println("Cart[${state.cartItemCount}]")
+        println("Cart[${scope.cartItemCount}]")
         println()
         printPurchases()
         printProducts()
@@ -46,7 +44,7 @@ class RestrictedViewMock(
     }
 
     fun printPurchases() {
-        val purchasesState = getPurchasesPanelState()
+        val purchasesState = getPurchasesPanelScope()
         for (purchase: PurchaseInfo in purchasesState.purchases) {
             println("PURCHASE #${purchase.id}")
             println("Purchase date: ${Date(purchase.date)}")
@@ -57,7 +55,7 @@ class RestrictedViewMock(
     }
 
     fun printProducts() {
-        val productsState = getProductsPanelState()
+        val productsState = getProductsPanelScope()
         for (product: ProductInfo in productsState.products ?: emptyList()) {
             print("PRODUCT #${product.id}")
             print("{name: ")
@@ -69,4 +67,7 @@ class RestrictedViewMock(
             println("}")
         }
     }
+
+    /** The view of the scope below (asked to the application, as a real view does). */
+    val contentView: CubeView? get() = scope.content?.let(app::viewOf)
 }

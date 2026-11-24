@@ -9,9 +9,10 @@ import br.com.wdc.shopping.nativeui.android.theme.*
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.shopping.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
 
-class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<ProductPresenter>("product-view", presenter) {
+class ProductViewAndroid(app: RootPresenter, scope: ProductScope) : AbstractViewAndroid<ProductScope>("product-view", app, scope) {
 
     private lateinit var imageView: ImageView
     private lateinit var nameLabel: TextView
@@ -186,7 +187,7 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
                                 height = (48 * density).toInt()
                                 marginEnd = (12 * density).toInt()
                             }
-                            setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
+                            setOnClickListener { safeAction("back") { scope.onOpenProducts() } }
                         }
 
                         // Add to Cart button (primary)
@@ -208,7 +209,7 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
                                 height = (48 * density).toInt()
                             }
                             setOnClickListener {
-                                safeAction("addToCart") { presenter.onAddToCart(quantity) }
+                                safeAction("addToCart") { scope.onAddToCart(quantity) }
                             }
                         }
                     }
@@ -218,7 +219,7 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
     }
 
     override fun doUpdate() {
-        val product = presenter.state.product ?: return
+        val product = scope.product ?: return
         if (product.id == lastProductId) return
         lastProductId = product.id
 

@@ -1,23 +1,25 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home
 
-import br.com.wdc.shopping.domain.product.ProductRepository
-import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.Scope
+import br.com.wdc.framework.cube.FormParam
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductService
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
+
+import kotlin.math.ceil
+import kotlin.math.max
+import br.com.wdc.shopping.presentation.presenter.restricted.products.calls.ProductQuery
+import br.com.wdc.shopping.presentation.presenter.restricted.products.calls.ProductListQuery
+import br.com.wdc.shopping.presentation.presenter.restricted.home.calls.PurchasesPageQuery
 
 class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
@@ -27,41 +29,45 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
         /** The session entry that keeps the cart across page reloads. */
         const val CART_KEY = "cart"
-
-        var createView: ((HomePresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
 
-    val state = observed(HomeViewState())
+    val scope = bind(HomeScope())
 
     // :: Internal Instance Fields
 
-    private val contentSlot = CubeViewSlot { v -> setContentView(v) }
+    private val contentSlot = ScopeSlot { setContent(it) }
 
-    private var ownerSlot: CubeViewSlot? = null
+    private var ownerSlot: ScopeSlot? = null
     private var cart: CartManager? = null
-    private var productsPanel: ProductsPanelPresenter? = null
-    private var purchasesPanel: PurchasesPanelPresenter? = null
+
+    // the two panels: segments of the home scope, without presenters of their own
+    private val products = segment(ProductsPanelScope())
+    private val purchases = segment(PurchasesPanelScope())
     private var onCartCommitListenerRemover: () -> Unit = NOOP
     private var onCartChangeListenerRemover: () -> Unit = NOOP
+
+    init {
+        scope.onExit = action(1) { exit() }
+        scope.onOpenCart = action(2) { CartKeys(app).flip() }
+
+        products.onOpenProduct = actionOf(1, FormParam.long("p.productId"), target = products) { openProduct(it) }
+
+        // not navigations: the guard republishes the address, which follows the page
+        purchases.onOpenReceipt = actionOf(1, FormParam.long("p.purchaseId"), target = purchases) { openReceipt(it) }
+        purchases.onPageChange = actionOf(2, FormParam.int("p.page"), target = purchases) { changePage(it ?: 0) }
+        purchases.onItemSizeCapacityChanged =
+            actionOf(3, FormParam.int("p.capacity"), target = purchases) { changeCapacity(it ?: 0) }
+    }
 
     // :: Cube API
 
     override fun release() {
-        state.contentView = null
+        scope.content = null
 
-        productsPanel?.let {
-            it.release()
-            productsPanel = null
-            state.productsPanelView = null
-        }
-
-        purchasesPanel?.let {
-            it.release()
-            purchasesPanel = null
-            state.purchasesPanelView = null
-        }
+        scope.productsPanel = null
+        scope.purchasesPanel = null
 
         app.cart = null
 
@@ -71,8 +77,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         onCartChangeListenerRemover()
         onCartChangeListenerRemover = NOOP
 
-        view?.release()
-        view = null
+        super.release()
     }
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
@@ -83,36 +88,33 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = HomeKeys(app, intent).parentSlot
-        if (initialization || view == null) {
-            view = createView?.invoke(this)
+        if (initialization || scope.productsPanel == null) {
+            scope.nickName = app.subject?.nickName
 
-            state.nickName = app.subject?.nickName
+            loadProducts()
+            scope.productsPanel = products
+            // the purchases come with the view's first capacity
+            scope.purchasesPanel = purchases
 
-            productsPanel = ProductsPanelPresenter(app, this)
-            state.productsPanelView = productsPanel!!.initialize()
-
-            purchasesPanel = PurchasesPanelPresenter(app, this)
-            state.purchasesPanelView = purchasesPanel!!.initialize()
-
-            cart = CartManager(PurchaseRepository.BEAN.get())
+            cart = CartManager()
             restoreCart()
             onCartCommitListenerRemover = cart!!.addCommitListener(::onCartCommited)
             onCartChangeListenerRemover = cart!!.addChangeListener(::onCartChanged)
             app.cart = cart
-            state.cartItemCount = cart!!.getItemCount()
+            scope.cartItemCount = cart!!.getItemCount()
         }
 
         if (ownerSlot == null) {
             return false
         }
 
-        ownerSlot!!.setView(view!!)
+        ownerSlot!!.setScope(scope)
 
         // the page the address asks for; the panel loads it now, or once its view tells its capacity
-        purchasesPanel?.restorePage(HomeKeys(app, intent).purchasesPage)
+        restorePage(HomeKeys(app, intent).purchasesPage)
 
         if (deepest) {
-            setContentView(null)
+            setContent(null)
             reloadPurchasesIfNeeded()
         } else {
             HomeKeys(app, intent).parentSlot = contentSlot
@@ -122,18 +124,18 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     override fun publishParameters(intent: CubeIntent) {
-        HomeKeys(app, intent).purchasesPage = purchasesPanel?.state?.page ?: 0
+        HomeKeys(app, intent).purchasesPage = purchases.page
     }
 
     // :: User Actions
 
     private suspend fun onCartCommited() {
-        productsPanel?.loadProducts()
-        purchasesPanel?.onPageChange(0)
+        loadProducts()
+        changePage(0)
     }
 
     private fun onCartChanged() {
-        state.cartItemCount = cart?.getItemCount() ?: 0
+        scope.cartItemCount = cart?.getItemCount() ?: 0
         saveCart()
     }
 
@@ -144,10 +146,9 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private suspend fun restoreCart() {
         val snapshot = CartManager.Snapshot.parse(app.sessionStorage.getString(CART_KEY)) ?: return
         if (snapshot.userId != app.subject?.id) return
-        val products = ProductService(ProductRepository.BEAN.get())
         for ((productId, quantity) in snapshot.quantities) {
             try {
-                cart!!.addProduct(products.loadProductById(productId), quantity)
+                cart!!.addProduct(ProductQuery(productId).run(), quantity)
             } catch (_: ProductNotFoundException) {
                 LOG.info("restoreCart: product {} is no longer available", productId)
             }
@@ -164,107 +165,137 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         }
     }
 
-    suspend fun onOpenReceipt(purchaseId: Long?) {
-        try {
-            if (purchaseId == null || purchaseId <= 0) {
-                alertPurchaseIdRequired()
-                LOG.warn("onOpenReceipt: {}", state.errorMessage)
-                return
-            }
+    /** Opens the receipt of a purchase: the purchases panel's action. */
+    private suspend fun openReceipt(purchaseId: Long?) {
+        if (purchaseId == null || purchaseId <= 0) {
+            alertPurchaseIdRequired()
+            LOG.warn("onOpenReceipt: {}", scope.errorMessage)
+            return
+        }
 
+        try {
             ReceiptKeys(app).apply { this.purchaseId = purchaseId }.flip()
-        } catch (caught: Exception) {
-            if (caught is PurchaseNotFoundException) {
-                alertPurchaseNotFound()
-                LOG.warn("{}: purchaseId={}", state.errorMessage, purchaseId)
-                return
-            }
-
-            app.alertUnexpectedError(
-                LOG,
-                "Trying to go to receipt place to show purchaseId=$purchaseId",
-                caught
-            )
+        } catch (caught: PurchaseNotFoundException) {
+            alertPurchaseNotFound()
+            LOG.warn("{}: purchaseId={}", scope.errorMessage, purchaseId)
         }
     }
 
-    suspend fun onOpenProduct(productId: Long?) {
-        try {
-            if (productId == null || productId <= 0) {
-                alertProductIdRequired()
-                LOG.warn("onOpenProduct: {}", state.errorMessage)
-                return
-            }
+    /** Opens a product: the products panel's action. */
+    private suspend fun openProduct(productId: Long?) {
+        if (productId == null || productId <= 0) {
+            alertProductIdRequired()
+            LOG.warn("onOpenProduct: {}", scope.errorMessage)
+            return
+        }
 
+        try {
             ProductKeys(app).apply { this.productId = productId }.flip()
-        } catch (caught: Exception) {
-            if (caught is ProductNotFoundException) {
-                alertProductNotFound()
-                LOG.warn("{}: productId={}", state.errorMessage, productId)
-                return
-            }
-
-            app.alertUnexpectedError(
-                LOG,
-                "Trying to go to product place to show productId=$productId",
-                caught
-            )
+        } catch (caught: ProductNotFoundException) {
+            alertProductNotFound()
+            LOG.warn("{}: productId={}", scope.errorMessage, productId)
         }
     }
 
-    suspend fun onOpenCart() {
-        try {
-            CartKeys(app).flip()
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Trying to go to cart place", caught)
-        }
-    }
+    private suspend fun exit() {
+        cart!!.clear()
+        app.subject = null
+        app.sessionStorage.clear()
+        setContent(null)
+        reloadPurchasesIfNeeded()
 
-    suspend fun onExit() {
-        try {
-            cart!!.clear()
-            app.subject = null
-            app.sessionStorage.clear()
-            setContentView(null)
-            reloadPurchasesIfNeeded()
-
-            LoginKeys(app).flip()
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Trying to go to login place", caught)
-        }
+        LoginKeys(app).flip()
     }
 
     // :: Messages
 
     private fun alertProductNotFound() {
-        state.errorCode = 3
-        state.errorMessage = "Product code not found."
+        scope.errorCode = 3
+        scope.errorMessage = "Product code not found."
     }
 
     private fun alertPurchaseNotFound() {
-        state.errorCode = 5
-        state.errorMessage = "Receipt code not found."
+        scope.errorCode = 5
+        scope.errorMessage = "Receipt code not found."
     }
 
     private fun alertProductIdRequired() {
-        state.errorCode = 6
-        state.errorMessage = "Product code is a required argument."
+        scope.errorCode = 6
+        scope.errorMessage = "Product code is a required argument."
     }
 
     private fun alertPurchaseIdRequired() {
-        state.errorCode = 7
-        state.errorMessage = "Receipt code is a required argument."
+        scope.errorCode = 7
+        scope.errorMessage = "Receipt code is a required argument."
     }
 
     // :: Slots
 
-    private fun setContentView(view: CubeView?) {
-        if (state.contentView !== view) {
-            state.contentView = view
+    private fun setContent(content: Scope?) {
+        if (scope.content !== content) {
+            scope.content = content
         }
     }
 
     private suspend fun reloadPurchasesIfNeeded() {
-        purchasesPanel?.loadPurchases()
+        loadPurchases()
+    }
+
+    // :: Products panel
+
+    private suspend fun loadProducts() {
+        try {
+            products.products = ProductListQuery(limit = 1000).run()
+        } catch (caught: Exception) {
+            LOG.error("Failed to load products", caught)
+        }
+    }
+
+    // :: Purchases panel
+
+    /**
+     * The page the address asks for. Loaded now if it changed and the view already told its capacity; otherwise with
+     * the first capacity.
+     */
+    private suspend fun restorePage(page: Int) {
+        val requested = max(0, page)
+        if (requested == purchases.page) return
+        purchases.page = requested
+        if (purchases.pageSize > 0) loadPurchases()
+    }
+
+    private suspend fun changePage(page: Int) {
+        purchases.page = max(0, page)
+        loadPurchases()
+    }
+
+    private suspend fun changeCapacity(capacity: Int) {
+        val newPageSize = max(1, capacity)
+        if (newPageSize != purchases.pageSize) {
+            // the first capacity keeps the page the address asked for; a later change goes back to the first page
+            if (purchases.pageSize > 0) purchases.page = 0
+            purchases.pageSize = newPageSize
+            loadPurchases()
+        }
+    }
+
+    private suspend fun loadPurchases() {
+        val subject = app.subject
+        if (subject != null && purchases.pageSize > 0) {
+            var page = PurchasesPageQuery(subject.id!!, purchases.page, purchases.pageSize).run()
+
+            purchases.totalCount = page.totalItems
+
+            val totalPages = max(1, ceil(purchases.totalCount.toDouble() / purchases.pageSize).toInt())
+            if (purchases.page >= totalPages) {
+                // the requested page is past the end (the view capacity changed, or purchases disappeared): show the
+                // last one, with its items — the result above is the one of the page that does not exist
+                purchases.page = totalPages - 1
+                page = PurchasesPageQuery(subject.id!!, purchases.page, purchases.pageSize).run()
+                purchases.totalCount = page.totalItems
+            }
+
+            purchases.purchases = page.items
+        }
     }
 }

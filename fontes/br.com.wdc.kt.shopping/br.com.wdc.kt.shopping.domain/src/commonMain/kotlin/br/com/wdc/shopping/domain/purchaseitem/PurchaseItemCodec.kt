@@ -116,6 +116,7 @@ class PurchaseItemCodec : ModelCodec<PurchaseItem, PurchaseItemCriteria> {
         if (input.peek() == SerializationToken.NULL) input.nextNull() else productCodec.readEntity(input)
 
     override fun writeCriteriaFields(out: ExtensibleObjectOutput, criteria: PurchaseItemCriteria) {
+        CriterionCodec.refuseAnyOf(criteria)
         CriterionCodec.write(out, "purchaseItemId", criteria.purchaseItemId, CriterionCodec.LONG_OUT)
         CriterionCodec.write(out, "purchaseId", criteria.purchaseId, CriterionCodec.LONG_OUT)
         CriterionCodec.write(out, "productId", criteria.productId, CriterionCodec.LONG_OUT)
@@ -134,6 +135,7 @@ class PurchaseItemCodec : ModelCodec<PurchaseItem, PurchaseItemCriteria> {
             "price" -> CriterionCodec.read(input, criteria.price, CriterionCodec.DOUBLE_IN)
             "userId" -> CriterionCodec.read(input, criteria.userId, CriterionCodec.LONG_IN)
             "orderBy" -> CriterionCodec.readOrderBy(input, PurchaseItemCriteria.OrderBy.entries)?.let { criteria.withOrderBy(it) }
+            CriterionCodec.ANY_OF -> throw CriterionCodec.anyOfDoesNotTravel()
             else -> return false
         }
         return true

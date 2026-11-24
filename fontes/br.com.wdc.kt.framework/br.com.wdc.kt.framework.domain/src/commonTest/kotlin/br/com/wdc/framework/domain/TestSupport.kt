@@ -20,6 +20,12 @@ class SampleCriteria : Criteria {
 
     override fun criterions(): List<Criterion<*, *>> = listOf(id, price, name, active)
 
+    /** The alternative groups, typed: a criteria that supports them narrows the interface's list to its own type. */
+    override var anyOf: List<SampleCriteria> = emptyList()
+        private set
+
+    fun withAnyOf(vararg groups: SampleCriteria) = apply { anyOf = groups.toList() }
+
     enum class OrderBy { OLDEST_FIRST, NAME_A_TO_Z }
 }
 

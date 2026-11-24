@@ -2,7 +2,8 @@ package br.com.wdc.shopping.nativeui.web.views
 
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.LocalMall
 import mui.material.Alert
 import mui.material.Avatar
@@ -34,7 +35,10 @@ import web.html.HTMLButtonElement
 import web.html.HTMLDivElement
 import web.html.HTMLInputElement
 
-class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-view", presenter) {
+class LoginView(
+    app: RootPresenter,
+    scope: LoginScope,
+) : ReactCubeView<LoginScope>("login-view", app, scope) {
 
     // :: Element refs — the fields are uncontrolled: typing repaints nothing, and the values are read on submit
 
@@ -48,7 +52,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
     private val emitOnEnter: () -> Unit = {
         val userName = userNameInput?.value ?: ""
         val password = passwordInput?.value ?: ""
-        safeCall { presenter.onEnter(userName, password) }
+        safeCall { scope.onEnter(userName, password) }
     }
 
     private val onEnterClick: MouseEventHandler<HTMLButtonElement> = { emitOnEnter() }
@@ -69,8 +73,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val state = presenter.state
-        val loading = state.loading
+        val loading = scope.loading
 
         // Full-screen gradient background
         Box {
@@ -147,7 +150,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             fullWidth = true
                             label = ReactNode("Username")
                             inputRef = userNameRef
-                            defaultValue = state.userName ?: ""
+                            defaultValue = scope.userName ?: ""
                             disabled = loading
                             asDynamic().autoComplete = "off"
                         }
@@ -157,7 +160,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                             fullWidth = true
                             label = ReactNode("Password")
                             inputRef = passwordRef
-                            defaultValue = state.password ?: ""
+                            defaultValue = scope.password ?: ""
                             asDynamic().type = "text"
                             asDynamic().autoComplete = "off"
                             asDynamic().InputProps = js("""({
@@ -170,7 +173,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
                         }
 
                         // Error message
-                        val errorMessage = state.errorMessage
+                        val errorMessage = scope.errorMessage
                         if (!errorMessage.isNullOrBlank()) {
                             Alert {
                                 severity = "error"

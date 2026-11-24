@@ -1,16 +1,29 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home.structs
 
+import br.com.wdc.framework.cube.ScopeValue
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.purchase.Purchase
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
 import br.com.wdc.framework.domain.projection.ProjectionValues
 
-class PurchaseInfo {
+class PurchaseInfo : ScopeValue {
 
     var id: Long = 0
     var date: Long = 0
     var total: Double = 0.0
     var items: List<String> = emptyList()
+
+    override fun writeJson(json: ExtensibleObjectOutput) {
+        json.beginObject()
+        json.name("id").value(id)
+        json.name("date").value(date)
+        json.name("total").value(total)
+        json.name("items").beginArray()
+        for (item in items) json.value(item)
+        json.endArray()
+        json.endObject()
+    }
 
     companion object {
         fun projectionWithItems(): Purchase {

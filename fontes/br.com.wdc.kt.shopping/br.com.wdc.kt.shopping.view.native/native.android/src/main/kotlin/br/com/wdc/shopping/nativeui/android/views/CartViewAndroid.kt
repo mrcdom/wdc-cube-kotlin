@@ -10,10 +10,11 @@ import br.com.wdc.shopping.nativeui.android.theme.*
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.shopping.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 
-class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresenter>("cart-view", presenter) {
+class CartViewAndroid(app: RootPresenter, scope: CartScope) : AbstractViewAndroid<CartScope>("cart-view", app, scope) {
 
     private lateinit var scrollView: ScrollView
     private lateinit var stackView: LinearLayout
@@ -22,9 +23,12 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
     private lateinit var footerContainer: LinearLayout
     private lateinit var errorLabel: TextView
     private lateinit var backButtonEmpty: Button
-    private lateinit var itemsSlot: ListSlot<CartItem, CartItemView>
 
-    private var lastItems: List<CartItem>? = null
+    /** The row views on screen, in order; each one is the catalog's view of a [CartItemScope]. */
+    private var rowViews: List<AbstractViewAndroid<*>> = emptyList()
+
+    private var lastRows: List<CartItemScope>? = null
+    private var lastTotal: Double = -1.0
     private var lastError: String? = null
 
     override fun createView(): View {
@@ -141,7 +145,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                                         height = (48 * density).toInt()
                                         marginEnd = (16 * density).toInt()
                                     }
-                                    setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
+                                    setOnClickListener { safeAction("back") { scope.onOpenProducts() } }
                                 }
                                 // Buy button
                                 button("Buy") {
@@ -156,7 +160,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                                         width = ViewGroup.LayoutParams.WRAP_CONTENT
                                         height = (48 * density).toInt()
                                     }
-                                    setOnClickListener { safeAction("buy") { presenter.onBuy() } }
+                                    setOnClickListener { safeAction("buy") { scope.onBuy() } }
                                 }
                             }
                         }
@@ -214,44 +218,36 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                             topMargin = (32 * density).toInt()
                             gravity = Gravity.CENTER_HORIZONTAL
                         }
-                        setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
+                        setOnClickListener { safeAction("back") { scope.onOpenProducts() } }
                     }
                 }
             }
-
-            itemsSlot = newListSlot(
-                stackView,
-                factory = { CartItemView(presenter).also { it.initialize() } },
-                updater = { view, item -> view.setState(item); view.forceUpdate() }
-            )
         }
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val items = state.items
+        val rows = scope.rows
 
-        if (items !== lastItems) {
-            lastItems = items
+        if (rows !== lastRows) {
+            lastRows = rows
 
-            if (items.isEmpty()) {
+            if (rows.isEmpty()) {
                 emptyContainer.visibility = View.VISIBLE
                 scrollView.visibility = View.GONE
-                itemsSlot.sync(emptyList())
             } else {
                 emptyContainer.visibility = View.GONE
                 scrollView.visibility = View.VISIBLE
-                itemsSlot.sync(items)
-
-                var total = 0.0
-                for (item in items) {
-                    total += item.price * item.quantity
-                }
-                totalLabel.text = "\$${ViewUtils.formatPrice(total)}"
             }
+            syncRows(rows)
         }
 
-        val errorMessage = state.errorMessage
+        val total = scope.total
+        if (total != lastTotal) {
+            lastTotal = total
+            totalLabel.text = "\$${ViewUtils.formatPrice(total)}"
+        }
+
+        val errorMessage = scope.errorMessage
         if (errorMessage != lastError) {
             lastError = errorMessage
             if (!errorMessage.isNullOrBlank()) {
@@ -262,150 +258,22 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
             }
         }
     }
-}
 
-// --- Cart Item sub-view ---
-
-private class CartItemView(presenter: CartPresenter) : AbstractViewAndroid<CartPresenter>("cart-item", presenter) {
-
-    private lateinit var imageView: ImageView
-    private lateinit var nameLabel: TextView
-    private lateinit var priceLabel: TextView
-    private lateinit var qtyLabel: TextView
-
-    var item: CartItem? = null
-        private set
-
-    private var lastItemId: Long = -1
-    private var lastName: String? = null
-    private var lastPrice: Double = -1.0
-    private var lastQuantity: Int = -1
-
-    fun setState(cartItem: CartItem) {
-        this.item = cartItem
-    }
-
-    override fun createView(): View {
-        val ctx = RootViewAndroid.appContext
-        val density = ctx.resources.displayMetrics.density
-
-        return AndroidDom.build(ctx) {
-            val card = parent()
-            card.background = ShoppingStyles.roundedBackground(ShoppingColors.SurfaceVariant40, 8 * density)
-
-            hStack(spacing = (12 * density).toInt(), configure = {
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding((10 * density).toInt(), (10 * density).toInt(), (10 * density).toInt(), (10 * density).toInt())
-                (layoutParams as FrameLayout.LayoutParams).apply {
-                    width = ViewGroup.LayoutParams.MATCH_PARENT
-                    height = ViewGroup.LayoutParams.WRAP_CONTENT
-                }
-            }) {
-                // Product image
-                imageView = imageView {
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-                    setBackgroundColor(ShoppingColors.SurfaceVariant)
-                    (layoutParams as LinearLayout.LayoutParams).apply {
-                        width = (50 * density).toInt()
-                        height = (50 * density).toInt()
-                    }
-                }
-
-                // Name + price
-                vStack(spacing = (2 * density).toInt(), configure = {
-                    (layoutParams as LinearLayout.LayoutParams).apply {
-                        weight = 1f
-                        width = 0
-                    }
-                }) {
-                    nameLabel = textView {
-                        textSize = 14f
-                        setTypeface(null, Typeface.BOLD)
-                        setTextColor(ShoppingColors.OnSurface)
-                        maxLines = 1
-                    }
-                    priceLabel = textView {
-                        textSize = 13f
-                        setTextColor(ShoppingColors.PriceColor)
-                    }
-                }
-
-                // Quantity controls
-                hStack(spacing = (4 * density).toInt(), configure = {
-                    gravity = Gravity.CENTER_VERTICAL
-                    (layoutParams as LinearLayout.LayoutParams).width = ViewGroup.LayoutParams.WRAP_CONTENT
-                }) {
-                    button("−") {
-                        textSize = 14f
-                        background = ShoppingStyles.roundedBackground(ShoppingColors.SecondaryContainer, 4 * density)
-                        (layoutParams as LinearLayout.LayoutParams).apply {
-                            width = (28 * density).toInt()
-                            height = (28 * density).toInt()
-                        }
-                        setPadding(0, 0, 0, 0)
-                        setOnClickListener {
-                            val i = item ?: return@setOnClickListener
-                            if (i.quantity > 1) safeAction("minus") { presenter.onModifyQuantity(i.id, i.quantity - 1) }
-                        }
-                    }
-                    qtyLabel = textView {
-                        textSize = 14f
-                        setTypeface(null, Typeface.BOLD)
-                        gravity = Gravity.CENTER
-                        (layoutParams as LinearLayout.LayoutParams).width = (30 * density).toInt()
-                    }
-                    button("+") {
-                        textSize = 14f
-                        background = ShoppingStyles.roundedBackground(ShoppingColors.SecondaryContainer, 4 * density)
-                        (layoutParams as LinearLayout.LayoutParams).apply {
-                            width = (28 * density).toInt()
-                            height = (28 * density).toInt()
-                        }
-                        setPadding(0, 0, 0, 0)
-                        setOnClickListener {
-                            val i = item ?: return@setOnClickListener
-                            safeAction("plus") { presenter.onModifyQuantity(i.id, i.quantity + 1) }
-                        }
-                    }
-                    // Remove button
-                    button("✕") {
-                        textSize = 14f
-                        setTextColor(ShoppingColors.Error)
-                        setBackgroundColor(Color.TRANSPARENT)
-                        (layoutParams as LinearLayout.LayoutParams).apply {
-                            width = (28 * density).toInt()
-                            height = (28 * density).toInt()
-                        }
-                        setPadding(0, 0, 0, 0)
-                        setOnClickListener {
-                            val i = item ?: return@setOnClickListener
-                            safeAction("remove") { presenter.onRemoveProduct(i.id) }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    override fun doUpdate() {
-        val i = item ?: return
-
-        if (i.id != lastItemId) {
-            lastItemId = i.id
-            ViewUtils.loadImageAsync(imageView, ViewUtils.productImageUrl(i.id))
-            lastName = null
-            lastPrice = -1.0
-            lastQuantity = -1
-        }
-        if (i.name != lastName) {
-            lastName = i.name
-            nameLabel.text = i.name ?: ""
-        }
-        if (i.price != lastPrice || i.quantity != lastQuantity) {
-            lastPrice = i.price
-            lastQuantity = i.quantity
-            priceLabel.text = "\$${ViewUtils.formatPrice(i.price)} × ${i.quantity}"
-            qtyLabel.text = i.quantity.toString()
+    /**
+     * Hosts the view of each row, in order. A row that stays keeps its view (the application creates one per scope);
+     * the views of rows that left are released by the presenter, so here they are only taken off the screen.
+     */
+    private fun syncRows(rows: List<CartItemScope>) {
+        val next = rows.mapNotNull { app.viewOf(it) as? AbstractViewAndroid<*> }
+        if (next.size == rowViews.size && next.indices.all { next[it] === rowViews[it] }) return
+        rowViews = next
+        stackView.removeAllViews()
+        for (view in next) {
+            (view.rootView.parent as? ViewGroup)?.removeView(view.rootView)
+            stackView.addView(
+                view.rootView,
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            )
         }
     }
 }

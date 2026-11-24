@@ -2,31 +2,23 @@ package br.com.wdc.shopping.persistence.rest
 
 import br.com.wdc.framework.rest.RestApi
 import br.com.wdc.framework.rest.rpc.RepositoryRpc
-import br.com.wdc.shopping.domain.exception.AccessDeniedException
 import br.com.wdc.shopping.domain.purchase.Purchase
 import br.com.wdc.shopping.domain.purchase.PurchaseCodec
 import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
-import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.shopping.persistence.rest.doc.RepositoryApiDocs
+import br.com.wdc.shopping.persistence.rest.security.PurchaseDataPolicy
 
 /**
  * Purchase REST endpoints: the repository RPC, read and written with the [PurchaseCodec] — the same one the
- * client uses. Access is checked here ([ApiSecurity]): permission and, for callers who don't reach everyone's
- * data, restriction to their own purchases — on reads and writes.
+ * client uses. Access is decided by [PurchaseDataPolicy]: a purchase is a receipt, which its buyer creates and reads,
+ * and only an administrator changes. A read without a projection gets the receipt (date, buyer's name, items).
  *
- * **The password of the purchase's user never leaves through here**: it is stripped from the requested
- * projection and from every written entity, whether security is on or not.
+ * The items that come with a new purchase are priced by the repository, in the INSERT.
  */
 internal object PurchaseApiController {
 
-    private const val ENTITY = "purchase"
-
     private fun repo(): PurchaseRepository = PurchaseRepository.BEAN.get()
-
-    private fun dropPassword(purchase: Purchase?) {
-        purchase?.user?.password = null
-    }
 
     fun register(routes: RestApi.Routes) {
         val rpc = RepositoryRpc<Purchase, PurchaseCriteria, Long>(
@@ -39,25 +31,8 @@ internal object PurchaseApiController {
             parseId = String::toLongOrNull,
             idOf = { it.id },
         )
-        rpc.rule = { op -> ApiSecurity.permission(ENTITY, op) }
+        rpc.policy = PurchaseDataPolicy.POLICY
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("purchase", op) }
-        // callers who don't reach everyone's data only reach their own purchases, whatever they ask for
-        rpc.scope = { criteria, request -> ApiSecurity.ownerScope(request)?.let { criteria.userId.and().eq(it) } }
-        rpc.sanitizeProjection = ::dropPassword
-        rpc.sanitizeOutput = ::dropPassword
-        rpc.beforeInsert = { purchase, request ->
-            // a purchase always belongs to whoever makes it
-            ApiSecurity.ownerScope(request)?.let { owner -> purchase.user = User().apply { id = owner } }
-            // the items that come with it are priced by the server
-            purchase.items?.forEach { ItemPrices.applyTo(it) }
-        }
-        // the scope already keeps the update to the caller's own purchases; this keeps the purchase theirs
-        rpc.beforeUpdate = { data, request ->
-            val owner = ApiSecurity.ownerScope(request)
-            if (owner != null && data.entity.user != null && data.entity.userId != owner) {
-                throw AccessDeniedException("Cannot reassign a purchase to another user")
-            }
-        }
         rpc.register(routes)
     }
 }

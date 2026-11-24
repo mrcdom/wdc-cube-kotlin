@@ -12,17 +12,21 @@ import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubePresenter
 import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
 import br.com.wdc.shopping.view.react.skeleton.spi.WebSocketConnection
 import br.com.wdc.shopping.view.react.skeleton.util.AppSecurity
 import br.com.wdc.shopping.view.react.skeleton.util.DataSecurity
 import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
+import br.com.wdc.framework.cube.ScopeViews
+import br.com.wdc.shopping.presentation.presenter.RootScope
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
+import br.com.wdc.shopping.view.react.skeleton.util.ScopeViewImpl
 import br.com.wdc.shopping.view.react.ViewFlushScheduler
 import com.google.gson.stream.JsonWriter
 import java.io.IOException
@@ -44,16 +48,6 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
         private val instanceMap = ConcurrentHashMap<String, ReactRootPresenter>()
 
-        init {
-            RootPresenter.createView = ::RootReactViewImpl
-            LoginPresenter.createView = ::LoginReactViewImpl
-            HomePresenter.createView = ::HomeReactViewImpl
-            ProductPresenter.createView = ::ProductReactViewImpl
-            CartPresenter.createView = ::CartReactViewImpl
-            ReceiptPresenter.createView = ::ReceiptReactViewImpl
-            ProductsPanelPresenter.createView = ::ProductsPanelReactViewImpl
-            PurchasesPanelPresenter.createView = ::PurchasesPanelReactViewImpl
-        }
 
         fun get(appId: String?): ReactRootPresenter? {
             if (appId.isNullOrBlank()) return null
@@ -73,9 +67,9 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
                 var path = app.fragment
                 @Suppress("UNCHECKED_CAST")
-                val browserViewState = request[BrowserReactViewImpl.VSID] as? Map<String, Any?>
-                if (browserViewState != null) {
-                    val p = browserViewState["p.path"] as? String
+                val browserScope = request[BrowserPresenter.VSID] as? Map<String, Any?>
+                if (browserScope != null) {
+                    val p = browserScope["p.path"] as? String
                     if (!p.isNullOrBlank()) {
                         path = p
                     }
@@ -122,17 +116,35 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
     private var removeInstanceAction: (() -> Unit) = {}
 
-    private val dirtyViewMap = ConcurrentHashMap<String, GenericViewImpl<*>>()
-    private val viewMap = HashMap<String, GenericViewImpl<*>>()
+    private val dirtyViewMap = ConcurrentHashMap<String, GenericViewImpl>()
+    private val viewMap = HashMap<String, GenericViewImpl>()
     private var lastRequestId: Long = 0L
     private var historyDirty: Boolean = false
-    internal lateinit var browserView: BrowserReactViewImpl
+    /** The browser tab: its scope's view is the client's top view ("<vid>:0"). */
+    internal lateinit var browser: BrowserPresenter
+        private set
+
+    internal lateinit var browserView: GenericViewImpl
         private set
     private var instanceIdGen: Int = 1
 
     init {
+        // which client component paints each scope (the vid); the login and the receipt have their own server side
+        scopeViews = ScopeViews()
+            .register<BrowserScope> { ScopeViewImpl(BrowserPresenter.VID, this, it, instanceId = 0) }
+            .register<RootScope> { ScopeViewImpl("f2d345c4a610", this, it) }
+            .register<LoginScope> { LoginReactViewImpl(this, it) }
+            .register<HomeScope> { ScopeViewImpl("473dbdd7a36a", this, it) }
+            .register<ProductScope> { ScopeViewImpl("48b693f67410", this, it) }
+            .register<CartScope> { ScopeViewImpl("7eb485e5f843", this, it) }
+            .register<CartItemScope> { ScopeViewImpl("5d9e3c7a1f42", this, it) }
+            .register<ReceiptScope> { ReceiptReactViewImpl(this, it) }
+            .register<ProductsPanelScope> { ScopeViewImpl("a1b2c3d4e5f6", this, it) }
+            .register<PurchasesPanelScope> { ScopeViewImpl("b3c4d5e6f7a8", this, it) }
+
         this.dataSecurity = DataSecurity()
-        this.browserView = BrowserReactViewImpl(this)
+        this.browser = BrowserPresenter(this)
+        this.browserView = viewOf(browser.scope) as GenericViewImpl
         this.viewMap[browserView.instanceId] = browserView
         this.dirtyViewMap[browserView.instanceId] = browserView
         this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.inWholeMilliseconds
@@ -141,7 +153,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
     override fun release() {
         try {
             try {
-                this.browserView.release()
+                this.browser.release()
                 this.removeInstanceAction()
                 this.removeInstanceAction = {}
                 super.release()
@@ -220,16 +232,16 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         }
     }
 
-    fun putView(view: GenericViewImpl<*>) {
+    fun putView(view: GenericViewImpl) {
         viewMap[view.instanceId] = view
     }
 
-    fun removeView(stateId: String): GenericViewImpl<*>? {
-        dirtyViewMap.remove(stateId)
-        return viewMap.remove(stateId)
+    fun removeView(scopeId: String): GenericViewImpl? {
+        dirtyViewMap.remove(scopeId)
+        return viewMap.remove(scopeId)
     }
 
-    fun markDirty(view: GenericViewImpl<*>) {
+    fun markDirty(view: GenericViewImpl) {
         dirtyViewMap[view.instanceId] = view
         ViewFlushScheduler.markDirty(this)
     }
@@ -242,7 +254,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
     override fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
         val text = errorText(message, e)
         logger.error(text, e)
-        browserView.alertUnexpectedError(text)
+        browser.alertUnexpectedError(text)
     }
 
     @Synchronized
@@ -263,16 +275,25 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
     // :: Flush
 
     /**
-     * Single paint point of a view: the presenter computes its derived fields right
-     * before the ViewState is read, once per paint cycle.
+     * Writes the scopes of [views] and of every view created while writing them (a scope written for the first time
+     * creates the views of the scopes inside it), so the client gets a parent and its children in the same message.
+     * The presenters compute their derived fields first, once per paint cycle.
      */
-    private fun writeViewState(json: ExtensibleObjectOutput, view: GenericViewImpl<*>) {
+    private fun writeScopes(json: ExtensibleObjectOutput, views: List<GenericViewImpl>) {
         try {
-            view.prepareForPaint()
+            commitComputedState()
         } catch (e: Exception) {
-            LOG.error("commitComputedState for view {}", view.instanceId, e)
+            LOG.error("commitComputedState", e)
         }
-        view.writeState(json)
+        val written = HashSet<String>()
+        var pending = views
+        while (pending.isNotEmpty()) {
+            for (view in pending) {
+                if (written.add(view.instanceId)) view.writeScope(json)
+            }
+            pending = dirtyViewMap.values.filter { it.instanceId !in written }
+            pending.forEach { dirtyViewMap.remove(it.instanceId) }
+        }
     }
 
     @Synchronized
@@ -284,7 +305,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         }
 
         LOG.debug("[flushDirtyViews] Flushing dirtyViewMap.keys={}", dirtyViewMap.keys)
-        val allViews = ArrayList<GenericViewImpl<*>>()
+        val allViews = ArrayList<GenericViewImpl>()
         val iter = dirtyViewMap.entries.iterator()
         while (iter.hasNext()) {
             allViews.add(iter.next().value)
@@ -307,11 +328,9 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
                 json.name("uri").value(fragment)
             }
 
-            json.name("states")
+            json.name("scopes")
             json.beginArray()
-            for (view in allViews) {
-                writeViewState(json, view)
-            }
+            writeScopes(json, allViews)
             json.endArray()
             json.endObject()
         } finally {
@@ -419,7 +438,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
             LOG.debug("[ResponsePhase] reqId={} dirtyViewMap.keys={} viewMap.keys={}", requestId, me.dirtyViewMap.keys, me.viewMap.keys)
 
-            val viewsToFlush = ArrayList<GenericViewImpl<*>>()
+            val viewsToFlush = ArrayList<GenericViewImpl>()
             val iter = me.dirtyViewMap.entries.iterator()
             while (iter.hasNext()) {
                 viewsToFlush.add(iter.next().value)
@@ -454,7 +473,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
             return CoerceUtils.asBoolean(request["ping"], false) == true
         }
 
-        private fun writeResponse(json: ExtensibleObjectOutput, requestId: Long, isPing: Boolean, views: List<GenericViewImpl<*>>) {
+        private fun writeResponse(json: ExtensibleObjectOutput, requestId: Long, isPing: Boolean, views: List<GenericViewImpl>) {
             json.beginObject()
             run {
                 json.name("requestId").value(requestId)
@@ -468,11 +487,9 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
                 }
 
                 if (views.isNotEmpty()) {
-                    json.name("states")
+                    json.name("scopes")
                     json.beginArray()
-                    for (view in views) {
-                        me.writeViewState(json, view)
-                    }
+                    me.writeScopes(json, views)
                     json.endArray()
                 }
             }

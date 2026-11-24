@@ -4,40 +4,40 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
+import br.com.wdc.shopping.presentation.presenter.open.login.calls.CredentialsCheck
 
 class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("LoginPresenter")
-
-        var createView: ((LoginPresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
 
-    val state = observed(LoginViewState())
+    val scope = bind(LoginScope())
 
     // :: Internal Instance Fields
 
-    private val loginService = LoginService()
-    private var ownerSlot: CubeViewSlot? = null
+    private var ownerSlot: ScopeSlot? = null
+
+    init {
+        scope.onEnter = actionOf2 { userName: String?, password: String? -> enter(userName, password) }
+        // a remote view sends what the user typed by sync (the password ciphered), then the event
+        onEvent(1) { scope.onEnter(null, null) }
+    }
 
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = LoginKeys(app, intent).parentSlot
-        if (initialization) {
-            view = createView?.invoke(this)
-        }
 
-        ownerSlot?.setView(view!!)
+        ownerSlot?.setScope(scope)
 
         return false
     }
@@ -45,34 +45,34 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     // :: Messages
 
     private fun alertUserOrPasswordNotRecognize() {
-        state.errorCode = 1
-        state.errorMessage = "Username or password not recognized!"
+        scope.errorCode = 1
+        scope.errorMessage = "Username or password not recognized!"
     }
 
     private fun alertDatabaseIsOffline() {
-        state.errorCode = 4
-        state.errorMessage = "The database is offline!"
+        scope.errorCode = 4
+        scope.errorMessage = "The database is offline!"
     }
 
     private fun alertConnectionError(caught: Throwable) {
-        state.errorCode = 5
-        state.errorMessage = "Failed to communicate with the server. Check your connection."
+        scope.errorCode = 5
+        scope.errorMessage = "Failed to communicate with the server. Check your connection."
     }
 
     // :: User Actions
 
-    suspend fun onEnter(userName: String? = null, password: String? = null) {
-        if (userName != null) state.userName = userName
-        if (password != null) state.password = password
+    private suspend fun enter(userName: String?, password: String?) {
+        if (userName != null) scope.userName = userName
+        if (password != null) scope.password = password
 
-        state.loading = true
-        state.errorCode = 0
-        state.errorMessage = null
+        scope.loading = true
+        scope.errorCode = 0
+        scope.errorMessage = null
 
         try {
-            val subject = loginService.fetchSubject(state.userName ?: "", state.password ?: "")
+            val subject = CredentialsCheck(scope.userName ?: "", scope.password ?: "").run()
 
-            state.loading = false
+            scope.loading = false
 
             if (subject == null || subject.id == null) {
                 app.subject = null
@@ -96,7 +96,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
                 HomeKeys(app).flip()
             }
         } catch (caught: Exception) {
-            state.loading = false
+            scope.loading = false
 
             if (caught is OfflineException) {
                 alertDatabaseIsOffline()

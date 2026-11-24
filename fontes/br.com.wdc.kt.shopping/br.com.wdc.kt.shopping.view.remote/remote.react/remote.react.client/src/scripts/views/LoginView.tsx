@@ -20,18 +20,18 @@ const ON_ENTER = 1
 
 // :: View
 
-export type LoginViewState = {
+export type LoginScope = {
   userName?: string
   password?: string
   loading?: boolean
   errorMessage?: string
 }
 
-class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
+class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
   // :: Render
 
   override render({ className }: ViewProps): React.ReactNode {
-    const { state } = this
+    const { scope } = this
 
     return (
       <Box
@@ -89,9 +89,9 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                   type="text"
                   name="login-usr"
                   autoComplete="off"
-                  defaultValue={state.userName ?? ''}
+                  defaultValue={scope.userName ?? ''}
                   fullWidth
-                  disabled={!!state.loading}
+                  disabled={!!scope.loading}
                 />
 
                 {/* Password */}
@@ -100,9 +100,9 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                   label="Password"
                   name="login-pwd"
                   autoComplete="off"
-                  defaultValue={state.password ?? ''}
+                  defaultValue={scope.password ?? ''}
                   fullWidth
-                  disabled={!!state.loading}
+                  disabled={!!scope.loading}
                   onKeyDown={this.onKeyDown}
                   slotProps={{
                     htmlInput: {
@@ -112,9 +112,9 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                 />
 
                 {/* Error message */}
-                {!!state.errorMessage && (
+                {!!scope.errorMessage && (
                   <Alert severity="error" sx={{ width: '100%', borderRadius: '8px' }}>
-                    {state.errorMessage}
+                    {scope.errorMessage}
                   </Alert>
                 )}
 
@@ -124,7 +124,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                   variant="contained"
                   fullWidth
                   onClick={this.emitOnEnter}
-                  disabled={!!state.loading}
+                  disabled={!!scope.loading}
                   sx={{
                     height: 48,
                     borderRadius: '12px',
@@ -133,7 +133,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginViewState> {
                     textTransform: 'none',
                   }}
                 >
-                  {state.loading ? (
+                  {scope.loading ? (
                     <CircularProgress size={24} sx={{ color: '#fff' }} />
                   ) : (
                     'Sign in'

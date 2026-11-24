@@ -34,7 +34,7 @@ export type Purchase = {
   items: string[]
 }
 
-type PurchasesPanelState = {
+type PurchasesPanelScope = {
   purchases?: Purchase[]
   page: number
   pageSize: number
@@ -43,7 +43,7 @@ type PurchasesPanelState = {
 
 // :: View
 
-class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> {
+class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelScope> {
   totalPages!: number
   private resizeHandler: (() => void) | null = null
   private resizeTimer: number | null = null
@@ -72,9 +72,9 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
   }
 
   override render({ className }: ViewProps, initial?: boolean): React.ReactNode {
-    const { state } = this
-    const pageSize = Math.max(1, state.pageSize)
-    this.totalPages = Math.max(1, Math.ceil(state.totalCount / pageSize))
+    const { scope } = this
+    const pageSize = Math.max(1, scope.pageSize)
+    this.totalPages = Math.max(1, Math.ceil(scope.totalCount / pageSize))
 
     if (initial && !this.resizeHandler) {
       this.resizeHandler = this.onResize
@@ -92,10 +92,10 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
             Purchases
           </Typography>
-          {state.totalCount > 0 && (
+          {scope.totalCount > 0 && (
             <Box sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: '8px', px: 2, py: 0.75 }}>
               <Typography variant="caption" sx={{ color: Colors.OnPrimaryContainer }}>
-                {state.totalCount} {state.totalCount === 1 ? 'item' : 'items'}
+                {scope.totalCount} {scope.totalCount === 1 ? 'item' : 'items'}
               </Typography>
             </Box>
           )}
@@ -105,8 +105,8 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
 
         {/* Purchase list */}
         <Box ref={this.listRef} sx={{ flex: '1 1 auto', overflow: 'hidden' }}>
-          {(state.purchases ?? []).length === 0 ? (
-            state.totalCount === 0 && (
+          {(scope.purchases ?? []).length === 0 ? (
+            scope.totalCount === 0 && (
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 6 }}>
                 <Inventory2Icon sx={{ fontSize: 48, color: Colors.OnSurfaceVariant }} />
                 <Typography variant="body1" sx={{ mt: 1, color: Colors.OnSurfaceVariant }}>
@@ -116,7 +116,7 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
             )
           ) : (
             <Stack direction="column" spacing={1}>
-              {(state.purchases ?? []).map((purchase) => (
+              {(scope.purchases ?? []).map((purchase) => (
                 <PurchaseItemRow key={purchase.id} vsid={this.vsid} purchase={purchase} />
               ))}
             </Stack>
@@ -124,15 +124,15 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
         </Box>
 
         {/* Pagination */}
-        {state.totalCount > state.pageSize && state.pageSize > 0 && (
+        {scope.totalCount > scope.pageSize && scope.pageSize > 0 && (
           <Stack direction="row" spacing={2} sx={{ justifyContent: 'center', alignItems: 'center', mt: 1 }}>
-            <IconButton disabled={state.page <= 0} onClick={this.emitPreviousPage}>
+            <IconButton disabled={scope.page <= 0} onClick={this.emitPreviousPage}>
               <ChevronLeftIcon />
             </IconButton>
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-              {state.page + 1} / {this.totalPages}
+              {scope.page + 1} / {this.totalPages}
             </Typography>
-            <IconButton disabled={state.page >= this.totalPages - 1} onClick={this.emitNextPage}>
+            <IconButton disabled={scope.page >= this.totalPages - 1} onClick={this.emitNextPage}>
               <ChevronRightIcon />
             </IconButton>
           </Stack>
@@ -150,13 +150,13 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelState> 
   }
 
   readonly emitNextPage = () => {
-    const { state } = this
-    this.emitPageChange(state.page + 1)
+    const { scope } = this
+    this.emitPageChange(scope.page + 1)
   }
 
   readonly emitPreviousPage = () => {
-    const { state } = this
-    this.emitPageChange(state.page - 1)
+    const { scope } = this
+    this.emitPageChange(scope.page - 1)
   }
 }
 

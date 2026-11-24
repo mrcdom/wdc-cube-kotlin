@@ -4,27 +4,27 @@ import Box from '@mui/material/Box'
 import app, { type ViewProps } from '@root/App'
 import { BaseViewClass } from '@root/utils/ViewUtils'
 
-export type RootViewState = {
+export type RootScope = {
   contentViewId?: string
   errorMessage?: string
 }
 
-class RootViewClass extends BaseViewClass<ViewProps, RootViewState> {
+class RootViewClass extends BaseViewClass<ViewProps, RootScope> {
   // :: Renderes
 
   override render({ className }: ViewProps) {
-    const { state } = this
+    const { scope } = this
 
-    if (state.errorMessage) {
+    if (scope.errorMessage) {
       return (
         <Box sx={{ m: 2 }}>
-          <Alert severity="error">{state.errorMessage}</Alert>
+          <Alert severity="error">{scope.errorMessage}</Alert>
         </Box>
       )
     }
 
-    if (state.contentViewId) {
-      return app.createView(state.contentViewId)
+    if (scope.contentViewId) {
+      return app.createView(scope.contentViewId)
     }
 
     return (

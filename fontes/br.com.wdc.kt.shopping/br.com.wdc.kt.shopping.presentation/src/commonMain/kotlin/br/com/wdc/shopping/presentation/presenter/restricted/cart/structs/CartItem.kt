@@ -1,8 +1,10 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.cart.structs
 
+import br.com.wdc.framework.cube.ScopeValue
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 
-class CartItem {
+class CartItem : ScopeValue {
 
     var id: Long = 0
     var image: String? = null
@@ -16,6 +18,15 @@ class CartItem {
         it.name = name
         it.price = price
         it.quantity = quantity
+    }
+
+    override fun writeJson(json: ExtensibleObjectOutput) {
+        json.beginObject()
+        json.name("id").value(id)
+        json.name("name").value(name)
+        json.name("price").value(price)
+        json.name("quantity").value(quantity.toLong())
+        json.endObject()
     }
 
     companion object {

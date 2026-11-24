@@ -20,7 +20,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.components.AsyncImage
 import br.com.wdc.shopping.view.compose.components.verticalScrollbar
@@ -29,15 +30,15 @@ import br.com.wdc.shopping.view.compose.util.formatPrice
 import br.com.wdc.shopping.view.compose.util.productImageUrl
 import br.com.wdc.shopping.view.compose.util.stripHtml
 
-class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("product-view", presenter) {
+class ProductView(app: RootPresenter, scope: ProductScope) :
+    ComposeCubeView<ProductScope>("product-view", app, scope) {
 
     @Composable
     override fun Render() {
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val state = presenter.state
-        val product = state.product
+        val product = scope.product
         var quantity by remember { mutableIntStateOf(1) }
 
         Box(
@@ -52,7 +53,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                         .verticalScroll(scrollState),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                        val errorMessage = state.errorMessage
+                        val errorMessage = scope.errorMessage
                         if (!errorMessage.isNullOrBlank()) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
@@ -198,7 +199,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                             horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                         ) {
                             OutlinedButton(
-                                onClick = { safeCall { presenter.onOpenProducts() } },
+                                onClick = { safeCall { scope.onOpenProducts() } },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.height(48.dp)
                             ) {
@@ -208,7 +209,7 @@ class ProductView(private val presenter: ProductPresenter) : ComposeCubeView("pr
                             }
                             }
                             Button(
-                                onClick = { safeCall { presenter.onAddToCart(quantity) } },
+                                onClick = { safeCall { scope.onAddToCart(quantity) } },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.height(48.dp),
                                 colors = ButtonDefaults.buttonColors(

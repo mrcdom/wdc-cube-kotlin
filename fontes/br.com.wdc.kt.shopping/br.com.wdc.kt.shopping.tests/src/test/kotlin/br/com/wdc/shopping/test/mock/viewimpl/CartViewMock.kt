@@ -1,15 +1,14 @@
 package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartViewState
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 
 class CartViewMock(
     app: RootPresenterMock,
-    presenter: CartPresenter,
-) : AbstractViewMock<CartPresenter>(app, presenter) {
+    scope: CartScope,
+) : AbstractViewMock<CartScope>(app, scope) {
 
     companion object {
         fun cast(view: CubeView?): CartViewMock {
@@ -20,5 +19,4 @@ class CartViewMock(
         }
     }
 
-    var state: CartViewState = presenter.state
 }

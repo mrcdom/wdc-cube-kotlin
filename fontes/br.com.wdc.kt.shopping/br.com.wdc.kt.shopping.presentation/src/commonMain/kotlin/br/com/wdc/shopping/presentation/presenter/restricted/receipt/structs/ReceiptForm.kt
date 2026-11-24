@@ -1,13 +1,25 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs
 
+import br.com.wdc.framework.cube.ScopeValue
+import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.shopping.domain.purchase.Purchase
 import br.com.wdc.framework.domain.projection.ProjectionValues
 
-class ReceiptForm {
+class ReceiptForm : ScopeValue {
 
     var date: Long? = null
     var items: MutableList<ReceiptItem> = mutableListOf()
     var total: Double? = null
+
+    override fun writeJson(json: ExtensibleObjectOutput) {
+        json.beginObject()
+        date?.let { json.name("date").value(it) }
+        total?.let { json.name("total").value(it) }
+        json.name("items").beginArray()
+        for (item in items) item.writeJson(json)
+        json.endArray()
+        json.endObject()
+    }
 
     companion object {
         fun projection(): Purchase {

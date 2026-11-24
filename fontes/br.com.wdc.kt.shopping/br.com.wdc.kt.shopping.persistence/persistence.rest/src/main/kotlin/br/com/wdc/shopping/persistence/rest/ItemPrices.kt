@@ -9,16 +9,11 @@ import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
 
 /**
- * **The price of a purchase item is the server's.** Whatever price the client sends, an item written through the
- * API gets its product's current price: on insert (alone or inside a purchase), and on an update that touches the
- * price or the product. An item of a product that does not exist is refused (400).
+ * **The price of a purchase item is the server's.** On insert the repository reads it (the item repository's INSERT,
+ * on every path); here, on an update through the API that touches the price or the product, the item gets its
+ * product's current price. An item of a product that does not exist is refused (400).
  */
 internal object ItemPrices {
-
-    /** Sets [item]'s price to its product's current one. */
-    suspend fun applyTo(item: PurchaseItem) {
-        item.price = currentPrice(item.productId)
-    }
 
     /**
      * On an update that writes the price or the product, sets the price to the current one of the product the item

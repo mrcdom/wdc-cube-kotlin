@@ -5,7 +5,7 @@ import CookieConstructor from 'universal-cookie'
 
 import type { FormMapType, IViewFactory } from './types'
 import { NOOP_VOID, NOOP_PROMISE_VOID, CAUTHED, BROWSER_VSID } from './constants'
-import { ViewScope } from './ViewScope'
+import { ViewBinding } from './ViewBinding'
 import { DataSecurity } from './DataSecurity'
 import { FlushRequestContext } from './FlushRequestContext'
 import { ReconnectController } from './ReconnectController'
@@ -18,7 +18,7 @@ export class Application {
   readonly history = history.createHashHistory()
 
   readonly viewFactory = new Map<string, IViewFactory>()
-  readonly viewMap = new Map<string, ViewScope>()
+  readonly viewMap = new Map<string, ViewBinding>()
 
   formMap: FormMapType = {}
 
@@ -35,7 +35,7 @@ export class Application {
   readyToStart = NOOP_PROMISE_VOID
 
   constructor() {
-    this.viewMap.set(BROWSER_VSID, new ViewScope(BROWSER_VSID))
+    this.viewMap.set(BROWSER_VSID, new ViewBinding(BROWSER_VSID))
 
     const appIdFromCookie = Cookie.get('app_id')
     if (appIdFromCookie) {
@@ -104,10 +104,10 @@ export class Application {
       throw new Error(`No view registered for viewId: "${parts[0]}"`)
     }
 
-    let viewScope = this.viewMap.get(vsid)
-    if (!viewScope) {
-      viewScope = new ViewScope(vsid)
-      this.viewMap.set(vsid, viewScope)
+    let binding = this.viewMap.get(vsid)
+    if (!binding) {
+      binding = new ViewBinding(vsid)
+      this.viewMap.set(vsid, binding)
     }
 
     return viewCreator(vsid, props ?? {})
@@ -118,26 +118,26 @@ export class Application {
   }
 
   bindView<T>(vsid: string) {
-    let scope = this.viewMap.get(vsid) ?? null
-    if (!scope) {
-      scope = this.viewGarbageCollector.recover(vsid)
-      if (!scope) {
+    let binding = this.viewMap.get(vsid) ?? null
+    if (!binding) {
+      binding = this.viewGarbageCollector.recover(vsid)
+      if (!binding) {
         throw new Error(`Missing View Scope for id(${vsid})`)
       }
     }
 
     const [updateCount, setUpdateCount] = React.useState(0)
-    scope.forceUpdate = () => setUpdateCount((count) => count + 1)
+    binding.forceUpdate = () => setUpdateCount((count) => count + 1)
 
     React.useEffect(() => {
       // attached
       return () => {
         // detached
-        this.viewGarbageCollector.mark(scope)
+        this.viewGarbageCollector.mark(binding)
       }
     }, [])
 
-    return { state: scope.getState() as T, scope }
+    return { scope: binding.getScope() as T, binding }
   }
 
   holdView(vsid: string | undefined) {
@@ -194,23 +194,23 @@ export class Application {
     this.submit(BROWSER_VSID, 2)
   }
 
-  applyViewStates(stateList: { id: string }[]) {
-    for (let i = 0, ilen = stateList.length; i < ilen; i++) {
-      let viewState = stateList[i]
-      if (!viewState || !viewState.id) {
+  applyScopes(scopeList: { id: string }[]) {
+    for (let i = 0, ilen = scopeList.length; i < ilen; i++) {
+      let scope = scopeList[i]
+      if (!scope || !scope.id) {
         continue
       }
-      const vsid = viewState.id
+      const vsid = scope.id
       this.viewGarbageCollector.recover(vsid)
 
-      let viewScope = this.viewMap.get(vsid)
-      if (!viewScope) {
-        viewScope = new ViewScope(vsid)
-        this.viewMap.set(vsid, viewScope)
+      let binding = this.viewMap.get(vsid)
+      if (!binding) {
+        binding = new ViewBinding(vsid)
+        this.viewMap.set(vsid, binding)
       }
 
-      viewScope.setState(viewState)
-      this.viewGarbageCollector.updateAutoHolds(viewScope)
+      binding.setScope(scope)
+      this.viewGarbageCollector.updateAutoHolds(binding)
     }
   }
 

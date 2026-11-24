@@ -2,7 +2,8 @@ package br.com.wdc.shopping.nativeui.ios.views
 
 import br.com.wdc.shopping.nativeui.ios.toolkit.*
 import br.com.wdc.shopping.nativeui.ios.theme.*
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import platform.CoreGraphics.CGSizeMake
@@ -15,7 +16,7 @@ import platform.darwin.NSObject
  * Matches the web reference exactly.
  */
 @OptIn(ExperimentalForeignApi::class)
-class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>("login-view", presenter) {
+class LoginViewIos(app: RootPresenter, scope: LoginScope) : AbstractViewIos<LoginScope>("login-view", app, scope) {
 
     // UI references for doUpdate()
     private lateinit var userField: UITextField
@@ -156,9 +157,8 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val loading = state.loading
-        val error = state.errorMessage
+        val loading = scope.loading
+        val error = scope.errorMessage
 
         // Guard: loading state
         if (loading != lastLoading) {
@@ -184,10 +184,9 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
 
     internal fun performLogin() {
         safeAction("login") {
-            val state = presenter.state
-            state.userName = userField.text ?: ""
-            state.password = passwordField.text ?: ""
-            presenter.onEnter()
+            scope.userName = userField.text ?: ""
+            scope.password = passwordField.text ?: ""
+            scope.onEnter(null, null)
         }
     }
 }

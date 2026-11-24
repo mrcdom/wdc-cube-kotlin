@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.InputCoerceUtils
 import br.com.wdc.framework.commons.serialization.SerializationToken
 import br.com.wdc.framework.domain.codec.ModelCodec
+import br.com.wdc.framework.domain.criteria.Criteria
 import br.com.wdc.framework.domain.criteria.CriterionCodec
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.exception.NotFoundException
@@ -15,6 +16,8 @@ import br.com.wdc.framework.rest.RequestContext
 import br.com.wdc.framework.rest.RestApi
 import br.com.wdc.framework.rest.RestCall
 import br.com.wdc.framework.rest.openapi.OperationDoc
+import br.com.wdc.framework.rest.policy.DataAccess
+import br.com.wdc.framework.rest.policy.DataPolicy
 import br.com.wdc.framework.rest.security.AccessRule
 import io.javalin.http.NotFoundResponse
 
@@ -35,8 +38,17 @@ import io.javalin.http.NotFoundResponse
  *
  * The writes only exist if the repository is a [Repository], and they are `transactional`. The reads run in the
  * client's remote transaction when the request carries its `X-Tx-Id`, so they see what it already wrote. Access is up to the
- * application: [rule] per operation, [scope] to restrict reads, delete and update to what belongs to the caller, and the write
- * hooks, which run inside the transaction. Fetching by key goes through the same rule and reach as the queries.
+ * application, in one of two ways:
+ *
+ * - a [policy] — the entity's data policy: per role, the rows reached, the fields read (as they are or masked), the
+ *   fields written, and whether it deletes. It takes over the whole authorization of the routes ([rule], [scope] and the
+ *   `sanitize*` hooks are not consulted); the routes only require an authenticated caller.
+ * - [rule] per operation, [scope] to restrict reads, delete and update to what belongs to the caller, and the
+ *   `sanitize*` hooks.
+ *
+ * Either way, the write hooks ([beforeInsert], [beforeUpdate]) run inside the transaction — with a policy, after its
+ * check, as transformations of what is written. Fetching by key goes through the same rules and reach as the queries.
+ * The criteria's alternative groups (`anyOf`) do not travel: the key is refused (400).
  *
  * Insert returns the entity as the repository left it (the generated key, the column defaults), passed through
  * [sanitizeOutput] like every entity read. A body without `entity` is read as the bare entity, the form before
@@ -76,7 +88,15 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         GET_BY_ID("{id}", false),
     }
 
-    /** The access rule of each operation, combined with the path's. `null` = only the path's. */
+    /**
+     * The entity's data policy. When set — before [register] — it is the only authorization of these routes: each
+     * request is checked and adapted by `policy.accessFor(principal)` (reads restricted and shaped, writes checked,
+     * delete restricted), and [rule], [scope], [sanitizeProjection] and [sanitizeOutput] are not consulted. Its criteria
+     * type must be this RPC's.
+     */
+    var policy: DataPolicy<E, *>? = null
+
+    /** The access rule of each operation, combined with the path's. `null` = only the path's. Ignored with a [policy]. */
     var rule: (Operation) -> AccessRule? = { null }
 
     /**
@@ -136,6 +156,7 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     /** Registers the routes on [routes]. */
     fun register(routes: RestApi.Routes) {
+        rulesInForce = policy == null
         if (writes) {
             post(routes, Operation.INSERT, transactional = true, ::insert)
             post(routes, Operation.UPDATE, transactional = true, ::update)
@@ -146,14 +167,28 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         post(routes, Operation.FETCH, transactional = false) { call -> call.inRemoteTransaction { fetch(call) } }
         post(routes, Operation.FETCH_PAGE, transactional = false) { call -> call.inRemoteTransaction { fetchPage(call) } }
         post(routes, Operation.FETCH_BY_ID, transactional = false) { call -> call.inRemoteTransaction { fetchByIdPost(call) } }
-        routes.get("$basePath/{id}", rule = rule(Operation.GET_BY_ID), doc = doc(Operation.GET_BY_ID)) { call ->
+        routes.get("$basePath/{id}", rule = ruleOf(Operation.GET_BY_ID), doc = doc(Operation.GET_BY_ID)) { call ->
             call.inRemoteTransaction { fetchById(call) }
         }
     }
 
     private fun post(routes: RestApi.Routes, op: Operation, transactional: Boolean, handler: suspend (RestCall) -> Any?) {
-        routes.post("$basePath/${op.route}", rule = rule(op), transactional = transactional, doc = doc(op), handler = handler)
+        routes.post("$basePath/${op.route}", rule = ruleOf(op), transactional = transactional, doc = doc(op), handler = handler)
     }
+
+    /** Whether [rule] decides the routes — not with a [policy], which decides alone. */
+    private var rulesInForce = true
+
+    private fun ruleOf(op: Operation): AccessRule? = if (rulesInForce) rule(op) else null
+
+    /** What the caller may do, by the [policy]; `null` without one. */
+    @Suppress("UNCHECKED_CAST")
+    private fun access(call: RestCall): DataAccess<E, Criteria>? =
+        (policy as DataPolicy<E, Criteria>?)?.accessFor(call.request.principal)
+
+    @Suppress("UNCHECKED_CAST")
+    private fun asCriteria(criteria: C): Criteria = criteria as? Criteria
+        ?: throw IllegalStateException("$basePath has a policy, and its criteria ${criteria::class.simpleName} is not a Criteria")
 
     @Suppress("UNCHECKED_CAST")
     private fun writable(): Repository<E, C, K> = repository() as? Repository<E, C, K>
@@ -161,10 +196,14 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     private suspend fun insert(call: RestCall): RawJson {
         val (entity, projection) = readInsert(call)
+        val access = access(call)
+        access?.checkCreate(entity)
         beforeInsert(entity, call.request)
         val success = writable().insert(entity, projection)
         val id = idOf(entity)
-        if (success) sanitizeOutput(entity)
+        if (success) {
+            if (access != null) access.readBack(entity) else sanitizeOutput(entity)
+        }
         // `id` and `entity` only on success: an id without a row would mislead (as in the C# version)
         return RawJson.write { out ->
             out.beginObject().name("success").value(success)
@@ -211,7 +250,13 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     private suspend fun update(call: RestCall): RawJson {
         val data = call.entityForUpdate(codec)
-        if (scoped) {
+        val access = access(call)
+        if (access != null) {
+            access.checkUpdate(data.entity, data.projection) { row, projection ->
+                val id = idOf(row) ?: throw InvalidRequestException("update without the id")
+                repository().fetchById(id, projection)
+            }
+        } else if (scoped) {
             val id = idOf(data.entity) ?: throw InvalidRequestException("update without the id")
             val target = newCriteria()
             restrictToId(target, id)
@@ -224,13 +269,15 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
 
     private suspend fun delete(call: RestCall): RawJson {
         val criteria = readFetchRequest(call).criteria
-        scope(criteria, call.request)
+        val access = access(call)
+        if (access != null) access.restrictDelete(asCriteria(criteria)) else scope(criteria, call.request)
         return RawJson.field("count", writable().delete(criteria).toLong())
     }
 
     private suspend fun count(call: RestCall): RawJson {
         val criteria = readFetchRequest(call).criteria
-        scope(criteria, call.request)
+        val access = access(call)
+        if (access != null) access.restrictCount(asCriteria(criteria)) else scope(criteria, call.request)
         return RawJson.field("count", repository().count(criteria).toLong())
     }
 
@@ -239,14 +286,14 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         val cap = maxLimit
         val unlimited = request.limit <= 0
         if (cap != null && request.limit > cap) throw InvalidRequestException("limit above the maximum of $cap rows")
-        scope(request.criteria, call.request)
+        val plan = prepareRead(call, request.criteria)
         // without a limit, one row past the cap tells "exactly the cap" from "more than it"
         val limit = if (cap != null && unlimited) cap + 1 else request.limit
         val items = repository().fetch(request.criteria, request.offset, limit)
         if (cap != null && unlimited && items.size > cap) {
             throw InvalidRequestException("More than $cap rows: page the query with limit and offset")
         }
-        items.forEach(sanitizeOutput)
+        plan.applyAll(items)
         return RawJson.write { writeItems(it, items, null) }
     }
 
@@ -254,9 +301,9 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
         val request = readFetchRequest(call)
         val cap = maxLimit
         if (cap != null && request.pageSize !in 1..cap) throw InvalidRequestException("pageSize must be between 1 and $cap")
-        scope(request.criteria, call.request)
+        val plan = prepareRead(call, request.criteria)
         val page = repository().fetchPage(request.criteria, request.page, request.pageSize)
-        page.items.forEach(sanitizeOutput)
+        plan.applyAll(page.items)
         return RawJson.write { writeItems(it, page.items, page.totalItems) }
     }
 
@@ -289,16 +336,37 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
     private suspend fun fetchOne(call: RestCall, id: K, projection: E?): E? {
         val criteria = newCriteria()
         restrictToId(criteria, id)
-        val shape = projection ?: repository().ownFieldsProjection()
+        projection?.let { setProjection(criteria, it) }
+        val plan = prepareRead(call, criteria)
+        return repository().fetch(criteria, 0, 1).firstOrNull()?.let { plan.apply(it) }
+    }
+
+    /**
+     * Prepares a read whose criteria carries the projection the caller asked for, if any: by the [policy] (rows
+     * restricted, projection checked and completed, or the default shape), or else by [scope] and the `sanitize*` hooks
+     * (the repository's own fields when nothing was asked).
+     */
+    @Suppress("UNCHECKED_CAST")
+    private suspend fun prepareRead(call: RestCall, criteria: C): DataAccess.ReadPlan<E> {
+        val access = access(call)
+        if (access != null) {
+            val plan = access.prepareRead(asCriteria(criteria))
+            // with security off and nothing asked, the policy leaves the repository's default
+            if (codecProjection(criteria) == null) setProjection(criteria, repository().ownFieldsProjection())
+            return plan
+        }
+        val requested = (codecProjection(criteria))
+        val shape = requested ?: repository().ownFieldsProjection()
         sanitizeProjection(shape)
         setProjection(criteria, shape)
         scope(criteria, call.request)
-        return repository().fetch(criteria, 0, 1).firstOrNull()
+        return DataAccess.ReadPlan { row -> row.also(sanitizeOutput) }
     }
+
+    private fun codecProjection(criteria: C): E? = codec.getProjection(criteria)
 
     private fun respondEntity(entity: E?): RawJson {
         if (entity == null) throw NotFoundResponse("Not found")
-        sanitizeOutput(entity)
         return RawJson.write { codec.writeEntity(it, entity) }
     }
 
@@ -327,15 +395,14 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
                     "limit" -> request.limit = CriterionCodec.readSliceNumber(input, "limit") ?: 0
                     "page" -> request.page = CriterionCodec.readSliceNumber(input, "page") ?: 0
                     "pageSize" -> request.pageSize = CriterionCodec.readSliceNumber(input, "pageSize") ?: 0
+                    CriterionCodec.ANY_OF -> throw CriterionCodec.anyOfDoesNotTravel()
                     else -> if (!codec.readCriteriaField(input, name, request.criteria)) input.skipValue()
                 }
             }
             input.endObject()
         }
-        // outside the body reading: a failure here is the server's, not the request's
-        val shape = projection ?: repository().ownFieldsProjection()
-        sanitizeProjection(shape)
-        setProjection(request.criteria, shape)
+        // the projection the caller asked for, if any: the read decides what to fetch (prepareRead)
+        projection?.let { setProjection(request.criteria, it) }
         return request
     }
 

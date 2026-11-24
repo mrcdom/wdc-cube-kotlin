@@ -48,6 +48,10 @@ object ShoppingConfig {
     var refreshTokenTtlDays: Int = 7
         private set
 
+    /** Requests to `/api/auth` (challenge, login, refresh) per client address and minute; `0` turns the limit off. */
+    var authRequestsPerMinute: Int = 60
+        private set
+
     object Internals {
 
         fun setWorkDir(path: Path) { ShoppingConfig.workDir = path }
@@ -58,6 +62,7 @@ object ShoppingConfig {
         fun setDeploymentDir(path: Path) { ShoppingConfig.deploymentDir = path }
         fun setJwtSecret(secret: String?) { ShoppingConfig.jwtSecret = secret }
         fun setRefreshTokenTtlDays(days: Int) { ShoppingConfig.refreshTokenTtlDays = days }
+        fun setAuthRequestsPerMinute(limit: Int) { ShoppingConfig.authRequestsPerMinute = limit }
 
         /**
          * Sets the runtime folders from the work directory, creating the missing ones.
@@ -86,6 +91,7 @@ object ShoppingConfig {
             val config = AppConfig.load(configDir.resolve(CONFIG_FILE_NAME))
             setJwtSecret(config.get("security.jwt.secret"))
             setRefreshTokenTtlDays(config.getInt("security.refresh.token.ttl.days", 7))
+            setAuthRequestsPerMinute(config.getInt("security.auth.requestsPerMinute", 60))
             return config
         }
 

@@ -30,7 +30,7 @@ sealed class ActionScenario(val name: String) {
     }
 
     /**
-     * Resolves the full instance ID for a VID by searching the client's tracked view states.
+     * Resolves the full instance ID for a VID by searching the client's tracked scopes.
      * Returns null if the view is not currently present in state.
      */
     protected fun resolveView(client: VirtualClient, vid: String): String? {
@@ -63,9 +63,9 @@ sealed class ActionScenario(val name: String) {
      * Product IDs currently listed by the products panel (IDs are not contiguous).
      */
     protected fun productIds(client: VirtualClient): List<Long> {
-        val state = client.getViewStateByVid(Vid.PRODUCTS_PANEL)
+        val scope = client.getScopeByVid(Vid.PRODUCTS_PANEL)
         @Suppress("UNCHECKED_CAST")
-        val products = state["products"] as? List<Map<String, Any?>> ?: return emptyList()
+        val products = scope["products"] as? List<Map<String, Any?>> ?: return emptyList()
         return products.mapNotNull { (it["id"] as? Number)?.toLong() }
     }
 }
@@ -82,6 +82,7 @@ object Vid {
     const val PURCHASES_PANEL = "b3c4d5e6f7a8"
     const val PRODUCT = "48b693f67410"
     const val CART = "7eb485e5f843"
+    const val CART_ITEM = "5d9e3c7a1f42"
     const val RECEIPT = "e8d0bd8ae3bc"
 }
 
@@ -102,6 +103,9 @@ class FullShoppingScenario(private val credentials: UserCredentials) : ActionSce
 
         // 4. Add to cart (the application navigates straight to the cart)
         if (!doAddToCart(client, metrics)) return false
+
+        // 4b. One more of it, from the cart row
+        if (!doIncrementCartRow(client, metrics)) return false
 
         // 5. Buy
         if (!doBuy(client, metrics)) return false
@@ -125,6 +129,12 @@ class FullShoppingScenario(private val credentials: UserCredentials) : ActionSce
         val viewId = resolveView(client, Vid.PRODUCT) ?: return false
         val latency = client.sendEvent(viewId, 2, mapOf("p.quantity" to 1))
         return recordAction(metrics, "addToCart", latency)
+    }
+
+    private fun doIncrementCartRow(client: VirtualClient, metrics: MetricsCollector): Boolean {
+        val rowViewId = resolveView(client, Vid.CART_ITEM) ?: return false
+        val latency = client.sendEvent(rowViewId, 2, mapOf("p.quantity" to 2))
+        return recordAction(metrics, "modifyQuantity", latency)
     }
 
     private fun doOpenProducts(client: VirtualClient, metrics: MetricsCollector, fromVid: String): Boolean {

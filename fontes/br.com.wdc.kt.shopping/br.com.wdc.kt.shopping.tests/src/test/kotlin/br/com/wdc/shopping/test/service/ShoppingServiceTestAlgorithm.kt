@@ -10,20 +10,19 @@ import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
 import br.com.wdc.shopping.domain.user.User
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.shopping.presentation.presenter.open.login.structs.Subject
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelService
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductService
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptService
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptForm
 import br.com.wdc.shopping.scripts.sgbd.DBReset
 import br.com.wdc.shopping.test.util.ShoppingTestEnvironment
 import kotlin.time.Clock
 import org.junit.jupiter.api.Assertions.*
 
 /**
- * Test algorithms shared between [ShoppingServiceTest] and
- * [ShoppingServiceRestTest]. Receives the repositories explicitly
- * through [ShoppingTestEnvironment].
+ * Test algorithms shared between [ShoppingServiceTest] and [ShoppingServiceRestTest]: the queries the presentation
+ * makes, with its projections and structs, run against the repositories the environment gives — in process or over
+ * REST. The calls themselves (which reach the repositories through their BEANs) are tested in process, in
+ * `ShoppingCallTest`.
  */
 object ShoppingServiceTestAlgorithm {
 
@@ -91,7 +90,7 @@ object ShoppingServiceTestAlgorithm {
             assertTrue(product.price >= 0.0, "Product price must be grater than or equal to 0.0")
             assertTrue(!product.description.isNullOrBlank(), "Product description can not be empty")
 
-            val sameProduct = ProductService(env.productRepo).loadProductById(product.id)
+            val sameProduct = ProductInfo.create(env.productRepo.fetchById(product.id, ProductInfo.projection()))!!
             assertEquals(product.id, sameProduct.id)
             assertEquals(product.name, sameProduct.name)
             assertEquals(product.image, sameProduct.image)
@@ -99,11 +98,9 @@ object ShoppingServiceTestAlgorithm {
             assertEquals(product.description, sameProduct.description)
         }
 
-        val homeService = PurchasesPanelService(env.purchaseRepo)
-
-        var purchases: List<PurchaseInfo> = homeService.loadPurchases(
-            PurchaseCriteria().withOrderBy(PurchaseCriteria.OrderBy.OLDEST_FIRST)
-        )
+        var purchases: List<PurchaseInfo> = env.purchaseRepo
+            .fetch(PurchaseCriteria().withOrderBy(PurchaseCriteria.OrderBy.OLDEST_FIRST).withProjection(PurchaseInfo.projectionWithItems()))
+            .mapNotNull { PurchaseInfo.create(it) }
 
         assertNotNull(purchases)
         assertEquals(2, purchases.size)
@@ -138,7 +135,14 @@ object ShoppingServiceTestAlgorithm {
         val purchaseId = purchase.id!!
         assertEquals(DBReset.ADMIN_SECOND_PURCHASE_ID + 1, purchaseId)
 
-        purchases = homeService.loadPurchasesOfUser(userId)
+        purchases = env.purchaseRepo
+            .fetch(
+                PurchaseCriteria()
+                    .withUserId(userId)
+                    .withProjection(PurchaseInfo.projectionWithItems())
+                    .withOrderBy(PurchaseCriteria.OrderBy.MOST_RECENT_PURCHASE_FIRST)
+            )
+            .mapNotNull { PurchaseInfo.create(it) }
 
         assertNotNull(purchases)
         assertEquals(3, purchases.size)
@@ -148,14 +152,14 @@ object ShoppingServiceTestAlgorithm {
         assertEquals(2, lastPurchase.items.size)
         assertEquals(21.34, lastPurchase.total)
 
-        val receipt = ReceiptService(env.purchaseRepo).loadReceipt(purchaseId, userId)
+        val receipt = receiptOf(env, purchaseId, userId)
         assertNotNull(receipt)
         assertEquals(21.34, receipt!!.total)
         assertEquals(2, receipt.items.size)
 
         // the receipt belongs to the buyer: for another user, the purchase does not exist
         val otherUser = if (userId == DBReset.FULANO_ID) DBReset.BEOTRANO_ID else DBReset.FULANO_ID
-        assertNull(ReceiptService(env.purchaseRepo).loadReceipt(purchaseId, otherUser))
+        assertNull(receiptOf(env, purchaseId, otherUser))
 
         val item0 = purchase.items!![0]
         assertEquals(item0.price, receipt.items[0].value)
@@ -166,5 +170,10 @@ object ShoppingServiceTestAlgorithm {
         assertEquals(item1.price, receipt.items[1].value)
         assertEquals(item1.amount, receipt.items[1].quantity)
         assertEquals("Thread Seal Tape", receipt.items[1].description)
+    }
+
+    private suspend fun receiptOf(env: ShoppingTestEnvironment, purchaseId: Long, userId: Long): ReceiptForm? {
+        val criteria = PurchaseCriteria().withPurchaseId(purchaseId).withUserId(userId).withProjection(ReceiptForm.projection())
+        return ReceiptForm.create(env.purchaseRepo.fetch(criteria, limit = 1).firstOrNull())?.also { r -> r.items.sortBy { it.id } }
     }
 }

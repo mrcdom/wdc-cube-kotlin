@@ -5,7 +5,8 @@ import br.com.wdc.shopping.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.theme.UIK
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -21,7 +22,7 @@ import kotlin.math.max
  * Uses ListSlot with PurchaseCardView sub-views for efficient recycling.
  */
 @OptIn(ExperimentalForeignApi::class)
-class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIos<PurchasesPanelPresenter>("purchases-panel-view", presenter) {
+class PurchasesPanelViewIos(app: RootPresenter, scope: PurchasesPanelScope) : AbstractViewIos<PurchasesPanelScope>("purchases-panel-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: UIStackView
@@ -168,13 +169,12 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
 
         purchasesSlot = newListSlot(
             stackView,
-            factory = { PurchaseCardView(presenter).also { it.initialize() } },
+            factory = { PurchaseCardView(app, scope).also { it.initialize() } },
             updater = { view, item -> view.setState(item); view.forceUpdate() }
         )
     }
 
     override fun doUpdate() {
-        val state = presenter.state
 
         // Calculate capacity based on available scroll height
         val availableHeight = scrollView.frame.useContents { size.height }
@@ -183,7 +183,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
             val capacity = max(1, (availableHeight / cardHeight).toInt())
             if (capacity != lastCapacity) {
                 lastCapacity = capacity
-                safeAction("capacityChanged") { presenter.onItemSizeCapacityChanged(capacity) }
+                safeAction("capacityChanged") { scope.onItemSizeCapacityChanged(capacity) }
                 return // presenter will trigger a new update with data
             }
         } else {
@@ -193,10 +193,10 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
             }
             return
         }
-        val purchases = state.purchases
-        val page = state.page
-        val totalCount = state.totalCount
-        val pageSize = if (state.pageSize > 0) state.pageSize else 5
+        val purchases = scope.purchases
+        val page = scope.page
+        val totalCount = scope.totalCount
+        val pageSize = if (scope.pageSize > 0) scope.pageSize else 5
         val totalPages = max(1, ceil(totalCount.toDouble() / pageSize).toInt())
 
         // Sync list with recycling
@@ -228,16 +228,15 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
 
     internal fun onPrevPage() {
         safeAction("prevPage") {
-            val state = presenter.state
-            if (state.page > 0) {
-                presenter.onPageChange(state.page - 1)
+            if (scope.page > 0) {
+                scope.onPageChange(scope.page - 1)
             }
         }
     }
 
     internal fun onNextPage() {
         safeAction("nextPage") {
-            presenter.onPageChange(presenter.state.page + 1)
+            scope.onPageChange(scope.page + 1)
         }
     }
 }
@@ -259,7 +258,7 @@ private class PurchasesPanelActions(private val view: PurchasesPanelViewIos) : N
 // --- Item sub-view: PurchaseCardView ---
 
 @OptIn(ExperimentalForeignApi::class)
-private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractViewIos<PurchasesPanelPresenter>("purchase-card", presenter) {
+private class PurchaseCardView(app: RootPresenter, scope: PurchasesPanelScope) : AbstractViewIos<PurchasesPanelScope>("purchase-card", app, scope) {
 
     private lateinit var dateLabel: UILabel
     private lateinit var totalLabel: UILabel
@@ -343,7 +342,7 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
 
     fun onTap() {
         val id = purchase?.id ?: return
-        safeAction("openReceipt") { presenter.onOpenReceipt(id) }
+        safeAction("openReceipt") { scope.onOpenReceipt(id) }
     }
 }
 

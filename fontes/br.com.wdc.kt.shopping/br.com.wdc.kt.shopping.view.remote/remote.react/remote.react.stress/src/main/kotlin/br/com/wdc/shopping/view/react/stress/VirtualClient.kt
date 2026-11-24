@@ -65,9 +65,9 @@ class VirtualClient(
     // Keep-alive
     private var keepAliveTask: ScheduledFuture<*>? = null
 
-    // View state (tracks current screen from server responses)
+    // Scopes (track current screen from server responses)
     private var currentUri: String = ""
-    private var viewStates: MutableMap<String, Map<String, Any?>> = mutableMapOf()
+    private var scopes: MutableMap<String, Map<String, Any?>> = mutableMapOf()
 
     /**
      * Establishes the session: HTTP request for cookies, then WebSocket connection.
@@ -103,13 +103,13 @@ class VirtualClient(
 
             // Step 5: Wait for Login view (arrives via flushDirtyViews after navigation)
             if (!waitForView(Vid.LOGIN, 5000)) {
-                LOG.error("[Client-{}] Login view not in state after onStart (views: {})", clientId, viewStates.keys)
+                LOG.error("[Client-{}] Login view not in state after onStart (views: {})", clientId, scopes.keys)
                 return false
             }
 
             val elapsed = System.currentTimeMillis() - startTime
             metrics.recordConnectionTime(elapsed)
-            LOG.debug("[Client-{}] Connected in {}ms (views: {})", clientId, elapsed, viewStates.keys)
+            LOG.debug("[Client-{}] Connected in {}ms (views: {})", clientId, elapsed, scopes.keys)
             return true
         } catch (e: Exception) {
             LOG.error("[Client-{}] Connection failed: {}", clientId, e.message)
@@ -180,11 +180,11 @@ class VirtualClient(
         return findViewByVid(vid) != null
     }
 
-    fun getViewState(instanceId: String): Map<String, Any?> = viewStates[instanceId] ?: emptyMap()
+    fun getScope(instanceId: String): Map<String, Any?> = scopes[instanceId] ?: emptyMap()
 
     /**
      * Finds the full instance ID (e.g. "c677cda52d14:1") for a given VID prefix (e.g. "c677cda52d14").
-     * Returns null if no matching view state is currently tracked.
+     * Returns null if no matching scope is currently tracked.
      */
     fun findViewByVid(vid: String): String? {
         return reachableViewIds().firstOrNull { it.startsWith("$vid:") }
@@ -193,19 +193,23 @@ class VirtualClient(
     /**
      * Instance IDs still attached to the Browser view, following every state field that
      * references another tracked view. The server never announces released views, so
-     * viewStates keeps stale entries (e.g. the Login view of a previous session).
+     * scopes keeps stale entries (e.g. the Login view of a previous session).
      */
     private fun reachableViewIds(): Set<String> {
-        val states = HashMap(viewStates)
+        val known = HashMap(scopes)
         val reachable = LinkedHashSet<String>()
         val pending = ArrayDeque<String>()
-        states.keys.firstOrNull { it.startsWith("${Vid.BROWSER}:") }?.let(pending::add)
+        known.keys.firstOrNull { it.startsWith("${Vid.BROWSER}:") }?.let(pending::add)
         while (pending.isNotEmpty()) {
             val id = pending.removeFirst()
             if (!reachable.add(id)) continue
-            for ((name, value) in states[id] ?: continue) {
-                if (name != "id" && value is String && states.containsKey(value)) {
+            for ((name, value) in known[id] ?: continue) {
+                if (name == "id") continue
+                if (value is String && known.containsKey(value)) {
                     pending.add(value)
+                } else if (value is List<*>) {
+                    // a list of rows, each a view of its own ("<field>ViewIds")
+                    value.filterIsInstance<String>().filter { known.containsKey(it) }.forEach(pending::add)
                 }
             }
         }
@@ -213,17 +217,17 @@ class VirtualClient(
     }
 
     /**
-     * Returns the state map for the view identified by VID prefix.
+     * Returns the scope map for the view identified by VID prefix.
      */
-    fun getViewStateByVid(vid: String): Map<String, Any?> {
+    fun getScopeByVid(vid: String): Map<String, Any?> {
         val instanceId = findViewByVid(vid) ?: return emptyMap()
-        return viewStates[instanceId] ?: emptyMap()
+        return scopes[instanceId] ?: emptyMap()
     }
 
     /**
      * Returns all currently tracked instance IDs (for diagnostics).
      */
-    fun getTrackedViewIds(): Set<String> = viewStates.keys
+    fun getTrackedViewIds(): Set<String> = scopes.keys
 
     // :: Private — HTTP session
 
@@ -413,15 +417,15 @@ class VirtualClient(
                 currentUri = uri
             }
 
-            // Update view states (merge — server sends only changed views)
+            // Update the scopes (merge — server sends only changed views)
             @Suppress("UNCHECKED_CAST")
-            val states = response["states"] as? List<Map<String, Any?>>
-            if (states != null) {
-                for (state in states) {
-                    val id = state["id"] as? String ?: continue
-                    viewStates[id] = state
+            val received = response["scopes"] as? List<Map<String, Any?>>
+            if (received != null) {
+                for (scope in received) {
+                    val id = scope["id"] as? String ?: continue
+                    scopes[id] = scope
                 }
-                LOG.debug("[Client-{}] After merge, viewStates keys: {}", clientId, viewStates.keys)
+                LOG.debug("[Client-{}] After merge, scopes keys: {}", clientId, scopes.keys)
             }
 
             lastResponse = response

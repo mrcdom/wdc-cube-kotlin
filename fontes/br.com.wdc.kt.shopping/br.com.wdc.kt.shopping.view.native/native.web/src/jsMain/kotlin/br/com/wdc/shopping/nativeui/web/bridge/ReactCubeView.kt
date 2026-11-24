@@ -2,25 +2,25 @@ package br.com.wdc.shopping.nativeui.web.bridge
 
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.PresenterBase
+import br.com.wdc.framework.cube.Scope
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.coroutines.launch
 import react.FC
 import react.Props
 
 /**
- * Base class for React-backed CubeView implementations.
+ * Base class for React-backed CubeView implementations: draws one [scope], created by the application's catalog
+ * ([br.com.wdc.framework.cube.CubeApplication.viewOf]).
  *
- * Each view keeps a revision counter. When a presenter calls [update],
- * the counter increments and the React root is re-rendered, picking up
- * the new presenter state.
+ * Each view keeps a revision counter. When the scope asks for a repaint ([update]), the view is marked dirty in
+ * [ViewUpdateScheduler]; on the flush the counter increments and the view's React component re-renders, reading the
+ * scope as it is then.
  */
-abstract class ReactCubeView(
+abstract class ReactCubeView<S : Scope>(
     private val id: String,
-    internal val presenterBase: PresenterBase
+    val app: RootPresenter,
+    val scope: S,
 ) : CubeView {
-
-    val app: RootPresenter get() = presenterBase.app as RootPresenter
 
     /** Revision counter — incremented during flush to signal state changes. */
     var revision: Int = 0
@@ -31,24 +31,7 @@ abstract class ReactCubeView(
 
     override val instanceId: String = id
 
-    // True while the presenter computes derived state for the paint about to happen;
-    // update() is ignored meanwhile, since this view is already being painted.
-    private var updateMuted = false
-
-    /**
-     * Runs the presenter's commitComputedState() right before this view is painted.
-     */
-    internal fun prepareForPaint() {
-        updateMuted = true
-        try {
-            presenterBase.commitComputedState()
-        } finally {
-            updateMuted = false
-        }
-    }
-
     override fun update() {
-        if (updateMuted) return
         ViewUpdateScheduler.markDirty(this)
     }
 
@@ -62,7 +45,7 @@ abstract class ReactCubeView(
     }
 
     /**
-     * Repaints this view only, without going through the presenter: for UI state the view keeps in its own fields
+     * Repaints this view only, without going through the scope: for UI state the view keeps in its own fields
      * (a quantity being chosen, the selected tab), changed by an emitter. The remote React client's
      * `BaseViewClass.forceUpdate` does the same.
      */
@@ -79,8 +62,8 @@ abstract class ReactCubeView(
     }
 
     /**
-     * Wraps a presenter call with error protection and dispatches it
-     * on a single-threaded scope to ensure serial execution of presenter actions.
+     * Wraps a call to the scope's actions with error protection and dispatches it
+     * on the presenters' single-threaded scope to ensure serial execution of presenter actions.
      */
     fun safeCall(action: suspend () -> Unit) {
         app.presenterScope.launch {

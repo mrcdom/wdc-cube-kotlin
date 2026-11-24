@@ -13,6 +13,8 @@ import br.com.wdc.framework.domain.projection.ProjectionValues
 import kotlin.time.toKotlinInstant
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -72,9 +74,7 @@ class AuthenticationServiceImpl(
             return null
         }
 
-        val roles = Role.parse(user.roles)
-        val permissions = Role.effectivePermissions(roles)
-        val session = cache.createSession(user.id!!, user.userName!!, permissions)
+        val session = cache.createSession(user.id!!, user.userName!!, Role.names(Role.parse(user.roles)))
         val accessToken = JwtUtil.create(session.sessionId, user.id!!, user.userName!!, cache.accessTokenTtl, cache.jwtSecret)
 
         return AuthResult(user.id!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64, session.intentSignSecret)
@@ -114,5 +114,29 @@ class AuthenticationServiceImpl(
         val user = users[0]
         user.password = user.password?.trim()
         return user
+    }
+
+    /** Drops the expired sessions and the challenges nobody answered. */
+    fun evictExpired() {
+        cache.evictExpired()
+        nonceStore.evictExpired()
+    }
+
+    /**
+     * Runs [evictExpired] every [intervalSeconds] on [executor]: without it, the sessions and challenges that were
+     * never used again would only pile up. Closing the result stops it.
+     */
+    fun startCleanup(executor: ScheduledExecutorService, intervalSeconds: Long = 60): AutoCloseable {
+        val task = executor.scheduleWithFixedDelay(
+            {
+                try {
+                    evictExpired()
+                } catch (e: Exception) {
+                    LOG.error("Evicting expired sessions", e)
+                }
+            },
+            intervalSeconds, intervalSeconds, TimeUnit.SECONDS,
+        )
+        return AutoCloseable { task.cancel(false) }
     }
 }

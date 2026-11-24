@@ -19,11 +19,11 @@ class CubeIntent {
 
     fun removeAttribute(name: String): Any? = attributes?.remove(name)
 
-    fun setViewSlot(name: String, slot: CubeViewSlot) {
-        setAttribute(name, slot)
+    fun setScopeSlot(name: String, slot: ScopeSlot?) {
+        if (slot == null) removeAttribute(name) else setAttribute(name, slot)
     }
 
-    fun getViewSlot(name: String): CubeViewSlot? = getAttribute(name) as? CubeViewSlot
+    fun getScopeSlot(name: String): ScopeSlot? = getAttribute(name) as? ScopeSlot
 
     // :: Parameters
 

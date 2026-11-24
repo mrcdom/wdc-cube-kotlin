@@ -2,7 +2,7 @@ package br.com.wdc.shopping.nativeui.ios.toolkit
 
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.PresenterBase
+import br.com.wdc.framework.cube.Scope
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.launch
@@ -19,20 +19,24 @@ interface Releasable {
 /**
  * Base class for all iOS native views in the Cube MVP architecture.
  *
+ * A view draws one [Scope]; it knows the application ([app]) and its scope, never the presenter.
+ * The application creates it the first time the scope is asked for ([RootPresenter.viewOf]).
+ *
  * Implements dirty-flag update throttling: when the presenter calls update(),
  * a dirty flag is set and the actual doUpdate() is scheduled on the main
  * run-loop via DispatchQueue.main.async (coalesces multiple calls in the same frame).
  *
  * Subclasses implement:
  * - createView(): build the UIView hierarchy (called once — the "template")
- * - doUpdate(): reconcile presenter state → UIKit (called at most once per frame)
+ * - doUpdate(): reconcile the scope → UIKit (called at most once per frame)
  *
  * The doUpdate() should use guards to only update components whose data has actually changed.
  */
 @OptIn(ExperimentalForeignApi::class)
-abstract class AbstractViewIos<P : PresenterBase>(
+abstract class AbstractViewIos<S : Scope>(
     private val viewId: String,
-    protected val presenter: P
+    protected val app: RootPresenter,
+    protected val scope: S
 ) : CubeView {
 
     companion object {
@@ -49,9 +53,6 @@ abstract class AbstractViewIos<P : PresenterBase>(
     private val myGcRetained = mutableListOf<Any>()
     private val myListSlots = mutableListOf<Releasable>()
 
-    /** Exposes the presenter as PresenterBase for the scheduler. */
-    internal val presenterBase: PresenterBase get() = presenter
-
     protected fun retainForGC(obj: Any) {
         myGcRetained.add(obj)
         gcRoots.add(obj)
@@ -66,25 +67,9 @@ abstract class AbstractViewIos<P : PresenterBase>(
 
     override val instanceId: String get() = viewId
 
-    // True while the presenter computes derived state for the paint about to happen;
-    // update() is ignored meanwhile, since this view is already being painted.
-    private var updateMuted = false
-
-    /**
-     * Runs the presenter's commitComputedState() right before this view is painted.
-     */
-    internal fun prepareForPaint() {
-        updateMuted = true
-        try {
-            presenterBase.commitComputedState()
-        } finally {
-            updateMuted = false
-        }
-    }
-
     override fun update() {
-        if (released || updateMuted) return
-        ViewUpdateScheduler.markDirty(this)
+        if (released) return
+        ViewUpdateScheduler.markDirty(this, app)
     }
 
     override fun release() {
@@ -104,7 +89,7 @@ abstract class AbstractViewIos<P : PresenterBase>(
     abstract fun createView(): UIView
 
     /**
-     * Reconcile presenter state to UIKit views. Called at most once per frame.
+     * Reconcile the scope to UIKit views. Called at most once per frame.
      * Only runs when dirty flag is set.
      *
      * Implementations should guard each section with change detection:
@@ -127,7 +112,7 @@ abstract class AbstractViewIos<P : PresenterBase>(
     /**
      * Initialize the view: creates the hierarchy and forces the first update.
      */
-    fun initialize(): AbstractViewIos<P> {
+    fun initialize(): AbstractViewIos<S> {
         rootView = createView()
         forceUpdate()
         return this
@@ -144,10 +129,6 @@ abstract class AbstractViewIos<P : PresenterBase>(
             NSLog("AbstractViewIos[$viewId] doUpdate error: ${e.message}")
         }
     }
-
-    /** The RootPresenter instance obtained from the presenter. */
-    private val app: RootPresenter
-        get() = presenter.app as RootPresenter
 
     /**
      * Wrap a user-initiated action in error handling.

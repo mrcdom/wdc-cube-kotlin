@@ -35,7 +35,7 @@ graph TD
 
 ### Cross-cutting Patterns
 
-- **View Factory**: each presenter registers a factory for its native view when the application boots
+- **View catalog**: each platform fills a `ScopeViews` catalog (scope class → native view) and gives it to the application when it boots; presenters never create views, and views take `(app, scope)`
 - **ViewSlot**: container that manages swapping child views on navigation
 - **ListSlot**: efficient list synchronization with view recycling (grow/shrink/update-in-place)
 - **FlowLayout**: responsive grid that redistributes children according to the available width

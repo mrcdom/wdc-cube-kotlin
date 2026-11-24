@@ -17,7 +17,20 @@ class CriterionTranslatorTest {
     private class Search : Criteria {
         val term = TextCriterion(this, "term")
         override fun criterions(): List<Criterion<*, *>> = listOf(term)
+
+        override var anyOf: List<Search> = emptyList()
+            private set
+
+        fun withAnyOf(vararg groups: Search) = apply { anyOf = groups.toList() }
     }
+
+    /** How a repository translates a criteria: its fields in AND, and the groups — translated the same way — in OR. */
+    private fun conditions(s: Search): Condition = CriterionTranslator.and(
+        listOf(
+            CriterionTranslator.translate(name, s.term),
+            CriterionTranslator.anyOf(s.anyOf, ::conditions),
+        ),
+    )
 
     private val dsl = DSL.using(SQLDialect.POSTGRES)
     private val name = DSL.field(DSL.name("name"), SQLDataType.VARCHAR)
@@ -64,5 +77,38 @@ class CriterionTranslatorTest {
     fun translateAny_withoutRequestOrColumns_isNull() {
         assertNull(CriterionTranslator.translateAny(listOf(name, code), Search().term))
         assertNull(CriterionTranslator.translateAny(emptyList<org.jooq.Field<String?>>(), Search().term.eq("x").term))
+    }
+
+    // :: anyOf
+
+    @Test
+    fun anyOf_joinsTheGroupsWithOr() {
+        val a = Search().term.eq("a")
+        val b = Search().term.eq("b")
+        assertEquals(sql(DSL.or(name.eq("a"), name.eq("b"))), sql(CriterionTranslator.anyOf(listOf(a, b)) { CriterionTranslator.translate(name, it.term) }))
+    }
+
+    @Test
+    fun anyOf_aGroupWithNoCondition_matchesEveryRow() {
+        val a = Search().term.eq("a")
+        // a group that does not filter makes the whole alternative hold
+        assertNull(CriterionTranslator.anyOf(listOf(a, Search()), ::conditions))
+    }
+
+    @Test
+    fun anyOf_withoutGroups_isNull() {
+        assertNull(CriterionTranslator.anyOf(emptyList<Search>()) { DSL.trueCondition() })
+        assertNull(CriterionTranslator.anyOf(null as List<Search>?) { DSL.trueCondition() })
+    }
+
+    @Test
+    fun anyOf_isConjunctiveWithTheOuterFields_andGroupsNest() {
+        val inner = Search().term.eq("c")
+        val group = Search().term.eq("b").withAnyOf(inner)
+        val criteria = Search().term.ne("z").withAnyOf(Search().term.eq("a"), group)
+        assertEquals(
+            sql(DSL.and(name.ne("z"), DSL.or(name.eq("a"), DSL.and(name.eq("b"), name.eq("c"))))),
+            sql(conditions(criteria)),
+        )
     }
 }

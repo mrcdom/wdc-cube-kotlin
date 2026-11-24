@@ -3,6 +3,7 @@ package br.com.wdc.shopping.persistence.security
 import br.com.wdc.framework.commons.log.Log
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -12,6 +13,8 @@ class AccessContextCache(
     val jwtSecret: String,
     private val intentSecretStore: IntentSecretStore,
     refreshTokenTtlDays: Int = 7,
+    /** The time, for the access token's expiry and the refresh token's window; a test passes its own. */
+    private val clock: Clock = Clock.systemUTC(),
 ) {
 
     companion object {
@@ -28,20 +31,20 @@ class AccessContextCache(
 
     private val refreshTokenTtl: Duration = Duration.ofDays(refreshTokenTtlDays.toLong())
 
-    private val sessionStore = SessionStore()
+    private val sessionStore = SessionStore(jwtSecret)
     private val bySessionId = ConcurrentHashMap<String, AccessContext>()
     private val refreshTokenIndex = ConcurrentHashMap<String, String>() // refreshToken → sessionId
 
     val accessTokenTtl: Duration get() = ACCESS_TOKEN_TTL
 
-    fun createSession(userId: Long, userName: String, permissions: Set<String>): AccessContext {
+    fun createSession(userId: Long, userName: String, roles: Set<String>): AccessContext {
         val keyPair = generateRsaKeyPair()
         val sessionId = UUID.randomUUID().toString()
         val refreshToken = UUID.randomUUID().toString()
-        val expiresAt = Instant.now().plus(ACCESS_TOKEN_TTL)
+        val expiresAt = Instant.now(clock).plus(ACCESS_TOKEN_TTL)
         val intentSignSecret = intentSecretStore.getOrCreate(userId)
 
-        val ctx = AccessContext(sessionId, userId, userName, permissions, keyPair, expiresAt, refreshToken, intentSignSecret)
+        val ctx = AccessContext(sessionId, userId, userName, roles, keyPair, expiresAt, refreshToken, intentSignSecret)
 
         bySessionId[sessionId] = ctx
         refreshTokenIndex[refreshToken] = sessionId
@@ -66,7 +69,7 @@ class AccessContextCache(
             val intentSignSecret = intentSecretStore.getOrCreate(existing.userId!!)
             existing = AccessContext(
                 existing.sessionId, existing.userId, existing.userName,
-                existing.permissions, existing.rsaKeyPair, existing.expiresAt,
+                existing.roles, existing.rsaKeyPair, existing.expiresAt,
                 existing.refreshToken, intentSignSecret
             )
         }
@@ -76,12 +79,19 @@ class AccessContextCache(
             return null
         }
 
+        // the refresh token lives refreshTokenTtl past the access token it came with; after that, sign in again
+        if (Instant.now(clock).isAfter(existing.expiresAt.plus(refreshTokenTtl))) {
+            removeBySessionId(existing.sessionId)
+            LOG.info("Refresh token expired for user: {} ({})", existing.userName, existing.userId)
+            return null
+        }
+
         val newSessionId = UUID.randomUUID().toString()
         val newRefreshToken = UUID.randomUUID().toString()
-        val expiresAt = Instant.now().plus(ACCESS_TOKEN_TTL)
+        val expiresAt = Instant.now(clock).plus(ACCESS_TOKEN_TTL)
 
         val intentSignSecret = intentSecretStore.getOrCreate(existing.userId!!)
-        val ctx = AccessContext(newSessionId, existing.userId, existing.userName, existing.permissions,
+        val ctx = AccessContext(newSessionId, existing.userId, existing.userName, existing.roles,
             generateRsaKeyPair(), expiresAt, newRefreshToken, intentSignSecret)
 
         // Remove old session
@@ -120,7 +130,7 @@ class AccessContextCache(
         val intentSignSecret = intentSecretStore.getOrCreate(ctx.userId!!)
         ctx = AccessContext(
             ctx.sessionId, ctx.userId, ctx.userName,
-            ctx.permissions, ctx.rsaKeyPair, ctx.expiresAt,
+            ctx.roles, ctx.rsaKeyPair, ctx.expiresAt,
             ctx.refreshToken, intentSignSecret
         )
 
@@ -157,9 +167,10 @@ class AccessContextCache(
         return false
     }
 
+    /** Drops the sessions whose refresh token can no longer be used, from memory and from the database. */
     fun evictExpired() {
         // Evict from in-memory cache
-        val now = Instant.now()
+        val now = Instant.now(clock)
         val it = bySessionId.entries.iterator()
         while (it.hasNext()) {
             val entry = it.next()

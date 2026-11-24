@@ -6,7 +6,8 @@ import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingIcons
 import br.com.wdc.shopping.nativeui.ios.theme.UIK
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptItem
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -18,7 +19,7 @@ import platform.darwin.NSObject
  * Receipt view — shows purchase confirmation with success banner, item list, and total.
  */
 @OptIn(ExperimentalForeignApi::class)
-class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPresenter>("receipt-view", presenter) {
+class ReceiptViewIos(app: RootPresenter, scope: ReceiptScope) : AbstractViewIos<ReceiptScope>("receipt-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var contentStack: UIStackView
@@ -173,11 +174,10 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        val receipt = state.receipt
+        val receipt = scope.receipt
 
         // Success banner
-        if (state.notifySuccess && !successShown) {
+        if (scope.notifySuccess && !successShown) {
             successBanner.hidden = false
             successShown = true
         }
@@ -241,7 +241,7 @@ class ReceiptViewIos(presenter: ReceiptPresenter) : AbstractViewIos<ReceiptPrese
     }
 
     internal fun goBack() {
-        safeAction("back") { presenter.onOpenProducts() }
+        safeAction("back") { scope.onOpenProducts() }
     }
 }
 

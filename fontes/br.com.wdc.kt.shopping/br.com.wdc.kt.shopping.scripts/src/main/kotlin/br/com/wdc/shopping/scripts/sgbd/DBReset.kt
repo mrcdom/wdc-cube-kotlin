@@ -46,14 +46,14 @@ object DBReset {
         var id: Long
 
         // Users
-        id = 0
+        id = 1
         addUser(c, id.also { ADMIN_ID = it; id++ }, "admin", "admin", "John Smith", "ADMIN")
         addUser(c, id.also { FULANO_ID = it; id++ }, "fulano", "fulano", "John Doe", "CUSTOMER")
         addUser(c, id.also { BEOTRANO_ID = it; id++ }, "beotrano", "beotrano", "Jane Roe", "CUSTOMER")
         restartSequence(c, "SQ_USER", id)
 
         // Products
-        id = 0
+        id = 1
         addProduct(c, id.also { COFFEE_MAKER_ID = it; id++ }, "Italian Design Coffee Maker", 199.99,
             "<ul>" +
                 "<li>Capacity for 30 cups (50ml each) or 24 cups (62ml each)</li>" +
@@ -100,13 +100,13 @@ object DBReset {
         restartSequence(c, "SQ_PRODUCT", id)
 
         // Purchases
-        id = 0
+        id = 1
         addPurchase(c, id.also { ADMIN_FIRST_PURCHASE_ID = it; id++ }, ADMIN_ID, intArrayOf(2010, 1, 1, 14, 30))
         addPurchase(c, id.also { ADMIN_SECOND_PURCHASE_ID = it; id++ }, ADMIN_ID, intArrayOf(2011, 4, 3, 9, 15))
         restartSequence(c, "SQ_PURCHASE", id)
 
         // Purchase items
-        id = 0
+        id = 1
         addPurchaseItem(c, id.also { ADMIN_FIRST_PURCHASE_ITEM0_ID = it; id++ }, ADMIN_FIRST_PURCHASE_ID, COFFEE_MAKER_ID, 1, 200.0)
         addPurchaseItem(c, id.also { ADMIN_SECOND_PURCHASE_ITEM0_ID = it; id++ }, ADMIN_SECOND_PURCHASE_ID, WILSON_BALL_ID, 1, 45.30)
         addPurchaseItem(c, id.also { ADMIN_SECOND_PURCHASE_ITEM1_ID = it; id++ }, ADMIN_SECOND_PURCHASE_ID, THREAD_SEAL_TAPE_ID, 1, 2.67)

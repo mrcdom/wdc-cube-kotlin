@@ -1,5 +1,6 @@
 package br.com.wdc.shopping.nativeui.ios.toolkit
 
+import br.com.wdc.framework.cube.CubeApplication
 import platform.Foundation.NSLog
 import platform.Foundation.NSLock
 import platform.darwin.dispatch_async
@@ -10,8 +11,9 @@ import platform.darwin.dispatch_get_main_queue
  *
  * When a presenter calls view.update(), the view is marked dirty here.
  * A single dispatch_async(main_queue) callback is scheduled to flush all dirty views.
- * Before flushing, commitComputedState() lets each dirty view's presenter compute
- * the derived fields the view reads — once per paint cycle, right before painting.
+ * Each flush first runs the application's commitComputedState() — once per paint cycle,
+ * right before painting — so the presenters compute the derived fields the views read;
+ * views it marks dirty join the same flush. Then the dirty views are painted.
  *
  * Thread safety: markDirty/removeDirty use NSLock since update() may
  * be called from any thread. The flush always runs on the main queue.
@@ -22,9 +24,13 @@ object ViewUpdateScheduler {
     private var flushScheduled = false
     private val lock = NSLock()
 
-    fun markDirty(view: AbstractViewIos<*>) {
+    /** The application whose computed state is committed before each flush (the one of the views marked dirty). */
+    private var app: CubeApplication? = null
+
+    fun markDirty(view: AbstractViewIos<*>, app: CubeApplication) {
         lock.lock()
         try {
+            this.app = app
             dirtyViews.add(view)
             if (!flushScheduled) {
                 flushScheduled = true
@@ -45,6 +51,20 @@ object ViewUpdateScheduler {
     }
 
     private fun flush() {
+        // Derived state first: what it changes marks views dirty and is painted in this same flush
+        val application: CubeApplication?
+        lock.lock()
+        try {
+            application = app
+        } finally {
+            lock.unlock()
+        }
+        try {
+            application?.commitComputedState()
+        } catch (e: Exception) {
+            NSLog("ViewUpdateScheduler commitComputedState error: ${e.message}")
+        }
+
         // Snapshot and clear
         val snapshot: List<AbstractViewIos<*>>
         lock.lock()
@@ -58,7 +78,6 @@ object ViewUpdateScheduler {
 
         for (view in snapshot) {
             try {
-                view.prepareForPaint()
                 view.forceUpdate()
             } catch (e: Exception) {
                 NSLog("ViewUpdateScheduler flush error: ${e.message}")

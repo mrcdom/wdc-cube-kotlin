@@ -140,6 +140,7 @@ criteria.name.containing("Tape")                   // …with this other request
 ```
 
 - Requests on **the same field** combine with `AND`; after `or()`, with `OR`. **Different fields always combine with `AND`.**
+- **Alternative groups** (`anyOf`, server side only): a criteria may carry groups — each one a criteria of the same entity — and then matches when its own fields match **and** at least one group does. The repository translates them with `CriterionTranslator.anyOf` as an `OR` of the groups. They exist for the REST API's [data policies](#security), which restrict the rows of several roles at once; **they do not travel**: the codec refuses them on the client, and an `anyOf` key reaching the server is a 400.
 - A field with no request doesn't filter. The `withXxx(value)` shortcuts ignore `null`.
 - `isIn(null)` doesn't filter ("not provided"), but `isIn(emptyList)` filters by nothing: the query matches no rows, and `delete` deletes nothing. On the wire, it goes out as `{ "o": "IN" }` with no values.
 - There are three families, and the compiler only offers what each one allows: `Criterion` (equality, `ne`, `isIn`, nullness), `ComparableCriterion` (plus `gt`/`ge`/`lt`/`le`/`between`), and `TextCriterion` (plus `like`/`ilike`/`startingWith`/`containing`).
@@ -180,7 +181,7 @@ val purchases = repo.fetch(PurchaseCriteria().withUserId(userId).withProjection(
 
 - An **association** (`user`) is projected by another instance. When it asks only for the key, the value comes from the row itself, without a subquery.
 - A **collection** (`items`) is projected by a one-element list — the shape of each item. With `pv.singletonList(shape, criteria, limit, offset)` the collection is also filtered, ordered, and sliced. This crosses REST: the projection collection travels as an envelope `{ shape, where, limit, offset }`.
-- Without a projection, each repository uses its default one (`ownFieldsProjection()`): the scalar fields and the association keys. The product image and the user password are left out.
+- Without a projection, each repository uses its default one (`ownFieldsProjection()`): the scalar fields and the association keys. The product image and the user password are left out. Through the REST API with security on, a read without a projection gets the entity's **default shape** instead, cut to what the caller's roles read (see [Security](#security)).
 
 ---
 
@@ -252,7 +253,7 @@ ShoppingTransactions.BEAN.get().required { tx ->
 - **A normal return commits; any exception rolls back** and propagates intact, with its original type.
 - **A nested block that fails dooms the whole transaction.** If a `required` (or `mandatory`, `supports`) inside another one throws, everything is rolled back even when the caller catches the exception and carries on, and the outer `required` throws `TransactionSystemException` ("The transaction was rolled back: a call inside it failed.") instead of returning its result. Only `setRollbackOnly()` rolls back without throwing. The same holds on the server and in the client's remote transaction.
 - The use case must tolerate the service being absent — `ShoppingTransactions.BEAN.getOrNull()` — and run directly in that case (tests without persistence).
-- This is how checkout works: `CartManager.doPurchase` writes the purchase and its items inside `required`. A failure halfway doesn't leave an orphan purchase.
+- In the presentation, a write is a resource call (`ResourceCreate`, `ResourceSave`, `ResourceUpdate`, `ResourceDelete`, in `framework-domain`), whose `run()` does exactly this: `required` on the module's service when there is one, directly otherwise. This is how checkout works: `CartManager.commit` runs `PurchaseCreate`, which inserts the purchase and its items in one transaction. A failure halfway doesn't leave an orphan purchase.
 - `afterCommit { … }` schedules a task for after the current physical transaction commits (notifying a background process, for example): it runs only if the transaction commits, in scheduling order, already outside it; if rolled back, the task is discarded. Without a transaction, it runs immediately. A task failure goes to the log and doesn't change the transaction's outcome. On the server, a task scheduled inside a remote transaction runs on its commit.
 
 There are two implementations, and the use case doesn't know which one it is using:
@@ -308,16 +309,16 @@ All entities have the same operations, under `/api/repo/<entity>` (`user`, `prod
 
 Every write is atomic: it runs in the remote transaction given by `X-Tx-Id` or, without it, in a transaction of the request's own.
 
-Entity routes are a [`framework-rest`](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md) `RepositoryRpc`, one per entity, and `RepositoryApiRoutes.create()` assembles the whole API. Each controller configures its entity's RPC: each operation's rule, restricting the criteria to the caller, stripping the password, and the checks before each write. The transaction bridge and the `/api/tx` routes also come from the framework.
+Entity routes are a [`framework-rest`](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md) `RepositoryRpc`, one per entity, and `RepositoryApiRoutes.create()` assembles the whole API. Each controller configures its entity's RPC: the entity's **data policy** (`rpc.policy`, package `security`), which decides every access, and the transformations before each write (the password digest, the item price on update). The transaction bridge and the `/api/tx` routes also come from the framework.
 
 Errors come back as `{"error": "…"}`:
 
 | Status | When |
 |---|---|
-| 400 | Invalid request: unknown `orderBy`, `delete` without a filter, `update` without an id |
+| 400 | Invalid request: unknown `orderBy`, `delete` without a filter, `update` without an id, an `anyOf` key in the criteria, a password that does not decrypt with the session key |
 | 401 | Missing or invalid token (with security enabled). A path with no route responds 404, with or without a token |
-| 403 | Missing permission, or a write the controller refuses (such as moving a row to another owner) |
-| 404 | Not found: the image of a product that doesn't exist, or an update whose row is outside the user's scope (told the same way as a missing row) |
+| 403 | Refused by the data policy, with the fields at fault named in the message (`not allowed to read user fields [password]`): a field the caller's roles do not read, filter or sort by; an operation no role allows; a write of a field not granted; a row created for someone else; an update or delete by a role that does not update or delete the entity |
+| 404 | Not found: the image of a product that doesn't exist, or an update of a row the caller's update grants do not reach and they cannot read either (told the same way as a missing row; no Storefront role has such a grant today) |
 | 409 | Remote transaction conflict |
 | 429 | Too many open remote transactions |
 | 500 | Unexpected failure: `{"error": "Internal server error"}`, with the error recorded in the log |
@@ -344,23 +345,67 @@ Errors come back as `{"error": "…"}`:
 
 **Access control lives at the HTTP boundary, and only there.** Repositories check neither permission nor data ownership. A repository is called from two places:
 
-- **From a client** (Compose, native), through the REST API. The user controls the client and can request anything; that's why each controller checks the request before executing it.
+- **From a client** (Compose, native), through the REST API. The user controls the client and can request anything — any criteria, any projection; that's why every request is checked before it runs.
 - **From inside the server**, by the remote view's presenters. There the user has no way to call a repository: only what the presentation asks for is executed. The guarantee is that the presentation is correct — always asking for the data of whoever is logged in.
 
-With `security.jwt.secret` configured, the backend requires `Authorization: Bearer` across the whole API, except `/api/auth`, reading a product image, and `/openapi.json`. Each route checks, through the access rule (`ApiSecurity.permission`) and the `RepositoryRpc` hooks:
+The whole model — authentication, sessions, trust boundaries, limitations — is in [Security architecture](security-architecture.md). This section covers what the persistence layer does.
 
-- the **permission** (`<entity>:read`, `:write`, `:delete`), granted by the user's roles;
-- the **scope**: whoever lacks `data:all` only reads and writes what is theirs — the user themselves, their own purchases, and those purchases' items. A purchase inserted by a client always belongs to them. Fetching by key goes through the same restriction: what belongs to someone else "doesn't exist" (404).
+With `security.jwt.secret` configured, the backend requires `Authorization: Bearer` across the whole API, except `/api/auth`, reading a product image, and `/openapi.json`. Without the secret, the API is open and `/api/auth` doesn't exist: this is the development mode, and the mode of tests that don't deal with security.
 
-**The password never leaves through the API.** It is accepted when writing a user and stripped from every projection and every response, including when the user comes inside a purchase — with security enabled or not.
+### Data policies
 
-**The price of a purchase item is the server's.** Through the API, an item gets its product's current price, whatever the client sent: on insert, alone or inside a purchase, and on an update that writes the price or the product. An item of a product that does not exist is refused with 400. The server-side presentation (remote view) writes through the repositories directly and already prices items from the products it loaded.
+**What each role may do with each entity is declared by the entity's data policy** — the only authorization of the repository API. The four policies are in `:persistence-rest`, package `security` (`UserDataPolicy`, `ProductDataPolicy`, `PurchaseDataPolicy`, `PurchaseItemDataPolicy`), on [`framework-rest`'s data policy](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md#data-policy); each controller sets its own on the RPC (`rpc.policy = UserDataPolicy.POLICY`). A policy gives each role one or more grants: the rows it reaches (all, or a `RowScope` such as `OWN`), the fields it reads as they are or masked, the fields it may create and update, and whether it deletes. The security context carries the user's **role names**; a role (`Role.ADMIN`, `CUSTOMER`, `MANAGER`) carries no permissions of its own.
 
-**The password is stored as its digest**, the form the login compares, so a user created through the API can log in. With security on, it must come encrypted with the session's RSA public key (the `publicKey` of the login response; `RestAuthClient.encryptPassword` on the client): one that does not decrypt is refused with 400, never stored as it came. Without security there is no key, and the password comes as typed.
+| Entity | ADMIN | CUSTOMER | MANAGER |
+|---|---|---|---|
+| `user` | reads every user (login, name, roles — never the password), creates, updates, deletes | reads their own user | reads their own user in full, the others by name with the login masked (`fulano` → `f*****`) |
+| `product` | reads, creates, updates, deletes (image included) | reads the catalog | as ADMIN |
+| `purchase` | reads every purchase, creates, updates (date, buyer), deletes | reads and creates their own purchases — for themselves only | reads their own purchases |
+| `purchase-item` | reads, creates, updates, deletes | reads the items of their own purchases, adds items to them without a price | reads the items of their own purchases |
 
-Without the secret, the API is open and `/api/auth` doesn't exist: this is the development mode, and the mode of tests that don't deal with security.
+```kotlin
+val POLICY: DataPolicy<Purchase, PurchaseCriteria> = DataPolicy(PURCHASE) {
+    grant(Role.ADMIN.name) {
+        read(Purchase::buyDate, Purchase::user, Purchase::items)
+        create(Purchase::buyDate, Purchase::user, Purchase::items)
+        update(Purchase::buyDate, Purchase::user)
+        delete()
+    }
+    grant(Role.CUSTOMER.name) {
+        rows(OWN)                                       // group.userId.eq(me) as criteria; row.user.id == me in memory
+        read(Purchase::buyDate, Purchase::user, Purchase::items)
+        create(Purchase::buyDate, Purchase::user, Purchase::items)
+    }
+    grant(Role.MANAGER.name) {
+        rows(OWN)
+        read(Purchase::buyDate, Purchase::user, Purchase::items)
+    }
+}
+```
 
-**In the presentation**, the care is with what arrives through navigation: a route parameter is chosen by the user. When it identifies a piece of data — the receipt's `purchaseId`, for example —, the service fetches it restricted to whoever is logged in (`ReceiptService.loadReceipt(purchaseId, userId)`), and never by key alone.
+How the policies decide:
+
+- **Allow-wins, per row.** A user gets the grants of all their roles, but each returned row shows only what the grants **that reach that row** allow — as it is, masked, or nothing. A MANAGER sees their own login in full and the others' masked.
+- **Reading** (`fetch`, `fetch-page`, `fetch-by-id`, `GET {id}`, `count`): the rows of scoped grants are added to the criteria as alternative groups (`anyOf`), so another user's purchase is not found and not counted. A projected field no grant reads is **refused with 403, naming it** — never quietly trimmed. **Filtering or sorting by a field counts as reading it**, and takes a grant that reads it as it is (not masked).
+- **Relations follow their own entity's policy.** What a projection asks inside `purchase.user` goes through `UserDataPolicy`, inside `purchase.items` through `PurchaseItemDataPolicy`, inside `item.product` through `ProductDataPolicy`. A relation is written by its key only; the items sent with a new purchase are checked as new items of that purchase.
+- **Default shapes.** A read without a projection, with security on, gets the entity's default shape cut to the role — never refused: a purchase is its receipt (date, buyer's name, items with quantity, price, and the product's name and price); an item is its quantity, price, and product (name and price); a user or a product, every field the role reads. Without security, the repository's own default (`ownFieldsProjection()`).
+- **Creating**: one grant must allow every field sent and reach the new row. The server **does not force the owner**: a purchase for someone else, or without a user, is 403 for a CUSTOMER.
+- **Updating**: one grant must reach the stored row, allow every changed field, and still reach the row after the change (an owner cannot hand a row to someone else). A caller with no update grant on the entity gets 403. One whose update grants do not reach the row gets **404 when they cannot read it either** — the same answer as a missing row — and **403 when they can**. In the Storefront only ADMIN updates, over every row, so a CUSTOMER or MANAGER update is always 403, their own purchase included: a purchase is a receipt, only an ADMIN changes it or its items.
+- **Deleting**: only the rows of the grants that delete; without a delete grant, 403.
+- **Masks** (`Mask.keepFirst`, `Mask.keepLast`) apply to text fields; a masked field cannot be filtered, sorted by, or written by the grant that masks it.
+- **`anyOf` is server side only**: the policies use it to restrict rows; in a request, the key is refused (400).
+
+**The password is write-only.** It is declared `writeOnly` in the user's description: no grant reads it, so projecting it — directly or through `purchase.user` — is 403 (`[password]`), **with security on or off**, and it never comes back in a response. It is accepted when writing a user and **stored as its digest**, the form the login compares, so a user created through the API can log in: the `beforeInsert`/`beforeUpdate` hooks of `UserApiController` turn it, after the policy's check. With security on, it must come encrypted with the session's RSA public key (the `publicKey` of the login response; `RestAuthClient.encryptPassword` on the client): one that does not decrypt is refused with 400, never stored as it came. Without security there is no key, and the password comes as typed.
+
+**The price of a purchase item is the server's.** On insert, alone or inside a purchase, the item repository (`PurchaseItemRepositoryImpl`) reads the product's current price itself, in the `INSERT`, inside the caller's transaction — on every path: through the API, and in process (the remote view's checkout, the desktop). A CUSTOMER that sends a price is refused (403, `[price]`: the field is not in their create grant). An item without a product, or of one that does not exist, is refused with 400. Through the API, an update that writes the price or the product also gets the product's current price (`ItemPrices`, in `PurchaseItemApiController`'s `beforeUpdate`, after the policy's check).
+
+**The product image** is read through its own public route, and written through `PUT …/image`, checked as an update of the `image` field by `ProductDataPolicy`.
+
+Without security (no authentication service), there is no caller: the policies reach every row and field and do not check writes — but the password is still refused and never returned.
+
+### In the presentation
+
+There the care is with what arrives through navigation: a route parameter is chosen by the user. When it identifies a piece of data — the receipt's `purchaseId`, for example —, the query fetches it restricted to whoever is logged in (`ReceiptQuery(purchaseId, userId)`), and never by key alone.
 
 ---
 
@@ -403,10 +448,10 @@ cd fontes
 1. **Domain** (`:shopping-domain`, package `domain.<entity>`): the entity (`KeyedEntity`, nullable fields), the `XxxCriteria` with the filter fields and the `OrderBy`, the `XxxCodec`, and the `XxxRepository` interface with `ownFieldsProjection()`, `fetchById`, and the `BEAN` holder.
 2. **Schema** (`:shopping-scripts`): the table, the sequence, and the ordering indexes in `DBCreate`; the migration for existing databases; the seed data in `DBReset`, if applicable. Regenerate the jOOQ classes.
 3. **Server** (`:shopping-persistence`): the `XxxRepositoryImpl` with the `QUERY` mapping, the conditions, and the ordering; registration in `ShoppingRepositoryBootstrap`.
-4. **REST** (`:persistence-rest`): the `XxxApiController`, which configures a `RepositoryRpc` **with the permission and scope checks** (`rule` with `ApiSecurity.permission`, `scope`, `beforeInsert`/`beforeUpdate`), and its call in `RepositoryApiRoutes.create()`; the permissions in `Role`; the entity in `RepositoryApiDocs`.
+4. **REST** (`:persistence-rest`): the entity's **data policy** in the `security` package — an `EntityDescriptor` (fields by property reference, criteria fields, orderings, default shape) and a `DataPolicy` with a grant per role, plus a `RowScope` if a role reaches only some rows; the `XxxApiController`, which configures a `RepositoryRpc` with `rpc.policy` (and `beforeInsert`/`beforeUpdate` only for transformations, such as a digest), and its call in `RepositoryApiRoutes.create()`; the entity in `RepositoryApiDocs`. Its criteria gets `anyOf`/`withAnyOf`, the codec refuses the key, and the repository translates the groups (`CriterionTranslator.anyOf`).
 5. **Client** (`:shopping-persistence-client`): the `HttpXxxRepository` and its registration in `RestRepositoryBootstrap`.
-6. **Presentation**: access in `RootPresenter`. In services, always ask for the data of whoever is logged in.
-7. **Tests**: an `AbstractXxxRepositoryTest` with the local and REST subclasses, and a REST test with security enabled.
+6. **Presentation**: resource calls (`XxxQuery`, `XxxCreate`, …) in the `calls/` package next to the presenter that uses them, reaching the repository through a private property, `private val xxxRepo: XxxRepository get() = XxxRepository.BEAN.get()`. Always ask for the data of whoever is logged in.
+7. **Tests**: an `AbstractXxxRepositoryTest` with the local and REST subclasses, and a REST test with security enabled that covers what the policy refuses.
 
 For read-only data (a dashboard, for example), the interface extends `ReadOnlyRepository`, the client extends `HttpReadOnlyRepository`, and the controller registers the RPC with `writes = false` (only `count`, `fetch`, `fetch-page`, `fetch-by-id`, and `GET {id}`).
 

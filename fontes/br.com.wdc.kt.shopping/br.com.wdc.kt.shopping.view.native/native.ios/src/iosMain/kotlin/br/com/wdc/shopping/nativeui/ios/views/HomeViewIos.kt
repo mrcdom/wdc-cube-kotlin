@@ -6,7 +6,8 @@ import br.com.wdc.shopping.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingIcons
 import br.com.wdc.shopping.nativeui.ios.theme.UIK
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.useContents
@@ -31,7 +32,7 @@ private const val MAX_DETAIL_WIDTH = 560.0
  * - Wide (>=700pt): 1-row header + side-by-side panels
  */
 @OptIn(ExperimentalForeignApi::class)
-class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("home-view", presenter) {
+class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeScope>("home-view", app, scope) {
 
     // Compact header UI
     private lateinit var compactHeaderContent: UIView
@@ -592,10 +593,9 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
     override fun doUpdate() {
         detectLayout()
 
-        val state = presenter.state
 
         // Nickname
-        val nick = state.nickName
+        val nick = scope.nickName
         if (nick != lastNick) {
             lastNick = nick
             val greeting = if (!nick.isNullOrBlank()) "Hello, $nick" else ""
@@ -604,7 +604,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Cart badge
-        val cartCount = state.cartItemCount
+        val cartCount = scope.cartItemCount
         if (cartCount != lastCartCount) {
             lastCartCount = cartCount
             val show = cartCount > 0
@@ -616,8 +616,8 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Mount panels
-        val productsPanel = state.productsPanelView
-        val purchasesPanel = state.purchasesPanelView
+        val productsPanel = scope.productsPanel?.let(app::viewOf)
+        val purchasesPanel = scope.purchasesPanel?.let(app::viewOf)
 
         if (productsPanel != null && mountedProductsPanel !== productsPanel) {
             mountedProductsPanel = productsPanel
@@ -639,7 +639,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Detail overlay
-        val newContentView = state.contentView
+        val newContentView = scope.content?.let(app::viewOf)
         detailSlot.sync(newContentView)
         val hasDetail = (newContentView != null)
         detailContainer.hidden = !hasDetail
@@ -663,7 +663,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Error
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             errorLabel.text = errorMessage
             errorLabel.hidden = false
@@ -705,11 +705,11 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
     }
 
     internal fun openCart() {
-        safeAction("openCart") { presenter.onOpenCart() }
+        safeAction("openCart") { scope.onOpenCart() }
     }
 
     internal fun exit() {
-        safeAction("exit") { presenter.onExit() }
+        safeAction("exit") { scope.onExit() }
     }
 }
 

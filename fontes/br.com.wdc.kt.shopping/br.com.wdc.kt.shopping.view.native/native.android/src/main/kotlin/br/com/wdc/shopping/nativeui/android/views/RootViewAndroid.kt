@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.nativeui.android.views
 
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.RootScope
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -16,7 +17,7 @@ import br.com.wdc.shopping.nativeui.android.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 
-class RootViewAndroid(presenter: RootPresenter) : AbstractViewAndroid<RootPresenter>("root-view", presenter) {
+class RootViewAndroid(app: RootPresenter, scope: RootScope) : AbstractViewAndroid<RootScope>("root-view", app, scope) {
 
     private lateinit var contentSlot: ViewSlot
     private val handler = Handler(Looper.getMainLooper())
@@ -58,13 +59,12 @@ class RootViewAndroid(presenter: RootPresenter) : AbstractViewAndroid<RootPresen
     }
 
     override fun doUpdate() {
-        val state = presenter.state
-        contentSlot.sync(state.contentView)
+        contentSlot.sync(scope.content?.let(app::viewOf))
 
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             showErrorToast(errorMessage)
-            state.errorMessage = null
+            scope.errorMessage = null
         }
     }
 

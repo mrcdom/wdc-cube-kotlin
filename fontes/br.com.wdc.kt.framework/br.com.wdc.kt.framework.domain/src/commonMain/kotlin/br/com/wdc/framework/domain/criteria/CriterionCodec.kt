@@ -73,6 +73,36 @@ object CriterionCodec {
             )
     }
 
+    /** The name the alternative groups ([Criteria.anyOf]) would have on the wire, where they are refused. */
+    const val ANY_OF = "anyOf"
+
+    /**
+     * Refuses to write a criteria that has alternative groups ([Criteria.anyOf]): they are for code on the server, and
+     * do not travel.
+     *
+     * A disjunction across fields chosen by the client would let it send any tree of `OR`s over any columns — the
+     * queries the provisioned orderings exist to avoid. Leaving the groups out instead would send a looser filter than
+     * the one built, with nothing pointing out the loss; hence the failure, on the side that built it. A search of one
+     * term over several columns is a criteria field of its own, which the repository translates with
+     * `CriterionTranslator.translateAny`.
+     *
+     * @throws InvalidRequestException if the criteria has groups
+     */
+    fun refuseAnyOf(criteria: Criteria?) {
+        if (criteria != null && criteria.anyOf.isNotEmpty()) {
+            throw anyOfDoesNotTravel()
+        }
+    }
+
+    /**
+     * The failure for alternative groups on the wire — thrown by the reader that meets an [ANY_OF] key, which the REST
+     * layer returns as 400 instead of skipping it and answering with a looser filter.
+     */
+    fun anyOfDoesNotTravel(): InvalidRequestException = InvalidRequestException(
+        "alternative groups (anyOf) are server-side only and do not travel; search several columns with a " +
+            "criteria field of its own",
+    )
+
     /**
      * Writes the field, if there is something to write. A field not provided produces no key at all — this
      * keeps short the criteria that filters by a single field, the common case.

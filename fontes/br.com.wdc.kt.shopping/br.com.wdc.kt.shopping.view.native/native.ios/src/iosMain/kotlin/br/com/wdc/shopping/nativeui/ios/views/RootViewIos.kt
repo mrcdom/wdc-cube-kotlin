@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.nativeui.ios.views
 
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.RootScope
 import br.com.wdc.shopping.nativeui.ios.toolkit.*
 import br.com.wdc.shopping.nativeui.ios.theme.*
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -8,10 +9,10 @@ import platform.UIKit.*
 
 /**
  * Root view — full-screen container with a single content slot.
- * Swaps between LoginView and HomeView based on presenter state.
+ * Swaps between LoginView and HomeView: shows the view of [RootScope.content].
  */
 @OptIn(ExperimentalForeignApi::class)
-class RootViewIos(presenter: RootPresenter) : AbstractViewIos<RootPresenter>("root-view", presenter) {
+class RootViewIos(app: RootPresenter, scope: RootScope) : AbstractViewIos<RootScope>("root-view", app, scope) {
 
     private lateinit var contentSlot: ViewSlot
 
@@ -26,16 +27,15 @@ class RootViewIos(presenter: RootPresenter) : AbstractViewIos<RootPresenter>("ro
     }
 
     override fun doUpdate() {
-        val state = presenter.state
 
         // Sync content slot
-        contentSlot.sync(state.contentView)
+        contentSlot.sync(scope.content?.let(app::viewOf))
 
         // Show error toast if any
-        val errorMessage = state.errorMessage
+        val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             showErrorToast(errorMessage)
-            state.errorMessage = null
+            scope.errorMessage = null
         }
     }
 

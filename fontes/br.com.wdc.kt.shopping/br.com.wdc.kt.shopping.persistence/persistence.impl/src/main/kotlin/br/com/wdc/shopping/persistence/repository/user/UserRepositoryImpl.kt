@@ -119,6 +119,7 @@ class UserRepositoryImpl : BaseRepositoryImpl(), UserRepository {
                 CriterionTranslator.translate(t.USERNAME, criteria.userName),
                 CriterionTranslator.translate(t.NAME, criteria.name),
                 CriterionTranslator.translate(t.ROLES, criteria.roles),
+                CriterionTranslator.anyOf(criteria.anyOf) { conditions(t, it) },
             )
         )
     }

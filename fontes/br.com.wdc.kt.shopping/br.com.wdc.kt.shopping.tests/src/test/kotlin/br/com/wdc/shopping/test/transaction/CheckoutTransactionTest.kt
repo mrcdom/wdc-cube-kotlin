@@ -41,15 +41,15 @@ class CheckoutTransactionTest {
 
     private suspend fun items() = env.purchaseItemRepo.count(PurchaseItemCriteria())
 
-    /** A cart whose second item violates the product foreign key: the first is written, the second fails. */
-    private fun cartThatFailsOnTheSecondItem() = CartManager(env.purchaseRepo).apply {
+    /** A cart whose second item is of a product that does not exist: the first is written, the second refused. */
+    private fun cartThatFailsOnTheSecondItem() = CartManager().apply {
         addProduct(product(DBReset.COFFEE_MAKER_ID, 200.5), 1)
         addProduct(product(NO_SUCH_PRODUCT, 10.5), 2)
     }
 
     @Test
     fun addingMoreOfAProductAlreadyInTheCart_notifiesTheListeners() {
-        val cart = CartManager(env.purchaseRepo)
+        val cart = CartManager()
         var changes = 0
         cart.addChangeListener { changes++ }
         cart.addProduct(product(DBReset.COFFEE_MAKER_ID, 200.5), 1)
@@ -61,7 +61,7 @@ class CheckoutTransactionTest {
     @Test
     fun checkout_withAZeroQuantity_isRefusedByTheCart_andWritesNothing() = runBlocking {
         val before = purchases()
-        val cart = CartManager(env.purchaseRepo).apply {
+        val cart = CartManager().apply {
             addProduct(product(DBReset.COFFEE_MAKER_ID, 200.5), 1)
             addProduct(product(DBReset.FLASH_DRIVE_2GB_ID, 16.25), 1)
             modifyProductQuantity(DBReset.FLASH_DRIVE_2GB_ID, 0)
@@ -72,7 +72,7 @@ class CheckoutTransactionTest {
 
     @Test
     fun checkout_commitsThePurchaseAndItsItems() = runBlocking {
-        val cart = CartManager(env.purchaseRepo).apply {
+        val cart = CartManager().apply {
             addProduct(product(DBReset.COFFEE_MAKER_ID, 200.5), 1)
             addProduct(product(DBReset.FLASH_DRIVE_2GB_ID, 16.25), 3)
         }

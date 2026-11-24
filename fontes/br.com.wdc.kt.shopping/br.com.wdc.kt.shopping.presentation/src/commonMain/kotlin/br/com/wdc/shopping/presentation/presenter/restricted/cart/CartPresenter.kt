@@ -5,8 +5,8 @@ import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.ScopeSlot
+import br.com.wdc.framework.cube.FormParam
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
@@ -18,131 +18,133 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     companion object {
         private val LOG = Log.getLogger("CartPresenter")
-
-        var createView: ((CartPresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
 
-    val state = observed(CartViewState())
+    val scope = bind(CartScope())
 
     // :: Internal Instance Fields
 
     private val cart: CartManager = app.cart!!
-    private var ownerSlot: CubeViewSlot? = null
+    private var ownerSlot: ScopeSlot? = null
     private var pendingErrorClear: Registration? = null
 
+    /** The rows alive, by product: a row that stays is reused, so only what changed in it repaints. */
+    private val rows = LinkedHashMap<Long, CartItemScope>()
+
     init {
-        state.items = emptyList()
+        scope.onBuy = action(1) { buy() }
+        scope.onOpenProducts = action(3) { HomeKeys(app).flip() }
     }
 
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
-        state.items = cart.getCartItems()
+        syncRows()
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = CartKeys(app, intent).parentSlot
-        if (initialization) {
-            view = createView?.invoke(this)
-        }
 
-        ownerSlot?.setView(view!!)
+        ownerSlot?.setScope(scope)
 
         return true
     }
 
+    // :: Rows
+
+    /** Makes the rows follow the cart: reuses the ones that stay, creates the new ones, releases the ones that left. */
+    private fun syncRows() {
+        val items = cart.getCartItems()
+        val next = items.map { item ->
+            rows.getOrPut(item.id) { newRow(item.id) }.apply {
+                name = item.name
+                image = item.image
+                price = item.price
+                quantity = item.quantity
+            }
+        }
+        val alive = items.mapTo(HashSet()) { it.id }
+        for (productId in rows.keys.filter { it !in alive }) {
+            detach(rows.remove(productId)!!)
+        }
+        scope.rows = next
+        scope.total = items.sumOf { it.price * it.quantity }
+    }
+
+    private fun newRow(productId: Long): CartItemScope = segment(CartItemScope()).also { row ->
+        row.productId = productId
+        row.onRemove = action(1, target = row) { removeProduct(productId) }
+        row.onModifyQuantity = actionOf(2, FormParam.int("p.quantity"), target = row) { modifyQuantity(productId, it) }
+    }
+
     // :: User Actions
 
-    fun onModifyQuantity(productId: Long?, quantity: Int?) {
-        try {
-            if (productId == null) {
-                errorMalformedProductId()
-                LOG.warn("onModifyQuantity.errorMalformedProductId: {}", state.errorMessage)
-                return
-            }
+    private fun modifyQuantity(productId: Long?, quantity: Int?) {
+        if (productId == null) {
+            errorMalformedProductId()
+            LOG.warn("onModifyQuantity.errorMalformedProductId: {}", scope.errorMessage)
+            return
+        }
 
-            if (quantity == null) {
-                errorMalformedQuantity()
-                LOG.warn("onModifyQuantity.errorMalformedQuantity: {}", state.errorMessage)
-                return
-            }
+        if (quantity == null) {
+            errorMalformedQuantity()
+            LOG.warn("onModifyQuantity.errorMalformedQuantity: {}", scope.errorMessage)
+            return
+        }
 
-            if (quantity < 1) {
-                alertThereIsItemWhichValueIsLessThanOne()
-                LOG.warn("onModifyQuantity.alertThereIsItemWhichValueIsLessThanOne: {}", state.errorMessage)
-                return
-            }
+        if (quantity < 1) {
+            alertThereIsItemWhichValueIsLessThanOne()
+            LOG.warn("onModifyQuantity.alertThereIsItemWhichValueIsLessThanOne: {}", scope.errorMessage)
+            return
+        }
 
-            val found = cart.modifyProductQuantity(productId, quantity)
-            if (!found) {
-                alertProductNotFound()
-                LOG.warn("onModifyQuantity.alertProductNotFound: {}", state.errorMessage)
-            } else {
-                state.items = cart.getCartItems()
-            }
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Modifying a product quantity", caught)
+        val found = cart.modifyProductQuantity(productId, quantity)
+        if (!found) {
+            alertProductNotFound()
+            LOG.warn("onModifyQuantity.alertProductNotFound: {}", scope.errorMessage)
+        } else {
+            syncRows()
         }
     }
 
-    suspend fun onRemoveProduct(productId: Long?) {
-        try {
-            if (productId == null) {
-                errorMalformedProductId()
-                LOG.warn("onRemoveProduct: {}", state.errorMessage)
-                return
-            }
-
-            val modified = cart.removeProduct(productId)
-            if (modified) {
-                if (cart.getSize() == 0) {
-                    HomeKeys(app).flip()
-                } else {
-                    state.items = cart.getCartItems()
-                }
-            }
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Removing a product", caught)
+    private suspend fun removeProduct(productId: Long?) {
+        if (productId == null) {
+            errorMalformedProductId()
+            LOG.warn("onRemoveProduct: {}", scope.errorMessage)
+            return
         }
-    }
 
-    suspend fun onBuy() {
-        try {
+        val modified = cart.removeProduct(productId)
+        if (modified) {
             if (cart.getSize() == 0) {
-                alertPurchaseOfEmptyCart()
-                LOG.warn("onBuy: {}", state.errorMessage)
-                return
+                HomeKeys(app).flip()
+            } else {
+                syncRows()
             }
+        }
+    }
 
+    private suspend fun buy() {
+        if (cart.getSize() == 0) {
+            alertPurchaseOfEmptyCart()
+            LOG.warn("onBuy: {}", scope.errorMessage)
+            return
+        }
+
+        try {
             val purchaseId = cart.commit(app.subject!!)
 
             ReceiptKeys(app).apply {
                 this.purchaseId = purchaseId
                 purchaseMade = true
             }.flip()
-        } catch (caught: Exception) {
-            if (caught is InvalidCartItemException) {
-                alertThereIsItemWhichValueIsLessThanOne()
-                LOG.error("onBuy.alertThereIsItemWhichValueIsLessThanOne: {}", state.errorMessage, caught)
-                return
-            }
-
-            if (caught is OfflineException) {
-                alertDatabaseOffline()
-                LOG.error("onBuy.alertDatabaseOffline: {}", state.errorMessage, caught)
-                return
-            }
-
-            app.alertUnexpectedError(LOG, "Buying a product", caught)
-        }
-    }
-
-    suspend fun onOpenProducts() {
-        try {
-            HomeKeys(app).flip()
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Going to root restricted place", caught)
+        } catch (caught: InvalidCartItemException) {
+            alertThereIsItemWhichValueIsLessThanOne()
+            LOG.error("onBuy.alertThereIsItemWhichValueIsLessThanOne: {}", scope.errorMessage, caught)
+        } catch (caught: OfflineException) {
+            alertDatabaseOffline()
+            LOG.error("onBuy.alertDatabaseOffline: {}", scope.errorMessage, caught)
         }
     }
 
@@ -151,44 +153,44 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private fun clearErrorAfterDelay() {
         pendingErrorClear?.remove()
         pendingErrorClear = ScheduledExecutor.BEAN.get().schedule({
-            state.errorCode = 0
-            state.errorMessage = null
+            scope.errorCode = 0
+            scope.errorMessage = null
         }, 3.seconds)
     }
 
     private fun alertThereIsItemWhichValueIsLessThanOne() {
-        state.errorCode = 1
-        state.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
+        scope.errorCode = 1
+        scope.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
         clearErrorAfterDelay()
     }
 
     private fun alertProductNotFound() {
-        state.errorCode = 2
-        state.errorMessage = "Product not found in the database."
+        scope.errorCode = 2
+        scope.errorMessage = "Product not found in the database."
         clearErrorAfterDelay()
     }
 
     private fun alertPurchaseOfEmptyCart() {
-        state.errorCode = 3
-        state.errorMessage = "There must be at least one item in the cart to complete a purchase."
+        scope.errorCode = 3
+        scope.errorMessage = "There must be at least one item in the cart to complete a purchase."
         clearErrorAfterDelay()
     }
 
     private fun alertDatabaseOffline() {
-        state.errorCode = 4
-        state.errorMessage = "The database is currently offline. Please wait a moment and try again."
+        scope.errorCode = 4
+        scope.errorMessage = "The database is currently offline. Please wait a moment and try again."
         clearErrorAfterDelay()
     }
 
     private fun errorMalformedProductId() {
-        state.errorCode = 5
-        state.errorMessage = "Malformed product code."
+        scope.errorCode = 5
+        scope.errorMessage = "Malformed product code."
         clearErrorAfterDelay()
     }
 
     private fun errorMalformedQuantity() {
-        state.errorCode = 6
-        state.errorMessage = "Malformed quantity value."
+        scope.errorCode = 6
+        scope.errorMessage = "Malformed quantity value."
         clearErrorAfterDelay()
     }
 }

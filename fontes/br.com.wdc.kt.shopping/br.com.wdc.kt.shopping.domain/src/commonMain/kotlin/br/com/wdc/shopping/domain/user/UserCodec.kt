@@ -12,7 +12,7 @@ import br.com.wdc.framework.domain.projection.ProjectionValues
  * How [User] and [UserCriteria] travel — the same codec on client and server.
  *
  * The password travels when it is in the entity (write) or marked in the projection; what keeps it from leaving
- * the server is the secured repository, which removes it from what it returns.
+ * the server is the REST API's user data policy, which reads it to no one (a projection that asks for it is refused).
  */
 class UserCodec : ModelCodec<User, UserCriteria> {
 
@@ -92,6 +92,7 @@ class UserCodec : ModelCodec<User, UserCriteria> {
     }
 
     override fun writeCriteriaFields(out: ExtensibleObjectOutput, criteria: UserCriteria) {
+        CriterionCodec.refuseAnyOf(criteria)
         CriterionCodec.write(out, "userId", criteria.userId, CriterionCodec.LONG_OUT)
         CriterionCodec.write(out, "userName", criteria.userName, CriterionCodec.STRING_OUT)
         CriterionCodec.write(out, "name", criteria.name, CriterionCodec.STRING_OUT)
@@ -106,6 +107,7 @@ class UserCodec : ModelCodec<User, UserCriteria> {
             "name" -> CriterionCodec.read(input, criteria.name, CriterionCodec.STRING_IN)
             "roles" -> CriterionCodec.read(input, criteria.roles, CriterionCodec.STRING_IN)
             "orderBy" -> CriterionCodec.readOrderBy(input, UserCriteria.OrderBy.entries)?.let { criteria.withOrderBy(it) }
+            CriterionCodec.ANY_OF -> throw CriterionCodec.anyOfDoesNotTravel()
             else -> return false
         }
         return true

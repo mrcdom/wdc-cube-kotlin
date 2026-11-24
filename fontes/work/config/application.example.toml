@@ -64,5 +64,8 @@
 # Without it, the API is OPEN — development only.
 # jwt.secret = "a-long-random-secret"
 
-# Refresh token validity, in days.
+# Refresh token validity, in days, counted from the end of the access token it came with.
 # refresh.token.ttl.days = 7
+
+# Requests to /api/auth (challenge, login, refresh) per client address and minute; above it, 429. 0 = no limit.
+# auth.requestsPerMinute = 60

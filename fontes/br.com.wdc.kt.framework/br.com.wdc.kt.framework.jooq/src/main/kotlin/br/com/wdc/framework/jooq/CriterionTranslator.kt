@@ -80,6 +80,28 @@ object CriterionTranslator {
     fun <V> column(table: Table<*>, column: TableField<*, V>): Field<V> =
         table.field(column) ?: throw IllegalArgumentException("column ${column.name} does not exist in ${table.name}")
 
+    /**
+     * Condition of the alternative groups (`Criteria.anyOf`): at least one of them has to hold — an `OR` of the groups,
+     * each one the `AND` of its own fields, joined by the caller with the `AND` of the outer criteria.
+     *
+     * Each group is translated by the same [apply] that translates the outer criteria, so a group has every operator,
+     * and groups of its own. **A group that translates to no condition holds for every row**, and makes the whole
+     * alternative hold: the result is then `null`, as for a field that is not set. Skipping that group instead would
+     * turn "or anything" into "only the other groups".
+     *
+     * @return `null` when there are no groups, or when one of them does not filter
+     */
+    fun <C> anyOf(groups: List<C>?, apply: (C) -> Condition?): Condition? {
+        if (groups.isNullOrEmpty()) return null
+        val alternatives = ArrayList<Condition>(groups.size)
+        for (group in groups) {
+            val c = apply(group)
+            if (c == null || c == DSL.noCondition()) return null
+            alternatives.add(c)
+        }
+        return if (alternatives.size == 1) alternatives[0] else DSL.or(alternatives)
+    }
+
     /** Joins the remaining conditions; an empty list (or only `null`s) returns `noCondition()`. */
     fun and(conditions: List<Condition?>): Condition {
         val useful = conditions.filterNotNull()

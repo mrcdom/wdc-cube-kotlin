@@ -17,7 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.theme.SuccessColor
@@ -25,15 +26,15 @@ import br.com.wdc.shopping.view.compose.theme.SuccessContainer
 import br.com.wdc.shopping.view.compose.util.formatDate
 import br.com.wdc.shopping.view.compose.util.formatPrice
 
-class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("receipt-view", presenter) {
+class ReceiptView(app: RootPresenter, scope: ReceiptScope) :
+    ComposeCubeView<ReceiptScope>("receipt-view", app, scope) {
 
     @Composable
     override fun Render() {
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val state = presenter.state
-        val receipt = state.receipt
+        val receipt = scope.receipt
 
         Box(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -44,7 +45,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                     // Success banner
-                    if (state.notifySuccess) {
+                    if (scope.notifySuccess) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
@@ -205,7 +206,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                         horizontalArrangement = Arrangement.End
                     ) {
                         Button(
-                            onClick = { safeCall { presenter.onOpenProducts() } },
+                            onClick = { safeCall { scope.onOpenProducts() } },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.height(48.dp)
                         ) {

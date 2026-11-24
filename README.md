@@ -8,7 +8,7 @@ Demo application for the **Cube MVP** framework in Kotlin Multiplatform, with th
 
 The application was first called "Shopping". Its code identifiers keep that name — packages (`br.com.wdc.shopping`), Gradle modules (`:shopping-*`), classes (`ShoppingConfig`), the `SHOPPING_WORKDIR` variable and the database names — so existing builds, configurations and databases keep working.
 
-**Documentation:** [Overview](docs/architecture.md) · [Cube Framework](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [React View](docs/architecture-react.md) · [Persistence](docs/architecture-persistence.md)
+**Documentation:** [Overview](docs/architecture.md) · [Cube Framework](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [React View](docs/architecture-react.md) · [Persistence](docs/architecture-persistence.md) · [Security](docs/security-architecture.md)
 
 ## Structure
 

@@ -113,20 +113,20 @@ class PlaceKeysTest : BasePresentationTest() {
 
     private suspend fun signIn() {
         LoginKeys(app).flip()
-        val loginView = LoginViewMock.cast(app.getRootView()!!.state.contentView)
-        loginView.state.userName = "admin"
-        loginView.state.password = "admin"
-        loginView.presenter.onEnter()
+        val loginView = LoginViewMock.cast(app.getRootView()!!.contentView)
+        loginView.scope.userName = "admin"
+        loginView.scope.password = "admin"
+        loginView.scope.onEnter(null, null)
     }
 
-    private fun home(): RestrictedViewMock = RestrictedViewMock.cast(app.getRootView()!!.state.contentView)
+    private fun home(): RestrictedViewMock = RestrictedViewMock.cast(app.getRootView()!!.contentView)
 
     @Test
     fun anAddressWithoutAUsableId_redirectsToTheHome() = runBlocking {
         signIn()
         for (address in listOf("product?pr-id=abc", "product", "receipt?rc-id=-1", "receipt", "public")) {
             app.flip(address)
-            assertNull(home().state.contentView, "$address: the home shows no inner place")
+            assertNull(home().contentView, "$address: the home shows no inner place")
             assertEquals("home", app.newIntent().toString(), address)
         }
     }
@@ -135,8 +135,8 @@ class PlaceKeysTest : BasePresentationTest() {
     fun navigatingFromTheState_putsTheNewNamesInTheAddress() = runBlocking {
         signIn()
         ProductKeys(app).apply { productId = DBReset.FLASH_DRIVE_2GB_ID }.flip()
-        val productView = ProductViewMock.cast(home().state.contentView)
-        assertEquals(DBReset.FLASH_DRIVE_2GB_ID, productView.state.product!!.id)
+        val productView = ProductViewMock.cast(home().contentView)
+        assertEquals(DBReset.FLASH_DRIVE_2GB_ID, productView.scope.product!!.id)
         assertEquals("product?pr-id=${DBReset.FLASH_DRIVE_2GB_ID}", app.newIntent().toString())
 
         app.flip("receipt?rc-id=${DBReset.ADMIN_SECOND_PURCHASE_ID}")
@@ -148,27 +148,27 @@ class PlaceKeysTest : BasePresentationTest() {
         signIn()
         // the address brings page 1 before the panel knows its capacity: the first capacity keeps it
         app.flip("home?hm-page=1")
-        val panel = PurchasesPanelViewMock.cast(home().state.purchasesPanelView)
-        panel.presenter.onItemSizeCapacityChanged(1) // admin has two purchases: one per page
-        assertEquals(1, panel.state.page)
-        assertEquals(listOf(DBReset.ADMIN_FIRST_PURCHASE_ID), panel.state.purchases.map { it.id }, "the older purchase, on the second page")
+        val panel = PurchasesPanelViewMock.cast(home().scope.purchasesPanel?.let(app::viewOf))
+        panel.scope.onItemSizeCapacityChanged(1) // admin has two purchases: one per page
+        assertEquals(1, panel.scope.page)
+        assertEquals(listOf(DBReset.ADMIN_FIRST_PURCHASE_ID), panel.scope.purchases.map { it.id }, "the older purchase, on the second page")
         assertEquals("home?hm-page=1", app.newIntent().toString())
 
         // changing page is published; the first page is the default and leaves the address
-        panel.presenter.onPageChange(0)
+        panel.scope.onPageChange(0)
         assertEquals("home", app.newIntent().toString())
 
         // a later capacity change goes back to the first page, as before
-        panel.presenter.onPageChange(1)
-        panel.presenter.onItemSizeCapacityChanged(2)
-        assertEquals(0, panel.state.page)
+        panel.scope.onPageChange(1)
+        panel.scope.onItemSizeCapacityChanged(2)
+        assertEquals(0, panel.scope.page)
 
         // the page survives a trip to another place and back
-        panel.presenter.onItemSizeCapacityChanged(1)
-        panel.presenter.onPageChange(1)
+        panel.scope.onItemSizeCapacityChanged(1)
+        panel.scope.onPageChange(1)
         ProductKeys(app).apply { productId = DBReset.FLASH_DRIVE_2GB_ID }.flip()
         assertTrue(app.newIntent().toString().contains("hm-page=1"), app.newIntent().toString())
         HomeKeys(app).flip()
-        assertEquals(1, PurchasesPanelViewMock.cast(home().state.purchasesPanelView).state.page)
+        assertEquals(1, PurchasesPanelViewMock.cast(home().scope.purchasesPanel?.let(app::viewOf)).scope.page)
     }
 }

@@ -13,7 +13,7 @@ import HeaderPanel from './home/HeaderPanel'
 
 // :: View
 
-export type HomeViewState = {
+export type HomeScope = {
   nickName: string
   cartItemCount: number
   productsPanelViewId?: string
@@ -22,13 +22,13 @@ export type HomeViewState = {
   errorMessage: string
 }
 
-class HomeViewClass extends BaseViewClass<ViewProps, HomeViewState> {
+class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
   private selectedTab = 0
   private isCompact = window.innerWidth < COMPACT_BREAKPOINT
   private resizeHandler: (() => void) | null = null
 
   override render({ vsid }: ViewProps, initial?: boolean) {
-    const { state } = this
+    const { scope } = this
 
     if (initial && !this.resizeHandler) {
       this.resizeHandler = () => {
@@ -45,23 +45,23 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeViewState> {
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         <HeaderPanel
           vsid={vsid}
-          nickName={state.nickName}
-          cartItemCount={state.cartItemCount}
+          nickName={scope.nickName}
+          cartItemCount={scope.cartItemCount}
           isCompact={this.isCompact}
         />
 
         {/* Error */}
-        {state.errorMessage && (
+        {scope.errorMessage && (
           <Alert severity="error" sx={{ mx: 2, mt: 1 }}>
-            {state.errorMessage}
+            {scope.errorMessage}
           </Alert>
         )}
 
         {/* Content area */}
-        {state.contentViewId ? (
+        {scope.contentViewId ? (
           <Box sx={{ flex: '1 1 0', overflowY: 'auto', overflowX: 'hidden' }}>
             <Box sx={{ maxWidth: 560, mx: 'auto' }}>
-              {app.createView(state.contentViewId)}
+              {app.createView(scope.contentViewId)}
             </Box>
           </Box>
         ) : this.isCompact ? (
@@ -94,8 +94,8 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeViewState> {
               }}
             >
               {this.selectedTab === 0
-                ? app.createView(state.productsPanelViewId)
-                : app.createView(state.purchasesPanelViewId)}
+                ? app.createView(scope.productsPanelViewId)
+                : app.createView(scope.purchasesPanelViewId)}
             </Card>
           </Box>
         ) : (
@@ -118,7 +118,7 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeViewState> {
               elevation={0}
               sx={{ flex: '3 1 0', borderRadius: '8px', overflowY: 'auto', overflowX: 'hidden' }}
             >
-              {app.createView(state.productsPanelViewId)}
+              {app.createView(scope.productsPanelViewId)}
             </Card>
 
             {/* Purchases panel (flex: 2) */}
@@ -126,7 +126,7 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeViewState> {
               elevation={0}
               sx={{ flex: '2 1 0', borderRadius: '8px', overflow: 'hidden' }}
             >
-              {app.createView(state.purchasesPanelViewId)}
+              {app.createView(scope.purchasesPanelViewId)}
             </Card>
           </Box>
         )}

@@ -12,7 +12,7 @@ package br.com.wdc.shopping.nativeui.web.bridge
  * ```
  *
  * An emitter must not capture values of the render: it reads what it needs (the item, its quantity) from the
- * presenter state when it runs, by the key.
+ * scope when it runs, by the key.
  */
 class EmitterCache<K, E : Any>(private val create: (K) -> E) {
 

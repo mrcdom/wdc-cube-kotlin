@@ -16,37 +16,38 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.bridge.RenderSlot
 import br.com.wdc.shopping.view.compose.components.ShoppingLogoHeader
 
 private val COMPACT_BREAKPOINT = 518.dp
 
-class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-view", presenter) {
+class HomeView(app: RootPresenter, scope: HomeScope) :
+    ComposeCubeView<HomeScope>("home-view", app, scope) {
 
     @Composable
     override fun Render() {
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val state = presenter.state
 
         Column(modifier = Modifier.fillMaxSize()) {
             // Header (responsive)
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val isCompact = maxWidth < COMPACT_BREAKPOINT
                 HeaderBar(
-                    nickName = state.nickName ?: "",
-                    cartItemCount = state.cartItemCount,
-                    onOpenCart = { safeCall { presenter.onOpenCart() } },
-                    onExit = { safeCall { presenter.onExit() } },
+                    nickName = scope.nickName ?: "",
+                    cartItemCount = scope.cartItemCount,
+                    onOpenCart = { safeCall { scope.onOpenCart() } },
+                    onExit = { safeCall { scope.onExit() } },
                     compact = isCompact
                 )
             }
 
             // Error message
-            val errorMessage = state.errorMessage
+            val errorMessage = scope.errorMessage
             if (!errorMessage.isNullOrBlank()) {
                 Surface(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -62,7 +63,7 @@ class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-vie
             }
 
             // Content area (responsive)
-            val contentView = state.contentView
+            val contentView = scope.content?.let(app::viewOf)
             if (contentView != null) {
                 RenderSlot(contentView)
             } else {
@@ -113,11 +114,11 @@ class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-vie
                             ) {
                                 when (selectedTab) {
                                     0 -> {
-                                        val productsView = state.productsPanelView
+                                        val productsView = scope.productsPanel?.let(app::viewOf)
                                         if (productsView != null) RenderSlot(productsView)
                                     }
                                     1 -> {
-                                        val purchasesView = state.purchasesPanelView
+                                        val purchasesView = scope.purchasesPanel?.let(app::viewOf)
                                         if (purchasesView != null) RenderSlot(purchasesView)
                                     }
                                 }
@@ -129,7 +130,7 @@ class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-vie
                             modifier = Modifier.fillMaxSize().padding(padding),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            val productsView = state.productsPanelView
+                            val productsView = scope.productsPanel?.let(app::viewOf)
                             if (productsView != null) {
                                 Card(
                                     modifier = Modifier.weight(3f).fillMaxHeight(),
@@ -141,7 +142,7 @@ class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-vie
                                 }
                             }
 
-                            val purchasesView = state.purchasesPanelView
+                            val purchasesView = scope.purchasesPanel?.let(app::viewOf)
                             if (purchasesView != null) {
                                 Card(
                                     modifier = Modifier.weight(2f).fillMaxHeight(),

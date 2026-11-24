@@ -9,7 +9,7 @@
 - [Session Establishment](#session-establishment)
 - [WebSocket Protocol](#websocket-protocol)
 - [Skeleton — The Bridge Between Presenter and Client](#skeleton--the-bridge-between-presenter-and-client)
-- [State Synchronization](#state-synchronization)
+- [Scope Synchronization](#scope-synchronization)
 - [Security](#security)
 - [Session Management and Lifecycle](#session-management-and-lifecycle)
 - [Advantages of the Remote View](#advantages-of-the-remote-view)
@@ -20,7 +20,7 @@
 
 ## Overview
 
-The React architecture implements a **remote view** in which the presentation layer (presenters) runs entirely on the server. The React client is responsible only for **rendering the interface**, with no business or presentation logic. All user interaction is sent to the server over WebSocket, and the server responds with the new state serialized as JSON.
+The React architecture implements a **remote view** in which the presentation layer (presenters) runs entirely on the server. The React client is responsible only for **rendering the interface**, with no business or presentation logic. All user interaction is sent to the server over WebSocket, and the server responds with the new scopes serialized as JSON.
 
 ```mermaid
 graph LR
@@ -113,8 +113,8 @@ graph TB
 
 | Module | Role |
 |--------|-------|
-| **react.client** | Pure rendering in React/TypeScript with Material UI. Receives JSON states and sends user events. Bundled with Parcel. |
-| **react.skeleton** | Server-side bridge: each `*ReactViewImpl` translates client events into presenter calls and serializes the ViewState to JSON. |
+| **react.client** | Pure rendering in React/TypeScript with Material UI. Receives the views' scopes as JSON and sends user events. Bundled with Parcel. |
+| **react.skeleton** | Server-side bridge: one `ScopeViewImpl` per scope dispatches the client's events to the actions the presenter bound with their codes and writes the scope as JSON; the view catalog (`ScopeViews`) holds each client component's vid. |
 | **backend** | Javalin server that hosts the WebSocket (`/dispatcher/{id}`), serves the React static files, and exposes the REST API for Compose clients. |
 | **presentation** | Shared presenters (KMP commonMain) — the same code used by both React and Compose. |
 | **persistence** | jOOQ implementation of the repositories (H2 or PostgreSQL) — used directly by the presenters in the React architecture. |
@@ -137,21 +137,21 @@ sequenceDiagram
     Browser->>WS: JSON with event and formData
     WS->>Dispatch: parses request
     Dispatch->>ViewImpl: syncClientToServer(formData)
-    ViewImpl->>Presenter: state.userName = formData.userName
+    ViewImpl->>Presenter: scope.userName = formData.userName
     Dispatch->>ViewImpl: submit(eventCode=1, ...)
-    ViewImpl->>Presenter: onEnter()
+    ViewImpl->>Presenter: scope.dispatch(1, formData) → onEnter
     Presenter->>Repo: findByCredentials(user, pass)
     Note over Repo: Direct JDBC access<br/>no network round trip
     Repo-->>Presenter: Subject
-    Presenter->>ViewImpl: update() via markDirty
-    Response->>Presenter: commitComputedState()
-    Response->>ViewImpl: writeState(json)
-    ViewImpl-->>WS: JSON with updated states
-    WS-->>Browser: states of the dirty views
-    Browser->>Browser: applies states and re-renders
+    Presenter->>ViewImpl: update() via markDirty (the scope asks)
+    Response->>Presenter: app.commitComputedState() (every live presenter)
+    Response->>ViewImpl: writeScope(json)
+    ViewImpl-->>WS: JSON with updated scopes
+    WS-->>Browser: scopes of the dirty views
+    Browser->>Browser: applies scopes and re-renders
 ```
 
-The whole cycle happens in a single WebSocket exchange — the client sends the event, the server processes it and responds with the new state. There are no intermediate REST calls.
+The whole cycle happens in a single WebSocket exchange — the client sends the event, the server processes it and responds with the new scopes. There are no intermediate REST calls.
 
 ---
 
@@ -177,7 +177,7 @@ sequenceDiagram
     Browser->>Server: ping with secret=app_signature
     Server->>Server: Decrypts AES password with RSA priv
     Server->>Server: Creates ReactRootPresenter
-    Server-->>Browser: Initial state (views)
+    Server-->>Browser: Initial scopes (views)
 ```
 
 The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging session IDs.
@@ -203,13 +203,13 @@ The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging 
 - **`vsid`**: view instance identifier (`hexVID:instanceNumber`)
 - **Form data**: indexed by `vsid`, sensitive fields encrypted
 
-### Server → Client (State Response)
+### Server → Client (Scope Response)
 
 ```json
 {
   "requestId": 42,
   "uri": "/home",
-  "states": [
+  "scopes": [
     {
       "id": "473dbdd7a36a:3",
       "nickName": "Admin",
@@ -225,101 +225,116 @@ The `appId` is self-signed: `{random}.{HMAC(random)}` — this prevents forging 
 }
 ```
 
-- **`states`**: only the views that changed (dirty tracking)
+- **`scopes`**: only the views that changed (dirty tracking)
 - **`uri`**: new navigation fragment (for the browser history)
-- **References between views**: `*ViewId` fields point to other views
+- **References between views**: `*ViewId` fields point to other views, `*ViewIds` fields to a list of views (the cart rows, `rowsViewIds`, empty included). A view created while writing a message (a scope sent for the first time) goes out in the same message
 
 ---
 
 ## Skeleton — The Bridge Between Presenter and Client
 
-Each presenter has a matching `*ReactViewImpl` in the skeleton module. This class implements `GenericViewImpl` and does three things:
-
-### 1. Synchronizes form data (client → server)
+Presenters do not create views. The skeleton fills the application's **view catalog** (`ScopeViews`, in `ReactRootPresenter`): one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it. Only the login (deciphers the password) and the receipt (one-time notice) have classes of their own:
 
 ```kotlin
-override fun syncClientToServer(formData: Map<String, Any?>) {
-    val state = presenter.state
-    if (formData.containsKey("userName")) {
-        state.userName = CoerceUtils.asString(formData["userName"])
+scopeViews = ScopeViews()
+    .register<RootScope> { ScopeViewImpl("f2d345c4a610", this, it) }
+    .register<LoginScope> { LoginReactViewImpl(this, it) }
+    .register<HomeScope> { ScopeViewImpl("473dbdd7a36a", this, it) }
+    .register<ProductScope> { ScopeViewImpl("48b693f67410", this, it) }
+    .register<CartScope> { ScopeViewImpl("7eb485e5f843", this, it) }
+    .register<CartItemScope> { ScopeViewImpl("5d9e3c7a1f42", this, it) }
+    .register<ReceiptScope> { ReceiptReactViewImpl(this, it) }
+    .register<ProductsPanelScope> { ScopeViewImpl("a1b2c3d4e5f6", this, it) }
+    .register<PurchasesPanelScope> { ScopeViewImpl("b3c4d5e6f7a8", this, it) }
+```
+
+`ScopeViewImpl` extends `GenericViewImpl` and does three things, all generic:
+
+```kotlin
+open class ScopeViewImpl<S : Scope>(vid: String, app: ReactRootPresenter, val scope: S) : GenericViewImpl(vid, app) {
+
+    // 1. What the user typed (client → server): what the presenter set with scope.onSync { … }
+    override fun syncClientToServer(formData: Map<String, Any?>) {
+        scope.sync(formData)
     }
-    if (formData.containsKey("password")) {
-        // Sensitive data is decrypted with AES
-        state.password = app.getDataSecurity()
-            .b64Decipher(CoerceUtils.asString(formData["password"]) ?: "")
+
+    // 2. The event: runs the action the presenter bound with this code (an unknown code is an error)
+    override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
+        scope.dispatch(eventCode, formData)
+    }
+
+    // 3. The scope as JSON, with the ids of the views of the scopes inside it
+    override fun writeScope(json: ExtensibleObjectOutput) {
+        scope.write(instanceId, json, app::viewOf)
     }
 }
 ```
 
-### 2. Dispatches events to the presenter
+The event codes live in the presenter, next to the action they fire, with how to read their values from the form data:
 
 ```kotlin
-override fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
-    if (eventCode == 1) {
-        presenter.onEnter()  // Maps the integer code to a presenter method
-    }
-}
+// ProductPresenter
+scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
+scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
 ```
 
-### 3. Serializes the state to JSON
+The login is the exception: its values arrive by sync (the password ciphered with the session key, which only the skeleton knows), so `LoginReactViewImpl` overrides `syncClientToServer`, and the presenter handles the event by hand: `onEvent(1) { scope.onEnter(null, null) }`.
 
-```kotlin
-override fun writeState(json: ExtensibleObjectOutput) {
-    presenter.state.write(instanceId(), json)
-}
-```
+The browser tab itself is a scope of the remote layer (`BrowserScope`: the alert and the root scope, sent as `contentViewId`), whose actions `BrowserPresenter` binds with their codes like any presenter; the presentation knows nothing of it.
 
 The mapping between hexadecimal View IDs and views is fixed and shared between client and server:
 
-| View | Hex VID | Client (TSX) | Server (Kotlin) |
-|------|---------|---------------|-------------------|
-| Browser | `7b32e816a191` | BrowserView.tsx | BrowserReactViewImpl.kt |
-| Root | `f2d345c4a610` | RootView.tsx | RootReactViewImpl.kt |
-| Login | `c677cda52d14` | LoginView.tsx | LoginReactViewImpl.kt |
-| Home | `473dbdd7a36a` | HomeView.tsx | HomeReactViewImpl.kt |
-| Cart | `7eb485e5f843` | CartView.tsx | CartReactViewImpl.kt |
-| Product | `48b693f67410` | ProductView.tsx | ProductReactViewImpl.kt |
-| Receipt | `e8d0bd8ae3bc` | ReceiptView.tsx | ReceiptReactViewImpl.kt |
-| ProductsPanel | `a1b2c3d4e5f6` | ProductsPanel.tsx | ProductsPanelReactViewImpl.kt |
-| PurchasesPanel | `b3c4d5e6f7a8` | PurchasesPanel.tsx | PurchasesPanelReactViewImpl.kt |
+| View | Hex VID | Client (TSX) | Server (Kotlin) | Events |
+|------|---------|---------------|-------------------|--------|
+| Browser | `7b32e816a191` | BrowserView.tsx | `ScopeViewImpl` (`BrowserScope`, actions bound by `BrowserPresenter`; instance `:0`) | 1 alert OK, 2 keep-alive, -1 start (`p.path`), -2 history changed (`p.path`) |
+| Root | `f2d345c4a610` | RootView.tsx | `ScopeViewImpl` (`RootScope`) | |
+| Login | `c677cda52d14` | LoginView.tsx | LoginReactViewImpl.kt | 1 enter |
+| Home | `473dbdd7a36a` | HomeView.tsx | `ScopeViewImpl` (`HomeScope`) | 1 exit, 2 open cart |
+| Cart | `7eb485e5f843` | CartView.tsx | `ScopeViewImpl` (`CartScope`) | 1 buy, 3 open products |
+| Cart row | `5d9e3c7a1f42` | CartView.tsx (`CartItemView`) | `ScopeViewImpl` (`CartItemScope`) | 1 remove, 2 quantity (`p.quantity`) |
+| Product | `48b693f67410` | ProductView.tsx | `ScopeViewImpl` (`ProductScope`) | 1 open products, 2 add to cart (`p.quantity`) |
+| Receipt | `e8d0bd8ae3bc` | ReceiptView.tsx | ReceiptReactViewImpl.kt | 1 open products |
+| ProductsPanel | `a1b2c3d4e5f6` | home/ProductsPanel.tsx | `ScopeViewImpl` (`ProductsPanelScope`) | 1 open product (`p.productId`) |
+| PurchasesPanel | `b3c4d5e6f7a8` | home/PurchasesPanel.tsx | `ScopeViewImpl` (`PurchasesPanelScope`) | 1 open receipt (`p.purchaseId`), 2 page (`p.page`), 3 capacity (`p.capacity`) |
+
+The products and purchases panels are segments of the Home's scope (no presenter of their own); their events go to the segment's view and run actions the `HomePresenter` bound with `target = products` / `target = purchases`. Each cart row is a segment of the cart's scope with its own view, so changing a quantity repaints that row and the total (computed on the server), not the whole list.
 
 ---
 
-## State Synchronization
+## Scope Synchronization
 
 ### Dirty Tracking
 
-When a presenter calls `view.update()`, the view is marked "dirty" in `ReactRootPresenter`. In the response, only dirty views are serialized:
+When a field of a scope changes, the scope asks its view to update, and the view is marked "dirty" in `ReactRootPresenter`. In the response, `app.commitComputedState()` runs first (every live presenter's, once per cycle), then only dirty views are serialized — plus any view created while writing them (a scope sent for the first time), so a parent and its children go out in the same message:
 
 ```mermaid
 graph TB
-    P["Presenter calls update()"]
+    P["scope field changed → view.update()"]
     P --> MD["app.markDirty(view)"]
     MD --> DM["dirtyViewMap stores view"]
 
     subgraph "In the response"
-        DM --> IT["Iterates dirtyViewMap"]
-        IT --> WS["writeState(json) for each view"]
+        CC["app.commitComputedState()"] --> IT["Iterates dirtyViewMap"]
+        DM --> IT
+        IT --> WS["writeScope(json) for each view<br/>(and the views it creates)"]
         WS --> CL["Removes from dirtyViewMap"]
     end
 ```
 
 ### Server Push
 
-When a view is marked dirty outside the request/response cycle (for example, by an asynchronous operation), the server schedules an automatic push over WebSocket after 200ms:
+When a view is marked dirty outside the request/response cycle (for example, by an asynchronous operation), the `ViewFlushScheduler` pushes it over WebSocket on its next tick (every 50 ms):
 
 ```kotlin
 fun markDirty(view: GenericViewImpl) {
-    dirtyViewMap[view.instanceId()] = view
-    if (!requestInProgress && wsSession != null) {
-        schedulePush()  // Push with a 200ms delay
-    }
+    dirtyViewMap[view.instanceId] = view
+    ViewFlushScheduler.markDirty(this)  // push when outside a request
 }
 ```
 
 ### View Garbage Collection
 
-The client keeps a reference system for views. When a `*ViewId` field changes in a parent view's state, the previous child view is released automatically after 4 seconds of inactivity.
+The client keeps a reference system for views. When a `*ViewId` field changes in a parent view's scope, the previous child view is released automatically after 4 seconds of inactivity.
 
 ---
 
@@ -348,7 +363,7 @@ graph LR
 
 ### Security Inherent to the Architecture
 
-In the remote view, repository data **never travels directly to the client**. The presenter on the server decides exactly which fields to expose in the ViewState. This eliminates entire classes of vulnerabilities:
+In the remote view, repository data **never travels directly to the client**. The presenter on the server decides exactly which fields to expose in its scope. This eliminates entire classes of vulnerabilities:
 
 - There is no REST API exposed to the React client — no endpoint to attack
 - There are no JWT tokens on the client — authentication is managed in the server session
@@ -421,7 +436,7 @@ Changes to the presentation logic take effect immediately on server deployment, 
 
 ### 6. Native Server Push
 
-The bidirectional WebSocket lets the server send state updates to the client without the client having to ask. This enables real-time notifications, dashboard updates, and synchronization across tabs/users.
+The bidirectional WebSocket lets the server send scope updates to the client without the client having to ask. This enables real-time notifications, dashboard updates, and synchronization across tabs/users.
 
 ---
 
@@ -437,7 +452,7 @@ The remote view architecture is especially suited for:
 | **Systems with regulated data (LGPD/GDPR)** | Personal data stays on the server, client is stateless |
 | **Real-time dashboards** | Server push over WebSocket is native |
 | **Applications that require strong consistency** | JDBC transactions coordinated on the server |
-| **Low-bandwidth environments** | Only state JSON is transferred, not raw data |
+| **Low-bandwidth environments** | Only the scopes JSON is transferred, not raw data |
 
 ### When NOT to use it
 
@@ -472,12 +487,12 @@ sequenceDiagram
     WS->>Disp: parses request JSON
 
     Disp->>LView: syncClientToServer(formData)
-    LView->>LPres: state.userName = admin
-    LView->>LView: state.password = decipher(AES)
-    LView->>LPres: state.password = real_password
+    LView->>LPres: scope.userName = admin
+    LView->>LView: scope.password = decipher(AES)
+    LView->>LPres: scope.password = real_password
 
     Disp->>LView: submit(eventCode=1, ...)
-    LView->>LPres: onEnter()
+    LView->>LPres: scope.dispatch(1) → scope.onEnter(null, null)
 
     LPres->>URepo: findByCredentials(admin, password)
     Note over URepo: Direct SQL on H2<br/>no intermediate REST
@@ -486,14 +501,14 @@ sequenceDiagram
     LPres->>LPres: app.subject = subject
     LPres->>LPres: Navigates to /home
 
-    Note over LPres: Creates HomePresenter<br/>ProductsPanelPresenter<br/>PurchasesPanelPresenter
+    Note over LPres: Creates HomePresenter<br/>(its panels are segments of HomeScope)
 
-    Resp->>LPres: commitComputedState()
+    Resp->>LPres: app.commitComputedState()
     Resp->>Resp: Collects dirty views
 
-    Resp-->>WS: JSON with states of Home,<br/>ProductsPanel, PurchasesPanel
+    Resp-->>WS: JSON with scopes of Home,<br/>ProductsPanel, PurchasesPanel
 
-    WS-->>React: uri=/home + states=[...]
+    WS-->>React: uri=/home + scopes=[...]
     React->>React: Updates browser history
     React->>React: Renders Home screen
 
@@ -503,5 +518,5 @@ sequenceDiagram
 Note that throughout the flow:
 1. The **password never travels in clear text** — it is encrypted with AES-GCM on the client and decrypted on the server
 2. **Database access is direct** — `UserRepository` runs SQL in the same JVM as the presenter
-3. The **client does not know how to navigate** — the server decides that the next screen is Home and sends the corresponding states
+3. The **client does not know how to navigate** — the server decides that the next screen is Home and sends the corresponding scopes
 4. Only **views that changed** are included in the response (dirty tracking)

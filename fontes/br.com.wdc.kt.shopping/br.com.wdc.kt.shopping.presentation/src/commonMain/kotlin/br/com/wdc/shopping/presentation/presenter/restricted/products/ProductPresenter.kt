@@ -1,38 +1,40 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.products
 
-import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
+import br.com.wdc.framework.cube.FormParam
+import br.com.wdc.shopping.presentation.presenter.restricted.products.calls.ProductQuery
 
 class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
     companion object {
         private val LOG = Log.getLogger("ProductPresenter")
-
-        var createView: ((ProductPresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
 
-    val state = observed(ProductViewState())
+    val scope = bind(ProductScope())
 
     // :: Internal Instance Fields
 
-    private val productService = ProductService(ProductRepository.BEAN.get())
-    private var ownerSlot: CubeViewSlot? = null
+    private var ownerSlot: ScopeSlot? = null
+
+    init {
+        scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
+        scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
+    }
 
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         val keys = ProductKeys(app, intent)
-        val oldProductId = state.product?.id
+        val oldProductId = scope.product?.id
 
         val newProductId = keys.productId ?: oldProductId ?: run {
             // no usable id in the address: nothing to show; go to the home, with the intent in transit
@@ -40,83 +42,69 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
             return false
         }
 
-        if (state.product == null || newProductId != oldProductId) {
-            state.product = productService.loadProductById(newProductId)
+        if (scope.product == null || newProductId != oldProductId) {
+            scope.product = ProductQuery(productId = newProductId).run()
         }
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = keys.parentSlot
         if (initialization) {
-            state.errorCode = 0
-            state.errorMessage = null
-            if (state.product == null) {
+            scope.errorCode = 0
+            scope.errorMessage = null
+            if (scope.product == null) {
                 throw AssertionError("Missing Product")
             }
 
-            view = createView?.invoke(this)
         }
 
-        ownerSlot?.setView(view!!)
+        ownerSlot?.setScope(scope)
 
         return true
     }
 
     override fun publishParameters(intent: CubeIntent) {
-        ProductKeys(app, intent).productId = state.product?.id
+        ProductKeys(app, intent).productId = scope.product?.id
     }
 
     // :: User Actions
 
-    suspend fun onAddToCart(quantity: Int?) {
+    private suspend fun addToCart(quantity: Int?) {
+        if (quantity == null) {
+            errorInvalidQuantity()
+            LOG.warn("onAddToCart.errorInvalidQuantity: {}", scope.errorMessage)
+            return
+        }
+
+        if (quantity < 1) {
+            alertCartItemWidthLessThanOneItem()
+            LOG.warn("onAddToCart.alertCartItemWidthLessThanOneItem: {}", scope.errorMessage)
+            return
+        }
+
         try {
-            if (quantity == null) {
-                errorInvalidQuantity()
-                LOG.warn("onAddToCart.errorInvalidQuantity: {}", state.errorMessage)
-                return
-            }
-
-            if (quantity < 1) {
-                alertCartItemWidthLessThanOneItem()
-                LOG.warn("onAddToCart.alertCartItemWidthLessThanOneItem: {}", state.errorMessage)
-                return
-            }
-
-            app.cart!!.addProduct(state.product!!, quantity)
+            app.cart!!.addProduct(scope.product!!, quantity)
 
             CartKeys(app).flip()
-        } catch (caught: Exception) {
-            if (caught is OfflineException) {
-                alertDatabaseNotAvailable()
-                LOG.error(state.errorMessage!!, caught)
-                return
-            }
-
-            app.alertUnexpectedError(LOG, "Adding an item to cart", caught)
-        }
-    }
-
-    suspend fun onOpenProducts() {
-        try {
-            HomeKeys(app).flip()
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Going to home of restricted place", caught)
+        } catch (caught: OfflineException) {
+            alertDatabaseNotAvailable()
+            LOG.error(scope.errorMessage!!, caught)
         }
     }
 
     // :: Messages
 
     private fun alertDatabaseNotAvailable() {
-        state.errorCode = 1
-        state.errorMessage = "The cart is not available. Please wait a moment and try again."
+        scope.errorCode = 1
+        scope.errorMessage = "The cart is not available. Please wait a moment and try again."
     }
 
     private fun alertCartItemWidthLessThanOneItem() {
-        state.errorCode = 2
-        state.errorMessage = "The quantity of items in the cart must be at least 1 (one)."
+        scope.errorCode = 2
+        scope.errorMessage = "The quantity of items in the cart must be at least 1 (one)."
     }
 
     private fun errorInvalidQuantity() {
-        state.errorCode = 3
-        state.errorMessage = "Invalid quantity format."
+        scope.errorCode = 3
+        scope.errorMessage = "Invalid quantity format."
     }
 }

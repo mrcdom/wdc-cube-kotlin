@@ -10,6 +10,7 @@ import br.com.wdc.shopping.domain.product.Product
 import br.com.wdc.shopping.domain.product.ProductCriteria
 import br.com.wdc.shopping.domain.purchase.Purchase
 import br.com.wdc.shopping.domain.purchase.PurchaseCriteria
+import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItem
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemCriteria
 import br.com.wdc.shopping.domain.security.CryptoProvider
@@ -79,15 +80,19 @@ class LiveBackendSmokeTest {
 
         // checkout, in the remote transaction the REST client registers
         val before = purchases.count(PurchaseCriteria())
+        // as a client application: the calls reach the repositories through their BEANs (no server in this JVM)
         val serverSide = ShoppingTransactions.BEAN.getOrNull()
+        val serverPurchases = PurchaseRepository.BEAN.getOrNull()
         ShoppingTransactions.BEAN.set(RestTransactionService(transport))
+        PurchaseRepository.BEAN.set(purchases)
         val purchaseId = try {
-            CartManager(purchases).apply {
+            CartManager().apply {
                 addProduct(ProductInfo().apply { id = catalog[0].id!!; price = catalog[0].price!!; name = catalog[0].name }, 2)
                 addProduct(ProductInfo().apply { id = catalog[1].id!!; price = catalog[1].price!!; name = catalog[1].name }, 1)
             }.commit(Subject().apply { id = me.id })
         } finally {
             ShoppingTransactions.BEAN.set(serverSide)
+            PurchaseRepository.BEAN.set(serverPurchases)
         }
         assertNotNull(purchaseId)
         assertEquals(before + 1, purchases.count(PurchaseCriteria()))
