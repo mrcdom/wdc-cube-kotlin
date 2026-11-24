@@ -350,11 +350,6 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
         RootKeys(this, intent).parentSlot = contentSlot
         return true
     }
-
-    override fun release() {
-        scope.content = null
-        super.release()
-    }
 }
 ```
 

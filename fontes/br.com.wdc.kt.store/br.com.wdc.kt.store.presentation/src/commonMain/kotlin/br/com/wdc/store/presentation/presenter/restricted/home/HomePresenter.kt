@@ -64,11 +64,6 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     // :: Cube API
 
     override fun release() {
-        scope.content = null
-
-        scope.productsPanel = null
-        scope.purchasesPanel = null
-
         app.cart = null
 
         onCartCommitListenerRemover()

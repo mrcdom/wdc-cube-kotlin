@@ -95,10 +95,6 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
         return true
     }
 
-    override fun release() {
-        scope.content = null
-        super.release()
-    }
 
     companion object {
         private val LOG = Log.getLogger("RootPresenter")
