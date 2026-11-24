@@ -338,6 +338,7 @@ sequenceDiagram
     Root->>Intent: parentSlot = contentSlot (RootKeys)
     Note over Root: contentSlot callback:<br/>s -> scope.content = s (the scope is observed)
 
+    Note over Intent: RestrictedPresenter (the guard) passes the slot through untouched
     Note over Home: applyParameters deepest=true, init=true
     Home->>Intent: parentSlot (HomeKeys)
     Intent-->>Home: contentSlot
@@ -370,8 +371,8 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
             viewOf(scope)
             restoreSubjectFromSession()
         }
-        if (deepest) {                       // navigation to the root itself: go on to the home
-            HomeKeys(this, intent).flip()
+        if (deepest) {                       // navigation to the root itself: the restricted area decides (home or login)
+            RestrictedKeys(this, intent).flip()
             return false
         }
         // Publishes the slot in the intent so the first step can use it

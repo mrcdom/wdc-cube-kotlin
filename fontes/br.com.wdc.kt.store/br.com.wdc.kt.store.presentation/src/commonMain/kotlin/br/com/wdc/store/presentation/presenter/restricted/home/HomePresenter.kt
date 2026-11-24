@@ -81,11 +81,6 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
-        if (app.subject == null) {
-            LoginKeys(app, intent).flip() // redirect, with the intent in transit
-            return false
-        }
-
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = HomeKeys(app, intent).parentSlot
         if (initialization || scope.productsPanel == null) {

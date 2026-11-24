@@ -16,7 +16,8 @@ import br.com.wdc.framework.cube.ScopeSlot
  *   don't). To create a name, look only at your own file. `PlaceKeysTest` checks the prefixes are unique.
  * - **The keys declare the place**, in the companion, from the place of the keys they extend
  *   (`val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`), so the class tree is the place tree:
- *   `RootKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it; the places
+ *   `RootKeys` → `OpenKeys` → `LoginKeys`, and `RootKeys` → `RestrictedKeys` → `HomeKeys` → `ProductKeys`. The open
+ *   and restricted places are guards: no scope, no view, only the rule of their area (a user, or none). A name is declared once, in the keys of whoever publishes it; the places
  *   below inherit it to read. [RootPresenter.PLACES] lists them all; `PlaceKeysTest` checks the tree.
  * - **The one name reused on purpose is the composition slot** ([parentSlot]): each level reads the slot it got and
  *   republishes, under the same name, the slot of its content for the level below.
@@ -35,7 +36,7 @@ open class RootKeys protected constructor(app: RootPresenter, intent: CubeIntent
     companion object {
         const val PREFIX = "rt"
 
-        /** The root: the application itself (the page frame); alone, it goes on to the home. */
+        /** The root: the application itself (the page frame); alone, it goes on to the restricted area. */
         val PLACE: CubeTreePlace = CubeTreePlace.ROOT
     }
 

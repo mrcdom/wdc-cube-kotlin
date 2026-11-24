@@ -3,18 +3,18 @@ package br.com.wdc.store.presentation.presenter.restricted.home
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeTreePlace
 import br.com.wdc.store.presentation.presenter.RootPresenter
-import br.com.wdc.store.presentation.presenter.RootKeys
+import br.com.wdc.store.presentation.presenter.restricted.RestrictedKeys
 
-/** The keys of the restricted branch (home and the places inside it). See [RootKeys]. */
+/** The keys of the home and the places inside it. See [RootKeys]. */
 open class HomeKeys protected constructor(app: RootPresenter, intent: CubeIntent?, place: CubeTreePlace) :
-    RootKeys(app, intent, place) {
+    RestrictedKeys(app, intent, place) {
 
     constructor(app: RootPresenter, intent: CubeIntent? = null) : this(app, intent, PLACE)
 
     companion object {
         const val PREFIX = "hm"
 
-        val PLACE: CubeTreePlace = RootKeys.PLACE.child("home", ::HomePresenter)
+        val PLACE: CubeTreePlace = RestrictedKeys.PLACE.child("home", ::HomePresenter)
     }
 
     private object P {

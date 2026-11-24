@@ -224,12 +224,13 @@ A change in a segment repaints its view, or the owner's until the segment has on
 
 ### Keys classes
 
-The names a place reads from and writes to the `CubeIntent` live in **one keys class per place**, named after it (`RootKeys`, `LoginKeys`, `HomeKeys`, `CartKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties, on the framework's `CubeKeys` (the application, the intent and `flip()`). **The keys class declares its place**: presenters never use a literal name, and navigate through the keys of the destination (`CartKeys(app).flip()`). A place with no names of its own still has its keys (`LoginKeys`, `CartKeys`): they declare the place, read its slot and navigate to it, and they are where its names will go.
+The names a place reads from and writes to the `CubeIntent` live in **one keys class per place**, named after it (`RootKeys`, `OpenKeys`, `LoginKeys`, `RestrictedKeys`, `HomeKeys`, `CartKeys`, `ProductKeys`, `ReceiptKeys`), with typed properties, on the framework's `CubeKeys` (the application, the intent and `flip()`). **The keys class declares its place**: presenters never use a literal name, and navigate through the keys of the destination (`CartKeys(app).flip()`). A place with no names of its own still has its keys (`OpenKeys`, `RestrictedKeys`, `LoginKeys`, `CartKeys`): they declare the place, read its slot and navigate to it, and they are where its names will go.
 
-- **Each keys class declares its place**, in its companion, from the place of the keys it extends: `val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`; the root keys use `CubeTreePlace.ROOT` (the application itself, so `LoginKeys` and `HomeKeys` declare `RootKeys.PLACE.child(...)`). So the class tree is the place tree, by construction, and there is no separate table of places to keep in step. The application lists every place an address can name, by hand, in `RootPresenter.PLACES` (a place is created when its keys are first used; the list creates them all before the first navigation) and hands it to `CubeApplication(places)`, whose `flip(address)` resolves an address to its place by name (`placeOf`), or to the root (the root is not in the list: an address that names no place goes to the root, which goes on to the home). `PlaceKeysTest` checks that each place is declared by one keys class, child of the place of the keys it extends, and that they are the places of the list.
+- **Each keys class declares its place**, in its companion, from the place of the keys it extends: `val PLACE = HomeKeys.PLACE.child("product", ::ProductPresenter)`; the root keys use `CubeTreePlace.ROOT` (the application itself, so `OpenKeys` and `RestrictedKeys` declare `RootKeys.PLACE.child(...)`, and `LoginKeys` and `HomeKeys` hang from them). So the class tree is the place tree, by construction, and there is no separate table of places to keep in step. The application lists every place an address can name, by hand, in `RootPresenter.PLACES` (a place is created when its keys are first used; the list creates them all before the first navigation) and hands it to `CubeApplication(places)`, whose `flip(address)` resolves an address to its place by name (`placeOf`), or to the root (the root is not in the list: an address that names no place goes to the root, which goes on to the restricted area, and from there to the home or the login). `PlaceKeysTest` checks that each place is declared by one keys class, child of the place of the keys it extends, and that they are the places of the list.
 
 - **A two-letter prefix per class, unique in the application.** Every name the class declares starts with it (`pr-id`), in a private table: `P` for parameters, which go in the address, and `A` for attributes, which don't. To create a name, look only at your own file. `PlaceKeysTest` checks that the prefixes are unique.
-- **Inheritance is the place tree:** `RootKeys` → `HomeKeys` → `ProductKeys`. A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.
+- **Inheritance is the place tree:** `RootKeys` → `OpenKeys` → `LoginKeys`, and `RootKeys` → `RestrictedKeys` → `HomeKeys` → `ProductKeys` (and `CartKeys`, `ReceiptKeys`). A name is declared once, in the keys of whoever publishes it, and the places below inherit it to read.
+- **Guard places.** `OpenKeys` (`op`, place `open`) and `RestrictedKeys` (`rs`, place `restricted`) are the two areas of the WDC Store, as in the Java version. Their presenters (`OpenPresenter`, `RestrictedPresenter`) have no scope and no view: they only decide, on every navigation that goes through them, whether the composition goes on, and the slot of the root passes through them untouched. `RestrictedPresenter` sends a user without a subject to the open area; `OpenPresenter` sends a signed-in user to the restricted area. Each, when it is the deepest step (a guard has no screen of its own), goes on to its area's screen: `HomeKeys` and `LoginKeys`. This is the only access control of the presentation: every restricted screen is below `restricted`. The screens' addresses did not change (`public/login`, `home`, …).
 - **The one name reused on purpose is the composition slot, `parentSlot`.** Each level reads the slot it got and republishes, under the same name, the slot of its content for the level below. A reused presenter reads it on every `applyParameters`, because the parent may now offer another slot.
 - **Validation is in the getter, which never throws.** The address is input from outside, so a getter returns a usable value or `null`: an id must be positive. A setter given the default or `null` removes the name from the address.
 - **The address follows the state through `publishParameters`.** Each presenter publishes what it shows — the product publishes `pr-id`, the home publishes the purchases page (`hm-page`, left out when it is the first page) — and the address is rebuilt from them at the end of every navigation. A change that is not a navigation, such as turning a page, calls `app.updateHistory()` so the address follows it; `applyParameters` reads the value back from the address.
@@ -310,7 +311,7 @@ abstract class CubeApplication {
 }
 ```
 
-**The application is the root of the place tree** (`CubeTreePlace.ROOT`) and takes part in every navigation, before the first step: `execute()` calls its `applyParameters`, in the same redirect-marked context as a presenter's (a navigation requested from in there is a redirect). `initialization` is `true` only the first time; `deepest` is `true` when there are no steps, that is, a flip to the root itself (`app.flip(CubeTreePlace.ROOT)` runs only this); `false` stops the navigation at the root. On rollback the application is restored first, with the source intent (`false, false`), then the presenters. The WDC Store's `RootPresenter` uses it to own the page frame — it is the presenter of the root view: it creates the root view (`viewOf(scope)`) and restores the session on initialization, goes on to the home when the root itself is the target, and otherwise offers the slot of the first level (`RootKeys(this, intent).parentSlot`).
+**The application is the root of the place tree** (`CubeTreePlace.ROOT`) and takes part in every navigation, before the first step: `execute()` calls its `applyParameters`, in the same redirect-marked context as a presenter's (a navigation requested from in there is a redirect). `initialization` is `true` only the first time; `deepest` is `true` when there are no steps, that is, a flip to the root itself (`app.flip(CubeTreePlace.ROOT)` runs only this); `false` stops the navigation at the root. On rollback the application is restored first, with the source intent (`false, false`), then the presenters. The WDC Store's `RootPresenter` uses it to own the page frame — it is the presenter of the root view: it creates the root view (`viewOf(scope)`) and restores the session on initialization, goes on to the restricted area (`RestrictedKeys`, which then picks the home or the login) when the root itself is the target, and otherwise offers the slot of the first level (`RootKeys(this, intent).parentSlot`).
 
 ### CubeNavigation
 
@@ -358,13 +359,14 @@ classDiagram
 Navigation starts by building the route through a fluent API:
 
 ```kotlin
-app.navigate<StoreApp>()
-    .step(HomeKeys.PLACE)       // id=1
-    .step(ProductKeys.PLACE)    // id=3
+app.navigate<RootPresenter>()
+    .step(RestrictedKeys.PLACE) // id=2
+    .step(HomeKeys.PLACE)       // id=3
+    .step(ProductKeys.PLACE)    // id=5
     .execute(intent)
 ```
 
-The `step()` calls register the sequence of Places that make up the hierarchical route, from the top level to the leaf; `app.flip(place)` does this with `place.path`. The root (`CubeTreePlace.ROOT`, the application) is never a step: the application's `applyParameters` runs before the first one.
+The `step()` calls register the sequence of Places that make up the hierarchical route, from the top level to the leaf; `app.flip(place)` does this with `place.path`. The ids in this document are the WDC Store's: places get ids in creation order, and `RootPresenter.PLACES` creates them in this order — `open` 0, `public/login` 1, `restricted` 2, `home` 3, `cart` 4, `product` 5, `receipt` 6. The root (`CubeTreePlace.ROOT`, the application) is never a step: the application's `applyParameters` runs before the first one.
 
 ### 2. Executing the Steps
 
@@ -420,23 +422,26 @@ flowchart TD
 
 ### The Problem
 
-During `applyParameters()`, a presenter may decide the user must be redirected to another screen. Classic example:
+During `applyParameters()`, a presenter may decide the user must be redirected to another screen. Classic example: the guard of the restricted area, when there is no signed-in user:
 
 ```kotlin
-class HomePresenter(app: StoreApp) : AbstractCubePresenter<StoreApp>(app) {
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+class RestrictedPresenter(override val app: RootPresenter) : CubePresenter {
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (app.subject == null) {
-            // Unauthenticated user — redirect to login
-            LoginKeys(app, intent).flip()  // ← calls app.navigate() internally
+            // Unauthenticated user — redirect to the open area, with the intent in transit
+            OpenKeys(app, intent).flip()  // ← calls app.navigate() internally
             return false
         }
-        // ...
+        if (deepest) {
+            HomeKeys(app, intent).flip()  // a guard has no screen of its own: go on to the home
+            return false
+        }
         return true
     }
 }
 ```
 
-The `LoginKeys(app, intent).flip()` call triggers `app.navigate()` **from inside** the execution of another navigation. This creates a **recursion**: the current navigation must be interrupted and a new one must take over, without losing the presenters already created.
+The `OpenKeys(app, intent).flip()` call triggers `app.navigate()` **from inside** the execution of another navigation. This creates a **recursion**: the current navigation must be interrupted and a new one must take over, without losing the presenters already created. `OpenPresenter` does the same on its side: with no user, and as the deepest step, it redirects again, to `LoginKeys`.
 
 ### The Solution — Presenter Migration
 
@@ -487,17 +492,21 @@ route, which was never visited.
 
 ### Detailed Flow of an Interruption
 
-Consider the scenario: navigate to `HOME → PRODUCT`, but `HOME` redirects to `LOGIN`. The application (the root) takes part in both, before the first step.
+Consider the scenario: an address of a product with no signed-in user, `RESTRICTED → HOME → PRODUCT`. `RESTRICTED` redirects to `OPEN`, and `OPEN`, the deepest step of that navigation, redirects to `LOGIN` — two chained interruptions. The application (the root) takes part in each, before the first step.
 
 ```mermaid
 sequenceDiagram
-    box rgb(220,235,250) Navigation A: HOME → PRODUCT
+    box rgb(220,235,250) Navigation A: RESTRICTED → HOME → PRODUCT
         participant NavA as Nav A (execute)
     end
     participant App as RootPresenter (root)
-    participant Home as HomePresenter
-    box rgb(235,250,220) Navigation B: LOGIN
+    participant Rs as RestrictedPresenter
+    box rgb(235,250,220) Navigation B: OPEN
         participant NavB as Nav B (execute)
+    end
+    participant Op as OpenPresenter
+    box rgb(250,240,220) Navigation C: OPEN → LOGIN
+        participant NavC as Nav C (execute)
     end
     participant Login as LoginPresenter
 
@@ -505,37 +514,53 @@ sequenceDiagram
     NavA->>App: applyParameters(init=false, deepest=false)
     App-->>NavA: true ✓ (offers the content slot)
 
-    Note over NavA: Step HOME (id=1) — does not exist, create
-    NavA->>NavA: newPresenterMap[1] = new HomePresenter
-    NavA->>Home: applyParameters(init=true)
+    Note over NavA: Step RESTRICTED (id=2) — does not exist, create
+    NavA->>NavA: newPresenterMap[2] = new RestrictedPresenter
+    NavA->>Rs: applyParameters(init=true, deepest=false)
 
-    Note over Home: subject == null → redirect!
-    Home->>App: navigate() — detects Nav A in progress
+    Note over Rs: subject == null → redirect!
+    Rs->>App: OpenKeys(app, intent).flip() — Nav A in progress
     App->>NavA: interrupt() → notInterrupted = false
     App->>NavB: creates Nav B (reflowCount = 2)
     App->>NavB: newPresenterMap.putAll(NavA.newPresenterMap)
-    Note over NavB: Inherits {1: HomePresenter}
+    Note over NavB: Inherits {2: Restricted}
 
-    Note over NavB: The application first
     NavB->>App: applyParameters(init=false, deepest=false)
     App-->>NavB: true ✓
 
-    Note over NavB: Step LOGIN (id=0) — does not exist, create
-    NavB->>NavB: newPresenterMap[0] = new LoginPresenter
-    NavB->>Login: applyParameters(init=true)
-    Login-->>NavB: true ✓
+    Note over NavB: Step OPEN (id=0) — does not exist, create
+    NavB->>NavB: newPresenterMap[0] = new OpenPresenter
+    NavB->>Op: applyParameters(init=true, deepest=true)
 
-    Note over NavB: commit()
-    NavB->>NavB: finalMap = {0: Login}
-    NavB->>NavB: Remaining: newPresenterMap = {1: Home}
-    NavB->>Home: release() ← inherited, not accepted
-    NavB->>App: presenterMap = finalMap
-    NavB->>App: updateHistory()
+    Note over Op: deepest → go on to the login
+    Op->>App: LoginKeys(app, intent).flip() — Nav B in progress
+    App->>NavB: interrupt()
+    App->>NavC: creates Nav C (reflowCount = 3)
+    Note over NavC: Inherits {2: Restricted, 0: Open}
 
+    NavC->>App: applyParameters(init=false, deepest=false)
+    App-->>NavC: true ✓
+    Note over NavC: Step OPEN (id=0) — found in newPresenterMap
+    NavC->>Op: applyParameters(init=false, deepest=false)
+    Op-->>NavC: true ✓
+    Note over NavC: Step LOGIN (id=1) — does not exist, create
+    NavC->>Login: applyParameters(init=true, deepest=true)
+    Login-->>NavC: true ✓
+
+    Note over NavC: commit()
+    NavC->>NavC: finalMap = {0: Open, 1: Login}
+    NavC->>NavC: Remaining: newPresenterMap = {2: Restricted}
+    NavC->>Rs: release() ← inherited, not accepted
+    NavC->>App: presenterMap = finalMap
+    NavC->>App: updateHistory()
+
+    Note over NavB: Return from the redirect
+    Op-->>NavB: false
+    Note over NavB: notInterrupted == false → STOP
     Note over NavA: Return from the redirect
-    Home-->>NavA: false
+    Rs-->>NavA: false
     Note over NavA: notInterrupted == false → STOP
-    Note over NavA: No commit or rollback (Nav B already finished)
+    Note over NavA: No commit or rollback (Nav C already finished)
 ```
 
 ### Chained Interruptions
@@ -585,7 +610,7 @@ private fun releasePresenters(presenterMap: MutableMap<Int, CubePresenter>) {
 
 This guarantees that children (leaves, higher IDs) are released before parents (root, lower IDs), respecting the dependency hierarchy. A child presenter may depend on the parent's resources, so the parent must be the last to be released.
 
-**Example:** If the active route was `HOME(1) → PRODUCT(3)` and a new navigation goes to `LOGIN(0)`, the `HOME(1)` and `PRODUCT(3)` presenters must be released. The order is: `PRODUCT(3)` first, then `HOME(1)`.
+**Example:** If the active route was `RESTRICTED(2) → HOME(3) → PRODUCT(5)` and a new navigation goes to `OPEN(0) → LOGIN(1)` (the user signed out), the `RESTRICTED(2)`, `HOME(3)` and `PRODUCT(5)` presenters must be released. The order is: `PRODUCT(5)` first, then `HOME(3)`, then `RESTRICTED(2)`.
 
 ---
 
@@ -612,104 +637,125 @@ This 10-level limit is enough for legitimate chained-redirect scenarios, but it 
 
 ### Normal Navigation with Reuse
 
-Initial state: `presenterMap = {1: HomePresenter}`
-Navigation: `HOME(1) → PRODUCT(3)`
+Initial state: `presenterMap = {2: RestrictedPresenter, 3: HomePresenter}`
+Navigation: `RESTRICTED(2) → HOME(3) → PRODUCT(5)`
 
 ```mermaid
 sequenceDiagram
     participant Nav as CubeNavigation
     participant App as RootPresenter (root)
-    participant Home as Home (id=1)
-    participant Prod as Product (id=3)
+    participant Rs as Restricted (id=2)
+    participant Home as Home (id=3)
+    participant Prod as Product (id=5)
 
-    Note over Nav: Initial state: {1: Home}
+    Note over Nav: Initial state: {2: Restricted, 3: Home}
 
     Nav->>App: applyParameters(init=false, deepest=false)
     App-->>Nav: true ✓
 
+    Nav->>Rs: applyParameters() — reused
+    Rs-->>Nav: true ✓ (there is a subject)
+
     Nav->>Home: applyParameters() — reused
     Home-->>Nav: true ✓
 
-    Note over Nav: Product(3) does not exist → create
+    Note over Nav: Product(5) does not exist → create
     Nav->>Prod: applyParameters(init=true, deepest=true)
     Prod-->>Nav: true ✓
 
     Note over Nav: commit()
-    Nav->>App: presenterMap = {1: Home, 3: Product}
+    Nav->>App: presenterMap = {2: Restricted, 3: Home, 5: Product}
     Note over Nav: Nothing to release (all accepted)
     Nav->>App: updateHistory()
 ```
 
 ### Redirect during Navigation
 
-Initial state: `presenterMap = {0: LoginPresenter}`
-Navigation A: `HOME(1)`, but HOME redirects to `LOGIN(0)`
+Initial state: `presenterMap = {0: OpenPresenter, 1: LoginPresenter}`
+Navigation A: `RESTRICTED(2) → HOME(3)`, but RESTRICTED redirects to `OPEN(0)`, which, as the deepest step, redirects to `OPEN(0) → LOGIN(1)`
 
 ```mermaid
 sequenceDiagram
     participant NavA as Nav A
     participant NavB as Nav B
+    participant NavC as Nav C
     participant App as RootPresenter (root)
-    participant Login as Login (id=0)
-    participant Home as Home (id=1)
+    participant Op as Open (id=0)
+    participant Login as Login (id=1)
+    participant Rs as Restricted (id=2)
 
-    Note over NavA: Initial state: {0: Login}
+    Note over NavA: Initial state: {0: Open, 1: Login}
 
     NavA->>App: applyParameters(init=false, deepest=false)
     App-->>NavA: true ✓
 
-    Note over NavA: Home(1) does not exist → create
-    NavA->>Home: applyParameters(init=true)
-    Note over Home: subject == null → redirect!
-    Home->>App: navigate() → interruption
+    Note over NavA: Restricted(2) does not exist → create
+    NavA->>Rs: applyParameters(init=true)
+    Note over Rs: subject == null → redirect!
+    Rs->>App: navigate() → interruption
     App->>NavA: interrupt()
-    App->>NavB: creates Nav B + migrates {1: Home}
+    App->>NavB: creates Nav B + migrates {2: Restricted}
 
     NavB->>App: applyParameters(init=false, deepest=false)
     App-->>NavB: true ✓
-    NavB->>Login: applyParameters() — reused
-    Login-->>NavB: true ✓
+    NavB->>Op: applyParameters(deepest=true) — reused
+    Note over Op: deepest → redirect to the login
+    Op->>App: navigate() → interruption
+    App->>NavB: interrupt()
+    App->>NavC: creates Nav C + migrates {2: Restricted}
 
-    Note over NavB: commit()
-    NavB->>NavB: finalMap = {0: Login}
-    NavB->>Home: release() ← inherited, not accepted ✓
-    NavB->>App: presenterMap = {0: Login}
-    NavB->>App: updateHistory()
+    NavC->>App: applyParameters(init=false, deepest=false)
+    App-->>NavC: true ✓
+    NavC->>Op: applyParameters() — reused
+    Op-->>NavC: true ✓
+    NavC->>Login: applyParameters(deepest=true) — reused
+    Login-->>NavC: true ✓
 
+    Note over NavC: commit()
+    NavC->>NavC: finalMap = {0: Open, 1: Login}
+    NavC->>Rs: release() ← inherited, not accepted ✓
+    NavC->>App: presenterMap = {0: Open, 1: Login}
+    NavC->>App: updateHistory()
+
+    Note over NavB: notInterrupted=false → STOP
     Note over NavA: notInterrupted=false → STOP
 ```
 
 ### Rollback after an Exception
 
-Initial state: `presenterMap = {1: HomePresenter}`
-Navigation: `HOME(1) → CART(2)`, but CART throws an exception
+Initial state: `presenterMap = {2: RestrictedPresenter, 3: HomePresenter}`
+Navigation: `RESTRICTED(2) → HOME(3) → CART(4)`, but CART throws an exception
 
 ```mermaid
 sequenceDiagram
     participant Nav as CubeNavigation
     participant App as RootPresenter (root)
-    participant Home as Home (id=1)
-    participant Cart as Cart (id=2)
+    participant Rs as Restricted (id=2)
+    participant Home as Home (id=3)
+    participant Cart as Cart (id=4)
 
-    Note over Nav: Initial state: {1: Home}
+    Note over Nav: Initial state: {2: Restricted, 3: Home}
 
     Nav->>App: applyParameters(init=false, deepest=false)
     App-->>Nav: true ✓
+    Nav->>Rs: applyParameters() — reused
+    Rs-->>Nav: true ✓
     Nav->>Home: applyParameters() — reused
     Home-->>Nav: true ✓
 
-    Note over Nav: Cart(2) does not exist → create
+    Note over Nav: Cart(4) does not exist → create
     Nav->>Cart: applyParameters(init=true, deepest=true)
     Cart--xNav: RuntimeException!
 
     Note over Nav: rollback()
     Nav->>App: applyParameters(sourceIntent, false, false) — restore
+    Nav->>Rs: applyParameters(sourceIntent) — restore
     Nav->>Home: applyParameters(sourceIntent) — restore
     Nav->>Cart: release() ✓
     Nav->>App: updateHistory()
     Nav->>App: navigation = null
     Note over Nav: RuntimeException rethrown
-    Note over App: presenterMap unchanged = {1: Home}
+    Note over App: presenterMap unchanged = {2: Restricted, 3: Home}
 ```
 
 ---

@@ -332,25 +332,29 @@ class LoginScope : Scope() {
 
 The view calls the action inside its own launch: `safeCall { scope.onEnter(null, null) }`. A piece of the screen without navigation of its own — the Home's products and purchases panels, each cart row — is a **segment**: a smaller scope in a field of the owner's, with a view of its own and no presenter ([details](architecture-cube.md#segments)).
 
-Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps. `ROOT` (`CubeTreePlace.ROOT`) is the application itself: it is not a step, but `RootPresenter.applyParameters` runs before the first step of every navigation (a navigation to the root alone goes on to the home):
+Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps. `ROOT` (`CubeTreePlace.ROOT`) is the application itself: it is not a step, but `RootPresenter.applyParameters` runs before the first step of every navigation (a navigation to the root alone goes on to the restricted area). The first level holds two **guard places**, as in the Java version: `OPEN` (`OpenPresenter`) and `RESTRICTED` (`RestrictedPresenter`), with no scope and no view. `RESTRICTED` sends a user without a subject to `OPEN`; `OPEN` sends a signed-in user to `RESTRICTED`; each, as the deepest step, goes on to its area's screen (the home, the login). The screens' addresses are still `public/login`, `home`, …:
 
 | Route                     | Steps                            |
 |---------------------------|----------------------------------|
-| Login                     | `ROOT → LOGIN`                   |
-| Home (product list)       | `ROOT → HOME`                    |
-| Product detail            | `ROOT → HOME → PRODUCT`          |
-| Cart                      | `ROOT → HOME → CART`             |
-| Purchase receipt          | `ROOT → HOME → RECEIPT`          |
+| Login                     | `ROOT → OPEN → LOGIN`                   |
+| Home (product list)       | `ROOT → RESTRICTED → HOME`              |
+| Product detail            | `ROOT → RESTRICTED → HOME → PRODUCT`    |
+| Cart                      | `ROOT → RESTRICTED → HOME → CART`       |
+| Purchase receipt          | `ROOT → RESTRICTED → HOME → RECEIPT`    |
 
 ```mermaid
 graph TD
-    ROOT --> LOGIN
-    ROOT --> HOME
+    ROOT --> OPEN
+    ROOT --> RESTRICTED
+    OPEN --> LOGIN
+    RESTRICTED --> HOME
     HOME --> CART
     HOME --> PRODUCT
     HOME --> RECEIPT
 
     style ROOT fill:#4a90d9,color:#fff
+    style OPEN fill:#9e9e9e,color:#fff
+    style RESTRICTED fill:#9e9e9e,color:#fff
     style LOGIN fill:#7cb342,color:#fff
     style HOME fill:#7cb342,color:#fff
     style CART fill:#f9a825,color:#000
@@ -370,6 +374,7 @@ sequenceDiagram
     Note over Root: applyParameters(deepest=false)
     Root->>Intent: parentSlot = contentSlot (RootKeys)
 
+    Note over Intent: RestrictedPresenter (the guard) passes the slot through untouched
     Note over Home: applyParameters(deepest=true)
     Home->>Intent: parentSlot (HomeKeys)
     Intent-->>Home: contentSlot
@@ -508,7 +513,8 @@ sequenceDiagram
     participant Platform as Platform Config
     participant App as RootPresenter
     participant Keys as RootKeys
-    participant Home as HomePresenter
+    participant Rs as RestrictedPresenter
+    participant Op as OpenPresenter
     participant Compose as Compose Runtime
 
     Main->>Platform: initializePlatform(baseUrl)
@@ -519,9 +525,11 @@ sequenceDiagram
     Main->>Keys: RootKeys(app).flip()
     Keys->>App: app.flip(CubeTreePlace.ROOT, intent) — no steps
     App->>App: applyParameters(init=true, deepest=true):<br/>viewOf(scope) creates the root view, restores the session
-    App->>Home: HomeKeys(app, intent).flip() (redirect)
-    Home->>Home: Checks subject
-    Home->>Keys: LoginKeys(app, intent).flip() when there is none
+    App->>Rs: RestrictedKeys(app, intent).flip() (redirect)
+    Rs->>Rs: Checks subject
+    Rs->>Keys: HomeKeys(app, intent).flip() when there is one
+    Rs->>Op: OpenKeys(app, intent).flip() when there is none
+    Op->>Keys: LoginKeys(app, intent).flip() (deepest step)
 
     Main->>Compose: Renders (app.view as? RootView)
     Compose->>App: rootView.Render()
@@ -563,14 +571,15 @@ sequenceDiagram
     LP->>LP: app.subject = subject
 
     LP->>Keys: HomeKeys(app).flip()
-    Keys->>Nav: navigate().step(HOME).execute()
+    Keys->>Nav: navigate().step(RESTRICTED).step(HOME).execute()
 
     Nav->>Nav: app.applyParameters() — offers the content slot
+    Nav->>Nav: RestrictedPresenter — there is a subject: goes on
     Nav->>HP: applyParameters(init=true, deepest=true)
     Note over HP: Creates CartManager, loads the products<br/>(its panels are segments of HomeScope)
     HP->>HP: Hands its scope to the Root slot
 
-    Nav->>Nav: release LoginPresenter
+    Nav->>Nav: release LoginPresenter, then OpenPresenter
     Nav->>Nav: updateHistory()
     Note over HV: Next paint: app.commitComputedState(),<br/>then app.viewOf(HomeScope) = HomeView
 

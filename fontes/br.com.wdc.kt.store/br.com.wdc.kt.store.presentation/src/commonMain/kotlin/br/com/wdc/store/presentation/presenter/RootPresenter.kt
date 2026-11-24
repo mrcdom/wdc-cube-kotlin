@@ -10,7 +10,9 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.store.domain.security.AuthenticationService
+import br.com.wdc.store.presentation.presenter.open.OpenKeys
 import br.com.wdc.store.presentation.presenter.open.login.LoginKeys
+import br.com.wdc.store.presentation.presenter.restricted.RestrictedKeys
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductKeys
@@ -85,7 +87,7 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     /**
      * The application's part in every navigation: on the first one, creates the root view and restores the session;
-     * the root alone shows nothing, so it goes on to the home, with the intent in transit; otherwise, offers the slot
+     * the root alone shows nothing, so it goes on to the restricted area, with the intent in transit; otherwise, offers the slot
      * of the first level.
      */
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
@@ -95,7 +97,8 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
         }
 
         if (deepest) {
-            HomeKeys(this, intent).flip()
+            // the root alone shows nothing: the restricted area decides (the home, or the login without a user)
+            RestrictedKeys(this, intent).flip()
             return false
         }
         RootKeys(this, intent).parentSlot = contentSlot
@@ -118,7 +121,9 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
          * an address that names no place goes to the root, which goes on to the home.
          */
         val PLACES: List<CubeTreePlace> = listOf(
+            OpenKeys.PLACE,
             LoginKeys.PLACE,
+            RestrictedKeys.PLACE,
             HomeKeys.PLACE,
             CartKeys.PLACE,
             ProductKeys.PLACE,

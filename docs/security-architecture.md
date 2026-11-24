@@ -277,7 +277,7 @@ In the remote React view there is no policy: the presenter is server code, and i
 
 The remote channel itself — the HMAC-signed session id, the RSA handshake that sets up an AES-256-GCM key for sensitive values, signed navigation — is described in [React architecture — Security](architecture-react.md#security).
 
-Access to the restricted screens goes through the Home: `HomePresenter.applyParameters` redirects to the login when there is no signed-in subject.
+Access to the restricted screens goes through a guard place, as in the Java version: every restricted screen is below `restricted` (`RestrictedKeys`), whose `RestrictedPresenter` — no scope, no view — redirects to the open area (`OpenKeys`, and from there to the login) when there is no signed-in subject. Its counterpart, `OpenPresenter`, sends a signed-in user back to the restricted area.
 
 ---
 
