@@ -388,7 +388,7 @@ stateDiagram-v2
 - **Creation**: when `/index.html` is accessed, session cookies are set
 - **Lifetime**: 3 minutes (`DEFAULT_TIME_SPAN`) — extended on every message, including the keep-alive event (every 15 s)
 - **Reconnection**: if the WebSocket drops, the client reconnects and finds the same session (if it has not expired)
-- **Cleanup**: `ReactRootPresenter.removeExpireds()` releases expired sessions without an active WebSocket, but nothing schedules it at present: in practice a session ends when its WebSocket closes unauthenticated
+- **Cleanup**: a session ends when its WebSocket closes unauthenticated; an authenticated one lives on without a socket until its life runs out. `ReactRootPresenter.startCleanup`, started by the backend, runs `removeExpireds()` every 30 seconds: an application past its life with no socket is released, one with a socket gets more life.
 - **Logout/Disconnection**: an unauthenticated session is released immediately when the WebSocket closes
 
 ---
