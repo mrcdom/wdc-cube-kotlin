@@ -11,16 +11,21 @@ Engine of the **Cube MVP** pattern — state management, hierarchical navigation
 | `CubePlace` | Navigation destination with ID, name and presenter factory |
 | `CubeTreePlace` | A place in a tree (`child`), hanging from `ROOT` — the application itself, with no presenter and not a step of any path: the path of a place is the navigation that reaches it; ids grow from the top to the leaves |
 | `CubeKeys` | Base of an application's keys classes, one per place: the application, the intent (a new one from the current state when none is given) and `flip()`, which navigates to the place |
-| `CubePresenter` | Lifecycle: `applyParameters` → `publishParameters` → `commitComputedState` → `release` |
-| `CubeIntent` | Container of parameters (serializable) and attributes (ephemeral, such as `ViewSlot`) |
-| `CubeViewSlot` | Parent-child composition mechanism between views |
-| `CubeView` | Rendering interface (Compose, React, etc.) |
-| `Scope` | What a presenter shows: the values its view paints, as observed fields (`var x by field(initial)`; a change asks for a repaint once the presenter binds it with `bind(...)`), written as JSON for views that receive it serialized (`write`, `toJson`) |
-| `CubeApplication` | Global state — map of active presenters, the `navigate()` entry point and `flip(place, intent)`, which steps through the path of a `CubeTreePlace`; the root of the tree: its `applyParameters(intent, initialization, deepest)` runs in every navigation before the first step (and first on rollback); built with the places an address can name, it resolves an address to its place (`placeOf`, `flip(address)`) |
+| `CubePresenter` | Lifecycle: `applyParameters` → `publishParameters` → `release`; `commitComputedState` (from `PresenterBase`) once per paint cycle |
+| `AbstractPresenter` | Base of every presenter (`AbstractCubePresenter` extends it): binds the scope (`bind`), declares segments (`segment`, `detach`) and binds the guarded actions (`action`, `actionOf`, `actionOf2`, optionally with an event code and `target`; `onEvent` for a code handled by hand). An unhandled failure goes to `CubeApplication.alertUnexpectedError`; `updateHistory()` runs after every action |
+| `CubeIntent` | Container of parameters (serializable) and attributes (ephemeral, such as the `ScopeSlot`s: `setScopeSlot`, `getScopeSlot`) |
+| `ScopeSlot` | Parent-child composition: a presenter hands its scope to the parent (`setScope`), which keeps it in a field of its own scope |
+| `CubeView` | Rendering interface (Compose, React, etc.): `instanceId`, `update`, `release` |
+| `ScopeViews` | The view layer's catalog: which view draws each kind of scope (`register<XxxScope> { … }`, `fallback`); each entry point assigns it to `app.scopeViews`, and `app.viewOf(scope)` creates the view once |
+| `Scope` | What a presenter shows: the values its view paints, as observed fields (`var x by field(initial)`; a change asks for a repaint once the presenter binds it with `bind(...)`), and its actions. Writes itself as JSON field by field (`write`, `toJson`): a nested scope as `"<name>ViewId"`, a list declared with `scopes()` as `"<name>ViewIds"`, `field(initial, sent = false)` left out. `dispatch(code, formData)` runs the action bound to an event code; `onSync`/`sync` copy what a remote view typed |
+| `ScopeValue` | A struct a scope field holds that writes itself as one JSON value |
+| `Action`, `ActionOf`, `ActionOf2` | An entry point of a presenter kept in a field of its scope, with zero, one or two values (`suspend operator fun invoke`); the view calls `scope.onX(...)` |
+| `FormParam` | How an action bound with an event code reads one value from a remote view's form data (`FormParam.long/int/string(name)`) |
+| `CubeApplication` | Global state — map of active presenters, the view catalog and the views alive (`scopeViews`, `viewOf`, `viewOrNull`, `releaseView`), `commitComputedState()` (every live presenter's, called by the view layer once per paint cycle), `alertUnexpectedError`, the `navigate()` entry point and `flip(place, intent)`, which steps through the path of a `CubeTreePlace`; the root of the tree: its `applyParameters(intent, initialization, deepest)` runs in every navigation before the first step (and first on rollback); built with the places an address can name, it resolves an address to its place (`placeOf`, `flip(address)`) |
 | `CubeNavigation` | Transactional engine — orchestrates execute → commit/rollback with support for interruptions |
 
 ## Documentation
 
 - [Cube Architecture — Navigation Mechanism](../../../docs/architecture-cube.md) — detailed explanation of the navigation cycle, interruptions, presenter migration, commit, rollback and framework guarantees
-- [Cube + Compose Architecture](../../../docs/architecture-cube-compose.md) — integration with Compose Multiplatform: ComposeCubeView, revision counter, safeCall, slots, view factories
+- [Cube + Compose Architecture](../../../docs/architecture-cube-compose.md) — integration with Compose Multiplatform: ComposeCubeView, revision counter, safeCall, slots, the view catalog
 - [Overall Project Architecture](../../../docs/architecture.md) — overview of the architecture, layers, modules and patterns

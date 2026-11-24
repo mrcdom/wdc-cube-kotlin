@@ -6,12 +6,14 @@ import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootScope
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
+import br.com.wdc.shopping.test.mock.viewimpl.CartItemViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.CartViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.LoginViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.ProductViewMock
@@ -30,6 +32,7 @@ class RootPresenterMock(private val storage: SessionStorage = JvmSessionStorage(
             .register<LoginScope> { LoginViewMock(this, it) }
             .register<HomeScope> { RestrictedViewMock(this, it) }
             .register<CartScope> { CartViewMock(this, it) }
+            .register<CartItemScope> { CartItemViewMock(this, it) }
             .register<ProductScope> { ProductViewMock(this, it) }
             .register<ReceiptScope> { ReceiptViewMock(this, it) }
             .register<ProductsPanelScope> { ProductsPanelViewMock(it) }

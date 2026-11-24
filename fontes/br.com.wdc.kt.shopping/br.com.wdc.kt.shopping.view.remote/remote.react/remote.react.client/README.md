@@ -62,7 +62,7 @@ graph TD
 1. **Bootstrap** (`index.tsx`): Creates the MUI theme, registers all views and renders the `BrowserView`
 2. **Connection** (`BrowserView`): On mount, calls `app.onStart()`, which opens the WebSocket
 3. **Receiving scopes**: The backend sends the serialized scopes (`scopes`) over the WebSocket → `Application.applyScopes()` updates the `ViewBinding`s → React re-renders
-4. **Sending events**: User actions call `app.submit(vsid, eventId)`, which sends the event to the matching presenter on the backend over the WebSocket
+4. **Sending events**: User actions call `app.submit(vsid, eventId)` (values first with `app.setFormField(vsid, 'p.name', value)`), which sends the event over the WebSocket; on the backend the view's scope runs the action the presenter bound with that code
 
 ### View Pattern
 
@@ -82,7 +82,7 @@ export default BaseViewClass.FC(LoginViewClass, 'c677cda52d14')
 - The **scope** (`scope`) comes from the backend (presenter); it is not managed locally
 - **Events** are sent to the backend via `app.submit(vsid, eventId)`
 - **Form data** is attached via `app.setFormField(vsid, field, value)` before the submit
-- Each view is identified by a unique **VIEW_ID** (hash) that maps to the presenter on the backend
+- Each view is identified by a unique **VIEW_ID** (hash) that maps to a kind of scope on the backend (the skeleton's view catalog). A list of child views arrives as `<name>ViewIds` (the cart rows, `rowsViewIds`, each painted by `CartItemView`)
 
 ### WebSocket Communication
 

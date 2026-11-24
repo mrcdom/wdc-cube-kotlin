@@ -283,18 +283,23 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
     val scope = bind(LoginScope()) // a field change repaints the view: no update() calls
     private val loginService = LoginService()
+    private var ownerSlot: ScopeSlot? = null
 
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
+    init {
+        // the action is a field of the scope, bound once and guarded (an unhandled failure → "Unexpected error: …")
+        scope.onEnter = actionOf2 { userName: String?, password: String? -> enter(userName, password) }
+    }
+
+    override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         // read on every call: a reused presenter goes where its parent puts it now
         ownerSlot = LoginKeys(app, intent).parentSlot
-        if (initialization) {
-            view = createView?.invoke(this)
-        }
-        ownerSlot?.setView(view!!)
+        ownerSlot?.setScope(scope) // the presenter shows its scope; it never creates a view
         return false
     }
 
-    fun onEnter() {
+    private suspend fun enter(userName: String?, password: String?) {
+        if (userName != null) scope.userName = userName
+        if (password != null) scope.password = password
         scope.loading = true
 
         val subject = loginService.fetchSubject(scope.userName ?: "", scope.password ?: "")
@@ -310,19 +315,22 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 }
 ```
 
-The **scope** is what a presenter shows: a simple mutable object holding the data its view paints. Its fields are observed: assigning one a different value asks for a repaint; it also writes itself as JSON for the remote view ([details](architecture-cube.md#scope)):
+The **scope** is what a presenter shows: a simple mutable object holding the data its view paints, and the actions the view calls. Its fields are observed: assigning one a different value asks for a repaint; it also writes itself as JSON for the remote view, field by field, with no code per scope ([details](architecture-cube.md#scope)):
 
 ```kotlin
 class LoginScope : Scope() {
     var userName: String? by field(null)
-    var password: String? by field(null)
+    var password: String? by field(null, sent = false) // never sent to a remote view
     var errorCode: Int by field(0)
     var errorMessage: String? by field(null)
     var loading: Boolean by field(false)
 
-    override fun write(instanceId: String, json: ExtensibleObjectOutput) { /* the fields the remote view needs */ }
+    /** Signs in with the given user name and password; `null` keeps what the view already put in the scope. */
+    var onEnter: ActionOf2<String?, String?> = ActionOf2.noop()
 }
 ```
+
+The view calls the action inside its own launch: `safeCall { scope.onEnter(null, null) }`. A piece of the screen without navigation of its own — the Home's products and purchases panels, each cart row — is a **segment**: a smaller scope in a field of the owner's, with a view of its own and no presenter ([details](architecture-cube.md#segments)).
 
 Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps. `ROOT` (`CubeTreePlace.ROOT`) is the application itself: it is not a step, but `RootPresenter.applyParameters` runs before the first step of every navigation (a navigation to the root alone goes on to the home):
 
@@ -350,7 +358,7 @@ graph TD
     style RECEIPT fill:#f9a825,color:#000
 ```
 
-The mechanism that connects parent and child views uses **ViewSlots** — functional callbacks that fully decouple the parent from the child:
+The mechanism that connects parent and child presenters uses **ScopeSlots** — functional callbacks that fully decouple the parent from the child. The child hands its scope to the parent, which keeps it in a field of its own scope; the parent's view asks the application for the view of that scope (`app.viewOf`), created by the view layer's catalog (`ScopeViews`):
 
 ```mermaid
 sequenceDiagram
@@ -365,8 +373,9 @@ sequenceDiagram
     Note over Home: applyParameters(deepest=true)
     Home->>Intent: parentSlot (HomeKeys)
     Intent-->>Home: contentSlot
-    Home->>Root: contentSlot.setView(homeView)
-    Note over RootView: Recomposes and renders HomeView
+    Home->>Root: contentSlot.setScope(homeScope)
+    Root->>Root: scope.content = homeScope
+    Note over RootView: Recomposes and renders app.viewOf(scope.content) = HomeView
 ```
 
 For full details of the transactional navigation mechanism (commit, rollback, interruption, presenter migration), see [architecture-cube.md](architecture-cube.md).
@@ -413,13 +422,13 @@ HTTP server based on **Javalin** (Java 21) with:
 
 Cube is integrated with Compose through the `ComposeCubeView` class, which solves three fundamental problems:
 
-- **Recomposition** — a `revision` counter (`MutableState<Int>`) is incremented when the presenter calls `update()`, triggering Compose's automatic recomposition
+- **Recomposition** — a `revision` counter (`MutableState<Int>`) is incremented when a field of the view's scope changes (once per paint cycle, after `app.commitComputedState()`), triggering Compose's automatic recomposition
 - **Threading** — `safeCall` dispatches presenter actions to a coroutine with `limitedParallelism(1)`, keeping the UI thread free and guaranteeing serial execution
 - **Hierarchical composition** — `RenderSlot(view)` renders a child `CubeView` inside a parent view, with no type coupling
 
-The **view factories** pattern lets each platform register its Compose views in the entry point, keeping presenters free of UI dependencies.
+The **view catalog** (`ScopeViews`, scope class → view; `composeScopeViews(app)` in the Compose layer) is given to the application by each entry point, keeping presenters free of UI dependencies: presenters never create views.
 
-See [architecture-cube-compose.md](architecture-cube-compose.md) for full details: the ComposeCubeView bridge, revision counter, safeCall, RenderSlot, factory registration, per-platform initialization, deep-linking and the loading pattern.
+See [architecture-cube-compose.md](architecture-cube-compose.md) for full details: the ComposeCubeView bridge, revision counter, safeCall, RenderSlot, the view catalog, per-platform initialization, deep-linking and the loading pattern.
 
 ---
 
@@ -451,11 +460,11 @@ graph TB
 Errors are handled at **two levels**:
 
 1. **In the Presenter** — expected errors (failed login, database offline) are handled with friendly messages in the presenter's scope
-2. **In safeCall** — unexpected errors are caught and delegated to `RootPresenter.alertUnexpectedError()`, which sets the root view's `scope.errorMessage`
+2. **In the action's guard** — every action bound with `action { … }` / `actionOf { … }` catches what its body did not handle and hands it to `RootPresenter.alertUnexpectedError()`, which sets the root view's `scope.errorMessage` (`"Unexpected error: <cause>"`) and logs the stack trace; then it republishes the address (`app.updateHistory()`). The view's `safeCall` keeps a last `catch` for failures of the view's own code
 
 ```kotlin
-// Level 1: Specific handling in the Presenter
-fun onBuy() {
+// Level 1: Specific handling in the Presenter (the body of scope.onBuy = action(1) { buy() })
+private suspend fun buy() {
     try {
         val purchaseId = cart.commit(app.subject!!)
         ReceiptKeys(app).apply { this.purchaseId = purchaseId }.flip()
@@ -466,14 +475,16 @@ fun onBuy() {
     }
 }
 
-// Level 2: safeCall catches any unhandled exception
-protected fun safeCall(action: () -> Unit) {
-    presenterScope.launch {
-        try {
-            action()
-        } catch (e: Exception) {
-            app.alertUnexpectedError(LOG, "Unexpected error", e)
-        }
+// Level 2: the guard of every action (AbstractPresenter)
+private suspend fun guard(block: suspend () -> Unit) {
+    try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        onActionFailure(e) // app.alertUnexpectedError(log, "Unexpected error", e)
+    } finally {
+        app.updateHistory()
     }
 }
 ```
@@ -485,8 +496,8 @@ protected fun safeCall(action: () -> Unit) {
 Each platform has an entry point that:
 
 1. **Configures** platform-specific **dependencies** (JSON, HTTP, Crypto, Scheduler)
-2. **Registers view factories** (binding Presenters to Compose Views; the root view's is `RootPresenter.createView`)
-3. **Creates the application** and triggers the initial navigation
+2. **Creates the application** and gives it the view catalog (`app.scopeViews = composeScopeViews(app)`)
+3. Triggers the initial navigation
 4. **Renders** using Compose
 
 ```mermaid
@@ -499,12 +510,13 @@ sequenceDiagram
     participant Compose as Compose Runtime
 
     Main->>Platform: initializePlatform(baseUrl)
-    Note over Platform: JSON, HTTP, Crypto,<br/>Scheduler, View Factories
+    Note over Platform: JSON, HTTP, Crypto,<br/>Scheduler
 
     Main->>App: create RootPresenter()
+    Main->>App: app.scopeViews = composeScopeViews(app)
     Main->>Keys: RootKeys(app).flip()
     Keys->>App: app.flip(CubeTreePlace.ROOT, intent) — no steps
-    App->>App: applyParameters(init=true, deepest=true):<br/>creates the root view, restores the session
+    App->>App: applyParameters(init=true, deepest=true):<br/>viewOf(scope) creates the root view, restores the session
     App->>Home: HomeKeys(app, intent).flip() (redirect)
     Home->>Home: Checks subject
     Home->>Keys: LoginKeys(app, intent).flip() when there is none
@@ -533,11 +545,11 @@ sequenceDiagram
     participant HV as HomeView
 
     User->>LV: Clicks Sign in
-    LV->>SC: safeCall - presenter.onEnter()
+    LV->>SC: safeCall - scope.onEnter(null, null)
     Note over LV: UI thread released
 
-    SC->>LP: onEnter() on background thread
-    LP->>LP: scope.loading = true, update()
+    SC->>LP: onEnter → enter() on background thread (guarded)
+    LP->>LP: scope.loading = true (the scope asks for the repaint)
     Note over LV: Recomposes: spinner + disabled fields
 
     LP->>LS: fetchSubject(admin, ***)
@@ -553,12 +565,12 @@ sequenceDiagram
 
     Nav->>Nav: app.applyParameters() — offers the content slot
     Nav->>HP: applyParameters(init=true, deepest=true)
-    Note over HP: Creates CartManager,<br/>ProductsPanel, PurchasesPanel
-    HP->>HP: Injects view into the Root slot
+    Note over HP: Creates CartManager, loads the products<br/>(its panels are segments of HomeScope)
+    HP->>HP: Hands its scope to the Root slot
 
     Nav->>Nav: release LoginPresenter
-    Nav->>Nav: commitComputedState()
     Nav->>Nav: updateHistory()
+    Note over HV: Next paint: app.commitComputedState(),<br/>then app.viewOf(HomeScope) = HomeView
 
     Note over HV: Compose recomposes:<br/>renders Home with products
     HV->>User: Shows main screen
@@ -571,7 +583,7 @@ sequenceDiagram
 | Document | Content |
 |-----------|----------|
 | [architecture-cube.md](architecture-cube.md) | Cube framework — transactional navigation mechanism, presenter lifecycle, interruption and migration, commit/rollback, guarantees |
-| [architecture-cube-compose.md](architecture-cube-compose.md) | Cube + Compose integration — ComposeCubeView, revision counter, safeCall, RenderSlot, view factories, per-platform initialization |
+| [architecture-cube-compose.md](architecture-cube-compose.md) | Cube + Compose integration — ComposeCubeView, revision counter, safeCall, RenderSlot, the view catalog, per-platform initialization |
 | [architecture-react.md](architecture-react.md) | Remote view modality — React + WebSocket, Skeletons, scope synchronization, security |
 | [architecture-persistence.md](architecture-persistence.md) | Persistence layer — repositories, criteria, projection, transactions (local and remote), REST API |
 
@@ -583,11 +595,14 @@ sequenceDiagram
 |----------------------|-----------|
 | **Place**            | Navigation destination with id, name and presenter factory; declared by the keys class of the place (`CubeTreePlace`, child of the place of the keys it extends) |
 | **CubeIntent**       | Container of parameters (serializable) and attributes (ephemeral) for a navigation transaction |
-| **CubeViewSlot**     | Functional callback for injecting a child view into a parent view |
+| **ScopeSlot**        | Functional callback through which a child presenter hands its scope to the parent |
+| **ScopeViews**       | The view layer's catalog: which view draws each kind of scope; `app.viewOf(scope)` creates the view once |
+| **Action**           | An entry point of a presenter kept in a field of its scope (`Action`, `ActionOf`, `ActionOf2`), bound with a guard and, for remote views, an event code |
+| **Segment**          | A smaller scope inside the owner's (a panel, a list row), with its own view and no presenter |
 | **Presenter**        | Controller that encapsulates a screen's presentation logic (plain Kotlin, no UI dependency) |
 | **Scope**            | What a presenter shows: a mutable object with the data its view paints, observed (a change asks for a repaint) and serializable to JSON |
 | **ComposeCubeView**  | Bridge between CubeView and Jetpack Compose, with a revision counter mechanism |
-| **safeCall**         | Serialized asynchronous dispatch (limitedParallelism=1) for presenter actions |
+| **safeCall**         | Serialized asynchronous dispatch (limitedParallelism=1) of the scope's actions from the view |
 | **CubeNavigation**   | Atomic navigation transaction with commit, rollback and support for interruptions |
 | **CubeApplication**  | Global container of active presenters and entry point for navigation |
 | **Skeleton**         | Server-client bridge in the React modality — serializes each view's scope for WebSocket |

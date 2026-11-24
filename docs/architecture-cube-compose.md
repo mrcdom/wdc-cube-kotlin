@@ -7,7 +7,7 @@
   - [Revision Counter](#revision-counter)
   - [safeCall — Serialized Asynchronous Execution](#safecall--serialized-asynchronous-execution)
   - [RenderSlot — View Composition](#renderslot--view-composition)
-- [Registering View Factories](#registering-view-factories)
+- [The View Catalog](#the-view-catalog)
 - [Complete Flow: From Action to Pixel](#complete-flow-from-action-to-pixel)
 - [View Implementation Pattern](#view-implementation-pattern)
 - [Slot Mechanism in Compose](#slot-mechanism-in-compose)
@@ -35,7 +35,8 @@ The presenter stays **pure Kotlin** — it knows nothing about Compose and impor
 graph LR
     subgraph "Pure Kotlin (commonMain)"
         P[Presenter] --> S[Scope]
-        P --> CV[CubeView interface]
+        APP[CubeApplication] --> SV[ScopeViews catalog]
+        APP --> CV[CubeView interface]
     end
 
     subgraph "Compose (view module)"
@@ -45,8 +46,8 @@ graph LR
         CCV --> RND["@Composable Render()"]
     end
 
-    P -->|"update()"| CCV
-    CCV -->|"revision++"| REV
+    S -->|"field changed → update()"| CCV
+    CCV -->|"flush: revision++"| REV
     REV -->|"recomposition"| RND
     RND -->|"reads"| S
 ```
@@ -57,18 +58,19 @@ graph LR
 
 ### Revision Counter
 
-`ComposeCubeView` implements `CubeView` and exposes a `MutableState<Int>` named `revision`. The presenter calls `update()`, which increments `revision.value`. Because `@Composable Render()` reads that value, Compose detects the change and schedules a recomposition.
+`ComposeCubeView<S : Scope>` implements `CubeView`, draws one scope of the application, and exposes a `MutableState<Int>` named `revision`. A change in a field of the scope calls the view's `update()`, which marks it dirty in the `ViewUpdateScheduler`; the scheduler's flush runs the application's `commitComputedState()` once (every live presenter's), then increments `revision.value` of each dirty view. Because `@Composable Render()` reads that value, Compose detects the change and schedules a recomposition.
 
 ```kotlin
-abstract class ComposeCubeView(
+abstract class ComposeCubeView<S : Scope>(
     private val id: String,
-    protected val app: RootPresenter
+    protected val app: RootPresenter,
+    protected val scope: S,
 ) : CubeView {
 
     val revision: MutableState<Int> = mutableIntStateOf(0)
 
     override fun update() {
-        revision.value++  // Thread-safe, triggers recomposition
+        ViewUpdateScheduler.markDirty(this)  // the flush increments revision, once per cycle
     }
 
     @Composable
@@ -89,7 +91,8 @@ sequenceDiagram
 
     BG->>P: action() via safeCall
     P->>P: scope.field = newValue
-    P->>V: update()
+    P->>V: update() (the scope asks) → markDirty
+    Note over V: flush(): app.commitComputedState(), then the dirty views
     V->>REV: revision.value++
     REV->>C: Snapshot change detected
     C->>UI: Schedule recomposition
@@ -105,25 +108,23 @@ sequenceDiagram
 
 ### safeCall — Serialized Asynchronous Execution
 
-`safeCall` dispatches the presenter action to a **coroutine with parallelism limited to 1**:
+`safeCall` dispatches a scope action to the application's **coroutine with parallelism limited to 1** (`RootPresenter.presenterScope`, reached through the scheduler):
 
 ```kotlin
-protected fun safeCall(action: () -> Unit) {
-    presenterScope.launch {
+protected fun safeCall(action: suspend () -> Unit) {
+    ViewUpdateScheduler.presenterScope.launch {
         try {
             action()
         } catch (e: Exception) {
             app.alertUnexpectedError(LOG, "Unexpected error in $id", e)
+        } finally {
+            ViewUpdateScheduler.flush()
         }
     }
 }
-
-companion object {
-    private val presenterScope = CoroutineScope(
-        Dispatchers.Default.limitedParallelism(1)
-    )
-}
 ```
+
+The view calls the action fields of its scope: `safeCall { scope.onBuy() }`. Each action has its own guard in the presenter (an unhandled failure becomes `"Unexpected error: <cause>"`), so the `catch` above only sees failures of the view's own code.
 
 This guarantees:
 
@@ -131,7 +132,7 @@ This guarantees:
 |----------|-----|
 | **Free UI thread** | The action runs in the background — the interface stays responsive |
 | **Serial execution** | `limitedParallelism(1)` — scope mutations never run concurrently |
-| **Synchronous code in the presenter** | The presenter writes linear code, with no callbacks or suspending functions |
+| **Linear code in the presenter** | The presenter writes linear `suspend` code, with no callbacks |
 | **Captured errors** | Unhandled exceptions are delegated to `RootPresenter.alertUnexpectedError()` |
 
 ```mermaid
@@ -140,8 +141,8 @@ sequenceDiagram
     participant Q as Queue (limitedParallelism=1)
     participant BG as Background Thread
 
-    UI->>Q: safeCall { onAddToCart() }
-    UI->>Q: safeCall { onBuy() }
+    UI->>Q: safeCall { scope.onAddToCart(1) }
+    UI->>Q: safeCall { scope.onBuy() }
     Note over UI: UI free, both queued
 
     Q->>BG: onAddToCart()
@@ -160,15 +161,15 @@ The `RenderSlot` function turns a generic `CubeView` into a `@Composable` call:
 ```kotlin
 @Composable
 fun RenderSlot(view: CubeView) {
-    (view as? ComposeCubeView)?.Render()
+    (view as? ComposeCubeView<*>)?.Render()
 }
 ```
 
-Parent views use it to render child views without knowing their concrete type. The parent view only knows that the presenter's `scope` holds a `CubeView`:
+Parent views use it to render child views without knowing their concrete type. The parent's scope holds the child's **scope**; the parent view asks the application for its view (`app.viewOf`, which gives the same instance for the same scope, so Compose skips the call while the slot keeps its scope):
 
 ```kotlin
 // Inside RootView.Render():
-val contentView = scope.contentView
+val contentView = scope.content?.let(app::viewOf)
 if (contentView != null) {
     RenderSlot(contentView)
 }
@@ -176,66 +177,53 @@ if (contentView != null) {
 
 ---
 
-## Registering View Factories
+## The View Catalog
 
-Each presenter declares a static `createView` variable that accepts a factory function:
-
-```kotlin
-// In the presenter (pure Kotlin — no Compose dependency):
-class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
-
-    companion object {
-        var createView: ((LoginPresenter) -> CubeView)? = null
-    }
-
-    override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
-        if (initialization) {
-            view = createView?.invoke(this)  // ← calls the factory
-        }
-        // ...
-    }
-}
-```
-
-In each platform's **entry point**, the factories are registered, binding presenters to concrete views:
+Presenters do not create views. The Compose view layer has **one catalog** (`ScopeViews`: scope class → view factory), in `views/ComposeScopeViews.kt`, and every Compose entry point (web, desktop, Android, iOS) assigns it to the application before the first navigation:
 
 ```kotlin
-// At startup (e.g. Desktop Main.kt):
-RootPresenter.createView = { p -> RootView(p) }
-LoginPresenter.createView    = { p -> LoginView(p) }
-HomePresenter.createView     = { p -> HomeView(p) }
-CartPresenter.createView     = { p -> CartView(p) }
-ProductPresenter.createView  = { p -> ProductView(p) }
-ReceiptPresenter.createView  = { p -> ReceiptView(p) }
-ProductsPanelPresenter.createView  = { p -> ProductsPanelView(p) }
-PurchasesPanelPresenter.createView = { p -> PurchasesPanelView(p) }
+fun composeScopeViews(app: RootPresenter): ScopeViews = ScopeViews()
+    .register<RootScope> { RootView(app, it) }
+    .register<LoginScope> { LoginView(app, it) }
+    .register<HomeScope> { HomeView(app, it) }
+    .register<CartScope> { CartView(app, it) }
+    .register<CartItemScope> { CartItemView(app, it) }
+    .register<ProductScope> { ProductView(app, it) }
+    .register<ReceiptScope> { ReceiptView(app, it) }
+    .register<ProductsPanelScope> { ProductsPanelView(app, it) }
+    .register<PurchasesPanelScope> { PurchasesPanelView(app, it) }
+
+// in each entry point
+app.scopeViews = composeScopeViews(app)
 ```
 
 ```mermaid
 graph TD
     subgraph "Presenter (commonMain)"
-        LP["LoginPresenter<br/>companion: createView"]
+        LP["LoginPresenter<br/>val scope = bind(LoginScope())"]
     end
 
-    subgraph "Entry Point (platform)"
-        EP["Main.kt<br/>LoginPresenter.createView = { p → LoginView(p) }"]
+    subgraph "Application"
+        APP["app.viewOf(scope)<br/>creates once, keeps until releaseView"]
     end
 
     subgraph "View (view-compose)"
-        LV["LoginView(presenter)<br/>extends ComposeCubeView"]
+        CAT["composeScopeViews(app)<br/>LoginScope → LoginView(app, it)"]
+        LV["LoginView(app, scope)<br/>extends ComposeCubeView"]
     end
 
-    EP -->|registers factory| LP
-    LP -->|"createView?.invoke(this)"| LV
-    LV -->|"reads scope"| LP
+    LP -->|"parentSlot.setScope(scope)"| APP
+    APP -->|"scopeViews.create(scope)"| CAT
+    CAT --> LV
+    LV -->|"reads scope, calls scope.onEnter"| LP
 ```
 
 This mechanism lets:
 
-- The presenter **not know** the concrete view class
-- Different platforms register **different views** for the same presenter
-- Tests leave the factory `null` — the presenter works without a view
-- The React modality skip registering factories — the Skeletons take the role of the view
+- The presenter **not know** any view: it only shows its scope
+- Different view layers register **different views** for the same scope (Compose, native, the remote React skeleton)
+- A new screen be registered **once per view layer**, not once per entry point; a scope with no view in the catalog fails naming its class
+- Tests register a catalog of mocks (`RootPresenterMock`) and call the scope's actions directly
 
 ---
 
@@ -255,13 +243,13 @@ sequenceDiagram
     participant CR as Compose Runtime
 
     User->>View: Clicks "Sign in"
-    View->>SC: safeCall { presenter.onEnter() }
+    View->>SC: safeCall { scope.onEnter(null, null) }
     Note over View: UI thread released
 
-    SC->>P: onEnter()
+    SC->>P: onEnter → enter() (guarded)
     P->>S: scope.loading = true
-    P->>View: update()
-    View->>Rev: revision.value++
+    S->>View: update() → markDirty
+    Note over View: flush: commitComputedState(), revision.value++
     Rev->>CR: Snapshot change → recomposition
     Note over View: Renders: spinner + disabled fields
 
@@ -272,7 +260,7 @@ sequenceDiagram
     P->>S: app.subject = subject
     P->>P: HomeKeys(app).flip() → navigation
     Note over P: CubeNavigation commit → HomePresenter created
-    Note over View: Root slot updated → HomeView rendered
+    Note over View: RootScope.content = HomeScope → app.viewOf → HomeView rendered
 ```
 
 ---
@@ -282,8 +270,8 @@ sequenceDiagram
 Every Compose view follows the same pattern:
 
 ```kotlin
-class LoginView(private val presenter: LoginPresenter)
-    : ComposeCubeView("login-view", presenter.app) {
+class LoginView(app: RootPresenter, scope: LoginScope) :
+    ComposeCubeView<LoginScope>("login-view", app, scope) {
 
     @Composable
     override fun Render() {
@@ -291,8 +279,7 @@ class LoginView(private val presenter: LoginPresenter)
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        // (2) Reads the presenter's scope
-        val scope = presenter.scope
+        // (2) Reads the scope it draws
         val loading = scope.loading
 
         // (3) Uses remember for local UI state (text fields)
@@ -308,9 +295,9 @@ class LoginView(private val presenter: LoginPresenter)
             enabled = !loading,
         )
 
-        // (5) Actions delegate to the presenter via safeCall
+        // (5) Actions are fields of the scope, called via safeCall
         Button(
-            onClick = { safeCall { presenter.onEnter() } },
+            onClick = { safeCall { scope.onEnter(null, null) } },
             enabled = !loading,
         ) {
             if (loading) {
@@ -328,16 +315,16 @@ class LoginView(private val presenter: LoginPresenter)
 | Step | What it does | Why |
 |------|--------------|-----|
 | `revision.value` | Creates a Compose subscription | Without it, the view does not recompose when `update()` is called |
-| `presenter.scope` | Accesses the presenter's mutable scope | The scope is read directly — no copies, no mapping |
+| `scope` | The scope the view was created for | The scope is read directly — no copies, no mapping, no reference to the presenter |
 | `remember` | Keeps local UI state | Text fields need local state for smooth typing |
 | `scope.userName = it` | Direct mutation | The scope is mutable by design — simplicity > ceremony |
-| `safeCall { ... }` | Dispatches the action to the background | Free UI thread, guaranteed serial execution |
+| `safeCall { scope.onX(...) }` | Dispatches the action to the background | Free UI thread, guaranteed serial execution |
 
 ---
 
 ## Slot Mechanism in Compose
 
-The slot connects parent and child views without direct coupling. The flow:
+The slot connects parent and child presenters without direct coupling: the child hands its **scope** to the parent, and the parent's view asks the application for the view of that scope. The flow:
 
 ```mermaid
 sequenceDiagram
@@ -349,39 +336,38 @@ sequenceDiagram
 
     Note over Root: applyParameters deepest=false
     Root->>Intent: parentSlot = contentSlot (RootKeys)
-    Note over Root: contentSlot callback:<br/>view -> scope.contentView = view (the scope is observed)
+    Note over Root: contentSlot callback:<br/>s -> scope.content = s (the scope is observed)
 
     Note over Home: applyParameters deepest=true, init=true
-    Home->>Home: view = createView(this) HomeView
     Home->>Intent: parentSlot (HomeKeys)
     Intent-->>Home: contentSlot
-    Home->>Root: contentSlot.setView(homeView)
-    Root->>RootScope: scope.contentView = homeView
-    Root->>RootView: update() revision++
-    Note over RootView: Recomposes and renders:<br/>RenderSlot(scope.contentView)
+    Home->>Root: contentSlot.setScope(homeScope)
+    Root->>RootScope: scope.content = homeScope
+    RootScope->>RootView: update() → revision++
+    Note over RootView: Recomposes and renders:<br/>RenderSlot(app.viewOf(scope.content))
 ```
 
 **In the RootPresenter code** (the root presenter is the application: it extends `CubeApplication`, is the root of the place tree and the presenter of the root view):
 
 ```kotlin
-abstract class RootPresenter : CubeApplication(), PresenterBase {
+abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     val scope = RootScope().also { it.observe(::update) }
 
-    var view: CubeView? = null
-        private set
+    // The root view: the view the catalog gives for the scope, created on the first navigation
+    val view: CubeView? get() = viewOrNull(scope)
 
-    // Callback that receives the child view and stores it in the scope (observed: the root view repaints)
-    private val contentSlot = CubeViewSlot { v -> if (scope.contentView !== v) scope.contentView = v }
+    // Callback that receives the child's scope and stores it in the root scope (observed: the root view repaints)
+    private val contentSlot = ScopeSlot { if (scope.content !== it) scope.content = it }
 
     fun update() {
-        view?.update()
+        viewOrNull(scope)?.update()
     }
 
     // Runs in every navigation, before the first step
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (initialization) {
-            view = createView?.invoke(this)
+            viewOf(scope)
             restoreSubjectFromSession()
         }
         if (deepest) {                       // navigation to the root itself: go on to the home
@@ -392,26 +378,21 @@ abstract class RootPresenter : CubeApplication(), PresenterBase {
         RootKeys(this, intent).parentSlot = contentSlot
         return true
     }
-
-    companion object {
-        var createView: ((RootPresenter) -> CubeView)? = null
-    }
 }
 ```
 
 **In the RootView code (Compose):**
 
 ```kotlin
-class RootView(private val presenter: RootPresenter)
-    : ComposeCubeView("root-view", presenter) {
+class RootView(app: RootPresenter, scope: RootScope) :
+    ComposeCubeView<RootScope>("root-view", app, scope) {
 
     @Composable
     override fun Render() {
         val rev = revision.value
 
-        val scope = presenter.scope
         Box(modifier = Modifier.fillMaxSize()) {
-            val contentView = scope.contentView
+            val contentView = scope.content?.let(app::viewOf)
             if (contentView != null) {
                 RenderSlot(contentView)  // ← renders the child view
             }
@@ -421,7 +402,7 @@ class RootView(private val presenter: RootPresenter)
 }
 ```
 
-`RootScope.contentView` has type `CubeView` — the parent view does not know whether it is `HomeView`, `LoginView` or another one. It just calls `RenderSlot`, and Compose renders the right content.
+`RootScope.content` has type `Scope` — neither the root presenter nor the root view knows whether it is the home or the login. The view asks `app.viewOf` for its view and calls `RenderSlot`, and Compose renders the right content. The same holds for the Home's content and its two panels (segments: `HomeScope.productsPanel`, `purchasesPanel`), and for the cart rows (`CartScope.rows`, each drawn by `CartItemView`).
 
 ---
 
@@ -433,13 +414,13 @@ Each platform has an entry point that follows the same pattern:
 sequenceDiagram
     participant Main as Entry Point
     participant Plat as Platform Config
-    participant Factories as View Factories
+    participant Factories as View Catalog
     participant App as RootPresenter
     participant Compose as Compose Runtime
 
     Main->>Plat: Configures JSON, HTTP, Crypto, Scheduler
-    Main->>Factories: Registers createView for the application (root view) and each presenter
     Main->>App: Creates the application instance
+    Main->>Factories: app.scopeViews = composeScopeViews(app)
     Main->>App: RootKeys(app).flip() → initial navigation
     Main->>Compose: Renders RootView
 ```
@@ -448,10 +429,12 @@ sequenceDiagram
 
 ```kotlin
 fun main() {
-    initializePlatform(baseUrl)  // JSON, HTTP, Crypto, Scheduler, View Factories
+    initializePlatform(baseUrl)  // JSON, HTTP, Crypto, Scheduler
 
     val app = DesktopRootPresenter()
-    RootKeys(app).flip()
+    app.scopeViews = composeScopeViews(app)
+    ViewUpdateScheduler.initialize { app }
+    runBlocking { RootKeys(app).flip() }
 
     application {
         Window(title = "Storefront", ...) {
@@ -474,6 +457,8 @@ fun main() {
     initializePlatform(baseUrl)
 
     val app = ComposeRootPresenter()
+    app.scopeViews = composeScopeViews(app)
+    ViewUpdateScheduler.initialize { app }
     restoreAuthState(app)
 
     val hash = getLocationHash()
@@ -504,7 +489,9 @@ class MainActivity : ComponentActivity() {
         initializePlatform(baseUrl)
 
         val app = AndroidRootPresenter(this)
-        RootKeys(app).flip()
+        app.scopeViews = composeScopeViews(app)
+        ViewUpdateScheduler.initialize { app }
+        runBlocking { RootKeys(app).flip() }
 
         setContent {
             ShoppingTheme {
@@ -526,7 +513,9 @@ fun MainViewController() = ComposeUIViewController {
     initializePlatform(baseUrl)
 
     val app = IosRootPresenter()
-    RootKeys(app).flip()
+    app.scopeViews = composeScopeViews(app)
+    ViewUpdateScheduler.initialize { app }
+    runBlocking { RootKeys(app).flip() }
 
     ShoppingTheme {
         (app.view as? RootView)?.Render()
@@ -597,10 +586,13 @@ stateDiagram-v2
     }
 ```
 
-**In the presenter** (synchronous, linear code):
+**In the presenter** (linear code; the body of the `onEnter` action, bound in the constructor with `scope.onEnter = actionOf2 { userName: String?, password: String? -> enter(userName, password) }`):
 
 ```kotlin
-fun onEnter() {
+private suspend fun enter(userName: String?, password: String?) {
+    if (userName != null) scope.userName = userName
+    if (password != null) scope.password = password
+
     scope.loading = true  // → UI shows spinner (the scope is observed: no update() call)
 
     try {
@@ -624,7 +616,7 @@ fun onEnter() {
 
 ```kotlin
 Button(
-    onClick = { safeCall { presenter.onEnter() } },
+    onClick = { safeCall { scope.onEnter(null, null) } },
     enabled = !loading,
 ) {
     if (loading) CircularProgressIndicator() else Text("Sign in")

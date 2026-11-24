@@ -4,13 +4,15 @@ View implementation using **UIKit** via Kotlin/Native — no SwiftUI, no Storybo
 
 ## Architecture
 
-### Base Class: `AbstractViewIos<P>`
+### Base Class: `AbstractViewIos<S>`
 
-Every view extends `AbstractViewIos<P>`, which implements the framework's `CubeView` interface:
+Every view extends `AbstractViewIos<S>`, which implements the framework's `CubeView` interface. A view receives the
+application and the scope it paints — never the presenter — and calls the scope's actions (`scope.onX(...)`) inside
+`safeCall`:
 
 ```kotlin
-class ProductsPanelViewIos(presenter: ProductsPanelPresenter) 
-    : AbstractViewIos<ProductsPanelPresenter>("products-panel", presenter) {
+class ProductsPanelViewIos(app: RootPresenter, scope: ProductsPanelScope)
+    : AbstractViewIos<ProductsPanelScope>("products-panel-view", app, scope) {
 
     override fun createView(): UIView = UIKitDom.build {
         // DSL for building UIViews with Auto Layout
@@ -24,7 +26,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter)
 
 The lifecycle is:
 1. `createView()` — builds the `UIView` hierarchy programmatically via `UIKitDom`
-2. `doUpdate()` — called by the scheduler when the presenter's scope changes
+2. `doUpdate()` — called once at creation and then by the scheduler whenever the scope asks for a repaint
 3. Guards (`lastX != newX`) avoid unnecessary UIKit manipulation
 
 ### DSL: `UIKitDom`
@@ -63,10 +65,10 @@ All views use `translatesAutoresizingMaskIntoConstraints = false` (set automatic
 
 The scheduler works via `dispatch_async(dispatch_get_main_queue())`:
 
-1. The presenter calls `update()` → marks the view as dirty
+1. A scope change calls the view's `update()` → marks the view as dirty
 2. On the next run loop iteration, the scheduler flushes
-3. Before the flush, `app.commitComputedState()` ensures consistency
-4. Each view runs `doUpdate()` only once per cycle
+3. Each flush first runs `app.commitComputedState()` once (every live presenter's; views it marks dirty join the same flush)
+4. Then each dirty view runs `doUpdate()` once
 
 ### Implementation Patterns
 
@@ -103,15 +105,23 @@ Breakpoints:
 
 ### Navigation and Slots
 
-Parent views declare a `ViewSlot` (a `UIView`) that receives child views through navigation. The slot pins the child view with constraints on all 4 edges:
+Parent views declare a `ViewSlot` (a `UIView`). The parent scope holds the child's scope (`content`, and
+`productsPanel`/`purchasesPanel` in Home); the parent asks the application for that scope's view, which is created once
+per scope and reused. The slot pins the child view with constraints on all 4 edges:
 
 ```kotlin
 // In HomeViewIos
-val detailSlot = newViewSlot(detailContainer)
+detailSlot = newViewSlot(detailContainer)
 
-// When the presenter navigates to "product-details"
-// the slot swaps the visible view automatically
+// In doUpdate(): the slot swaps the visible view when the child scope changes
+detailSlot.sync(scope.content?.let(app::viewOf))
 ```
+
+The cart draws each row (`CartScope.rows`) with the view of the row's scope (`CartItemViewIos`), so changing a
+quantity repaints that row and the total, not the list.
+
+The catalog of views (`ScopeViews`, scope class → view) is set on the application in `AppBootstrap.kt` before the
+first navigation.
 
 ### Kotlin/Native ↔ Objective-C Interop
 
@@ -142,6 +152,7 @@ The Xcode project (`ShoppingNativeApp.xcodeproj`) is generated with [XcodeGen](h
 
 ```
 src/iosMain/kotlin/br/com/wdc/shopping/nativeui/ios/
+├── AppBootstrap.kt        # Entry point: platform setup and the view catalog (ScopeViews)
 ├── theme/
 │   ├── Colors.kt          # Material Design palette adapted to UIColor
 │   ├── Icons.kt           # SVG path icons → UIBezierPath
@@ -153,13 +164,14 @@ src/iosMain/kotlin/br/com/wdc/shopping/nativeui/ios/
 │   ├── ViewUpdateScheduler.kt   # Update coalescing via GCD
 │   └── ViewUtils.kt             # Formatting, async image loading
 └── views/
-    ├── RootViewIos.kt           # Entry point + factory registration
+    ├── RootViewIos.kt           # Page frame: content slot and error alert
     ├── LoginViewIos.kt          # Login screen
     ├── HomeViewIos.kt           # Responsive layout with panels/tabs/detail
     ├── ProductsPanelViewIos.kt  # Product grid (FlowLayout)
     ├── PurchasesPanelViewIos.kt # Paginated purchase list
     ├── ProductViewIos.kt        # Product details
-    ├── CartViewIos.kt           # Storefront cart
+    ├── CartViewIos.kt           # Storefront cart: hosts the view of each row
+    ├── CartItemViewIos.kt       # A cart row: quantity controls and remove
     └── ReceiptViewIos.kt        # Purchase receipt
 
 app/
