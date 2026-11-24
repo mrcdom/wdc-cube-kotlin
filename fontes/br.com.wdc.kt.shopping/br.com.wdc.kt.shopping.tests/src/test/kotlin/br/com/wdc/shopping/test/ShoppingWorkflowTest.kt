@@ -41,17 +41,20 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     }
 
     @Test
-    fun remoteCart_changesTheQuantity_byItsEventCode() = runBlocking {
-        // the React cart sends code 4 with p.productId and p.quantity; the server ignored it before
+    fun remoteCartRow_changesTheQuantity_byItsEventCode() = runBlocking {
+        // a row of the React cart sends code 2 with p.quantity (the server ignored the cart's quantity buttons before)
         gotoRestricted().getProductsPanelScope().onOpenProduct(DBReset.WILSON_BALL_ID)
         var home = RestrictedViewMock.cast(app.getRootView()!!.contentView)
         ProductViewMock.cast(home.contentView).scope.onAddToCart(1)
         home = RestrictedViewMock.cast(app.getRootView()!!.contentView)
         val cart = CartViewMock.cast(home.contentView).scope
 
-        cart.dispatch(4, mapOf("p.productId" to DBReset.WILSON_BALL_ID, "p.quantity" to 3))
+        val row = cart.rows.single()
+        row.dispatch(2, mapOf("p.quantity" to 3))
 
-        assertEquals(3, cart.items.single().quantity)
+        assertEquals(3, row.quantity)
+        assertSame(row, cart.rows.single(), "the row that stays is reused")
+        assertEquals(3 * row.price, cart.total, 1e-9, "the total is computed on the server")
         assertEquals(3, home.scope.cartItemCount)
     }
 
@@ -171,16 +174,16 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         assertTrue(homeView.updates > homeUpdatesBefore, "the cart change repaints the home header")
         var cartView = CartViewMock.cast(homeView.contentView)
         assertTrue(cartView.scope.errorCode == 0, "There must be no error indication")
-        assertTrue(cartView.scope.items.size == 1, "One item in the cart")
-        assertTrue(cartView.scope.items[0].quantity == 1, "The item must have quantity 1")
+        assertTrue(cartView.scope.rows.size == 1, "One item in the cart")
+        assertTrue(cartView.scope.rows[0].quantity == 1, "The item must have quantity 1")
         assertTrue(
-            cartView.scope.items[0].id == DBReset.FLASH_DRIVE_2GB_ID,
+            cartView.scope.rows[0].productId == DBReset.FLASH_DRIVE_2GB_ID,
             "ID in the cart <> ${DBReset.FLASH_DRIVE_2GB_ID}"
         )
 
         // the presenter no longer calls update(): its observed scope asks for the repaint
         var updatesBefore = cartView.updates
-        cartView.scope.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 0)
+        cartView.scope.rows.single { it.productId == DBReset.FLASH_DRIVE_2GB_ID }.onModifyQuantity(0)
         assertTrue(cartView.updates > updatesBefore, "an alert repaints the cart")
         homeView = RestrictedViewMock.cast(rootView.contentView)
         cartView = CartViewMock.cast(homeView.contentView)
@@ -189,17 +192,12 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         cartView.scope.errorCode = 0
 
         updatesBefore = cartView.updates
-        cartView.scope.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 2)
+        cartView.scope.rows.single { it.productId == DBReset.FLASH_DRIVE_2GB_ID }.onModifyQuantity(2)
         assertTrue(cartView.updates > updatesBefore, "a new quantity repaints the cart")
         homeView = RestrictedViewMock.cast(rootView.contentView)
         cartView = CartViewMock.cast(homeView.contentView)
         assertTrue(cartView.scope.errorCode == 0, "It must work without errors")
-        assertTrue(cartView.scope.items[0].quantity == 2, "The item must have quantity 2")
-
-        cartView.scope.onModifyQuantity(Long.MIN_VALUE, 2)
-        cartView = CartViewMock.cast(homeView.contentView)
-        assertTrue(cartView.scope.errorCode == 2, "Product not found")
-        cartView.scope.errorCode = 0
+        assertTrue(cartView.scope.rows[0].quantity == 2, "The item must have quantity 2")
 
         cartView.scope.onOpenProducts()
         homeView = RestrictedViewMock.cast(rootView.contentView)
@@ -225,8 +223,8 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         productView.scope.onAddToCart(1)
         homeView = RestrictedViewMock.cast(rootView.contentView)
         cartView = CartViewMock.cast(homeView.contentView)
-        assertTrue(cartView.scope.items.size == 2, "Two items in the cart")
-        assertTrue(cartView.scope.items[1].quantity == 1, "The item must have quantity 1")
+        assertTrue(cartView.scope.rows.size == 2, "Two items in the cart")
+        assertTrue(cartView.scope.rows[1].quantity == 1, "The item must have quantity 1")
 
         cartView.scope.onBuy()
         homeView = RestrictedViewMock.cast(rootView.contentView)

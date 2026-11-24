@@ -14,41 +14,33 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import RemoveIcon from '@mui/icons-material/Remove'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import app, { type ViewProps } from '@root/App'
-import { BaseViewClass, BasePanelClass } from '@root/utils/ViewUtils'
+import { BaseViewClass } from '@root/utils/ViewUtils'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import { Colors } from '@root/theme'
 
 // :: Actions
 
 const ON_BUY = 1
-const ON_REMOVE_PRODUCT = 2
 const ON_OPEN_PRODUCTS = 3
-const ON_MODIFY_QUANTITY = 4
 
-// :: Types
-
-type CartItem = {
-  id: number
-  name: string
-  price: number
-  quantity: number
-}
+// row actions, sent by each row on its own view
+const ON_REMOVE = 1
+const ON_MODIFY_QUANTITY = 2
 
 // :: View
 
 export type CartScope = {
-  items: CartItem[]
+  /** one view per row, each with its own scope */
+  rowsViewIds?: string[]
+  /** computed on the server */
+  total?: number
   errorMessage?: string
 }
 
 class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
   override render({ className }: ViewProps) {
-    const { vsid, scope } = this
-    const items = scope.items ?? []
-    let totalValue = 0
-    items.forEach((prod) => {
-      totalValue += prod.price * prod.quantity
-    })
+    const { scope } = this
+    const rowsViewIds = scope.rowsViewIds ?? []
 
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: '16px 10px 16px 16px' }}>
@@ -70,7 +62,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
             </Alert>
           )}
 
-          {items.length === 0 ? (
+          {rowsViewIds.length === 0 ? (
             /* Empty state */
             <Box
               sx={{
@@ -94,15 +86,15 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
             /* Cart items */
             <Box sx={{ mt: 1.5, mr: -0.75 }}>
               <Stack direction="column" spacing={1}>
-                {items.map((item) => (
-                  <CartItemCard key={item.id} vsid={vsid} item={item} />
+                {rowsViewIds.map((rowViewId) => (
+                  <React.Fragment key={rowViewId}>{app.createView(rowViewId)}</React.Fragment>
                 ))}
               </Stack>
             </Box>
           )}
 
           {/* Total section */}
-          {items.length > 0 && (
+          {rowsViewIds.length > 0 && (
             <>
               <Divider sx={{ mt: 1, mb: 1 }} />
               <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -111,7 +103,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
                 </Typography>
                 <Box sx={{ bgcolor: Colors.PriceBackground, borderRadius: '10px', px: 1.75, py: 0.75 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: 22, color: Colors.PriceColor }}>
-                    ${NumberUtils.format(totalValue)}
+                    ${NumberUtils.format(scope.total ?? 0)}
                   </Typography>
                 </Box>
               </Stack>
@@ -128,7 +120,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
             >
               Continue Shopping
             </Button>
-            {items.length > 0 && (
+            {rowsViewIds.length > 0 && (
               <Button
                 variant="contained"
                 onClick={this.emitClickFinalizar}
@@ -165,20 +157,18 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
 
 export default BaseViewClass.FC(CartViewClass, '7eb485e5f843')
 
-// :: CartItemCard Component
+// :: CartItemView: one row of the cart, a view of its own
 
-type CartItemCardProps = {
-  vsid: string
-  item: CartItem
+export type CartItemScope = {
+  productId: number
+  name?: string
+  price: number
+  quantity: number
 }
 
-class CartItemCardClass extends BasePanelClass<CartItemCardProps> {
-  vsid!: string
-  item!: CartItem
-
-  override render({ vsid, item }: CartItemCardProps) {
-    this.vsid = vsid
-    this.item = item
+class CartItemViewClass extends BaseViewClass<ViewProps, CartItemScope> {
+  override render(_props: ViewProps) {
+    const { scope } = this
 
     return (
       <Card elevation={0} sx={{ borderRadius: '8px', bgcolor: Colors.SurfaceVariant40 }}>
@@ -187,10 +177,10 @@ class CartItemCardClass extends BasePanelClass<CartItemCardProps> {
             {/* Product info */}
             <Box sx={{ flex: '1 1 0' }}>
               <Typography variant="body2" noWrap sx={{ fontWeight: 500, fontSize: 14 }}>
-                {item.name}
+                {scope.name}
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 500, color: Colors.PriceColor }}>
-                ${NumberUtils.format(item.price)}
+                ${NumberUtils.format(scope.price)}
               </Typography>
             </Box>
 
@@ -213,7 +203,7 @@ class CartItemCardClass extends BasePanelClass<CartItemCardProps> {
                 <RemoveIcon sx={{ fontSize: 16 }} />
               </IconButton>
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', px: 1.75 }}>
-                {item.quantity}
+                {scope.quantity}
               </Typography>
               <IconButton
                 size="small"
@@ -228,7 +218,7 @@ class CartItemCardClass extends BasePanelClass<CartItemCardProps> {
             <Button
               variant="text"
               color="error"
-              onClick={this.emitRemoveProduct}
+              onClick={this.emitRemove}
               sx={{ fontWeight: 'normal', fontSize: 12, textTransform: 'none' }}
             >
               Remove
@@ -239,27 +229,23 @@ class CartItemCardClass extends BasePanelClass<CartItemCardProps> {
     )
   }
 
-  readonly emitRemoveProduct = () => {
-    const { vsid, item } = this
-    app.setFormField(vsid, 'p.productId', item.id)
-    app.submit(vsid, ON_REMOVE_PRODUCT)
+  readonly emitRemove = () => {
+    app.submit(this.vsid, ON_REMOVE)
   }
 
   readonly emitIncrement = () => {
-    const { vsid, item } = this
-    app.setFormField(vsid, 'p.productId', item.id)
-    app.setFormField(vsid, 'p.quantity', item.quantity + 1)
+    const { vsid, scope } = this
+    app.setFormField(vsid, 'p.quantity', scope.quantity + 1)
     app.submit(vsid, ON_MODIFY_QUANTITY)
   }
 
   readonly emitDecrement = () => {
-    const { vsid, item } = this
-    if (item.quantity > 1) {
-      app.setFormField(vsid, 'p.productId', item.id)
-      app.setFormField(vsid, 'p.quantity', item.quantity - 1)
+    const { vsid, scope } = this
+    if (scope.quantity > 1) {
+      app.setFormField(vsid, 'p.quantity', scope.quantity - 1)
       app.submit(vsid, ON_MODIFY_QUANTITY)
     }
   }
 }
 
-const CartItemCard = BasePanelClass.FC(CartItemCardClass)
+export const CartItemView = BaseViewClass.FC(CartItemViewClass, '5d9e3c7a1f42')

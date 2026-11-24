@@ -32,8 +32,8 @@ import kotlin.reflect.KProperty
  *
  * **As JSON** ([write]), the fields go out in declaration order, after `"id"` (the view instance): `null` and blank
  * strings are left out; numbers and booleans always go; a [Scope] (a presenter's below, a segment) goes as
- * `"<name>ViewId"` with the instance id of the view that draws it ([CubeApplication.viewOf]), and a list of scopes as
- * `"<name>ViewIds"`; a [CubeView] goes as `"<name>Id"`; lists, maps, enums, [ScopeValue] and [Externalizable] values
+ * `"<name>ViewId"` with the instance id of the view that draws it ([CubeApplication.viewOf]), and a list declared with
+ * [scopes] as `"<name>ViewIds"`; a [CubeView] goes as `"<name>Id"`; lists, maps, enums, [ScopeValue] and [Externalizable] values
  * are written as themselves. Plain `var`s (the actions) never go. A field declared with
  * `sent = false` never goes (a password the user types, for example). Override [write] only for a shape these
  * rules can't give.
@@ -56,7 +56,9 @@ abstract class Scope {
         json.beginObject()
         json.name("id").value(instanceId)
         for (field in fields) {
-            if (field.sent) writeField(json, field.name, field.value, viewOf)
+            if (!field.sent) continue
+            if (field.scopes) writeScopes(json, field.name, field.value as List<*>, viewOf)
+            else writeField(json, field.name, field.value, viewOf)
         }
         json.endObject()
     }
@@ -112,7 +114,18 @@ abstract class Scope {
     protected fun <T> field(initial: T, sent: Boolean = true): PropertyDelegateProvider<Scope, ReadWriteProperty<Scope, T>> =
         PropertyDelegateProvider { scope, property -> Field(property.name, initial, sent).also { scope.fields += it } }
 
-    private class Field<T>(val name: String, var value: T, val sent: Boolean) : ReadWriteProperty<Scope, T> {
+    /**
+     * An observed list of scopes (the rows of a list, each one a view of its own): goes out as `"<name>ViewIds"`,
+     * empty included. Replace the list to change it; the presenter reuses the rows that stay (`segment`) and releases
+     * the ones that leave (`detach`).
+     */
+    protected fun <S : Scope> scopes(): PropertyDelegateProvider<Scope, ReadWriteProperty<Scope, List<S>>> =
+        PropertyDelegateProvider { scope, property ->
+            Field<List<S>>(property.name, emptyList(), sent = true, scopes = true).also { scope.fields += it }
+        }
+
+    private class Field<T>(val name: String, var value: T, val sent: Boolean, val scopes: Boolean = false) :
+        ReadWriteProperty<Scope, T> {
         override fun getValue(thisRef: Scope, property: KProperty<*>): T = value
 
         override fun setValue(thisRef: Scope, property: KProperty<*>, value: T) {
@@ -124,16 +137,18 @@ abstract class Scope {
 
     private companion object {
 
+        fun writeScopes(json: ExtensibleObjectOutput, name: String, rows: List<*>, viewOf: ((Scope) -> CubeView)?) {
+            if (viewOf == null) return
+            json.name(name + "ViewIds").beginArray()
+            for (row in rows) json.value(viewOf(row as Scope).instanceId)
+            json.endArray()
+        }
+
         fun writeField(json: ExtensibleObjectOutput, name: String, value: Any?, viewOf: ((Scope) -> CubeView)?) {
             when {
                 value == null -> {}
                 value is String -> if (value.isNotBlank()) json.name(name).value(value)
                 value is Scope -> if (viewOf != null) json.name(name + "ViewId").value(viewOf(value).instanceId)
-                value is List<*> && value.isNotEmpty() && value.all { it is Scope } -> if (viewOf != null) {
-                    json.name(name + "ViewIds").beginArray()
-                    for (item in value) json.value(viewOf(item as Scope).instanceId)
-                    json.endArray()
-                }
                 value is CubeView -> json.name(name + "Id").value(value.instanceId)
                 else -> {
                     json.name(name)

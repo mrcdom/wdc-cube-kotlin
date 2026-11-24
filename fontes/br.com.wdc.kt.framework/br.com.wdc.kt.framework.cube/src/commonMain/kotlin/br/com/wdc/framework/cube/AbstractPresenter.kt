@@ -60,6 +60,12 @@ abstract class AbstractPresenter<A : CubeApplication>(override val app: A) : Pre
         return scope
     }
 
+    /** Releases a segment that left the screen (a row removed from a list): its view and the owner's hold on it. */
+    protected fun detach(segment: Scope) {
+        segments.remove(segment)
+        app.releaseView(segment)
+    }
+
     // :: Actions
 
     protected fun action(fn: suspend () -> Unit): Action = Action { guard { fn() } }

@@ -204,8 +204,12 @@ class VirtualClient(
             val id = pending.removeFirst()
             if (!reachable.add(id)) continue
             for ((name, value) in known[id] ?: continue) {
-                if (name != "id" && value is String && known.containsKey(value)) {
+                if (name == "id") continue
+                if (value is String && known.containsKey(value)) {
                     pending.add(value)
+                } else if (value is List<*>) {
+                    // a list of rows, each a view of its own ("<field>ViewIds")
+                    value.filterIsInstance<String>().filter { known.containsKey(it) }.forEach(pending::add)
                 }
             }
         }

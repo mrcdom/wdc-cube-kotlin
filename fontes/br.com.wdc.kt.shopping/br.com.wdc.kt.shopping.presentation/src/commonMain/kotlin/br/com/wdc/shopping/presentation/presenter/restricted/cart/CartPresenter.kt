@@ -30,20 +30,18 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private var ownerSlot: ScopeSlot? = null
     private var pendingErrorClear: Registration? = null
 
+    /** The rows alive, by product: a row that stays is reused, so only what changed in it repaints. */
+    private val rows = LinkedHashMap<Long, CartItemScope>()
+
     init {
-        scope.items = emptyList()
         scope.onBuy = action(1) { buy() }
-        scope.onRemoveProduct = actionOf(2, FormParam.long("p.productId")) { removeProduct(it) }
         scope.onOpenProducts = action(3) { HomeKeys(app).flip() }
-        scope.onModifyQuantity = actionOf2(4, FormParam.long("p.productId"), FormParam.int("p.quantity")) { productId, quantity ->
-            modifyQuantity(productId, quantity)
-        }
     }
 
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
-        scope.items = cart.getCartItems()
+        syncRows()
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = CartKeys(app, intent).parentSlot
@@ -51,6 +49,33 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         ownerSlot?.setScope(scope)
 
         return true
+    }
+
+    // :: Rows
+
+    /** Makes the rows follow the cart: reuses the ones that stay, creates the new ones, releases the ones that left. */
+    private fun syncRows() {
+        val items = cart.getCartItems()
+        val next = items.map { item ->
+            rows.getOrPut(item.id) { newRow(item.id) }.apply {
+                name = item.name
+                image = item.image
+                price = item.price
+                quantity = item.quantity
+            }
+        }
+        val alive = items.mapTo(HashSet()) { it.id }
+        for (productId in rows.keys.filter { it !in alive }) {
+            detach(rows.remove(productId)!!)
+        }
+        scope.rows = next
+        scope.total = items.sumOf { it.price * it.quantity }
+    }
+
+    private fun newRow(productId: Long): CartItemScope = segment(CartItemScope()).also { row ->
+        row.productId = productId
+        row.onRemove = action(1, target = row) { removeProduct(productId) }
+        row.onModifyQuantity = actionOf(2, FormParam.int("p.quantity"), target = row) { modifyQuantity(productId, it) }
     }
 
     // :: User Actions
@@ -79,7 +104,7 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
             alertProductNotFound()
             LOG.warn("onModifyQuantity.alertProductNotFound: {}", scope.errorMessage)
         } else {
-            scope.items = cart.getCartItems()
+            syncRows()
         }
     }
 
@@ -95,7 +120,7 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
             if (cart.getSize() == 0) {
                 HomeKeys(app).flip()
             } else {
-                scope.items = cart.getCartItems()
+                syncRows()
             }
         }
     }

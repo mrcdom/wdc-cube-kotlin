@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -62,7 +63,7 @@ class RecompositionTest {
             SideEffect { renders++ }
             BasicText("parent $rev")
             scope.content?.let(app::viewOf)?.let { RenderSlot(it) }
-            // Same shape as CartView: a lambda created in the render, capturing the scope and an item id
+            // A lambda created in the render, capturing the scope and an id
             Button(onClick = { scope.onRemove(itemId) })
         }
 
@@ -71,6 +72,26 @@ class RecompositionTest {
         private fun Button(onClick: () -> Unit) {
             SideEffect { buttonRenders++ }
             BasicText("remove", Modifier.clickable(onClick = onClick))
+        }
+    }
+
+    private class ListScope : Scope() {
+        var rows: List<ChildScope> by scopes()
+    }
+
+    /** Same shape as CartView: each row is a view of its own, keyed by its scope. */
+    private class ListView(app: RootPresenter, scope: ListScope) :
+        ComposeCubeView<ListScope>("list", app, scope) {
+        var renders = 0
+
+        @Composable
+        override fun Render() {
+            val rev = revision.value
+            SideEffect { renders++ }
+            BasicText("list $rev")
+            for (row in scope.rows) {
+                key(row) { RenderSlot(app.viewOf(row)) }
+            }
         }
     }
 
@@ -83,6 +104,7 @@ class RecompositionTest {
             app.scopeViews = ScopeViews()
                 .register<ParentScope> { ParentView(app, it) }
                 .register<ChildScope> { ChildView(app, it, "child-${it.hashCode()}") }
+                .register<ListScope> { ListView(app, it) }
         }
 
         val parent get() = app.viewOf(parentScope) as ParentView
@@ -132,5 +154,33 @@ class RecompositionTest {
         runOnIdle { slot.value = scopeB }
         waitForIdle()
         assertEquals(1, f.viewOf(scopeA).renders); assertEquals(1, f.viewOf(scopeB).renders)
+    }
+
+    @Test
+    fun rows_recomposeOneByOne_andKeepTheirViewsWhenTheListChanges() = runComposeUiTest {
+        val f = Fixture()
+        val (a, b, c) = List(3) { ChildScope() }
+        val listScope = ListScope().also { it.rows = listOf(a, b, c) }
+        val list = f.app.viewOf(listScope) as ListView
+        setContent { list.Render() }
+        waitForIdle()
+        assertEquals(1, list.renders)
+        assertEquals(listOf(1, 1, 1), listOf(a, b, c).map { f.viewOf(it).renders })
+
+        // A row that changes repaints alone
+        runOnIdle { f.viewOf(b).revision.value++ }
+        waitForIdle()
+        assertEquals(1, list.renders, "list")
+        assertEquals(listOf(1, 2, 1), listOf(a, b, c).map { f.viewOf(it).renders })
+
+        // The list repaints (the total changed): its rows are skipped
+        runOnIdle { list.revision.value++ }
+        waitForIdle()
+        assertEquals(listOf(1, 2, 1), listOf(a, b, c).map { f.viewOf(it).renders })
+
+        // A row leaves: the others keep their views and are not repainted
+        runOnIdle { listScope.rows = listOf(b, c); list.revision.value++ }
+        waitForIdle()
+        assertEquals(listOf(2, 1), listOf(b, c).map { f.viewOf(it).renders })
     }
 }

@@ -18,6 +18,7 @@ import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.RootScope
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
@@ -109,4 +110,5 @@ private fun createScopeViews(app: RootPresenter): ScopeViews = ScopeViews()
     .register<PurchasesPanelScope> { onMainThread { PurchasesPanelViewIos(app, it).initialize() } }
     .register<ProductScope> { onMainThread { ProductViewIos(app, it).initialize() } }
     .register<CartScope> { onMainThread { CartViewIos(app, it).initialize() } }
+    .register<CartItemScope> { onMainThread { CartItemViewIos(app, it).initialize() } }
     .register<ReceiptScope> { onMainThread { ReceiptViewIos(app, it).initialize() } }

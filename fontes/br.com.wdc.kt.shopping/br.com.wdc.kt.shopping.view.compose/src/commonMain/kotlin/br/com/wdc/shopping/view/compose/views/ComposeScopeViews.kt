@@ -4,6 +4,7 @@ import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootScope
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
@@ -20,6 +21,7 @@ fun composeScopeViews(app: RootPresenter): ScopeViews = ScopeViews()
     .register<LoginScope> { LoginView(app, it) }
     .register<HomeScope> { HomeView(app, it) }
     .register<CartScope> { CartView(app, it) }
+    .register<CartItemScope> { CartItemView(app, it) }
     .register<ProductScope> { ProductView(app, it) }
     .register<ReceiptScope> { ReceiptView(app, it) }
     .register<ProductsPanelScope> { ProductsPanelView(app, it) }

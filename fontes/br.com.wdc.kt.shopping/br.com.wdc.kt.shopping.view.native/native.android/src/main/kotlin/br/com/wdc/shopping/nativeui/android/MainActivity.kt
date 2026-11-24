@@ -27,6 +27,7 @@ import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.presentation.presenter.RootKeys
 import br.com.wdc.shopping.presentation.presenter.RootScope
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
@@ -99,6 +100,7 @@ class MainActivity : AppCompatActivity() {
             .register<PurchasesPanelScope> { onMainThread { PurchasesPanelViewAndroid(app, it).initialize() } }
             .register<ProductScope> { onMainThread { ProductViewAndroid(app, it).initialize() } }
             .register<CartScope> { onMainThread { CartViewAndroid(app, it).initialize() } }
+            .register<CartItemScope> { onMainThread { CartItemViewAndroid(app, it).initialize() } }
             .register<ReceiptScope> { onMainThread { ReceiptViewAndroid(app, it).initialize() } }
     }
 

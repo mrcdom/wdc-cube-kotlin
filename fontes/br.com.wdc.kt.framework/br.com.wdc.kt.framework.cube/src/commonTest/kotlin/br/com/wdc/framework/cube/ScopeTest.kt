@@ -90,7 +90,7 @@ class ScopeTest {
 
     private class Holder : Scope() {
         var content: Scope? by field(null)
-        var rows: List<Scope> by field(emptyList())
+        var rows: List<TestScope> by scopes()
     }
 
     @Test
@@ -102,7 +102,7 @@ class ScopeTest {
             """{"id":"h:1","contentViewId":"test","rowsViewIds":["test","test"]}""",
             holder.toJson("h:1", app::viewOf),
         )
-        assertEquals("""{"id":"h:1","rows":[]}""", Holder().toJson("h:1", app::viewOf))
+        assertEquals("""{"id":"h:1","rowsViewIds":[]}""", Holder().toJson("h:1", app::viewOf), "an empty list still goes")
     }
 
     @Test

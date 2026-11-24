@@ -1,10 +1,11 @@
 package br.com.wdc.shopping.nativeui.web.views
 
-import br.com.wdc.shopping.nativeui.web.bridge.EmitterCache
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.shopping.nativeui.web.bridge.RenderSlot
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.Add
@@ -43,30 +44,11 @@ class CartView(
     scope: CartScope,
 ) : ReactCubeView<CartScope>("cart-view", app, scope) {
 
-    // :: Emitters — created once per view (and once per cart item), so they are the same function on every render
+    // :: Emitters — created once per view, so they are the same function on every render
 
     private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
 
     private val onBuy: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onBuy() } }
-
-    /** The emitters of one cart item. They read the item's current quantity from the state when they run. */
-    private inner class ItemEmitters(val id: Long) {
-        private fun quantity(): Int = scope.items.firstOrNull { it.id == id }?.quantity ?: 1
-
-        val decrement: MouseEventHandler<HTMLButtonElement> = {
-            val next = (quantity() - 1).coerceAtLeast(1)
-            safeCall { scope.onModifyQuantity(id, next) }
-        }
-
-        val increment: MouseEventHandler<HTMLButtonElement> = {
-            val next = quantity() + 1
-            safeCall { scope.onModifyQuantity(id, next) }
-        }
-
-        val remove: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onRemoveProduct(id) } }
-    }
-
-    private val itemEmitters = EmitterCache<Long, ItemEmitters> { id -> ItemEmitters(id) }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -119,7 +101,8 @@ class CartView(
                     }
                 }
 
-                if (scope.items.isEmpty()) {
+                val rows = scope.rows
+                if (rows.isEmpty()) {
                     // Empty state
                     Box {
                         sx {
@@ -153,95 +136,12 @@ class CartView(
                         Stack {
                             direction = responsive(StackDirection.column)
                             spacing = responsive(1)
-
-                            itemEmitters.retainOnly(scope.items.map { it.id })
-                            for (item in scope.items) {
-                                val emitters = itemEmitters[item.id]
-                                Card {
-                                    key = "${item.id}"
-                                    sx {
-                                        borderRadius = 8.px
-                                        backgroundColor = ShoppingColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
-                                    }
-                                    elevation = 0
-
-                                    CardContent {
-                                        sx { padding = 16.px }
-
-                                        Stack {
-                                            direction = responsive(StackDirection.row)
-                                            sx { alignItems = AlignItems.center }
-                                            spacing = responsive(2)
-
-                                            // Product info
-                                            Box {
-                                                sx { flex = Flex(number(1.0), number(1.0), 0.px) }
-
-                                                Typography {
-                                                    variant = TypographyVariant.body2
-                                                    asDynamic().style = ShoppingStyles.subtitleBody2
-                                                    asDynamic().noWrap = true
-                                                    +(item.name ?: "")
-                                                }
-                                                Typography {
-                                                    variant = TypographyVariant.body2
-                                                    asDynamic().style = ShoppingStyles.fontMedium
-                                                    sx { color = ShoppingColors.PriceColor.unsafeCast<Color>() }
-                                                    +"\$${formatPrice(item.price)}"
-                                                }
-                                            }
-
-                                            // Quantity controls
-                                            Paper {
-                                                sx {
-                                                    borderRadius = 10.px
-                                                    backgroundColor = ShoppingColors.SurfaceVariant.unsafeCast<BackgroundColor>()
-                                                    display = Display.flex
-                                                    alignItems = AlignItems.center
-                                                    paddingLeft = 4.px
-                                                    paddingRight = 4.px
-                                                }
-                                                elevation = 0
-
-                                                IconButton {
-                                                    size = mui.material.Size.small
-                                                    sx {
-                                                        backgroundColor = ShoppingColors.SecondaryContainer.unsafeCast<BackgroundColor>()
-                                                        width = 32.px
-                                                        height = 32.px
-                                                    }
-                                                    onClick = emitters.decrement
-                                                    Remove { sx { fontSize = 16.px } }
-                                                }
-
-                                                Typography {
-                                                    variant = TypographyVariant.subtitle1
-                                                    sx { fontWeight = FontWeight.bold; paddingLeft = 14.px; paddingRight = 14.px }
-                                                    +"${item.quantity}"
-                                                }
-
-                                                IconButton {
-                                                    size = mui.material.Size.small
-                                                    sx {
-                                                        backgroundColor = ShoppingColors.SecondaryContainer.unsafeCast<BackgroundColor>()
-                                                        width = 32.px
-                                                        height = 32.px
-                                                    }
-                                                    onClick = emitters.increment
-                                                    Add { sx { fontSize = 16.px } }
-                                                }
-                                            }
-
-                                            // Remove button
-                                            Button {
-                                                variant = ButtonVariant.text
-                                                color = ButtonColor.error
-                                                onClick = emitters.remove
-                                                asDynamic().style = ShoppingStyles.smallAction
-                                                +"Remove"
-                                            }
-                                        }
-                                    }
+                            // Each row is a view of its own: it repaints only when its own scope changes
+                            for (row in rows) {
+                                val rowView = app.viewOf(row)
+                                RenderSlot {
+                                    key = rowView.instanceId
+                                    view = rowView
                                 }
                             }
                         }
@@ -261,7 +161,7 @@ class CartView(
                             +"Total: "
                         }
 
-                        val total = scope.items.sumOf { it.price * it.quantity }
+                        val total = scope.total
                         Box {
                             sx {
                                 backgroundColor = ShoppingColors.PriceBackground.unsafeCast<BackgroundColor>()
@@ -295,7 +195,7 @@ class CartView(
                         +"Continue Shopping"
                     }
 
-                    if (scope.items.isNotEmpty()) {
+                    if (rows.isNotEmpty()) {
                         Button {
                             variant = ButtonVariant.contained
                             onClick = onBuy
@@ -313,5 +213,127 @@ class CartView(
                 }
             }
         }
+    }
+}
+
+/** One row of the cart: a view of its own, repainted only when its row's scope changes. */
+class CartItemView(
+    app: RootPresenter,
+    scope: CartItemScope,
+) : ReactCubeView<CartItemScope>("cart-item-view-${nextInstance++}", app, scope) {
+
+    // :: Emitters — created once per row view; they read the row's current quantity when they run
+
+    private val decrement: MouseEventHandler<HTMLButtonElement> = {
+        val next = (scope.quantity - 1).coerceAtLeast(1)
+        safeCall { scope.onModifyQuantity(next) }
+    }
+
+    private val increment: MouseEventHandler<HTMLButtonElement> = {
+        val next = scope.quantity + 1
+        safeCall { scope.onModifyQuantity(next) }
+    }
+
+    private val remove: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onRemove() } }
+
+    override val component = FC<Props> {
+        var rev by useState(revision)
+        useEffect(this@CartItemView) {
+            onUpdate = { rev = revision }
+        }
+
+        @Suppress("UNUSED_VARIABLE")
+        val unused = rev
+
+        Card {
+            sx {
+                borderRadius = 8.px
+                backgroundColor = ShoppingColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
+            }
+            elevation = 0
+
+            CardContent {
+                sx { padding = 16.px }
+
+                Stack {
+                    direction = responsive(StackDirection.row)
+                    sx { alignItems = AlignItems.center }
+                    spacing = responsive(2)
+
+                    // Product info
+                    Box {
+                        sx { flex = Flex(number(1.0), number(1.0), 0.px) }
+
+                        Typography {
+                            variant = TypographyVariant.body2
+                            asDynamic().style = ShoppingStyles.subtitleBody2
+                            asDynamic().noWrap = true
+                            +(scope.name ?: "")
+                        }
+                        Typography {
+                            variant = TypographyVariant.body2
+                            asDynamic().style = ShoppingStyles.fontMedium
+                            sx { color = ShoppingColors.PriceColor.unsafeCast<Color>() }
+                            +"\$${formatPrice(scope.price)}"
+                        }
+                    }
+
+                    // Quantity controls
+                    Paper {
+                        sx {
+                            borderRadius = 10.px
+                            backgroundColor = ShoppingColors.SurfaceVariant.unsafeCast<BackgroundColor>()
+                            display = Display.flex
+                            alignItems = AlignItems.center
+                            paddingLeft = 4.px
+                            paddingRight = 4.px
+                        }
+                        elevation = 0
+
+                        IconButton {
+                            size = mui.material.Size.small
+                            sx {
+                                backgroundColor = ShoppingColors.SecondaryContainer.unsafeCast<BackgroundColor>()
+                                width = 32.px
+                                height = 32.px
+                            }
+                            onClick = decrement
+                            Remove { sx { fontSize = 16.px } }
+                        }
+
+                        Typography {
+                            variant = TypographyVariant.subtitle1
+                            sx { fontWeight = FontWeight.bold; paddingLeft = 14.px; paddingRight = 14.px }
+                            +"${scope.quantity}"
+                        }
+
+                        IconButton {
+                            size = mui.material.Size.small
+                            sx {
+                                backgroundColor = ShoppingColors.SecondaryContainer.unsafeCast<BackgroundColor>()
+                                width = 32.px
+                                height = 32.px
+                            }
+                            onClick = increment
+                            Add { sx { fontSize = 16.px } }
+                        }
+                    }
+
+                    // Remove button
+                    Button {
+                        variant = ButtonVariant.text
+                        color = ButtonColor.error
+                        onClick = remove
+                        asDynamic().style = ShoppingStyles.smallAction
+                        +"Remove"
+                    }
+                }
+            }
+        }
+    }
+
+    private companion object {
+        /** Each row view needs its own instance id: they are keyed by it in the cart. */
+        var nextInstance = 0
     }
 }

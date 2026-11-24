@@ -10,7 +10,7 @@ import SlotView from './views/SlotView'
 import RootView from './views/RootView'
 import LoginView from './views/LoginView'
 import RestrictedView from './views/HomeView'
-import CartView from './views/CartView'
+import CartView, { CartItemView } from './views/CartView'
 import ReceiptView from './views/ReceiptView'
 import ProductView from './views/ProductView'
 import ProductsPanel from './views/home/ProductsPanel'
@@ -23,6 +23,7 @@ app.registerComponents(
   LoginView,
   RestrictedView,
   CartView,
+  CartItemView,
   ReceiptView,
   ProductView,
   ProductsPanel,

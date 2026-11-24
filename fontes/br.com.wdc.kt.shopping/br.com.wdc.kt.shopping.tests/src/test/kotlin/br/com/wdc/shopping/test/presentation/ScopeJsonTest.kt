@@ -6,7 +6,7 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.Scope
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
@@ -51,12 +51,18 @@ class ScopeJsonTest {
     }
 
     @Test
-    fun cart_itemsKeepTheirShape() {
-        val item = CartItem().apply { id = 4; name = "Ball"; price = 12.5; quantity = 2; image = "x.png" }
+    fun cart_sendsItsRows_asTheIdsOfTheirViews_andTheTotal() {
+        val row = CartItemScope().apply { productId = 4; name = "Ball"; price = 12.5; quantity = 2; image = "x.png" }
+        val views = mapOf<Scope, CubeView>(row to View("i:9"))
         assertEquals(
-            """{"id":"c:2","items":[{"id":4,"name":"Ball","price":12.5,"quantity":2}],"errorCode":0}""",
-            CartScope().apply { items = listOf(item) }.toJson("c:2"),
+            """{"id":"c:2","rowsViewIds":["i:9"],"total":25.0,"errorCode":0}""",
+            CartScope().apply { rows = listOf(row); total = 25.0 }.toJson("c:2") { views.getValue(it) },
         )
+        assertEquals(
+            """{"id":"i:9","productId":4,"name":"Ball","image":"x.png","price":12.5,"quantity":2}""",
+            row.toJson("i:9"),
+        )
+        assertEquals("""{"id":"c:2","rowsViewIds":[],"total":0.0,"errorCode":0}""", CartScope().toJson("c:2") { error("none") })
     }
 
     @Test

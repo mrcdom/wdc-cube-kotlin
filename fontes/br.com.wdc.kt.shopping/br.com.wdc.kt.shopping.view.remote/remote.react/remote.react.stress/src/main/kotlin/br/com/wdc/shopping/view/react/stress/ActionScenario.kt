@@ -82,6 +82,7 @@ object Vid {
     const val PURCHASES_PANEL = "b3c4d5e6f7a8"
     const val PRODUCT = "48b693f67410"
     const val CART = "7eb485e5f843"
+    const val CART_ITEM = "5d9e3c7a1f42"
     const val RECEIPT = "e8d0bd8ae3bc"
 }
 
@@ -102,6 +103,9 @@ class FullShoppingScenario(private val credentials: UserCredentials) : ActionSce
 
         // 4. Add to cart (the application navigates straight to the cart)
         if (!doAddToCart(client, metrics)) return false
+
+        // 4b. One more of it, from the cart row
+        if (!doIncrementCartRow(client, metrics)) return false
 
         // 5. Buy
         if (!doBuy(client, metrics)) return false
@@ -125,6 +129,12 @@ class FullShoppingScenario(private val credentials: UserCredentials) : ActionSce
         val viewId = resolveView(client, Vid.PRODUCT) ?: return false
         val latency = client.sendEvent(viewId, 2, mapOf("p.quantity" to 1))
         return recordAction(metrics, "addToCart", latency)
+    }
+
+    private fun doIncrementCartRow(client: VirtualClient, metrics: MetricsCollector): Boolean {
+        val rowViewId = resolveView(client, Vid.CART_ITEM) ?: return false
+        val latency = client.sendEvent(rowViewId, 2, mapOf("p.quantity" to 2))
+        return recordAction(metrics, "modifyQuantity", latency)
     }
 
     private fun doOpenProducts(client: VirtualClient, metrics: MetricsCollector, fromVid: String): Boolean {

@@ -70,8 +70,8 @@ class CartReloadTest {
         addToCart(first, DBReset.FLASH_DRIVE_2GB_ID, 1) // a product already in the cart also counts
 
         val cart = cartAfterReload()
-        assertEquals(listOf(DBReset.FLASH_DRIVE_2GB_ID to 3, DBReset.WILSON_BALL_ID to 1), cart.scope.items.map { it.id to it.quantity })
-        assertTrue(cart.scope.items.all { !it.name.isNullOrBlank() && it.price > 0.0 }, "names and prices read again")
+        assertEquals(listOf(DBReset.FLASH_DRIVE_2GB_ID to 3, DBReset.WILSON_BALL_ID to 1), cart.scope.rows.map { it.productId to it.quantity })
+        assertTrue(cart.scope.rows.all { !it.name.isNullOrBlank() && it.price > 0.0 }, "names and prices read again")
         val home = RestrictedViewMock.cast(apps.last().getRootView()!!.contentView)
         assertEquals(4, home.scope.cartItemCount)
     }
@@ -84,10 +84,10 @@ class CartReloadTest {
         val home = RestrictedViewMock.cast(first.getRootView()!!.contentView)
         home.scope.onOpenCart()
         val cartView = CartViewMock.cast(RestrictedViewMock.cast(first.getRootView()!!.contentView).contentView)
-        cartView.scope.onRemoveProduct(DBReset.WILSON_BALL_ID)
+        cartView.scope.rows.single { it.productId == DBReset.WILSON_BALL_ID }.onRemove()
         assertNull(session.getString(HomePresenter.CART_KEY))
 
-        assertTrue(cartAfterReload().scope.items.isEmpty())
+        assertTrue(cartAfterReload().scope.rows.isEmpty())
     }
 
     @Test

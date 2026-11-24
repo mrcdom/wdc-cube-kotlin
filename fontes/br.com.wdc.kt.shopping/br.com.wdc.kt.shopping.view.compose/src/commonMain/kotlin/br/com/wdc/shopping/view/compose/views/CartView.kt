@@ -20,7 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
+import br.com.wdc.shopping.view.compose.bridge.RenderSlot
 import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.util.formatPrice
 
@@ -31,7 +33,6 @@ class CartView(app: RootPresenter, scope: CartScope) :
     override fun Render() {
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
-
 
         Box(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -76,7 +77,7 @@ class CartView(app: RootPresenter, scope: CartScope) :
                         }
                     }
 
-                    if (scope.items.isEmpty()) {
+                    if (scope.rows.isEmpty()) {
                         // Empty state
                         Box(
                             modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -104,91 +105,9 @@ class CartView(app: RootPresenter, scope: CartScope) :
                             modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            for (item in scope.items) {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(8.dp),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                                    )
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        // Product info
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                item.name ?: "",
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.SemiBold,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Spacer(Modifier.height(4.dp))
-                                            Text(
-                                                "\$${formatPrice(item.price)}",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = PriceColor,
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                        }
-
-                                        // Quantity controls
-                                        Surface(
-                                            shape = RoundedCornerShape(10.dp),
-                                            color = MaterialTheme.colorScheme.surfaceVariant
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                            ) {
-                                                FilledTonalIconButton(
-                                                    onClick = {
-                                                        safeCall {
-                                                            scope.onModifyQuantity(
-                                                                item.id,
-                                                                (item.quantity - 1).coerceAtLeast(1)
-                                                            )
-                                                        }
-                                                    },
-                                                    modifier = Modifier.size(32.dp)
-                                                ) {
-                                                    Icon(Icons.Default.Remove, contentDescription = "Diminuir", modifier = Modifier.size(16.dp))
-                                                }
-
-                                                Text(
-                                                    "${item.quantity}",
-                                                    modifier = Modifier.padding(horizontal = 14.dp),
-                                                    fontWeight = FontWeight.Bold,
-                                                    style = MaterialTheme.typography.titleMedium
-                                                )
-
-                                                FilledTonalIconButton(
-                                                    onClick = {
-                                                        safeCall { scope.onModifyQuantity(item.id, item.quantity + 1) }
-                                                    },
-                                                    modifier = Modifier.size(32.dp)
-                                                ) {
-                                                    Icon(Icons.Default.Add, contentDescription = "Aumentar", modifier = Modifier.size(16.dp))
-                                                }
-                                            }
-                                        }
-
-                                        Spacer(Modifier.width(12.dp))
-
-                                        // Remove button
-                                        TextButton(
-                                            onClick = { safeCall { scope.onRemoveProduct(item.id) } },
-                                            colors = ButtonDefaults.textButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error
-                                            )
-                                        ) {
-                                            Text("Remove", fontSize = 12.sp)
-                                        }
-                                    }
-                                }
+                            for (row in scope.rows) {
+                                // Keyed by the row's scope: a row keeps its view while its product stays in the cart
+                                key(row) { RenderSlot(app.viewOf(row)) }
                             }
                         }
 
@@ -207,13 +126,12 @@ class CartView(app: RootPresenter, scope: CartScope) :
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            val total = scope.items.sumOf { it.price * it.quantity }
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
                                 color = PriceColor.copy(alpha = 0.1f)
                             ) {
                                 Text(
-                                    "\$${formatPrice(total)}",
+                                    "\$${formatPrice(scope.total)}",
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
@@ -240,7 +158,7 @@ class CartView(app: RootPresenter, scope: CartScope) :
                                 Text("Continue Shopping", fontWeight = FontWeight.Medium)
                             }
                         }
-                        if (scope.items.isNotEmpty()) {
+                        if (scope.rows.isNotEmpty()) {
                             Button(
                                 onClick = { safeCall { scope.onBuy() } },
                                 shape = RoundedCornerShape(12.dp),
@@ -263,3 +181,92 @@ class CartView(app: RootPresenter, scope: CartScope) :
     }
 }
 
+
+/** One row of the cart, a view of its own: it recomposes when its product's quantity changes, not the whole cart. */
+class CartItemView(app: RootPresenter, scope: CartItemScope) :
+    ComposeCubeView<CartItemScope>("cart-item-view", app, scope) {
+
+    @Composable
+    override fun Render() {
+        @Suppress("UNUSED_VARIABLE")
+        val rev = revision.value
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Product info
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        scope.name ?: "",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "\$${formatPrice(scope.price)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = PriceColor,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Quantity controls
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    ) {
+                        FilledTonalIconButton(
+                            onClick = {
+                                safeCall { scope.onModifyQuantity((scope.quantity - 1).coerceAtLeast(1)) }
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(16.dp))
+                        }
+
+                        Text(
+                            "${scope.quantity}",
+                            modifier = Modifier.padding(horizontal = 14.dp),
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        FilledTonalIconButton(
+                            onClick = { safeCall { scope.onModifyQuantity(scope.quantity + 1) } },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                // Remove button
+                TextButton(
+                    onClick = { safeCall { scope.onRemove() } },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Remove", fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}

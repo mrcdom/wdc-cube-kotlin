@@ -123,6 +123,7 @@ src/androidMain/kotlin/br/com/wdc/shopping/nativeui/android/
     ├── ProductsPanelViewAndroid.kt  # Product grid
     ├── PurchasesPanelViewAndroid.kt # Paginated purchase list
     ├── ProductViewAndroid.kt    # Product details
-    ├── CartViewAndroid.kt       # Storefront cart
+    ├── CartViewAndroid.kt       # Storefront cart: hosts the view of each row
+    ├── CartItemViewAndroid.kt   # A cart row: quantity controls and remove
     └── ReceiptViewAndroid.kt    # Purchase receipt
 ```

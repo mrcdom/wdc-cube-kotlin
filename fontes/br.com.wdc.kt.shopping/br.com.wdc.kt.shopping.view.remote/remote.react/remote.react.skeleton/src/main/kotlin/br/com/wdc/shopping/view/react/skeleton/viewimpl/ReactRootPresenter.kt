@@ -19,6 +19,7 @@ import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.shopping.presentation.presenter.RootScope
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
@@ -131,6 +132,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
             .register<HomeScope> { ScopeViewImpl("473dbdd7a36a", this, it) }
             .register<ProductScope> { ScopeViewImpl("48b693f67410", this, it) }
             .register<CartScope> { ScopeViewImpl("7eb485e5f843", this, it) }
+            .register<CartItemScope> { ScopeViewImpl("5d9e3c7a1f42", this, it) }
             .register<ReceiptScope> { ReceiptReactViewImpl(this, it) }
             .register<ProductsPanelScope> { ScopeViewImpl("a1b2c3d4e5f6", this, it) }
             .register<PurchasesPanelScope> { ScopeViewImpl("b3c4d5e6f7a8", this, it) }
