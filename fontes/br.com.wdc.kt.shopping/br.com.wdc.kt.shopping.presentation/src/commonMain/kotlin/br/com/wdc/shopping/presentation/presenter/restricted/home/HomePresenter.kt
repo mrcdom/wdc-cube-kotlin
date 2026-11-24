@@ -6,6 +6,7 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.Scope
+import br.com.wdc.framework.cube.FormParam
 import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
@@ -13,11 +14,15 @@ import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelService
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductService
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
+
+import kotlin.math.ceil
+import kotlin.math.max
 
 class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
@@ -39,14 +44,26 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private var ownerSlot: ScopeSlot? = null
     private var cart: CartManager? = null
-    private var productsPanel: ProductsPanelPresenter? = null
-    private var purchasesPanel: PurchasesPanelPresenter? = null
+    private val productService = ProductService(ProductRepository.BEAN.get())
+    private val purchasesService = PurchasesPanelService(PurchaseRepository.BEAN.get())
+
+    // the two panels: segments of the home scope, without presenters of their own
+    private val products = segment(ProductsPanelScope())
+    private val purchases = segment(PurchasesPanelScope())
     private var onCartCommitListenerRemover: () -> Unit = NOOP
     private var onCartChangeListenerRemover: () -> Unit = NOOP
 
     init {
         scope.onExit = action(1) { exit() }
         scope.onOpenCart = action(2) { CartKeys(app).flip() }
+
+        products.onOpenProduct = actionOf(1, FormParam.long("p.productId"), target = products) { openProduct(it) }
+
+        // not navigations: the guard republishes the address, which follows the page
+        purchases.onOpenReceipt = actionOf(1, FormParam.long("p.purchaseId"), target = purchases) { openReceipt(it) }
+        purchases.onPageChange = actionOf(2, FormParam.int("p.page"), target = purchases) { changePage(it ?: 0) }
+        purchases.onItemSizeCapacityChanged =
+            actionOf(3, FormParam.int("p.capacity"), target = purchases) { changeCapacity(it ?: 0) }
     }
 
     // :: Cube API
@@ -54,17 +71,8 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     override fun release() {
         scope.content = null
 
-        productsPanel?.let {
-            it.release()
-            productsPanel = null
-            scope.productsPanel = null
-        }
-
-        purchasesPanel?.let {
-            it.release()
-            purchasesPanel = null
-            scope.purchasesPanel = null
-        }
+        scope.productsPanel = null
+        scope.purchasesPanel = null
 
         app.cart = null
 
@@ -85,14 +93,13 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = HomeKeys(app, intent).parentSlot
-        if (initialization || productsPanel == null) {
+        if (initialization || scope.productsPanel == null) {
             scope.nickName = app.subject?.nickName
 
-            productsPanel = ProductsPanelPresenter(app, this).also { it.initialize() }
-            scope.productsPanel = productsPanel!!.scope
-
-            purchasesPanel = PurchasesPanelPresenter(app, this).also { it.initialize() }
-            scope.purchasesPanel = purchasesPanel!!.scope
+            loadProducts()
+            scope.productsPanel = products
+            // the purchases come with the view's first capacity
+            scope.purchasesPanel = purchases
 
             cart = CartManager(PurchaseRepository.BEAN.get())
             restoreCart()
@@ -109,7 +116,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         ownerSlot!!.setScope(scope)
 
         // the page the address asks for; the panel loads it now, or once its view tells its capacity
-        purchasesPanel?.restorePage(HomeKeys(app, intent).purchasesPage)
+        restorePage(HomeKeys(app, intent).purchasesPage)
 
         if (deepest) {
             setContent(null)
@@ -122,14 +129,14 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     override fun publishParameters(intent: CubeIntent) {
-        HomeKeys(app, intent).purchasesPage = purchasesPanel?.scope?.page ?: 0
+        HomeKeys(app, intent).purchasesPage = purchases.page
     }
 
     // :: User Actions
 
     private suspend fun onCartCommited() {
-        productsPanel?.loadProducts()
-        purchasesPanel?.changePage(0)
+        loadProducts()
+        changePage(0)
     }
 
     private fun onCartChanged() {
@@ -165,7 +172,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     /** Opens the receipt of a purchase: the purchases panel's action. */
-    internal suspend fun openReceipt(purchaseId: Long?) {
+    private suspend fun openReceipt(purchaseId: Long?) {
         if (purchaseId == null || purchaseId <= 0) {
             alertPurchaseIdRequired()
             LOG.warn("onOpenReceipt: {}", scope.errorMessage)
@@ -181,7 +188,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     /** Opens a product: the products panel's action. */
-    internal suspend fun openProduct(productId: Long?) {
+    private suspend fun openProduct(productId: Long?) {
         if (productId == null || productId <= 0) {
             alertProductIdRequired()
             LOG.warn("onOpenProduct: {}", scope.errorMessage)
@@ -237,6 +244,64 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     private suspend fun reloadPurchasesIfNeeded() {
-        purchasesPanel?.loadPurchases()
+        loadPurchases()
+    }
+
+    // :: Products panel
+
+    private suspend fun loadProducts() {
+        try {
+            products.products = productService.loadProductsWithoutDescription(1000)
+        } catch (caught: Exception) {
+            LOG.error("Failed to load products", caught)
+        }
+    }
+
+    // :: Purchases panel
+
+    /**
+     * The page the address asks for. Loaded now if it changed and the view already told its capacity; otherwise with
+     * the first capacity.
+     */
+    private suspend fun restorePage(page: Int) {
+        val requested = max(0, page)
+        if (requested == purchases.page) return
+        purchases.page = requested
+        if (purchases.pageSize > 0) loadPurchases()
+    }
+
+    private suspend fun changePage(page: Int) {
+        purchases.page = max(0, page)
+        loadPurchases()
+    }
+
+    private suspend fun changeCapacity(capacity: Int) {
+        val newPageSize = max(1, capacity)
+        if (newPageSize != purchases.pageSize) {
+            // the first capacity keeps the page the address asked for; a later change goes back to the first page
+            if (purchases.pageSize > 0) purchases.page = 0
+            purchases.pageSize = newPageSize
+            loadPurchases()
+        }
+    }
+
+    private suspend fun loadPurchases() {
+        val subject = app.subject
+        if (subject != null && purchases.pageSize > 0) {
+            var page = purchasesService.fetchPageOfUser(subject.id!!, purchases.page, purchases.pageSize)
+
+            purchases.totalCount = page.totalItems
+
+            val totalPages = max(1, ceil(purchases.totalCount.toDouble() / purchases.pageSize).toInt())
+            if (purchases.page >= totalPages) {
+                // the requested page is past the end (the view capacity changed, or purchases disappeared): show the
+                // last one, with its items — the result above is the one of the page that does not exist
+                purchases.page = totalPages - 1
+                page = purchasesService.fetchPageOfUser(subject.id!!, purchases.page, purchases.pageSize)
+                purchases.totalCount = page.totalItems
+            }
+
+            purchases.purchases = page.items
+        }
     }
 }

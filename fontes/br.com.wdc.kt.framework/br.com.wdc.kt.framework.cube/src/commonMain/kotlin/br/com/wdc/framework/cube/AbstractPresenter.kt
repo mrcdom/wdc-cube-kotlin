@@ -20,6 +20,8 @@ abstract class AbstractPresenter<A : CubeApplication>(override val app: A) : Pre
 
     private var boundScope: Scope? = null
 
+    private val segments = mutableListOf<Scope>()
+
     private val log by lazy { Log.getLogger(this::class.simpleName ?: "Presenter") }
 
     /** Asks the view of the bound scope to repaint (only needed for a change no field sees). */
@@ -27,8 +29,9 @@ abstract class AbstractPresenter<A : CubeApplication>(override val app: A) : Pre
         boundScope?.let { app.viewOrNull(it)?.update() }
     }
 
-    /** Releases the view of the bound scope. */
+    /** Releases the views of the bound scope and of its segments. */
     override fun release() {
+        segments.forEach { app.releaseView(it) }
         boundScope?.let { app.releaseView(it) }
     }
 
@@ -42,6 +45,18 @@ abstract class AbstractPresenter<A : CubeApplication>(override val app: A) : Pre
     protected fun <S : Scope> bind(scope: S): S {
         scope.observe(::update)
         boundScope = scope
+        return scope
+    }
+
+    /**
+     * A segment: a piece of the screen without navigation of its own (a panel), kept as a smaller scope in a field
+     * of the bound one, with its own view and no presenter — this presenter binds its actions
+     * (`actionOf(1, FormParam.long("p.productId"), target = products) { … }`). A change repaints the segment's view,
+     * or the owner's until the segment has one; its view is released with this presenter.
+     */
+    protected fun <S : Scope> segment(scope: S): S {
+        scope.observe { (app.viewOrNull(scope) ?: boundScope?.let { app.viewOrNull(it) })?.update() }
+        segments += scope
         return scope
     }
 

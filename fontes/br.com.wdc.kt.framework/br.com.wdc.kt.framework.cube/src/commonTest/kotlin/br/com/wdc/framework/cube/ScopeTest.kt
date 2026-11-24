@@ -151,4 +151,30 @@ class ScopeTest {
         val e = assertFailsWith<IllegalStateException> { Odd().toJson("v:1") }
         assertTrue("thing" in e.message!!, e.message)
     }
+
+    private class OwnerPresenter(app: CubeApplication) : AbstractCubePresenter<CubeApplication>(app) {
+        val scope = bind(Holder())
+        val panel = segment(TestScope())
+    }
+
+    @Test
+    fun aSegment_repaintsTheOwnerUntilItHasAViewOfItsOwn_andIsReleasedWithThePresenter() {
+        val app = object : CubeApplication() {}
+        val ownerView = TestView()
+        val panelView = TestView()
+        app.scopeViews = ScopeViews().register<Holder> { ownerView }.register<TestScope> { panelView }
+        val presenter = OwnerPresenter(app)
+        app.viewOf(presenter.scope)
+
+        presenter.panel.name = "before its view"
+        assertEquals(1, ownerView.updates, "no view of its own yet: the owner repaints")
+
+        app.viewOf(presenter.panel)
+        presenter.panel.name = "with its view"
+        assertEquals(1, panelView.updates)
+        assertEquals(1, ownerView.updates, "the owner no longer repaints for it")
+
+        presenter.release()
+        assertNull(app.viewOrNull(presenter.panel))
+    }
 }

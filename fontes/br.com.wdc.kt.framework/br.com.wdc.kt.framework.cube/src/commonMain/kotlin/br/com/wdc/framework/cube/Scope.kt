@@ -12,8 +12,8 @@ import kotlin.reflect.KProperty
  * not call `update()` by hand, and it writes itself as JSON for views that receive it serialized ([write]).
  *
  * Declare each field with [field]: assigning it a value different from the current one (`!=`, so lists compare by
- * content) notifies the observer — the presenter, through `bind(...)` in [AbstractCubePresenter] and
- * [AbstractChildPresenter], which calls `update()`. Several changes in a row cost one repaint: `update()` only marks
+ * content) notifies the observer — the presenter, through `bind(...)` (or `segment(...)`) in [AbstractPresenter],
+ * which calls `update()`. Several changes in a row cost one repaint: `update()` only marks
  * the view dirty, and the view layer paints once per cycle.
  *
  * ```kotlin
