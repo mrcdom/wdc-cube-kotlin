@@ -1,7 +1,7 @@
 package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.PurchasesPanelScope
 import org.junit.jupiter.api.Assertions
 
 class PurchasesPanelViewMock(

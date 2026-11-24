@@ -11,7 +11,7 @@ import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.shopping.nativeui.android.toolkit.ViewUtils
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.PurchasesPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 
 class PurchasesPanelViewAndroid(app: RootPresenter, scope: PurchasesPanelScope) : AbstractViewAndroid<PurchasesPanelScope>("purchases-panel-view", app, scope) {

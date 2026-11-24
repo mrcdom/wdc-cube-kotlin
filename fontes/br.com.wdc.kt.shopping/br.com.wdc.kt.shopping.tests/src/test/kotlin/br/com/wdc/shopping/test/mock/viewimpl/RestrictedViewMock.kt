@@ -2,8 +2,8 @@ package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.PurchasesPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 import br.com.wdc.shopping.test.mock.RootPresenterMock

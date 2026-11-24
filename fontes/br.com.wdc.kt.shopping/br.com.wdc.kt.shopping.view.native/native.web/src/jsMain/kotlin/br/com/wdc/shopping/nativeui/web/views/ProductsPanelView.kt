@@ -6,7 +6,7 @@ import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
 import br.com.wdc.shopping.nativeui.web.util.productImageUrl
 import br.com.wdc.shopping.nativeui.web.util.stripHtml
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.ProductsPanelScope
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.ShoppingBag
 import mui.material.Box

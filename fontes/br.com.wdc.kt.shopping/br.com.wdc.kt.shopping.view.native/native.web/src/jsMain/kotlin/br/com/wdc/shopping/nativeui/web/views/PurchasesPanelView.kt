@@ -6,7 +6,7 @@ import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
 import br.com.wdc.shopping.nativeui.web.util.formatDate
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.PurchasesPanelScope
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.ChevronLeft
 import mui.icons.material.ChevronRight

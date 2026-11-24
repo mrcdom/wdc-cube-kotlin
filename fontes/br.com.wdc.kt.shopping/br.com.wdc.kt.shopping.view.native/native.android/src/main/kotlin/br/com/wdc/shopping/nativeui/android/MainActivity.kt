@@ -30,8 +30,8 @@ import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.PurchasesPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
 import kotlinx.coroutines.Dispatchers

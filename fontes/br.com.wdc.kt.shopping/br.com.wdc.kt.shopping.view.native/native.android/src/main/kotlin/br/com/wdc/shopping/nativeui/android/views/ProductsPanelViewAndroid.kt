@@ -13,7 +13,7 @@ import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.shopping.nativeui.android.toolkit.ViewUtils
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.ProductsPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 
 class ProductsPanelViewAndroid(app: RootPresenter, scope: ProductsPanelScope) : AbstractViewAndroid<ProductsPanelScope>("products-panel-view", app, scope) {

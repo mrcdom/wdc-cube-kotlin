@@ -12,8 +12,6 @@ import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartManager
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptKeys
 
