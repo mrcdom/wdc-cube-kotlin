@@ -114,7 +114,7 @@ graph TB
 | Module | Role |
 |--------|-------|
 | **react.client** (`remote.react.client`, npm) | Pure rendering in React/TypeScript with Material UI. Receives the views' scopes as JSON and sends user events. Bundled with Parcel (`npm run build`) into the skeleton's resources. |
-| **react.skeleton** (`:view-remote-react-skeleton`) | Server-side bridge: one `ScopeViewImpl` per scope dispatches the client's events to the actions the presenter bound with their codes and writes the scope as JSON; the view catalog (`ScopeViews`) holds each client component's vid. |
+| **react.skeleton** (`:view-remote-react-skeleton`) | Server-side bridge: one `ScopeViewImpl` per scope dispatches the client's events to the actions the presenter bound with their codes and writes the scope as JSON; the session's view catalog holds each client component's vid, and the session releases the views whose scopes left. |
 | **backend** (`:backend`) | Javalin server that hosts the WebSocket (`/dispatcher/{id}`), serves the React static files, and exposes the REST API for Compose clients. |
 | **presentation** (`:store-presentation`) | Shared presenters (KMP commonMain) — the same code used by both React and Compose. |
 | **persistence** (`:store-persistence`) | jOOQ implementation of the repositories (H2 or PostgreSQL) — used directly by the presenters in the React architecture. |
@@ -221,7 +221,8 @@ The `appId` is self-signed: `{random}.{signature(random)}` (`AppSecurity.signAsH
       "id": "a1b2c3d4e5f6:4",
       "products": [...]
     }
-  ]
+  ],
+  "releasedViews": ["c677cda52d14:1"]
 }
 ```
 
@@ -229,49 +230,68 @@ The `appId` is self-signed: `{random}.{signature(random)}` (`AppSecurity.signAsH
 - **`uri`**: the current navigation fragment, signed (for the browser history)
 - **Fields**: in the scope's declaration order, after `id`; `null` and blank strings are left out, numbers and booleans always go, fields declared with `sent = false` (the login's password) never go
 - **References between views**: `*ViewId` fields point to other views, `*ViewIds` fields to a list of views (the cart rows, `rowsViewIds`, empty included). A view created while writing a message (a scope sent for the first time) goes out in the same message
+- **`releasedViews`**: the ids of the views the server released since the last message (their scopes left the screen), after `scopes`, only when there are any. The server will never send them again; the client drops each one at once, or as soon as it leaves the screen if it is still mounted
 
 ---
 
 ## Skeleton — The Bridge Between Presenter and Client
 
-Presenters do not create views, and the application keeps none. Each session (`ReactRootPresenter`) owns a **`ScopeViews`** registry (`views`): which view draws each kind of scope — one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it — and the view of each scope on the client's screen. Only the login (deciphers the password) and the receipt (one-time notice) have classes of their own:
+Presenters do not create views; the framework knows only scopes. The remote host is a rendering technology of its own: each session (`ReactRootPresenter`, which implements `RemoteApplication`) keeps a private **catalog** — which view draws each kind of scope, one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it — and the view of each scope on the client's screen. Only the login (deciphers the password) and the receipt (one-time notice) have classes of their own:
 
 ```kotlin
-views = ScopeViews()
-    .register<RootScope> { ScopeViewImpl("f2d345c4a610", this, it) }
-    .register<LoginScope> { LoginReactViewImpl(this, it) }
-    .register<HomeScope> { ScopeViewImpl("473dbdd7a36a", this, it) }
-    .register<ProductScope> { ScopeViewImpl("48b693f67410", this, it) }
-    .register<CartScope> { ScopeViewImpl("7eb485e5f843", this, it) }
-    .register<CartItemScope> { ScopeViewImpl("5d9e3c7a1f42", this, it) }
-    .register<ReceiptScope> { ReceiptReactViewImpl(this, it) }
-    .register<ProductsPanelScope> { ScopeViewImpl("a1b2c3d4e5f6", this, it) }
-    .register<PurchasesPanelScope> { ScopeViewImpl("b3c4d5e6f7a8", this, it) }
+private val catalog: Map<KClass<out Scope>, (Scope) -> ScopeViewImpl<*>> = mapOf(
+    BrowserScope::class to { ScopeViewImpl(BrowserPresenter.VID, this, it, instanceId = 0) },
+    RootScope::class to { ScopeViewImpl("f2d345c4a610", this, it) },
+    LoginScope::class to { LoginReactViewImpl(this, it as LoginScope) },
+    HomeScope::class to { ScopeViewImpl("473dbdd7a36a", this, it) },
+    ProductScope::class to { ScopeViewImpl("48b693f67410", this, it) },
+    CartScope::class to { ScopeViewImpl("7eb485e5f843", this, it) },
+    CartItemScope::class to { ScopeViewImpl("5d9e3c7a1f42", this, it) },
+    ReceiptScope::class to { ReceiptReactViewImpl(this, it as ReceiptScope) },
+    ProductsPanelScope::class to { ScopeViewImpl("a1b2c3d4e5f6", this, it) },
+    PurchasesPanelScope::class to { ScopeViewImpl("b3c4d5e6f7a8", this, it) },
+)
 ```
 
-A view is created the first time its scope is written (`views.viewOf`, which `Scope.write` calls for the scopes inside the one it writes), repaints on each change of its scope (it is marked dirty and goes out in the next message), and is dropped when the presenter releases the scope: the registry calls its `release()`, which removes it from the session's view map.
+`viewOf(scope)` creates a view the first time a scope that holds its scope is written: it registers it in the view map by instance id, installs its updater in the scope (`scope.setUpdater(view.updater)`) and marks it dirty for its first drawing. From then on each change of the scope marks it dirty, and it goes out in the next message. The browser's view (instance `:0`) is the top one; every other view is asked for by the view that holds its scope.
 
-`ScopeViewImpl` extends `GenericViewImpl` and does three things, all generic:
+**Writing a scope is drawing it**, and that is where a scope that left is noticed. `ScopeViewImpl` does four things, all generic:
 
 ```kotlin
-open class ScopeViewImpl<S : Scope>(vid: String, app: ReactRootPresenter, val scope: S) : GenericViewImpl(vid, app) {
+open class ScopeViewImpl<S : Scope>(vid: String, protected val app: RemoteApplication, val scope: S,
+                                    instanceId: Int = app.nextInstanceId()) {
 
     // 1. What the user typed (client → server): what the presenter set with scope.onSync { … }
-    override fun syncClientToServer(formData: Map<String, Any?>) {
+    open fun syncClientToServer(formData: Map<String, Any?>) {
         scope.sync(formData)
     }
 
     // 2. The event: runs the action the presenter bound with this code (an unknown code is an error)
-    override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
+    open suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
         scope.dispatch(eventCode, formData)
     }
 
-    // 3. The scope as JSON, with the ids of the views of the scopes inside it
-    override fun writeScope(json: ExtensibleObjectOutput) {
-        scope.write(instanceId, json, app.views::viewOf)
+    // 3. The scope as JSON, with the ids of the views of the scopes inside it; the views it no longer refers to
+    //    are released
+    open fun writeScope(json: ExtensibleObjectOutput) {
+        val written = LinkedHashSet<ScopeViewImpl<*>>()
+        scope.write(instanceId, json) { inner ->
+            val child = app.viewOf(inner)
+            child.holders += this
+            written += child
+            child.instanceId
+        }
+        val before = children
+        children = written
+        for (child in before) if (child !in written) child.dropHolder(this)
     }
+
+    // 4. Released when no view refers to it any more
+    fun release() { /* clearUpdater, app.forgetView, app.removeView(instanceId), then its children */ }
 }
 ```
+
+Each view keeps the views it referred to the last time it was written (`children`) and those that refer to it (`holders`); one is **released only when no view holds it**: it takes its updater back (`scope.clearUpdater(updater)`, the same function), leaves the session's maps and the dirty set (`forgetView`), and its id is queued for the client (`removeView` → `releasedViews` in the next message); then the views it held are dropped in cascade. A view released while an earlier one was being written is skipped by the flush. When the session ends, `ReactRootPresenter.release()` releases the browser's view and the cascade takes the rest. The presenters take no part. `RemoteViewReleaseTest` covers this.
 
 The event codes live in the presenter, next to the action they fire, with how to read their values from the form data:
 
@@ -308,7 +328,7 @@ The products and purchases panels are segments of the Home's scope (no presenter
 
 ### Dirty Tracking
 
-When a field of a scope changes, the scope asks its view to update, and the view is marked "dirty" in `ReactRootPresenter`. In the response, `app.commitComputedState()` runs first (every live presenter's, once per cycle), then only dirty views are serialized — plus any view created while writing them (a scope sent for the first time), so a parent and its children go out in the same message:
+When a field of a scope changes, the scope calls its updater (the view's `update()`), and the view is marked "dirty" in `ReactRootPresenter`. In the response, `app.commitComputedState()` runs first (every live presenter's, once per cycle), then only dirty views are serialized — plus any view created while writing them (a scope sent for the first time), so a parent and its children go out in the same message:
 
 ```mermaid
 graph TB
@@ -329,7 +349,8 @@ graph TB
 When a view is marked dirty outside the request/response cycle (for example, by an asynchronous operation), the `ViewFlushScheduler` pushes it over WebSocket on its next tick (every 50 ms):
 
 ```kotlin
-fun markDirty(view: GenericViewImpl) {
+override fun markDirty(view: ScopeViewImpl<*>) {
+    if (view.released) return
     dirtyViewMap[view.instanceId] = view
     ViewFlushScheduler.markDirty(this)  // push when outside a request
 }
@@ -337,7 +358,7 @@ fun markDirty(view: GenericViewImpl) {
 
 ### View Garbage Collection
 
-The client keeps a reference system for views. When a `*ViewId` field changes in a parent view's scope, the previous child view is released automatically after 4 seconds of inactivity.
+The client keeps a reference system for views (`ViewGarbageCollector`). A view the server lists in `releasedViews` is dropped at once if it is not on screen, or as soon as it unmounts if it still is (`mount` is recorded when a view's binding mounts). For the rest, when a `*ViewId` field changes in a parent view's scope, the previous child view is released automatically after 4 seconds of inactivity.
 
 ---
 

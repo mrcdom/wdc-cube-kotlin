@@ -4,7 +4,7 @@
 
 - [Overview](#overview)
 - [Bridge Layer](#bridge-layer)
-  - [useScope — Subscription and Lifecycle](#usescope--subscription-and-lifecycle)
+  - [useScope — the Updater and the Lifecycle](#usescope--the-updater-and-the-lifecycle)
   - [The Paint Cycle](#the-paint-cycle)
   - [safeCall — Serialized Asynchronous Execution](#safecall--serialized-asynchronous-execution)
   - [RenderSlot — View Composition](#renderslot--view-composition)
@@ -41,7 +41,7 @@ graph LR
 
     subgraph "Compose (view module)"
         V["@Composable CartView(scope)"] --> US["useScope(scope)"]
-        US -->|"subscribe on enter,<br/>unsubscribe on leave"| S
+        US -->|"setUpdater while drawing,<br/>clearUpdater on leave"| S
         US --> PC["paint counter: MutableIntState"]
         SCH[ViewUpdateScheduler] -->|"flush: counter++"| PC
         PC -->|recomposition| V
@@ -55,21 +55,20 @@ graph LR
 
 ## Bridge Layer
 
-### useScope — Subscription and Lifecycle
+### useScope — the Updater and the Lifecycle
 
-Every view starts with `useScope(scope)`. It keeps a paint counter (`MutableIntState`) for that view, reads it (so Compose recomposes the view when it changes), and subscribes to the scope in a `DisposableEffect`: on each change, the scope marks the counter dirty in the `ViewUpdateScheduler`. When the view leaves the composition, the effect unsubscribes.
+Every view starts with `useScope(scope)`. It keeps a paint counter (`MutableIntState`) for that view, reads it (so Compose recomposes the view when it changes), and installs itself as the scope's **updater** (`scope.setUpdater`) as it starts drawing — in the composable's body, before it reads the scope, so no change is lost. On each change, the scope calls the updater, which marks the counter dirty in the `ViewUpdateScheduler`. When the view leaves the composition, a `DisposableEffect` takes the updater back (`clearUpdater`, which does nothing if another view has installed its own since).
 
 ```kotlin
 @Composable
 fun <S : Scope> useScope(scope: S): S {
     val painted = remember(scope) { mutableIntStateOf(0) }
-    painted.intValue                       // read here, so the scheduler's bump recomposes this view
-    val seen = scope.version
+    val updater: () -> Unit = remember(scope) { { ViewUpdateScheduler.markDirty(painted) } }
+    painted.intValue // read here, so the scheduler's bump recomposes this view
+    scope.setUpdater(updater)
     DisposableEffect(scope) {
-        val unsubscribe = scope.subscribe { ViewUpdateScheduler.markDirty(painted) }
-        if (scope.version != seen) ViewUpdateScheduler.markDirtyLater(painted)  // a change before the subscription
         onDispose {
-            unsubscribe()
+            scope.clearUpdater(updater)
             ViewUpdateScheduler.removeDirty(painted)
         }
     }
@@ -77,7 +76,7 @@ fun <S : Scope> useScope(scope: S): S {
 }
 ```
 
-So **no view is released by hand**: the composition is the lifecycle. A view on screen listens to its scope; a view that left the screen does not. The presenter releases its scope when it is released (`Scope.release()`), which matters only to the view layers that keep view objects (native iOS and Android, the remote React skeleton, the test mocks) — see [architecture-cube.md](architecture-cube.md#the-views-and-their-lifecycle).
+So **no view is released by hand**: the composition is the lifecycle, and Compose drops what leaves the screen. A view on screen draws its scope; a view that left does not. A scope has one updater, so one view draws a scope at a time (the Home draws each panel in its compact *or* its wide layout, never both). The technologies that keep view objects (native iOS and Android, the remote React host) release them themselves — see [architecture-cube.md](architecture-cube.md#the-views-and-their-lifecycle).
 
 ### The Paint Cycle
 
@@ -96,14 +95,14 @@ sequenceDiagram
 
     BG->>P: action() via safeCall
     P->>S: scope.field = newValue
-    S->>SCH: subscriber → markDirty(counter)
+    S->>SCH: updater → markDirty(counter)
     Note over SCH: flush(): app.commitComputedState(), then the dirty counters
     SCH->>C: counter.intValue++ (snapshot change)
     C->>C: recomposes the views that read the counter
     Note over C: the view reads the scope as it is now
 ```
 
-Several changes in a row cost one recomposition per view. The dirty set is touched only on the presenters' single-threaded dispatcher; the composition (UI thread) reaches it through `markDirtyLater`/`removeDirty`, which launch on it.
+Several changes in a row cost one recomposition per view. The dirty set is touched only on the presenters' single-threaded dispatcher; the composition (UI thread) reaches it through `removeDirty`, which launches on it.
 
 ### safeCall — Serialized Asynchronous Execution
 
@@ -249,8 +248,8 @@ sequenceDiagram
 
     P->>S: scope.loading = false
     P->>P: app.subject = subject; HomeKeys(app).flip()
-    Note over P: CubeNavigation commit → HomePresenter created,<br/>LoginPresenter released (its scope too)
-    Note over View: RootScope.content = HomeScope → RenderSlot draws HomeView;<br/>LoginView leaves the composition and unsubscribes
+    Note over P: CubeNavigation commit → HomePresenter created,<br/>LoginPresenter released
+    Note over View: RootScope.content = HomeScope → RenderSlot draws HomeView;<br/>LoginView leaves the composition and takes its updater back
 ```
 
 ---
@@ -295,7 +294,7 @@ fun LoginView(scope: LoginScope) {
 
 | Step | What it does | Why |
 |------|--------------|-----|
-| `useScope(scope)` | Subscribes while the view is in the composition | Without it, the view does not recompose when its scope changes |
+| `useScope(scope)` | Installs the view as the scope's updater while it is in the composition | Without it, the view does not recompose when its scope changes |
 | `scope` | The scope the slot passed | Read directly — no copies, no mapping, no reference to the presenter |
 | `remember` | Keeps local UI state | Text fields need local state for smooth typing |
 | `scope.userName = it` | Direct mutation | The scope is mutable by design — simplicity > ceremony |
@@ -325,7 +324,7 @@ sequenceDiagram
     Intent-->>Home: contentSlot
     Home->>Root: contentSlot.setScope(homeScope)
     Root->>RootScope: scope.content = homeScope
-    RootScope->>RootView: subscriber → markDirty → recomposition
+    RootScope->>RootView: updater → markDirty → recomposition
     Note over RootView: RenderSlot(scope.content) draws HomeView
 ```
 
@@ -355,7 +354,6 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
     override fun release() {
         scope.content = null
         super.release()
-        scope.release()
     }
 }
 ```
@@ -569,7 +567,7 @@ private suspend fun enter(userName: String?, password: String?) {
     if (userName != null) scope.userName = userName
     if (password != null) scope.password = password
 
-    scope.loading = true  // → UI shows spinner (the view is subscribed to the scope)
+    scope.loading = true  // → UI shows spinner (the view is the scope's updater)
 
     try {
         val subject = CredentialsCheck(scope.userName ?: "", scope.password ?: "").run()
@@ -599,4 +597,4 @@ Button(
 }
 ```
 
-The presenter changes `scope.loading`; the scope tells the view that subscribed to it (`useScope`), and Compose recomposes. No callbacks in the presenter, no explicit bindings.
+The presenter changes `scope.loading`; the scope tells the view that draws it (its updater, installed by `useScope`), and Compose recomposes. No callbacks in the presenter, no explicit bindings.

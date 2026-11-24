@@ -431,11 +431,11 @@ HTTP server based on **Javalin** (Java 21) with:
 
 A Compose view is a **function of its scope** (`@Composable fun CartView(scope: CartScope)`), with no object behind it. A small bridge solves the rest:
 
-- **Recomposition and lifecycle** — `useScope(scope)` subscribes the view to its scope when it enters the composition and unsubscribes when it leaves; a change marks the view dirty and the paint cycle (once per cycle, after `app.commitComputedState()`) recomposes it. No view is released by hand
+- **Recomposition and lifecycle** — `useScope(scope)` installs the view as its scope's updater as it starts drawing and takes it back when it leaves the composition; a change marks the view dirty and the paint cycle (once per cycle, after `app.commitComputedState()`) recomposes it. No view is released by hand
 - **Threading** — `safeCall` dispatches presenter actions to a coroutine with `limitedParallelism(1)`, keeping the UI thread free and guaranteeing serial execution
 - **Hierarchical composition** — `RenderSlot(scope)` draws the view of a child scope inside a parent view, with no type coupling
 
-The **view catalog** (`storeViews`: scope class → composable) is provided by `StoreApp(app)`, which every Compose entry point shows; presenters never create views, and the application keeps none.
+The **view catalog** (`storeViews`: scope class → composable) is provided by `StoreApp(app)`, which every Compose entry point shows; presenters never create views, and the framework knows only scopes.
 
 See [architecture-cube-compose.md](architecture-cube-compose.md) for full details: `useScope`, the paint cycle, safeCall, RenderSlot, the view catalog, per-platform initialization, deep-linking and the loading pattern.
 
@@ -609,12 +609,11 @@ sequenceDiagram
 | **Place**            | Navigation destination with id, name and presenter factory; declared by the keys class of the place (`CubeTreePlace`, child of the place of the keys it extends) |
 | **CubeIntent**       | Container of parameters (serializable) and attributes (ephemeral) for a navigation transaction |
 | **ScopeSlot**        | Functional callback through which a child presenter hands its scope to the parent |
-| **ScopeViews**       | The registry of a view layer that keeps view objects (native iOS/Android, remote React, test mocks): which view draws each kind of scope, and the view of each scope on screen, dropped when the scope is released |
 | **Action**           | An entry point of a presenter kept in a field of its scope (`Action`, `ActionOf`, `ActionOf2`), bound with a guard and, for remote views, an event code |
-| **Segment**          | A smaller scope inside the owner's (a panel, a list row), with its own view and no presenter |
+| **Segment**          | A smaller scope that the owner creates and keeps in a field of its scope (a panel, a list row), with its own view and no presenter |
 | **Presenter**        | Controller that encapsulates a screen's presentation logic (plain Kotlin, no UI dependency) |
-| **Scope**            | What a presenter shows: a mutable object with the data its view paints, with subscribers (a change repaints the views that read it), released with its presenter, and serializable to JSON |
-| **useScope**         | The hook of Compose and the native web that subscribes a view to its scope while it is on screen |
+| **Scope**            | What a presenter shows: a mutable object with the data its view paints, with one updater installed by whatever draws it (a change repaints that view), and serializable to JSON; the framework knows no views — each rendering technology keeps and releases its own |
+| **useScope**         | The hook of Compose and the native web that makes a view its scope's updater while it is on screen |
 | **safeCall**         | Serialized asynchronous dispatch (limitedParallelism=1) of the scope's actions from the view |
 | **CubeNavigation**   | Atomic navigation transaction with commit, rollback and support for interruptions |
 | **CubeApplication**  | Global container of active presenters and entry point for navigation |

@@ -61,7 +61,7 @@ graph TD
 
 1. **Bootstrap** (`index.tsx`): Creates the MUI theme, registers all views and renders the `BrowserView`
 2. **Connection** (`BrowserView`): On mount, calls `app.onStart()`, which opens the WebSocket
-3. **Receiving scopes**: The backend sends the serialized scopes (`scopes`) over the WebSocket → `Application.applyScopes()` updates the `ViewBinding`s → React re-renders
+3. **Receiving scopes**: The backend sends the serialized scopes (`scopes`) over the WebSocket → `Application.applyScopes()` updates the `ViewBinding`s → React re-renders; the ids in `releasedViews` (views the server let go of) go to the `ViewGarbageCollector`, which drops each at once, or when it unmounts if it is still on screen
 4. **Sending events**: User actions call `app.submit(vsid, eventId)` (values first with `app.setFormField(vsid, 'p.name', value)`), which sends the event over the WebSocket; on the backend the view's scope runs the action the presenter bound with that code
 
 ### View Pattern

@@ -28,15 +28,15 @@ graph TD
         presenters["Presenters"]
     end
 
-    presenters -->|CubeView interface| web["native.web<br/>React + MUI"]
-    presenters -->|CubeView interface| android["native.android<br/>Android Views"]
-    presenters -->|CubeView interface| ios["native.ios<br/>UIKit"]
+    presenters -->|scopes| web["native.web<br/>React + MUI"]
+    presenters -->|scopes| android["native.android<br/>Android Views"]
+    presenters -->|scopes| ios["native.ios<br/>UIKit"]
 ```
 
 ### Cross-cutting Patterns
 
-- **View catalog**: each platform fills a `ScopeViews` catalog (scope class → native view) and gives it to the application when it boots; presenters never create views, and views take `(app, scope)`
-- **Slots**: a child view is shown through a slot — `ViewSlot` on Android and iOS, the memoized `RenderSlot` component on the web; the slot swaps the view on navigation
+- **View catalog**: the framework knows only scopes; each platform keeps its own catalog (scope class → native view) — in the application on Android and iOS, in a `ScopeComponents` on the web — and owns its views; presenters never create views, and views take the scope (and, on Android and iOS, the application)
+- **Slots**: a child view is shown through a slot — `ViewSlot` on Android and iOS, the memoized `RenderSlot` component on the web; the slot swaps the view on navigation. On Android and iOS a view whose scope left (the parent's drawing no longer asks for it) is released, in cascade; on the web React drops what unmounts
 - **ListSlot** (Android, iOS): efficient list synchronization with view recycling (grow/shrink/update-in-place)
 - **FlowLayout** (Android `FlowLayout`, iOS `FlowLayoutView`): responsive grid that redistributes children according to the available width
 - **Dirty-flag coalescing**: each platform has a `ViewUpdateScheduler`; several `update()` calls are merged into a single repaint per flush, which first runs `app.commitComputedState()` once

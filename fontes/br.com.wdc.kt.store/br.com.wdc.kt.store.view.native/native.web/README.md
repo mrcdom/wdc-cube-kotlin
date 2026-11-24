@@ -7,7 +7,7 @@ View implementation using **React + Material UI** through Kotlin/JS — no Compo
 ### Views: function components of the scope
 
 A view is a React function component of the scope it paints — no class, no object behind it, as in the TypeScript
-version of the framework. It receives the scope in its props (never the presenter), subscribes to it with
+version of the framework. It receives the scope in its props (never the presenter), becomes its updater with
 `useScope`, and calls the scope's actions (`scope.onX(...)`) inside `safeCall`:
 
 ```kotlin
@@ -21,9 +21,11 @@ val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
 }
 ```
 
-`useScope(scope)` subscribes the component to its scope when it mounts and unsubscribes when it unmounts: the
-component's lifecycle is the view's, and nothing is released by hand. A change between the first render and the
-subscription is not lost (the scope's `version` tells it).
+`useScope(scope)` installs the component as the scope's updater (`scope.setUpdater`) as it starts rendering — before
+it reads the scope, so no change is lost — and takes it back (`clearUpdater`) in the cleanup of a
+`useEffectWithCleanup` when it unmounts: the component's lifecycle is the view's, React drops what leaves the screen,
+and nothing is released by hand. A scope has one updater, so one component draws a scope at a time (the Home draws
+each panel in its compact *or* its wide layout, never both).
 
 ### Technology Stack
 
@@ -39,7 +41,7 @@ subscription is not lost (the scope's `version` tells it).
 
 The bridge between the Cube framework (imperative) and React (declarative) is the `ViewUpdateScheduler`:
 
-1. A scope change reaches the components subscribed to it (`useScope`) → each marks itself dirty
+1. A scope change calls its updater, the component that draws it (`useScope`) → it marks itself dirty
 2. On the next animation frame (`window.requestAnimationFrame`), the scheduler flushes; a `safeCall` also flushes when its action ends
 3. The flush first runs `app.commitComputedState()` once (every live presenter's), then bumps a state counter of each dirty component
 4. React re-renders only those components
@@ -52,7 +54,7 @@ The bridge between the Cube framework (imperative) and React (declarative) is th
 | **Responsive breakpoints** | `window.innerWidth` against 518px (`COMPACT_BREAKPOINT`, in `HomeView`) to switch between compact and wide layouts |
 | **Hash routing** | `window.location.hash` kept in sync with Cube navigation (in `Main.kt`) |
 | **MUI theming** | Colors, styles and the MUI theme through constants (`StoreColors`, `StoreStyles`, `StoreTheme`) |
-| **useScope** | Each view subscribes to its scope while mounted, to repaint when it changes |
+| **useScope** | Each view is its scope's updater while mounted, to repaint when it changes |
 
 ### Navigation and Slots
 
