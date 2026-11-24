@@ -4,27 +4,29 @@ import br.com.wdc.store.presentation.presenter.RootPresenter
 import kotlinx.browser.window
 
 /**
- * Centralized dirty-view scheduler for the native.web platform.
+ * The paint cycle of the native.web platform.
  *
- * When a scope asks for a repaint (view.update()), the view is marked dirty here.
- * A single requestAnimationFrame callback is scheduled to flush all dirty views.
- * Each flush first runs the application's commitComputedState() — once per paint cycle,
- * right before painting — so every presenter computes the derived fields its view reads;
- * whatever that changes marks views dirty and is painted in the same flush.
+ * A scope that changes marks dirty the views on screen that read it ([useScope]); a single requestAnimationFrame
+ * callback is scheduled to paint them. Each flush first runs the application's commitComputedState() — once per paint
+ * cycle, right before painting — so every presenter computes the derived fields its view reads; whatever that changes
+ * marks views dirty and is painted in the same flush.
  */
 object ViewUpdateScheduler {
 
-    private val dirtyViews = linkedSetOf<ReactCubeView<*>>()
+    private val dirtyViews = linkedSetOf<() -> Unit>()
     private var flushScheduled = false
     private var committing = false
     private var appProvider: (() -> RootPresenter?)? = null
+
+    internal val app: RootPresenter get() = appProvider!!.invoke()!!
 
     fun initialize(appProvider: () -> RootPresenter?) {
         this.appProvider = appProvider
     }
 
-    fun markDirty(view: ReactCubeView<*>) {
-        dirtyViews.add(view)
+    /** Marks a view dirty: [repaint] is its component's repaint. */
+    fun markDirty(repaint: () -> Unit) {
+        dirtyViews.add(repaint)
         // marked while the flush commits the computed state: painted by this same flush
         if (committing) return
         if (!flushScheduled) {
@@ -33,8 +35,9 @@ object ViewUpdateScheduler {
         }
     }
 
-    fun removeDirty(view: ReactCubeView<*>) {
-        dirtyViews.remove(view)
+    /** A view left the screen. */
+    fun removeDirty(repaint: () -> Unit) {
+        dirtyViews.remove(repaint)
     }
 
     internal fun flush() {
@@ -52,8 +55,8 @@ object ViewUpdateScheduler {
         val snapshot = dirtyViews.toList()
         dirtyViews.clear()
 
-        for (view in snapshot) {
-            view.notifyDirty()
+        for (repaint in snapshot) {
+            repaint()
         }
     }
 }

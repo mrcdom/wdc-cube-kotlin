@@ -58,7 +58,7 @@ fun createRootViewController(baseUrl: String): UIViewController {
 
     // Create the application and its view catalog (before the first navigation)
     val app = IosNativeRootPresenter()
-    app.scopeViews = createScopeViews(app)
+    val views = createScopeViews(app)
 
     // Create root ViewController
     val viewController = UIViewController()
@@ -68,7 +68,7 @@ fun createRootViewController(baseUrl: String): UIViewController {
     kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
     // Mount root view
-    val rootView = app.view as? AbstractViewIos<*>
+    val rootView = views.viewOf(app.scope) as? AbstractViewIos<*>
 
     if (rootView != null) {
         val rv = rootView.rootView
@@ -99,16 +99,20 @@ private fun <T> onMainThread(block: () -> T): T {
 }
 
 /**
- * The view catalog: which iOS view draws each kind of scope. The application creates a view the first
- * time its scope is asked for ([RootPresenter.viewOf]); views are UIKit objects, so they are built on the main thread.
+ * The iOS views: which view draws each kind of scope, and the view of each scope on screen — created the first time
+ * its scope is asked for ([ScopeViews.viewOf]) and released with it. Views are UIKit objects, so they are built on the
+ * main thread.
  */
-private fun createScopeViews(app: RootPresenter): ScopeViews = ScopeViews()
-    .register<RootScope> { onMainThread { RootViewIos(app, it).initialize() } }
-    .register<LoginScope> { onMainThread { LoginViewIos(app, it).initialize() } }
-    .register<HomeScope> { onMainThread { HomeViewIos(app, it).initialize() } }
-    .register<ProductsPanelScope> { onMainThread { ProductsPanelViewIos(app, it).initialize() } }
-    .register<PurchasesPanelScope> { onMainThread { PurchasesPanelViewIos(app, it).initialize() } }
-    .register<ProductScope> { onMainThread { ProductViewIos(app, it).initialize() } }
-    .register<CartScope> { onMainThread { CartViewIos(app, it).initialize() } }
-    .register<CartItemScope> { onMainThread { CartItemViewIos(app, it).initialize() } }
-    .register<ReceiptScope> { onMainThread { ReceiptViewIos(app, it).initialize() } }
+private fun createScopeViews(app: RootPresenter): ScopeViews {
+    val views = ScopeViews()
+    return views
+        .register<RootScope> { onMainThread { RootViewIos(app, views, it).initialize() } }
+        .register<LoginScope> { onMainThread { LoginViewIos(app, it).initialize() } }
+        .register<HomeScope> { onMainThread { HomeViewIos(app, views, it).initialize() } }
+        .register<ProductsPanelScope> { onMainThread { ProductsPanelViewIos(app, it).initialize() } }
+        .register<PurchasesPanelScope> { onMainThread { PurchasesPanelViewIos(app, it).initialize() } }
+        .register<ProductScope> { onMainThread { ProductViewIos(app, it).initialize() } }
+        .register<CartScope> { onMainThread { CartViewIos(app, views, it).initialize() } }
+        .register<CartItemScope> { onMainThread { CartItemViewIos(app, it).initialize() } }
+        .register<ReceiptScope> { onMainThread { ReceiptViewIos(app, it).initialize() } }
+}

@@ -1,12 +1,13 @@
 package br.com.wdc.store.nativeui.web.views
 
-import br.com.wdc.store.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.store.nativeui.web.bridge.ScopeProps
+import br.com.wdc.store.nativeui.web.bridge.safeCall
+import br.com.wdc.store.nativeui.web.bridge.useScope
 import br.com.wdc.store.nativeui.web.theme.StoreColors
 import br.com.wdc.store.nativeui.web.util.formatPrice
 import br.com.wdc.store.nativeui.web.util.productImageUrl
 import br.com.wdc.store.nativeui.web.util.stripHtml
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
 import mui.icons.material.Add
 import mui.icons.material.AddShoppingCart
 import mui.icons.material.ArrowBack
@@ -32,235 +33,215 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
-import react.Props
 import react.ReactNode
 import react.dom.html.ReactHTML.img
 import react.dom.events.MouseEventHandler
-import react.useEffect
 import react.useState
 import web.cssom.*
 import web.html.HTMLButtonElement
 
-class ProductView(
-    app: RootPresenter,
-    scope: ProductScope,
-) : ReactCubeView<ProductScope>("product-view", app, scope) {
+val ProductView = FC<ScopeProps<ProductScope>> { props ->
+    val scope = useScope(props.scope)
 
-    /** The quantity being chosen: UI state of this view, changed by the emitters below. */
-    private var quantity = 1
+    /** The quantity being chosen: UI state of this view, fresh for each product (the slot keys it by scope). */
+    var quantity by useState(1)
 
-    // :: Emitters — created once per view, so they are the same function on every render
-
-    private val onDecrement: MouseEventHandler<HTMLButtonElement> = {
-        if (quantity > 1) {
-            quantity--
-            forceUpdate()
-        }
+    val onDecrement: MouseEventHandler<HTMLButtonElement> = {
+        if (quantity > 1) quantity--
     }
 
-    private val onIncrement: MouseEventHandler<HTMLButtonElement> = {
+    val onIncrement: MouseEventHandler<HTMLButtonElement> = {
         quantity++
-        forceUpdate()
     }
 
-    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
+    val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
 
-    private val onAddToCart: MouseEventHandler<HTMLButtonElement> = {
+    val onAddToCart: MouseEventHandler<HTMLButtonElement> = {
         val chosen = quantity
         safeCall { scope.onAddToCart(chosen) }
     }
 
-    override val component = FC<Props> {
-        var rev by useState(revision)
-        useEffect(this@ProductView) {
-            onUpdate = { rev = revision }
+    val product = scope.product
+
+    Box {
+        sx {
+            display = Display.flex
+            justifyContent = JustifyContent.center
+            padding = Padding(16.px, 10.px, 16.px, 16.px)
         }
 
-        @Suppress("UNUSED_VARIABLE")
-        val unused = rev
+        if (product != null) {
+            Box {
+                sx { maxWidth = 600.px; width = 100.pct }
 
-        val product = scope.product
+                Stack {
+                    direction = responsive(StackDirection.column)
+                    spacing = responsive(2)
 
-        Box {
-            sx {
-                display = Display.flex
-                justifyContent = JustifyContent.center
-                padding = Padding(16.px, 10.px, 16.px, 16.px)
-            }
+                    // Error message
+                    val errorMessage = scope.errorMessage
+                    if (!errorMessage.isNullOrBlank()) {
+                        Alert {
+                            severity = "error"
+                            sx { borderRadius = 8.px }
+                            +errorMessage
+                        }
+                    }
 
-            if (product != null) {
-                Box {
-                    sx { maxWidth = 600.px; width = 100.pct }
+                    // Product name
+                    Typography {
+                        variant = TypographyVariant.h4
+                        sx { fontWeight = FontWeight.bold }
+                        +(product.name ?: "")
+                    }
 
-                    Stack {
-                        direction = responsive(StackDirection.column)
-                        spacing = responsive(2)
+                    Divider {}
 
-                        // Error message
-                        val errorMessage = scope.errorMessage
-                        if (!errorMessage.isNullOrBlank()) {
-                            Alert {
-                                severity = "error"
-                                sx { borderRadius = 8.px }
-                                +errorMessage
+                    // Description
+                    val rawDesc = product.description
+                    if (!rawDesc.isNullOrBlank() && rawDesc != "unknown") {
+                        val cleanDesc = stripHtml(rawDesc)
+                        if (cleanDesc.isNotBlank()) {
+                            Paper {
+                                sx {
+                                    padding = 16.px
+                                    borderRadius = 8.px
+                                    backgroundColor = StoreColors.SurfaceVariant50.unsafeCast<BackgroundColor>()
+                                }
+                                elevation = 0
+                                Typography {
+                                    variant = TypographyVariant.body1
+                                    sx {
+                                        color = StoreColors.OnSurfaceVariant.unsafeCast<Color>()
+                                        lineHeight = 24.px
+                                        whiteSpace = WhiteSpace.preWrap
+                                    }
+                                    +cleanDesc
+                                }
                             }
                         }
+                    }
 
-                        // Product name
-                        Typography {
-                            variant = TypographyVariant.h4
-                            sx { fontWeight = FontWeight.bold }
-                            +(product.name ?: "")
-                        }
+                    // Price + quantity + image row
+                    Stack {
+                        direction = responsive(StackDirection.row)
+                        spacing = responsive(3)
+                        sx { alignItems = AlignItems.center }
 
-                        Divider {}
+                        // Left: price + quantity
+                        Stack {
+                            direction = responsive(StackDirection.column)
+                            spacing = responsive(2)
+                            sx { flex = Flex(number(1.0), number(1.0), 0.px) }
 
-                        // Description
-                        val rawDesc = product.description
-                        if (!rawDesc.isNullOrBlank() && rawDesc != "unknown") {
-                            val cleanDesc = stripHtml(rawDesc)
-                            if (cleanDesc.isNotBlank()) {
+                            // Price
+                            Chip {
+                                label = ReactNode("\$${formatPrice(product.price)}")
+                                sx {
+                                    backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
+                                    color = StoreColors.PriceColor.unsafeCast<Color>()
+                                    height = 40.px
+                                    borderRadius = 12.px
+                                }
+                            }
+
+                            // Quantity selector
+                            Stack {
+                                direction = responsive(StackDirection.row)
+                                spacing = responsive(1)
+                                sx { alignItems = AlignItems.center }
+
+                                Typography {
+                                    variant = TypographyVariant.body1
+                                    sx { fontWeight = FontWeight.bold }
+                                    +"Qty:"
+                                }
+
                                 Paper {
                                     sx {
-                                        padding = 16.px
-                                        borderRadius = 8.px
-                                        backgroundColor = StoreColors.SurfaceVariant50.unsafeCast<BackgroundColor>()
+                                        borderRadius = 12.px
+                                        backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
+                                        display = Display.flex
+                                        alignItems = AlignItems.center
+                                        paddingLeft = 4.px
+                                        paddingRight = 4.px
                                     }
                                     elevation = 0
+
+                                    IconButton {
+                                        disabled = quantity <= 1
+                                        onClick = onDecrement
+                                        size = mui.material.Size.small
+                                        Remove {}
+                                    }
+
                                     Typography {
-                                        variant = TypographyVariant.body1
-                                        sx {
-                                            color = StoreColors.OnSurfaceVariant.unsafeCast<Color>()
-                                            lineHeight = 24.px
-                                            whiteSpace = WhiteSpace.preWrap
-                                        }
-                                        +cleanDesc
+                                        variant = TypographyVariant.h6
+                                        sx { fontWeight = FontWeight.bold; paddingLeft = 20.px; paddingRight = 20.px }
+                                        +"$quantity"
+                                    }
+
+                                    IconButton {
+                                        onClick = onIncrement
+                                        size = mui.material.Size.small
+                                        Add {}
                                     }
                                 }
                             }
                         }
 
-                        // Price + quantity + image row
-                        Stack {
-                            direction = responsive(StackDirection.row)
-                            spacing = responsive(3)
-                            sx { alignItems = AlignItems.center }
-
-                            // Left: price + quantity
-                            Stack {
-                                direction = responsive(StackDirection.column)
-                                spacing = responsive(2)
-                                sx { flex = Flex(number(1.0), number(1.0), 0.px) }
-
-                                // Price
-                                Chip {
-                                    label = ReactNode("\$${formatPrice(product.price)}")
-                                    sx {
-                                        backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
-                                        color = StoreColors.PriceColor.unsafeCast<Color>()
-                                        height = 40.px
-                                        borderRadius = 12.px
-                                    }
-                                }
-
-                                // Quantity selector
-                                Stack {
-                                    direction = responsive(StackDirection.row)
-                                    spacing = responsive(1)
-                                    sx { alignItems = AlignItems.center }
-
-                                    Typography {
-                                        variant = TypographyVariant.body1
-                                        sx { fontWeight = FontWeight.bold }
-                                        +"Qty:"
-                                    }
-
-                                    Paper {
-                                        sx {
-                                            borderRadius = 12.px
-                                            backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
-                                            display = Display.flex
-                                            alignItems = AlignItems.center
-                                            paddingLeft = 4.px
-                                            paddingRight = 4.px
-                                        }
-                                        elevation = 0
-
-                                        IconButton {
-                                            disabled = quantity <= 1
-                                            onClick = onDecrement
-                                            size = mui.material.Size.small
-                                            Remove {}
-                                        }
-
-                                        Typography {
-                                            variant = TypographyVariant.h6
-                                            sx { fontWeight = FontWeight.bold; paddingLeft = 20.px; paddingRight = 20.px }
-                                            +"$quantity"
-                                        }
-
-                                        IconButton {
-                                            onClick = onIncrement
-                                            size = mui.material.Size.small
-                                            Add {}
-                                        }
-                                    }
-                                }
+                        Box {
+                            sx {
+                                width = 120.px
+                                height = 120.px
+                                borderRadius = 12.px
+                                overflow = Overflow.hidden
+                                backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
                             }
-
-                            Box {
-                                sx {
-                                    width = 120.px
-                                    height = 120.px
-                                    borderRadius = 12.px
-                                    overflow = Overflow.hidden
-                                    backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
-                                }
-                                img {
-                                    src = productImageUrl(product.id)
-                                    alt = product.name ?: ""
-                                    style = js("({width: '120px', height: '120px', objectFit: 'contain'})").unsafeCast<react.CSSProperties>()
-                                }
+                            img {
+                                src = productImageUrl(product.id)
+                                alt = product.name ?: ""
+                                style = js("({width: '120px', height: '120px', objectFit: 'contain'})").unsafeCast<react.CSSProperties>()
                             }
                         }
+                    }
 
-                        // Action buttons
-                        Stack {
-                            direction = responsive(StackDirection.row)
-                            spacing = responsive(2)
-                            sx { justifyContent = JustifyContent.flexEnd }
+                    // Action buttons
+                    Stack {
+                        direction = responsive(StackDirection.row)
+                        spacing = responsive(2)
+                        sx { justifyContent = JustifyContent.flexEnd }
 
-                            Button {
-                                variant = ButtonVariant.outlined
-                                onClick = onOpenProducts
-                                sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
-                                ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
-                                +"Back"
-                            }
+                        Button {
+                            variant = ButtonVariant.outlined
+                            onClick = onOpenProducts
+                            sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                            ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
+                            +"Back"
+                        }
 
-                            Button {
-                                variant = ButtonVariant.contained
-                                onClick = onAddToCart
-                                sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
-                                AddShoppingCart { sx { marginRight = 6.px; fontSize = 18.px } }
-                                +"Add to Cart"
-                            }
+                        Button {
+                            variant = ButtonVariant.contained
+                            onClick = onAddToCart
+                            sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                            AddShoppingCart { sx { marginRight = 6.px; fontSize = 18.px } }
+                            +"Add to Cart"
                         }
                     }
                 }
-            } else {
-                // Loading
-                Stack {
-                    direction = responsive(StackDirection.column)
-                    sx { alignItems = AlignItems.center; padding = 48.px }
-                    spacing = responsive(2)
+            }
+        } else {
+            // Loading
+            Stack {
+                direction = responsive(StackDirection.column)
+                sx { alignItems = AlignItems.center; padding = 48.px }
+                spacing = responsive(2)
 
-                    CircularProgress {}
-                    Typography {
-                        variant = TypographyVariant.body2
-                        sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                        +"Loading product..."
-                    }
+                CircularProgress {}
+                Typography {
+                    variant = TypographyVariant.body2
+                    sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                    +"Loading product..."
                 }
             }
         }

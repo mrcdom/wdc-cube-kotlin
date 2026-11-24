@@ -26,8 +26,8 @@ import br.com.wdc.store.test.mock.viewimpl.RootViewMock
 /** [storage] is the session: a page reload is a new application on the same session. */
 class RootPresenterMock(private val storage: SessionStorage = JvmSessionStorage()) : RootPresenter() {
 
-    init {
-        scopeViews = ScopeViews()
+    /** The test views, one per scope on screen: created when a test asks for them, dropped with their scopes. */
+    val views: ScopeViews = ScopeViews()
             .register<RootScope> { RootViewMock(this, it) }
             .register<LoginScope> { LoginViewMock(this, it) }
             .register<HomeScope> { RestrictedViewMock(this, it) }
@@ -37,14 +37,10 @@ class RootPresenterMock(private val storage: SessionStorage = JvmSessionStorage(
             .register<ReceiptScope> { ReceiptViewMock(this, it) }
             .register<ProductsPanelScope> { ProductsPanelViewMock(it) }
             .register<PurchasesPanelScope> { PurchasesPanelViewMock(it) }
-    }
 
     override fun createSessionStorage(): SessionStorage = storage
 
-    fun getRootView(): RootViewMock? {
-        val v = view
-        return if (v is RootViewMock) v else null
-    }
+    fun getRootView(): RootViewMock? = views.viewOf(scope) as? RootViewMock
 
     override fun updateHistory() {
         // NOOP

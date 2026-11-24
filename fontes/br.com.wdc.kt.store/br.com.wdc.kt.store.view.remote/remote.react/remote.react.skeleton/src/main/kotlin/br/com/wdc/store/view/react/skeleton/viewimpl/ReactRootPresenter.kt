@@ -150,9 +150,15 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         private set
     private var instanceIdGen: Int = 1
 
+    /**
+     * The views of this session, one per scope on the client's screen: created when a scope is first written, dropped
+     * (and removed from the client's map) when the scope is released.
+     */
+    val views: ScopeViews
+
     init {
         // which client component paints each scope (the vid); the login and the receipt have their own server side
-        scopeViews = ScopeViews()
+        views = ScopeViews()
             .register<BrowserScope> { ScopeViewImpl(BrowserPresenter.VID, this, it, instanceId = 0) }
             .register<RootScope> { ScopeViewImpl("f2d345c4a610", this, it) }
             .register<LoginScope> { LoginReactViewImpl(this, it) }
@@ -166,7 +172,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
         this.dataSecurity = DataSecurity()
         this.browser = BrowserPresenter(this)
-        this.browserView = viewOf(browser.scope) as GenericViewImpl
+        this.browserView = views.viewOf(browser.scope) as GenericViewImpl
         this.viewMap[browserView.instanceId] = browserView
         this.dirtyViewMap[browserView.instanceId] = browserView
         this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.inWholeMilliseconds

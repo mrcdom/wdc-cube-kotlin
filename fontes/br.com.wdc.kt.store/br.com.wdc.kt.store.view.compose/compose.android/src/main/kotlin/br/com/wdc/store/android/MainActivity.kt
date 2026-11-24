@@ -52,7 +52,6 @@ class MainActivity : ComponentActivity() {
 
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
         app = AndroidRootPresenter(AndroidPersistentSessionStorage(prefs))
-        app.scopeViews = composeScopeViews(app)
         ViewUpdateScheduler.initialize { app }
         kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
@@ -62,7 +61,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    (app.view as? RootView)?.Render()
+                    StoreApp(app)
                 }
             }
         }

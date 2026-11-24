@@ -64,11 +64,11 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
         val app = AndroidNativeRootPresenter(AndroidPersistentSessionStorage(prefs))
-        registerViews(app)
+        val views = createViews(app)
         ViewUpdateScheduler.initialize { app }
         runBlocking { RootKeys(app).flip() }
 
-        val rootView = (app.view as? AbstractViewAndroid<*>)?.rootView
+        val rootView = (views.viewOf(app.scope) as? AbstractViewAndroid<*>)?.rootView
 
         if (rootView != null) {
             setContentView(rootView)
@@ -88,18 +88,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * The catalog of views, set before the first navigation. Android views must be built on the main
-     * thread; the application creates each view once per scope ([RootPresenter.viewOf]).
+     * The Android views: which view draws each kind of scope, and the view of each scope on screen — created the
+     * first time its scope is asked for ([ScopeViews.viewOf]) and released with it. Android views must be built on
+     * the main thread.
      */
-    private fun registerViews(app: RootPresenter) {
-        app.scopeViews = ScopeViews()
-            .register<RootScope> { onMainThread { RootViewAndroid(app, it).initialize() } }
+    private fun createViews(app: RootPresenter): ScopeViews {
+        val views = ScopeViews()
+        return views
+            .register<RootScope> { onMainThread { RootViewAndroid(app, views, it).initialize() } }
             .register<LoginScope> { onMainThread { LoginViewAndroid(app, it).initialize() } }
-            .register<HomeScope> { onMainThread { HomeViewAndroid(app, it).initialize() } }
+            .register<HomeScope> { onMainThread { HomeViewAndroid(app, views, it).initialize() } }
             .register<ProductsPanelScope> { onMainThread { ProductsPanelViewAndroid(app, it).initialize() } }
             .register<PurchasesPanelScope> { onMainThread { PurchasesPanelViewAndroid(app, it).initialize() } }
             .register<ProductScope> { onMainThread { ProductViewAndroid(app, it).initialize() } }
-            .register<CartScope> { onMainThread { CartViewAndroid(app, it).initialize() } }
+            .register<CartScope> { onMainThread { CartViewAndroid(app, views, it).initialize() } }
             .register<CartItemScope> { onMainThread { CartItemViewAndroid(app, it).initialize() } }
             .register<ReceiptScope> { onMainThread { ReceiptViewAndroid(app, it).initialize() } }
     }

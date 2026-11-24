@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.RootScope
 import br.com.wdc.store.nativeui.ios.toolkit.*
@@ -12,7 +13,7 @@ import platform.UIKit.*
  * Swaps between LoginView and HomeView: shows the view of [RootScope.content].
  */
 @OptIn(ExperimentalForeignApi::class)
-class RootViewIos(app: RootPresenter, scope: RootScope) : AbstractViewIos<RootScope>("root-view", app, scope) {
+class RootViewIos(app: RootPresenter, private val views: ScopeViews, scope: RootScope) : AbstractViewIos<RootScope>("root-view", app, scope) {
 
     private lateinit var contentSlot: ViewSlot
 
@@ -29,7 +30,7 @@ class RootViewIos(app: RootPresenter, scope: RootScope) : AbstractViewIos<RootSc
     override fun doUpdate() {
 
         // Sync content slot
-        contentSlot.sync(scope.content?.let(app::viewOf))
+        contentSlot.sync(scope.content?.let(views::viewOf))
 
         // Show error toast if any
         val errorMessage = scope.errorMessage

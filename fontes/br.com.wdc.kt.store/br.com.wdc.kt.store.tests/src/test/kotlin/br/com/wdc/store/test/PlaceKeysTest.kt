@@ -148,7 +148,7 @@ class PlaceKeysTest : BasePresentationTest() {
         signIn()
         // the address brings page 1 before the panel knows its capacity: the first capacity keeps it
         app.flip("home?hm-page=1")
-        val panel = PurchasesPanelViewMock.cast(home().scope.purchasesPanel?.let(app::viewOf))
+        val panel = PurchasesPanelViewMock.cast(home().scope.purchasesPanel?.let(app.views::viewOf))
         panel.scope.onItemSizeCapacityChanged(1) // admin has two purchases: one per page
         assertEquals(1, panel.scope.page)
         assertEquals(listOf(DBReset.ADMIN_FIRST_PURCHASE_ID), panel.scope.purchases.map { it.id }, "the older purchase, on the second page")
@@ -169,6 +169,6 @@ class PlaceKeysTest : BasePresentationTest() {
         ProductKeys(app).apply { productId = DBReset.FLASH_DRIVE_2GB_ID }.flip()
         assertTrue(app.newIntent().toString().contains("hm-page=1"), app.newIntent().toString())
         HomeKeys(app).flip()
-        assertEquals(1, PurchasesPanelViewMock.cast(home().scope.purchasesPanel?.let(app::viewOf)).scope.page)
+        assertEquals(1, PurchasesPanelViewMock.cast(home().scope.purchasesPanel?.let(app.views::viewOf)).scope.page)
     }
 }

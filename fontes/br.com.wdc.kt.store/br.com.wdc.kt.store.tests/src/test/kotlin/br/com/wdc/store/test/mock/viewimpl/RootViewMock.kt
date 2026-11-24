@@ -20,5 +20,5 @@ class RootViewMock(
     }
 
     /** The view of the scope below (asked to the application, as a real view does). */
-    val contentView: CubeView? get() = scope.content?.let(app::viewOf)
+    val contentView: CubeView? get() = scope.content?.let(app.views::viewOf)
 }

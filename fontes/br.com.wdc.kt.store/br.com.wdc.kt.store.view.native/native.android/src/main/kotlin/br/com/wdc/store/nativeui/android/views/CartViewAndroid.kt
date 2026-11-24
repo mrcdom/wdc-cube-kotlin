@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.framework.cube.ScopeViews
 import android.graphics.Color
 import android.graphics.Typeface
 import android.view.Gravity
@@ -14,7 +15,7 @@ import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
 
-class CartViewAndroid(app: RootPresenter, scope: CartScope) : AbstractViewAndroid<CartScope>("cart-view", app, scope) {
+class CartViewAndroid(app: RootPresenter, private val views: ScopeViews, scope: CartScope) : AbstractViewAndroid<CartScope>("cart-view", app, scope) {
 
     private lateinit var scrollView: ScrollView
     private lateinit var stackView: LinearLayout
@@ -264,7 +265,7 @@ class CartViewAndroid(app: RootPresenter, scope: CartScope) : AbstractViewAndroi
      * the views of rows that left are released by the presenter, so here they are only taken off the screen.
      */
     private fun syncRows(rows: List<CartItemScope>) {
-        val next = rows.mapNotNull { app.viewOf(it) as? AbstractViewAndroid<*> }
+        val next = rows.mapNotNull { views.viewOf(it) as? AbstractViewAndroid<*> }
         if (next.size == rowViews.size && next.indices.all { next[it] === rowViews[it] }) return
         rowViews = next
         stackView.removeAllViews()

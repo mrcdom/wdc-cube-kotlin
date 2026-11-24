@@ -26,11 +26,11 @@ class RestrictedViewMock(
 
 
     fun getProductsPanelScope(): ProductsPanelScope {
-        return ProductsPanelViewMock.cast(scope.productsPanel?.let(app::viewOf)).scope
+        return ProductsPanelViewMock.cast(scope.productsPanel?.let(app.views::viewOf)).scope
     }
 
     fun getPurchasesPanelScope(): PurchasesPanelScope {
-        return PurchasesPanelViewMock.cast(scope.purchasesPanel?.let(app::viewOf)).scope
+        return PurchasesPanelViewMock.cast(scope.purchasesPanel?.let(app.views::viewOf)).scope
     }
 
     fun render() {
@@ -69,5 +69,5 @@ class RestrictedViewMock(
     }
 
     /** The view of the scope below (asked to the application, as a real view does). */
-    val contentView: CubeView? get() = scope.content?.let(app::viewOf)
+    val contentView: CubeView? get() = scope.content?.let(app.views::viewOf)
 }

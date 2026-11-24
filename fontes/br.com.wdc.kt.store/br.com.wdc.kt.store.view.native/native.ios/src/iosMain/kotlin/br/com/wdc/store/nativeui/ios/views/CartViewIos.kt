@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
@@ -22,7 +23,7 @@ import platform.darwin.NSObject
  * A row that stays keeps its view; the presenter releases the views of the rows that leave.
  */
 @OptIn(ExperimentalForeignApi::class)
-class CartViewIos(app: RootPresenter, scope: CartScope) : AbstractViewIos<CartScope>("cart-view", app, scope) {
+class CartViewIos(app: RootPresenter, private val views: ScopeViews, scope: CartScope) : AbstractViewIos<CartScope>("cart-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: UIStackView
@@ -292,7 +293,7 @@ class CartViewIos(app: RootPresenter, scope: CartScope) : AbstractViewIos<CartSc
             emptyContainer.hidden = !empty
             scrollView.hidden = empty
             backButton.hidden = !empty
-            syncRows(rows.map(app::viewOf))
+            syncRows(rows.map(views::viewOf))
         }
 
         // Total (guard), computed by the presenter

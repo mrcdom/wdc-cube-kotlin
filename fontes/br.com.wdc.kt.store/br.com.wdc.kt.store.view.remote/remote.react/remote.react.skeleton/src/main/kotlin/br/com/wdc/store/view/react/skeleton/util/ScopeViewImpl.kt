@@ -25,6 +25,6 @@ open class ScopeViewImpl<S : Scope>(
     }
 
     override fun writeScope(json: ExtensibleObjectOutput) {
-        scope.write(instanceId, json, app::viewOf)
+        scope.write(instanceId, json, app.views::viewOf)
     }
 }

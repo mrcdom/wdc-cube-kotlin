@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
@@ -32,7 +33,7 @@ private const val MAX_DETAIL_WIDTH = 560.0
  * - Wide (>=700pt): 1-row header + side-by-side panels
  */
 @OptIn(ExperimentalForeignApi::class)
-class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeScope>("home-view", app, scope) {
+class HomeViewIos(app: RootPresenter, private val views: ScopeViews, scope: HomeScope) : AbstractViewIos<HomeScope>("home-view", app, scope) {
 
     // Compact header UI
     private lateinit var compactHeaderContent: UIView
@@ -616,8 +617,8 @@ class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeSc
         }
 
         // Mount panels
-        val productsPanel = scope.productsPanel?.let(app::viewOf)
-        val purchasesPanel = scope.purchasesPanel?.let(app::viewOf)
+        val productsPanel = scope.productsPanel?.let(views::viewOf)
+        val purchasesPanel = scope.purchasesPanel?.let(views::viewOf)
 
         if (productsPanel != null && mountedProductsPanel !== productsPanel) {
             mountedProductsPanel = productsPanel
@@ -639,7 +640,7 @@ class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeSc
         }
 
         // Detail overlay
-        val newContentView = scope.content?.let(app::viewOf)
+        val newContentView = scope.content?.let(views::viewOf)
         detailSlot.sync(newContentView)
         val hasDetail = (newContentView != null)
         detailContainer.hidden = !hasDetail

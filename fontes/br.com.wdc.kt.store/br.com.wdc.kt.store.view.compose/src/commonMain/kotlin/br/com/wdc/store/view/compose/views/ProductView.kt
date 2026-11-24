@@ -20,9 +20,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
-import br.com.wdc.store.view.compose.bridge.ComposeCubeView
+import br.com.wdc.store.view.compose.bridge.useScope
+import br.com.wdc.store.view.compose.bridge.safeCall
 import br.com.wdc.store.view.compose.components.AsyncImage
 import br.com.wdc.store.view.compose.components.verticalScrollbar
 import br.com.wdc.store.view.compose.theme.PriceColor
@@ -30,209 +30,204 @@ import br.com.wdc.store.view.compose.util.formatPrice
 import br.com.wdc.store.view.compose.util.productImageUrl
 import br.com.wdc.store.view.compose.util.stripHtml
 
-class ProductView(app: RootPresenter, scope: ProductScope) :
-    ComposeCubeView<ProductScope>("product-view", app, scope) {
+@Composable
+fun ProductView(scope: ProductScope) {
+    useScope(scope)
 
-    @Composable
-    override fun Render() {
-        @Suppress("UNUSED_VARIABLE")
-        val rev = revision.value
+    val product = scope.product
+    var quantity by remember { mutableIntStateOf(1) }
 
-        val product = scope.product
-        var quantity by remember { mutableIntStateOf(1) }
+    Box(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        if (product != null) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth()
+                    .verticalScrollbar(scrollState)
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                    val errorMessage = scope.errorMessage
+                    if (!errorMessage.isNullOrBlank()) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.errorContainer
+                        ) {
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                    }
 
-        Box(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            if (product != null) {
-                val scrollState = rememberScrollState()
-                Column(
-                    modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth()
-                        .verticalScrollbar(scrollState)
-                        .verticalScroll(scrollState),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                        val errorMessage = scope.errorMessage
-                        if (!errorMessage.isNullOrBlank()) {
+                    // Product name
+                    Text(
+                        product.name ?: "",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    // Description (full width)
+                    val rawDesc = product.description
+                    if (!rawDesc.isNullOrBlank() && rawDesc != "unknown") {
+                        val cleanDesc = stripHtml(rawDesc)
+                        if (cleanDesc.isNotBlank()) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.errorContainer
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                             ) {
                                 Text(
-                                    errorMessage,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.padding(12.dp)
+                                    cleanDesc,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(16.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 24.sp
                                 )
                             }
                         }
+                    }
 
-                        // Product name
-                        Text(
-                            product.name ?: "",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                        // Description (full width)
-                        val rawDesc = product.description
-                        if (!rawDesc.isNullOrBlank() && rawDesc != "unknown") {
-                            val cleanDesc = stripHtml(rawDesc)
-                            if (cleanDesc.isNotBlank()) {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                ) {
-                                    Text(
-                                        cleanDesc,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.padding(16.dp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        lineHeight = 24.sp
-                                    )
-                                }
-                            }
-                        }
-
-                        // Price + quantity + image side by side
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(20.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    // Price + quantity + image side by side
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Left: price + quantity
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Left: price + quantity
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            // Price
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = PriceColor.copy(alpha = 0.1f)
                             ) {
-                                // Price
+                                Text(
+                                    "\$${formatPrice(product.price)}",
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PriceColor
+                                )
+                            }
+
+                            // Quantity selector
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    "Qty:",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = PriceColor.copy(alpha = 0.1f)
+                                    color = MaterialTheme.colorScheme.surfaceVariant
                                 ) {
-                                    Text(
-                                        "\$${formatPrice(product.price)}",
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = PriceColor
-                                    )
-                                }
-
-                                // Quantity selector
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Text(
-                                        "Qty:",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Medium
-                                    )
-
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 4.dp)
                                     ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(horizontal = 4.dp)
+                                        FilledTonalIconButton(
+                                            onClick = { if (quantity > 1) quantity-- },
+                                            modifier = Modifier.size(36.dp),
+                                            enabled = quantity > 1
                                         ) {
-                                            FilledTonalIconButton(
-                                                onClick = { if (quantity > 1) quantity-- },
-                                                modifier = Modifier.size(36.dp),
-                                                enabled = quantity > 1
-                                            ) {
-                                                Icon(Icons.Default.Remove, contentDescription = "Diminuir", modifier = Modifier.size(18.dp))
-                                            }
+                                            Icon(Icons.Default.Remove, contentDescription = "Diminuir", modifier = Modifier.size(18.dp))
+                                        }
 
-                                            Text(
-                                                "$quantity",
-                                                modifier = Modifier.padding(horizontal = 20.dp),
-                                                style = MaterialTheme.typography.titleLarge,
-                                                fontWeight = FontWeight.Bold
-                                            )
+                                        Text(
+                                            "$quantity",
+                                            modifier = Modifier.padding(horizontal = 20.dp),
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.Bold
+                                        )
 
-                                            FilledTonalIconButton(
-                                                onClick = { quantity++ },
-                                                modifier = Modifier.size(36.dp)
-                                            ) {
-                                                Icon(Icons.Default.Add, contentDescription = "Aumentar", modifier = Modifier.size(18.dp))
-                                            }
+                                        FilledTonalIconButton(
+                                            onClick = { quantity++ },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(Icons.Default.Add, contentDescription = "Aumentar", modifier = Modifier.size(18.dp))
                                         }
                                     }
                                 }
                             }
-
-                            // Right: product image
-                            AsyncImage(
-                                url = productImageUrl(product.id),
-                                contentDescription = product.name,
-                                modifier = Modifier
-                                    .size(120.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentScale = ContentScale.Fit,
-                                placeholder = {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(120.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            )
                         }
 
-                        Spacer(Modifier.height(8.dp))
-
-                        // Action buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
-                        ) {
-                            OutlinedButton(
-                                onClick = { safeCall { scope.onOpenProducts() } },
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.height(48.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text("Back", fontWeight = FontWeight.Medium)
-                            }
-                            }
-                            Button(
-                                onClick = { safeCall { scope.onAddToCart(quantity) } },
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.height(48.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Icon(Icons.Default.AddShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Text("Add to Cart", fontWeight = FontWeight.SemiBold)
+                        // Right: product image
+                        AsyncImage(
+                            url = productImageUrl(product.id),
+                            contentDescription = product.name,
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentScale = ContentScale.Fit,
+                            placeholder = {
+                                Box(
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
+                            }
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Action buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
+                    ) {
+                        OutlinedButton(
+                            onClick = { safeCall { scope.onOpenProducts() } },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(48.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text("Back", fontWeight = FontWeight.Medium)
+                        }
+                        }
+                        Button(
+                            onClick = { safeCall { scope.onAddToCart(quantity) } },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(48.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Default.AddShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Text("Add to Cart", fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
-                } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(strokeWidth = 3.dp)
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        "Loading product...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
+            } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(strokeWidth = 3.dp)
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Loading product...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

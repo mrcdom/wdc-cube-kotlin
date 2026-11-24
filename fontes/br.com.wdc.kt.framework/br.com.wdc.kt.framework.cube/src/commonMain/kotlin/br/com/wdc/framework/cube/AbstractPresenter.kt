@@ -24,26 +24,21 @@ abstract class AbstractPresenter<A : CubeApplication>(override val app: A) : Pre
 
     private val log by lazy { Log.getLogger(this::class.simpleName ?: "Presenter") }
 
-    /** Asks the view of the bound scope to repaint (only needed for a change no field sees). */
-    open fun update() {
-        boundScope?.let { app.viewOrNull(it)?.update() }
-    }
-
-    /** Releases the views of the bound scope and of its segments. */
+    /** Releases the bound scope and its segments: the view layer drops their views ([Scope.onRelease]). */
     override fun release() {
-        segments.forEach { app.releaseView(it) }
-        boundScope?.let { app.releaseView(it) }
+        segments.forEach { it.release() }
+        segments.clear()
+        boundScope?.release()
     }
 
     /** The bound scope ([bind]). */
     fun scope(): Scope? = boundScope
 
     /**
-     * Ties [scope] to this presenter: each change of one of its fields repaints this presenter's view, and the
-     * actions bound with an event code go to it. Used on the field: `val scope = bind(CartScope())`.
+     * Ties [scope] to this presenter: the actions bound with an event code go to it, and it is released with the
+     * presenter. Used on the field: `val scope = bind(CartScope())`.
      */
     protected fun <S : Scope> bind(scope: S): S {
-        scope.observe(::update)
         boundScope = scope
         return scope
     }
@@ -51,19 +46,17 @@ abstract class AbstractPresenter<A : CubeApplication>(override val app: A) : Pre
     /**
      * A segment: a piece of the screen without navigation of its own (a panel), kept as a smaller scope in a field
      * of the bound one, with its own view and no presenter — this presenter binds its actions
-     * (`actionOf(1, FormParam.long("p.productId"), target = products) { … }`). A change repaints the segment's view,
-     * or the owner's until the segment has one; its view is released with this presenter.
+     * (`actionOf(1, FormParam.long("p.productId"), target = products) { … }`). It is released with this presenter.
      */
     protected fun <S : Scope> segment(scope: S): S {
-        scope.observe { (app.viewOrNull(scope) ?: boundScope?.let { app.viewOrNull(it) })?.update() }
         segments += scope
         return scope
     }
 
-    /** Releases a segment that left the screen (a row removed from a list): its view and the owner's hold on it. */
+    /** Releases a segment that left the screen (a row removed from a list): its view goes with it. */
     protected fun detach(segment: Scope) {
         segments.remove(segment)
-        app.releaseView(segment)
+        segment.release()
     }
 
     // :: Actions

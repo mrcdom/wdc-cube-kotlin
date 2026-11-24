@@ -1,13 +1,15 @@
 package br.com.wdc.store.nativeui.web.views
 
-import br.com.wdc.store.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.store.nativeui.web.bridge.ScopeProps
+import br.com.wdc.store.nativeui.web.bridge.safeCall
+import br.com.wdc.store.nativeui.web.bridge.useScope
 import br.com.wdc.store.nativeui.web.bridge.RenderSlot
+import br.com.wdc.store.nativeui.web.bridge.scopeKey
 import br.com.wdc.store.nativeui.web.theme.StoreColors
 import br.com.wdc.store.nativeui.web.theme.StoreStyles
 import br.com.wdc.store.nativeui.web.util.formatPrice
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
 import mui.icons.material.Add
 import mui.icons.material.ArrowBack
 import mui.icons.material.Remove
@@ -31,184 +33,165 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
-import react.Props
 import react.ReactNode
 import react.dom.events.MouseEventHandler
-import react.useEffect
-import react.useState
 import web.cssom.*
 import web.html.HTMLButtonElement
 
-class CartView(
-    app: RootPresenter,
-    scope: CartScope,
-) : ReactCubeView<CartScope>("cart-view", app, scope) {
+val CartView = FC<ScopeProps<CartScope>> { props ->
+    val scope = useScope(props.scope)
 
-    // :: Emitters — created once per view, so they are the same function on every render
+    val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
 
-    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
+    val onBuy: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onBuy() } }
 
-    private val onBuy: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onBuy() } }
-
-    override val component = FC<Props> {
-        var rev by useState(revision)
-        useEffect(this@CartView) {
-            onUpdate = { rev = revision }
+    Box {
+        sx {
+            display = Display.flex
+            justifyContent = JustifyContent.center
+            padding = Padding(16.px, 10.px, 16.px, 16.px)
         }
-
-        @Suppress("UNUSED_VARIABLE")
-        val unused = rev
-
 
         Box {
             sx {
+                maxWidth = 700.px
+                width = 100.pct
                 display = Display.flex
-                justifyContent = JustifyContent.center
-                padding = Padding(16.px, 10.px, 16.px, 16.px)
+                flexDirection = FlexDirection.column
             }
 
-            Box {
-                sx {
-                    maxWidth = 700.px
-                    width = 100.pct
-                    display = Display.flex
-                    flexDirection = FlexDirection.column
+            // Title
+            Stack {
+                direction = responsive(StackDirection.row)
+                spacing = responsive(1)
+                sx { alignItems = AlignItems.center; marginBottom = 12.px }
+
+                ShoppingCart { sx { fontSize = 28.px } }
+                Typography {
+                    variant = TypographyVariant.h5
+                    asDynamic().style = StoreStyles.titleH5
+                    +"Shopping Cart"
                 }
+            }
 
-                // Title
-                Stack {
-                    direction = responsive(StackDirection.row)
-                    spacing = responsive(1)
-                    sx { alignItems = AlignItems.center; marginBottom = 12.px }
+            Divider {}
 
-                    ShoppingCart { sx { fontSize = 28.px } }
+            // Error message
+            val errorMessage = scope.errorMessage
+            if (!errorMessage.isNullOrBlank()) {
+                Alert {
+                    severity = "error"
+                    sx { marginTop = 12.px; borderRadius = 8.px }
+                    +errorMessage
+                }
+            }
+
+            val rows = scope.rows
+            if (rows.isEmpty()) {
+                // Empty state
+                Box {
+                    sx {
+                        display = Display.flex
+                        flexDirection = FlexDirection.column
+                        alignItems = AlignItems.center
+                        justifyContent = JustifyContent.center
+                        flex = Flex(number(1.0), number(1.0), 0.px)
+                        padding = 48.px
+                    }
+                    ShoppingCart { sx { fontSize = 48.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() } }
                     Typography {
-                        variant = TypographyVariant.h5
-                        asDynamic().style = StoreStyles.titleH5
-                        +"Shopping Cart"
+                        variant = TypographyVariant.h6
+                        sx { marginTop = 16.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                        +"Your cart is empty"
+                    }
+                    Typography {
+                        variant = TypographyVariant.body2
+                        sx { marginTop = 8.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>(); opacity = number(0.7) }
+                        +"Add products to start shopping"
                     }
                 }
-
-                Divider {}
-
-                // Error message
-                val errorMessage = scope.errorMessage
-                if (!errorMessage.isNullOrBlank()) {
-                    Alert {
-                        severity = "error"
-                        sx { marginTop = 12.px; borderRadius = 8.px }
-                        +errorMessage
+            } else {
+                // Cart items
+                Box {
+                    sx {
+                        marginTop = 12.px
+                        marginRight = (-6).px
                     }
-                }
-
-                val rows = scope.rows
-                if (rows.isEmpty()) {
-                    // Empty state
-                    Box {
-                        sx {
-                            display = Display.flex
-                            flexDirection = FlexDirection.column
-                            alignItems = AlignItems.center
-                            justifyContent = JustifyContent.center
-                            flex = Flex(number(1.0), number(1.0), 0.px)
-                            padding = 48.px
-                        }
-                        ShoppingCart { sx { fontSize = 48.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() } }
-                        Typography {
-                            variant = TypographyVariant.h6
-                            sx { marginTop = 16.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                            +"Your cart is empty"
-                        }
-                        Typography {
-                            variant = TypographyVariant.body2
-                            sx { marginTop = 8.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>(); opacity = number(0.7) }
-                            +"Add products to start shopping"
-                        }
-                    }
-                } else {
-                    // Cart items
-                    Box {
-                        sx {
-                            marginTop = 12.px
-                            marginRight = (-6).px
-                        }
-
-                        Stack {
-                            direction = responsive(StackDirection.column)
-                            spacing = responsive(1)
-                            // Each row is a view of its own: it repaints only when its own scope changes
-                            for (row in rows) {
-                                val rowView = app.viewOf(row)
-                                RenderSlot {
-                                    key = rowView.instanceId
-                                    view = rowView
-                                }
-                            }
-                        }
-                    }
-
-                    // Total section
-                    Divider { sx { marginTop = 8.px; marginBottom = 8.px } }
 
                     Stack {
-                        direction = responsive(StackDirection.row)
-                        sx { justifyContent = JustifyContent.flexEnd; alignItems = AlignItems.center }
+                        direction = responsive(StackDirection.column)
                         spacing = responsive(1)
-
-                        Typography {
-                            variant = TypographyVariant.subtitle1
-                            sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                            +"Total: "
-                        }
-
-                        val total = scope.total
-                        Box {
-                            sx {
-                                backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
-                                borderRadius = 10.px
-                                padding = Padding(6.px, 14.px)
-                            }
-                            Typography {
-                                variant = TypographyVariant.h6
-                                sx {
-                                    fontWeight = FontWeight.bold
-                                    fontSize = 22.px
-                                    color = StoreColors.PriceColor.unsafeCast<Color>()
-                                }
-                                +"\$${formatPrice(total)}"
+                        // Each row is a view of its own: it repaints only when its own scope changes
+                        for (row in rows) {
+                            RenderSlot {
+                                key = scopeKey(row)
+                                this.scope = row
                             }
                         }
                     }
                 }
 
-                // Action buttons
+                // Total section
+                Divider { sx { marginTop = 8.px; marginBottom = 8.px } }
+
                 Stack {
                     direction = responsive(StackDirection.row)
-                    spacing = responsive(2)
-                    sx { justifyContent = JustifyContent.flexEnd; marginTop = 16.px }
+                    sx { justifyContent = JustifyContent.flexEnd; alignItems = AlignItems.center }
+                    spacing = responsive(1)
 
-                    Button {
-                        variant = ButtonVariant.outlined
-                        onClick = onOpenProducts
-                        sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
-                        ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
-                        +"Continue Shopping"
+                    Typography {
+                        variant = TypographyVariant.subtitle1
+                        sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                        +"Total: "
                     }
 
-                    if (rows.isNotEmpty()) {
-                        Button {
-                            variant = ButtonVariant.contained
-                            onClick = onBuy
-                            sx {
-                                borderRadius = 12.px
-                                height = 48.px
-                                textTransform = None.none
-                                fontWeight = FontWeight.bold
-                                fontSize = 16.px
-                                backgroundColor = StoreColors.PriceColor.unsafeCast<BackgroundColor>()
-                            }
-                            +"Buy"
+                    val total = scope.total
+                    Box {
+                        sx {
+                            backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
+                            borderRadius = 10.px
+                            padding = Padding(6.px, 14.px)
                         }
+                        Typography {
+                            variant = TypographyVariant.h6
+                            sx {
+                                fontWeight = FontWeight.bold
+                                fontSize = 22.px
+                                color = StoreColors.PriceColor.unsafeCast<Color>()
+                            }
+                            +"\$${formatPrice(total)}"
+                        }
+                    }
+                }
+            }
+
+            // Action buttons
+            Stack {
+                direction = responsive(StackDirection.row)
+                spacing = responsive(2)
+                sx { justifyContent = JustifyContent.flexEnd; marginTop = 16.px }
+
+                Button {
+                    variant = ButtonVariant.outlined
+                    onClick = onOpenProducts
+                    sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                    ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
+                    +"Continue Shopping"
+                }
+
+                if (rows.isNotEmpty()) {
+                    Button {
+                        variant = ButtonVariant.contained
+                        onClick = onBuy
+                        sx {
+                            borderRadius = 12.px
+                            height = 48.px
+                            textTransform = None.none
+                            fontWeight = FontWeight.bold
+                            fontSize = 16.px
+                            backgroundColor = StoreColors.PriceColor.unsafeCast<BackgroundColor>()
+                        }
+                        +"Buy"
                     }
                 }
             }
@@ -217,123 +200,104 @@ class CartView(
 }
 
 /** One row of the cart: a view of its own, repainted only when its row's scope changes. */
-class CartItemView(
-    app: RootPresenter,
-    scope: CartItemScope,
-) : ReactCubeView<CartItemScope>("cart-item-view-${nextInstance++}", app, scope) {
+val CartItemView = FC<ScopeProps<CartItemScope>> { props ->
+    val scope = useScope(props.scope)
 
-    // :: Emitters — created once per row view; they read the row's current quantity when they run
-
-    private val decrement: MouseEventHandler<HTMLButtonElement> = {
+    val decrement: MouseEventHandler<HTMLButtonElement> = {
         val next = (scope.quantity - 1).coerceAtLeast(1)
         safeCall { scope.onModifyQuantity(next) }
     }
 
-    private val increment: MouseEventHandler<HTMLButtonElement> = {
+    val increment: MouseEventHandler<HTMLButtonElement> = {
         val next = scope.quantity + 1
         safeCall { scope.onModifyQuantity(next) }
     }
 
-    private val remove: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onRemove() } }
+    val remove: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onRemove() } }
 
-    override val component = FC<Props> {
-        var rev by useState(revision)
-        useEffect(this@CartItemView) {
-            onUpdate = { rev = revision }
+    Card {
+        sx {
+            borderRadius = 8.px
+            backgroundColor = StoreColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
         }
+        elevation = 0
 
-        @Suppress("UNUSED_VARIABLE")
-        val unused = rev
+        CardContent {
+            sx { padding = 16.px }
 
-        Card {
-            sx {
-                borderRadius = 8.px
-                backgroundColor = StoreColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
-            }
-            elevation = 0
+            Stack {
+                direction = responsive(StackDirection.row)
+                sx { alignItems = AlignItems.center }
+                spacing = responsive(2)
 
-            CardContent {
-                sx { padding = 16.px }
+                // Product info
+                Box {
+                    sx { flex = Flex(number(1.0), number(1.0), 0.px) }
 
-                Stack {
-                    direction = responsive(StackDirection.row)
-                    sx { alignItems = AlignItems.center }
-                    spacing = responsive(2)
-
-                    // Product info
-                    Box {
-                        sx { flex = Flex(number(1.0), number(1.0), 0.px) }
-
-                        Typography {
-                            variant = TypographyVariant.body2
-                            asDynamic().style = StoreStyles.subtitleBody2
-                            asDynamic().noWrap = true
-                            +(scope.name ?: "")
-                        }
-                        Typography {
-                            variant = TypographyVariant.body2
-                            asDynamic().style = StoreStyles.fontMedium
-                            sx { color = StoreColors.PriceColor.unsafeCast<Color>() }
-                            +"\$${formatPrice(scope.price)}"
-                        }
+                    Typography {
+                        variant = TypographyVariant.body2
+                        asDynamic().style = StoreStyles.subtitleBody2
+                        asDynamic().noWrap = true
+                        +(scope.name ?: "")
                     }
+                    Typography {
+                        variant = TypographyVariant.body2
+                        asDynamic().style = StoreStyles.fontMedium
+                        sx { color = StoreColors.PriceColor.unsafeCast<Color>() }
+                        +"\$${formatPrice(scope.price)}"
+                    }
+                }
 
-                    // Quantity controls
-                    Paper {
+                // Quantity controls
+                Paper {
+                    sx {
+                        borderRadius = 10.px
+                        backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
+                        display = Display.flex
+                        alignItems = AlignItems.center
+                        paddingLeft = 4.px
+                        paddingRight = 4.px
+                    }
+                    elevation = 0
+
+                    IconButton {
+                        size = mui.material.Size.small
                         sx {
-                            borderRadius = 10.px
-                            backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
-                            display = Display.flex
-                            alignItems = AlignItems.center
-                            paddingLeft = 4.px
-                            paddingRight = 4.px
+                            backgroundColor = StoreColors.SecondaryContainer.unsafeCast<BackgroundColor>()
+                            width = 32.px
+                            height = 32.px
                         }
-                        elevation = 0
-
-                        IconButton {
-                            size = mui.material.Size.small
-                            sx {
-                                backgroundColor = StoreColors.SecondaryContainer.unsafeCast<BackgroundColor>()
-                                width = 32.px
-                                height = 32.px
-                            }
-                            onClick = decrement
-                            Remove { sx { fontSize = 16.px } }
-                        }
-
-                        Typography {
-                            variant = TypographyVariant.subtitle1
-                            sx { fontWeight = FontWeight.bold; paddingLeft = 14.px; paddingRight = 14.px }
-                            +"${scope.quantity}"
-                        }
-
-                        IconButton {
-                            size = mui.material.Size.small
-                            sx {
-                                backgroundColor = StoreColors.SecondaryContainer.unsafeCast<BackgroundColor>()
-                                width = 32.px
-                                height = 32.px
-                            }
-                            onClick = increment
-                            Add { sx { fontSize = 16.px } }
-                        }
+                        onClick = decrement
+                        Remove { sx { fontSize = 16.px } }
                     }
 
-                    // Remove button
-                    Button {
-                        variant = ButtonVariant.text
-                        color = ButtonColor.error
-                        onClick = remove
-                        asDynamic().style = StoreStyles.smallAction
-                        +"Remove"
+                    Typography {
+                        variant = TypographyVariant.subtitle1
+                        sx { fontWeight = FontWeight.bold; paddingLeft = 14.px; paddingRight = 14.px }
+                        +"${scope.quantity}"
                     }
+
+                    IconButton {
+                        size = mui.material.Size.small
+                        sx {
+                            backgroundColor = StoreColors.SecondaryContainer.unsafeCast<BackgroundColor>()
+                            width = 32.px
+                            height = 32.px
+                        }
+                        onClick = increment
+                        Add { sx { fontSize = 16.px } }
+                    }
+                }
+
+                // Remove button
+                Button {
+                    variant = ButtonVariant.text
+                    color = ButtonColor.error
+                    onClick = remove
+                    asDynamic().style = StoreStyles.smallAction
+                    +"Remove"
                 }
             }
         }
-    }
-
-    private companion object {
-        /** Each row view needs its own instance id: they are keyed by it in the cart. */
-        var nextInstance = 0
     }
 }

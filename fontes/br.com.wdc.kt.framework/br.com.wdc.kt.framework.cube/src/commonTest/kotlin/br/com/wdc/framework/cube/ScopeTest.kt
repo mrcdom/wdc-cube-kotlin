@@ -26,11 +26,12 @@ class ScopeTest {
 
     private class TestView : CubeView {
         var updates = 0
+        var onRelease: () -> Unit = {}
         override val instanceId: String = "test"
         override fun update() {
             updates++
         }
-        override fun release() {}
+        override fun release() = onRelease()
     }
 
     private class TestPresenter(app: CubeApplication) : AbstractCubePresenter<CubeApplication>(app) {
@@ -41,11 +42,12 @@ class ScopeTest {
     fun assigningADifferentValue_notifies_andTheSameValueDoesNot() {
         val scope = TestScope()
         var changes = 0
-        scope.observe { changes++ }
+        scope.subscribe { changes++ }
 
         scope.name = "a"
         scope.count = 1
         assertEquals(2, changes)
+        assertEquals(2, scope.version)
 
         scope.name = "a"
         scope.count = 1
@@ -61,7 +63,7 @@ class ScopeTest {
     fun aChangeInsideAnObject_needsChanged() {
         val scope = TestScope()
         var changes = 0
-        scope.observe { changes++ }
+        scope.subscribe { changes++ }
 
         scope.tags += "inside"
         assertEquals(0, changes, "the field cannot see a mutation inside the object")
@@ -70,22 +72,62 @@ class ScopeTest {
     }
 
     @Test
-    fun observedState_updatesThePresentersView_withoutAnExplicitUpdate() {
+    fun manySubscribers_eachUntilItUnsubscribes() {
+        val scope = TestScope()
+        var first = 0
+        var second = 0
+        val unsubscribeFirst = scope.subscribe { first++ }
+        scope.subscribe { second++ }
+
+        scope.count = 1
+        unsubscribeFirst()
+        unsubscribeFirst()
+        scope.count = 2
+        assertEquals(1, first)
+        assertEquals(2, second)
+    }
+
+    @Test
+    fun release_tellsOnce_andDropsTheSubscribers() {
+        val scope = TestScope()
+        var changes = 0
+        var releases = 0
+        var cancelled = 0
+        scope.subscribe { changes++ }
+        scope.onRelease { releases++ }
+        val cancel = scope.onRelease { cancelled++ }
+        cancel()
+
+        scope.release()
+        scope.release()
+        scope.count = 1
+        assertTrue(scope.released)
+        assertEquals(1, releases)
+        assertEquals(0, cancelled, "removed before the release")
+        assertEquals(0, changes, "no subscriber after the release")
+    }
+
+    @Test
+    fun theLayersViews_repaintWithTheScope_andAreReleasedWithIt() {
         val app = object : CubeApplication() {}
         val view = TestView()
-        app.scopeViews = ScopeViews().register<TestScope> { view }
+        var released = 0
+        val views = ScopeViews().register<TestScope> { view.also { it.onRelease = { released++ } } }
         val presenter = TestPresenter(app)
 
         presenter.scope.name = "before the view"
-        assertSame(view, app.viewOf(presenter.scope), "the catalog's view, created once")
-        assertSame(view, app.viewOf(presenter.scope))
+        assertSame(view, views.viewOf(presenter.scope), "the catalog's view, created once")
+        assertSame(view, views.viewOf(presenter.scope))
         presenter.scope.name = "with the view"
         presenter.scope.count = 7
-
         assertEquals(2, view.updates)
 
         presenter.release()
-        assertNull(app.viewOrNull(presenter.scope), "released with its presenter")
+        assertTrue(presenter.scope.released, "the presenter releases its scope")
+        assertNull(views.viewOrNull(presenter.scope), "dropped with its scope")
+        assertEquals(1, released)
+        presenter.scope.count = 8
+        assertEquals(2, view.updates)
     }
 
     private class Holder : Scope() {
@@ -95,20 +137,18 @@ class ScopeTest {
 
     @Test
     fun aScopeInAField_goesAsTheIdOfItsView() {
-        val app = object : CubeApplication() {}
-        app.scopeViews = ScopeViews().register<TestScope> { TestView() }.fallback { s -> TestView().takeIf { s is Holder } }
+        val views = ScopeViews().register<TestScope> { TestView() }.fallback { s -> TestView().takeIf { s is Holder } }
         val holder = Holder().apply { content = TestScope(); rows = listOf(TestScope(), TestScope()) }
         assertEquals(
             """{"id":"h:1","contentViewId":"test","rowsViewIds":["test","test"]}""",
-            holder.toJson("h:1", app::viewOf),
+            holder.toJson("h:1", views::viewOf),
         )
-        assertEquals("""{"id":"h:1","rowsViewIds":[]}""", Holder().toJson("h:1", app::viewOf), "an empty list still goes")
+        assertEquals("""{"id":"h:1","rowsViewIds":[]}""", Holder().toJson("h:1", views::viewOf), "an empty list still goes")
     }
 
     @Test
     fun aScopeWithNoViewInTheCatalog_failsNamingIt() {
-        val app = object : CubeApplication() {}
-        val e = assertFailsWith<IllegalStateException> { app.viewOf(TestScope()) }
+        val e = assertFailsWith<IllegalStateException> { ScopeViews().viewOf(TestScope()) }
         assertTrue("TestScope" in e.message!!, e.message)
     }
 
@@ -158,23 +198,22 @@ class ScopeTest {
     }
 
     @Test
-    fun aSegment_repaintsTheOwnerUntilItHasAViewOfItsOwn_andIsReleasedWithThePresenter() {
+    fun aSegment_hasItsOwnView_andIsReleasedWithThePresenter() {
         val app = object : CubeApplication() {}
         val ownerView = TestView()
         val panelView = TestView()
-        app.scopeViews = ScopeViews().register<Holder> { ownerView }.register<TestScope> { panelView }
+        val views = ScopeViews().register<Holder> { ownerView }.register<TestScope> { panelView }
         val presenter = OwnerPresenter(app)
-        app.viewOf(presenter.scope)
+        views.viewOf(presenter.scope)
+        views.viewOf(presenter.panel)
 
-        presenter.panel.name = "before its view"
-        assertEquals(1, ownerView.updates, "no view of its own yet: the owner repaints")
-
-        app.viewOf(presenter.panel)
-        presenter.panel.name = "with its view"
+        presenter.panel.name = "changed"
         assertEquals(1, panelView.updates)
-        assertEquals(1, ownerView.updates, "the owner no longer repaints for it")
+        assertEquals(0, ownerView.updates, "the owner does not repaint for its segment")
 
         presenter.release()
-        assertNull(app.viewOrNull(presenter.panel))
+        assertTrue(presenter.panel.released)
+        assertNull(views.viewOrNull(presenter.panel))
+        assertEquals(0, views.size)
     }
 }

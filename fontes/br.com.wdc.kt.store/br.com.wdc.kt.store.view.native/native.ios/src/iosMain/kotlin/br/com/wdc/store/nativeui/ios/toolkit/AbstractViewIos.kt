@@ -20,9 +20,10 @@ interface Releasable {
  * Base class for all iOS native views in the Cube MVP architecture.
  *
  * A view draws one [Scope]; it knows the application ([app]) and its scope, never the presenter.
- * The application creates it the first time the scope is asked for ([RootPresenter.viewOf]).
+ * The layer's [br.com.wdc.framework.cube.ScopeViews] creates it the first time the scope is asked for, and releases
+ * it with the scope.
  *
- * Implements dirty-flag update throttling: when the presenter calls update(),
+ * Implements dirty-flag update throttling: when the scope changes (update()),
  * a dirty flag is set and the actual doUpdate() is scheduled on the main
  * run-loop via DispatchQueue.main.async (coalesces multiple calls in the same frame).
  *

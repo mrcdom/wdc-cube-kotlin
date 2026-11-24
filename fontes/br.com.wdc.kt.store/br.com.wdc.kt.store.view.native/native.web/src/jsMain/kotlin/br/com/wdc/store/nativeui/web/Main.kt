@@ -9,7 +9,6 @@ import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.storage.JsSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.store.domain.product.ProductRepository
 import br.com.wdc.store.domain.purchaseitem.PurchaseItemRepository
 import br.com.wdc.store.domain.purchase.PurchaseRepository
@@ -17,6 +16,8 @@ import br.com.wdc.store.domain.user.UserRepository
 import br.com.wdc.store.domain.security.AuthenticationService
 import br.com.wdc.store.domain.security.CryptoProvider
 import br.com.wdc.store.domain.security.JsCryptoProvider
+import br.com.wdc.store.nativeui.web.bridge.RenderSlot
+import br.com.wdc.store.nativeui.web.bridge.ScopeComponentsContext
 import br.com.wdc.store.nativeui.web.bridge.ViewUpdateScheduler
 import kotlinx.coroutines.launch
 import br.com.wdc.store.nativeui.web.theme.StoreTheme
@@ -26,15 +27,6 @@ import br.com.wdc.store.persistence.client.RestConfig
 import br.com.wdc.store.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.RootKeys
-import br.com.wdc.store.presentation.presenter.RootScope
-import br.com.wdc.store.presentation.presenter.open.login.LoginScope
-import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
-import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
-import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
-import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScope
-import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelScope
-import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
-import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
 import kotlinx.browser.window
 import mui.material.CssBaseline
 import mui.material.styles.ThemeProvider
@@ -128,17 +120,6 @@ fun main() {
     initializePlatform(baseUrl)
 
     val app = JsRootPresenter()
-    // The view of each scope, created by the application on first use — before the first navigation
-    app.scopeViews = ScopeViews()
-        .register<RootScope> { RootView(app, it) }
-        .register<LoginScope> { LoginView(app, it) }
-        .register<HomeScope> { HomeView(app, it) }
-        .register<CartScope> { CartView(app, it) }
-        .register<CartItemScope> { CartItemView(app, it) }
-        .register<ProductScope> { ProductView(app, it) }
-        .register<ReceiptScope> { ReceiptView(app, it) }
-        .register<ProductsPanelScope> { ProductsPanelView(app, it) }
-        .register<PurchasesPanelScope> { PurchasesPanelView(app, it) }
     ViewUpdateScheduler.initialize { app }
 
     // On irrecoverable auth failure (401 + refresh failed), clear session and go to login
@@ -185,9 +166,10 @@ fun main() {
 
             CssBaseline()
 
-            val rootView = app.view as? RootView
-
-            rootView?.component {}
+            ScopeComponentsContext.Provider {
+                value = storeViews
+                RenderSlot { scope = app.scope }
+            }
         }
     }
 

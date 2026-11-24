@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.framework.cube.ScopeViews
 import android.graphics.Color
 import android.graphics.Typeface
 import android.view.GestureDetector
@@ -15,7 +16,7 @@ import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
 
-class HomeViewAndroid(app: RootPresenter, scope: HomeScope) : AbstractViewAndroid<HomeScope>("home-view", app, scope) {
+class HomeViewAndroid(app: RootPresenter, private val views: ScopeViews, scope: HomeScope) : AbstractViewAndroid<HomeScope>("home-view", app, scope) {
 
     // Compact header
     private lateinit var compactHeader: LinearLayout
@@ -659,8 +660,8 @@ class HomeViewAndroid(app: RootPresenter, scope: HomeScope) : AbstractViewAndroi
         }
 
         // Mount panels
-        val productsPanel = scope.productsPanel?.let(app::viewOf)
-        val purchasesPanel = scope.purchasesPanel?.let(app::viewOf)
+        val productsPanel = scope.productsPanel?.let(views::viewOf)
+        val purchasesPanel = scope.purchasesPanel?.let(views::viewOf)
 
         if (productsPanel != null && mountedProductsPanel !== productsPanel) {
             mountedProductsPanel = productsPanel
@@ -685,7 +686,7 @@ class HomeViewAndroid(app: RootPresenter, scope: HomeScope) : AbstractViewAndroi
         }
 
         // Detail overlay
-        val contentView = scope.content?.let(app::viewOf)
+        val contentView = scope.content?.let(views::viewOf)
         detailSlot.sync(contentView)
         if (contentView != null) {
             detailContainer.visibility = View.VISIBLE

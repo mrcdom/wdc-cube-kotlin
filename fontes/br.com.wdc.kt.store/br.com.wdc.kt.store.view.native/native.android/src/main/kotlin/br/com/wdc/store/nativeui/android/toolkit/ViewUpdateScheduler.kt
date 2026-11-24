@@ -8,7 +8,7 @@ import br.com.wdc.store.presentation.presenter.RootPresenter
 /**
  * Centralized dirty-view scheduler for the Android platform.
  *
- * When a presenter calls view.update(), the view is marked dirty here.
+ * When a scope changes, the layer's ScopeViews calls its view's update(), and the view is marked dirty here.
  * A single Handler.post on the main looper is scheduled to flush all dirty views.
  * Each flush first runs the application's commitComputedState() — once per paint cycle,
  * right before the scopes are read — and then paints the dirty views, including the

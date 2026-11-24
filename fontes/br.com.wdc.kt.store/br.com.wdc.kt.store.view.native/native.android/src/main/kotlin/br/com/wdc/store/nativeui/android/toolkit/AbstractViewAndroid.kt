@@ -13,10 +13,12 @@ import kotlinx.coroutines.launch
 /**
  * Base class for all Android native views in the Cube MVP architecture.
  *
- * A view paints one [Scope] and calls its actions; it knows the application ([app]) only to reach the views of child
- * scopes ([RootPresenter.viewOf]) and to launch actions on the presenter dispatcher.
+ * A view paints one [Scope] and calls its actions; it knows the application ([app]) only to launch actions on the
+ * presenter dispatcher. The layer's [br.com.wdc.framework.cube.ScopeViews] creates it the first time the scope is
+ * asked for, and releases it with the scope; a view with slots gets the same registry to reach the views of the
+ * scopes inside its own.
  *
- * Implements dirty-flag update throttling: when the presenter calls update(), the view is marked dirty in
+ * Implements dirty-flag update throttling: when the scope changes (update()), the view is marked dirty in
  * [ViewUpdateScheduler], which coalesces multiple update() calls into one doUpdate() per flush.
  */
 abstract class AbstractViewAndroid<S : Scope>(

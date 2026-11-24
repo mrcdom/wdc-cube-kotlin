@@ -1,12 +1,13 @@
 package br.com.wdc.store.nativeui.web.views
 
-import br.com.wdc.store.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.store.nativeui.web.bridge.ScopeProps
+import br.com.wdc.store.nativeui.web.bridge.safeCall
+import br.com.wdc.store.nativeui.web.bridge.useScope
 import br.com.wdc.store.nativeui.web.theme.StoreColors
 import br.com.wdc.store.nativeui.web.theme.StoreStyles
 import br.com.wdc.store.nativeui.web.util.formatDate
 import br.com.wdc.store.nativeui.web.util.formatPrice
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
 import mui.icons.material.ArrowBack
 import mui.icons.material.CheckCircle
 import mui.icons.material.Receipt
@@ -25,226 +26,209 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
-import react.Props
 import react.ReactNode
 import react.dom.events.MouseEventHandler
-import react.useEffect
-import react.useState
 import web.cssom.*
 import web.html.HTMLButtonElement
 
-class ReceiptView(
-    app: RootPresenter,
-    scope: ReceiptScope,
-) : ReactCubeView<ReceiptScope>("receipt-view", app, scope) {
+val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
+    val scope = useScope(props.scope)
 
-    // :: Emitters — created once per view, so they are the same function on every render
+    val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
 
-    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
+    val receipt = scope.receipt
 
-    override val component = FC<Props> {
-        var rev by useState(revision)
-        useEffect(this@ReceiptView) {
-            onUpdate = { rev = revision }
+    Box {
+        sx {
+            display = Display.flex
+            justifyContent = JustifyContent.center
+            padding = Padding(16.px, 10.px, 16.px, 16.px)
         }
 
-        @Suppress("UNUSED_VARIABLE")
-        val unused = rev
-
-        val receipt = scope.receipt
-
         Box {
-            sx {
-                display = Display.flex
-                justifyContent = JustifyContent.center
-                padding = Padding(16.px, 10.px, 16.px, 16.px)
-            }
+            sx { maxWidth = 600.px; width = 100.pct }
 
-            Box {
-                sx { maxWidth = 600.px; width = 100.pct }
+            Stack {
+                direction = responsive(StackDirection.column)
+                spacing = responsive(2)
 
-                Stack {
-                    direction = responsive(StackDirection.column)
-                    spacing = responsive(2)
-
-                    // Success banner
-                    if (scope.notifySuccess) {
-                        Paper {
-                            sx {
-                                padding = 20.px
-                                borderRadius = 12.px
-                                backgroundColor = StoreColors.SuccessContainer.unsafeCast<BackgroundColor>()
-                                textAlign = TextAlign.center
-                            }
-                            elevation = 0
-
-                            Stack {
-                                direction = responsive(StackDirection.column)
-                                sx { alignItems = AlignItems.center }
-                                spacing = responsive(1)
-
-                                CheckCircle {
-                                    sx { fontSize = 32.px; color = StoreColors.SuccessColor.unsafeCast<Color>() }
-                                }
-                                Typography {
-                                    variant = TypographyVariant.subtitle1
-                                    asDynamic().style = StoreStyles.successText
-                                    +"Purchase completed successfully!"
-                                }
-                            }
+                // Success banner
+                if (scope.notifySuccess) {
+                    Paper {
+                        sx {
+                            padding = 20.px
+                            borderRadius = 12.px
+                            backgroundColor = StoreColors.SuccessContainer.unsafeCast<BackgroundColor>()
+                            textAlign = TextAlign.center
                         }
-                    }
+                        elevation = 0
 
-                    if (receipt != null) {
-                        // Receipt header
-                        Stack {
-                            direction = responsive(StackDirection.row)
-                            sx { justifyContent = JustifyContent.spaceBetween; alignItems = AlignItems.center }
-
-                            Stack {
-                                direction = responsive(StackDirection.row)
-                                spacing = responsive(1)
-                                sx { alignItems = AlignItems.center }
-
-                                Receipt { sx { fontSize = 28.px } }
-                                Typography {
-                                    variant = TypographyVariant.h5
-                                    asDynamic().style = StoreStyles.titleH5
-                                    +"Receipt"
-                                }
-                            }
-
-                            receipt.date?.let { date ->
-                                Chip {
-                                    label = ReactNode(formatDate(date))
-                                    sx {
-                                        backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
-                                    }
-                                    size = mui.material.Size.small
-                                }
-                            }
-                        }
-
-                        Divider {}
-
-                        // Items header
-                        Stack {
-                            direction = responsive(StackDirection.row)
-                            sx {
-                                justifyContent = JustifyContent.spaceBetween
-                                paddingLeft = 4.px
-                                paddingRight = 4.px
-                            }
-
-                            Typography {
-                                variant = TypographyVariant.caption
-                                sx { flex = Flex(number(1.0), number(1.0), 0.px); color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                                +"Item"
-                            }
-                            Typography {
-                                variant = TypographyVariant.caption
-                                sx { width = 50.px; textAlign = TextAlign.center; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                                +"Qty"
-                            }
-                            Typography {
-                                variant = TypographyVariant.caption
-                                sx { width = 100.px; textAlign = TextAlign.end; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                                +"Amount"
-                            }
-                        }
-
-                        // Items
                         Stack {
                             direction = responsive(StackDirection.column)
+                            sx { alignItems = AlignItems.center }
                             spacing = responsive(1)
 
-                            for (item in receipt.items) {
-                                Paper {
-                                    key = "${item.id}"
-                                    sx {
-                                        padding = 12.px
-                                        borderRadius = 8.px
-                                        backgroundColor = StoreColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
-                                    }
-                                    elevation = 0
+                            CheckCircle {
+                                sx { fontSize = 32.px; color = StoreColors.SuccessColor.unsafeCast<Color>() }
+                            }
+                            Typography {
+                                variant = TypographyVariant.subtitle1
+                                asDynamic().style = StoreStyles.successText
+                                +"Purchase completed successfully!"
+                            }
+                        }
+                    }
+                }
 
-                                    Stack {
-                                        direction = responsive(StackDirection.row)
-                                        sx { justifyContent = JustifyContent.spaceBetween; alignItems = AlignItems.center }
+                if (receipt != null) {
+                    // Receipt header
+                    Stack {
+                        direction = responsive(StackDirection.row)
+                        sx { justifyContent = JustifyContent.spaceBetween; alignItems = AlignItems.center }
 
-                                        Typography {
-                                            variant = TypographyVariant.body2
-                                            sx { flex = Flex(number(1.0), number(1.0), 0.px) }
-                                            asDynamic().style = StoreStyles.fontMedium
-                                            +(item.description ?: "")
-                                        }
-                                        Typography {
-                                            variant = TypographyVariant.body2
-                                            sx { width = 50.px; textAlign = TextAlign.center; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                                            +"${item.quantity}x"
-                                        }
-                                        Typography {
-                                            variant = TypographyVariant.body2
-                                            sx {
-                                                width = 100.px
-                                                textAlign = TextAlign.end
-                                                color = StoreColors.PriceColor.unsafeCast<Color>()
-                                            }
-                                            asDynamic().style = StoreStyles.fontMedium
-                                            +"\$${formatPrice(item.value)}"
-                                        }
-                                    }
-                                }
+                        Stack {
+                            direction = responsive(StackDirection.row)
+                            spacing = responsive(1)
+                            sx { alignItems = AlignItems.center }
+
+                            Receipt { sx { fontSize = 28.px } }
+                            Typography {
+                                variant = TypographyVariant.h5
+                                asDynamic().style = StoreStyles.titleH5
+                                +"Receipt"
                             }
                         }
 
-                        // Total
-                        Divider {}
-                        Stack {
-                            direction = responsive(StackDirection.row)
-                            sx { justifyContent = JustifyContent.flexEnd; alignItems = AlignItems.center }
-                            spacing = responsive(1)
-
-                            Typography {
-                                variant = TypographyVariant.subtitle1
-                                sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                                +"Total: "
+                        receipt.date?.let { date ->
+                            Chip {
+                                label = ReactNode(formatDate(date))
+                                sx {
+                                    backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
+                                }
+                                size = mui.material.Size.small
                             }
+                        }
+                    }
 
-                            receipt.total?.let { total ->
-                                Box {
-                                    sx {
-                                        backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
-                                        borderRadius = 10.px
-                                        padding = Padding(6.px, 14.px)
+                    Divider {}
+
+                    // Items header
+                    Stack {
+                        direction = responsive(StackDirection.row)
+                        sx {
+                            justifyContent = JustifyContent.spaceBetween
+                            paddingLeft = 4.px
+                            paddingRight = 4.px
+                        }
+
+                        Typography {
+                            variant = TypographyVariant.caption
+                            sx { flex = Flex(number(1.0), number(1.0), 0.px); color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                            +"Item"
+                        }
+                        Typography {
+                            variant = TypographyVariant.caption
+                            sx { width = 50.px; textAlign = TextAlign.center; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                            +"Qty"
+                        }
+                        Typography {
+                            variant = TypographyVariant.caption
+                            sx { width = 100.px; textAlign = TextAlign.end; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                            +"Amount"
+                        }
+                    }
+
+                    // Items
+                    Stack {
+                        direction = responsive(StackDirection.column)
+                        spacing = responsive(1)
+
+                        for (item in receipt.items) {
+                            Paper {
+                                key = "${item.id}"
+                                sx {
+                                    padding = 12.px
+                                    borderRadius = 8.px
+                                    backgroundColor = StoreColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
+                                }
+                                elevation = 0
+
+                                Stack {
+                                    direction = responsive(StackDirection.row)
+                                    sx { justifyContent = JustifyContent.spaceBetween; alignItems = AlignItems.center }
+
+                                    Typography {
+                                        variant = TypographyVariant.body2
+                                        sx { flex = Flex(number(1.0), number(1.0), 0.px) }
+                                        asDynamic().style = StoreStyles.fontMedium
+                                        +(item.description ?: "")
                                     }
                                     Typography {
-                                        variant = TypographyVariant.h6
+                                        variant = TypographyVariant.body2
+                                        sx { width = 50.px; textAlign = TextAlign.center; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                                        +"${item.quantity}x"
+                                    }
+                                    Typography {
+                                        variant = TypographyVariant.body2
                                         sx {
-                                            fontWeight = FontWeight.bold
-                                            fontSize = 22.px
+                                            width = 100.px
+                                            textAlign = TextAlign.end
                                             color = StoreColors.PriceColor.unsafeCast<Color>()
                                         }
-                                        +"\$${formatPrice(total)}"
+                                        asDynamic().style = StoreStyles.fontMedium
+                                        +"\$${formatPrice(item.value)}"
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Action button
+                    // Total
+                    Divider {}
                     Stack {
                         direction = responsive(StackDirection.row)
-                        sx { justifyContent = JustifyContent.flexEnd }
+                        sx { justifyContent = JustifyContent.flexEnd; alignItems = AlignItems.center }
+                        spacing = responsive(1)
 
-                        Button {
-                            variant = ButtonVariant.contained
-                            onClick = onOpenProducts
-                            asDynamic().style = StoreStyles.fontMedium
-                            sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
-                            ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
-                            +"Continue Shopping"
+                        Typography {
+                            variant = TypographyVariant.subtitle1
+                            sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                            +"Total: "
                         }
+
+                        receipt.total?.let { total ->
+                            Box {
+                                sx {
+                                    backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
+                                    borderRadius = 10.px
+                                    padding = Padding(6.px, 14.px)
+                                }
+                                Typography {
+                                    variant = TypographyVariant.h6
+                                    sx {
+                                        fontWeight = FontWeight.bold
+                                        fontSize = 22.px
+                                        color = StoreColors.PriceColor.unsafeCast<Color>()
+                                    }
+                                    +"\$${formatPrice(total)}"
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Action button
+                Stack {
+                    direction = responsive(StackDirection.row)
+                    sx { justifyContent = JustifyContent.flexEnd }
+
+                    Button {
+                        variant = ButtonVariant.contained
+                        onClick = onOpenProducts
+                        asDynamic().style = StoreStyles.fontMedium
+                        sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                        ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
+                        +"Continue Shopping"
                     }
                 }
             }

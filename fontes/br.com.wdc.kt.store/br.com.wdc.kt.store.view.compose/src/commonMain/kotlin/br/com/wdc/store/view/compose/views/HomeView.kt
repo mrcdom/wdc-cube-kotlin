@@ -16,142 +16,134 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
-import br.com.wdc.store.view.compose.bridge.ComposeCubeView
+import br.com.wdc.store.view.compose.bridge.useScope
+import br.com.wdc.store.view.compose.bridge.safeCall
 import br.com.wdc.store.view.compose.bridge.RenderSlot
 import br.com.wdc.store.view.compose.components.StoreLogoHeader
 
 private val COMPACT_BREAKPOINT = 518.dp
 
-class HomeView(app: RootPresenter, scope: HomeScope) :
-    ComposeCubeView<HomeScope>("home-view", app, scope) {
+@Composable
+fun HomeView(scope: HomeScope) {
+    useScope(scope)
 
-    @Composable
-    override fun Render() {
-        @Suppress("UNUSED_VARIABLE")
-        val rev = revision.value
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Header (responsive)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val isCompact = maxWidth < COMPACT_BREAKPOINT
+            HeaderBar(
+                nickName = scope.nickName ?: "",
+                cartItemCount = scope.cartItemCount,
+                onOpenCart = { safeCall { scope.onOpenCart() } },
+                onExit = { safeCall { scope.onExit() } },
+                compact = isCompact
+            )
+        }
 
-
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Header (responsive)
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val isCompact = maxWidth < COMPACT_BREAKPOINT
-                HeaderBar(
-                    nickName = scope.nickName ?: "",
-                    cartItemCount = scope.cartItemCount,
-                    onOpenCart = { safeCall { scope.onOpenCart() } },
-                    onExit = { safeCall { scope.onExit() } },
-                    compact = isCompact
+        // Error message
+        val errorMessage = scope.errorMessage
+        if (!errorMessage.isNullOrBlank()) {
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.errorContainer
+            ) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(12.dp)
                 )
             }
+        }
 
-            // Error message
-            val errorMessage = scope.errorMessage
-            if (!errorMessage.isNullOrBlank()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.errorContainer
-                ) {
-                    Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-            }
+        // Content area (responsive)
+        val content = scope.content
+        if (content != null) {
+            RenderSlot(content)
+        } else {
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxSize().weight(1f)
+            ) {
+                val isCompact = maxWidth < COMPACT_BREAKPOINT
+                val padding = if (isCompact) 8.dp else 16.dp
 
-            // Content area (responsive)
-            val contentView = scope.content?.let(app::viewOf)
-            if (contentView != null) {
-                RenderSlot(contentView)
-            } else {
-                BoxWithConstraints(
-                    modifier = Modifier.fillMaxSize().weight(1f)
-                ) {
-                    val isCompact = maxWidth < COMPACT_BREAKPOINT
-                    val padding = if (isCompact) 8.dp else 16.dp
+                if (isCompact) {
+                    // Tabs for mobile
+                    var selectedTab by remember { mutableIntStateOf(0) }
+                    val tabTitles = listOf("Products" to Icons.Filled.ShoppingBag, "Purchases" to Icons.Filled.Inventory2)
 
-                    if (isCompact) {
-                        // Tabs for mobile
-                        var selectedTab by remember { mutableIntStateOf(0) }
-                        val tabTitles = listOf("Products" to Icons.Filled.ShoppingBag, "Purchases" to Icons.Filled.Inventory2)
-
-                        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-                            PrimaryTabRow(
-                                selectedTabIndex = selectedTab,
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                contentColor = MaterialTheme.colorScheme.primary
-                            ) {
-                                tabTitles.forEachIndexed { index, (title, icon) ->
-                                    Tab(
-                                        selected = selectedTab == index,
-                                        onClick = { selectedTab = index },
-                                        text = {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                            ) {
-                                                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                Text(
-                                                    title,
-                                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
-                                                )
-                                            }
+                    Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                        PrimaryTabRow(
+                            selectedTabIndex = selectedTab,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ) {
+                            tabTitles.forEachIndexed { index, (title, icon) ->
+                                Tab(
+                                    selected = selectedTab == index,
+                                    onClick = { selectedTab = index },
+                                    text = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Text(
+                                                title,
+                                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                                            )
                                         }
-                                    )
+                                    }
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Card(
+                            modifier = Modifier.fillMaxSize(),
+                            shape = RoundedCornerShape(8.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            when (selectedTab) {
+                                0 -> {
+                                    RenderSlot(scope.productsPanel)
+                                }
+                                1 -> {
+                                    RenderSlot(scope.purchasesPanel)
                                 }
                             }
-
-                            Spacer(Modifier.height(8.dp))
-
+                        }
+                    }
+                } else {
+                    // Side-by-side for desktop
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(padding),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        val productsPanel = scope.productsPanel
+                        if (productsPanel != null) {
                             Card(
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier.weight(3f).fillMaxHeight(),
                                 shape = RoundedCornerShape(8.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                             ) {
-                                when (selectedTab) {
-                                    0 -> {
-                                        val productsView = scope.productsPanel?.let(app::viewOf)
-                                        if (productsView != null) RenderSlot(productsView)
-                                    }
-                                    1 -> {
-                                        val purchasesView = scope.purchasesPanel?.let(app::viewOf)
-                                        if (purchasesView != null) RenderSlot(purchasesView)
-                                    }
-                                }
+                                RenderSlot(productsPanel)
                             }
                         }
-                    } else {
-                        // Side-by-side for desktop
-                        Row(
-                            modifier = Modifier.fillMaxSize().padding(padding),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            val productsView = scope.productsPanel?.let(app::viewOf)
-                            if (productsView != null) {
-                                Card(
-                                    modifier = Modifier.weight(3f).fillMaxHeight(),
-                                    shape = RoundedCornerShape(8.dp),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                                ) {
-                                    RenderSlot(productsView)
-                                }
-                            }
 
-                            val purchasesView = scope.purchasesPanel?.let(app::viewOf)
-                            if (purchasesView != null) {
-                                Card(
-                                    modifier = Modifier.weight(2f).fillMaxHeight(),
-                                    shape = RoundedCornerShape(8.dp),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                                ) {
-                                    RenderSlot(purchasesView)
-                                }
+                        val purchasesPanel = scope.purchasesPanel
+                        if (purchasesPanel != null) {
+                            Card(
+                                modifier = Modifier.weight(2f).fillMaxHeight(),
+                                shape = RoundedCornerShape(8.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                RenderSlot(purchasesPanel)
                             }
                         }
                     }
