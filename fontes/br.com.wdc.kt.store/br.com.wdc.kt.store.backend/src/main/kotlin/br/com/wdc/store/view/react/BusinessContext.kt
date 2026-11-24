@@ -18,6 +18,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import br.com.wdc.store.persistence.security.AuthenticationServiceImpl
 import br.com.wdc.store.domain.security.AuthenticationService
+import br.com.wdc.store.view.react.skeleton.viewimpl.ReactRootPresenter
 
 /**
  * @param config the service configuration, already loaded from the work directory
@@ -63,6 +64,9 @@ class BusinessContext(private val config: AppConfig) {
             // rolls back abandoned transactions even when no one opens a new one
             val reaper = coordinator.startReaper(scheduledExecutor)
             cleanUp.push { reaper.close() }
+            // releases the remote React applications whose client went away
+            val remoteApps = ReactRootPresenter.startCleanup(scheduledExecutor)
+            cleanUp.push { remoteApps.close() }
 
             val jwtSecret = StoreConfig.jwtSecret
             if (!jwtSecret.isNullOrBlank()) {

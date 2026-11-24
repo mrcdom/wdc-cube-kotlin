@@ -33,6 +33,8 @@ import java.io.IOException
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -88,6 +90,25 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
             return app
         }
 
+        /**
+         * Runs [removeExpireds] every [intervalSeconds] on [executor]: without it, an application whose client went
+         * away (no socket, past its life) would stay in memory for good. Closing the result stops it.
+         */
+        fun startCleanup(executor: ScheduledExecutorService, intervalSeconds: Long = 30): AutoCloseable {
+            val task = executor.scheduleWithFixedDelay(
+                {
+                    try {
+                        removeExpireds()
+                    } catch (e: Exception) {
+                        LOG.error("Removing expired applications", e)
+                    }
+                },
+                intervalSeconds, intervalSeconds, TimeUnit.SECONDS,
+            )
+            return AutoCloseable { task.cancel(false) }
+        }
+
+        /** Releases the applications past their life with no socket; one with a socket gets more life. */
         fun removeExpireds() {
             val now = System.currentTimeMillis()
             val appIterator = instanceMap.values.iterator()
@@ -108,7 +129,8 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
     // :: Instance
 
-    private var expireMoment: Long = 0L
+    /** When this application expires if no message comes (epoch millis); tests move it. */
+    internal var expireMoment: Long = 0L
 
     private var dataSecurity: DataSecurity = DataSecurity()
     @Volatile
