@@ -20,9 +20,16 @@ class CredentialsCheck(private val userName: String, private val password: Strin
     override suspend fun run(): Subject? {
         val authService = AuthenticationService.BEAN.getOrNull()
         if (authService != null) {
-            return authenticateViaAuthService(authService, userName, password)
+            return authenticateViaAuthService(
+                authService = authService,
+                userName = userName,
+                password = password,
+            )
         }
-        return authenticateViaRepository(userName, password)
+        return authenticateViaRepository(
+            userName = userName,
+            password = password,
+        )
     }
 
     private suspend fun authenticateViaAuthService(
@@ -37,10 +44,17 @@ class CredentialsCheck(private val userName: String, private val password: Strin
         val challenge = authService.challenge()
 
         // 3. Compute HMAC-SHA256(key=passwordHash, data=userName+nonce)
-        val digest = PasswordUtil.computeHmac(passwordHash, userName + challenge.nonce)
+        val digest = PasswordUtil.computeHmac(
+            key = passwordHash,
+            data = userName + challenge.nonce,
+        )
 
         // 4. Authenticate
-        val authResult = authService.login(userName, digest, challenge.nonce) ?: return null
+        val authResult = authService.login(
+            userName = userName,
+            digest = digest,
+            nonce = challenge.nonce,
+        ) ?: return null
 
         // 5. Fetch the user's display name
         val users = userRepo.fetch(

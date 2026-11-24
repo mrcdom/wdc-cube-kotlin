@@ -565,7 +565,10 @@ private suspend fun enter(userName: String?, password: String?) {
     scope.loading = true  // → UI shows spinner (the view is the scope's updater)
 
     try {
-        val subject = CredentialsCheck(scope.userName ?: "", scope.password ?: "").run()
+        val subject = CredentialsCheck(
+            userName = scope.userName ?: "",
+            password = scope.password ?: "",
+        ).run()
         scope.loading = false
 
         if (subject?.id != null) {

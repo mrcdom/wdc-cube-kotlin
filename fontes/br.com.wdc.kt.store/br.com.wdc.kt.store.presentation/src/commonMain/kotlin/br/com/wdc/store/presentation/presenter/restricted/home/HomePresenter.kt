@@ -136,7 +136,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         if (snapshot.userId != app.subject?.id) return
         for ((productId, quantity) in snapshot.quantities) {
             try {
-                cart!!.addProduct(ProductQuery(productId).run(), quantity)
+                cart!!.addProduct(ProductQuery(productId = productId).run(), quantity)
             } catch (_: ProductNotFoundException) {
                 LOG.info("restoreCart: product {} is no longer available", productId)
             }
@@ -270,7 +270,11 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private suspend fun loadPurchases() {
         val subject = app.subject
         if (subject != null && purchases.pageSize > 0) {
-            var page = PurchasesPageQuery(subject.id!!, purchases.page, purchases.pageSize).run()
+            var page = PurchasesPageQuery(
+                userId = subject.id!!,
+                page = purchases.page,
+                pageSize = purchases.pageSize,
+            ).run()
 
             purchases.totalCount = page.totalItems
 
@@ -279,7 +283,11 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
                 // the requested page is past the end (the view capacity changed, or purchases disappeared): show the
                 // last one, with its items — the result above is the one of the page that does not exist
                 purchases.page = totalPages - 1
-                page = PurchasesPageQuery(subject.id!!, purchases.page, purchases.pageSize).run()
+                page = PurchasesPageQuery(
+                    userId = subject.id!!,
+                    page = purchases.page,
+                    pageSize = purchases.pageSize,
+                ).run()
                 purchases.totalCount = page.totalItems
             }
 

@@ -32,7 +32,12 @@ class SecuredLoginTest {
         SecurityContextHolder.clear()
     }
 
-    private fun login(userName: String, password: String = userName) = runBlocking { CredentialsCheck(userName, password).run() }
+    private fun login(userName: String, password: String = userName) = runBlocking {
+        CredentialsCheck(
+            userName = userName,
+            password = password,
+        ).run()
+    }
 
     @Test
     fun admin_logsIn() {

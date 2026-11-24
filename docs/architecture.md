@@ -304,7 +304,10 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         scope.loading = true
 
         // a resource call: a new instance per use, the request in its constructor
-        val subject = CredentialsCheck(scope.userName ?: "", scope.password ?: "").run()
+        val subject = CredentialsCheck(
+            userName = scope.userName ?: "",
+            password = scope.password ?: "",
+        ).run()
         scope.loading = false
 
         if (subject?.id != null) {

@@ -69,6 +69,9 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     private suspend fun loadReceipt(purchaseId: Long): ReceiptForm {
         val userId = app.subject?.id ?: throw WrongParametersException()
-        return ReceiptQuery(purchaseId, userId).run() ?: throw PurchaseNotFoundException()
+        return ReceiptQuery(
+            purchaseId = purchaseId,
+            userId = userId,
+        ).run() ?: throw PurchaseNotFoundException()
     }
 }
