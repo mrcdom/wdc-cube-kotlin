@@ -25,7 +25,7 @@
 
 ## Introduction
 
-This project is a demo application (**Storefront Demo**) built on the **Cube MVP** framework in **Kotlin Multiplatform**. Its goal is to show how a single presentation codebase can be shared across multiple platforms and distinct view technologies.
+This project is a demo application (**WDC Store Demo**) built on the **Cube MVP** framework in **Kotlin Multiplatform**. Its goal is to show how a single presentation codebase can be shared across multiple platforms and distinct view technologies.
 
 The architecture is centered on three fundamental decisions:
 
@@ -116,12 +116,12 @@ graph TB
     end
 
     subgraph "Presentation"
-        PRES[":shopping-presentation<br/>(Plain Kotlin)"]
+        PRES[":store-presentation<br/>(Plain Kotlin)"]
     end
 
     subgraph "Domain"
-        DOM[":shopping-domain<br/>(Models & Interfaces)"]
-        PCLI[":shopping-persistence-client<br/>(REST Client)"]
+        DOM[":store-domain<br/>(Models & Interfaces)"]
+        PCLI[":store-persistence-client<br/>(REST Client)"]
     end
 
     subgraph "Framework"
@@ -163,17 +163,17 @@ graph TB
 |--------|-----------------|
 | `:framework-cube` | MVP engine — transactional navigation, presenter lifecycle, Places, Intent |
 | `:framework-commons` | Shared utilities — logging, JSON, HTTP, crypto, schedulers |
-| `:shopping-presentation` | Presenters and their scopes — pure presentation logic (no UI) |
-| `:shopping-domain` | Domain models, repository interfaces, services |
-| `:shopping-persistence-client` | REST implementation of the repositories and of the transaction service (HTTP client) |
-| `:shopping-persistence` | jOOQ implementation of the repositories (direct database access) |
+| `:store-presentation` | Presenters and their scopes — pure presentation logic (no UI) |
+| `:store-domain` | Domain models, repository interfaces, services |
+| `:store-persistence-client` | REST implementation of the repositories and of the transaction service (HTTP client) |
+| `:store-persistence` | jOOQ implementation of the repositories (direct database access) |
 | `:view-compose` | Shared Compose Multiplatform views |
 | `:view-compose-desktop` | JVM Desktop entry point |
 | `:view-compose-android` | Android entry point |
 | `:view-compose-web` | wasmJs (WebAssembly) entry point |
 | `:view-compose-ios` | iOS entry point (via Xcode) |
-| `:shopping-backend` | Javalin server — REST API, WebSocket, H2 |
-| `:shopping-scripts` | Database migrations and scripts |
+| `:store-backend` | Javalin server — REST API, WebSocket, H2 |
+| `:store-scripts` | Database migrations and scripts |
 
 ---
 
@@ -401,8 +401,8 @@ See [architecture-persistence.md](architecture-persistence.md) for details of th
 
 | Implementation | Module | Use |
 |---------------|--------|-----|
-| **REST Client** | `:shopping-persistence-client` | Local views (Compose) — calls the backend over HTTP |
-| **jOOQ** | `:shopping-persistence` | Backend — direct database access (H2 or PostgreSQL) |
+| **REST Client** | `:store-persistence-client` | Local views (Compose) — calls the backend over HTTP |
+| **jOOQ** | `:store-persistence` | Backend — direct database access (H2 or PostgreSQL) |
 
 Both implement the same contract. The REST implementation sends the criteria and the projection as JSON, using the same codec the server uses to read them; the jOOQ implementation translates them into a single SQL query with bind parameters.
 

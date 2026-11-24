@@ -37,7 +37,7 @@ class ProductQuery(private val productId: Long) : ResourceQuery<ProductInfo>() {
 }
 
 class PurchaseCreate(private val userId: Long, private val cartItems: List<CartItem>) :
-    ResourceCreate<Long>({ ShoppingTransactions.BEAN.getOrNull() }) {
+    ResourceCreate<Long>({ StoreTransactions.BEAN.getOrNull() }) {
     override suspend fun create(): Long { /* inserts the purchase and its items */ }
 }
 

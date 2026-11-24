@@ -18,8 +18,8 @@ import javax.sql.DataSource
  * Transactional composition (same connection/transaction):
  * ```
  * TransactionContext.begin(dataSource).use { tx ->
- *     shoppingService.purchase(userId, items)    // joins the existing tx
- *     shoppingService.loadPurchases(userId)       // same connection
+ *     storeService.purchase(userId, items)    // joins the existing tx
+ *     storeService.loadPurchases(userId)       // same connection
  * }
  * ```
  */

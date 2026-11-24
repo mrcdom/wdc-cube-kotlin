@@ -437,8 +437,8 @@ fun main() {
     runBlocking { RootKeys(app).flip() }
 
     application {
-        Window(title = "Storefront", ...) {
-            ShoppingTheme {
+        Window(title = "WDC Store", ...) {
+            StoreTheme {
                 (app.view as? RootView)?.Render()
             }
         }
@@ -470,7 +470,7 @@ fun main() {
     }
 
     ComposeViewport(document.getElementById("ComposeTarget")!!) {
-        ShoppingTheme {
+        StoreTheme {
             (app.view as? RootView)?.Render()
         }
     }
@@ -494,7 +494,7 @@ class MainActivity : ComponentActivity() {
         runBlocking { RootKeys(app).flip() }
 
         setContent {
-            ShoppingTheme {
+            StoreTheme {
                 (app.view as? RootView)?.Render()
             }
         }
@@ -517,7 +517,7 @@ fun MainViewController() = ComposeUIViewController {
     ViewUpdateScheduler.initialize { app }
     runBlocking { RootKeys(app).flip() }
 
-    ShoppingTheme {
+    StoreTheme {
         (app.view as? RootView)?.Render()
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Backend log configuration. The service reads it from <work directory>/config/logback.xml and passes the
-  log folder in ${shopping.log.dir} (<work directory>/log).
+  log folder in ${store.log.dir} (<work directory>/log).
 
   This is the versioned default: console and file, with daily rotation. Adjust the levels as you like.
 -->
@@ -17,9 +17,9 @@
 
     <!-- One file per day (and per 20 MB within the day), keeping 30 days and at most 500 MB. -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${shopping.log.dir}/shopping.log</file>
+        <file>${store.log.dir}/store.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${shopping.log.dir}/shopping.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>${store.log.dir}/store.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>500MB</totalSizeCap>

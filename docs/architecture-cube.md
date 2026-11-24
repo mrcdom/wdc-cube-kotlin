@@ -179,7 +179,7 @@ A struct of the presentation that a field holds implements **`ScopeValue`** (`fu
 
 **What the fields cannot see:** a change *inside* an object already assigned — an element added to a mutable list, a field of a nested object, or an object shared with someone who mutates it. Assign a new value (a copy), or call `scope.changed()`. `CartManager.getCartItems()` returns copies for this reason.
 
-A new view needs no `update()` either: every view layer paints the current scope when the view is created. Keep in the scope what the view shows — the Storefront home keeps the cart count as a field, set by the cart's change listener — and the presenter never calls `update()`. It is still there for state the view reads from somewhere else.
+A new view needs no `update()` either: every view layer paints the current scope when the view is created. Keep in the scope what the view shows — the WDC Store home keeps the cart count as a field, set by the cart's change listener — and the presenter never calls `update()`. It is still there for state the view reads from somewhere else.
 
 ### Actions
 
@@ -194,7 +194,7 @@ init {
 
 The view calls the field, inside its own launch: `safeCall { scope.onBuy() }` (Compose, native web, iOS), `safeAction("buy") { scope.onBuy() }` (native Android). A test calls it directly and sees the result on the next line. The body is a private method of the presenter; presenters no longer have public `onXxx` methods.
 
-**The guard.** Every bound action catches what its body did not handle and hands it to `onActionFailure`, which by default calls `CubeApplication.alertUnexpectedError` (in the Storefront the user sees `"Unexpected error: <cause>"` and the log gets the stack trace). At the end, failing or not, it calls `app.updateHistory()`, since the action may have changed what the presenters publish. Expected failures (an invalid item, an offline database) stay in the body, which turns them into messages of its own. `CancellationException` passes through.
+**The guard.** Every bound action catches what its body did not handle and hands it to `onActionFailure`, which by default calls `CubeApplication.alertUnexpectedError` (in the WDC Store the user sees `"Unexpected error: <cause>"` and the log gets the stack trace). At the end, failing or not, it calls `app.updateHistory()`, since the action may have changed what the presenters publish. Expected failures (an invalid item, an offline database) stay in the body, which turns them into messages of its own. `CancellationException` passes through.
 
 **Remote views: event codes.** An action a remote view fires is bound with its **event code**, and with how to read its values from the form data the client sends (`FormParam.long/int/string(name)`):
 
@@ -234,7 +234,7 @@ The names a place reads from and writes to the `CubeIntent` live in **one keys c
 - **Validation is in the getter, which never throws.** The address is input from outside, so a getter returns a usable value or `null`: an id must be positive. A setter given the default or `null` removes the name from the address.
 - **The address follows the state through `publishParameters`.** Each presenter publishes what it shows — the product publishes `pr-id`, the home publishes the purchases page (`hm-page`, left out when it is the first page) — and the address is rebuilt from them at the end of every navigation. A change that is not a navigation, such as turning a page, calls `app.updateHistory()` so the address follows it; `applyParameters` reads the value back from the address.
 - **Navigating starts from the state.** Without an intent, the keys start from `app.newIntent()`, which asks every live presenter what it shows: `ProductKeys(app).apply { productId = id }.flip()`.
-- **Redirecting from inside `applyParameters` uses the intent in transit**, as in `HomeKeys(app, intent).flip(); return false`, not a new intent: the presenter is not accepted yet, and a new intent would lose what the address brought. The Storefront does this when an address has no usable id: it goes to the home.
+- **Redirecting from inside `applyParameters` uses the intent in transit**, as in `HomeKeys(app, intent).flip(); return false`, not a new intent: the presenter is not accepted yet, and a new intent would lose what the address brought. The WDC Store does this when an address has no usable id: it goes to the home.
 
 ```kotlin
 class ProductKeys(app: RootPresenter, intent: CubeIntent? = null) : HomeKeys(app, intent, PLACE) {
@@ -310,7 +310,7 @@ abstract class CubeApplication {
 }
 ```
 
-**The application is the root of the place tree** (`CubeTreePlace.ROOT`) and takes part in every navigation, before the first step: `execute()` calls its `applyParameters`, in the same redirect-marked context as a presenter's (a navigation requested from in there is a redirect). `initialization` is `true` only the first time; `deepest` is `true` when there are no steps, that is, a flip to the root itself (`app.flip(CubeTreePlace.ROOT)` runs only this); `false` stops the navigation at the root. On rollback the application is restored first, with the source intent (`false, false`), then the presenters. The Storefront's `RootPresenter` uses it to own the page frame — it is the presenter of the root view: it creates the root view (`viewOf(scope)`) and restores the session on initialization, goes on to the home when the root itself is the target, and otherwise offers the slot of the first level (`RootKeys(this, intent).parentSlot`).
+**The application is the root of the place tree** (`CubeTreePlace.ROOT`) and takes part in every navigation, before the first step: `execute()` calls its `applyParameters`, in the same redirect-marked context as a presenter's (a navigation requested from in there is a redirect). `initialization` is `true` only the first time; `deepest` is `true` when there are no steps, that is, a flip to the root itself (`app.flip(CubeTreePlace.ROOT)` runs only this); `false` stops the navigation at the root. On rollback the application is restored first, with the source intent (`false, false`), then the presenters. The WDC Store's `RootPresenter` uses it to own the page frame — it is the presenter of the root view: it creates the root view (`viewOf(scope)`) and restores the session on initialization, goes on to the home when the root itself is the target, and otherwise offers the slot of the first level (`RootKeys(this, intent).parentSlot`).
 
 ### CubeNavigation
 
@@ -358,7 +358,7 @@ classDiagram
 Navigation starts by building the route through a fluent API:
 
 ```kotlin
-app.navigate<ShoppingApp>()
+app.navigate<StoreApp>()
     .step(HomeKeys.PLACE)       // id=1
     .step(ProductKeys.PLACE)    // id=3
     .execute(intent)
@@ -423,7 +423,7 @@ flowchart TD
 During `applyParameters()`, a presenter may decide the user must be redirected to another screen. Classic example:
 
 ```kotlin
-class HomePresenter(app: ShoppingApp) : AbstractCubePresenter<ShoppingApp>(app) {
+class HomePresenter(app: StoreApp) : AbstractCubePresenter<StoreApp>(app) {
     override fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (app.subject == null) {
             // Unauthenticated user — redirect to login

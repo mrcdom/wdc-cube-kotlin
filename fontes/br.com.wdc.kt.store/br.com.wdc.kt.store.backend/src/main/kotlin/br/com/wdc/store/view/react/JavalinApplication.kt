@@ -1,0 +1,373 @@
+package br.com.wdc.store.view.react
+
+import br.com.wdc.framework.commons.log.Log
+import br.com.wdc.framework.commons.log.Slf4jLogFactory
+import br.com.wdc.framework.commons.serialization.JsonOutputFactory
+import br.com.wdc.framework.commons.serialization.JsonInputFactory
+import br.com.wdc.framework.commons.serialization.installCommon
+import br.com.wdc.store.domain.StoreConfig
+import br.com.wdc.store.domain.config.AppConfig
+import br.com.wdc.store.view.react.supports.LoggingSupport
+import br.com.wdc.store.view.react.supports.WorkDirectory
+import br.com.wdc.store.view.react.controller.DispatcherController
+import br.com.wdc.store.view.react.controller.ImageController
+import br.com.wdc.store.view.react.controller.IndexHtmlController
+import br.com.wdc.store.view.react.controller.StatusController
+import br.com.wdc.store.persistence.rest.RepositoryApiRoutes
+import io.javalin.Javalin
+import io.javalin.config.JavalinConfig
+import io.javalin.http.staticfiles.Location
+import io.javalin.json.JsonMapper
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.InputStream
+import java.lang.reflect.Type
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.time.Duration
+
+class JavalinApplication(
+    config: AppConfig,
+    private val port: Int = DEFAULT_PORT,
+    private val corsAllowAll: Boolean = false,
+) {
+
+    companion object {
+        private val LOG: Log
+
+        private const val STATIC_FILES_DIR = "META-INF/resources"
+        private const val STATIC_IMAGES_FILES_DIR = "$STATIC_FILES_DIR/images"
+        private const val STATIC_FILES_EXTERNAL_DIR_ENV = "STORE_STATIC_FILES_DIR"
+        private const val STATIC_FILES_EXTERNAL_DIR_PROPERTY = "store.staticFilesDir"
+        private const val STATIC_HOSTED_IMAGE_PATH = "/images"
+
+        private const val DEFAULT_PORT = 8080
+
+        init {
+            Log.setFactory(Slf4jLogFactory())
+            LOG = Log.getLogger("JavalinApplication")
+        }
+
+        private fun isStaticResource(path: String): Boolean {
+            return path.endsWith(".js") ||
+                    path.endsWith(".css") ||
+                    path.endsWith(".html") ||
+                    path.endsWith(".json") ||
+                    path.endsWith(".map") ||
+                    path.endsWith(".png") ||
+                    path.endsWith(".jpg") ||
+                    path.endsWith(".gif") ||
+                    path.endsWith(".svg") ||
+                    path.endsWith(".woff") ||
+                    path.endsWith(".woff2") ||
+                    path.endsWith(".ttf") ||
+                    path == "/"
+        }
+
+        private fun resolveStaticFilesSettings(): StaticFilesSettings {
+            var customStaticDir = System.getProperty(STATIC_FILES_EXTERNAL_DIR_PROPERTY)
+            if (customStaticDir.isNullOrBlank()) {
+                customStaticDir = System.getenv(STATIC_FILES_EXTERNAL_DIR_ENV)
+            }
+
+            if (!customStaticDir.isNullOrBlank()) {
+                val resolvedPath = Paths.get(customStaticDir).toAbsolutePath().normalize()
+                if (Files.isDirectory(resolvedPath)) {
+                    return StaticFilesSettings(resolvedPath.toString(), Location.EXTERNAL)
+                }
+                LOG.warn("External static files directory does not exist: {} (resolved to {}). Falling back to classpath.", customStaticDir, resolvedPath)
+            }
+
+            return StaticFilesSettings(STATIC_FILES_DIR, Location.CLASSPATH)
+        }
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            try {
+                doMain(args)
+            } catch (t: Throwable) {
+                t.printStackTrace(System.err)
+                System.exit(1)
+            }
+        }
+
+        fun doMain(args: Array<String>) {
+            Log.setFactory(Slf4jLogFactory())
+            JsonOutputFactory.installCommon()
+            JsonInputFactory.installCommon()
+
+            // The work directory is mandatory: the configuration, the log and the runtime folders come from it.
+            StoreConfig.Internals.useWorkDir(WorkDirectory.resolve(args))
+            if (LoggingSupport.configure(StoreConfig.configDir!!, StoreConfig.logDir!!)) {
+                LOG.info("Logging configured from {}", StoreConfig.configDir!!.resolve(LoggingSupport.CONFIG_FILE_NAME))
+            }
+            LOG.info("Work directory: {}", StoreConfig.workDir)
+            val config = StoreConfig.Internals.loadConfig()
+            var port = config.getInt("server.port", DEFAULT_PORT)
+
+            val portArgument = WorkDirectory.otherArguments(args).firstOrNull()
+            if (portArgument != null) {
+                try {
+                    port = portArgument.toInt()
+                } catch (_: NumberFormatException) {
+                    LOG.warn("Invalid port number: {}, using default {}", portArgument, DEFAULT_PORT)
+                }
+            }
+
+            val portEnv = System.getenv("SERVER_PORT")
+            if (!portEnv.isNullOrBlank()) {
+                try {
+                    port = portEnv.toInt()
+                } catch (_: NumberFormatException) {
+                    LOG.warn("Invalid SERVER_PORT environment variable: {}, using default {}", portEnv, DEFAULT_PORT)
+                }
+            }
+
+            LOG.info("Starting WDC Store React Server on port {}", port)
+
+            val corsAllowAll = config.getBoolean("server.cors.allowAll", false)
+            if (corsAllowAll) {
+                LOG.info("CORS: allowing any origin (development mode)")
+            }
+
+            val server = JavalinApplication(config, port, corsAllowAll)
+
+            Runtime.getRuntime().addShutdownHook(Thread {
+                LOG.info("Shutdown signal received")
+                server.stop()
+            })
+
+            server.start()
+
+            try {
+                Thread.currentThread().join()
+            } catch (_: InterruptedException) {
+                LOG.info("Main thread interrupted")
+                server.stop()
+            }
+        }
+    }
+
+    private data class StaticFilesSettings(val directory: String, val location: Location)
+
+    private val businessContext = BusinessContext(config)
+    private val staticFilesSettings = resolveStaticFilesSettings()
+    private val deployedContexts: List<String>
+    private val app: Javalin
+
+    init {
+        businessContext.start()
+        deployedContexts = detectDeployedContexts()
+        app = createJavalinApp()
+    }
+
+    /** The directory of the deployed frontends: `deployment/` under the work directory. */
+    private fun deploymentDir(): File =
+        StoreConfig.deploymentDir?.toFile() ?: throw IllegalStateException("Work directory not set")
+
+    /**
+     * Scans the deployment directory for subdirectories, each representing a deployed frontend
+     * context (e.g. "native" for React/JS, "compose" for Wasm/Compose).
+     */
+    private fun detectDeployedContexts(): List<String> {
+        val deploymentDir = deploymentDir()
+        if (!deploymentDir.isDirectory) return emptyList()
+
+        return deploymentDir.listFiles()
+            ?.filter { it.isDirectory && File(it, "index.html").exists() }
+            ?.map { it.name }
+            ?.sorted()
+            ?: emptyList()
+    }
+
+    private fun createJavalinApp(): Javalin {
+        val gson = Gson()
+        val gsonMapper = object : JsonMapper {
+            override fun <T : Any> fromJsonString(json: String, targetType: Type): T {
+                return gson.fromJson(json, targetType)
+            }
+            override fun toJsonString(obj: Any, type: Type): String {
+                return gson.toJson(obj, type)
+            }
+            override fun toJsonStream(obj: Any, type: Type): InputStream {
+                return ByteArrayInputStream(toJsonString(obj, type).toByteArray())
+            }
+        }
+
+        return Javalin.create { config ->
+            config.jsonMapper(gsonMapper)
+            config.concurrency.useVirtualThreads = true
+
+            config.jetty.modifyWebSocketServletFactory { wsFactory ->
+                wsFactory.idleTimeout = Duration.ofMinutes(2)
+            }
+
+            config.jetty.modifyServer { server ->
+                server.connectors.forEach { connector ->
+                    if (connector is org.eclipse.jetty.server.ServerConnector) {
+                        connector.idleTimeout = Duration.ofMinutes(5).toMillis()
+                    }
+                }
+            }
+
+            config.bundledPlugins.enableCors { cors ->
+                cors.addRule { rule ->
+                    if (corsAllowAll) {
+                        rule.anyHost()
+                    } else {
+                        rule.allowHost(
+                            "tauri://localhost", "https://tauri.localhost",
+                            "http://tauri.localhost",
+                            "http://localhost:8080", "http://store-wdc.localhost:8080"
+                        )
+                        rule.allowCredentials = true
+                    }
+                }
+            }
+
+            config.staticFiles.add { staticFileConfig ->
+                staticFileConfig.directory = staticFilesSettings.directory
+                staticFileConfig.location = staticFilesSettings.location
+                staticFileConfig.precompressMaxSize = 0
+            }
+
+            config.staticFiles.add { staticFileConfig ->
+                staticFileConfig.directory = STATIC_IMAGES_FILES_DIR
+                staticFileConfig.location = Location.CLASSPATH
+                staticFileConfig.hostedPath = STATIC_HOSTED_IMAGE_PATH
+                staticFileConfig.precompressMaxSize = 0
+            }
+
+            // Deployed frontends: registered as explicit routes in configureRoutes()
+            for (context in deployedContexts) {
+                val contextDir = File(deploymentDir(), context).absolutePath
+                LOG.info("Deployed frontend registered: /{} -> {}", context, contextDir)
+            }
+
+            config.http.defaultContentType = "application/json"
+
+            configureRoutes(config)
+        }
+    }
+
+    private fun configureRoutes(config: JavalinConfig) {
+        config.routes.exception(Exception::class.java) { e, ctx ->
+            LOG.error("Unhandled exception in request processing", e)
+            ctx.status(500).json(mapOf("error" to "Internal server error"))
+        }
+
+        config.routes.before { ctx -> LOG.debug("HTTP {} {}", ctx.method(), ctx.path()) }
+
+        // Serve deployed frontend files with correct MIME types and optional gzip pre-compression
+        for (context in deployedContexts) {
+            val contextBaseDir = File(deploymentDir(), context).canonicalFile
+            config.routes.get("/$context/<path>") { ctx ->
+                val requestedPath = ctx.pathParam("path")
+                val file = File(contextBaseDir, requestedPath).canonicalFile
+                if (!file.path.startsWith(contextBaseDir.path) || !file.isFile) {
+                    ctx.status(404)
+                    return@get
+                }
+                val contentType = when {
+                    requestedPath.endsWith(".js") || requestedPath.endsWith(".mjs") -> "application/javascript"
+                    requestedPath.endsWith(".css") -> "text/css"
+                    requestedPath.endsWith(".wasm") -> "application/wasm"
+                    requestedPath.endsWith(".html") -> "text/html; charset=utf-8"
+                    requestedPath.endsWith(".json") -> "application/json"
+                    requestedPath.endsWith(".png") -> "image/png"
+                    requestedPath.endsWith(".jpg") || requestedPath.endsWith(".jpeg") -> "image/jpeg"
+                    requestedPath.endsWith(".gif") -> "image/gif"
+                    requestedPath.endsWith(".svg") -> "image/svg+xml"
+                    requestedPath.endsWith(".ico") -> "image/x-icon"
+                    requestedPath.endsWith(".map") -> "application/json"
+                    requestedPath.endsWith(".txt") -> "text/plain"
+                    requestedPath.endsWith(".woff") -> "font/woff"
+                    requestedPath.endsWith(".woff2") -> "font/woff2"
+                    requestedPath.endsWith(".ttf") -> "font/ttf"
+                    else -> "application/octet-stream"
+                }
+                // Use servlet API directly to prevent Javalin/Jetty from appending ;charset=utf-8
+                // (WebAssembly.compileStreaming requires exactly "application/wasm" without parameters)
+                ctx.res().setContentType(contentType)
+                ctx.res().characterEncoding = null
+                val acceptEncoding = ctx.header("Accept-Encoding") ?: ""
+                if (acceptEncoding.contains("gzip")) {
+                    val gzFile = File(contextBaseDir, "$requestedPath.gz")
+                    if (gzFile.isFile) {
+                        ctx.header("Content-Encoding", "gzip")
+                        ctx.header("Vary", "Accept-Encoding")
+                        ctx.result(gzFile.inputStream())
+                        LOG.debug("Serving pre-compressed: /{}/{}", context, requestedPath)
+                        return@get
+                    }
+                }
+                ctx.result(file.inputStream())
+            }
+        }
+
+        StatusController.configure(config)
+        ImageController.configure(config)
+
+        // Repository REST API
+        RepositoryApiRoutes.configure(config)
+
+        // Stress test metrics endpoint
+        config.routes.get("/api/stress/metrics") { ctx ->
+            br.com.wdc.store.view.react.controller.StressMetricsController.handle(ctx)
+        }
+
+        config.routes.get("/") { ctx -> ctx.redirect("/index.html") }
+
+        // Deployed frontend context routes: /{context} and /{context}/ → /{context}/index.html
+        for (context in deployedContexts) {
+            config.routes.get("/$context") { ctx -> ctx.redirect("/$context/index.html") }
+            config.routes.get("/$context/") { ctx -> ctx.redirect("/$context/index.html") }
+        }
+
+        DispatcherController.configure(config)
+        IndexHtmlController.configure(config)
+
+        config.routes.before { ctx ->
+            val path = ctx.path()
+            if (!path.startsWith("/api/")
+                && !path.startsWith("/ws/")
+                && !path.startsWith("/health")
+                && !path.startsWith("/dispatcher")
+                && path != "/index.html"
+                && !isStaticResource(path)
+                && deployedContexts.none { path.startsWith("/$it/") || path == "/$it" }
+            ) {
+                LOG.debug("SPA fallback for path: {}", path)
+                ctx.redirect("/index.html")
+            }
+        }
+    }
+
+    fun start() {
+        try {
+            ViewFlushScheduler.start()
+            app.start(port)
+            LOG.info("Javalin server started on port {}", port)
+            LOG.info("Static files served from {}: {}", staticFilesSettings.location, staticFilesSettings.directory)
+            if (deployedContexts.isNotEmpty()) {
+                LOG.info("Deployed frontends: {}", deployedContexts.joinToString(", ") { "/$it/" })
+            }
+        } catch (e: Exception) {
+            LOG.error("Failed to start Javalin server", e)
+            throw AssertionError("Server startup failed", e)
+        }
+    }
+
+    fun stop() {
+        try {
+            ViewFlushScheduler.stop()
+            businessContext.stop()
+            app.stop()
+            LOG.info("Javalin server stopped")
+        } catch (e: Exception) {
+            LOG.error("Error stopping server", e)
+        }
+    }
+}

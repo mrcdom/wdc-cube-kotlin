@@ -1,9 +1,9 @@
-# WeDoCode Shopping — backend configuration (example)
+# WeDoCode Store — backend configuration (example)
 #
 # Copy to application.toml, in this same folder, and adjust it: that file is local and not versioned.
 #
 # The backend always reads <work directory>/config/application.toml. The work directory is given when
-# starting the service (--workdir=<folder> or the SHOPPING_WORKDIR variable); in development it is fontes/work.
+# starting the service (--workdir=<folder> or the STORE_WORKDIR variable); in development it is fontes/work.
 #
 # Every key is optional: commented out, the indicated default applies. The reader accepts sections and
 # key = value pairs; it does not accept lists or end-of-line comments.
@@ -12,18 +12,18 @@
 
 [database]
 # --- H2 (default) ----------------------------------------------------------------------------------------
-# Without url, the database is a file-based H2 in the data folder: <work directory>/data/wedocode-shopping.
-# url = "jdbc:h2:file:/path/wedocode-shopping;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+# Without url, the database is a file-based H2 in the data folder: <work directory>/data/wedocode-store.
+# url = "jdbc:h2:file:/path/wedocode-store;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 # username = "sa"
 # password = "sa"
 
 # --- PostgreSQL ------------------------------------------------------------------------------------------
 # The database is chosen by the url. The database must exist; the tables are created on startup.
-# url = "jdbc:postgresql://localhost:5432/shopping"
+# url = "jdbc:postgresql://localhost:5432/store"
 # username = "postgres"
 # password = "change-me"
 # Application schema (PostgreSQL only). Created if missing; without it, the user's default schema applies.
-# schema = "shopping"
+# schema = "store"
 
 # Erases the data and reloads the demo data on every startup.
 # reset = false
