@@ -17,19 +17,9 @@ class BrowserReactViewImpl(app: ReactRootPresenter) : GenericViewImpl<ReactRootP
     private var alertArgs: List<String> = emptyList()
     private var alertAction: () -> Unit = {}
 
-    fun alertUnexpectedError(msg: String?, cause: Throwable?) {
-        var message = msg
-        val alertCode = -1
-        if (message == null) {
-            message = cause?.message ?: "An unexpected error occurred"
-        }
-
-        if (cause != null) {
-            val detail = cause.stackTraceToString()
-            alert({}, alertCode, message, detail)
-        } else {
-            alert({}, alertCode, message)
-        }
+    /** Shows [message] in the alert; only the text goes to the client, never a stack trace. */
+    fun alertUnexpectedError(message: String) {
+        alert({}, -1, message.ifBlank { "An unexpected error occurred" })
     }
 
     fun alert(action: () -> Unit, code: Int, vararg args: Any?) {

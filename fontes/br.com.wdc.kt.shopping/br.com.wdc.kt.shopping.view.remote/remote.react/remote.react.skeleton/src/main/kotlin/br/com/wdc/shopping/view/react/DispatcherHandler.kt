@@ -126,10 +126,11 @@ class DispatcherHandler private constructor(private val appId: String) {
             try {
                 request = GSON.fromJson(jsonRequest, REQUEST_TYPE.type)
             } catch (parseError: Exception) {
-                LOG.warn("Failed to parse WebSocket message as JSON", parseError)
                 val app = getApp()
                 if (app != null) {
-                    app.alertUnexpectedError(LOG, parseError.message ?: "", parseError)
+                    app.alertUnexpectedError(LOG, "Could not read the request", parseError)
+                } else {
+                    LOG.warn("Failed to parse WebSocket message as JSON", parseError)
                 }
                 return
             }
@@ -139,8 +140,7 @@ class DispatcherHandler private constructor(private val appId: String) {
                 app.wsSession = wsSession
                 app.sendResponse(request)
             } catch (processingError: Exception) {
-                LOG.error("Error processing WebSocket message", processingError)
-                app.alertUnexpectedError(LOG, processingError.message ?: "", processingError)
+                app.alertUnexpectedError(LOG, "Could not process the request", processingError)
             }
         } catch (e: Exception) {
             LOG.error("Unexpected error in WebSocket message handler", e)
@@ -181,11 +181,11 @@ class DispatcherHandler private constructor(private val appId: String) {
         try {
             ctx.disableAutomaticPings()
             val error = ctx.error()
-            LOG.warn("WebSocket error for session {}: {}", appId, error?.message, error)
-
             val app = getApp()
             if (app != null && error != null) {
-                app.alertUnexpectedError(LOG, error.message ?: "", error)
+                app.alertUnexpectedError(LOG, "Connection error", error)
+            } else {
+                LOG.warn("WebSocket error for session {}: {}", appId, error?.message, error)
             }
         } catch (e: Exception) {
             LOG.error("Error in WebSocket error handler", e)

@@ -7,3 +7,9 @@ dependencies {
     api(libs.gson)
     implementation(libs.slf4j.api)
 }
+
+dependencies {
+    testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.logback.classic)
+}
