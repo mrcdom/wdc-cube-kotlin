@@ -43,17 +43,17 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
     // :: Emitters — created once per view (and once per list item), so they are the same function on every render
 
     private val openReceipt = EmitterCache<Long, MouseEventHandler<HTMLButtonElement>> { id ->
-        { safeCall { presenter.onOpenReceipt(id) } }
+        { safeCall { presenter.scope.onOpenReceipt(id) } }
     }
 
     private val onPreviousPage: MouseEventHandler<HTMLButtonElement> = {
         val page = presenter.scope.page - 1
-        safeCall { presenter.onPageChange(page) }
+        safeCall { presenter.scope.onPageChange(page) }
     }
 
     private val onNextPage: MouseEventHandler<HTMLButtonElement> = {
         val page = presenter.scope.page + 1
-        safeCall { presenter.onPageChange(page) }
+        safeCall { presenter.scope.onPageChange(page) }
     }
 
     override val component = FC<Props> {
@@ -78,7 +78,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                 val capacity = (h / ITEM_HEIGHT_PX).coerceAtLeast(1)
                 if (capacity != (lastCapacityRef.current ?: -1)) {
                     lastCapacityRef.current = capacity
-                    safeCall { presenter.onItemSizeCapacityChanged(capacity) }
+                    safeCall { presenter.scope.onItemSizeCapacityChanged(capacity) }
                 }
             }
 

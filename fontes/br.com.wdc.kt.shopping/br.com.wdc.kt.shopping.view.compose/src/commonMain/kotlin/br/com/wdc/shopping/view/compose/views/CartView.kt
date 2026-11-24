@@ -146,7 +146,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                                 FilledTonalIconButton(
                                                     onClick = {
                                                         safeCall {
-                                                            presenter.onModifyQuantity(
+                                                            presenter.scope.onModifyQuantity(
                                                                 item.id,
                                                                 (item.quantity - 1).coerceAtLeast(1)
                                                             )
@@ -166,7 +166,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
 
                                                 FilledTonalIconButton(
                                                     onClick = {
-                                                        safeCall { presenter.onModifyQuantity(item.id, item.quantity + 1) }
+                                                        safeCall { presenter.scope.onModifyQuantity(item.id, item.quantity + 1) }
                                                     },
                                                     modifier = Modifier.size(32.dp)
                                                 ) {
@@ -179,7 +179,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
 
                                         // Remove button
                                         TextButton(
-                                            onClick = { safeCall { presenter.onRemoveProduct(item.id) } },
+                                            onClick = { safeCall { presenter.scope.onRemoveProduct(item.id) } },
                                             colors = ButtonDefaults.textButtonColors(
                                                 contentColor = MaterialTheme.colorScheme.error
                                             )
@@ -230,7 +230,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                     ) {
                         OutlinedButton(
-                            onClick = { safeCall { presenter.onOpenProducts() } },
+                            onClick = { safeCall { presenter.scope.onOpenProducts() } },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.height(48.dp)
                         ) {
@@ -241,7 +241,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                         }
                         if (scope.items.isNotEmpty()) {
                             Button(
-                                onClick = { safeCall { presenter.onBuy() } },
+                                onClick = { safeCall { presenter.scope.onBuy() } },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.height(48.dp),
                                 colors = ButtonDefaults.buttonColors(

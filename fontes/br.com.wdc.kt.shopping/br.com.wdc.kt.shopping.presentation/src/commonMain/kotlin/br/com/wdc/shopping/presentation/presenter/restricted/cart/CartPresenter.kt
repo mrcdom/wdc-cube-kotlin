@@ -7,6 +7,7 @@ import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.FormParam
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
@@ -34,6 +35,12 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     init {
         scope.items = emptyList()
+        scope.onBuy = action(1) { buy() }
+        scope.onRemoveProduct = actionOf(2, FormParam.long("p.productId")) { removeProduct(it) }
+        scope.onOpenProducts = action(3) { HomeKeys(app).flip() }
+        scope.onModifyQuantity = actionOf2(4, FormParam.long("p.productId"), FormParam.int("p.quantity")) { productId, quantity ->
+            modifyQuantity(productId, quantity)
+        }
     }
 
     // :: Cube API
@@ -54,95 +61,71 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     // :: User Actions
 
-    fun onModifyQuantity(productId: Long?, quantity: Int?) {
-        try {
-            if (productId == null) {
-                errorMalformedProductId()
-                LOG.warn("onModifyQuantity.errorMalformedProductId: {}", scope.errorMessage)
-                return
-            }
+    private fun modifyQuantity(productId: Long?, quantity: Int?) {
+        if (productId == null) {
+            errorMalformedProductId()
+            LOG.warn("onModifyQuantity.errorMalformedProductId: {}", scope.errorMessage)
+            return
+        }
 
-            if (quantity == null) {
-                errorMalformedQuantity()
-                LOG.warn("onModifyQuantity.errorMalformedQuantity: {}", scope.errorMessage)
-                return
-            }
+        if (quantity == null) {
+            errorMalformedQuantity()
+            LOG.warn("onModifyQuantity.errorMalformedQuantity: {}", scope.errorMessage)
+            return
+        }
 
-            if (quantity < 1) {
-                alertThereIsItemWhichValueIsLessThanOne()
-                LOG.warn("onModifyQuantity.alertThereIsItemWhichValueIsLessThanOne: {}", scope.errorMessage)
-                return
-            }
+        if (quantity < 1) {
+            alertThereIsItemWhichValueIsLessThanOne()
+            LOG.warn("onModifyQuantity.alertThereIsItemWhichValueIsLessThanOne: {}", scope.errorMessage)
+            return
+        }
 
-            val found = cart.modifyProductQuantity(productId, quantity)
-            if (!found) {
-                alertProductNotFound()
-                LOG.warn("onModifyQuantity.alertProductNotFound: {}", scope.errorMessage)
+        val found = cart.modifyProductQuantity(productId, quantity)
+        if (!found) {
+            alertProductNotFound()
+            LOG.warn("onModifyQuantity.alertProductNotFound: {}", scope.errorMessage)
+        } else {
+            scope.items = cart.getCartItems()
+        }
+    }
+
+    private suspend fun removeProduct(productId: Long?) {
+        if (productId == null) {
+            errorMalformedProductId()
+            LOG.warn("onRemoveProduct: {}", scope.errorMessage)
+            return
+        }
+
+        val modified = cart.removeProduct(productId)
+        if (modified) {
+            if (cart.getSize() == 0) {
+                HomeKeys(app).flip()
             } else {
                 scope.items = cart.getCartItems()
             }
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Modifying a product quantity", caught)
         }
     }
 
-    suspend fun onRemoveProduct(productId: Long?) {
-        try {
-            if (productId == null) {
-                errorMalformedProductId()
-                LOG.warn("onRemoveProduct: {}", scope.errorMessage)
-                return
-            }
-
-            val modified = cart.removeProduct(productId)
-            if (modified) {
-                if (cart.getSize() == 0) {
-                    HomeKeys(app).flip()
-                } else {
-                    scope.items = cart.getCartItems()
-                }
-            }
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Removing a product", caught)
+    private suspend fun buy() {
+        if (cart.getSize() == 0) {
+            alertPurchaseOfEmptyCart()
+            LOG.warn("onBuy: {}", scope.errorMessage)
+            return
         }
-    }
 
-    suspend fun onBuy() {
         try {
-            if (cart.getSize() == 0) {
-                alertPurchaseOfEmptyCart()
-                LOG.warn("onBuy: {}", scope.errorMessage)
-                return
-            }
-
             val purchaseId = cart.commit(app.subject!!)
 
             ReceiptKeys(app).apply {
                 this.purchaseId = purchaseId
                 purchaseMade = true
             }.flip()
-        } catch (caught: Exception) {
-            if (caught is InvalidCartItemException) {
-                alertThereIsItemWhichValueIsLessThanOne()
-                LOG.error("onBuy.alertThereIsItemWhichValueIsLessThanOne: {}", scope.errorMessage, caught)
-                return
-            }
-
-            if (caught is OfflineException) {
-                alertDatabaseOffline()
-                LOG.error("onBuy.alertDatabaseOffline: {}", scope.errorMessage, caught)
-                return
-            }
-
-            app.alertUnexpectedError(LOG, "Buying a product", caught)
-        }
-    }
-
-    suspend fun onOpenProducts() {
-        try {
-            HomeKeys(app).flip()
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Going to root restricted place", caught)
+        } catch (caught: InvalidCartItemException) {
+            alertThereIsItemWhichValueIsLessThanOne()
+            LOG.error("onBuy.alertThereIsItemWhichValueIsLessThanOne: {}", scope.errorMessage, caught)
+        } catch (caught: OfflineException) {
+            alertDatabaseOffline()
+            LOG.error("onBuy.alertDatabaseOffline: {}", scope.errorMessage, caught)
         }
     }
 

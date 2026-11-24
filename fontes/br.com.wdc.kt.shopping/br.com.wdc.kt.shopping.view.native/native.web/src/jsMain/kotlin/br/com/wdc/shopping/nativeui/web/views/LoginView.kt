@@ -48,7 +48,7 @@ class LoginView(private val presenter: LoginPresenter) : ReactCubeView("login-vi
     private val emitOnEnter: () -> Unit = {
         val userName = userNameInput?.value ?: ""
         val password = passwordInput?.value ?: ""
-        safeCall { presenter.onEnter(userName, password) }
+        safeCall { presenter.scope.onEnter(userName, password) }
     }
 
     private val onEnterClick: MouseEventHandler<HTMLButtonElement> = { emitOnEnter() }

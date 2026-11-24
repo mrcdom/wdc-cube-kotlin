@@ -188,7 +188,7 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewA
             card.isFocusable = true
             card.setOnClickListener {
                 val id = product?.id ?: return@setOnClickListener
-                safeAction("openProduct") { presenter.onOpenProduct(id) }
+                safeAction("openProduct") { presenter.scope.onOpenProduct(id) }
             }
             (card as FrameLayout).clipChildren = true
 

@@ -44,14 +44,14 @@ class CartReloadTest {
         val loginView = LoginViewMock.cast(app.getRootView()!!.scope.contentView)
         loginView.scope.userName = user
         loginView.scope.password = password
-        loginView.presenter.onEnter()
+        loginView.presenter.scope.onEnter(null, null)
         return RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
     }
 
     private suspend fun addToCart(app: RootPresenterMock, productId: Long, quantity: Int) {
-        RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).presenter.onOpenProduct(productId)
+        RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).getProductsPanelScope().onOpenProduct(productId)
         val home = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
-        ProductViewMock.cast(home.scope.contentView).presenter.onAddToCart(quantity)
+        ProductViewMock.cast(home.scope.contentView).presenter.scope.onAddToCart(quantity)
     }
 
     private suspend fun cartAfterReload(): CartViewMock {
@@ -82,9 +82,9 @@ class CartReloadTest {
         signIn(first, "admin", "admin")
         addToCart(first, DBReset.WILSON_BALL_ID, 1)
         val home = RestrictedViewMock.cast(first.getRootView()!!.scope.contentView)
-        home.presenter.onOpenCart()
+        home.presenter.scope.onOpenCart()
         val cartView = CartViewMock.cast(RestrictedViewMock.cast(first.getRootView()!!.scope.contentView).scope.contentView)
-        cartView.presenter.onRemoveProduct(DBReset.WILSON_BALL_ID)
+        cartView.presenter.scope.onRemoveProduct(DBReset.WILSON_BALL_ID)
         assertNull(session.getString(HomePresenter.CART_KEY))
 
         assertTrue(cartAfterReload().scope.items.isEmpty())
@@ -96,7 +96,7 @@ class CartReloadTest {
         signIn(first, "admin", "admin")
         addToCart(first, DBReset.WILSON_BALL_ID, 1)
         assertNotNull(session.getString(HomePresenter.CART_KEY))
-        RestrictedViewMock.cast(first.getRootView()!!.scope.contentView).presenter.onExit()
+        RestrictedViewMock.cast(first.getRootView()!!.scope.contentView).presenter.scope.onExit()
         assertNull(session.getString(HomePresenter.CART_KEY))
     }
 

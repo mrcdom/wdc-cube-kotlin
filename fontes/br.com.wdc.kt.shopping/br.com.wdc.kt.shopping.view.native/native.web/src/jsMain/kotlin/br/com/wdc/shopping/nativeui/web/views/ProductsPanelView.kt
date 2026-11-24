@@ -38,7 +38,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
     // :: Emitters — created once per view (and once per list item), so they are the same function on every render
 
     private val openProduct = EmitterCache<Long, MouseEventHandler<HTMLButtonElement>> { id ->
-        { safeCall { presenter.onOpenProduct(id) } }
+        { safeCall { presenter.scope.onOpenProduct(id) } }
     }
 
     override val component = FC<Props> {

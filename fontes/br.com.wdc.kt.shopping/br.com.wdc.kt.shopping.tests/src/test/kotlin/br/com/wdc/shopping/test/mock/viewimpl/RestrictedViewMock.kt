@@ -27,11 +27,11 @@ class RestrictedViewMock(
 
     var scope: HomeScope = presenter.scope
 
-    fun getProductsPanelState(): ProductsPanelScope {
+    fun getProductsPanelScope(): ProductsPanelScope {
         return ProductsPanelViewMock.cast(scope.productsPanelView).scope
     }
 
-    fun getPurchasesPanelState(): PurchasesPanelScope {
+    fun getPurchasesPanelScope(): PurchasesPanelScope {
         return PurchasesPanelViewMock.cast(scope.purchasesPanelView).scope
     }
 
@@ -46,7 +46,7 @@ class RestrictedViewMock(
     }
 
     fun printPurchases() {
-        val purchasesState = getPurchasesPanelState()
+        val purchasesState = getPurchasesPanelScope()
         for (purchase: PurchaseInfo in purchasesState.purchases) {
             println("PURCHASE #${purchase.id}")
             println("Purchase date: ${Date(purchase.date)}")
@@ -57,7 +57,7 @@ class RestrictedViewMock(
     }
 
     fun printProducts() {
-        val productsState = getProductsPanelState()
+        val productsState = getProductsPanelScope()
         for (product: ProductInfo in productsState.products ?: emptyList()) {
             print("PRODUCT #${product.id}")
             print("{name: ")

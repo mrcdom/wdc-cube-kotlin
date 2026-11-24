@@ -10,6 +10,7 @@ import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
+import br.com.wdc.framework.cube.FormParam
 
 class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
@@ -27,6 +28,11 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     private val productService = ProductService(ProductRepository.BEAN.get())
     private var ownerSlot: CubeViewSlot? = null
+
+    init {
+        scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
+        scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
+    }
 
     // :: Cube API
 
@@ -67,39 +73,26 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     // :: User Actions
 
-    suspend fun onAddToCart(quantity: Int?) {
+    private suspend fun addToCart(quantity: Int?) {
+        if (quantity == null) {
+            errorInvalidQuantity()
+            LOG.warn("onAddToCart.errorInvalidQuantity: {}", scope.errorMessage)
+            return
+        }
+
+        if (quantity < 1) {
+            alertCartItemWidthLessThanOneItem()
+            LOG.warn("onAddToCart.alertCartItemWidthLessThanOneItem: {}", scope.errorMessage)
+            return
+        }
+
         try {
-            if (quantity == null) {
-                errorInvalidQuantity()
-                LOG.warn("onAddToCart.errorInvalidQuantity: {}", scope.errorMessage)
-                return
-            }
-
-            if (quantity < 1) {
-                alertCartItemWidthLessThanOneItem()
-                LOG.warn("onAddToCart.alertCartItemWidthLessThanOneItem: {}", scope.errorMessage)
-                return
-            }
-
             app.cart!!.addProduct(scope.product!!, quantity)
 
             CartKeys(app).flip()
-        } catch (caught: Exception) {
-            if (caught is OfflineException) {
-                alertDatabaseNotAvailable()
-                LOG.error(scope.errorMessage!!, caught)
-                return
-            }
-
-            app.alertUnexpectedError(LOG, "Adding an item to cart", caught)
-        }
-    }
-
-    suspend fun onOpenProducts() {
-        try {
-            HomeKeys(app).flip()
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Going to home of restricted place", caught)
+        } catch (caught: OfflineException) {
+            alertDatabaseNotAvailable()
+            LOG.error(scope.errorMessage!!, caught)
         }
     }
 

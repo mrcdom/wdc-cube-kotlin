@@ -183,7 +183,7 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
             val capacity = max(1, (availableHeight / cardHeight).toInt())
             if (capacity != lastCapacity) {
                 lastCapacity = capacity
-                safeAction("capacityChanged") { presenter.onItemSizeCapacityChanged(capacity) }
+                safeAction("capacityChanged") { presenter.scope.onItemSizeCapacityChanged(capacity) }
                 return // presenter will trigger a new update with data
             }
         } else {
@@ -230,14 +230,14 @@ class PurchasesPanelViewIos(presenter: PurchasesPanelPresenter) : AbstractViewIo
         safeAction("prevPage") {
             val scope = presenter.scope
             if (scope.page > 0) {
-                presenter.onPageChange(scope.page - 1)
+                presenter.scope.onPageChange(scope.page - 1)
             }
         }
     }
 
     internal fun onNextPage() {
         safeAction("nextPage") {
-            presenter.onPageChange(presenter.scope.page + 1)
+            presenter.scope.onPageChange(presenter.scope.page + 1)
         }
     }
 }
@@ -343,7 +343,7 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
 
     fun onTap() {
         val id = purchase?.id ?: return
-        safeAction("openReceipt") { presenter.onOpenReceipt(id) }
+        safeAction("openReceipt") { presenter.scope.onOpenReceipt(id) }
     }
 }
 

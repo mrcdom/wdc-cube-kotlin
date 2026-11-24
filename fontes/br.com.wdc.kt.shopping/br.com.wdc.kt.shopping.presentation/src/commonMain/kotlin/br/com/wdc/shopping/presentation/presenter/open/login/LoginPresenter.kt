@@ -28,6 +28,12 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     private val loginService = LoginService()
     private var ownerSlot: CubeViewSlot? = null
 
+    init {
+        scope.onEnter = actionOf2 { userName: String?, password: String? -> enter(userName, password) }
+        // a remote view sends what the user typed by sync (the password ciphered), then the event
+        onEvent(1) { scope.onEnter(null, null) }
+    }
+
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
@@ -61,7 +67,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
     // :: User Actions
 
-    suspend fun onEnter(userName: String? = null, password: String? = null) {
+    private suspend fun enter(userName: String?, password: String?) {
         if (userName != null) scope.userName = userName
         if (password != null) scope.password = password
 

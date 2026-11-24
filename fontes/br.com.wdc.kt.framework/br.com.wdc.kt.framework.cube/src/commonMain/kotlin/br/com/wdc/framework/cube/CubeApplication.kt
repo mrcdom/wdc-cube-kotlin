@@ -147,6 +147,14 @@ abstract class CubeApplication(places: List<CubeTreePlace> = emptyList()) {
 
     open fun updateHistory() {}
 
+    /**
+     * A failure nobody handled (the guard of an action hands it here): the application shows it as it can. By
+     * default it is only logged.
+     */
+    open fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
+        logger.error(message, e)
+    }
+
     fun forEachPresenter(action: (CubePresenter) -> Unit) {
         presenterMap.values.forEach(action)
     }

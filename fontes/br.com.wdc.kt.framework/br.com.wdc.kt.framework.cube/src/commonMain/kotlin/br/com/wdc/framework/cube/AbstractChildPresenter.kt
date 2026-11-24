@@ -1,8 +1,6 @@
 package br.com.wdc.framework.cube
 
-abstract class AbstractChildPresenter<A : CubeApplication>(
-    override val app: A,
-) : PresenterBase {
+abstract class AbstractChildPresenter<A : CubeApplication>(app: A) : AbstractPresenter<A>(app) {
 
     var view: CubeView? = null
         protected set
@@ -19,15 +17,9 @@ abstract class AbstractChildPresenter<A : CubeApplication>(
         view = null
     }
 
-    fun update() {
+    override fun update() {
         view?.update()
     }
-
-    /**
-     * Makes [scope] repaint this presenter's view on its own: each change of a [Scope] field calls
-     * [update]. Use it on the presenter's scope: `val scope = bind(CartScope())`.
-     */
-    protected fun <S : Scope> bind(scope: S): S = scope.also { it.observe(::update) }
 
     protected abstract fun onCreateView(): CubeView
 

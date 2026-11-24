@@ -39,8 +39,8 @@ class HomeView(private val presenter: HomePresenter) : ComposeCubeView("home-vie
                 HeaderBar(
                     nickName = scope.nickName ?: "",
                     cartItemCount = scope.cartItemCount,
-                    onOpenCart = { safeCall { presenter.onOpenCart() } },
-                    onExit = { safeCall { presenter.onExit() } },
+                    onOpenCart = { safeCall { presenter.scope.onOpenCart() } },
+                    onExit = { safeCall { presenter.scope.onExit() } },
                     compact = isCompact
                 )
             }

@@ -41,7 +41,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
             val capacity = (heightDp / ITEM_HEIGHT_DP).toInt().coerceAtLeast(1)
             if (capacity != lastReportedCapacity) {
                 lastReportedCapacity = capacity
-                safeCall { presenter.onItemSizeCapacityChanged(capacity) }
+                safeCall { presenter.scope.onItemSizeCapacityChanged(capacity) }
             }
         }
 
@@ -116,7 +116,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { safeCall { presenter.onOpenReceipt(purchase.id) } },
+                                    .clickable { safeCall { presenter.scope.onOpenReceipt(purchase.id) } },
                                 shape = RoundedCornerShape(8.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                 colors = CardDefaults.cardColors(
@@ -173,7 +173,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilledTonalIconButton(
-                        onClick = { safeCall { presenter.onPageChange(scope.page - 1) } },
+                        onClick = { safeCall { presenter.scope.onPageChange(scope.page - 1) } },
                         enabled = scope.page > 0,
                         modifier = Modifier.size(36.dp)
                     ) { Text("‹", fontWeight = FontWeight.Bold) }
@@ -187,7 +187,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                     Spacer(Modifier.width(16.dp))
 
                     FilledTonalIconButton(
-                        onClick = { safeCall { presenter.onPageChange(scope.page + 1) } },
+                        onClick = { safeCall { presenter.scope.onPageChange(scope.page + 1) } },
                         enabled = scope.page < totalPages - 1,
                         modifier = Modifier.size(36.dp)
                     ) { Text("›", fontWeight = FontWeight.Bold) }

@@ -31,7 +31,7 @@ class ShoppingLoginTest : BasePresentationTest() {
         var loginView = LoginViewMock.cast(rootView.scope.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "unrecognized password"
-        loginView.presenter.onEnter()
+        loginView.presenter.scope.onEnter(null, null)
 
         // Check if it keeps bean login view
         loginView = LoginViewMock.cast(rootView.scope.contentView)
@@ -47,7 +47,7 @@ class ShoppingLoginTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(rootView.scope.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.presenter.onEnter()
+        loginView.presenter.scope.onEnter(null, null)
 
         val restrictedView = RestrictedViewMock.cast(rootView.scope.contentView)
 
@@ -55,15 +55,15 @@ class ShoppingLoginTest : BasePresentationTest() {
         assertTrue(restrictedView.scope.cartItemCount >= 0, "The number of items in the cart cannot be negative")
         assertTrue(restrictedView.scope.errorCode == 0, "The user should have been validated")
 
-        val purchasesState = restrictedView.getPurchasesPanelState()
-        val productsState = restrictedView.getProductsPanelState()
+        val purchasesState = restrictedView.getPurchasesPanelScope()
+        val productsState = restrictedView.getProductsPanelScope()
 
         assertNotNull(purchasesState.purchases, "Missing purchase list")
         assertNotNull(productsState.products, "Missing product list")
 
         // Simulate the view reporting capacity (no real view in tests)
         val purchasesMock = PurchasesPanelViewMock.cast(restrictedView.scope.purchasesPanelView)
-        purchasesMock.presenter.onItemSizeCapacityChanged(3)
+        purchasesMock.presenter.scope.onItemSizeCapacityChanged(3)
 
         assertEquals("John Smith", restrictedView.scope.nickName)
         assertEquals(0, restrictedView.scope.cartItemCount)

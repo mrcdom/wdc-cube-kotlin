@@ -8,6 +8,7 @@ import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
 import kotlin.math.ceil
 import kotlin.math.max
+import br.com.wdc.framework.cube.FormParam
 
 class PurchasesPanelPresenter(
     app: RootPresenter,
@@ -28,12 +29,19 @@ class PurchasesPanelPresenter(
 
     private val purchasesPanelService = PurchasesPanelService(PurchaseRepository.BEAN.get())
 
+    init {
+        // not navigations: the guard republishes the address, which follows the page
+        scope.onOpenReceipt = actionOf(1, FormParam.long("p.purchaseId")) { owner.openReceipt(it) }
+        scope.onPageChange = actionOf(2, FormParam.int("p.page")) { changePage(it ?: 0) }
+        scope.onItemSizeCapacityChanged = actionOf(3, FormParam.int("p.capacity")) { changeCapacity(it ?: 0) }
+    }
+
     // :: Life cycle
 
     override fun onCreateView(): CubeView = createView!!.invoke(this)
 
     override suspend fun onInitialize() {
-        // NOOP: a new view paints the current state; the page comes with onPageChange
+        // NOOP: a new view paints the current state; the page comes with the view's first capacity
     }
 
     // :: User Actions
@@ -49,26 +57,20 @@ class PurchasesPanelPresenter(
         if (scope.pageSize > 0) loadPurchases()
     }
 
-    suspend fun onPageChange(page: Int) {
+    /** Shows [page] of the purchases (the home also calls it after a checkout). */
+    suspend fun changePage(page: Int) {
         scope.page = max(0, page)
         loadPurchases()
-        // not a navigation: the address follows the page here
-        app.updateHistory()
     }
 
-    suspend fun onItemSizeCapacityChanged(capacity: Int) {
+    private suspend fun changeCapacity(capacity: Int) {
         val newPageSize = max(1, capacity)
         if (newPageSize != scope.pageSize) {
             // the first capacity keeps the page the address asked for; a later change goes back to the first page
             if (scope.pageSize > 0) scope.page = 0
             scope.pageSize = newPageSize
             loadPurchases()
-            app.updateHistory()
         }
-    }
-
-    suspend fun onOpenReceipt(purchaseId: Long?) {
-        owner.onOpenReceipt(purchaseId)
     }
 
     // :: Data load

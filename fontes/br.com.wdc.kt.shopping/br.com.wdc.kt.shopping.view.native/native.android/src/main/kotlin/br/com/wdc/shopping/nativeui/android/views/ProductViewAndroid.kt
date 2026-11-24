@@ -186,7 +186,7 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
                                 height = (48 * density).toInt()
                                 marginEnd = (12 * density).toInt()
                             }
-                            setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
+                            setOnClickListener { safeAction("back") { presenter.scope.onOpenProducts() } }
                         }
 
                         // Add to Cart button (primary)
@@ -208,7 +208,7 @@ class ProductViewAndroid(presenter: ProductPresenter) : AbstractViewAndroid<Prod
                                 height = (48 * density).toInt()
                             }
                             setOnClickListener {
-                                safeAction("addToCart") { presenter.onAddToCart(quantity) }
+                                safeAction("addToCart") { presenter.scope.onAddToCart(quantity) }
                             }
                         }
                     }

@@ -41,6 +41,10 @@ abstract class Scope {
 
     private val fields = mutableListOf<Field<*>>()
 
+    private val events = mutableMapOf<Int, suspend (Map<String, Any?>) -> Unit>()
+
+    private var syncScope: ((Map<String, Any?>) -> Unit)? = null
+
     /** Writes this scope as the JSON object of the view instance [instanceId]: see the rules above. */
     open fun write(instanceId: String, json: ExtensibleObjectOutput) {
         json.beginObject()
@@ -57,6 +61,33 @@ abstract class Scope {
         write(instanceId, jsonOutput.output)
         return jsonOutput.resultString()
     }
+
+    // :: Remote views
+
+    /** Keeps the handler of an event code (the presenter binds it with `action(code) { … }`). */
+    internal fun onEvent(eventCode: Int, handler: suspend (Map<String, Any?>) -> Unit) {
+        check(eventCode !in events) { "${this::class.simpleName}: event code $eventCode is bound twice" }
+        events[eventCode] = handler
+    }
+
+    /** Runs the action bound to [eventCode], reading its values from [formData]. An unknown code is an error. */
+    suspend fun dispatch(eventCode: Int, formData: Map<String, Any?>) {
+        val handler = events[eventCode]
+            ?: throw IllegalArgumentException("${this::class.simpleName}: no action for event code $eventCode")
+        handler(formData)
+    }
+
+    /** What to copy into the scope from the form data a remote view sends before each event (what the user typed). */
+    fun onSync(syncScope: (Map<String, Any?>) -> Unit) {
+        this.syncScope = syncScope
+    }
+
+    /** Copies the form data a remote view sent into the scope ([onSync]). */
+    fun sync(formData: Map<String, Any?>) {
+        syncScope?.invoke(formData)
+    }
+
+    // :: Observation
 
     /** Sets who is told of each change (one observer; `null` removes it). */
     fun observe(observer: (() -> Unit)?) {

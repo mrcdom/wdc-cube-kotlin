@@ -172,7 +172,7 @@ class ReceiptViewAndroid(presenter: ReceiptPresenter) : AbstractViewAndroid<Rece
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 height = (48 * density).toInt()
                             }
-                            setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
+                            setOnClickListener { safeAction("back") { presenter.scope.onOpenProducts() } }
                         }
                     }
                 }

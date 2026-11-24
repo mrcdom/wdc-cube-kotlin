@@ -7,6 +7,7 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductService
+import br.com.wdc.framework.cube.FormParam
 
 class ProductsPanelPresenter(
     app: RootPresenter,
@@ -27,18 +28,16 @@ class ProductsPanelPresenter(
 
     private val productService = ProductService(ProductRepository.BEAN.get())
 
+    init {
+        scope.onOpenProduct = actionOf(1, FormParam.long("p.productId")) { owner.openProduct(it) }
+    }
+
     // :: Life cycle
 
     override fun onCreateView(): CubeView = createView!!.invoke(this)
 
     override suspend fun onInitialize() {
         loadProducts()
-    }
-
-    // :: User Actions
-
-    suspend fun onOpenProduct(productId: Long?) {
-        owner.onOpenProduct(productId)
     }
 
     // :: Data load

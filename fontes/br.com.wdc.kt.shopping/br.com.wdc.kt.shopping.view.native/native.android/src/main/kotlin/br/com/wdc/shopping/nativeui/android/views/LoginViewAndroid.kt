@@ -208,7 +208,7 @@ class LoginViewAndroid(presenter: LoginPresenter) : AbstractViewAndroid<LoginPre
             val scope = presenter.scope
             scope.userName = userField.text.toString()
             scope.password = passwordField.text.toString()
-            presenter.onEnter()
+            presenter.scope.onEnter(null, null)
         }
     }
 }

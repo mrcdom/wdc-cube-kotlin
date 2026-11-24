@@ -6,12 +6,8 @@ import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
 class HomeReactViewImpl(presenter: HomePresenter) : GenericViewImpl<HomePresenter>("473dbdd7a36a", presenter) {
 
-    @Throws(Exception::class)
     override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
-        when (eventCode) {
-            1 -> presenter.onExit()
-            2 -> presenter.onOpenCart()
-        }
+        presenter.scope.dispatch(eventCode, formData)
     }
 
     override fun writeScope(json: ExtensibleObjectOutput) {

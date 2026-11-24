@@ -141,7 +141,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                                         height = (48 * density).toInt()
                                         marginEnd = (16 * density).toInt()
                                     }
-                                    setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
+                                    setOnClickListener { safeAction("back") { presenter.scope.onOpenProducts() } }
                                 }
                                 // Buy button
                                 button("Buy") {
@@ -156,7 +156,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                                         width = ViewGroup.LayoutParams.WRAP_CONTENT
                                         height = (48 * density).toInt()
                                     }
-                                    setOnClickListener { safeAction("buy") { presenter.onBuy() } }
+                                    setOnClickListener { safeAction("buy") { presenter.scope.onBuy() } }
                                 }
                             }
                         }
@@ -214,7 +214,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                             topMargin = (32 * density).toInt()
                             gravity = Gravity.CENTER_HORIZONTAL
                         }
-                        setOnClickListener { safeAction("back") { presenter.onOpenProducts() } }
+                        setOnClickListener { safeAction("back") { presenter.scope.onOpenProducts() } }
                     }
                 }
             }
@@ -345,7 +345,7 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewAndroid<CartP
                         setPadding(0, 0, 0, 0)
                         setOnClickListener {
                             val i = item ?: return@setOnClickListener
-                            if (i.quantity > 1) safeAction("minus") { presenter.onModifyQuantity(i.id, i.quantity - 1) }
+                            if (i.quantity > 1) safeAction("minus") { presenter.scope.onModifyQuantity(i.id, i.quantity - 1) }
                         }
                     }
                     qtyLabel = textView {
@@ -364,7 +364,7 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewAndroid<CartP
                         setPadding(0, 0, 0, 0)
                         setOnClickListener {
                             val i = item ?: return@setOnClickListener
-                            safeAction("plus") { presenter.onModifyQuantity(i.id, i.quantity + 1) }
+                            safeAction("plus") { presenter.scope.onModifyQuantity(i.id, i.quantity + 1) }
                         }
                     }
                     // Remove button
@@ -379,7 +379,7 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewAndroid<CartP
                         setPadding(0, 0, 0, 0)
                         setOnClickListener {
                             val i = item ?: return@setOnClickListener
-                            safeAction("remove") { presenter.onRemoveProduct(i.id) }
+                            safeAction("remove") { presenter.scope.onRemoveProduct(i.id) }
                         }
                     }
                 }

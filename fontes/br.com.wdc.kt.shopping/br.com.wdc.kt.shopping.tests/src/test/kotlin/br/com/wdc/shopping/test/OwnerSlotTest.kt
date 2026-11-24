@@ -42,7 +42,7 @@ class OwnerSlotTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(app.getRootView()!!.scope.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.presenter.onEnter()
+        loginView.presenter.scope.onEnter(null, null)
         return RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
     }
 
@@ -62,7 +62,7 @@ class OwnerSlotTest : BasePresentationTest() {
     @Test
     fun product_followsTheSlotOfferedNow() = runBlocking {
         val home = gotoRestricted()
-        home.presenter.onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
+        home.getProductsPanelScope().onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
         val productView = ProductViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).scope.contentView)
         val placed = reapplyWithANewSlot(productView.presenter) { ProductKeys(app, it).productId = DBReset.FLASH_DRIVE_2GB_ID }
         assertSame(productView, placed)
@@ -79,7 +79,7 @@ class OwnerSlotTest : BasePresentationTest() {
     @Test
     fun receipt_followsTheSlotOfferedNow() = runBlocking {
         val home = gotoRestricted()
-        home.presenter.onOpenReceipt(DBReset.ADMIN_SECOND_PURCHASE_ID)
+        home.getPurchasesPanelScope().onOpenReceipt(DBReset.ADMIN_SECOND_PURCHASE_ID)
         val receiptView = ReceiptViewMock.cast(RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).scope.contentView)
         val placed = reapplyWithANewSlot(receiptView.presenter) { ReceiptKeys(app, it).purchaseId = DBReset.ADMIN_SECOND_PURCHASE_ID }
         assertSame(receiptView, placed)

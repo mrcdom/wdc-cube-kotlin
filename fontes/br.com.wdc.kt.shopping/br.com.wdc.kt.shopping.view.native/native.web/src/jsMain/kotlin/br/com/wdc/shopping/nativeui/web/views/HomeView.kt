@@ -46,9 +46,9 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
     // :: Emitters — created once per view, so they are the same function on every render
 
-    private val onExit: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onExit() } }
+    private val onExit: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onExit() } }
 
-    private val onOpenCart: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onOpenCart() } }
+    private val onOpenCart: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onOpenCart() } }
 
     private val onTabChange: (SyntheticEvent<*, *>, Any) -> Unit = { _, value ->
         selectedTab = value as Int

@@ -22,9 +22,7 @@ class LoginReactViewImpl(presenter: LoginPresenter) : GenericViewImpl<LoginPrese
     }
 
     override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
-        if (eventCode == 1) {
-            presenter.onEnter()
-        }
+        presenter.scope.dispatch(eventCode, formData)
     }
 
     override fun writeScope(json: ExtensibleObjectOutput) {

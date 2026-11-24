@@ -205,7 +205,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ComposeCubeView("re
                         horizontalArrangement = Arrangement.End
                     ) {
                         Button(
-                            onClick = { safeCall { presenter.onOpenProducts() } },
+                            onClick = { safeCall { presenter.scope.onOpenProducts() } },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.height(48.dp)
                         ) {

@@ -187,7 +187,7 @@ class LoginViewIos(presenter: LoginPresenter) : AbstractViewIos<LoginPresenter>(
             val scope = presenter.scope
             scope.userName = userField.text ?: ""
             scope.password = passwordField.text ?: ""
-            presenter.onEnter()
+            presenter.scope.onEnter(null, null)
         }
     }
 }

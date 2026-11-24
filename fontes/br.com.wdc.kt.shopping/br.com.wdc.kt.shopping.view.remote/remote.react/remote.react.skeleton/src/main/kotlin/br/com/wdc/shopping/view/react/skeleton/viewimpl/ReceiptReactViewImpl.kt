@@ -6,11 +6,8 @@ import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
 
 class ReceiptReactViewImpl(presenter: ReceiptPresenter) : GenericViewImpl<ReceiptPresenter>("e8d0bd8ae3bc", presenter) {
 
-    @Throws(Exception::class)
     override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
-        if (eventCode == 1) {
-            presenter.onOpenProducts()
-        }
+        presenter.scope.dispatch(eventCode, formData)
     }
 
     override fun writeScope(json: ExtensibleObjectOutput) {

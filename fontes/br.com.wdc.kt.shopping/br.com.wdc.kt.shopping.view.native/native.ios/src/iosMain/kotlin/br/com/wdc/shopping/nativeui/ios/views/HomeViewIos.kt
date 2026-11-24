@@ -705,11 +705,11 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
     }
 
     internal fun openCart() {
-        safeAction("openCart") { presenter.onOpenCart() }
+        safeAction("openCart") { presenter.scope.onOpenCart() }
     }
 
     internal fun exit() {
-        safeAction("exit") { presenter.onExit() }
+        safeAction("exit") { presenter.scope.onExit() }
     }
 }
 

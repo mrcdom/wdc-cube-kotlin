@@ -70,7 +70,7 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
     // :: API
 
     /** Logs the failure with its stack trace and shows the user only what failed and the cause's message. */
-    open fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
+    override fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
         scope.errorMessage = errorText(message, e)
         logger.error(scope.errorMessage!!, e)
     }

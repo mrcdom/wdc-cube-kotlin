@@ -116,7 +116,7 @@ class PlaceKeysTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(app.getRootView()!!.scope.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.presenter.onEnter()
+        loginView.presenter.scope.onEnter(null, null)
     }
 
     private fun home(): RestrictedViewMock = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
@@ -149,23 +149,23 @@ class PlaceKeysTest : BasePresentationTest() {
         // the address brings page 1 before the panel knows its capacity: the first capacity keeps it
         app.flip("home?hm-page=1")
         val panel = PurchasesPanelViewMock.cast(home().scope.purchasesPanelView)
-        panel.presenter.onItemSizeCapacityChanged(1) // admin has two purchases: one per page
+        panel.presenter.scope.onItemSizeCapacityChanged(1) // admin has two purchases: one per page
         assertEquals(1, panel.scope.page)
         assertEquals(listOf(DBReset.ADMIN_FIRST_PURCHASE_ID), panel.scope.purchases.map { it.id }, "the older purchase, on the second page")
         assertEquals("home?hm-page=1", app.newIntent().toString())
 
         // changing page is published; the first page is the default and leaves the address
-        panel.presenter.onPageChange(0)
+        panel.presenter.scope.onPageChange(0)
         assertEquals("home", app.newIntent().toString())
 
         // a later capacity change goes back to the first page, as before
-        panel.presenter.onPageChange(1)
-        panel.presenter.onItemSizeCapacityChanged(2)
+        panel.presenter.scope.onPageChange(1)
+        panel.presenter.scope.onItemSizeCapacityChanged(2)
         assertEquals(0, panel.scope.page)
 
         // the page survives a trip to another place and back
-        panel.presenter.onItemSizeCapacityChanged(1)
-        panel.presenter.onPageChange(1)
+        panel.presenter.scope.onItemSizeCapacityChanged(1)
+        panel.presenter.scope.onPageChange(1)
         ProductKeys(app).apply { productId = DBReset.FLASH_DRIVE_2GB_ID }.flip()
         assertTrue(app.newIntent().toString().contains("hm-page=1"), app.newIntent().toString())
         HomeKeys(app).flip()

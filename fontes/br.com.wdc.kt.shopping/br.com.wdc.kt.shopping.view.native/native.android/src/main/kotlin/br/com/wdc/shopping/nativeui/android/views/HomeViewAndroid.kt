@@ -132,7 +132,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                 height = (28 * density).toInt()
                                 marginStart = (12 * density).toInt()
                             }
-                            setOnClickListener { safeAction("exit") { presenter.onExit() } }
+                            setOnClickListener { safeAction("exit") { presenter.scope.onExit() } }
                         }) {
                             imageView {
                                 setImageDrawable(ShoppingIcons.logout(ctx, 16, Color.WHITE))
@@ -193,7 +193,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                     width = ViewGroup.LayoutParams.WRAP_CONTENT
                                     height = (30 * density).toInt()
                                 }
-                                setOnClickListener { safeAction("cart") { presenter.onOpenCart() } }
+                                setOnClickListener { safeAction("cart") { presenter.scope.onOpenCart() } }
                             }
                             cartBadgeLabel = textView {
                                 textSize = 11f
@@ -279,7 +279,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                             height = (32 * density).toInt()
                             marginStart = (16 * density).toInt()
                         }
-                        setOnClickListener { safeAction("exit") { presenter.onExit() } }
+                        setOnClickListener { safeAction("exit") { presenter.scope.onExit() } }
                     }) {
                         imageView {
                             setImageDrawable(ShoppingIcons.logout(ctx, 18, Color.WHITE))
@@ -349,7 +349,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 height = ViewGroup.LayoutParams.WRAP_CONTENT
                             }
-                            setOnClickListener { safeAction("cart") { presenter.onOpenCart() } }
+                            setOnClickListener { safeAction("cart") { presenter.scope.onOpenCart() } }
                         }
                         wideCartBadgeLabel = textView {
                             textSize = 11f

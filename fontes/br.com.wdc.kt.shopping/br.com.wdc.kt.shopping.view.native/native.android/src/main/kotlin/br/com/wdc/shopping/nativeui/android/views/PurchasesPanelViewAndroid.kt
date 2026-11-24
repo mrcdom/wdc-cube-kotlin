@@ -160,7 +160,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
-                        setOnClickListener { safeAction("prevPage") { presenter.onPageChange(presenter.scope.page - 1) } }
+                        setOnClickListener { safeAction("prevPage") { presenter.scope.onPageChange(presenter.scope.page - 1) } }
                     }
                     pageLabel = textView {
                         textSize = 14f
@@ -185,7 +185,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
-                        setOnClickListener { safeAction("nextPage") { presenter.onPageChange(presenter.scope.page + 1) } }
+                        setOnClickListener { safeAction("nextPage") { presenter.scope.onPageChange(presenter.scope.page + 1) } }
                     }
                 }
             }
@@ -223,7 +223,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                             lastPurchases = null
                             lastPage = -1
                             lastTotalCount = -1
-                            safeAction("capacityChanged") { presenter.onItemSizeCapacityChanged(newCapacity) }
+                            safeAction("capacityChanged") { presenter.scope.onItemSizeCapacityChanged(newCapacity) }
                         }
                     }
                 }
@@ -243,7 +243,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
 
             lastStackHeight = stackView.height
             lastCapacity = capacity
-            safeAction("capacityInit") { presenter.onItemSizeCapacityChanged(capacity) }
+            safeAction("capacityInit") { presenter.scope.onItemSizeCapacityChanged(capacity) }
         } else if (lastCapacity < 0) {
             // stackView not yet laid out, schedule recalculation
             stackView.post { forceUpdate() }
@@ -325,7 +325,7 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
             card.background = statesBg
             card.isClickable = true
             card.isFocusable = true
-            card.setOnClickListener { safeAction("receipt") { presenter.onOpenReceipt(purchase?.id) } }
+            card.setOnClickListener { safeAction("receipt") { presenter.scope.onOpenReceipt(purchase?.id) } }
 
             hStack(configure = {
                 gravity = Gravity.CENTER_VERTICAL

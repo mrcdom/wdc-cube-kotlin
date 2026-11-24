@@ -29,6 +29,10 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
     private var purchaseId: Long? = null
     private var ownerSlot: CubeViewSlot? = null
 
+    init {
+        scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
+    }
+
     // :: Cube API
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
@@ -63,20 +67,6 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     override fun publishParameters(intent: CubeIntent) {
         ReceiptKeys(app, intent).purchaseId = purchaseId
-    }
-
-    // :: User Actions
-
-    fun onPrint() {
-        // Not implemented
-    }
-
-    suspend fun onOpenProducts() {
-        try {
-            HomeKeys(app).flip()
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Going to restricted home place", caught)
-        }
     }
 
     // :: Data Loaders

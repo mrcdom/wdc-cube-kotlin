@@ -25,7 +25,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(rootView.scope.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.presenter.onEnter()
+        loginView.presenter.scope.onEnter(null, null)
 
         return RestrictedViewMock.cast(rootView.scope.contentView)
     }
@@ -41,9 +41,24 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     }
 
     @Test
+    fun remoteCart_changesTheQuantity_byItsEventCode() = runBlocking {
+        // the React cart sends code 4 with p.productId and p.quantity; the server ignored it before
+        gotoRestricted().getProductsPanelScope().onOpenProduct(DBReset.WILSON_BALL_ID)
+        var home = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
+        ProductViewMock.cast(home.scope.contentView).presenter.scope.onAddToCart(1)
+        home = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
+        val cart = CartViewMock.cast(home.scope.contentView).presenter.scope
+
+        cart.dispatch(4, mapOf("p.productId" to DBReset.WILSON_BALL_ID, "p.quantity" to 3))
+
+        assertEquals(3, cart.items.single().quantity)
+        assertEquals(3, home.presenter.scope.cartItemCount)
+    }
+
+    @Test
     fun openingAReceiptThatDoesNotExist_saysSo() = runBlocking {
         val restrictedView = gotoRestricted()
-        restrictedView.presenter.onOpenReceipt(9_999_999L)
+        restrictedView.getPurchasesPanelScope().onOpenReceipt(9_999_999L)
         val home = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
         assertEquals(5, home.scope.errorCode, "receipt not found")
         assertEquals("Receipt code not found.", home.scope.errorMessage)
@@ -55,7 +70,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         CartKeys(app).flip()
         val home = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
         val cartView = CartViewMock.cast(home.scope.contentView)
-        cartView.presenter.onBuy()
+        cartView.presenter.scope.onBuy()
         assertEquals(3, cartView.scope.errorCode)
         assertEquals("There must be at least one item in the cart to complete a purchase.", cartView.scope.errorMessage)
     }
@@ -63,16 +78,16 @@ class ShoppingWorkflowTest : BasePresentationTest() {
     @Test
     fun openingWithAnIdThatCannotExist_saysItIsRequired() = runBlocking {
         val restrictedView = gotoRestricted()
-        restrictedView.presenter.onOpenProduct(Long.MIN_VALUE)
+        restrictedView.getProductsPanelScope().onOpenProduct(Long.MIN_VALUE)
         assertEquals(6, RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).scope.errorCode)
-        restrictedView.presenter.onOpenReceipt(0)
+        restrictedView.getPurchasesPanelScope().onOpenReceipt(0)
         assertEquals(7, RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).scope.errorCode)
     }
 
     @Test
     fun receiptItems_keepTheirIds_andComeOrderedByThem() = runBlocking {
         val restrictedView = gotoRestricted()
-        restrictedView.presenter.onOpenReceipt(DBReset.ADMIN_SECOND_PURCHASE_ID)
+        restrictedView.getPurchasesPanelScope().onOpenReceipt(DBReset.ADMIN_SECOND_PURCHASE_ID)
         val home = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
         val receipt = ReceiptViewMock.cast(home.scope.contentView).scope.receipt!!
         assertEquals(
@@ -86,7 +101,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         val restrictedView = gotoRestricted()
         val panel = PurchasesPanelViewMock.cast(restrictedView.scope.purchasesPanelView)
         panel.scope.pageSize = 1
-        panel.presenter.onPageChange(50) // admin has two purchases: page 50 does not exist
+        panel.presenter.scope.onPageChange(50) // admin has two purchases: page 50 does not exist
         assertEquals(1, panel.scope.page, "adjusted to the last one")
         assertEquals(1, panel.scope.purchases.size, "with the items of the adjusted page")
     }
@@ -106,7 +121,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         val rootView = app.getRootView()!!
 
         // Product that does not exist
-        restrictedView.presenter.onOpenProduct(9_999_999L)
+        restrictedView.getProductsPanelScope().onOpenProduct(9_999_999L)
         restrictedView = RestrictedViewMock.cast(rootView.scope.contentView)
         assertTrue(
             restrictedView.scope.errorCode == 3,
@@ -119,7 +134,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         var restrictedView = gotoRestricted()
         val rootView = app.getRootView()!!
 
-        restrictedView.presenter.onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
+        restrictedView.getProductsPanelScope().onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
         restrictedView = RestrictedViewMock.cast(rootView.scope.contentView)
 
         val productView = ProductViewMock.cast(restrictedView.scope.contentView)
@@ -135,11 +150,11 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(rootView.scope.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.presenter.onEnter()
+        loginView.presenter.scope.onEnter(null, null)
 
         var homeView = RestrictedViewMock.cast(rootView.scope.contentView)
 
-        homeView.presenter.onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
+        homeView.getProductsPanelScope().onOpenProduct(DBReset.FLASH_DRIVE_2GB_ID)
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
         var productView = ProductViewMock.cast(homeView.scope.contentView)
         assertTrue(productView.scope.product != null, "A product must have been selected")
@@ -149,7 +164,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         )
 
         val homeUpdatesBefore = homeView.updates
-        productView.presenter.onAddToCart(1)
+        productView.presenter.scope.onAddToCart(1)
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
         // the header counter is a field of the home state, kept by the cart's change listener
         assertEquals(1, homeView.presenter.scope.cartItemCount)
@@ -165,7 +180,7 @@ class ShoppingWorkflowTest : BasePresentationTest() {
 
         // the presenter no longer calls update(): its observed scope asks for the repaint
         var updatesBefore = cartView.updates
-        cartView.presenter.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 0)
+        cartView.presenter.scope.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 0)
         assertTrue(cartView.updates > updatesBefore, "an alert repaints the cart")
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
         cartView = CartViewMock.cast(homeView.scope.contentView)
@@ -174,32 +189,32 @@ class ShoppingWorkflowTest : BasePresentationTest() {
         cartView.scope.errorCode = 0
 
         updatesBefore = cartView.updates
-        cartView.presenter.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 2)
+        cartView.presenter.scope.onModifyQuantity(DBReset.FLASH_DRIVE_2GB_ID, 2)
         assertTrue(cartView.updates > updatesBefore, "a new quantity repaints the cart")
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
         cartView = CartViewMock.cast(homeView.scope.contentView)
         assertTrue(cartView.scope.errorCode == 0, "It must work without errors")
         assertTrue(cartView.scope.items[0].quantity == 2, "The item must have quantity 2")
 
-        cartView.presenter.onModifyQuantity(Long.MIN_VALUE, 2)
+        cartView.presenter.scope.onModifyQuantity(Long.MIN_VALUE, 2)
         cartView = CartViewMock.cast(homeView.scope.contentView)
         assertTrue(cartView.scope.errorCode == 2, "Product not found")
         cartView.scope.errorCode = 0
 
-        cartView.presenter.onOpenProducts()
+        cartView.presenter.scope.onOpenProducts()
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
 
-        homeView.presenter.onOpenProduct(DBReset.WILSON_BALL_ID)
+        homeView.getProductsPanelScope().onOpenProduct(DBReset.WILSON_BALL_ID)
         productView = ProductViewMock.cast(homeView.scope.contentView)
         assertTrue(
             productView.scope.product!!.id == DBReset.WILSON_BALL_ID,
             "Product WILSON_BALL not found"
         )
 
-        productView.presenter.onOpenProducts()
+        productView.presenter.scope.onOpenProducts()
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
 
-        homeView.presenter.onOpenProduct(DBReset.THREAD_SEAL_TAPE_ID)
+        homeView.getProductsPanelScope().onOpenProduct(DBReset.THREAD_SEAL_TAPE_ID)
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
         productView = ProductViewMock.cast(homeView.scope.contentView)
         assertTrue(
@@ -207,20 +222,20 @@ class ShoppingWorkflowTest : BasePresentationTest() {
             "Product THREAD_SEAL_TAPE not found"
         )
 
-        productView.presenter.onAddToCart(1)
+        productView.presenter.scope.onAddToCart(1)
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
         cartView = CartViewMock.cast(homeView.scope.contentView)
         assertTrue(cartView.scope.items.size == 2, "Two items in the cart")
         assertTrue(cartView.scope.items[1].quantity == 1, "The item must have quantity 1")
 
-        cartView.presenter.onBuy()
+        cartView.presenter.scope.onBuy()
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
         val receiptView = ReceiptViewMock.cast(homeView.scope.contentView)
         assertTrue(receiptView.scope.notifySuccess, "It must be flagged as a new receipt")
         assertNotNull(receiptView.scope.receipt)
         assertEquals(2, receiptView.scope.receipt!!.items.size)
 
-        receiptView.presenter.onOpenProducts()
+        receiptView.presenter.scope.onOpenProducts()
         homeView = RestrictedViewMock.cast(rootView.scope.contentView)
         assertNull(
             homeView.scope.contentView,

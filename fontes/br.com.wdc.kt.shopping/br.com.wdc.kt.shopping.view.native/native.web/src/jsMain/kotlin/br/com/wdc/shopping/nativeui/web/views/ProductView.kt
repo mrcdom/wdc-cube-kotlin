@@ -59,11 +59,11 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
         forceUpdate()
     }
 
-    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onOpenProducts() } }
+    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onOpenProducts() } }
 
     private val onAddToCart: MouseEventHandler<HTMLButtonElement> = {
         val chosen = quantity
-        safeCall { presenter.onAddToCart(chosen) }
+        safeCall { presenter.scope.onAddToCart(chosen) }
     }
 
     override val component = FC<Props> {

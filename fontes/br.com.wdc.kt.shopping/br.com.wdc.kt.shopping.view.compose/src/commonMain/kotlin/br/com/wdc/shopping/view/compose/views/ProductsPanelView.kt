@@ -116,7 +116,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
                                     ProductCard(
                                         product = product,
                                         modifier = Modifier.width(itemWidth),
-                                        onClick = { safeCall { presenter.onOpenProduct(product.id) } }
+                                        onClick = { safeCall { presenter.scope.onOpenProduct(product.id) } }
                                     )
                                 }
                                 // Fill remaining space if row is incomplete

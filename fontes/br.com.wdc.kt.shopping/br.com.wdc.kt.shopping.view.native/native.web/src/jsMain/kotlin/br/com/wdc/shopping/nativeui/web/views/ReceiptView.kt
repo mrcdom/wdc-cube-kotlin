@@ -36,7 +36,7 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
 
     // :: Emitters — created once per view, so they are the same function on every render
 
-    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.onOpenProducts() } }
+    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onOpenProducts() } }
 
     override val component = FC<Props> {
         var rev by useState(revision)

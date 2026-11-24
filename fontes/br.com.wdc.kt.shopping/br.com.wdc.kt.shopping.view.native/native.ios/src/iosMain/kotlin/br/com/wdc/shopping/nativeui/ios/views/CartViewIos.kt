@@ -323,11 +323,11 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
     }
 
     internal fun goBack() {
-        safeAction("back") { presenter.onOpenProducts() }
+        safeAction("back") { presenter.scope.onOpenProducts() }
     }
 
     internal fun buy() {
-        safeAction("buy") { presenter.onBuy() }
+        safeAction("buy") { presenter.scope.onBuy() }
     }
 }
 
@@ -452,18 +452,18 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewIos<CartPrese
     fun onMinus() {
         val i = item ?: return
         if (i.quantity > 1) {
-            safeAction("minus") { presenter.onModifyQuantity(i.id, i.quantity - 1) }
+            safeAction("minus") { presenter.scope.onModifyQuantity(i.id, i.quantity - 1) }
         }
     }
 
     fun onPlus() {
         val i = item ?: return
-        safeAction("plus") { presenter.onModifyQuantity(i.id, i.quantity + 1) }
+        safeAction("plus") { presenter.scope.onModifyQuantity(i.id, i.quantity + 1) }
     }
 
     fun onRemove() {
         val i = item ?: return
-        safeAction("remove") { presenter.onRemoveProduct(i.id) }
+        safeAction("remove") { presenter.scope.onRemoveProduct(i.id) }
     }
 }
 

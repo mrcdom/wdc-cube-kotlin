@@ -46,6 +46,11 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private var onCartCommitListenerRemover: () -> Unit = NOOP
     private var onCartChangeListenerRemover: () -> Unit = NOOP
 
+    init {
+        scope.onExit = action(1) { exit() }
+        scope.onOpenCart = action(2) { CartKeys(app).flip() }
+    }
+
     // :: Cube API
 
     override fun release() {
@@ -129,7 +134,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private suspend fun onCartCommited() {
         productsPanel?.loadProducts()
-        purchasesPanel?.onPageChange(0)
+        purchasesPanel?.changePage(0)
     }
 
     private fun onCartChanged() {
@@ -164,74 +169,46 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         }
     }
 
-    suspend fun onOpenReceipt(purchaseId: Long?) {
-        try {
-            if (purchaseId == null || purchaseId <= 0) {
-                alertPurchaseIdRequired()
-                LOG.warn("onOpenReceipt: {}", scope.errorMessage)
-                return
-            }
+    /** Opens the receipt of a purchase: the purchases panel's action. */
+    internal suspend fun openReceipt(purchaseId: Long?) {
+        if (purchaseId == null || purchaseId <= 0) {
+            alertPurchaseIdRequired()
+            LOG.warn("onOpenReceipt: {}", scope.errorMessage)
+            return
+        }
 
+        try {
             ReceiptKeys(app).apply { this.purchaseId = purchaseId }.flip()
-        } catch (caught: Exception) {
-            if (caught is PurchaseNotFoundException) {
-                alertPurchaseNotFound()
-                LOG.warn("{}: purchaseId={}", scope.errorMessage, purchaseId)
-                return
-            }
-
-            app.alertUnexpectedError(
-                LOG,
-                "Trying to go to receipt place to show purchaseId=$purchaseId",
-                caught
-            )
+        } catch (caught: PurchaseNotFoundException) {
+            alertPurchaseNotFound()
+            LOG.warn("{}: purchaseId={}", scope.errorMessage, purchaseId)
         }
     }
 
-    suspend fun onOpenProduct(productId: Long?) {
-        try {
-            if (productId == null || productId <= 0) {
-                alertProductIdRequired()
-                LOG.warn("onOpenProduct: {}", scope.errorMessage)
-                return
-            }
+    /** Opens a product: the products panel's action. */
+    internal suspend fun openProduct(productId: Long?) {
+        if (productId == null || productId <= 0) {
+            alertProductIdRequired()
+            LOG.warn("onOpenProduct: {}", scope.errorMessage)
+            return
+        }
 
+        try {
             ProductKeys(app).apply { this.productId = productId }.flip()
-        } catch (caught: Exception) {
-            if (caught is ProductNotFoundException) {
-                alertProductNotFound()
-                LOG.warn("{}: productId={}", scope.errorMessage, productId)
-                return
-            }
-
-            app.alertUnexpectedError(
-                LOG,
-                "Trying to go to product place to show productId=$productId",
-                caught
-            )
+        } catch (caught: ProductNotFoundException) {
+            alertProductNotFound()
+            LOG.warn("{}: productId={}", scope.errorMessage, productId)
         }
     }
 
-    suspend fun onOpenCart() {
-        try {
-            CartKeys(app).flip()
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Trying to go to cart place", caught)
-        }
-    }
+    private suspend fun exit() {
+        cart!!.clear()
+        app.subject = null
+        app.sessionStorage.clear()
+        setContentView(null)
+        reloadPurchasesIfNeeded()
 
-    suspend fun onExit() {
-        try {
-            cart!!.clear()
-            app.subject = null
-            app.sessionStorage.clear()
-            setContentView(null)
-            reloadPurchasesIfNeeded()
-
-            LoginKeys(app).flip()
-        } catch (caught: Exception) {
-            app.alertUnexpectedError(LOG, "Trying to go to login place", caught)
-        }
+        LoginKeys(app).flip()
     }
 
     // :: Messages
