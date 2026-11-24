@@ -1,27 +1,11 @@
 package br.com.wdc.framework.cube
 
+/** A presenter inside another one, without a place of its own: its owner creates, initializes and releases it. */
 abstract class AbstractChildPresenter<A : CubeApplication>(app: A) : AbstractPresenter<A>(app) {
 
-    var view: CubeView? = null
-        protected set
-
-    suspend fun initialize(): CubeView {
-        val v = onCreateView()
-        view = v
+    suspend fun initialize() {
         onInitialize()
-        return v
     }
-
-    override fun release() {
-        view?.release()
-        view = null
-    }
-
-    override fun update() {
-        view?.update()
-    }
-
-    protected abstract fun onCreateView(): CubeView
 
     protected abstract suspend fun onInitialize()
 }

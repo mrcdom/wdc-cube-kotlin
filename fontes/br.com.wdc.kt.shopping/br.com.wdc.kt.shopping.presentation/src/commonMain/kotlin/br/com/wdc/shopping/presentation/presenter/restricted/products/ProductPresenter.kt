@@ -4,8 +4,7 @@ import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartKeys
@@ -16,8 +15,6 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     companion object {
         private val LOG = Log.getLogger("ProductPresenter")
-
-        var createView: ((ProductPresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
@@ -27,7 +24,7 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
     // :: Internal Instance Fields
 
     private val productService = ProductService(ProductRepository.BEAN.get())
-    private var ownerSlot: CubeViewSlot? = null
+    private var ownerSlot: ScopeSlot? = null
 
     init {
         scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
@@ -59,10 +56,9 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
                 throw AssertionError("Missing Product")
             }
 
-            view = createView?.invoke(this)
         }
 
-        ownerSlot?.setView(view!!)
+        ownerSlot?.setScope(scope)
 
         return true
     }

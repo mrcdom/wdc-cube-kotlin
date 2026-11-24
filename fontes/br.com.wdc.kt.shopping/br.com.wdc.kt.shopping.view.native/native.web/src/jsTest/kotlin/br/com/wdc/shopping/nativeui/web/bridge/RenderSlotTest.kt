@@ -1,7 +1,9 @@
 package br.com.wdc.shopping.nativeui.web.bridge
 
-import br.com.wdc.framework.cube.CubeApplication
-import br.com.wdc.framework.cube.PresenterBase
+import br.com.wdc.framework.commons.storage.JsSessionStorage
+import br.com.wdc.framework.commons.storage.SessionStorage
+import br.com.wdc.framework.cube.Scope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlin.js.Promise
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -28,15 +30,16 @@ import web.dom.Element
  */
 class RenderSlotTest {
 
-    private class TestApp : CubeApplication()
-
-    private class TestPresenter : PresenterBase {
-        override val app: CubeApplication = TestApp()
-        override fun release() {}
+    private class TestApp : RootPresenter() {
+        override fun createSessionStorage(): SessionStorage = JsSessionStorage()
     }
 
+    private class TestScope : Scope()
+
+    private val app = TestApp()
+
     /** A view that counts its renders and subscribes to its own updates, as every view in this module does. */
-    private class CountingView(id: String) : ReactCubeView(id, TestPresenter()) {
+    private class CountingView(app: RootPresenter, id: String) : ReactCubeView<TestScope>(id, app, TestScope()) {
         var renders = 0
 
         override val component = FC<Props> {
@@ -50,7 +53,7 @@ class RenderSlotTest {
     }
 
     /** A view whose UI state lives in a field, changed by an emitter that calls [forceUpdate]. */
-    private class CounterView : ReactCubeView("counter", TestPresenter()) {
+    private class CounterView(app: RootPresenter) : ReactCubeView<TestScope>("counter", app, TestScope()) {
         var renders = 0
         private var count = 0
         val increment: () -> Unit = {
@@ -82,8 +85,8 @@ class RenderSlotTest {
     @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun parentRepaint_leavesTheSlot_andTheViewRepaintsItself() = GlobalScope.promise {
-        val first = CountingView("first")
-        val second = CountingView("second")
+        val first = CountingView(app, "first")
+        val second = CountingView(app, "second")
         var parentRenders = 0
         var bump: (() -> Unit)? = null
         var swap: (() -> Unit)? = null
@@ -130,7 +133,7 @@ class RenderSlotTest {
     @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun forceUpdate_repaintsTheViewItself_withoutTheParent() = GlobalScope.promise {
-        val view = CounterView()
+        val view = CounterView(app)
         var parentRenders = 0
         val parent = FC<Props> {
             parentRenders++

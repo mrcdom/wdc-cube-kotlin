@@ -6,34 +6,46 @@ import kotlinx.browser.window
 /**
  * Centralized dirty-view scheduler for the native.web platform.
  *
- * When a presenter calls view.update(), the view is marked dirty here.
+ * When a scope asks for a repaint (view.update()), the view is marked dirty here.
  * A single requestAnimationFrame callback is scheduled to flush all dirty views.
- * Before flushing, commitComputedState() lets each dirty view's presenter compute
- * the derived fields the view reads — once per paint cycle, right before painting.
+ * Each flush first runs the application's commitComputedState() — once per paint cycle,
+ * right before painting — so every presenter computes the derived fields its view reads;
+ * whatever that changes marks views dirty and is painted in the same flush.
  */
 object ViewUpdateScheduler {
 
-    private val dirtyViews = linkedSetOf<ReactCubeView>()
+    private val dirtyViews = linkedSetOf<ReactCubeView<*>>()
     private var flushScheduled = false
+    private var committing = false
     private var appProvider: (() -> RootPresenter?)? = null
 
     fun initialize(appProvider: () -> RootPresenter?) {
         this.appProvider = appProvider
     }
 
-    fun markDirty(view: ReactCubeView) {
+    fun markDirty(view: ReactCubeView<*>) {
         dirtyViews.add(view)
+        // marked while the flush commits the computed state: painted by this same flush
+        if (committing) return
         if (!flushScheduled) {
             flushScheduled = true
             window.requestAnimationFrame { flush() }
         }
     }
 
-    fun removeDirty(view: ReactCubeView) {
+    fun removeDirty(view: ReactCubeView<*>) {
         dirtyViews.remove(view)
     }
 
     internal fun flush() {
+        // Once per paint cycle, before reading the scopes: the views it marks dirty join this flush
+        committing = true
+        try {
+            appProvider?.invoke()?.commitComputedState()
+        } finally {
+            committing = false
+        }
+
         // Snapshot and clear — new markDirty() calls after this point
         // will schedule the next flush cycle
         flushScheduled = false
@@ -41,7 +53,6 @@ object ViewUpdateScheduler {
         dirtyViews.clear()
 
         for (view in snapshot) {
-            view.prepareForPaint()
             view.notifyDirty()
         }
     }

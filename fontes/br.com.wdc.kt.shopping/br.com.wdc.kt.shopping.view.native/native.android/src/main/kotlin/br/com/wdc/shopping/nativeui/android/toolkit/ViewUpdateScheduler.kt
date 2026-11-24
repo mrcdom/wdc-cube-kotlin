@@ -10,8 +10,9 @@ import br.com.wdc.shopping.presentation.presenter.RootPresenter
  *
  * When a presenter calls view.update(), the view is marked dirty here.
  * A single Handler.post on the main looper is scheduled to flush all dirty views.
- * Before flushing, commitComputedState() lets each dirty view's presenter compute
- * the derived fields the view reads — once per paint cycle, right before painting.
+ * Each flush first runs the application's commitComputedState() — once per paint cycle,
+ * right before the scopes are read — and then paints the dirty views, including the
+ * ones that commitComputedState() itself marked dirty.
  */
 object ViewUpdateScheduler {
 
@@ -23,8 +24,6 @@ object ViewUpdateScheduler {
     fun initialize(appProvider: () -> RootPresenter?) {
         this.appProvider = appProvider
     }
-
-    internal fun getApp(): RootPresenter? = appProvider?.invoke()
 
     @Synchronized
     fun markDirty(view: AbstractViewAndroid<*>) {
@@ -41,6 +40,13 @@ object ViewUpdateScheduler {
     }
 
     private fun flush() {
+        // flushScheduled is still true here, so views marked dirty now join this cycle
+        try {
+            appProvider?.invoke()?.commitComputedState()
+        } catch (e: Exception) {
+            Log.e("ViewUpdateScheduler", "commitComputedState error", e)
+        }
+
         val snapshot: List<AbstractViewAndroid<*>>
         synchronized(this) {
             flushScheduled = false
@@ -50,7 +56,6 @@ object ViewUpdateScheduler {
 
         for (view in snapshot) {
             try {
-                view.prepareForPaint()
                 view.forceUpdate()
             } catch (e: Exception) {
                 Log.e("ViewUpdateScheduler", "flush error", e)

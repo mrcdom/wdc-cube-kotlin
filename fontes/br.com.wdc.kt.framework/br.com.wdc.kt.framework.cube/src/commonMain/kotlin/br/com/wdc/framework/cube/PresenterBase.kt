@@ -13,8 +13,8 @@ interface PresenterBase {
     /**
      * Computes the calculated/derived fields the view reads from the presenter's scope.
      *
-     * Called by the view layer exactly once per paint cycle, right before the view
-     * state is read for rendering. The view ignores its own `update()` during this call.
+     * Called once per paint cycle, right before the scopes are read for painting: the view layer runs the
+     * application's `commitComputedState()`, which runs every live presenter's.
      */
     fun commitComputedState() {}
 

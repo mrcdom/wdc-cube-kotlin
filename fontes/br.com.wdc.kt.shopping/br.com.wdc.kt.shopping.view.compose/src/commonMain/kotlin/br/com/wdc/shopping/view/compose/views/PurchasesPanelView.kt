@@ -16,7 +16,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.util.formatDate
@@ -25,14 +26,14 @@ import br.com.wdc.shopping.view.compose.util.formatPrice
 // Estimated height of each purchase card
 private val ITEM_HEIGHT_DP = 76.dp
 
-class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ComposeCubeView("purchases-panel-view", presenter) {
+class PurchasesPanelView(app: RootPresenter, scope: PurchasesPanelScope) :
+    ComposeCubeView<PurchasesPanelScope>("purchases-panel-view", app, scope) {
 
     @Composable
     override fun Render() {
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val scope = presenter.scope
         val density = LocalDensity.current
         var lastReportedCapacity by remember { mutableIntStateOf(-1) }
 
@@ -41,7 +42,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
             val capacity = (heightDp / ITEM_HEIGHT_DP).toInt().coerceAtLeast(1)
             if (capacity != lastReportedCapacity) {
                 lastReportedCapacity = capacity
-                safeCall { presenter.scope.onItemSizeCapacityChanged(capacity) }
+                safeCall { scope.onItemSizeCapacityChanged(capacity) }
             }
         }
 
@@ -116,7 +117,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { safeCall { presenter.scope.onOpenReceipt(purchase.id) } },
+                                    .clickable { safeCall { scope.onOpenReceipt(purchase.id) } },
                                 shape = RoundedCornerShape(8.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                 colors = CardDefaults.cardColors(
@@ -173,7 +174,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilledTonalIconButton(
-                        onClick = { safeCall { presenter.scope.onPageChange(scope.page - 1) } },
+                        onClick = { safeCall { scope.onPageChange(scope.page - 1) } },
                         enabled = scope.page > 0,
                         modifier = Modifier.size(36.dp)
                     ) { Text("‹", fontWeight = FontWeight.Bold) }
@@ -187,7 +188,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : Compo
                     Spacer(Modifier.width(16.dp))
 
                     FilledTonalIconButton(
-                        onClick = { safeCall { presenter.scope.onPageChange(scope.page + 1) } },
+                        onClick = { safeCall { scope.onPageChange(scope.page + 1) } },
                         enabled = scope.page < totalPages - 1,
                         modifier = Modifier.size(36.dp)
                     ) { Text("›", fontWeight = FontWeight.Bold) }

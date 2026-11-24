@@ -43,6 +43,38 @@ abstract class CubeApplication(places: List<CubeTreePlace> = emptyList()) {
 
     fun getPresenter(placeId: Int): CubePresenter? = presenterMap[placeId]
 
+    // :: Views
+
+    /** The view layer's catalog ([ScopeViews]): set by each entry point before the first navigation. */
+    var scopeViews: ScopeViews = ScopeViews()
+
+    private val views = concurrentMutableMapOf<Scope, CubeView>()
+
+    /** The view of [scope], created the first time it is asked for and kept until [releaseView]. */
+    fun viewOf(scope: Scope): CubeView = views[scope] ?: scopeViews.create(scope).also { views[scope] = it }
+
+    /** The view of [scope], if one was created. */
+    fun viewOrNull(scope: Scope): CubeView? = views[scope]
+
+    /** Releases the view of [scope] (when its presenter is released, or a scope leaves the screen). */
+    fun releaseView(scope: Scope) {
+        views.remove(scope)?.release()
+    }
+
+    /**
+     * Runs every live presenter's `commitComputedState()`: the view layer calls it once per paint cycle, right before
+     * it reads the scopes to paint.
+     */
+    open fun commitComputedState() {
+        for (presenter in presenterMap.values) {
+            try {
+                presenter.commitComputedState()
+            } catch (caught: Exception) {
+                LOG.error("commitComputedState of ${presenter::class.simpleName}: ${caught.message}")
+            }
+        }
+    }
+
     /**
      * The application's own part in every navigation, run before the first step: the application is the root of the
      * place tree ([CubeTreePlace.ROOT]) — it may own the page frame (alerts, the slot of the first level) and hand it

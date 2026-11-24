@@ -5,7 +5,8 @@ import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.Add
 import mui.icons.material.ArrowBack
 import mui.icons.material.Remove
@@ -37,29 +38,32 @@ import react.useState
 import web.cssom.*
 import web.html.HTMLButtonElement
 
-class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view", presenter) {
+class CartView(
+    app: RootPresenter,
+    scope: CartScope,
+) : ReactCubeView<CartScope>("cart-view", app, scope) {
 
     // :: Emitters — created once per view (and once per cart item), so they are the same function on every render
 
-    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onOpenProducts() } }
+    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
 
-    private val onBuy: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onBuy() } }
+    private val onBuy: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onBuy() } }
 
     /** The emitters of one cart item. They read the item's current quantity from the state when they run. */
     private inner class ItemEmitters(val id: Long) {
-        private fun quantity(): Int = presenter.scope.items.firstOrNull { it.id == id }?.quantity ?: 1
+        private fun quantity(): Int = scope.items.firstOrNull { it.id == id }?.quantity ?: 1
 
         val decrement: MouseEventHandler<HTMLButtonElement> = {
             val next = (quantity() - 1).coerceAtLeast(1)
-            safeCall { presenter.scope.onModifyQuantity(id, next) }
+            safeCall { scope.onModifyQuantity(id, next) }
         }
 
         val increment: MouseEventHandler<HTMLButtonElement> = {
             val next = quantity() + 1
-            safeCall { presenter.scope.onModifyQuantity(id, next) }
+            safeCall { scope.onModifyQuantity(id, next) }
         }
 
-        val remove: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onRemoveProduct(id) } }
+        val remove: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onRemoveProduct(id) } }
     }
 
     private val itemEmitters = EmitterCache<Long, ItemEmitters> { id -> ItemEmitters(id) }
@@ -73,7 +77,6 @@ class CartView(private val presenter: CartPresenter) : ReactCubeView("cart-view"
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val scope = presenter.scope
 
         Box {
             sx {

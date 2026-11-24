@@ -18,7 +18,7 @@ class ShoppingLoginTest : BasePresentationTest() {
 
         val rootView = app.getRootView()!!
 
-        val mainContent = LoginViewMock.cast(rootView.scope.contentView)
+        val mainContent = LoginViewMock.cast(rootView.contentView)
         assertTrue(mainContent.scope.errorCode == 0, "The user should not have been validated")
     }
 
@@ -28,13 +28,13 @@ class ShoppingLoginTest : BasePresentationTest() {
 
         val rootView = app.getRootView()!!
 
-        var loginView = LoginViewMock.cast(rootView.scope.contentView)
+        var loginView = LoginViewMock.cast(rootView.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "unrecognized password"
-        loginView.presenter.scope.onEnter(null, null)
+        loginView.scope.onEnter(null, null)
 
         // Check if it keeps bean login view
-        loginView = LoginViewMock.cast(rootView.scope.contentView)
+        loginView = LoginViewMock.cast(rootView.contentView)
         assertTrue(loginView.scope.errorCode == 1, "The user should not have been validated")
     }
 
@@ -44,12 +44,12 @@ class ShoppingLoginTest : BasePresentationTest() {
 
         val rootView = app.getRootView()!!
 
-        val loginView = LoginViewMock.cast(rootView.scope.contentView)
+        val loginView = LoginViewMock.cast(rootView.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.presenter.scope.onEnter(null, null)
+        loginView.scope.onEnter(null, null)
 
-        val restrictedView = RestrictedViewMock.cast(rootView.scope.contentView)
+        val restrictedView = RestrictedViewMock.cast(rootView.contentView)
 
         assertTrue(!restrictedView.scope.nickName.isNullOrBlank(), "Invalid user name")
         assertTrue(restrictedView.scope.cartItemCount >= 0, "The number of items in the cart cannot be negative")
@@ -62,8 +62,8 @@ class ShoppingLoginTest : BasePresentationTest() {
         assertNotNull(productsState.products, "Missing product list")
 
         // Simulate the view reporting capacity (no real view in tests)
-        val purchasesMock = PurchasesPanelViewMock.cast(restrictedView.scope.purchasesPanelView)
-        purchasesMock.presenter.scope.onItemSizeCapacityChanged(3)
+        val purchasesMock = PurchasesPanelViewMock.cast(restrictedView.scope.purchasesPanel?.let(app::viewOf))
+        purchasesMock.scope.onItemSizeCapacityChanged(3)
 
         assertEquals("John Smith", restrictedView.scope.nickName)
         assertEquals(0, restrictedView.scope.cartItemCount)

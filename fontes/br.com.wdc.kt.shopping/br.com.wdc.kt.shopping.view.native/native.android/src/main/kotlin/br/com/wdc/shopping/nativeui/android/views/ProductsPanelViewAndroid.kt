@@ -12,10 +12,11 @@ import br.com.wdc.shopping.nativeui.android.theme.*
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.shopping.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 
-class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) : AbstractViewAndroid<ProductsPanelPresenter>("products-panel-view", presenter) {
+class ProductsPanelViewAndroid(app: RootPresenter, scope: ProductsPanelScope) : AbstractViewAndroid<ProductsPanelScope>("products-panel-view", app, scope) {
 
     private lateinit var scrollView: ScrollView
     private lateinit var stackView: FlowLayout
@@ -109,14 +110,14 @@ class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) : AbstractView
 
             productsSlot = newListSlot(
                 stackView,
-                factory = { ProductCardView(presenter).also { it.initialize() } },
+                factory = { ProductCardView(app, scope).also { it.initialize() } },
                 updater = { view, item -> view.setState(item); view.forceUpdate() }
             )
         }
     }
 
     override fun doUpdate() {
-        val products = presenter.scope.products
+        val products = scope.products
         if (products === lastProducts) return
         lastProducts = products
 
@@ -153,7 +154,7 @@ class ProductsPanelViewAndroid(presenter: ProductsPanelPresenter) : AbstractView
 
 // --- Product Card sub-view ---
 
-private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewAndroid<ProductsPanelPresenter>("product-card", presenter) {
+private class ProductCardView(app: RootPresenter, scope: ProductsPanelScope) : AbstractViewAndroid<ProductsPanelScope>("product-card", app, scope) {
 
     private lateinit var imageView: ImageView
     private lateinit var nameLabel: TextView
@@ -188,7 +189,7 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewA
             card.isFocusable = true
             card.setOnClickListener {
                 val id = product?.id ?: return@setOnClickListener
-                safeAction("openProduct") { presenter.scope.onOpenProduct(id) }
+                safeAction("openProduct") { scope.onOpenProduct(id) }
             }
             (card as FrameLayout).clipChildren = true
 

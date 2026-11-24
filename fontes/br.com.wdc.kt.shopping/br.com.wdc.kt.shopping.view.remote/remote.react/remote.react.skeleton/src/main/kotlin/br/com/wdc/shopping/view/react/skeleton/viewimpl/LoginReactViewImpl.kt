@@ -1,15 +1,17 @@
 package br.com.wdc.shopping.view.react.skeleton.viewimpl
 
 import br.com.wdc.framework.commons.lang.CoerceUtils
-import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
-import br.com.wdc.shopping.view.react.skeleton.util.GenericViewImpl
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.view.react.skeleton.util.ScopeViewImpl
 
-class LoginReactViewImpl(presenter: LoginPresenter) : GenericViewImpl<LoginPresenter>("c677cda52d14", presenter) {
+/** The login: the password arrives ciphered with the session's key, which only this layer knows. */
+class LoginReactViewImpl(app: ReactRootPresenter, scope: LoginScope) : ScopeViewImpl<LoginScope>(VID, app, scope) {
+
+    companion object {
+        const val VID = "c677cda52d14"
+    }
 
     override fun syncClientToServer(formData: Map<String, Any?>) {
-        val scope = presenter.scope
-
         var fn = "userName"
         if (formData.containsKey(fn)) {
             scope.userName = CoerceUtils.asString(formData[fn])
@@ -19,13 +21,5 @@ class LoginReactViewImpl(presenter: LoginPresenter) : GenericViewImpl<LoginPrese
         if (formData.containsKey(fn)) {
             scope.password = app.getDataSecurity().b64Decipher(CoerceUtils.asString(formData[fn]) ?: "")
         }
-    }
-
-    override suspend fun submit(eventCode: Int, eventQtde: Int, formData: Map<String, Any?>) {
-        presenter.scope.dispatch(eventCode, formData)
-    }
-
-    override fun writeScope(json: ExtensibleObjectOutput) {
-        presenter.scope.write(instanceId, json)
     }
 }

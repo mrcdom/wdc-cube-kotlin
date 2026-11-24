@@ -3,6 +3,7 @@ package br.com.wdc.shopping.test.presentation
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.cube.CubeView
+import br.com.wdc.framework.cube.Scope
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
@@ -38,13 +39,14 @@ class ScopeJsonTest {
     }
 
     @Test
-    fun home_sendsTheViewsItHolds_asViewIds() {
-        val scope = HomeScope().apply {
-            contentView = View("p:7"); productsPanelView = View("a:2"); nickName = "John"; cartItemCount = 3
-        }
+    fun home_sendsTheScopesItHolds_asTheIdsOfTheirViews() {
+        val product = ProductsPanelScope()
+        val cart = CartScope()
+        val views = mapOf<Scope, CubeView>(cart to View("p:7"), product to View("a:2"))
+        val scope = HomeScope().apply { content = cart; productsPanel = product; nickName = "John"; cartItemCount = 3 }
         assertEquals(
             """{"id":"h:1","contentViewId":"p:7","productsPanelViewId":"a:2","nickName":"John","cartItemCount":3,"errorCode":0}""",
-            scope.toJson("h:1"),
+            scope.toJson("h:1") { views.getValue(it) },
         )
     }
 

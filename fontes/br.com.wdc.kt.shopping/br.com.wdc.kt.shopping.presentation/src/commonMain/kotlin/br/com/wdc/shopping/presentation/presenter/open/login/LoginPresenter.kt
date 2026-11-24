@@ -4,8 +4,7 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.shopping.domain.exception.OfflineException
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
@@ -15,8 +14,6 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
     companion object {
         private val LOG = Log.getLogger("LoginPresenter")
-
-        var createView: ((LoginPresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
@@ -26,7 +23,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     // :: Internal Instance Fields
 
     private val loginService = LoginService()
-    private var ownerSlot: CubeViewSlot? = null
+    private var ownerSlot: ScopeSlot? = null
 
     init {
         scope.onEnter = actionOf2 { userName: String?, password: String? -> enter(userName, password) }
@@ -39,11 +36,8 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = LoginKeys(app, intent).parentSlot
-        if (initialization) {
-            view = createView?.invoke(this)
-        }
 
-        ownerSlot?.setView(view!!)
+        ownerSlot?.setScope(scope)
 
         return false
     }

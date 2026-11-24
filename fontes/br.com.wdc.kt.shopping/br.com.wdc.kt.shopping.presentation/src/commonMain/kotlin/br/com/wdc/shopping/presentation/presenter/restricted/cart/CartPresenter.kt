@@ -5,8 +5,7 @@ import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.framework.cube.FormParam
 import br.com.wdc.shopping.domain.exception.InvalidCartItemException
 import br.com.wdc.shopping.domain.exception.OfflineException
@@ -19,8 +18,6 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     companion object {
         private val LOG = Log.getLogger("CartPresenter")
-
-        var createView: ((CartPresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
@@ -30,7 +27,7 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     // :: Internal Instance Fields
 
     private val cart: CartManager = app.cart!!
-    private var ownerSlot: CubeViewSlot? = null
+    private var ownerSlot: ScopeSlot? = null
     private var pendingErrorClear: Registration? = null
 
     init {
@@ -50,11 +47,8 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = CartKeys(app, intent).parentSlot
-        if (initialization) {
-            view = createView?.invoke(this)
-        }
 
-        ownerSlot?.setView(view!!)
+        ownerSlot?.setScope(scope)
 
         return true
     }

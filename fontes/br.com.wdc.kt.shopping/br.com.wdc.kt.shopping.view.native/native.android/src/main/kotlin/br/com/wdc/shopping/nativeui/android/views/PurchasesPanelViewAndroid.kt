@@ -10,10 +10,11 @@ import br.com.wdc.shopping.nativeui.android.theme.*
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.shopping.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.structs.PurchaseInfo
 
-class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractViewAndroid<PurchasesPanelPresenter>("purchases-panel-view", presenter) {
+class PurchasesPanelViewAndroid(app: RootPresenter, scope: PurchasesPanelScope) : AbstractViewAndroid<PurchasesPanelScope>("purchases-panel-view", app, scope) {
 
     private lateinit var stackView: LinearLayout
     private lateinit var emptyLabel: TextView
@@ -160,7 +161,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
-                        setOnClickListener { safeAction("prevPage") { presenter.scope.onPageChange(presenter.scope.page - 1) } }
+                        setOnClickListener { safeAction("prevPage") { scope.onPageChange(scope.page - 1) } }
                     }
                     pageLabel = textView {
                         textSize = 14f
@@ -185,7 +186,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
-                        setOnClickListener { safeAction("nextPage") { presenter.scope.onPageChange(presenter.scope.page + 1) } }
+                        setOnClickListener { safeAction("nextPage") { scope.onPageChange(scope.page + 1) } }
                     }
                 }
             }
@@ -202,7 +203,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
 
             purchasesSlot = newListSlot(
                 stackView,
-                factory = { PurchaseCardView(presenter).also { it.initialize() } },
+                factory = { PurchaseCardView(app, scope).also { it.initialize() } },
                 updater = { view, item -> view.setState(item); view.forceUpdate() }
             )
 
@@ -223,7 +224,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
                             lastPurchases = null
                             lastPage = -1
                             lastTotalCount = -1
-                            safeAction("capacityChanged") { presenter.scope.onItemSizeCapacityChanged(newCapacity) }
+                            safeAction("capacityChanged") { scope.onItemSizeCapacityChanged(newCapacity) }
                         }
                     }
                 }
@@ -243,14 +244,13 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
 
             lastStackHeight = stackView.height
             lastCapacity = capacity
-            safeAction("capacityInit") { presenter.scope.onItemSizeCapacityChanged(capacity) }
+            safeAction("capacityInit") { scope.onItemSizeCapacityChanged(capacity) }
         } else if (lastCapacity < 0) {
             // stackView not yet laid out, schedule recalculation
             stackView.post { forceUpdate() }
             return
         }
 
-        val scope = presenter.scope
         val purchases = scope.purchases
         val page = scope.page
         val totalCount = scope.totalCount
@@ -294,7 +294,7 @@ class PurchasesPanelViewAndroid(presenter: PurchasesPanelPresenter) : AbstractVi
 
 // --- Purchase Card sub-view ---
 
-private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractViewAndroid<PurchasesPanelPresenter>("purchase-card", presenter) {
+private class PurchaseCardView(app: RootPresenter, scope: PurchasesPanelScope) : AbstractViewAndroid<PurchasesPanelScope>("purchase-card", app, scope) {
 
     private lateinit var dateLabel: TextView
     private lateinit var totalLabel: TextView
@@ -325,7 +325,7 @@ private class PurchaseCardView(presenter: PurchasesPanelPresenter) : AbstractVie
             card.background = statesBg
             card.isClickable = true
             card.isFocusable = true
-            card.setOnClickListener { safeAction("receipt") { presenter.scope.onOpenReceipt(purchase?.id) } }
+            card.setOnClickListener { safeAction("receipt") { scope.onOpenReceipt(purchase?.id) } }
 
             hStack(configure = {
                 gravity = Gravity.CENTER_VERTICAL

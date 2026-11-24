@@ -6,7 +6,8 @@ import br.com.wdc.shopping.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingIcons
 import br.com.wdc.shopping.nativeui.ios.theme.UIK
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.useContents
@@ -31,7 +32,7 @@ private const val MAX_DETAIL_WIDTH = 560.0
  * - Wide (>=700pt): 1-row header + side-by-side panels
  */
 @OptIn(ExperimentalForeignApi::class)
-class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("home-view", presenter) {
+class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeScope>("home-view", app, scope) {
 
     // Compact header UI
     private lateinit var compactHeaderContent: UIView
@@ -592,7 +593,6 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
     override fun doUpdate() {
         detectLayout()
 
-        val scope = presenter.scope
 
         // Nickname
         val nick = scope.nickName
@@ -616,8 +616,8 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Mount panels
-        val productsPanel = scope.productsPanelView
-        val purchasesPanel = scope.purchasesPanelView
+        val productsPanel = scope.productsPanel?.let(app::viewOf)
+        val purchasesPanel = scope.purchasesPanel?.let(app::viewOf)
 
         if (productsPanel != null && mountedProductsPanel !== productsPanel) {
             mountedProductsPanel = productsPanel
@@ -639,7 +639,7 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
         }
 
         // Detail overlay
-        val newContentView = scope.contentView
+        val newContentView = scope.content?.let(app::viewOf)
         detailSlot.sync(newContentView)
         val hasDetail = (newContentView != null)
         detailContainer.hidden = !hasDetail
@@ -705,11 +705,11 @@ class HomeViewIos(presenter: HomePresenter) : AbstractViewIos<HomePresenter>("ho
     }
 
     internal fun openCart() {
-        safeAction("openCart") { presenter.scope.onOpenCart() }
+        safeAction("openCart") { scope.onOpenCart() }
     }
 
     internal fun exit() {
-        safeAction("exit") { presenter.scope.onExit() }
+        safeAction("exit") { scope.onExit() }
     }
 }
 

@@ -15,7 +15,6 @@ import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.storage.JvmSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
@@ -26,14 +25,6 @@ import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
-import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.bridge.ViewUpdateScheduler
 import br.com.wdc.shopping.view.compose.theme.ShoppingTheme
 import br.com.wdc.shopping.view.compose.util.PlatformConfig
@@ -58,6 +49,7 @@ fun main() {
     } catch (_: Exception) { }
 
     val app = DesktopRootPresenter()
+    app.scopeViews = composeScopeViews(app)
     ViewUpdateScheduler.initialize { app }
     kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
@@ -85,8 +77,6 @@ private class DesktopRootPresenter : RootPresenter() {
     override fun createSessionStorage(): SessionStorage = JvmSessionStorage()
 }
 
-private fun createView(view: ComposeCubeView): CubeView = view
-
 private fun initializePlatform(baseUrl: String) {
     PlatformConfig.baseUrl = baseUrl
     JsonInputFactory.installCommon()
@@ -96,13 +86,4 @@ private fun initializePlatform(baseUrl: String) {
     val transport = OkHttpTransport(baseUrl)
     val config = RestConfig(transport)
     RestRepositoryBootstrap.initialize(config, JceCryptoProvider())
-
-    RootPresenter.createView = { p -> createView(RootView(p)) }
-    LoginPresenter.createView = { p -> createView(LoginView(p)) }
-    HomePresenter.createView = { p -> createView(HomeView(p)) }
-    CartPresenter.createView = { p -> createView(CartView(p)) }
-    ProductPresenter.createView = { p -> createView(ProductView(p)) }
-    ReceiptPresenter.createView = { p -> createView(ReceiptView(p)) }
-    ProductsPanelPresenter.createView = { p -> createView(ProductsPanelView(p)) }
-    PurchasesPanelPresenter.createView = { p -> createView(PurchasesPanelView(p)) }
 }

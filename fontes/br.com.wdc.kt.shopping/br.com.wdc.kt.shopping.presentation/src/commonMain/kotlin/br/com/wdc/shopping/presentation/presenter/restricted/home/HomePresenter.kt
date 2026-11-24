@@ -5,8 +5,8 @@ import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.Scope
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.ProductNotFoundException
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
@@ -27,8 +27,6 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
         /** The session entry that keeps the cart across page reloads. */
         const val CART_KEY = "cart"
-
-        var createView: ((HomePresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
@@ -37,9 +35,9 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     // :: Internal Instance Fields
 
-    private val contentSlot = CubeViewSlot { v -> setContentView(v) }
+    private val contentSlot = ScopeSlot { setContent(it) }
 
-    private var ownerSlot: CubeViewSlot? = null
+    private var ownerSlot: ScopeSlot? = null
     private var cart: CartManager? = null
     private var productsPanel: ProductsPanelPresenter? = null
     private var purchasesPanel: PurchasesPanelPresenter? = null
@@ -54,18 +52,18 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     // :: Cube API
 
     override fun release() {
-        scope.contentView = null
+        scope.content = null
 
         productsPanel?.let {
             it.release()
             productsPanel = null
-            scope.productsPanelView = null
+            scope.productsPanel = null
         }
 
         purchasesPanel?.let {
             it.release()
             purchasesPanel = null
-            scope.purchasesPanelView = null
+            scope.purchasesPanel = null
         }
 
         app.cart = null
@@ -76,8 +74,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         onCartChangeListenerRemover()
         onCartChangeListenerRemover = NOOP
 
-        view?.release()
-        view = null
+        super.release()
     }
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
@@ -88,16 +85,14 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
         // read on every call: a reused presenter goes where its parent puts it now, not where it was first put
         ownerSlot = HomeKeys(app, intent).parentSlot
-        if (initialization || view == null) {
-            view = createView?.invoke(this)
-
+        if (initialization || productsPanel == null) {
             scope.nickName = app.subject?.nickName
 
-            productsPanel = ProductsPanelPresenter(app, this)
-            scope.productsPanelView = productsPanel!!.initialize()
+            productsPanel = ProductsPanelPresenter(app, this).also { it.initialize() }
+            scope.productsPanel = productsPanel!!.scope
 
-            purchasesPanel = PurchasesPanelPresenter(app, this)
-            scope.purchasesPanelView = purchasesPanel!!.initialize()
+            purchasesPanel = PurchasesPanelPresenter(app, this).also { it.initialize() }
+            scope.purchasesPanel = purchasesPanel!!.scope
 
             cart = CartManager(PurchaseRepository.BEAN.get())
             restoreCart()
@@ -111,13 +106,13 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
             return false
         }
 
-        ownerSlot!!.setView(view!!)
+        ownerSlot!!.setScope(scope)
 
         // the page the address asks for; the panel loads it now, or once its view tells its capacity
         purchasesPanel?.restorePage(HomeKeys(app, intent).purchasesPage)
 
         if (deepest) {
-            setContentView(null)
+            setContent(null)
             reloadPurchasesIfNeeded()
         } else {
             HomeKeys(app, intent).parentSlot = contentSlot
@@ -205,7 +200,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         cart!!.clear()
         app.subject = null
         app.sessionStorage.clear()
-        setContentView(null)
+        setContent(null)
         reloadPurchasesIfNeeded()
 
         LoginKeys(app).flip()
@@ -235,9 +230,9 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     // :: Slots
 
-    private fun setContentView(view: CubeView?) {
-        if (scope.contentView !== view) {
-            scope.contentView = view
+    private fun setContent(content: Scope?) {
+        if (scope.content !== content) {
+            scope.content = content
         }
     }
 

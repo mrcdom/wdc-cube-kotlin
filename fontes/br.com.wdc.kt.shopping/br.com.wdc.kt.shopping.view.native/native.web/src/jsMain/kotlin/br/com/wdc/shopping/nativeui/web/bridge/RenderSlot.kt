@@ -13,7 +13,7 @@ import react.memo
  * subscribes to its view's `onUpdate`). The slot repaints only when the parent puts a different view in it.
  */
 val RenderSlot = memo(FC<RenderSlotProps> { props ->
-    val view = props.view as? ReactCubeView ?: return@FC
+    val view = props.view as? ReactCubeView<*> ?: return@FC
     view.component {}
 })
 

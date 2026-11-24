@@ -6,19 +6,23 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import br.com.wdc.framework.commons.log.Log as AppLog
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.PresenterBase
+import br.com.wdc.framework.cube.Scope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlinx.coroutines.launch
 
 /**
  * Base class for all Android native views in the Cube MVP architecture.
  *
- * Implements dirty-flag update throttling: when the presenter calls update(),
- * a dirty flag is set and the actual doUpdate() is scheduled via postOnAnimation
- * (syncs with VSYNC — coalesces multiple update() calls into 1 doUpdate() per frame).
+ * A view paints one [Scope] and calls its actions; it knows the application ([app]) only to reach the views of child
+ * scopes ([RootPresenter.viewOf]) and to launch actions on the presenter dispatcher.
+ *
+ * Implements dirty-flag update throttling: when the presenter calls update(), the view is marked dirty in
+ * [ViewUpdateScheduler], which coalesces multiple update() calls into one doUpdate() per flush.
  */
-abstract class AbstractViewAndroid<P>(
+abstract class AbstractViewAndroid<S : Scope>(
     private val viewId: String,
-    protected val presenter: P
+    protected val app: RootPresenter,
+    protected val scope: S
 ) : CubeView {
 
     lateinit var rootView: View
@@ -28,30 +32,10 @@ abstract class AbstractViewAndroid<P>(
     private var firstRender = true
     private val myListSlots = mutableListOf<ListSlot<*, *>>()
 
-    /** Exposes the presenter as PresenterBase for the scheduler (null for child presenters). */
-    internal val presenterBase: PresenterBase? get() = presenter as? PresenterBase
-
     override val instanceId: String get() = viewId
 
-    // True while the presenter computes derived state for the paint about to happen;
-    // update() is ignored meanwhile, since this view is already being painted.
-    @Volatile
-    private var updateMuted = false
-
-    /**
-     * Runs the presenter's commitComputedState() right before this view is painted.
-     */
-    internal fun prepareForPaint() {
-        updateMuted = true
-        try {
-            presenterBase?.commitComputedState()
-        } finally {
-            updateMuted = false
-        }
-    }
-
     override fun update() {
-        if (released || updateMuted) return
+        if (released) return
         ViewUpdateScheduler.markDirty(this)
     }
 
@@ -75,7 +59,7 @@ abstract class AbstractViewAndroid<P>(
         return false
     }
 
-    fun initialize(): AbstractViewAndroid<P> {
+    fun initialize(): AbstractViewAndroid<S> {
         rootView = createView()
         forceUpdate()
         return this
@@ -91,13 +75,11 @@ abstract class AbstractViewAndroid<P>(
     }
 
     protected fun safeAction(context: String, action: suspend () -> Unit) {
-        ViewUpdateScheduler.getApp()!!.presenterScope.launch {
+        app.presenterScope.launch {
             try {
                 action()
             } catch (e: Exception) {
-                ViewUpdateScheduler.getApp()
-                    ?.alertUnexpectedError(LOG, "action '$context' error", e)
-                    ?: Log.e("View[$viewId]", "action '$context' error", e)
+                app.alertUnexpectedError(LOG, "action '$context' error", e)
             }
         }
     }

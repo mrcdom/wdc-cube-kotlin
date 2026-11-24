@@ -17,20 +17,21 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.components.ShoppingLogoLarge
 import br.com.wdc.shopping.view.compose.theme.Primary
 import br.com.wdc.shopping.view.compose.theme.PrimaryContainer
 
-class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-view", presenter) {
+class LoginView(app: RootPresenter, scope: LoginScope) :
+    ComposeCubeView<LoginScope>("login-view", app, scope) {
 
     @Composable
     override fun Render() {
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val scope = presenter.scope
         val loading = scope.loading
         var userName by remember { mutableStateOf(scope.userName ?: "") }
         var password by remember { mutableStateOf(scope.password ?: "") }
@@ -96,7 +97,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                         enabled = !loading,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { safeCall { presenter.scope.onEnter(null, null) } })
+                        keyboardActions = KeyboardActions(onDone = { safeCall { scope.onEnter(null, null) } })
                     )
 
                     val errorMessage = scope.errorMessage
@@ -118,7 +119,7 @@ class LoginView(private val presenter: LoginPresenter) : ComposeCubeView("login-
                     Spacer(Modifier.height(4.dp))
 
                     Button(
-                        onClick = { safeCall { presenter.scope.onEnter(null, null) } },
+                        onClick = { safeCall { scope.onEnter(null, null) } },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         enabled = !loading,

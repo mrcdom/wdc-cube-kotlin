@@ -18,19 +18,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.util.formatPrice
 
-class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-view", presenter) {
+class CartView(app: RootPresenter, scope: CartScope) :
+    ComposeCubeView<CartScope>("cart-view", app, scope) {
 
     @Composable
     override fun Render() {
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val scope = presenter.scope
 
         Box(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -146,7 +147,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                                                 FilledTonalIconButton(
                                                     onClick = {
                                                         safeCall {
-                                                            presenter.scope.onModifyQuantity(
+                                                            scope.onModifyQuantity(
                                                                 item.id,
                                                                 (item.quantity - 1).coerceAtLeast(1)
                                                             )
@@ -166,7 +167,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
 
                                                 FilledTonalIconButton(
                                                     onClick = {
-                                                        safeCall { presenter.scope.onModifyQuantity(item.id, item.quantity + 1) }
+                                                        safeCall { scope.onModifyQuantity(item.id, item.quantity + 1) }
                                                     },
                                                     modifier = Modifier.size(32.dp)
                                                 ) {
@@ -179,7 +180,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
 
                                         // Remove button
                                         TextButton(
-                                            onClick = { safeCall { presenter.scope.onRemoveProduct(item.id) } },
+                                            onClick = { safeCall { scope.onRemoveProduct(item.id) } },
                                             colors = ButtonDefaults.textButtonColors(
                                                 contentColor = MaterialTheme.colorScheme.error
                                             )
@@ -230,7 +231,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                     ) {
                         OutlinedButton(
-                            onClick = { safeCall { presenter.scope.onOpenProducts() } },
+                            onClick = { safeCall { scope.onOpenProducts() } },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.height(48.dp)
                         ) {
@@ -241,7 +242,7 @@ class CartView(private val presenter: CartPresenter) : ComposeCubeView("cart-vie
                         }
                         if (scope.items.isNotEmpty()) {
                             Button(
-                                onClick = { safeCall { presenter.scope.onBuy() } },
+                                onClick = { safeCall { scope.onBuy() } },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.height(48.dp),
                                 colors = ButtonDefaults.buttonColors(

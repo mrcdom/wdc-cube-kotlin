@@ -22,8 +22,18 @@ abstract class AbstractPresenter<A : CubeApplication>(override val app: A) : Pre
 
     private val log by lazy { Log.getLogger(this::class.simpleName ?: "Presenter") }
 
-    /** Asks the view to repaint. */
-    abstract fun update()
+    /** Asks the view of the bound scope to repaint (only needed for a change no field sees). */
+    open fun update() {
+        boundScope?.let { app.viewOrNull(it)?.update() }
+    }
+
+    /** Releases the view of the bound scope. */
+    override fun release() {
+        boundScope?.let { app.releaseView(it) }
+    }
+
+    /** The bound scope ([bind]). */
+    fun scope(): Scope? = boundScope
 
     /**
      * Ties [scope] to this presenter: each change of one of its fields repaints this presenter's view, and the

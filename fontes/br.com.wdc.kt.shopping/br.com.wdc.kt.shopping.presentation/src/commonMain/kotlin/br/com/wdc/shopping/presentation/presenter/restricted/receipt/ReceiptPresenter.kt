@@ -4,8 +4,7 @@ import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.exception.PurchaseNotFoundException
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeKeys
@@ -15,8 +14,6 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     companion object {
         private val LOG = Log.getLogger("ReceiptPresenter")
-
-        var createView: ((ReceiptPresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
@@ -27,7 +24,7 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     private val receiptService = ReceiptService(PurchaseRepository.BEAN.get())
     private var purchaseId: Long? = null
-    private var ownerSlot: CubeViewSlot? = null
+    private var ownerSlot: ScopeSlot? = null
 
     init {
         scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
@@ -57,10 +54,9 @@ class ReceiptPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
                 throw AssertionError("Missing receipt")
             }
 
-            view = createView?.invoke(this)
         }
 
-        ownerSlot?.setView(view!!)
+        ownerSlot?.setScope(scope)
 
         return true
     }

@@ -27,11 +27,14 @@ import kotlin.reflect.KProperty
  * field of a nested object). Assign a new value instead, or call [changed]. A plain `var` (not declared with [field])
  * is not observed either.
  *
- * Changes made in `commitComputedState()` notify too, but the view being painted ignores its own `update()` then.
+ * Changes made in `commitComputedState()` notify too: the view layer runs it before it picks the views to paint, so
+ * they are painted in the same cycle.
  *
  * **As JSON** ([write]), the fields go out in declaration order, after `"id"` (the view instance): `null` and blank
- * strings are left out; numbers and booleans always go; a [CubeView] goes as `"<name>Id"` with its instance id;
- * lists, maps, enums, [ScopeValue] and [Externalizable] values are written as themselves. A field declared with
+ * strings are left out; numbers and booleans always go; a [Scope] (a presenter's below, a segment) goes as
+ * `"<name>ViewId"` with the instance id of the view that draws it ([CubeApplication.viewOf]), and a list of scopes as
+ * `"<name>ViewIds"`; a [CubeView] goes as `"<name>Id"`; lists, maps, enums, [ScopeValue] and [Externalizable] values
+ * are written as themselves. Plain `var`s (the actions) never go. A field declared with
  * `sent = false` never goes (a password the user types, for example). Override [write] only for a shape these
  * rules can't give.
  */
@@ -45,20 +48,23 @@ abstract class Scope {
 
     private var syncScope: ((Map<String, Any?>) -> Unit)? = null
 
-    /** Writes this scope as the JSON object of the view instance [instanceId]: see the rules above. */
-    open fun write(instanceId: String, json: ExtensibleObjectOutput) {
+    /**
+     * Writes this scope as the JSON object of the view instance [instanceId]: see the rules above. [viewOf] gives the
+     * view of a scope held in a field (without it, such a field is left out).
+     */
+    open fun write(instanceId: String, json: ExtensibleObjectOutput, viewOf: ((Scope) -> CubeView)? = null) {
         json.beginObject()
         json.name("id").value(instanceId)
         for (field in fields) {
-            if (field.sent) writeField(json, field.name, field.value)
+            if (field.sent) writeField(json, field.name, field.value, viewOf)
         }
         json.endObject()
     }
 
     /** This scope as JSON, for the view instance [instanceId]. */
-    fun toJson(instanceId: String): String {
+    fun toJson(instanceId: String, viewOf: ((Scope) -> CubeView)? = null): String {
         val jsonOutput = JsonOutputFactory.createStringOutput()
-        write(instanceId, jsonOutput.output)
+        write(instanceId, jsonOutput.output, viewOf)
         return jsonOutput.resultString()
     }
 
@@ -118,11 +124,17 @@ abstract class Scope {
 
     private companion object {
 
-        fun writeField(json: ExtensibleObjectOutput, name: String, value: Any?) {
-            when (value) {
-                null -> {}
-                is String -> if (value.isNotBlank()) json.name(name).value(value)
-                is CubeView -> json.name(name + "Id").value(value.instanceId)
+        fun writeField(json: ExtensibleObjectOutput, name: String, value: Any?, viewOf: ((Scope) -> CubeView)?) {
+            when {
+                value == null -> {}
+                value is String -> if (value.isNotBlank()) json.name(name).value(value)
+                value is Scope -> if (viewOf != null) json.name(name + "ViewId").value(viewOf(value).instanceId)
+                value is List<*> && value.isNotEmpty() && value.all { it is Scope } -> if (viewOf != null) {
+                    json.name(name + "ViewIds").beginArray()
+                    for (item in value) json.value(viewOf(item as Scope).instanceId)
+                    json.endArray()
+                }
+                value is CubeView -> json.name(name + "Id").value(value.instanceId)
                 else -> {
                     json.name(name)
                     writeValue(json, name, value)

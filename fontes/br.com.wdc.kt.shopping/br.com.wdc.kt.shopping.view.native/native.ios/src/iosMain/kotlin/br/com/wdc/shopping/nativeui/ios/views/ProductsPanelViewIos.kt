@@ -6,7 +6,8 @@ import br.com.wdc.shopping.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.theme.UIK
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -21,7 +22,7 @@ import platform.darwin.NSObject
  * Uses ListSlot with ProductCardView sub-views for efficient recycling.
  */
 @OptIn(ExperimentalForeignApi::class)
-class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<ProductsPanelPresenter>("products-panel-view", presenter) {
+class ProductsPanelViewIos(app: RootPresenter, scope: ProductsPanelScope) : AbstractViewIos<ProductsPanelScope>("products-panel-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: FlowLayoutView
@@ -120,13 +121,13 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
 
         productsSlot = newListSlot(
             stackView,
-            factory = { ProductCardView(presenter).also { it.initialize() } },
+            factory = { ProductCardView(app, scope).also { it.initialize() } },
             updater = { view, item -> view.setState(item); view.forceUpdate() }
         )
     }
 
     override fun doUpdate() {
-        val products = presenter.scope.products
+        val products = scope.products
         if (products === lastProducts) return
         lastProducts = products
 
@@ -154,7 +155,7 @@ class ProductsPanelViewIos(presenter: ProductsPanelPresenter) : AbstractViewIos<
 // --- Item sub-view: ProductCardView ---
 
 @OptIn(ExperimentalForeignApi::class)
-private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewIos<ProductsPanelPresenter>("product-card", presenter) {
+private class ProductCardView(app: RootPresenter, scope: ProductsPanelScope) : AbstractViewIos<ProductsPanelScope>("product-card", app, scope) {
 
     private lateinit var imageView: UIImageView
     private lateinit var nameLabel: UILabel
@@ -246,7 +247,7 @@ private class ProductCardView(presenter: ProductsPanelPresenter) : AbstractViewI
 
     fun onTap() {
         val id = product?.id ?: return
-        safeAction("openProduct") { presenter.scope.onOpenProduct(id) }
+        safeAction("openProduct") { scope.onOpenProduct(id) }
     }
 }
 

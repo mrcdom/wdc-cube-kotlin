@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
@@ -13,8 +12,8 @@ import java.util.Date
 
 class RestrictedViewMock(
     app: RootPresenterMock,
-    presenter: HomePresenter,
-) : AbstractViewMock<HomePresenter>(app, presenter) {
+    scope: HomeScope,
+) : AbstractViewMock<HomeScope>(app, scope) {
 
     companion object {
         fun cast(view: CubeView?): RestrictedViewMock {
@@ -25,14 +24,13 @@ class RestrictedViewMock(
         }
     }
 
-    var scope: HomeScope = presenter.scope
 
     fun getProductsPanelScope(): ProductsPanelScope {
-        return ProductsPanelViewMock.cast(scope.productsPanelView).scope
+        return ProductsPanelViewMock.cast(scope.productsPanel?.let(app::viewOf)).scope
     }
 
     fun getPurchasesPanelScope(): PurchasesPanelScope {
-        return PurchasesPanelViewMock.cast(scope.purchasesPanelView).scope
+        return PurchasesPanelViewMock.cast(scope.purchasesPanel?.let(app::viewOf)).scope
     }
 
     fun render() {
@@ -69,4 +67,7 @@ class RestrictedViewMock(
             println("}")
         }
     }
+
+    /** The view of the scope below (asked to the application, as a real view does). */
+    val contentView: CubeView? get() = scope.content?.let(app::viewOf)
 }

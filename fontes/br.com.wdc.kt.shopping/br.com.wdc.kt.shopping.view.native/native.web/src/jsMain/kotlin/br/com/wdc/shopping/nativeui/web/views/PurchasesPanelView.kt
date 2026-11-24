@@ -6,7 +6,8 @@ import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
 import br.com.wdc.shopping.nativeui.web.util.formatDate
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.ChevronLeft
 import mui.icons.material.ChevronRight
 import mui.icons.material.Inventory2
@@ -38,22 +39,25 @@ import web.html.HTMLDivElement
 
 private const val ITEM_HEIGHT_PX = 76
 
-class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : ReactCubeView("purchases-panel-view", presenter) {
+class PurchasesPanelView(
+    app: RootPresenter,
+    scope: PurchasesPanelScope,
+) : ReactCubeView<PurchasesPanelScope>("purchases-panel-view", app, scope) {
 
     // :: Emitters — created once per view (and once per list item), so they are the same function on every render
 
     private val openReceipt = EmitterCache<Long, MouseEventHandler<HTMLButtonElement>> { id ->
-        { safeCall { presenter.scope.onOpenReceipt(id) } }
+        { safeCall { scope.onOpenReceipt(id) } }
     }
 
     private val onPreviousPage: MouseEventHandler<HTMLButtonElement> = {
-        val page = presenter.scope.page - 1
-        safeCall { presenter.scope.onPageChange(page) }
+        val page = scope.page - 1
+        safeCall { scope.onPageChange(page) }
     }
 
     private val onNextPage: MouseEventHandler<HTMLButtonElement> = {
-        val page = presenter.scope.page + 1
-        safeCall { presenter.scope.onPageChange(page) }
+        val page = scope.page + 1
+        safeCall { scope.onPageChange(page) }
     }
 
     override val component = FC<Props> {
@@ -65,7 +69,6 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val scope = presenter.scope
         val containerRef = useRef<HTMLDivElement>()
         val lastCapacityRef = useRef(-1)
 
@@ -78,7 +81,7 @@ class PurchasesPanelView(private val presenter: PurchasesPanelPresenter) : React
                 val capacity = (h / ITEM_HEIGHT_PX).coerceAtLeast(1)
                 if (capacity != (lastCapacityRef.current ?: -1)) {
                     lastCapacityRef.current = capacity
-                    safeCall { presenter.scope.onItemSizeCapacityChanged(capacity) }
+                    safeCall { scope.onItemSizeCapacityChanged(capacity) }
                 }
             }
 

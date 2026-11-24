@@ -2,16 +2,18 @@ package br.com.wdc.shopping.view.react.skeleton.util
 
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.view.react.skeleton.viewimpl.ReactRootPresenter
 
-abstract class GenericViewImpl<P : PresenterBase> protected constructor(
+/**
+ * A view of the remote React client, kept on the server: it has an instance id ("<vid>:<n>", the vid naming the
+ * client component), receives the client's events and writes what the client paints.
+ */
+abstract class GenericViewImpl protected constructor(
     vid: String,
-    protected val presenter: P,
-    instanceId: Int = (presenter.app as ReactRootPresenter).nextInstanceId()
+    protected val app: ReactRootPresenter,
+    instanceId: Int = app.nextInstanceId(),
 ) : CubeView {
 
-    protected val app: ReactRootPresenter = presenter.app as ReactRootPresenter
     private val _instanceId: String = "$vid:$instanceId"
 
     protected var alertId: Int = 0
@@ -21,23 +23,6 @@ abstract class GenericViewImpl<P : PresenterBase> protected constructor(
         this.app.markDirty(this)
     }
 
-    // True while the presenter computes derived state for the paint about to happen;
-    // update() is ignored meanwhile, since this view is already being painted.
-    @Volatile
-    private var updateMuted = false
-
-    /**
-     * Runs the presenter's commitComputedState() right before this view is painted.
-     */
-    internal fun prepareForPaint() {
-        updateMuted = true
-        try {
-            presenter.commitComputedState()
-        } finally {
-            updateMuted = false
-        }
-    }
-
     override val instanceId: String get() = _instanceId
 
     override fun release() {
@@ -45,10 +30,10 @@ abstract class GenericViewImpl<P : PresenterBase> protected constructor(
     }
 
     override fun update() {
-        if (updateMuted) return
         app.markDirty(this)
     }
 
+    /** Copies what the client sent (what the user typed) before its event. */
     open fun syncClientToServer(formData: Map<String, Any?>) {
         // NOOP
     }

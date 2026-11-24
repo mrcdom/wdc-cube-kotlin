@@ -5,6 +5,8 @@ import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
@@ -31,12 +33,8 @@ class ScopeTest {
         override fun release() {}
     }
 
-    private class TestPresenter : AbstractCubePresenter<CubeApplication>(object : CubeApplication() {}) {
+    private class TestPresenter(app: CubeApplication) : AbstractCubePresenter<CubeApplication>(app) {
         val scope = bind(TestScope())
-
-        fun attach(v: CubeView) {
-            view = v
-        }
     }
 
     @Test
@@ -73,15 +71,45 @@ class ScopeTest {
 
     @Test
     fun observedState_updatesThePresentersView_withoutAnExplicitUpdate() {
-        val presenter = TestPresenter()
+        val app = object : CubeApplication() {}
         val view = TestView()
+        app.scopeViews = ScopeViews().register<TestScope> { view }
+        val presenter = TestPresenter(app)
 
         presenter.scope.name = "before the view"
-        presenter.attach(view)
+        assertSame(view, app.viewOf(presenter.scope), "the catalog's view, created once")
+        assertSame(view, app.viewOf(presenter.scope))
         presenter.scope.name = "with the view"
         presenter.scope.count = 7
 
         assertEquals(2, view.updates)
+
+        presenter.release()
+        assertNull(app.viewOrNull(presenter.scope), "released with its presenter")
+    }
+
+    private class Holder : Scope() {
+        var content: Scope? by field(null)
+        var rows: List<Scope> by field(emptyList())
+    }
+
+    @Test
+    fun aScopeInAField_goesAsTheIdOfItsView() {
+        val app = object : CubeApplication() {}
+        app.scopeViews = ScopeViews().register<TestScope> { TestView() }.fallback { s -> TestView().takeIf { s is Holder } }
+        val holder = Holder().apply { content = TestScope(); rows = listOf(TestScope(), TestScope()) }
+        assertEquals(
+            """{"id":"h:1","contentViewId":"test","rowsViewIds":["test","test"]}""",
+            holder.toJson("h:1", app::viewOf),
+        )
+        assertEquals("""{"id":"h:1","rows":[]}""", Holder().toJson("h:1", app::viewOf))
+    }
+
+    @Test
+    fun aScopeWithNoViewInTheCatalog_failsNamingIt() {
+        val app = object : CubeApplication() {}
+        val e = assertFailsWith<IllegalStateException> { app.viewOf(TestScope()) }
+        assertTrue("TestScope" in e.message!!, e.message)
     }
 
     private enum class Color { RED }

@@ -12,9 +12,10 @@ import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.nativeui.android.theme.*
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
 
-class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresenter>("home-view", presenter) {
+class HomeViewAndroid(app: RootPresenter, scope: HomeScope) : AbstractViewAndroid<HomeScope>("home-view", app, scope) {
 
     // Compact header
     private lateinit var compactHeader: LinearLayout
@@ -132,7 +133,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                 height = (28 * density).toInt()
                                 marginStart = (12 * density).toInt()
                             }
-                            setOnClickListener { safeAction("exit") { presenter.scope.onExit() } }
+                            setOnClickListener { safeAction("exit") { scope.onExit() } }
                         }) {
                             imageView {
                                 setImageDrawable(ShoppingIcons.logout(ctx, 16, Color.WHITE))
@@ -193,7 +194,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                     width = ViewGroup.LayoutParams.WRAP_CONTENT
                                     height = (30 * density).toInt()
                                 }
-                                setOnClickListener { safeAction("cart") { presenter.scope.onOpenCart() } }
+                                setOnClickListener { safeAction("cart") { scope.onOpenCart() } }
                             }
                             cartBadgeLabel = textView {
                                 textSize = 11f
@@ -279,7 +280,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                             height = (32 * density).toInt()
                             marginStart = (16 * density).toInt()
                         }
-                        setOnClickListener { safeAction("exit") { presenter.scope.onExit() } }
+                        setOnClickListener { safeAction("exit") { scope.onExit() } }
                     }) {
                         imageView {
                             setImageDrawable(ShoppingIcons.logout(ctx, 18, Color.WHITE))
@@ -349,7 +350,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 height = ViewGroup.LayoutParams.WRAP_CONTENT
                             }
-                            setOnClickListener { safeAction("cart") { presenter.scope.onOpenCart() } }
+                            setOnClickListener { safeAction("cart") { scope.onOpenCart() } }
                         }
                         wideCartBadgeLabel = textView {
                             textSize = 11f
@@ -635,7 +636,6 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
     }
 
     override fun doUpdate() {
-        val scope = presenter.scope
 
         // Nickname
         val nick = scope.nickName
@@ -659,8 +659,8 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
         }
 
         // Mount panels
-        val productsPanel = scope.productsPanelView
-        val purchasesPanel = scope.purchasesPanelView
+        val productsPanel = scope.productsPanel?.let(app::viewOf)
+        val purchasesPanel = scope.purchasesPanel?.let(app::viewOf)
 
         if (productsPanel != null && mountedProductsPanel !== productsPanel) {
             mountedProductsPanel = productsPanel
@@ -685,7 +685,7 @@ class HomeViewAndroid(presenter: HomePresenter) : AbstractViewAndroid<HomePresen
         }
 
         // Detail overlay
-        val contentView = scope.contentView
+        val contentView = scope.content?.let(app::viewOf)
         detailSlot.sync(contentView)
         if (contentView != null) {
             detailContainer.visibility = View.VISIBLE

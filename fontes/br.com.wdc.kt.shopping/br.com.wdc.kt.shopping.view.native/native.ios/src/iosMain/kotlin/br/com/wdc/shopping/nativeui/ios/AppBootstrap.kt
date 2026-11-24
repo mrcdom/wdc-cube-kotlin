@@ -6,6 +6,7 @@ import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
+import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.shopping.domain.security.IosCryptoProvider
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.toolkit.AbstractViewIos
@@ -15,13 +16,14 @@ import br.com.wdc.shopping.persistence.client.IosHttpTransport
 import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
+import br.com.wdc.shopping.presentation.presenter.RootScope
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -53,11 +55,9 @@ fun createRootViewController(baseUrl: String): UIViewController {
     // Configure view utilities
     ViewUtils.baseUrl = baseUrl
 
-    // Register view factories
-    registerViewFactories()
-
-    // Create the application
+    // Create the application and its view catalog (before the first navigation)
     val app = IosNativeRootPresenter()
+    app.scopeViews = createScopeViews(app)
 
     // Create root ViewController
     val viewController = UIViewController()
@@ -98,38 +98,15 @@ private fun <T> onMainThread(block: () -> T): T {
 }
 
 /**
- * Registers CubeView factory lambdas for all presenters.
+ * The view catalog: which iOS view draws each kind of scope. The application creates a view the first
+ * time its scope is asked for ([RootPresenter.viewOf]); views are UIKit objects, so they are built on the main thread.
  */
-private fun registerViewFactories() {
-    RootPresenter.createView = { presenter ->
-        onMainThread { RootViewIos(presenter).initialize() }
-    }
-
-    LoginPresenter.createView = { presenter ->
-        onMainThread { LoginViewIos(presenter).initialize() }
-    }
-
-    HomePresenter.createView = { presenter ->
-        onMainThread { HomeViewIos(presenter).initialize() }
-    }
-
-    ProductsPanelPresenter.createView = { presenter ->
-        onMainThread { ProductsPanelViewIos(presenter).initialize() }
-    }
-
-    PurchasesPanelPresenter.createView = { presenter ->
-        onMainThread { PurchasesPanelViewIos(presenter).initialize() }
-    }
-
-    ProductPresenter.createView = { presenter ->
-        onMainThread { ProductViewIos(presenter).initialize() }
-    }
-
-    CartPresenter.createView = { presenter ->
-        onMainThread { CartViewIos(presenter).initialize() }
-    }
-
-    ReceiptPresenter.createView = { presenter ->
-        onMainThread { ReceiptViewIos(presenter).initialize() }
-    }
-}
+private fun createScopeViews(app: RootPresenter): ScopeViews = ScopeViews()
+    .register<RootScope> { onMainThread { RootViewIos(app, it).initialize() } }
+    .register<LoginScope> { onMainThread { LoginViewIos(app, it).initialize() } }
+    .register<HomeScope> { onMainThread { HomeViewIos(app, it).initialize() } }
+    .register<ProductsPanelScope> { onMainThread { ProductsPanelViewIos(app, it).initialize() } }
+    .register<PurchasesPanelScope> { onMainThread { PurchasesPanelViewIos(app, it).initialize() } }
+    .register<ProductScope> { onMainThread { ProductViewIos(app, it).initialize() } }
+    .register<CartScope> { onMainThread { CartViewIos(app, it).initialize() } }
+    .register<ReceiptScope> { onMainThread { ReceiptViewIos(app, it).initialize() } }

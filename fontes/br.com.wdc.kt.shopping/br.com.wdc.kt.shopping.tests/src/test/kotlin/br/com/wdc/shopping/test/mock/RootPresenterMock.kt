@@ -2,14 +2,16 @@ package br.com.wdc.shopping.test.mock
 
 import br.com.wdc.framework.commons.storage.JvmSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
+import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
+import br.com.wdc.shopping.presentation.presenter.RootScope
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
 import br.com.wdc.shopping.test.mock.viewimpl.CartViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.LoginViewMock
 import br.com.wdc.shopping.test.mock.viewimpl.ProductViewMock
@@ -23,14 +25,15 @@ import br.com.wdc.shopping.test.mock.viewimpl.RootViewMock
 class RootPresenterMock(private val storage: SessionStorage = JvmSessionStorage()) : RootPresenter() {
 
     init {
-        RootPresenter.createView = { p -> RootViewMock(p.app as RootPresenterMock, p) }
-        LoginPresenter.createView = { p -> LoginViewMock(p.app as RootPresenterMock, p) }
-        HomePresenter.createView = { p -> RestrictedViewMock(p.app as RootPresenterMock, p) }
-        CartPresenter.createView = { p -> CartViewMock(p.app as RootPresenterMock, p) }
-        ProductPresenter.createView = { p -> ProductViewMock(p.app as RootPresenterMock, p) }
-        ReceiptPresenter.createView = { p -> ReceiptViewMock(p.app as RootPresenterMock, p) }
-        ProductsPanelPresenter.createView = { p -> ProductsPanelViewMock(p) }
-        PurchasesPanelPresenter.createView = { p -> PurchasesPanelViewMock(p) }
+        scopeViews = ScopeViews()
+            .register<RootScope> { RootViewMock(this, it) }
+            .register<LoginScope> { LoginViewMock(this, it) }
+            .register<HomeScope> { RestrictedViewMock(this, it) }
+            .register<CartScope> { CartViewMock(this, it) }
+            .register<ProductScope> { ProductViewMock(this, it) }
+            .register<ReceiptScope> { ReceiptViewMock(this, it) }
+            .register<ProductsPanelScope> { ProductsPanelViewMock(it) }
+            .register<PurchasesPanelScope> { PurchasesPanelViewMock(it) }
     }
 
     override fun createSessionStorage(): SessionStorage = storage

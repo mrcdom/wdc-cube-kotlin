@@ -1,13 +1,13 @@
 package br.com.wdc.shopping.test.mock.viewimpl
 
-import br.com.wdc.framework.cube.PresenterBase
+import br.com.wdc.framework.cube.Scope
 import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.test.mock.RootPresenterMock
 import java.util.concurrent.atomic.AtomicInteger
 
-abstract class AbstractViewMock<P : PresenterBase>(
+abstract class AbstractViewMock<S : Scope>(
     val app: RootPresenterMock,
-    val presenter: P,
+    val scope: S,
 ) : CubeView {
 
     companion object {

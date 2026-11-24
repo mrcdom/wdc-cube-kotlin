@@ -1,7 +1,6 @@
 package br.com.wdc.shopping.test.mock.viewimpl
 
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
 import br.com.wdc.shopping.presentation.presenter.restricted.receipt.structs.ReceiptItem
 import br.com.wdc.shopping.test.mock.RootPresenterMock
@@ -10,8 +9,8 @@ import java.util.Date
 
 class ReceiptViewMock(
     app: RootPresenterMock,
-    presenter: ReceiptPresenter,
-) : AbstractViewMock<ReceiptPresenter>(app, presenter) {
+    scope: ReceiptScope,
+) : AbstractViewMock<ReceiptScope>(app, scope) {
 
     companion object {
         fun cast(view: CubeView?): ReceiptViewMock {
@@ -22,7 +21,6 @@ class ReceiptViewMock(
         }
     }
 
-    var scope: ReceiptScope = presenter.scope
 
     fun printReceipt() {
         if (scope.notifySuccess) {

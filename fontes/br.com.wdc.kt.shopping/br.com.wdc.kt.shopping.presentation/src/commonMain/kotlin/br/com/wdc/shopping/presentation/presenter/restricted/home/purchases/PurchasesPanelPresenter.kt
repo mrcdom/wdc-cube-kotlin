@@ -3,7 +3,6 @@ package br.com.wdc.shopping.presentation.presenter.restricted.home.purchases
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractChildPresenter
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
 import kotlin.math.ceil
@@ -17,8 +16,6 @@ class PurchasesPanelPresenter(
 
     companion object {
         private val LOG = Log.getLogger("PurchasesPanelPresenter")
-
-        var createView: ((PurchasesPanelPresenter) -> CubeView)? = null
     }
 
     // :: Public Instance Fields
@@ -37,8 +34,6 @@ class PurchasesPanelPresenter(
     }
 
     // :: Life cycle
-
-    override fun onCreateView(): CubeView = createView!!.invoke(this)
 
     override suspend fun onInitialize() {
         // NOOP: a new view paints the current state; the page comes with the view's first capacity

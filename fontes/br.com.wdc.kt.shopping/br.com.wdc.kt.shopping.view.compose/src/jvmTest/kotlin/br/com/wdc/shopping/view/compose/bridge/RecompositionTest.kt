@@ -8,31 +8,39 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
-import br.com.wdc.framework.cube.CubeApplication
-import br.com.wdc.framework.cube.PresenterBase
+import br.com.wdc.framework.commons.storage.SessionStorage
+import br.com.wdc.framework.cube.Scope
+import br.com.wdc.framework.cube.ScopeViews
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertSame
 
 /**
  * Cube views are independent: a view recomposes only when its own scope changes ([ComposeCubeView.revision]).
  *
  * Unlike the native web view, nothing in this module does that by hand: the Compose compiler (strong skipping)
- * skips [RenderSlot] when it gets the same view, and remembers the lambdas created in a render, so a child that
- * receives `{ presenter.onX(id) }` is skipped too. These tests pin that down, so a change that breaks it shows up.
+ * skips [RenderSlot] when it gets the same view — [RootPresenter.viewOf][br.com.wdc.framework.cube.CubeApplication.viewOf]
+ * gives the same instance for the same scope — and remembers the lambdas created in a render, so a child that
+ * receives `{ scope.onX(id) }` is skipped too. These tests pin that down, so a change that breaks it shows up.
  */
 @OptIn(ExperimentalTestApi::class)
 class RecompositionTest {
 
-    private class TestApp : CubeApplication()
-
-    private class TestPresenter : PresenterBase {
-        override val app: CubeApplication = TestApp()
-        var removed = -1L
-        fun onRemove(id: Long) { removed = id }
-        override fun release() {}
+    private class TestApp : RootPresenter() {
+        override fun createSessionStorage(): SessionStorage = error("not used")
     }
 
-    private class ChildView(id: String) : ComposeCubeView(id, TestPresenter()) {
+    private class ChildScope : Scope()
+
+    private class ParentScope : Scope() {
+        var content: Scope? by field(null)
+        var removed = -1L
+        var onRemove: (Long) -> Unit = { removed = it }
+    }
+
+    private class ChildView(app: RootPresenter, scope: ChildScope, id: String) :
+        ComposeCubeView<ChildScope>(id, app, scope) {
         var renders = 0
         @Composable
         override fun Render() {
@@ -42,8 +50,8 @@ class RecompositionTest {
         }
     }
 
-    private class ParentView(val child: ChildView) : ComposeCubeView("parent", TestPresenter()) {
-        val presenter = presenterBase as TestPresenter
+    private class ParentView(app: RootPresenter, scope: ParentScope) :
+        ComposeCubeView<ParentScope>("parent", app, scope) {
         var renders = 0
         var buttonRenders = 0
         private val itemId = 42L
@@ -53,9 +61,9 @@ class RecompositionTest {
             val rev = revision.value
             SideEffect { renders++ }
             BasicText("parent $rev")
-            RenderSlot(child)
-            // Same shape as CartView: a lambda created in the render, capturing the presenter and an item id
-            Button(onClick = { presenter.onRemove(itemId) })
+            scope.content?.let(app::viewOf)?.let { RenderSlot(it) }
+            // Same shape as CartView: a lambda created in the render, capturing the scope and an item id
+            Button(onClick = { scope.onRemove(itemId) })
         }
 
         // It must use onClick: the compiler leaves unused parameters out of the skip check
@@ -66,12 +74,30 @@ class RecompositionTest {
         }
     }
 
+    /** An application whose catalog draws [ParentScope] and [ChildScope]; the parent shows [child]. */
+    private class Fixture(child: ChildScope = ChildScope()) {
+        val app = TestApp()
+        val parentScope = ParentScope().also { it.content = child }
+
+        init {
+            app.scopeViews = ScopeViews()
+                .register<ParentScope> { ParentView(app, it) }
+                .register<ChildScope> { ChildView(app, it, "child-${it.hashCode()}") }
+        }
+
+        val parent get() = app.viewOf(parentScope) as ParentView
+        fun viewOf(scope: ChildScope) = app.viewOf(scope) as ChildView
+        val child get() = viewOf(parentScope.content as ChildScope)
+    }
+
     @Test
     fun parentRecomposition_skipsTheSlotAndTheLambdaChild() = runComposeUiTest {
-        val child = ChildView("child")
-        val parent = ParentView(child)
+        val f = Fixture()
+        val parent = f.parent
         setContent { parent.Render() }
         waitForIdle()
+        val child = f.child
+        assertSame(child, f.child, "viewOf gives the same view for the same scope")
         assertEquals(1, parent.renders); assertEquals(1, child.renders); assertEquals(1, parent.buttonRenders)
 
         runOnIdle { parent.revision.value++ }
@@ -83,10 +109,11 @@ class RecompositionTest {
 
     @Test
     fun childRecomposition_doesNotRecomposeTheParent() = runComposeUiTest {
-        val child = ChildView("child")
-        val parent = ParentView(child)
+        val f = Fixture()
+        val parent = f.parent
         setContent { parent.Render() }
         waitForIdle()
+        val child = f.child
 
         runOnIdle { child.revision.value++ }
         waitForIdle()
@@ -96,13 +123,14 @@ class RecompositionTest {
 
     @Test
     fun differentViewInTheSlot_recomposesIt() = runComposeUiTest {
-        val a = ChildView("a")
-        val b = ChildView("b")
-        val slot = mutableStateOf<ComposeCubeView>(a)
-        setContent { RenderSlot(slot.value) }
+        val scopeA = ChildScope()
+        val scopeB = ChildScope()
+        val f = Fixture(scopeA)
+        val slot = mutableStateOf<Scope>(scopeA)
+        setContent { RenderSlot(f.app.viewOf(slot.value)) }
         waitForIdle()
-        runOnIdle { slot.value = b }
+        runOnIdle { slot.value = scopeB }
         waitForIdle()
-        assertEquals(1, a.renders); assertEquals(1, b.renders)
+        assertEquals(1, f.viewOf(scopeA).renders); assertEquals(1, f.viewOf(scopeB).renders)
     }
 }

@@ -1,6 +1,7 @@
 package br.com.wdc.shopping.nativeui.web.views
 
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.RootScope
 import br.com.wdc.shopping.nativeui.web.bridge.RenderSlot
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
 import mui.material.Alert
@@ -15,7 +16,10 @@ import react.useEffect
 import react.useState
 import web.cssom.*
 
-class RootView(private val presenter: RootPresenter) : ReactCubeView("root-view", presenter) {
+class RootView(
+    app: RootPresenter,
+    scope: RootScope,
+) : ReactCubeView<RootScope>("root-view", app, scope) {
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -26,7 +30,6 @@ class RootView(private val presenter: RootPresenter) : ReactCubeView("root-view"
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val scope = presenter.scope
 
         Box {
             sx {
@@ -36,7 +39,7 @@ class RootView(private val presenter: RootPresenter) : ReactCubeView("root-view"
                 flexDirection = FlexDirection.column
             }
 
-            val contentView = scope.contentView
+            val contentView = scope.content?.let(app::viewOf)
             if (contentView != null) {
                 RenderSlot {
                     view = contentView
@@ -51,7 +54,6 @@ class RootView(private val presenter: RootPresenter) : ReactCubeView("root-view"
                     autoHideDuration = 6000
                     onClose = { _, _ ->
                         scope.errorMessage = null
-                        presenter.update()
                     }
                 }
             }

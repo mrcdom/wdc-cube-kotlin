@@ -1,14 +1,14 @@
 package br.com.wdc.shopping.presentation.presenter.restricted.home
 
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.Scope
 import br.com.wdc.framework.cube.Action
 
 class HomeScope : Scope() {
 
-    var contentView: CubeView? by field(null)
-    var productsPanelView: CubeView? by field(null)
-    var purchasesPanelView: CubeView? by field(null)
+    /** The scope of the place below the home (product, cart, receipt), or none. */
+    var content: Scope? by field(null)
+    var productsPanel: Scope? by field(null)
+    var purchasesPanel: Scope? by field(null)
     var nickName: String? by field(null)
     var cartItemCount: Int by field(0)
     var errorCode: Int by field(0)

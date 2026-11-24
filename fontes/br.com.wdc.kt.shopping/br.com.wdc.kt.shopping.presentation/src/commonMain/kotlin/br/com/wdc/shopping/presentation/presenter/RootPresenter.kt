@@ -7,7 +7,7 @@ import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.CubeTreePlace
 import br.com.wdc.framework.cube.CubeView
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.presentation.presenter.open.login.LoginKeys
@@ -49,17 +49,21 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
     /** What the root view shows: the view of the first level, and the unexpected-error alert. */
     val scope = RootScope().also { it.observe(::update) }
 
-    /** The root view, created on the first navigation by [createView]. */
-    var view: CubeView? = null
-        private set
+    /** The root view: the view the catalog gives for [scope] ([scopeViews]), created on the first navigation. */
+    val view: CubeView? get() = viewOrNull(scope)
 
-    private val contentSlot = CubeViewSlot { v -> if (scope.contentView !== v) scope.contentView = v }
+    private val contentSlot = ScopeSlot { if (scope.content !== it) scope.content = it }
 
     override val app: CubeApplication get() = this
 
     /** Asks the root view to repaint. */
     fun update() {
-        view?.update()
+        viewOrNull(scope)?.update()
+    }
+
+    /** Both the application (every presenter's) and the root presenter (none of its own) have one. */
+    override fun commitComputedState() {
+        super<CubeApplication>.commitComputedState()
     }
 
     // :: Getters and Setters
@@ -86,7 +90,7 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
      */
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (initialization) {
-            view = createView?.invoke(this)
+            viewOf(scope)
             restoreSubjectFromSession()
         }
 
@@ -99,17 +103,13 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
     }
 
     override fun release() {
-        scope.contentView = null
-        view?.release()
-        view = null
+        scope.content = null
         super.release()
+        releaseView(scope)
     }
 
     companion object {
         private val LOG = Log.getLogger("RootPresenter")
-
-        /** Creates the root view; registered by each entry point, like the presenters' `createView`. */
-        var createView: ((RootPresenter) -> CubeView)? = null
 
         /**
          * Every place an address can name, given to [CubeApplication], which resolves addresses among them. Listed

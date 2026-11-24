@@ -9,7 +9,7 @@ import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.storage.JsSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
+import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
@@ -17,7 +17,6 @@ import br.com.wdc.shopping.domain.user.UserRepository
 import br.com.wdc.shopping.domain.security.AuthenticationService
 import br.com.wdc.shopping.domain.security.CryptoProvider
 import br.com.wdc.shopping.domain.security.JsCryptoProvider
-import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
 import br.com.wdc.shopping.nativeui.web.bridge.ViewUpdateScheduler
 import kotlinx.coroutines.launch
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingTheme
@@ -27,13 +26,14 @@ import br.com.wdc.shopping.persistence.client.RestConfig
 import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
+import br.com.wdc.shopping.presentation.presenter.RootScope
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelScope
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
 import kotlinx.browser.window
 import mui.material.CssBaseline
 import mui.material.styles.ThemeProvider
@@ -94,8 +94,6 @@ private class JsRootPresenter : RootPresenter() {
     override fun createSessionStorage(): SessionStorage = JsSessionStorage()
 }
 
-private fun createView(view: ReactCubeView): CubeView = view
-
 private fun initializePlatform(baseUrl: String) {
     // Install platform services
     JsonInputFactory.installCommon()
@@ -107,16 +105,6 @@ private fun initializePlatform(baseUrl: String) {
     val config = RestConfig(transport)
     platformConfig = config
     RestRepositoryBootstrap.initialize(config, JsCryptoProvider())
-
-    // Wire view factories
-    RootPresenter.createView = { p -> createView(RootView(p)) }
-    LoginPresenter.createView = { p -> createView(LoginView(p)) }
-    HomePresenter.createView = { p -> createView(HomeView(p)) }
-    CartPresenter.createView = { p -> createView(CartView(p)) }
-    ProductPresenter.createView = { p -> createView(ProductView(p)) }
-    ReceiptPresenter.createView = { p -> createView(ReceiptView(p)) }
-    ProductsPanelPresenter.createView = { p -> createView(ProductsPanelView(p)) }
-    PurchasesPanelPresenter.createView = { p -> createView(PurchasesPanelView(p)) }
 }
 
 fun main() {
@@ -139,6 +127,16 @@ fun main() {
     initializePlatform(baseUrl)
 
     val app = JsRootPresenter()
+    // The view of each scope, created by the application on first use — before the first navigation
+    app.scopeViews = ScopeViews()
+        .register<RootScope> { RootView(app, it) }
+        .register<LoginScope> { LoginView(app, it) }
+        .register<HomeScope> { HomeView(app, it) }
+        .register<CartScope> { CartView(app, it) }
+        .register<ProductScope> { ProductView(app, it) }
+        .register<ReceiptScope> { ReceiptView(app, it) }
+        .register<ProductsPanelScope> { ProductsPanelView(app, it) }
+        .register<PurchasesPanelScope> { PurchasesPanelView(app, it) }
     ViewUpdateScheduler.initialize { app }
 
     // On irrecoverable auth failure (401 + refresh failed), clear session and go to login

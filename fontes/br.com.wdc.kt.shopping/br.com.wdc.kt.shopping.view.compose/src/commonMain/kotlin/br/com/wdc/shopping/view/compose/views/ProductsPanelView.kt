@@ -19,7 +19,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
 import br.com.wdc.shopping.presentation.presenter.restricted.products.structs.ProductInfo
 import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.components.AsyncImage
@@ -27,14 +28,14 @@ import br.com.wdc.shopping.view.compose.theme.PriceColor
 import br.com.wdc.shopping.view.compose.util.formatPrice
 import br.com.wdc.shopping.view.compose.util.productImageUrl
 
-class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ComposeCubeView("products-panel-view", presenter) {
+class ProductsPanelView(app: RootPresenter, scope: ProductsPanelScope) :
+    ComposeCubeView<ProductsPanelScope>("products-panel-view", app, scope) {
 
     @Composable
     override fun Render() {
         @Suppress("UNUSED_VARIABLE")
         val rev = revision.value
 
-        val scope = presenter.scope
         val products = scope.products
 
         Column(
@@ -116,7 +117,7 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : Compose
                                     ProductCard(
                                         product = product,
                                         modifier = Modifier.width(itemWidth),
-                                        onClick = { safeCall { presenter.scope.onOpenProduct(product.id) } }
+                                        onClick = { safeCall { scope.onOpenProduct(product.id) } }
                                     )
                                 }
                                 // Fill remaining space if row is incomplete

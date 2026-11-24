@@ -3,7 +3,8 @@ package br.com.wdc.shopping.nativeui.web.views
 import br.com.wdc.shopping.nativeui.web.bridge.RenderSlot
 import br.com.wdc.shopping.nativeui.web.bridge.ReactCubeView
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.Inventory2
 import mui.icons.material.LocalMall
 import mui.icons.material.Logout
@@ -39,16 +40,19 @@ import web.html.HTMLButtonElement
 
 private const val COMPACT_BREAKPOINT = 518
 
-class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view", presenter) {
+class HomeView(
+    app: RootPresenter,
+    scope: HomeScope,
+) : ReactCubeView<HomeScope>("home-view", app, scope) {
 
     /** The tab shown in the compact layout: UI state of this view, changed by [onTabChange]. */
     private var selectedTab = 0
 
     // :: Emitters — created once per view, so they are the same function on every render
 
-    private val onExit: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onExit() } }
+    private val onExit: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onExit() } }
 
-    private val onOpenCart: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onOpenCart() } }
+    private val onOpenCart: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenCart() } }
 
     private val onTabChange: (SyntheticEvent<*, *>, Any) -> Unit = { _, value ->
         selectedTab = value as Int
@@ -64,7 +68,6 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val scope = presenter.scope
         var isCompact by useState(kotlinx.browser.window.innerWidth < COMPACT_BREAKPOINT)
 
         // Track window width for responsiveness
@@ -295,7 +298,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
             }
 
             // Content area
-            val contentView = scope.contentView
+            val contentView = scope.content?.let(app::viewOf)
             if (contentView != null) {
                 Box {
                     sx {
@@ -372,13 +375,13 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
 
                         when (selectedTab) {
                             0 -> {
-                                val productsView = scope.productsPanelView
+                                val productsView = scope.productsPanel?.let(app::viewOf)
                                 if (productsView != null) {
                                     RenderSlot { view = productsView }
                                 }
                             }
                             1 -> {
-                                val purchasesView = scope.purchasesPanelView
+                                val purchasesView = scope.purchasesPanel?.let(app::viewOf)
                                 if (purchasesView != null) {
                                     RenderSlot { view = purchasesView }
                                 }
@@ -412,7 +415,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                         }
                         elevation = 0
 
-                        val productsView = scope.productsPanelView
+                        val productsView = scope.productsPanel?.let(app::viewOf)
                         if (productsView != null) {
                             RenderSlot { view = productsView }
                         }
@@ -427,7 +430,7 @@ class HomeView(private val presenter: HomePresenter) : ReactCubeView("home-view"
                         }
                         elevation = 0
 
-                        val purchasesView = scope.purchasesPanelView
+                        val purchasesView = scope.purchasesPanel?.let(app::viewOf)
                         if (purchasesView != null) {
                             RenderSlot { view = purchasesView }
                         }

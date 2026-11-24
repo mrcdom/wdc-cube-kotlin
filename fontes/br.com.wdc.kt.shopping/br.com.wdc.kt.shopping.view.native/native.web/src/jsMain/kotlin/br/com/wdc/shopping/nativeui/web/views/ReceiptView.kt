@@ -5,7 +5,8 @@ import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.theme.ShoppingStyles
 import br.com.wdc.shopping.nativeui.web.util.formatDate
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.ArrowBack
 import mui.icons.material.CheckCircle
 import mui.icons.material.Receipt
@@ -32,11 +33,14 @@ import react.useState
 import web.cssom.*
 import web.html.HTMLButtonElement
 
-class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("receipt-view", presenter) {
+class ReceiptView(
+    app: RootPresenter,
+    scope: ReceiptScope,
+) : ReactCubeView<ReceiptScope>("receipt-view", app, scope) {
 
     // :: Emitters — created once per view, so they are the same function on every render
 
-    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onOpenProducts() } }
+    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
 
     override val component = FC<Props> {
         var rev by useState(revision)
@@ -47,7 +51,6 @@ class ReceiptView(private val presenter: ReceiptPresenter) : ReactCubeView("rece
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val scope = presenter.scope
         val receipt = scope.receipt
 
         Box {

@@ -6,7 +6,8 @@ import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
 import br.com.wdc.shopping.nativeui.web.util.productImageUrl
 import br.com.wdc.shopping.nativeui.web.util.stripHtml
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.ShoppingBag
 import mui.material.Box
 import mui.material.Card
@@ -33,12 +34,15 @@ import react.useState
 import web.cssom.*
 import web.html.HTMLButtonElement
 
-class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCubeView("products-panel-view", presenter) {
+class ProductsPanelView(
+    app: RootPresenter,
+    scope: ProductsPanelScope,
+) : ReactCubeView<ProductsPanelScope>("products-panel-view", app, scope) {
 
     // :: Emitters — created once per view (and once per list item), so they are the same function on every render
 
     private val openProduct = EmitterCache<Long, MouseEventHandler<HTMLButtonElement>> { id ->
-        { safeCall { presenter.scope.onOpenProduct(id) } }
+        { safeCall { scope.onOpenProduct(id) } }
     }
 
     override val component = FC<Props> {
@@ -50,7 +54,6 @@ class ProductsPanelView(private val presenter: ProductsPanelPresenter) : ReactCu
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val scope = presenter.scope
         val products = scope.products
 
         Box {

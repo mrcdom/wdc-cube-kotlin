@@ -10,9 +10,10 @@ import android.widget.*
 import br.com.wdc.shopping.nativeui.android.theme.*
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.open.login.LoginScope
 
-class LoginViewAndroid(presenter: LoginPresenter) : AbstractViewAndroid<LoginPresenter>("login-view", presenter) {
+class LoginViewAndroid(app: RootPresenter, scope: LoginScope) : AbstractViewAndroid<LoginScope>("login-view", app, scope) {
 
     private lateinit var userField: EditText
     private lateinit var passwordField: EditText
@@ -179,7 +180,6 @@ class LoginViewAndroid(presenter: LoginPresenter) : AbstractViewAndroid<LoginPre
     }
 
     override fun doUpdate() {
-        val scope = presenter.scope
         val loading = scope.loading
         val error = scope.errorMessage
 
@@ -205,10 +205,9 @@ class LoginViewAndroid(presenter: LoginPresenter) : AbstractViewAndroid<LoginPre
 
     private fun performLogin() {
         safeAction("login") {
-            val scope = presenter.scope
             scope.userName = userField.text.toString()
             scope.password = passwordField.text.toString()
-            presenter.scope.onEnter(null, null)
+            scope.onEnter(null, null)
         }
     }
 }

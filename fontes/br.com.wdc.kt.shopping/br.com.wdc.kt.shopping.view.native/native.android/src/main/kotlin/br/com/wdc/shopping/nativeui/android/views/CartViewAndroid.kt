@@ -10,10 +10,11 @@ import br.com.wdc.shopping.nativeui.android.theme.*
 import br.com.wdc.shopping.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.shopping.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.shopping.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
 
-class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresenter>("cart-view", presenter) {
+class CartViewAndroid(app: RootPresenter, scope: CartScope) : AbstractViewAndroid<CartScope>("cart-view", app, scope) {
 
     private lateinit var scrollView: ScrollView
     private lateinit var stackView: LinearLayout
@@ -141,7 +142,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                                         height = (48 * density).toInt()
                                         marginEnd = (16 * density).toInt()
                                     }
-                                    setOnClickListener { safeAction("back") { presenter.scope.onOpenProducts() } }
+                                    setOnClickListener { safeAction("back") { scope.onOpenProducts() } }
                                 }
                                 // Buy button
                                 button("Buy") {
@@ -156,7 +157,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                                         width = ViewGroup.LayoutParams.WRAP_CONTENT
                                         height = (48 * density).toInt()
                                     }
-                                    setOnClickListener { safeAction("buy") { presenter.scope.onBuy() } }
+                                    setOnClickListener { safeAction("buy") { scope.onBuy() } }
                                 }
                             }
                         }
@@ -214,21 +215,20 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
                             topMargin = (32 * density).toInt()
                             gravity = Gravity.CENTER_HORIZONTAL
                         }
-                        setOnClickListener { safeAction("back") { presenter.scope.onOpenProducts() } }
+                        setOnClickListener { safeAction("back") { scope.onOpenProducts() } }
                     }
                 }
             }
 
             itemsSlot = newListSlot(
                 stackView,
-                factory = { CartItemView(presenter).also { it.initialize() } },
+                factory = { CartItemView(app, scope).also { it.initialize() } },
                 updater = { view, item -> view.setState(item); view.forceUpdate() }
             )
         }
     }
 
     override fun doUpdate() {
-        val scope = presenter.scope
         val items = scope.items
 
         if (items !== lastItems) {
@@ -266,7 +266,7 @@ class CartViewAndroid(presenter: CartPresenter) : AbstractViewAndroid<CartPresen
 
 // --- Cart Item sub-view ---
 
-private class CartItemView(presenter: CartPresenter) : AbstractViewAndroid<CartPresenter>("cart-item", presenter) {
+private class CartItemView(app: RootPresenter, scope: CartScope) : AbstractViewAndroid<CartScope>("cart-item", app, scope) {
 
     private lateinit var imageView: ImageView
     private lateinit var nameLabel: TextView
@@ -345,7 +345,7 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewAndroid<CartP
                         setPadding(0, 0, 0, 0)
                         setOnClickListener {
                             val i = item ?: return@setOnClickListener
-                            if (i.quantity > 1) safeAction("minus") { presenter.scope.onModifyQuantity(i.id, i.quantity - 1) }
+                            if (i.quantity > 1) safeAction("minus") { scope.onModifyQuantity(i.id, i.quantity - 1) }
                         }
                     }
                     qtyLabel = textView {
@@ -364,7 +364,7 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewAndroid<CartP
                         setPadding(0, 0, 0, 0)
                         setOnClickListener {
                             val i = item ?: return@setOnClickListener
-                            safeAction("plus") { presenter.scope.onModifyQuantity(i.id, i.quantity + 1) }
+                            safeAction("plus") { scope.onModifyQuantity(i.id, i.quantity + 1) }
                         }
                     }
                     // Remove button
@@ -379,7 +379,7 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewAndroid<CartP
                         setPadding(0, 0, 0, 0)
                         setOnClickListener {
                             val i = item ?: return@setOnClickListener
-                            safeAction("remove") { presenter.scope.onRemoveProduct(i.id) }
+                            safeAction("remove") { scope.onRemoveProduct(i.id) }
                         }
                     }
                 }

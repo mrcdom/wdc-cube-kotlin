@@ -15,7 +15,6 @@ import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.commons.storage.WasmSessionStorage
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.shopping.domain.product.ProductRepository
 import br.com.wdc.shopping.domain.purchaseitem.PurchaseItemRepository
 import br.com.wdc.shopping.domain.purchase.PurchaseRepository
@@ -28,14 +27,6 @@ import br.com.wdc.shopping.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.shopping.persistence.client.WasmHttpTransport
 import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.RootKeys
-import br.com.wdc.shopping.presentation.presenter.open.login.LoginPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.HomePresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.products.ProductsPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.home.purchases.PurchasesPanelPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
-import br.com.wdc.shopping.presentation.presenter.restricted.receipt.ReceiptPresenter
-import br.com.wdc.shopping.view.compose.bridge.ComposeCubeView
 import br.com.wdc.shopping.view.compose.bridge.ViewUpdateScheduler
 import br.com.wdc.shopping.view.compose.views.*
 import br.com.wdc.shopping.view.compose.theme.ShoppingTheme
@@ -92,10 +83,6 @@ private class ComposeRootPresenter : RootPresenter() {
     override fun createSessionStorage(): SessionStorage = WasmSessionStorage()
 }
 
-private fun createView(view: ComposeCubeView): CubeView {
-    return view
-}
-
 private fun initializePlatform(baseUrl: String) {
     // Install platform services
     JsonInputFactory.installCommon()
@@ -107,16 +94,6 @@ private fun initializePlatform(baseUrl: String) {
     val config = RestConfig(transport)
     platformConfig = config
     RestRepositoryBootstrap.initialize(config, WasmCryptoProvider())
-
-    // Wire view factories
-    RootPresenter.createView = { p -> createView(RootView(p)) }
-    LoginPresenter.createView = { p -> createView(LoginView(p)) }
-    HomePresenter.createView = { p -> createView(HomeView(p)) }
-    CartPresenter.createView = { p -> createView(CartView(p)) }
-    ProductPresenter.createView = { p -> createView(ProductView(p)) }
-    ReceiptPresenter.createView = { p -> createView(ReceiptView(p)) }
-    ProductsPanelPresenter.createView = { p -> createView(ProductsPanelView(p)) }
-    PurchasesPanelPresenter.createView = { p -> createView(PurchasesPanelView(p)) }
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -125,6 +102,7 @@ fun main() {
     initializePlatform(baseUrl)
 
     val app = ComposeRootPresenter()
+    app.scopeViews = composeScopeViews(app)
     ViewUpdateScheduler.initialize { app }
 
     // On irrecoverable auth failure (401 + refresh failed), clear session and go to login

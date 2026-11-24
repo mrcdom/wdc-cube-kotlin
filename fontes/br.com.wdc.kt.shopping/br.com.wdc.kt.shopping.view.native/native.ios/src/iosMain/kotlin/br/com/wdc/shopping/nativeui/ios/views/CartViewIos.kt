@@ -6,7 +6,8 @@ import br.com.wdc.shopping.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.ios.theme.ShoppingIcons
 import br.com.wdc.shopping.nativeui.ios.theme.UIK
-import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import br.com.wdc.shopping.presentation.presenter.restricted.cart.structs.CartItem
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -19,7 +20,7 @@ import platform.darwin.NSObject
  * Uses ListSlot with CartItemView sub-views for efficient recycling.
  */
 @OptIn(ExperimentalForeignApi::class)
-class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("cart-view", presenter) {
+class CartViewIos(app: RootPresenter, scope: CartScope) : AbstractViewIos<CartScope>("cart-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: UIStackView
@@ -277,13 +278,12 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
 
         itemsSlot = newListSlot(
             stackView,
-            factory = { CartItemView(presenter).also { it.initialize() } },
+            factory = { CartItemView(app, scope).also { it.initialize() } },
             updater = { view, item -> view.setState(item); view.forceUpdate() }
         )
     }
 
     override fun doUpdate() {
-        val scope = presenter.scope
         val items = scope.items
 
         // Items list (guard by reference)
@@ -323,11 +323,11 @@ class CartViewIos(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("ca
     }
 
     internal fun goBack() {
-        safeAction("back") { presenter.scope.onOpenProducts() }
+        safeAction("back") { scope.onOpenProducts() }
     }
 
     internal fun buy() {
-        safeAction("buy") { presenter.scope.onBuy() }
+        safeAction("buy") { scope.onBuy() }
     }
 }
 
@@ -348,7 +348,7 @@ private class CartActions(private val view: CartViewIos) : NSObject() {
 // --- Item sub-view: CartItemView ---
 
 @OptIn(ExperimentalForeignApi::class)
-private class CartItemView(presenter: CartPresenter) : AbstractViewIos<CartPresenter>("cart-item", presenter) {
+private class CartItemView(app: RootPresenter, scope: CartScope) : AbstractViewIos<CartScope>("cart-item", app, scope) {
 
     private lateinit var imageView: UIImageView
     private lateinit var nameLabel: UILabel
@@ -452,18 +452,18 @@ private class CartItemView(presenter: CartPresenter) : AbstractViewIos<CartPrese
     fun onMinus() {
         val i = item ?: return
         if (i.quantity > 1) {
-            safeAction("minus") { presenter.scope.onModifyQuantity(i.id, i.quantity - 1) }
+            safeAction("minus") { scope.onModifyQuantity(i.id, i.quantity - 1) }
         }
     }
 
     fun onPlus() {
         val i = item ?: return
-        safeAction("plus") { presenter.scope.onModifyQuantity(i.id, i.quantity + 1) }
+        safeAction("plus") { scope.onModifyQuantity(i.id, i.quantity + 1) }
     }
 
     fun onRemove() {
         val i = item ?: return
-        safeAction("remove") { presenter.scope.onRemoveProduct(i.id) }
+        safeAction("remove") { scope.onRemoveProduct(i.id) }
     }
 }
 

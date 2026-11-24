@@ -5,7 +5,8 @@ import br.com.wdc.shopping.nativeui.web.theme.ShoppingColors
 import br.com.wdc.shopping.nativeui.web.util.formatPrice
 import br.com.wdc.shopping.nativeui.web.util.productImageUrl
 import br.com.wdc.shopping.nativeui.web.util.stripHtml
-import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductPresenter
+import br.com.wdc.shopping.presentation.presenter.restricted.products.ProductScope
+import br.com.wdc.shopping.presentation.presenter.RootPresenter
 import mui.icons.material.Add
 import mui.icons.material.AddShoppingCart
 import mui.icons.material.ArrowBack
@@ -40,7 +41,10 @@ import react.useState
 import web.cssom.*
 import web.html.HTMLButtonElement
 
-class ProductView(private val presenter: ProductPresenter) : ReactCubeView("product-view", presenter) {
+class ProductView(
+    app: RootPresenter,
+    scope: ProductScope,
+) : ReactCubeView<ProductScope>("product-view", app, scope) {
 
     /** The quantity being chosen: UI state of this view, changed by the emitters below. */
     private var quantity = 1
@@ -59,11 +63,11 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
         forceUpdate()
     }
 
-    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { presenter.scope.onOpenProducts() } }
+    private val onOpenProducts: MouseEventHandler<HTMLButtonElement> = { safeCall { scope.onOpenProducts() } }
 
     private val onAddToCart: MouseEventHandler<HTMLButtonElement> = {
         val chosen = quantity
-        safeCall { presenter.scope.onAddToCart(chosen) }
+        safeCall { scope.onAddToCart(chosen) }
     }
 
     override val component = FC<Props> {
@@ -75,7 +79,6 @@ class ProductView(private val presenter: ProductPresenter) : ReactCubeView("prod
         @Suppress("UNUSED_VARIABLE")
         val unused = rev
 
-        val scope = presenter.scope
         val product = scope.product
 
         Box {

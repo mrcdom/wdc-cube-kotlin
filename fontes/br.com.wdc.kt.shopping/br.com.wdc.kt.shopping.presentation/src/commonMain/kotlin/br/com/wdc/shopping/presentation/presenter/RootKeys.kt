@@ -3,7 +3,7 @@ package br.com.wdc.shopping.presentation.presenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.CubeKeys
 import br.com.wdc.framework.cube.CubeTreePlace
-import br.com.wdc.framework.cube.CubeViewSlot
+import br.com.wdc.framework.cube.ScopeSlot
 
 /**
  * The names a place reads from and writes to the [CubeIntent], typed, on the framework's [CubeKeys]. **Each place has
@@ -45,7 +45,7 @@ open class RootKeys protected constructor(app: RootPresenter, intent: CubeIntent
     }
 
     /** The slot where this level shows its view; a level with content republishes it for the level below. */
-    var parentSlot: CubeViewSlot?
-        get() = intent.getViewSlot(A.PARENT_SLOT)
-        set(value) = intent.setAttribute(A.PARENT_SLOT, value)
+    var parentSlot: ScopeSlot?
+        get() = intent.getScopeSlot(A.PARENT_SLOT)
+        set(value) = intent.setScopeSlot(A.PARENT_SLOT, value)
 }

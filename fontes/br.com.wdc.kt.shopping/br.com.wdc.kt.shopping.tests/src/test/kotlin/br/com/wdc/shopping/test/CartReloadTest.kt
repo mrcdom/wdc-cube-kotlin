@@ -41,24 +41,24 @@ class CartReloadTest {
 
     private suspend fun signIn(app: RootPresenterMock, user: String, password: String): RestrictedViewMock {
         LoginKeys(app).flip()
-        val loginView = LoginViewMock.cast(app.getRootView()!!.scope.contentView)
+        val loginView = LoginViewMock.cast(app.getRootView()!!.contentView)
         loginView.scope.userName = user
         loginView.scope.password = password
-        loginView.presenter.scope.onEnter(null, null)
-        return RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
+        loginView.scope.onEnter(null, null)
+        return RestrictedViewMock.cast(app.getRootView()!!.contentView)
     }
 
     private suspend fun addToCart(app: RootPresenterMock, productId: Long, quantity: Int) {
-        RestrictedViewMock.cast(app.getRootView()!!.scope.contentView).getProductsPanelScope().onOpenProduct(productId)
-        val home = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
-        ProductViewMock.cast(home.scope.contentView).presenter.scope.onAddToCart(quantity)
+        RestrictedViewMock.cast(app.getRootView()!!.contentView).getProductsPanelScope().onOpenProduct(productId)
+        val home = RestrictedViewMock.cast(app.getRootView()!!.contentView)
+        ProductViewMock.cast(home.contentView).scope.onAddToCart(quantity)
     }
 
     private suspend fun cartAfterReload(): CartViewMock {
         val app = newApp()
         CartKeys(app).flip()
-        val home = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
-        return CartViewMock.cast(home.scope.contentView)
+        val home = RestrictedViewMock.cast(app.getRootView()!!.contentView)
+        return CartViewMock.cast(home.contentView)
     }
 
     @Test
@@ -72,8 +72,8 @@ class CartReloadTest {
         val cart = cartAfterReload()
         assertEquals(listOf(DBReset.FLASH_DRIVE_2GB_ID to 3, DBReset.WILSON_BALL_ID to 1), cart.scope.items.map { it.id to it.quantity })
         assertTrue(cart.scope.items.all { !it.name.isNullOrBlank() && it.price > 0.0 }, "names and prices read again")
-        val home = RestrictedViewMock.cast(apps.last().getRootView()!!.scope.contentView)
-        assertEquals(4, home.presenter.scope.cartItemCount)
+        val home = RestrictedViewMock.cast(apps.last().getRootView()!!.contentView)
+        assertEquals(4, home.scope.cartItemCount)
     }
 
     @Test
@@ -81,10 +81,10 @@ class CartReloadTest {
         val first = newApp()
         signIn(first, "admin", "admin")
         addToCart(first, DBReset.WILSON_BALL_ID, 1)
-        val home = RestrictedViewMock.cast(first.getRootView()!!.scope.contentView)
-        home.presenter.scope.onOpenCart()
-        val cartView = CartViewMock.cast(RestrictedViewMock.cast(first.getRootView()!!.scope.contentView).scope.contentView)
-        cartView.presenter.scope.onRemoveProduct(DBReset.WILSON_BALL_ID)
+        val home = RestrictedViewMock.cast(first.getRootView()!!.contentView)
+        home.scope.onOpenCart()
+        val cartView = CartViewMock.cast(RestrictedViewMock.cast(first.getRootView()!!.contentView).contentView)
+        cartView.scope.onRemoveProduct(DBReset.WILSON_BALL_ID)
         assertNull(session.getString(HomePresenter.CART_KEY))
 
         assertTrue(cartAfterReload().scope.items.isEmpty())
@@ -96,7 +96,7 @@ class CartReloadTest {
         signIn(first, "admin", "admin")
         addToCart(first, DBReset.WILSON_BALL_ID, 1)
         assertNotNull(session.getString(HomePresenter.CART_KEY))
-        RestrictedViewMock.cast(first.getRootView()!!.scope.contentView).presenter.scope.onExit()
+        RestrictedViewMock.cast(first.getRootView()!!.contentView).scope.onExit()
         assertNull(session.getString(HomePresenter.CART_KEY))
     }
 
@@ -107,8 +107,8 @@ class CartReloadTest {
         val app = newApp()
         signIn(app, "admin", "admin")
         HomeKeys(app).flip()
-        val home = RestrictedViewMock.cast(app.getRootView()!!.scope.contentView)
-        assertEquals(0, home.presenter.scope.cartItemCount)
+        val home = RestrictedViewMock.cast(app.getRootView()!!.contentView)
+        assertEquals(0, home.scope.cartItemCount)
     }
 
     @Test
