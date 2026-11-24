@@ -74,11 +74,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
                 </Typography>
               </Stack>
               {receipt.date && (
-                <Chip
-                  label={DateUtils.formatDate(receipt.date)}
-                  size="small"
-                  sx={{ bgcolor: Colors.SurfaceVariant }}
-                />
+                <Chip label={DateUtils.formatDate(receipt.date)} size="small" sx={{ bgcolor: Colors.SurfaceVariant }} />
               )}
             </Stack>
 
@@ -109,10 +105,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
                     <Typography variant="body2" sx={{ flex: '1 1 0', fontWeight: 500 }}>
                       {item.description}
                     </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ width: 50, textAlign: 'center', color: Colors.OnSurfaceVariant }}
-                    >
+                    <Typography variant="body2" sx={{ width: 50, textAlign: 'center', color: Colors.OnSurfaceVariant }}>
                       {item.quantity}x
                     </Typography>
                     <Typography

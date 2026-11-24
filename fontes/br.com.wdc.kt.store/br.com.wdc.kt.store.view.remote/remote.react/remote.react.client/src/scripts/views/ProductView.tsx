@@ -100,10 +100,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
 
             {/* Description */}
             {cleanDesc && (
-              <Paper
-                elevation={0}
-                sx={{ p: 2, borderRadius: '8px', bgcolor: Colors.SurfaceVariant50 }}
-              >
+              <Paper elevation={0} sx={{ p: 2, borderRadius: '8px', bgcolor: Colors.SurfaceVariant50 }}>
                 <Typography
                   variant="body1"
                   sx={{ color: Colors.OnSurfaceVariant, lineHeight: '24px', whiteSpace: 'pre-wrap' }}

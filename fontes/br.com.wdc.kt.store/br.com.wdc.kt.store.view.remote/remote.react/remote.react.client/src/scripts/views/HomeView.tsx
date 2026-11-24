@@ -60,18 +60,12 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
         {/* Content area */}
         {scope.contentViewId ? (
           <Box sx={{ flex: '1 1 0', overflowY: 'auto', overflowX: 'hidden' }}>
-            <Box sx={{ maxWidth: 560, mx: 'auto' }}>
-              {app.createView(scope.contentViewId)}
-            </Box>
+            <Box sx={{ maxWidth: 560, mx: 'auto' }}>{app.createView(scope.contentViewId)}</Box>
           </Box>
         ) : this.isCompact ? (
           /* COMPACT: Tabs for Products / Purchases */
           <Box sx={{ flex: '1 1 0', p: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <Tabs
-              value={this.selectedTab}
-              onChange={this.onTabChange}
-              sx={{ mb: 0.5, minHeight: 36 }}
-            >
+            <Tabs value={this.selectedTab} onChange={this.onTabChange} sx={{ mb: 0.5, minHeight: 36 }}>
               <Tab
                 label="Products"
                 icon={<ShoppingBagIcon />}
@@ -114,18 +108,12 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
             }}
           >
             {/* Products panel (flex: 3) */}
-            <Card
-              elevation={0}
-              sx={{ flex: '3 1 0', borderRadius: '8px', overflowY: 'auto', overflowX: 'hidden' }}
-            >
+            <Card elevation={0} sx={{ flex: '3 1 0', borderRadius: '8px', overflowY: 'auto', overflowX: 'hidden' }}>
               {app.createView(scope.productsPanelViewId)}
             </Card>
 
             {/* Purchases panel (flex: 2) */}
-            <Card
-              elevation={0}
-              sx={{ flex: '2 1 0', borderRadius: '8px', overflow: 'hidden' }}
-            >
+            <Card elevation={0} sx={{ flex: '2 1 0', borderRadius: '8px', overflow: 'hidden' }}>
               {app.createView(scope.purchasesPanelViewId)}
             </Card>
           </Box>

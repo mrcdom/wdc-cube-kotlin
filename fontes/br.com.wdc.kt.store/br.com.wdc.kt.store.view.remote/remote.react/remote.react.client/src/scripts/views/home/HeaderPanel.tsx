@@ -55,14 +55,14 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
                   WDC Store
                 </Typography>
-                <Typography variant="caption" sx={{ position: 'absolute', bottom: -10, right: 0, color: '#fff', opacity: 0.45, fontSize: 9 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ position: 'absolute', bottom: -10, right: 0, color: '#fff', opacity: 0.45, fontSize: 9 }}
+                >
                   remote.react
                 </Typography>
               </Box>
-              <IconButton
-                onClick={this.emitExit}
-                sx={{ width: 28, height: 28, ml: 2, bgcolor: Colors.WhiteOverlay10 }}
-              >
+              <IconButton onClick={this.emitExit} sx={{ width: 28, height: 28, ml: 2, bgcolor: Colors.WhiteOverlay10 }}>
                 <LogoutIcon sx={{ fontSize: 16, color: '#fff', opacity: 0.7 }} />
               </IconButton>
             </Box>
@@ -119,7 +119,10 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
             <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
               WDC Store
             </Typography>
-            <Typography variant="caption" sx={{ position: 'absolute', bottom: -10, right: 0, color: '#fff', opacity: 0.45, fontSize: 10 }}>
+            <Typography
+              variant="caption"
+              sx={{ position: 'absolute', bottom: -10, right: 0, color: '#fff', opacity: 0.45, fontSize: 10 }}
+            >
               remote.react
             </Typography>
           </Box>

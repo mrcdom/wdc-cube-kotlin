@@ -70,15 +70,22 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
                   <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                     WDC Store
                   </Typography>
-                  <Typography variant="caption" sx={{ position: 'absolute', bottom: -16, right: 0, color: Colors.OnSurfaceVariant, opacity: 0.5, fontSize: 10 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      position: 'absolute',
+                      bottom: -16,
+                      right: 0,
+                      color: Colors.OnSurfaceVariant,
+                      opacity: 0.5,
+                      fontSize: 10,
+                    }}
+                  >
                     react
                   </Typography>
                 </Box>
 
-                <Typography
-                  variant="body2"
-                  sx={{ color: Colors.OnSurfaceVariant, textAlign: 'center' }}
-                >
+                <Typography variant="body2" sx={{ color: Colors.OnSurfaceVariant, textAlign: 'center' }}>
                   Sign in to continue
                 </Typography>
 
@@ -133,11 +140,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
                     textTransform: 'none',
                   }}
                 >
-                  {scope.loading ? (
-                    <CircularProgress size={24} sx={{ color: '#fff' }} />
-                  ) : (
-                    'Sign in'
-                  )}
+                  {scope.loading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Sign in'}
                 </Button>
               </Stack>
             </form>

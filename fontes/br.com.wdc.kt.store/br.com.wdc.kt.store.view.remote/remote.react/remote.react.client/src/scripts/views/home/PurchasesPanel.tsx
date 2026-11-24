@@ -83,10 +83,7 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelScope> 
     }
 
     return (
-      <Box
-        className={className}
-        sx={{ p: 1.5, display: 'flex', flexDirection: 'column', height: '100%' }}
-      >
+      <Box className={className} sx={{ p: 1.5, display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* Section header */}
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -107,7 +104,9 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelScope> 
         <Box ref={this.listRef} sx={{ flex: '1 1 auto', overflow: 'hidden' }}>
           {(scope.purchases ?? []).length === 0 ? (
             scope.totalCount === 0 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 6 }}>
+              <Box
+                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 6 }}
+              >
                 <Inventory2Icon sx={{ fontSize: 48, color: Colors.OnSurfaceVariant }} />
                 <Typography variant="body1" sx={{ mt: 1, color: Colors.OnSurfaceVariant }}>
                   No purchases yet
@@ -178,11 +177,7 @@ class PurchaseItemRowClass extends BasePanelClass<PurchaseItemRowProps> {
     this.purchase = purchase
 
     return (
-      <Card
-        data-purchase-item
-        elevation={0}
-        sx={{ borderRadius: '8px', bgcolor: Colors.SurfaceVariant50 }}
-      >
+      <Card data-purchase-item elevation={0} sx={{ borderRadius: '8px', bgcolor: Colors.SurfaceVariant50 }}>
         <CardActionArea onClick={this.emitOpenReceipt}>
           <CardContent sx={{ p: '14px !important' }}>
             <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
@@ -190,11 +185,7 @@ class PurchaseItemRowClass extends BasePanelClass<PurchaseItemRowProps> {
                 <Typography variant="caption" sx={{ color: Colors.OnSurfaceVariant }}>
                   {DateUtils.formatDate(purchase.date)}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  noWrap
-                  sx={{ fontWeight: 'normal' }}
-                >
+                <Typography variant="body2" noWrap sx={{ fontWeight: 'normal' }}>
                   {purchase.items.join(', ')}
                 </Typography>
               </Box>
