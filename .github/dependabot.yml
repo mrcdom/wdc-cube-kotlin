@@ -1,0 +1,41 @@
+# New versions of the dependencies, as pull requests. A release becomes a PR only after 14 days (cooldown), the
+# same rule as for versions chosen by hand; minor and patch updates of one ecosystem come together in one PR, major
+# ones each on their own. Kotlin, Compose Multiplatform and AGP move together: review those PRs as a set. The CI runs
+# the full build on each PR; a version that needs a newer Android platform than compileSdk fails there.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directories:
+      - /fontes
+      - /starter
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      gradle-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directories:
+      - /fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript
+      - /fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript.react
+      - /fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript
+      - /fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      actions:
+        patterns: ["*"]
