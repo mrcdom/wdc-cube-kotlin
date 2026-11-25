@@ -62,7 +62,7 @@ class LiveBackendSmokeTest {
         val items = HttpPurchaseItemRepository(transport)
 
         // login
-        auth.login("fulano", PasswordUtil.hashPassword("fulano"))
+        auth.login("fulano", "fulano")
         val me = users.fetch(UserCriteria()).single()
         assertEquals("fulano", me.userName)
         assertNull(me.password)

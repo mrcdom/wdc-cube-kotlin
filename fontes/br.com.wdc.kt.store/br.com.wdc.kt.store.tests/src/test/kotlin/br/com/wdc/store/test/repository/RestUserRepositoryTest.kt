@@ -1,5 +1,6 @@
 package br.com.wdc.store.test.repository
 
+import br.com.wdc.store.test.util.StoredPasswords
 import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.store.domain.user.User
@@ -51,16 +52,17 @@ class RestUserRepositoryTest : AbstractUserRepositoryTest() {
     }
 
     @Test
-    fun password_isWriteOnly_andStoredAsItsDigest() = runBlocking {
+    fun password_isWriteOnly_andStoredAsItsVerifier() = runBlocking {
         val user = User().apply { userName = "stored"; password = "s3cret"; name = "Stored" }
         assertTrue(repo().insert(user))
         assertNull(repo().fetchById(user.id!!)!!.password)
-        // without security there is no session key: the password comes as typed, and the server stores its digest
-        assertEquals(DBReset.passwordDigest("s3cret"), storedPassword(user.id!!))
+        // without security there is no session key: the password comes as typed, and the server stores its verifier
+        assertTrue(StoredPasswords.matches(storedPassword(user.id!!), "s3cret"))
 
         assertTrue(repo().update(User().apply { id = user.id; password = "other" }, null, User().apply { password = ProjectionValues.str }))
         assertNull(repo().fetchById(user.id!!)!!.password)
-        assertEquals(DBReset.passwordDigest("other"), storedPassword(user.id!!))
+        assertTrue(StoredPasswords.matches(storedPassword(user.id!!), "other"))
+        assertFalse(StoredPasswords.matches(storedPassword(user.id!!), "s3cret"))
     }
 
     /** The password column as the server stored it, read by the server-side repository (fixed width: padded). */

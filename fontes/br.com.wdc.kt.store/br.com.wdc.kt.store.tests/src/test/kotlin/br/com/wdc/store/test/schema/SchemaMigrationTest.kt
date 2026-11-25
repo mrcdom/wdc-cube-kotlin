@@ -3,6 +3,7 @@ package br.com.wdc.store.test.schema
 import br.com.wdc.store.scripts.sgbd.DBCreate
 import br.com.wdc.store.scripts.sgbd.DBReset
 import br.com.wdc.store.scripts.sgbd.Migration_0006_PurchaseBuyDateToUtc
+import br.com.wdc.store.test.util.StoredPasswords
 import java.sql.Connection
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -135,15 +136,14 @@ class SchemaMigrationTest {
     }
 
     @Test
-    fun migration_rewritesSignedPasswordDigests_asTheUnsignedOnesTheApplicationComputes() {
+    fun migration_turnsTheLegacyDigests_intoVerifiersOfTheSamePasswords() {
         newDatabase().use { legacy ->
             legacy.createLegacySchema()
             legacy.prepareStatement("INSERT INTO EN_USER (ID, USERNAME, PASSWORD, NAME, ROLES) VALUES (?, ?, ?, ?, 'CUSTOMER')").use { ps ->
                 // as the old seed stored it: MD5 read as signed, in base 36
                 listOf(
-                    Triple(0L, "admin", "1ymiigxvce4vzea4zp5bsfbgj"),      // sign bit 0: already matches
-                    Triple(2L, "beotrano", "-17msdx5ah76k0tdyvaoieqemg"),   // sign bit 1: negative
-                    Triple(7L, "external", "password-stored-without-digest"), // stored by the API, without digest: stays as is
+                    Triple(0L, "admin", "1ymiigxvce4vzea4zp5bsfbgj"),      // sign bit 0: already the application's digest
+                    Triple(2L, "beotrano", "-17msdx5ah76k0tdyvaoieqemg"),   // sign bit 1: rewritten unsigned by migration 0005
                 ).forEach { (id, user, digest) ->
                     ps.setLong(1, id); ps.setString(2, user); ps.setString(3, digest); ps.setString(4, user); ps.executeUpdate()
                 }
@@ -151,11 +151,14 @@ class SchemaMigrationTest {
 
             DBCreate().withConnection(legacy).run()
 
-            assertEquals(
-                listOf("admin | 1ymiigxvce4vzea4zp5bsfbgj", "beotrano | dxz5j4uooih4r59rlath82ago", "external | password-stored-without-digest"),
-                legacy.rows("SELECT USERNAME, TRIM(PASSWORD) FROM EN_USER ORDER BY ID"),
-            )
-            assertEquals(DBReset.passwordDigest("beotrano"), "dxz5j4uooih4r59rlath82ago")
+            // migration 0009: each digest became a salted verifier, and the user signs in with the same password
+            val stored = legacy.rows("SELECT USERNAME, PASSWORD FROM EN_USER ORDER BY ID").map { it.split(" | ") }
+            assertEquals(listOf("admin", "beotrano"), stored.map { it[0] })
+            for ((user, password) in stored) {
+                assertTrue(password.startsWith("SCRAM-SHA-256\$"), password)
+                assertTrue(StoredPasswords.matches(password, user), user)
+            }
+            assertTrue(stored[0][1] != stored[1][1])
         }
     }
 

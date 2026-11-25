@@ -16,6 +16,8 @@ class JsCryptoProvider : CryptoProvider {
         return hmacSha256Compute(key, data)
     }
 
+    override fun sha256(input: ByteArray): ByteArray = sha256Hash(input)
+
     override fun rsaEncryptOaep(publicKeyBase64: String, data: ByteArray): ByteArray {
         throw UnsupportedOperationException("RSA encryption is not supported in wasmJs client")
     }

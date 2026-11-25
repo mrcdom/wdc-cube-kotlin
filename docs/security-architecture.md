@@ -27,7 +27,7 @@ How WDC Store protects its data and its sessions, and why it is built this way: 
 | Authenticated customer with a **modified client** | Send any request its token allows — any criteria, any projection | Read other users' data, write beyond its role, choose prices |
 | Manager | Run the catalog | Change purchases or users |
 | Administrator | Everything on the data | Read passwords back |
-| Network observer | See the traffic | Read credentials — assumes TLS in production |
+| Network observer | See the traffic | Read credentials — assumes TLS in production (the login exchange can't be replayed, but a captured one lets an observer guess the password offline at a PBKDF2 run per guess) |
 
 Every client is assumed to be modifiable. The Compose and native views run the presenters **on the user's device** and reach the data through the REST API, so their code is no more trustworthy than a hand-written HTTP call.
 
@@ -80,26 +80,43 @@ Without the secret — a fresh clone, and the tests that don't deal with securit
 
 ## Authentication
 
-### Login by challenge and response
+### Login by challenge and response: SCRAM-SHA-256
 
-The password never travels, not even as its digest:
+The login is SCRAM-SHA-256 (RFC 5802, RFC 7677), the scheme PostgreSQL uses. The password never travels, and what the server keeps does not let anyone sign in:
 
 ```
-1. GET  /api/auth/challenge                → { nonce, expiresAt }          single use, 60 s
-2. digest = HMAC-SHA256(key = password digest, data = userName + nonce)
-3. POST /api/auth/login { userName, digest, nonce }
-                                           → { userId, accessToken, refreshToken, expiresAt, publicKey, intentSignKey }
-4. Authorization: Bearer <accessToken>     on every repository call
+1. POST /api/auth/challenge { userName }   → { nonce, salt, iterations, expiresAt }   nonce: single use, this user, 60 s
+2. SaltedPassword = PBKDF2-HMAC-SHA256(password digest, salt, iterations)
+   ClientKey = HMAC(SaltedPassword, "Client Key")     StoredKey = SHA-256(ClientKey)
+   AuthMessage = "n=<userName>,r=<nonce>"
+   proof = ClientKey XOR HMAC(StoredKey, AuthMessage)
+3. POST /api/auth/login { userName, proof, nonce }
+                                           → { userId, accessToken, refreshToken, expiresAt, publicKey, intentSignKey,
+                                               serverSignature }
+4. the client checks serverSignature = HMAC(ServerKey, AuthMessage), ServerKey = HMAC(SaltedPassword, "Server Key")
+5. Authorization: Bearer <accessToken>     on every repository call
 ```
 
-The password digest is MD5 in base 36 (`PasswordUtil.hashPassword` on the client, the form stored in the database). `AuthenticationServiceImpl` recomputes the HMAC with the digest it stores and compares in constant time (`MessageDigest.isEqual`). The nonce (`NonceStore`) is consumed on use and expires in 60 seconds, so a captured digest cannot be replayed. On the client, `RestAuthClient.login` does steps 1–3; in the remote view, `CredentialsCheck` does them in the server's own process.
+**What the server stores** (`EN_USER.PASSWORD`) is a verifier, in PostgreSQL's encoding: `SCRAM-SHA-256$<iterations>:<salt>$<StoredKey>:<ServerKey>` (`ScramVerifier`). The salt is random per user (`PasswordVerifiers`), and the iteration count (4096, RFC 7677's minimum and PostgreSQL's default) is kept per verifier, so it can be raised later. From the verifier, `AuthenticationServiceImpl` checks a proof — `SHA-256(proof XOR HMAC(StoredKey, AuthMessage))` must be the StoredKey, compared in constant time — but cannot produce one: a leak of the user table does not let anyone sign in, and guessing a password from it costs a PBKDF2 run per guess.
+
+**The password digest.** The password goes into PBKDF2 as its MD5 digest in base 36 (`PasswordUtil.hashPassword`), the form the application stored before SCRAM. That is what let migration 0009 turn every stored digest into a verifier without knowing the passwords, so no user had to change theirs. The digest neither adds nor removes security: the salted PBKDF2 is what protects the password.
+
+**Both sides prove something.** The client proves it knows the password; the server's signature proves it holds the verifier. A client that does not get the signature it expects drops the session (`RestAuthClient.login`, `CredentialsCheck`): it is not talking to the real server.
+
+**What a refusal does not tell.** An unknown user gets a challenge with a made-up salt — derived from the JWT secret, the same for the same name — and the default iteration count, and the server checks the proof against a decoy verifier: the answers and the work are the same as for a wrong password. The nonce is bound to the user it was made for, consumed on use and expires in 60 seconds, so a captured proof cannot be replayed, nor used for another account.
+
+**Failed sign-ins slow down, per user.** `LoginThrottle`, inside `AuthenticationServiceImpl`: five failures in a row are free; then each attempt on that account waits 30 seconds, doubling with each failure up to 15 minutes, and a success clears the count. It applies whichever way the login comes — `/api/auth` or a remote view whose presenters call the service in the server's own process. A wait, not a lock: nobody can lock an account out for good by failing on purpose. The refusal is `TooManyRequestsException`: 429 with `Retry-After` at the API, and the login screen says how long to wait. `/api/auth` also keeps its limit per client address and minute (`AuthRateLimit`).
+
+**Who runs the exchange.** `CredentialsCheck` (the login's resource call), wherever the presenters run: in a client app it goes through `RestAuthenticationService` to `/api/auth`; in the remote view, in the server's process, straight to `AuthenticationServiceImpl`. `RestAuthClient.login(userName, password)` runs the same exchange for code that talks to the API directly (the tests, the live smoke test).
 
 ### Sessions and tokens
 
 | Token | Form | Lifetime | Where it lives |
 |-------|------|----------|----------------|
-| Access token | JWT, HS256 signed with `security.jwt.secret`; claims `sid` (session id), `sub` (user id), `usr` (login), `iat`, `exp` | 30 minutes | Client memory and session storage (`RestAuthenticationService.writeAuthState`) |
-| Refresh token | Random UUID, one per session | **Rotated** on each refresh: a new session id, refresh token and RSA key pair | Server; client session storage |
+| Access token | JWT, HS256 signed with `security.jwt.secret`; claims `sid` (session id), `sub` (user id), `usr` (login), `iat`, `exp` | 30 minutes | Client memory and the app's session storage (`RestAuthenticationService.writeAuthState`; see below) |
+| Refresh token | Random UUID, one per session | **Rotated** on each refresh: a new session id, refresh token and RSA key pair | Server; the app's session storage |
+
+**Where an app keeps its session.** The tokens and the intent signing key survive a restart of the app in its `SessionStorage`, which is protected on each platform: on **iOS**, the Keychain (`IosPersistentSessionStorage`: generic-password items readable only on this device after its first unlock, left out of backups); on **Android**, `SharedPreferences` with every value AES-256-GCM-encrypted under a key that lives in the Android Keystore and never leaves it (`AndroidPersistentSessionStorage`; a value that does not decrypt reads as absent). The **web** apps use the browser's `sessionStorage`, which a script running in the page can read — see the limitations. The desktop app keeps the session only in memory.
 
 Each login creates a **session** (`AccessContext`): user id, login, the user's **role names**, an RSA-2048 key pair of its own, and the refresh token. Sessions are kept in memory (`AccessContextCache`) and persisted in the `EN_USER_SESSION` table (`SessionStore`), so a server restart does not sign anyone out. A token is accepted only while **its own session** (the `sid` claim) is alive and unexpired; logout removes the session of its refresh token, and that session's access token stops working at once.
 
@@ -299,8 +316,9 @@ The reference implementation favors clarity over a hardened deployment. Before p
 
 | Area | As implemented | Consequence | Hardening |
 |------|----------------|-------------|-----------|
-| Password storage | Unsalted MD5, base 36; the stored digest is the HMAC key of the login | A database leak allows signing in as any user, without cracking anything | A salted, slow hash (Argon2, bcrypt) with a challenge protocol that does not make the stored value a credential (SCRAM, OPAQUE) |
-| Login attempts | `/api/auth` (challenge, login, refresh) limited per client **address** and minute (`security.auth.requestsPerMinute`, default 60; above it, 429 with `Retry-After`), in memory, per instance; the address is the connection's | Online guessing is slowed per address, not per user; behind a proxy every client shares the proxy's address | A limit per user too, and the client address from a trusted proxy header |
+| Password storage | SCRAM-SHA-256 verifier: salted PBKDF2-HMAC-SHA256, 4096 iterations, derived in each client's own code | A leak of the user table lets no one sign in; guessing a password costs a PBKDF2 run per guess — 4096 iterations is the standard minimum, cheap next to a memory-hard hash | Raise the iteration count of new verifiers (each keeps its own); a memory-hard hash (Argon2) or OPAQUE, if the clients can afford it |
+| Login attempts | Per **user** (`LoginThrottle`, every way in: five free failures, then a wait from 30 s doubling up to 15 min) and, at `/api/auth`, per client **address** and minute (`security.auth.requestsPerMinute`, default 60); both 429 with `Retry-After`, in memory, per instance; the address is the connection's | Guessing one account is slow from any number of addresses; someone who knows a login can make its owner wait, never lock them out; behind a proxy every client shares the proxy's address | Share the counts between instances; the client address from a trusted proxy header |
+| Session in web apps | The browser's `sessionStorage` holds the tokens and the intent signing key | A script injected into the page (XSS) can read and use them | A strict Content Security Policy; the refresh token in an `HttpOnly` cookie, out of the script's reach |
 | Session storage | `EN_USER_SESSION` keeps each session's RSA private key **encrypted** (AES-256-GCM with a key derived from the JWT secret; sessions stored in the clear before 0.5.0 are not restored) | A leak of the table alone does not expose the keys; a leak of the table **and** the JWT secret does | Keep the keys only in memory, or in a key store |
 | Expiry of refresh tokens and nonces | A refresh token is refused (and its session removed) past `security.refresh.token.ttl.days` after the access token it came with; the backend evicts expired sessions and unanswered nonces every minute (`AuthenticationServiceImpl.startCleanup`) | The window slides with each refresh: an active user stays signed in, an idle one signs in again after the TTL | An absolute maximum session age, if the deployment needs one |
 | Roles | Read at sign-in and carried by the session | Removing a role, or a user, does not end their live sessions | End the user's sessions when their roles change |
@@ -322,7 +340,7 @@ The reference implementation favors clarity over a hardened deployment. Before p
 | Filter and ordering | Only fields read as they are |
 | Writing | Fields per grant for create and update; the row scope on create, on update (before and after) and on delete; masked values never written; relations by key; the owner is not forced |
 | No projection | The entity's default shape, trimmed to what the requester may read |
-| Password | Write-only, with or without security; stored as its digest; sent encrypted with the session key |
+| Password | Write-only, with or without security; stored as a SCRAM-SHA-256 verifier; sent encrypted with the session key when written |
 | Purchases | A receipt: customers read and create their own; only an ADMIN changes or deletes them or their items |
 | Price of an item | Decided by the server, from the product, on every insert; `ItemPrices` on update |
 | Disjunction of row scopes | Alternative groups (`anyOf`), server side only; a client's search over columns is a field of its own (`translateAny`) |

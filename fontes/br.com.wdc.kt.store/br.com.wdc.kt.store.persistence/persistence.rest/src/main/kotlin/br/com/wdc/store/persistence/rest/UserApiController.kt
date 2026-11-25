@@ -11,9 +11,8 @@ import br.com.wdc.store.domain.user.UserCriteria
 import br.com.wdc.store.domain.user.UserRepository
 import br.com.wdc.store.persistence.rest.doc.RepositoryApiDocs
 import br.com.wdc.store.persistence.rest.security.UserDataPolicy
-import java.math.BigInteger
+import br.com.wdc.store.persistence.security.PasswordVerifiers
 import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.security.PrivateKey
 import java.util.Base64
 import javax.crypto.Cipher
@@ -23,9 +22,10 @@ import javax.crypto.Cipher
  * Access is decided by [UserDataPolicy].
  *
  * **The password is write-only in this API**: it goes in on insert and update, and is never returned — asking for it
- * in a projection is refused (403, naming `password`), with security on or off. It is stored as its digest, the form
- * the login compares: with security on it must come encrypted with the session's RSA key (otherwise 400); without
- * security there is no key, and it comes as typed.
+ * in a projection is refused (403, naming `password`), with security on or off. It is stored as a SCRAM-SHA-256
+ * verifier with a fresh salt ([PasswordVerifiers]), which the login checks and which does not let anyone sign in:
+ * with security on it must come encrypted with the session's RSA key (otherwise 400); without security there is no
+ * key, and it comes as typed.
  */
 internal object UserApiController {
 
@@ -45,14 +45,14 @@ internal object UserApiController {
         )
         rpc.policy = UserDataPolicy.POLICY
         rpc.doc = { op -> RepositoryApiDocs.rpcDoc("user", op) }
-        // transformations, after the policy's check: the password is stored as its digest
+        // transformations, after the policy's check: the password is stored as its verifier
         rpc.beforeInsert = { user, request -> storablePassword(user, request) }
         rpc.beforeUpdate = { data, request -> storablePassword(data.entity, request) }
         rpc.register(routes)
     }
 
     /**
-     * Turns the password that came into the one stored: its digest. With a session, the password must come encrypted
+     * Turns the password that came into the one stored: its verifier. With a session, the password must come encrypted
      * with the session's RSA key; one that does not decrypt is refused, never stored as it came.
      */
     private fun storablePassword(user: User, request: RequestContext) {
@@ -68,12 +68,8 @@ internal object UserApiController {
                 throw InvalidRequestException("The password must come encrypted with the session key")
             }
         }
-        user.password = passwordDigest(plain)
+        user.password = PasswordVerifiers.fromPassword(plain)
     }
-
-    /** The stored form of a password, the one the login compares (MD5, base 36 — as in the seed data). */
-    private fun passwordDigest(plain: String): String =
-        BigInteger(1, MessageDigest.getInstance("MD5").digest(plain.toByteArray(StandardCharsets.UTF_8))).toString(36)
 
     private fun rsaDecrypt(encryptedBase64: String, privateKey: PrivateKey): String {
         val cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding")

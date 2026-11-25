@@ -232,7 +232,7 @@ graph TB
 |--------------------|-------------------------------------------------|------------------------------------------|---------------------------------------|
 | JSON               | Framework's pure-Kotlin reader/writer (`installCommon()`) | same                           | same                                  |
 | HTTP               | `OkHttpTransport` (OkHttp)                      | `WasmHttpTransport` (synchronous XMLHttpRequest) | `IosHttpTransport` (NSURLSession) |
-| Crypto             | `JceCryptoProvider` (JCE)                       | `WasmCryptoProvider` (pure Kotlin MD5/HMAC, no RSA) | `IosCryptoProvider` (pure Kotlin MD5/HMAC, no RSA) |
+| Crypto             | `JceCryptoProvider` (JCE)                       | `WasmCryptoProvider` (pure Kotlin MD5/SHA-256/HMAC, no RSA) | `IosCryptoProvider` (pure Kotlin MD5/SHA-256/HMAC, no RSA) |
 | Scheduler          | Swing `Timer` (desktop), `Handler` (Android)    | `setTimeout`                             | `dispatch_after` on the main queue    |
 | ThreadLocalRef     | `java.lang.ThreadLocal`                         | Plain field                              | Plain field                           |
 
@@ -565,8 +565,8 @@ sequenceDiagram
     Note over LV: Recomposes: spinner + disabled fields
 
     LP->>LS: CredentialsCheck(admin, ***).run()
-    LS->>API: GET /api/auth/challenge, POST /api/auth/login
-    API-->>LS: tokens + user id (then the name, via the user repository)
+    LS->>API: POST /api/auth/challenge, POST /api/auth/login (SCRAM-SHA-256)
+    API-->>LS: tokens + user id + server signature (checked; then the name, via the user repository)
     LS-->>LP: Subject(id, nickName)
 
     LP->>LP: scope.loading = false

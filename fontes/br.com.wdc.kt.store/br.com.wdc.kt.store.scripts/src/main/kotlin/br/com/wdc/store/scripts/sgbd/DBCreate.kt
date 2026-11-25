@@ -64,7 +64,7 @@ class DBCreate {
                 CREATE TABLE EN_USER (
                     ID BIGINT NOT NULL,
                     USERNAME VARCHAR(255) NOT NULL,
-                    PASSWORD CHAR(32) NOT NULL,
+                    PASSWORD VARCHAR(255) NOT NULL,
                     NAME VARCHAR(255) NOT NULL,
                     ROLES VARCHAR(255) DEFAULT 'CUSTOMER',
                     CONSTRAINT PK_USER PRIMARY KEY (ID)
@@ -179,6 +179,7 @@ class DBCreate {
             .run(Migration_0006_PurchaseBuyDateToUtc(conn))
             .run(Migration_0007_SessionExpiryToUtc(conn))
             .run(Migration_0008_UserRolesDefaultCustomer(conn))
+            .run(Migration_0009_PasswordScramVerifier(conn))
 
         // The seed comes after the migrations: it already writes in the current format, and must not be migrated.
         if (mustResetDb && !skipReset) {

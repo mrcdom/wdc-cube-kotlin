@@ -1,9 +1,8 @@
 package br.com.wdc.store.scripts.sgbd
 
+import br.com.wdc.store.persistence.security.PasswordVerifiers
+
 import java.math.BigDecimal
-import java.math.BigInteger
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.sql.Connection
 import java.sql.SQLException
 import java.time.LocalDateTime
@@ -121,7 +120,7 @@ object DBReset {
         c.prepareStatement("INSERT INTO EN_USER (ID, USERNAME, PASSWORD, NAME, ROLES) VALUES (?, ?, ?, ?, ?)").use { ps ->
             ps.setLong(1, id)
             ps.setString(2, userName)
-            ps.setString(3, password?.takeIf { it.isNotBlank() }?.let(::passwordDigest))
+            ps.setString(3, password?.takeIf { it.isNotBlank() }?.let { PasswordVerifiers.fromPassword(it) })
             ps.setString(4, name)
             ps.setString(5, roles)
             ps.executeUpdate()
@@ -161,12 +160,4 @@ object DBReset {
             ps.executeUpdate()
         }
     }
-
-    /**
-     * The password digest as the application computes it (`PasswordUtil.hashPassword`): MD5 read as an
-     * **unsigned** integer, in base 36. Read as signed, the digest comes out different whenever the first bit of
-     * the MD5 is 1 — and the user cannot authenticate.
-     */
-    fun passwordDigest(password: String): String =
-        BigInteger(1, MessageDigest.getInstance("MD5").digest(password.toByteArray(StandardCharsets.UTF_8))).toString(36)
 }
