@@ -24,8 +24,15 @@ class RsaHelper {
   }
 }
 
+/** Bytes of the IV in front of every ciphered value (the size GCM is made for). */
+const IV_SIZE = 12
+
+/**
+ * The session's cipher: AES-256-GCM with a key derived by PBKDF2 from a random password, which goes to the host
+ * ciphered with its RSA key (the signature). Every value gets an IV of its own, random, sent in front of it:
+ * Base64(IV ‖ ciphertext and tag) — one IV for the whole session would let whoever sees two values learn their XOR.
+ */
 export class DataSecurity {
-  private __iv!: Uint8Array<ArrayBuffer>
   private __key!: CryptoKey
   private __signature!: string
   private __rsa!: RsaHelper
@@ -41,9 +48,7 @@ export class DataSecurity {
   }
 
   async updateSecret(password: Uint8Array) {
-    // Generate salt and IV
     const salt = crypto.getRandomValues(new Uint8Array(16))
-    this.__iv = crypto.getRandomValues(new Uint8Array(12))
 
     // Derive key from password
     const key = await crypto.subtle.importKey('raw', password as unknown as any, { name: 'PBKDF2' }, false, [
@@ -65,7 +70,7 @@ export class DataSecurity {
 
     const cryptedPwd = this.__rsa.encryptToBase36(password)
 
-    this.__signature = `${cryptedPwd}.${Base64.encodeUrlSafe(salt)}.${Base64.encodeUrlSafe(this.__iv)}`
+    this.__signature = `${cryptedPwd}.${Base64.encodeUrlSafe(salt)}`
   }
 
   getSignature() {
@@ -74,27 +79,20 @@ export class DataSecurity {
 
   async b64Cipher(text: string) {
     const textAsUtf8Array = UTF8.encode(text) as ArrayBufferView<ArrayBuffer>
-    const cipheredText = await crypto.subtle.encrypt(
-      {
-        name: 'AES-GCM',
-        iv: this.__iv,
-      },
-      this.__key,
-      textAsUtf8Array,
+    const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE))
+    const cipheredText = new Uint8Array(
+      await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.__key, textAsUtf8Array),
     )
-    return Base64.encode(new Uint8Array(cipheredText))
+    const result = new Uint8Array(IV_SIZE + cipheredText.length)
+    result.set(iv, 0)
+    result.set(cipheredText, IV_SIZE)
+    return Base64.encode(result)
   }
 
   async b64Decipher(b64CipheredText: string) {
-    const cipheredText = Base64.decode(b64CipheredText) as ArrayBufferView<ArrayBuffer>
-    const textAsUtf8Array = await crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: this.__iv,
-      },
-      this.__key,
-      cipheredText,
-    )
+    const data = Base64.decode(b64CipheredText) as Uint8Array<ArrayBuffer>
+    const iv = data.slice(0, IV_SIZE)
+    const textAsUtf8Array = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, this.__key, data.slice(IV_SIZE))
     return UTF8.decode(textAsUtf8Array)
   }
 }

@@ -59,7 +59,7 @@ ShopRemoteApplication.REGISTRY.startCleanup(executor)    // releases the session
 | `RemoteViewHost` | What a view needs from its session (`viewOf`, `markDirty`, …); `RemoteApplicationSupport` is the real one. |
 | `BrowserScope`, `RemoteBrowserPresenter` | The client's browser tab, its top view (`7b32e816a191:0`): the alert, the application's root scope (`contentViewId`), start (`-1`), history (`-2`), the alert's OK (`1`), keep-alive (`2`). |
 | `RemoteAppSecurity` | The host's keys: textbook RSA for the handshake (the client ciphers its session password with it) and `SHA256withRSA` to sign session ids and addresses. Read from the system properties `wdc.web.public_key`/`wdc.web.private_key` and `wdc.sign.wdc.web.public_key`/`wdc.sign.wdc.web.private_key`; without them, fixed development keys — **set your own in production** (`RemoteAppSecurity.main` prints a new set). |
-| `RemoteDataSecurity` | A session's cipher for sensitive values (a typed password): AES-256-GCM, key derived by PBKDF2 (250,000 iterations) from the password of the handshake. |
+| `RemoteDataSecurity` | A session's cipher for sensitive values (a typed password): AES-256-GCM, key derived by PBKDF2 (250,000 iterations) from the password of the handshake (`<password ciphered with RSA>.<salt>`); every value carries a random IV of its own in front of it, `Base64(IV ‖ ciphertext and tag)`. |
 | `javalin.DispatcherController` | `ws://…/dispatcher/{id}`: checks the session id's signature and the `app_signature` cookie on connect, hands each message to the session, and releases a session that does not outlive its socket when it closes. |
 | `javalin.IndexHtmlController` | Before `/index.html`: plants `app_id` (a new signed session id) and `app_skey` (the host's public key), and keeps the page out of caches. |
 
@@ -72,4 +72,4 @@ The WDC Store's [remote React documentation](../../../../docs/architecture-react
 
 ## Tests
 
-`RemoteViewReleaseTest` (views released in cascade), `ExpiredApplicationsTest` (registry and life) and `RemoteProtocolTest` (a message and its answer, the alert, a forged address).
+`RemoteViewReleaseTest` (views released in cascade), `ExpiredApplicationsTest` (registry and life), `RemoteProtocolTest` (a message and its answer, the alert, a forged address) and `RemoteDataSecurityTest` (the client's handshake, a new IV per value, a changed byte refused).

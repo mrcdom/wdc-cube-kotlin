@@ -176,7 +176,7 @@ sequenceDiagram
     Server->>Server: Generates appId = random.sign(random)
     Server-->>Browser: Cookies: app_id, app_skey (the server's RSA public key)
 
-    Browser->>Browser: Generates a random password, salt and IV
+    Browser->>Browser: Generates a random password and salt
     Browser->>Browser: Encrypts the password with the RSA public key
     Browser->>Browser: Sets the app_signature cookie
 
@@ -400,7 +400,7 @@ graph LR
 ```
 
 - **Session ID**: self-signed with HMAC — prevents forging
-- **Sensitive fields**: encrypted end to end with AES-256-GCM (e.g., passwords)
+- **Sensitive fields**: encrypted end to end with AES-256-GCM (e.g., passwords), each value with a random IV of its own sent in front of it (`Base64(IV ‖ ciphertext and tag)`); the handshake (`<password ciphered with RSA>.<salt>`) carries no IV
 - **Navigation**: URLs signed with a hash to prevent parameter tampering
 
 ### Security Inherent to the Architecture

@@ -52,7 +52,6 @@ class VirtualClient(
     private var rsaPublicKey: BigInteger = BigInteger.ZERO
     private var signature: String = ""
     private var aesKey: SecretKeySpec? = null
-    private var aesIv: ByteArray = ByteArray(12)
 
     // WebSocket
     private var webSocket: WebSocket? = null
@@ -278,11 +277,9 @@ class VirtualClient(
         random.nextBytes(password)
         val passwordB64 = Base64.getUrlEncoder().withoutPadding().encodeToString(password)
 
-        // Generate random salt and IV
+        // Generate random salt (each ciphered value gets its own IV)
         val salt = ByteArray(16)
         random.nextBytes(salt)
-        aesIv = ByteArray(12)
-        random.nextBytes(aesIv)
 
         // Derive AES-256 key using PBKDF2
         val spec = PBEKeySpec(passwordB64.toCharArray(), salt, 250_000, 256)
@@ -297,18 +294,19 @@ class VirtualClient(
         val encrypted = passwordBigInt.modPow(rsaExponent, rsaPublicKey)
         val encryptedBase36 = encrypted.toString(36)
 
-        // Build signature: {encrypted_password}.{base64url_salt}.{base64url_iv}
+        // Build signature: {encrypted_password}.{base64url_salt}
         val saltB64 = Base64.getUrlEncoder().withoutPadding().encodeToString(salt)
-        val ivB64 = Base64.getUrlEncoder().withoutPadding().encodeToString(aesIv)
-        signature = "$encryptedBase36.$saltB64.$ivB64"
+        signature = "$encryptedBase36.$saltB64"
     }
 
+    /** Ciphers as the browser does: a new random IV, in front of the ciphertext. */
     fun cipherField(plainText: String): String {
+        val iv = ByteArray(12)
+        random.nextBytes(iv)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val gcmSpec = GCMParameterSpec(128, aesIv)
-        cipher.init(Cipher.ENCRYPT_MODE, aesKey, gcmSpec)
+        cipher.init(Cipher.ENCRYPT_MODE, aesKey, GCMParameterSpec(128, iv))
         val encrypted = cipher.doFinal(plainText.toByteArray(Charsets.UTF_8))
-        return Base64.getEncoder().encodeToString(encrypted)
+        return Base64.getEncoder().encodeToString(iv + encrypted)
     }
 
     // :: Private — WebSocket

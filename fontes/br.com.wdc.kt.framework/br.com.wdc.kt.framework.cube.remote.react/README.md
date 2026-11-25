@@ -123,5 +123,5 @@ Also exported: `BaseViewClass`, `BasePanelClass`, `ViewBinding`, `BROWSER_VID`, 
 
 ## Security
 
-1. **Handshake.** The bridge generates a random password, derives an AES-256-GCM key from it with PBKDF2 (SHA-256, 250,000 iterations, random salt) and encrypts the password with the server's RSA public key (textbook RSA, no padding). The signature `<rsa password, base 36>.<salt>.<iv>` goes to the server in the `app_signature` cookie and in the first WebSocket message.
-2. **Sensitive data.** Values passed through `cipher()` (the password at login, for instance) travel encrypted with the session key; the server decrypts them.
+1. **Handshake.** The bridge generates a random password, derives an AES-256-GCM key from it with PBKDF2 (SHA-256, 250,000 iterations, random salt) and encrypts the password with the server's RSA public key (textbook RSA, no padding). The signature `<rsa password, base 36>.<salt>` goes to the server in the `app_signature` cookie and in the first WebSocket message.
+2. **Sensitive data.** Values passed through `cipher()` (the password at login, for instance) travel encrypted with the session key, each with a random 12-byte IV of its own in front of it: `Base64(IV ‖ ciphertext and tag)`. Reusing one IV with the same GCM key would let whoever sees two values learn their XOR and forge tags. The server decrypts them (`RemoteDataSecurity`).
