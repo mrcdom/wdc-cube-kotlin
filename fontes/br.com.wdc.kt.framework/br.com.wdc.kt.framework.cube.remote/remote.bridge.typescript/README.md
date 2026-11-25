@@ -1,6 +1,6 @@
 # remote-bridge
 
-TypeScript client of the **remote Cube MVP** protocol: the browser side of the remote host ([`framework-cube-remote-host`](../remote.host/)). The presenters run on the server; this package connects to it over WebSocket, does the security handshake, keeps the scopes the server publishes (each presenter's view state, serialized), follows the history, and sends the views' events and form fields back.
+TypeScript client of the **remote Cube MVP** protocol: the browser side of the remote backend ([`framework-cube-remote-backend`](../remote.backend/)). The presenters run on the server; this package connects to it over WebSocket, does the security handshake, keeps the scopes the server publishes (each presenter's view state, serialized), follows the history, and sends the views' events and form fields back.
 
 It depends on no UI technology: it never draws anything. Painting a scope is the job of a technology binding on top of it — [`@wdc/remote-bridge-react`](../remote.bridge.typescript.react/) for React — or of a shell that talks to it directly. It knows nothing about any application either: which views exist and how they look belong to the shell (in this repository, the WDC Store client, [`remote.react.typescript`](../../../br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript/)). The same protocol has a Kotlin/JS client, [`framework-cube-remote-bridge`](../remote.bridge.kotlin/).
 

@@ -1,6 +1,6 @@
 # framework-cube-remote-bridge
 
-The client of the remote Cube host ([`framework-cube-remote-host`](../remote.host/)), in Kotlin, compiled to JavaScript by the Kotlin toolchain: the presenters run on the server, and a browser page written in Kotlin paints the scopes they show. It speaks the same protocol as the [TypeScript bridge](../remote.bridge.typescript/) and uses no UI technology: the React bindings are [`framework-cube-remote-bridge-react`](../remote.bridge.kotlin.react/), and any other UI library (Compose HTML, plain DOM) can bind the same way.
+The client of the remote Cube backend ([`framework-cube-remote-backend`](../remote.backend/)), in Kotlin, compiled to JavaScript by the Kotlin toolchain: the presenters run on the server, and a browser page written in Kotlin paints the scopes they show. It speaks the same protocol as the [TypeScript bridge](../remote.bridge.typescript/) and uses no UI technology: the React bindings are [`framework-cube-remote-bridge-react`](../remote.bridge.kotlin.react/), and any other UI library (Compose HTML, plain DOM) can bind the same way.
 
 Kotlin/JS (browser) only. Gradle: `implementation("io.github.mrcdom.wdc.kt:framework-cube-remote-bridge:<version>")` (from 0.5.0), in a `js { browser() }` source set. It brings `framework-commons`.
 

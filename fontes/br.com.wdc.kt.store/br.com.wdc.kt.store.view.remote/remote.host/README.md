@@ -1,6 +1,6 @@
-# remote.skeleton
+# remote.host
 
-The WDC Store as a remote application. The remote host itself is the framework's: sessions, views, protocol, history and security are in [`framework-cube-remote-host`](../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.host/), and the WebSocket route the backend installs is in [`framework-cube-remote-host-javalin`](../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.host.javalin/). This module is the Store's configuration of it, plus the client bundle.
+The WDC Store as a remote application. The remote backend itself is the framework's: sessions, views, protocol, history and security are in [`framework-cube-remote-backend`](../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.backend/), and the WebSocket route the backend installs is in [`framework-cube-remote-backend-javalin`](../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.backend.javalin/). This module is the Store's configuration of it, plus the client bundle.
 
 - `RemoteRootPresenter` — the Store's root presenter as a `RemoteApplication`: it holds the session's `RemoteApplicationSupport` and supplies what is the Store's:
   - the vid of each of its scopes (`VIDS`, read from each scope's `VID`);

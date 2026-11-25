@@ -1,8 +1,8 @@
-# framework-cube-remote-host-javalin
+# framework-cube-remote-backend-javalin
 
-The remote Cube host ([`framework-cube-remote-host`](../remote.host/)) on [Javalin](https://javalin.io): the two routes a remote client needs. Another web server gets the same by writing these two pieces over its own API.
+The remote Cube backend ([`framework-cube-remote-backend`](../remote.backend/)) on [Javalin](https://javalin.io): the two routes a remote client needs. Another web server gets the same by writing these two pieces over its own API.
 
-Gradle: `implementation("io.github.mrcdom.wdc.kt:framework-cube-remote-host-javalin:<version>")` (from 0.5.0). It brings the host and Javalin 7.
+Gradle: `implementation("io.github.mrcdom.wdc.kt:framework-cube-remote-backend-javalin:<version>")` (from 0.5.0). It brings the host and Javalin 7.
 
 ```kotlin
 Javalin.create { config ->

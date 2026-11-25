@@ -1,10 +1,10 @@
-# framework-cube-remote-host
+# framework-cube-remote-backend
 
-The remote host of Cube MVP: the presenters run on the server, and a client paints the views and talks to them over the remote protocol. The host keeps each view's scope and sends what changed; the client paints it and sends back what the user typed and the events. JVM only, and free of any web server or client technology: the routes on Javalin are [`framework-cube-remote-host-javalin`](../remote.host.javalin/), and the clients are the [Kotlin/JS](../remote.bridge.kotlin/) and [TypeScript](../remote.bridge.typescript/) bridges.
+The remote backend of Cube MVP: the presenters run on the server, and a client paints the views and talks to them over the remote protocol. The host keeps each view's scope and sends what changed; the client paints it and sends back what the user typed and the events. JVM only, and free of any web server or client technology: the routes on Javalin are [`framework-cube-remote-backend-javalin`](../remote.backend.javalin/), and the clients are the [Kotlin/JS](../remote.bridge.kotlin/) and [TypeScript](../remote.bridge.typescript/) bridges.
 
 It is the Kotlin counterpart of the Java version's `remote.backend`. The WDC Store's remote view is built on it: its `RemoteRootPresenter` is a complete example.
 
-Gradle: `implementation("io.github.mrcdom.wdc.kt:framework-cube-remote-host:<version>")` (from 0.5.0). It brings `framework-cube` and Gson.
+Gradle: `implementation("io.github.mrcdom.wdc.kt:framework-cube-remote-backend:<version>")` (from 0.5.0). It brings `framework-cube` and Gson.
 
 ## How an application uses it
 
@@ -39,7 +39,7 @@ class ShopRemoteApplication(id: String) : ShopRootPresenter(), RemoteApplication
     }
 }
 
-// in the server (the routes: framework-cube-remote-host-javalin, or your own over another web server)
+// in the server (the routes: framework-cube-remote-backend-javalin, or your own over another web server)
 ShopRemoteApplication.REGISTRY.startFlushing()           // pushes changes made outside a client message
 ShopRemoteApplication.REGISTRY.startCleanup(executor)    // releases the sessions whose client went away
 ```

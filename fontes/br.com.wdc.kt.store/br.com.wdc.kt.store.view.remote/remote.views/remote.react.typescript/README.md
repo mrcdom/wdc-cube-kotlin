@@ -77,7 +77,7 @@ export default BaseViewClass.FC(LoginViewClass, 'c677cda52d14')
 - The **scope** (`scope`) comes from the backend (presenter); it is not managed locally
 - **Events** are sent to the backend via `bridge.submit(vsid, eventId)`
 - **Form data** is attached via `bridge.setFormField(vsid, field, value)` before the submit
-- Each view is identified by a unique **VIEW_ID** (hash) that maps to a kind of scope on the backend (the skeleton's view catalog). A list of child views arrives as `<name>ViewIds` (the cart rows, `rowsViewIds`, each painted by `CartItemView`)
+- Each view is identified by a unique **VIEW_ID** (hash) that maps to a kind of scope on the backend (the vid each scope declares, read by the remote host). A list of child views arrives as `<name>ViewIds` (the cart rows, `rowsViewIds`, each painted by `CartItemView`)
 
 ### WebSocket Communication
 
@@ -110,13 +110,13 @@ Configured in `package.json` (Parcel `alias`) and `tsconfig.json` (`paths`, for 
 
 ## Build Output
 
-The compiled assets are written straight into the `skeleton` module:
+The compiled assets are written straight into the `remote.host` module:
 
 ```
-../../remote.skeleton/src/main/resources/META-INF/resources/
+../../remote.host/src/main/resources/META-INF/resources/
 ```
 
-This lets the Javalin server serve the static files automatically from the classpath. The bundle is generated, not versioned (the skeleton's `.gitignore` excludes it): run `npm run build` after cloning and after changing the client, before starting the backend; without it, the backend starts without the React view.
+This lets the Javalin server serve the static files automatically from the classpath. The bundle is generated, not versioned (the host's `.gitignore` excludes it): run `npm run build` after cloning and after changing the client, before starting the backend; without it, the backend starts without the React view.
 
 ## Commands
 

@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 /**
- * The client side of one remote application (`framework-cube-remote-host`), in the browser: the session id, the security
+ * The client side of one remote application (`framework-cube-remote-backend`), in the browser: the session id, the security
  * handshake, the WebSocket exchange, the history, and the scopes of the views the host publishes. One per page.
  *
  * The page comes from the host, which plants two cookies: `app_id` (the session id, signed by the host) and

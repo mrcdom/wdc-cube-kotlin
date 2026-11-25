@@ -3,7 +3,7 @@
 The **remote view's client written in Kotlin**: React + Material UI through kotlin-wrappers, compiled to JavaScript by
 the Kotlin toolchain (Kotlin/JS, webpack through the Gradle plugin).
 
-In the remote view the presenters run on the server (`framework-cube-remote-host`, on Javalin). The server sends the
+In the remote view the presenters run on the server (`framework-cube-remote-backend`, on Javalin). The server sends the
 scopes over a WebSocket; this client only paints them and sends back what the user typed (form fields) and did
 (events). It knows the protocol — vids, field names, event codes — and nothing else: no presenters, no domain, no
 persistence.

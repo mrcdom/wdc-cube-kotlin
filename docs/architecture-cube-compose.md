@@ -214,7 +214,7 @@ graph TD
 This lets:
 
 - The presenter **not know** any view: it only shows its scope
-- Different view layers draw **different views** for the same scope (Compose, native, the remote React skeleton)
+- Different view layers draw **different views** for the same scope (Compose, native, the remote host)
 - A new screen be registered **once per view layer**; a scope with no view in the catalog fails naming its class
 
 ---

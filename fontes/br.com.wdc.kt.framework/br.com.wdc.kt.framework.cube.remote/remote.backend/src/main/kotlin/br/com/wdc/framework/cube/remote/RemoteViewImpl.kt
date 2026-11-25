@@ -4,7 +4,7 @@ import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.cube.Scope
 
 /**
- * What the remote host draws a scope with: the client's view of it, known by an instance id ("<vid>:<n>", the vid
+ * What the remote backend draws a scope with: the client's view of it, known by an instance id ("<vid>:<n>", the vid
  * naming the client component that paints it). One class for every scope: what is particular to a screen is the
  * presenter's, not the view's. The client's events go to the actions the presenter bound with their
  * codes ([Scope.dispatch]), what the user typed to [Scope.sync], and the scope goes out as JSON with the ids of the

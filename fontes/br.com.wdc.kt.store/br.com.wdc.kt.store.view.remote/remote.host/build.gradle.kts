@@ -3,7 +3,7 @@ dependencies {
     api(project(":store-persistence"))
     api(project(":store-scripts"))
     api(project(":framework-commons"))
-    api(project(":framework-cube-remote-host"))
+    api(project(":framework-cube-remote-backend"))
     api(libs.javalin)
     api(libs.gson)
     implementation(libs.slf4j.api)

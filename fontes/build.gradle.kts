@@ -63,8 +63,8 @@ val publishedModules = mapOf(
     "framework-persistence" to "JDBC transactions with propagation, coroutine-aware, and a coordinator for client-driven remote transactions",
     "framework-jooq" to "Declarative jOOQ queries that load an object graph in one statement, for H2 and PostgreSQL",
     "framework-rest" to "REST APIs on Javalin: resource routes, pluggable security, exception mapping, per-request context and transactions, OpenAPI",
-    "framework-cube-remote-host" to "Remote Cube MVP host: presenters on the server, views in a client over the remote protocol (sessions, views, dispatch, signed history)",
-    "framework-cube-remote-host-javalin" to "The remote Cube MVP host on Javalin: the WebSocket route and the session cookies of the client page",
+    "framework-cube-remote-backend" to "Remote Cube MVP host: presenters on the server, views in a client over the remote protocol (sessions, views, dispatch, signed history)",
+    "framework-cube-remote-backend-javalin" to "The remote Cube MVP host on Javalin: the WebSocket route and the session cookies of the client page",
     "framework-cube-remote-bridge" to "Kotlin/JS client of the remote Cube MVP host, with no UI technology: session, handshake, WebSocket, scopes and events",
     "framework-cube-remote-bridge-react" to "React bindings (kotlin-wrappers) for the Kotlin/JS client of the remote Cube MVP host",
 )

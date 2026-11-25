@@ -1,6 +1,6 @@
 # framework-cube-remote-bridge-react
 
-React bindings, with [kotlin-wrappers](https://github.com/JetBrains/kotlin-wrappers), for the Kotlin/JS client of the remote Cube host ([`framework-cube-remote-bridge`](../remote.bridge.kotlin/)): which component paints each vid, and the hooks a view uses. The WDC Store's [Kotlin remote client](../../../br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.kotlin/) is built on it.
+React bindings, with [kotlin-wrappers](https://github.com/JetBrains/kotlin-wrappers), for the Kotlin/JS client of the remote Cube backend ([`framework-cube-remote-bridge`](../remote.bridge.kotlin/)): which component paints each vid, and the hooks a view uses. The WDC Store's [Kotlin remote client](../../../br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.kotlin/) is built on it.
 
 Kotlin/JS (browser) only. Gradle: `implementation("io.github.mrcdom.wdc.kt:framework-cube-remote-bridge-react:<version>")` (from 0.5.0). It brings the bridge and kotlin-wrappers' `react`; the shell adds the `react` npm package.
 

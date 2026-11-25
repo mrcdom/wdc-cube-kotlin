@@ -8,7 +8,7 @@ import br.com.wdc.framework.cube.ScopeValue
 
 /**
  * The browser tab of the remote client: the page frame around the root view (the alert) and the client's own events
- * (start, history, keep-alive, the alert's OK). It belongs to the remote host: the application's presenters know
+ * (start, history, keep-alive, the alert's OK). It belongs to the remote backend: the application's presenters know
  * nothing of it. Its view is the client's top one, instance 0 ([RemoteBrowserPresenter.VSID]).
  */
 class BrowserScope : Scope() {

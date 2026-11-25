@@ -1,6 +1,6 @@
 # remote.views
 
-The clients of the remote view: each paints the scopes the server sends and sends back form data and events, speaking the same protocol to the same server ([remote.skeleton](../remote.skeleton/)).
+The clients of the remote view: each paints the scopes the server sends and sends back form data and events, speaking the same protocol to the same server ([remote.host](../remote.host/)).
 
 See the [architecture documentation](../../../../docs/architecture-react.md) for the full details.
 

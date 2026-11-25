@@ -5,7 +5,7 @@ plugins {
 kotlin {
     jvmToolchain(21)
 
-    // a browser library: the client side of framework-cube-remote-host, with no UI technology
+    // a browser library: the client side of framework-cube-remote-backend, with no UI technology
     js {
         browser()
     }
