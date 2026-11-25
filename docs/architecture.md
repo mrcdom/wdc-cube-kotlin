@@ -288,7 +288,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
     init {
         // the action is a field of the scope, bound once and guarded (an unhandled failure → "Unexpected error: …")
-        scope.onEnter = actionOf2 { userName: String?, password: String? -> enter(userName, password) }
+        scope.onEnter = action(1) { enter() }
     }
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
@@ -298,9 +298,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         return false
     }
 
-    private suspend fun enter(userName: String?, password: String?) {
-        if (userName != null) scope.userName = userName
-        if (password != null) scope.password = password
+    private suspend fun enter() {
         scope.loading = true
 
         // a resource call: a new instance per use, the request in its constructor
@@ -330,12 +328,12 @@ class LoginScope : Scope() {
     var errorMessage: String? by field(null)
     var loading: Boolean by field(false)
 
-    /** Signs in with the given user name and password; `null` keeps what the view already put in the scope. */
-    var onEnter: ActionOf2<String?, String?> = ActionOf2.noop()
+    /** Signs in with the user name and password the view put in this scope. */
+    var onEnter: Action = Action.NOOP
 }
 ```
 
-The view calls the action inside its own launch: `safeCall { scope.onEnter(null, null) }`. A piece of the screen without navigation of its own — the Home's products and purchases panels, each cart row — is a **segment**: a smaller scope in a field of the owner's, with a view of its own and no presenter ([details](architecture-cube.md#segments)).
+The view puts what the user typed in the scope and calls the action inside its own launch: `safeCall { scope.onEnter() }`. A piece of the screen without navigation of its own — the Home's products and purchases panels, each cart row — is a **segment**: a smaller scope in a field of the owner's, with a view of its own and no presenter ([details](architecture-cube.md#segments)).
 
 Hierarchical navigation is done through **Places** and **CubeNavigation**. Each route is a sequence of steps. `ROOT` (`CubeTreePlace.ROOT`) is the application itself: it is not a step, but `RootPresenter.applyParameters` runs before the first step of every navigation (a navigation to the root alone goes on to the restricted area). The first level holds two **guard places**, as in the Java version: `OPEN` (`OpenPresenter`) and `RESTRICTED` (`RestrictedPresenter`), with no scope and no view. `RESTRICTED` sends a user without a subject to `OPEN`; `OPEN` sends a signed-in user to `RESTRICTED`; each, as the deepest step, goes on to its area's screen (the home, the login). The screens' addresses are still `public/login`, `home`, …:
 
@@ -559,7 +557,7 @@ sequenceDiagram
     participant HV as HomeView
 
     User->>LV: Clicks Sign in
-    LV->>SC: safeCall - scope.onEnter(null, null)
+    LV->>SC: safeCall - scope.onEnter()
     Note over LV: UI thread released
 
     SC->>LP: onEnter → enter() on background thread (guarded)

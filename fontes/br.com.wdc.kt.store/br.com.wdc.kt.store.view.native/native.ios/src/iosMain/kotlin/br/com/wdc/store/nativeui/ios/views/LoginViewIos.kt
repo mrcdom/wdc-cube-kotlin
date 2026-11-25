@@ -186,7 +186,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
         safeAction("login") {
             scope.userName = userField.text ?: ""
             scope.password = passwordField.text ?: ""
-            scope.onEnter(null, null)
+            scope.onEnter()
         }
     }
 }

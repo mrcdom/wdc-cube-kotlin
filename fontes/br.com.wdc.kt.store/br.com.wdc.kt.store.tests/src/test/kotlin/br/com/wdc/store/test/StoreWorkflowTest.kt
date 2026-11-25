@@ -26,7 +26,7 @@ class StoreWorkflowTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(rootView.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.scope.onEnter(null, null)
+        loginView.scope.onEnter()
 
         return RestrictedViewMock.cast(rootView.contentView)
     }
@@ -168,7 +168,7 @@ class StoreWorkflowTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(rootView.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.scope.onEnter(null, null)
+        loginView.scope.onEnter()
 
         var homeView = RestrictedViewMock.cast(rootView.contentView)
 

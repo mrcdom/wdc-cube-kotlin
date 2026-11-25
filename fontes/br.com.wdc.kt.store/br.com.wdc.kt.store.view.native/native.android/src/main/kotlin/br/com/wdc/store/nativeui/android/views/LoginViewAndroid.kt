@@ -207,7 +207,7 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
         safeAction("login") {
             scope.userName = userField.text.toString()
             scope.password = passwordField.text.toString()
-            scope.onEnter(null, null)
+            scope.onEnter()
         }
     }
 }

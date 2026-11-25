@@ -50,7 +50,7 @@ class OwnerSlotTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(app.getRootView()!!.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.scope.onEnter(null, null)
+        loginView.scope.onEnter()
         return RestrictedViewMock.cast(app.getRootView()!!.contentView)
     }
 

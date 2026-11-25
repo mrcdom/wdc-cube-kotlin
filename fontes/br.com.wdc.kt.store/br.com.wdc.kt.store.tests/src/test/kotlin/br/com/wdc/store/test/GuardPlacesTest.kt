@@ -19,7 +19,7 @@ class GuardPlacesTest : BasePresentationTest() {
         val login = LoginViewMock.cast(rootContent())
         login.scope.userName = "admin"
         login.scope.password = "admin"
-        login.scope.onEnter(null, null)
+        login.scope.onEnter()
         RestrictedViewMock.cast(rootContent())
     }
 
