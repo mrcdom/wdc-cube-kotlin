@@ -247,7 +247,7 @@ sequenceDiagram
     API-->>P: Subject(id, nickName)
 
     P->>S: scope.loading = false
-    P->>P: app.subject = subject; HomeKeys(app).flip()
+    P->>P: app.startSession(subject); HomeKeys(app).flip()
     Note over P: CubeNavigation commit → HomePresenter created,<br/>LoginPresenter released
     Note over View: RootScope.content = HomeScope → RenderSlot draws HomeView;<br/>LoginView leaves the composition and takes its updater back
 ```

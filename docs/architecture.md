@@ -287,8 +287,10 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     private var ownerSlot: ScopeSlot? = null
 
     init {
-        // the action is a field of the scope, bound once and guarded (an unhandled failure → "Unexpected error: …")
+        // the init only binds: the action is a field of the scope, bound once and guarded (an unhandled failure →
+        // "Unexpected error: …"); what a remote view typed comes by sync, handled by a method of the presenter
         scope.onEnter = action(1) { enter() }
+        scope.onSync(::sync)
     }
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
@@ -309,10 +311,18 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         scope.loading = false
 
         if (subject?.id != null) {
-            app.subject = subject
+            app.startSession(subject) // the user and the session's tokens, kept between runs
             HomeKeys(app).flip()
         } else {
             scope.errorMessage = "Username or password not recognized!"
+        }
+    }
+
+    // a remote view's form: the password comes ciphered with the session's key, which only the remote host holds
+    private fun sync(formData: Map<String, Any?>) {
+        if (formData.containsKey("userName")) scope.userName = CoerceUtils.asString(formData["userName"])
+        if (formData.containsKey("password")) {
+            scope.password = app.b64Decipher(CoerceUtils.asString(formData["password"]) ?: "")
         }
     }
 }
