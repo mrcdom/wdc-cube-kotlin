@@ -229,13 +229,17 @@ private external fun xhrResultBody(r: JsAny): JsString
 @JsFun("""(method, url, body, contentType, authorization, clientId, txId) => {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url, false);
-    xhr.responseType = 'arraybuffer';
+    // a synchronous request from a page can't set responseType: read the body as text, one byte per char
+    xhr.overrideMimeType('text/plain; charset=x-user-defined');
     if (contentType !== '') xhr.setRequestHeader('Content-Type', contentType);
     if (authorization !== '') xhr.setRequestHeader('Authorization', authorization);
     xhr.setRequestHeader('X-Client-Id', clientId);
     if (txId !== '') xhr.setRequestHeader('X-Tx-Id', txId);
     xhr.send(body !== '' ? body : null);
-    return { status: xhr.status, data: xhr.response ? new Uint8Array(xhr.response) : null };
+    const text = xhr.responseText;
+    const data = new Uint8Array(text.length);
+    for (let i = 0; i < text.length; i++) data[i] = text.charCodeAt(i) & 0xff;
+    return { status: xhr.status, data: data };
 }""")
 private external fun xhrSyncRequestBytes(
     method: JsString, url: JsString, body: JsString,
