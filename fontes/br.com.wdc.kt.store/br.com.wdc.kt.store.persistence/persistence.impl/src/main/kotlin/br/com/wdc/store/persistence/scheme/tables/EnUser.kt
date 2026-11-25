@@ -67,7 +67,7 @@ open class EnUser(
 
     val NAME: TableField<Record, String?> = createField(DSL.name("NAME"), SQLDataType.VARCHAR(255).nullable(false), this, "")
 
-    val ROLES: TableField<Record, String?> = createField(DSL.name("ROLES"), SQLDataType.VARCHAR(255), this, "")
+    val ROLES: TableField<Record, String?> = createField(DSL.name("ROLES"), SQLDataType.VARCHAR(255).defaultValue(DSL.field(DSL.raw("'CUSTOMER'"), SQLDataType.VARCHAR)), this, "")
 
     private constructor(alias: Name, aliased: Table<Record>?): this(alias, null, null, null, aliased, null, null)
     private constructor(alias: Name, aliased: Table<Record>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)

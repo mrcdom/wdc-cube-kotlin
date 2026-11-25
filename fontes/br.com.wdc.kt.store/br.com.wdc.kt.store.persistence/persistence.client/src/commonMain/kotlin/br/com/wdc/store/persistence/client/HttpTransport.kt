@@ -26,11 +26,16 @@ interface HttpTransport {
 
     fun postJsonNullable(path: String, body: String): String?
 
+    /** A POST without the session: no token, no remote transaction, no renewal (login, refresh). */
     fun postJsonPublic(path: String, body: String): String
 
     fun postJsonWithAuth(path: String, body: String, token: String): String
 
-    fun getJson(path: String): String
+    /**
+     * A GET without the session: no token, no remote transaction, no renewal (the login challenge). The authenticated
+     * reads go by POST ([postJson]), so none needs an authenticated GET.
+     */
+    fun getJsonPublic(path: String): String
 
     /** The bytes at [path]; `null` for 204 (no content). Any other failure, 404 included, throws ([httpFailure]). */
     fun getBytes(path: String): ByteArray?

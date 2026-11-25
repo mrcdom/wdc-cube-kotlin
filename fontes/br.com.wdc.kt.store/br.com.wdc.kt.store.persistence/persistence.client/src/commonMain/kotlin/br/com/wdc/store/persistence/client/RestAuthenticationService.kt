@@ -19,7 +19,7 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
     }
 
     override fun challenge(): ChallengeResult {
-        val input = config.getJson("/api/auth/challenge")
+        val input = config.getJsonPublic("/api/auth/challenge")
         var nonce = ""
         var expiresAt = Instant.DISTANT_PAST
         input.beginObject()

@@ -25,7 +25,7 @@ class RestAuthClient(private val config: RestConfig) {
 
     fun login(userName: String, passwordHash: String) {
         // 1. Get challenge (nonce)
-        val challengeInput = config.getJson("/api/auth/challenge")
+        val challengeInput = config.getJsonPublic("/api/auth/challenge")
         val nonce = readStringField(challengeInput, "nonce")
 
         // 2. Compute HMAC: key=passwordHash, data=userName+nonce

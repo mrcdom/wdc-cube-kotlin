@@ -136,7 +136,7 @@ class RestProductEndpointsTest {
 
     @Test
     fun fetchById_byGetAndByPost() {
-        val byGet = env.transport.getJson("/api/repo/product/${DBReset.THREAD_SEAL_TAPE_ID}")
+        val byGet = env.transport.getJsonPublic("/api/repo/product/${DBReset.THREAD_SEAL_TAPE_ID}")
         assertTrue(byGet.startsWith("""{"id":${DBReset.THREAD_SEAL_TAPE_ID},"name":"Thread Seal Tape","price":2.67"""), byGet)
 
         val byPost = post("fetch-by-id", """{"id":${DBReset.THREAD_SEAL_TAPE_ID},"projection":{"name":"~"}}""")

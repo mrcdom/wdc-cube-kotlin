@@ -54,8 +54,8 @@ class RestConfig(val transport: HttpTransport) {
     fun postJsonWithAuth(path: String, body: String, token: String): ExtensibleObjectInput =
         fromJson(transport.postJsonWithAuth(path, body, token))
 
-    fun getJson(path: String): ExtensibleObjectInput =
-        fromJson(transport.getJson(path))
+    fun getJsonPublic(path: String): ExtensibleObjectInput =
+        fromJson(transport.getJsonPublic(path))
 
     fun getBytes(path: String): ByteArray? =
         transport.getBytes(path)

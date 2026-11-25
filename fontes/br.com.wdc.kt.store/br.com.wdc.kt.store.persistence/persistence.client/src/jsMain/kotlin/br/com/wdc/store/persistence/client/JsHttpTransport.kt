@@ -33,7 +33,7 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
             ?: throw BusinessException("Empty response for POST $path")
     }
 
-    override fun getJson(path: String): String {
+    override fun getJsonPublic(path: String): String {
         return doRequest("GET", baseUrl + path, null, null, null)
             ?: throw BusinessException("Empty response for GET $path")
     }
@@ -144,7 +144,8 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
     ): ByteArray? {
         val xhr = XMLHttpRequest()
         xhr.open(method, url, async = false)
-        xhr.asDynamic().responseType = "arraybuffer"
+        // a synchronous request from a page can't set responseType: read the body as text, one byte per char
+        xhr.overrideMimeType("text/plain; charset=x-user-defined")
         authorization?.let { xhr.setRequestHeader("Authorization", it) }
         xhr.setRequestHeader(CLIENT_HEADER, clientId)
         txId?.let { xhr.setRequestHeader(TX_HEADER, it) }
@@ -155,14 +156,8 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
         // 204 = no content ("no image"); 404 = not found, an error like the others
         if (status == 204) return null
         if (status in 200..299) {
-            val buffer = xhr.asDynamic().response ?: return null
-            val uint8Array = js("new Uint8Array(buffer)")
-            val len: Int = uint8Array.length as Int
-            val result = ByteArray(len)
-            for (i in 0 until len) {
-                result[i] = (uint8Array[i] as Int).toByte()
-            }
-            return result
+            val text = xhr.responseText
+            return ByteArray(text.length) { (text[it].code and 0xff).toByte() }
         }
 
         if (status == 401 && authorization != null) {

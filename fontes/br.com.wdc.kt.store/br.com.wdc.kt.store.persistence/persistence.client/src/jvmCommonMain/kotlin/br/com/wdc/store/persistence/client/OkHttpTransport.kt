@@ -64,7 +64,7 @@ class OkHttpTransport(private val baseUrl: String) : HttpTransport {
         return executeForString(request, "POST $path")
     }
 
-    override fun getJson(path: String): String {
+    override fun getJsonPublic(path: String): String {
         val request = Request.Builder()
             .url(baseUrl + path)
             .get()
