@@ -33,6 +33,7 @@ object UIK {
     // UIReturnKeyType (value class)
     val ReturnKeyDefault: UIReturnKeyType = UIReturnKeyType.UIReturnKeyDefault
     val ReturnKeyGo: UIReturnKeyType = UIReturnKeyType.UIReturnKeyGo
+    val ReturnKeyNext: UIReturnKeyType = UIReturnKeyType.UIReturnKeyNext
     val ReturnKeyDone: UIReturnKeyType = UIReturnKeyType.UIReturnKeyDone
 
     // UIStackViewAlignment (Long typealias)
