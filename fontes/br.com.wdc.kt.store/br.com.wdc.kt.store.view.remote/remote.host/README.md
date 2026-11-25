@@ -8,7 +8,7 @@ The WDC Store as a remote application. The remote backend itself is the framewor
   - that a signed-in user's session outlives its connection (`keepsSessionWithoutConnection`);
   - the text of an unexpected error, shown in the browser's alert;
   - `b64Decipher`, with the session's key, for what the client ciphered (the login's password, which `LoginPresenter` deciphers on sync).
-- `controller/` — the Store's own routes: product images (`ImageController`), `/health` (`StatusController`) and the stress tool's metrics (`StressMetricsController`).
+- `controller/` — the Store's own route for product images (`ImageController`). The backend serves the health checks and the metrics.
 - `src/main/resources/META-INF/resources` — where `npm run build` of the [TypeScript client](../remote.views/remote.react.typescript/) writes the bundle (not versioned).
 
 `UnexpectedErrorAlertTest` covers the Store's alert text. The host's own tests are in the framework module.

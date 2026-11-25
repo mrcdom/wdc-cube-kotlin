@@ -32,12 +32,6 @@ data class StressConfig(
 
     /** Context path for the remote.react app (default uses root) */
     val contextPath: String = "",
-
-    /** Whether to collect server-side metrics via endpoint */
-    val collectServerMetrics: Boolean = true,
-
-    /** Server metrics polling interval in milliseconds */
-    val serverMetricsPollMs: Long = 2_000,
 )
 
 data class UserCredentials(

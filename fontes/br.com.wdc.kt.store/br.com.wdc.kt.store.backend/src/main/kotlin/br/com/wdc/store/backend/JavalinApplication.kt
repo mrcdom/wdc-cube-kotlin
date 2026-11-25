@@ -15,7 +15,6 @@ import br.com.wdc.store.domain.config.AppConfig
 import br.com.wdc.store.persistence.rest.RepositoryApiRoutes
 import br.com.wdc.store.view.remote.RemoteRootPresenter
 import br.com.wdc.store.view.remote.controller.ImageController
-import br.com.wdc.store.view.remote.controller.StatusController
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import io.javalin.Javalin
@@ -325,16 +324,12 @@ class JavalinApplication(
             }
         }
 
-        StatusController.configure(config)
+        // times every request; /metrics (with management.token) and the health checks
+        businessContext.observability.configure(config)
         ImageController.configure(config)
 
         // Repository REST API
         RepositoryApiRoutes.configure(config)
-
-        // Stress test metrics endpoint
-        config.routes.get("/api/stress/metrics") { ctx ->
-            br.com.wdc.store.view.remote.controller.StressMetricsController.handle(ctx)
-        }
 
         // the landing page: what the demo is, and which client to open
         val landing = LandingPage(availableClients(), securityOn = !StoreConfig.jwtSecret.isNullOrBlank())
@@ -357,6 +352,7 @@ class JavalinApplication(
             if (!path.startsWith("/api/")
                 && !path.startsWith("/ws/")
                 && !path.startsWith("/health")
+                && path != "/metrics"
                 && !path.startsWith("/dispatcher")
                 && path != "/index.html"
                 && path != "/"

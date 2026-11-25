@@ -66,3 +66,21 @@ class SessionTakenOverTest {
         assertFalse(registry.releaseIdle("unknown"))
     }
 }
+
+/** The transport tells the registry of each message it handled ([RemoteApplicationRegistry.messageHandled]). */
+class RegistryMessagesTest {
+
+    @Test
+    fun eachMessageHandled_isToldToTheListeners_untilTheyStop() {
+        val registry = RemoteApplicationRegistry(::TestRemoteApplication)
+        val told = ArrayList<Pair<Long, Boolean>>()
+        val listening = registry.onMessage { nanos, failed -> told += nanos to failed }
+
+        registry.messageHandled(nanos = 5, failed = false)
+        registry.messageHandled(nanos = 7, failed = true)
+        listening.close()
+        registry.messageHandled(nanos = 9, failed = false)
+
+        assertEquals(listOf(5L to false, 7L to true), told)
+    }
+}

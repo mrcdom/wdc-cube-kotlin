@@ -44,6 +44,8 @@ Two rules cover the table:
 1. **A browser tab's socket stays on one instance**, reconnections included: hashing on the session id in the socket's path does it. The page itself can come from any instance, since every instance of the same configuration signs session ids with the same key. (Without `security.jwt.secret` each instance has its own key, and the page must land with its socket — a load balancer's own sticky cookie does that; hashing on the id does not, because the page is requested before the id exists.)
 2. **An API client stays on one instance** while it has a remote transaction open: route by `X-Client-Id`. (Its sign-in does not need it: the challenges are in the database.)
 
+Each instance answers `GET /health/ready` with 503 when its database does not answer: point the load balancer's health check there. nginx open source has no active checks and never calls it: it takes an instance out only after connection errors, or the statuses listed in `proxy_next_upstream`.
+
 A sketch for nginx, **not tested** (rule 1 by the id in the socket's path, rule 2 by `X-Client-Id`):
 
 ```nginx

@@ -81,6 +81,8 @@ internal class DispatcherHandler(
     }
 
     fun onMessage(ctx: WsMessageContext) {
+        val started = System.nanoTime()
+        var failed = true
         try {
             val jsonRequest = ctx.message()
 
@@ -101,11 +103,14 @@ internal class DispatcherHandler(
             try {
                 app.remote.wsSession = wsSession
                 app.remote.sendResponse(request)
+                failed = false
             } catch (processingError: Exception) {
                 app.alertUnexpectedError(LOG, "Could not process the request", processingError)
             }
         } catch (e: Exception) {
             LOG.error("Unexpected error in WebSocket message handler", e)
+        } finally {
+            registry.messageHandled(System.nanoTime() - started, failed)
         }
     }
 
