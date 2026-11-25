@@ -87,18 +87,18 @@ graph LR
 ```mermaid
 graph TB
     subgraph "Client (TypeScript)"
-        RC["react.client<br/>React + MUI + Parcel"]
+        RC["remote.react.typescript<br/>React + MUI + Parcel"]
         BRG["@wdc/remote-bridge-react<br/>Protocol client (framework)"]
     end
 
     subgraph "Client (Kotlin/JS)"
-        RK["react.kotlin<br/>Kotlin + React + MUI"]
+        RK["remote.react.kotlin<br/>Kotlin + React + MUI"]
         BRK["framework-cube-remote-bridge<br/>Protocol client (framework)"]
     end
 
     subgraph "Server (Kotlin/JVM)"
         BACK["backend<br/>Javalin HTTP/WS"]
-        SKEL["react.skeleton<br/>The Store's remote application"]
+        SKEL["remote.skeleton<br/>The Store's remote application"]
         FCR["framework-cube-remote<br/>Remote host: sessions, views, protocol"]
         PRES["presentation<br/>Presenters (KMP commonMain)"]
         PERS["persistence<br/>Repositories jOOQ"]
@@ -126,12 +126,12 @@ graph TB
 
 | Module | Role |
 |--------|-------|
-| **react.client** (`remote.react.client`, npm) | The Store's views in React/TypeScript with Material UI, registered by vid with the bridge. Bundled with Parcel (`npm run build`) into the skeleton's resources. |
+| **remote.react.typescript** (npm) | The Store's views in React/TypeScript with Material UI, registered by vid with the bridge. Bundled with Parcel (`npm run build`) into the skeleton's resources. |
 | **remote bridge** (`@wdc/remote-bridge-react`, framework, `br.com.wdc.kt.framework.cube.remote.react`) | The client side of the protocol, for any React shell: the WebSocket session and reconnection, the security handshake and cipher, the scopes of the views (`ViewBinding`), event delivery, the release of views (`ViewGarbageCollector`), `BaseViewClass`. Imported from source by a Parcel alias (and a tsconfig `paths` entry); its peer dependencies (React, history, universal-cookie) come from the shell's `node_modules`. |
-| **react.kotlin** (`:view-remote-react-kotlin`) | A second client of the same server, written in Kotlin with React and MUI (kotlin-wrappers) and compiled to JS by the Kotlin toolchain: the same vids, fields and event codes as the TypeScript client. Deployed by its `deploy.sh` to the `remote-kotlin` context (`/remote-kotlin/`). |
+| **remote.react.kotlin** (`:view-remote-react-kotlin`) | A second client of the same server, written in Kotlin with React and MUI (kotlin-wrappers) and compiled to JS by the Kotlin toolchain: the same vids, fields and event codes as the TypeScript client. Deployed by its `deploy.sh` to the `remote-kotlin` context (`/remote-kotlin/`). |
 | **Kotlin remote bridge** (`:framework-cube-remote-bridge`, framework) | The client side of the protocol in Kotlin/JS: `RemoteBridge` (session, handshake, WebSocket, history, events), `RemoteScope` (a scope read by name), and React bindings (`RemoteViews`, `useView`, `useHold`, `remoteView`). |
 | **framework-cube-remote** (`:framework-cube-remote`, framework) | The server side of the protocol, for any Cube application: the sessions (`RemoteApplicationRegistry`), each one's work (`RemoteApplicationSupport`: views, dispatch, answer, signed history, life), one `RemoteViewImpl` per scope, the browser tab (`BrowserScope`, `RemoteBrowserPresenter`), the keys and cipher (`RemoteAppSecurity`, `RemoteDataSecurity`) and the Javalin routes (`DispatcherController`, `IndexHtmlController`). |
-| **react.skeleton** (`:view-remote-react-skeleton`) | The Store as a remote application: `ReactRootPresenter` (its root presenter, implementing `RemoteApplication`, with the vid of each of its scopes and its registry), plus the Store's own routes (product images, health, stress metrics) and the client bundle. |
+| **remote.skeleton** (`:view-remote-skeleton`) | The Store as a remote application: `RemoteRootPresenter` (its root presenter, implementing `RemoteApplication`, with the vid of each of its scopes and its registry), plus the Store's own routes (product images, health, stress metrics) and the client bundle. |
 | **backend** (`:backend`) | Javalin server that hosts the WebSocket (`/dispatcher/{id}`), serves the React static files, and exposes the REST API for Compose clients. |
 | **presentation** (`:store-presentation`) | Shared presenters (KMP commonMain) — the same code used by both React and Compose. |
 | **persistence** (`:store-persistence`) | jOOQ implementation of the repositories (H2 or PostgreSQL) — used directly by the presenters in the React architecture. |
@@ -192,7 +192,7 @@ sequenceDiagram
     Browser->>Server: WebSocket /dispatcher/appId (checks the appId and the cookie)
     Browser->>Server: ping with secret=app_signature
     Server->>Server: Decrypts the password with the RSA private key,<br/>derives the AES-256-GCM key (PBKDF2)
-    Server->>Server: The registry creates the application (ReactRootPresenter, first message)
+    Server->>Server: The registry creates the application (RemoteRootPresenter, first message)
     Server-->>Browser: Initial scopes (views)
 ```
 
@@ -256,7 +256,7 @@ The `appId` is self-signed: `{random}.{signature(random)}` (`RemoteAppSecurity.s
 Presenters do not create views; the framework knows only scopes. The remote host (`framework-cube-remote`) is a rendering technology of its own. An application becomes remote by implementing `RemoteApplication` and holding a `RemoteApplicationSupport`, which does the session's work: the view of each scope on the client's screen, one `RemoteViewImpl` per scope, carrying the vid of the client component that paints it. Each scope declares its vid (`LoginScope.VID`): the presentation names what paints it in the bridge protocol, and the WDC Store speaks that protocol. What the Store supplies is the vid of each scope class; the browser's is built in. No scope has a view class of its own:
 
 ```kotlin
-class ReactRootPresenter(id: String) : RootPresenter(), RemoteApplication {
+class RemoteRootPresenter(id: String) : RootPresenter(), RemoteApplication {
 
     companion object {
         val VIDS: Map<KClass<out Scope>, String> = mapOf(
@@ -267,7 +267,7 @@ class ReactRootPresenter(id: String) : RootPresenter(), RemoteApplication {
         )
 
         /** The Store's remote sessions: the backend gives it to the WebSocket route and starts its cleanup and flush. */
-        val REGISTRY = RemoteApplicationRegistry(::ReactRootPresenter)
+        val REGISTRY = RemoteApplicationRegistry(::RemoteRootPresenter)
     }
 
     override val remote = RemoteApplicationSupport(id, this, VIDS, content = scope)
@@ -318,7 +318,7 @@ open class RemoteViewImpl<S : Scope>(vid: String, protected val app: RemoteViewH
 }
 ```
 
-Each view keeps the views it referred to the last time it was written (`children`) and those that refer to it (`holders`); one is **released only when no view holds it**: it takes its updater back (`scope.clearUpdater(updater)`, the same function), leaves the session's maps and the dirty set (`forgetView`), and its id is queued for the client (`removeView` → `releasedViews` in the next message); then the views it held are dropped in cascade. A view released while an earlier one was being written is skipped by the flush. When the session ends, `ReactRootPresenter.release()` releases the browser's view and the cascade takes the rest. The presenters take no part. `RemoteViewReleaseTest` covers this.
+Each view keeps the views it referred to the last time it was written (`children`) and those that refer to it (`holders`); one is **released only when no view holds it**: it takes its updater back (`scope.clearUpdater(updater)`, the same function), leaves the session's maps and the dirty set (`forgetView`), and its id is queued for the client (`removeView` → `releasedViews` in the next message); then the views it held are dropped in cascade. A view released while an earlier one was being written is skipped by the flush. When the session ends, `RemoteRootPresenter.release()` releases the browser's view and the cascade takes the rest. The presenters take no part. `RemoteViewReleaseTest` covers this.
 
 The event codes live in the presenter, next to the action they fire, with how to read their values from the form data:
 
@@ -328,7 +328,7 @@ scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
 scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
 ```
 
-The login's values arrive by sync, not as form parameters of the event, and the presenter copies them into the scope (`scope.onSync(::sync)` in `LoginPresenter`). The password goes ciphered with the session key; the presenter deciphers it with `app.b64Decipher`, which only the remote application implements (`ReactRootPresenter`, with the session's `RemoteDataSecurity`). The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { enter() }`, reading the user name and password from the scope.
+The login's values arrive by sync, not as form parameters of the event, and the presenter copies them into the scope (`scope.onSync(::sync)` in `LoginPresenter`). The password goes ciphered with the session key; the presenter deciphers it with `app.b64Decipher`, which only the remote application implements (`RemoteRootPresenter`, with the session's `RemoteDataSecurity`). The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { enter() }`, reading the user name and password from the scope.
 
 The browser tab itself is a scope of the remote layer (`BrowserScope`: the alert and the root scope, sent as `contentViewId`), whose actions `RemoteBrowserPresenter` binds with their codes like any presenter; the presentation knows nothing of it.
 

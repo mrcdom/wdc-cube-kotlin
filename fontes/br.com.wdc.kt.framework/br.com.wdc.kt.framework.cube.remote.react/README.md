@@ -2,7 +2,7 @@
 
 TypeScript/React bridge for the **remote Cube MVP** protocol: the browser side of the Kotlin module [`framework-cube-remote`](../br.com.wdc.kt.framework.cube.remote/). The presenters run on the server; this package connects to it over WebSocket, does the security handshake, keeps the scopes the server publishes (each presenter's view state, serialized) and gives the React views a small API to draw them and send events back.
 
-It knows nothing about any application: which views exist, how they look and what they say belong to the React shell that consumes it (in this repository, the WDC Store client, [`remote.react.client`](../../br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.react/remote.react.client/)).
+It knows nothing about any application: which views exist, how they look and what they say belong to the React shell that consumes it (in this repository, the WDC Store client, [`remote.react.typescript`](../../br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript/)).
 
 The package name is `@wdc/remote-bridge-react`. It is not published to npm: a shell imports it from source, through a bundler alias.
 
