@@ -191,28 +191,6 @@ final class br.com.wdc.framework.commons.log/Log { // br.com.wdc.framework.commo
     }
 }
 
-final class br.com.wdc.framework.commons.security/RSA { // br.com.wdc.framework.commons.security/RSA|null[0]
-    constructor <init>(com.ionspin.kotlin.bignum.integer/BigInteger, com.ionspin.kotlin.bignum.integer/BigInteger, com.ionspin.kotlin.bignum.integer/BigInteger) // br.com.wdc.framework.commons.security/RSA.<init>|<init>(com.ionspin.kotlin.bignum.integer.BigInteger;com.ionspin.kotlin.bignum.integer.BigInteger;com.ionspin.kotlin.bignum.integer.BigInteger){}[0]
-
-    final var privateKey // br.com.wdc.framework.commons.security/RSA.privateKey|{}privateKey[0]
-        final fun <get-privateKey>(): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.privateKey.<get-privateKey>|<get-privateKey>(){}[0]
-    final var publicExponent // br.com.wdc.framework.commons.security/RSA.publicExponent|{}publicExponent[0]
-        final fun <get-publicExponent>(): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.publicExponent.<get-publicExponent>|<get-publicExponent>(){}[0]
-    final var publicKey // br.com.wdc.framework.commons.security/RSA.publicKey|{}publicKey[0]
-        final fun <get-publicKey>(): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
-
-    final fun decrypt(com.ionspin.kotlin.bignum.integer/BigInteger): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.decrypt|decrypt(com.ionspin.kotlin.bignum.integer.BigInteger){}[0]
-    final fun encrypt(com.ionspin.kotlin.bignum.integer/BigInteger): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.encrypt|encrypt(com.ionspin.kotlin.bignum.integer.BigInteger){}[0]
-    final fun toString(): kotlin/String // br.com.wdc.framework.commons.security/RSA.toString|toString(){}[0]
-
-    final object Companion { // br.com.wdc.framework.commons.security/RSA.Companion|null[0]
-        final val N65537 // br.com.wdc.framework.commons.security/RSA.Companion.N65537|{}N65537[0]
-            final fun <get-N65537>(): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.Companion.N65537.<get-N65537>|<get-N65537>(){}[0]
-
-        final fun modPow(com.ionspin.kotlin.bignum.integer/BigInteger, com.ionspin.kotlin.bignum.integer/BigInteger, com.ionspin.kotlin.bignum.integer/BigInteger): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.Companion.modPow|modPow(com.ionspin.kotlin.bignum.integer.BigInteger;com.ionspin.kotlin.bignum.integer.BigInteger;com.ionspin.kotlin.bignum.integer.BigInteger){}[0]
-    }
-}
-
 final class br.com.wdc.framework.commons.serialization/JsonStreamReader : br.com.wdc.framework.commons.serialization/ExtensibleObjectInput { // br.com.wdc.framework.commons.serialization/JsonStreamReader|null[0]
     constructor <init>(kotlin/String) // br.com.wdc.framework.commons.serialization/JsonStreamReader.<init>|<init>(kotlin.String){}[0]
 
