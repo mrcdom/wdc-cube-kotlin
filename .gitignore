@@ -36,3 +36,6 @@ node_modules/
 
 # Maven (legacy)
 target/
+
+# Logback writes here when the log folder property is not set (e.g. store.log.dir_IS_UNDEFINED/)
+*_IS_UNDEFINED/
