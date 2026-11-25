@@ -27,6 +27,12 @@ class AppConfig private constructor(
         return value.equals("true", ignoreCase = true)
     }
 
+    /**
+     * A list of strings: `["a", "b"]` on one line (a value that is not between brackets is a list of one). Empty when
+     * the key is missing.
+     */
+    fun getList(key: String): List<String> = parseList(properties[key])
+
     fun withOverride(key: String, value: String): AppConfig {
         val copy = LinkedHashMap(properties)
         copy[key] = value
@@ -53,6 +59,12 @@ class AppConfig private constructor(
 
         /** A configuration without a file: everything at its default. */
         fun empty(): AppConfig = AppConfig(emptyMap())
+
+        internal fun parseList(value: String?): List<String> {
+            val text = value?.trim() ?: return emptyList()
+            val items = if (text.startsWith("[") && text.endsWith("]")) text.substring(1, text.length - 1).split(",") else listOf(text)
+            return items.map { it.trim().removeSurrounding("\"") }.filter { it.isNotEmpty() }
+        }
 
         internal fun parseToml(content: String): Map<String, String> {
             val result = LinkedHashMap<String, String>()

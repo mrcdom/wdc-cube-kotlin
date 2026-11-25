@@ -53,6 +53,8 @@ public final class br/com/wdc/framework/cube/remote/RemoteApplicationRegistry {
 	public final fun get (Ljava/lang/String;)Lbr/com/wdc/framework/cube/remote/RemoteApplication;
 	public final fun getActiveSessionCount ()I
 	public final fun getOrCreate (Ljava/lang/String;Ljava/util/Map;)Lbr/com/wdc/framework/cube/remote/RemoteApplication;
+	public final fun onCreated (Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
+	public final fun releaseIdle (Ljava/lang/String;)Z
 	public final fun removeExpireds (J)V
 	public static synthetic fun removeExpireds$default (Lbr/com/wdc/framework/cube/remote/RemoteApplicationRegistry;JILjava/lang/Object;)V
 	public final fun startCleanup (Ljava/util/concurrent/ScheduledExecutorService;J)Ljava/lang/AutoCloseable;

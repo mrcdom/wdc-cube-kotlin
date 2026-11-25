@@ -7,19 +7,35 @@ The demo was built and tested as one instance. Nothing below was run against sev
 ## What every instance shares
 
 - **The database.** All the data, and also what makes a user's session outlive one instance: the sessions (`EN_USER_SESSION`), the intent signing secrets (`EN_USER_INTENT_SECRET`) and the sign-in challenges in flight (`EN_AUTH_NONCE`: a challenge answered by one instance and the login sent to another find the same nonce, used up once). An instance that does not know a session reads it from there.
-- **The configuration**, in particular `security.jwt.secret`: it signs the access tokens, encrypts the sessions' private keys in the database, makes the salts answered for unknown users, and gives the key that signs the remote view's session ids. Instances with different secrets reject each other's tokens and session ids.
+- **The configuration**, in particular `security.jwt.secret`: it signs the access tokens, encrypts the sessions' private keys in the database, makes the salts answered for unknown users, and gives the keys that sign the remote view's session ids and that the instances of the mesh prove to each other. Instances with different secrets reject each other's tokens, session ids and mesh connections.
 - **The deployed web clients** (`deployment/`), the same version everywhere.
 
 ## What each instance keeps in its own memory
 
 | What | Where | If a request reaches another instance | What to route by |
 |---|---|---|---|
-| A **remote view session**: the presenters and views of one browser tab | `RemoteApplicationRegistry` | The registry there makes a new, empty session under the same id: what was on the screen is gone | The session id, the last segment of the WebSocket's path (`/dispatcher/<app_id>`) |
+| A **remote view session**: the presenters and views of one browser tab | `RemoteApplicationRegistry` | The registry there makes a new, empty session under the same id: what was on the screen is gone. With the mesh, the instance the tab left lets go of its copy (unless a socket still holds it there); without it, the copy waits to expire | The session id, the last segment of the WebSocket's path (`/dispatcher/<app_id>`) |
 | The **key that signs remote session ids** | `RemoteAppSecurity`. The WDC Store's backend derives it from `security.jwt.secret` (`RemoteSigningKey`, given to `useKey`): the same on every instance of the same configuration. **Without the secret it is random per process** | With the secret, nothing: a page served by one instance and its socket on another accept the same id (checked with two instances). Without it, the signature does not check there, the host closes the socket with `4001`, and the page reloads | With the secret, nothing. Without it, the page (`/index.html`, which plants the `app_id` cookie) and its socket must reach the same instance |
 | A **remote transaction** of the REST API, which holds a database connection | `RemoteTransactionCoordinatorImpl` | The calls that carry its `X-Tx-Id` get 410: the transaction is unknown there | The client, `X-Client-Id` (sent on every call, from the `begin` on) |
-| A **session's state in memory** (an access token's session) | `AccessContextCache` | It works: the instance reads the session from the database. A session ended or renewed on one instance is dropped by the others within a moment **on PostgreSQL** (`PostgresSessionEvents`, `LISTEN`/`NOTIFY`); on H2, which is for one instance, it would stay valid on another that had already read it, until its access token expires (30 minutes) | — |
+| A **session's state in memory** (an access token's session) | `AccessContextCache` | It works: the instance reads the session from the database. A session ended or renewed on one instance is dropped by the others within a moment, told by the **mesh** when there is one, otherwise **on PostgreSQL** by the database (`PostgresSessionEvents`, `LISTEN`/`NOTIFY`); on H2 without the mesh it would stay valid on another instance that had already read it, until its access token expires (30 minutes) | — |
 | **Limits**: failed sign-ins per user, `/api/auth` requests per address and minute, the API's per-minute limit | `LoginThrottle`, `AuthRateLimit`, `rateLimit` | Each instance counts its own: the effective limit is the configured one times the number of instances | — |
-| The **product images** already served | the image cache of `ProductApiController` | After an image changes, only the instance that saved it drops the old one; another can keep serving it | — |
+| The **product images** already served | the image cache of `ProductApiController` | With the mesh, every instance drops it when it changes. Without it, only the instance that saved it does; another can keep serving the old one | — |
+
+## The mesh between instances
+
+With `cluster.peers` in `application.toml`, the instances keep a WebSocket open to each other (`ClusterMesh`, route `/cluster`) and tell each other what the table above says the others must know: a session that ended, a product image that changed, a remote view session that moved. One list can serve every instance — each one finds itself in it (it must be able to reach its own address to recognize itself) and leaves that address alone:
+
+```toml
+[cluster]
+peers = ["ws://store-a:8080", "ws://store-b:8080", "ws://store-c:8080"]
+```
+
+- **It needs `security.jwt.secret`**: the two ends of each connection prove to each other a key derived from it (HMAC-SHA256 over a challenge each one makes), and nothing is read or sent before that. The messages travel as they are, and carry session ids: between instances not on a private network, use `wss://` addresses.
+- **What is missed is made up for.** A connection that drops is opened again (1 s, doubling up to 30 s), and what was published meanwhile waits for it (the last 1000 messages). Each time another instance connects — at its start, or after a drop — the instance it reaches drops every user session and product image it holds, which are read again from the database; remote view sessions are left to expire. A connection is taken as dropped when a send fails, or after about a minute without an answer to its pings (60 to 80 s).
+- **Every instance lists every other one.** An instance only hears from the ones that list it, and one without `cluster.peers` has no `/cluster` route: the others keep trying to reach it.
+- Without the mesh, on PostgreSQL the database still tells the instances of the sessions that end; the images and the remote view sessions are told only by the mesh.
+
+The decision, and what else was weighed, is in [ADR 0017](adr/0017-mesh-between-instances.md).
 
 ## Routing
 
@@ -63,6 +79,5 @@ When an instance stops, what it held in memory is gone: its remote view sessions
 ## What to change for a real deployment
 
 - **Shared counts** for the limits.
-- **Invalidating the image cache** on every instance, or not caching images in the instance.
 
 See also: [security-architecture.md](security-architecture.md) (sessions, limits), [architecture-react.md](architecture-react.md) (the remote view's sessions), [architecture-persistence.md](architecture-persistence.md) (remote transactions).

@@ -73,20 +73,19 @@ object StoreRepositoryBootstrap {
      * Turns authentication on: registers the [AuthenticationService], after which the REST API requires and
      * checks access. The repositories do not change — access control belongs to the HTTP boundary.
      *
+     * The backend instances tell each other of the sessions that end: by [events] when given (the servers' own
+     * mesh); otherwise, on PostgreSQL, through the database ([PostgresSessionEvents], listening until [cleanUp]); on
+     * H2 nothing is told.
+     *
      * @param cleanUp receives the action that removes the authentication service
      */
-    /**
-     * Registers the authentication service. On PostgreSQL, the backend instances sharing the database tell each other
-     * of the sessions that end ([PostgresSessionEvents], listening until [cleanUp]); on H2, opened by one process, there
-     * is no one to tell.
-     */
-    fun initializeSecurity(jwtSecret: String, refreshTokenTtlDays: Int = 7, cleanUp: Defer) {
-        val events = sessionEvents(cleanUp)
+    fun initializeSecurity(jwtSecret: String, refreshTokenTtlDays: Int = 7, cleanUp: Defer, events: SessionEvents? = null) {
+        val sessionEvents = events ?: sessionEvents(cleanUp)
         val service = AuthenticationServiceImpl(
             rawUserRepo = UserRepository.BEAN.get(),
             jwtSecret = jwtSecret,
             refreshTokenTtlDays = refreshTokenTtlDays,
-            sessionEvents = events,
+            sessionEvents = sessionEvents,
         )
         AuthenticationService.BEAN.set(service)
         cleanUp.push { AuthenticationService.BEAN.set(null) }
