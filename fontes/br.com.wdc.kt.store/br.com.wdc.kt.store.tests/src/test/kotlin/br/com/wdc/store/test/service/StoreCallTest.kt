@@ -34,10 +34,17 @@ class StoreCallTest {
 
     @Test
     fun credentialsCheck_knowsTheUser_andRefusesAWrongPassword() = runBlocking {
-        val subject = CredentialsCheck("admin", "admin").run()
+        val subject = CredentialsCheck(
+            userName = "admin",
+            password = "admin",
+        ).run()
         assertEquals(DBReset.ADMIN_ID, subject!!.id)
         assertEquals("John Smith", subject.nickName)
-        assertNull(CredentialsCheck("admin", "wrong").run())
+        val wrong = CredentialsCheck(
+            userName = "admin",
+            password = "wrong",
+        )
+        assertNull(wrong.run())
     }
 
     @Test
@@ -54,25 +61,48 @@ class StoreCallTest {
 
     @Test
     fun purchaseCreate_writesThePurchaseWithTheProductsPrices_inOneTransaction() = runBlocking {
-        val purchaseId = PurchaseCreate(DBReset.FULANO_ID, listOf(cartItem(DBReset.WILSON_BALL_ID, 2), cartItem(DBReset.FLASH_DRIVE_2GB_ID, 1))).run()
+        val purchaseId = PurchaseCreate(
+            userId = DBReset.FULANO_ID,
+            cartItems = listOf(cartItem(DBReset.WILSON_BALL_ID, 2), cartItem(DBReset.FLASH_DRIVE_2GB_ID, 1)),
+        ).run()
 
         val items = env.purchaseItemRepo.fetch(PurchaseItemCriteria().withPurchaseId(purchaseId)).associate { it.productId to it.price }
         assertEquals(mapOf(DBReset.WILSON_BALL_ID to 45.30, DBReset.FLASH_DRIVE_2GB_ID to 16.0), items, "the cart's price is not used")
 
-        val page = PurchasesPageQuery(DBReset.FULANO_ID, page = 0, pageSize = 10).run()
+        val page = PurchasesPageQuery(
+            userId = DBReset.FULANO_ID,
+            page = 0,
+            pageSize = 10,
+        ).run()
         assertEquals(purchaseId, page.items.first().id, "the newest purchase comes first")
 
-        val receipt = ReceiptQuery(purchaseId, DBReset.FULANO_ID).run()!!
+        val receipt = ReceiptQuery(
+            purchaseId = purchaseId,
+            userId = DBReset.FULANO_ID,
+        ).run()!!
         assertEquals(2 * 45.30 + 16.0, receipt.total!!, 1e-9)
-        assertNull(ReceiptQuery(purchaseId, DBReset.BEOTRANO_ID).run(), "someone else's purchase does not exist")
+        val someoneElses = ReceiptQuery(
+            purchaseId = purchaseId,
+            userId = DBReset.BEOTRANO_ID,
+        )
+        assertNull(someoneElses.run(), "someone else's purchase does not exist")
     }
 
     @Test
     fun purchaseCreate_withAZeroQuantity_isRefused_andWritesNothing() = runBlocking {
-        val before = PurchasesPageQuery(DBReset.FULANO_ID, 0, 10).run().totalItems
+        val firstPage = PurchasesPageQuery(
+            userId = DBReset.FULANO_ID,
+            page = 0,
+            pageSize = 10,
+        )
+        val before = firstPage.run().totalItems
+        val zeroQuantity = PurchaseCreate(
+            userId = DBReset.FULANO_ID,
+            cartItems = listOf(cartItem(DBReset.WILSON_BALL_ID, 0)),
+        )
         assertThrows(InvalidCartItemException::class.java) {
-            runBlocking { PurchaseCreate(DBReset.FULANO_ID, listOf(cartItem(DBReset.WILSON_BALL_ID, 0))).run() }
+            runBlocking { zeroQuantity.run() }
         }
-        assertEquals(before, PurchasesPageQuery(DBReset.FULANO_ID, 0, 10).run().totalItems)
+        assertEquals(before, firstPage.run().totalItems)
     }
 }

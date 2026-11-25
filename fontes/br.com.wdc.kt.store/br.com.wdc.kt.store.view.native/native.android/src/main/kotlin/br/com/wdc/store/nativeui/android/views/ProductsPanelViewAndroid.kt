@@ -12,11 +12,11 @@ import br.com.wdc.store.nativeui.android.theme.*
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.store.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScope
 import br.com.wdc.store.presentation.presenter.restricted.products.structs.ProductInfo
 
-class ProductsPanelViewAndroid(app: RootPresenter, scope: ProductsPanelScope) : AbstractViewAndroid<ProductsPanelScope>("products-panel-view", app, scope) {
+class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsPanelScope) : AbstractViewAndroid<ProductsPanelScope>("products-panel-view", app, scope) {
 
     private lateinit var scrollView: ScrollView
     private lateinit var stackView: FlowLayout
@@ -111,7 +111,7 @@ class ProductsPanelViewAndroid(app: RootPresenter, scope: ProductsPanelScope) : 
             productsSlot = newListSlot(
                 stackView,
                 factory = { ProductCardView(app, scope).also { it.initialize() } },
-                updater = { view, item -> view.setState(item); view.forceUpdate() }
+                updater = { view, item -> view.setState(item); view.redraw() }
             )
         }
     }
@@ -154,7 +154,7 @@ class ProductsPanelViewAndroid(app: RootPresenter, scope: ProductsPanelScope) : 
 
 // --- Product Card sub-view ---
 
-private class ProductCardView(app: RootPresenter, scope: ProductsPanelScope) : AbstractViewAndroid<ProductsPanelScope>("product-card", app, scope) {
+private class ProductCardView(app: AndroidNativeRootPresenter, scope: ProductsPanelScope) : AbstractViewAndroid<ProductsPanelScope>("product-card", app, scope) {
 
     private lateinit var imageView: ImageView
     private lateinit var nameLabel: TextView

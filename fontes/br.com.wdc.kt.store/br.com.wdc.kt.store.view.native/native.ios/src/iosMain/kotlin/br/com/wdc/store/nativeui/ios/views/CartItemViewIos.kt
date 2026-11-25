@@ -5,7 +5,7 @@ import br.com.wdc.store.nativeui.ios.theme.UIK
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.store.nativeui.ios.toolkit.ViewUtils
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -18,7 +18,7 @@ import platform.objc.sel_registerName
  * A view of its own in the catalog: the cart view only places it; it repaints when its own scope changes.
  */
 @OptIn(ExperimentalForeignApi::class)
-class CartItemViewIos(app: RootPresenter, scope: CartItemScope) :
+class CartItemViewIos(app: IosNativeRootPresenter, scope: CartItemScope) :
     AbstractViewIos<CartItemScope>("cart-item", app, scope) {
 
     private lateinit var imageView: UIImageView

@@ -6,7 +6,6 @@ import br.com.wdc.framework.cube.CubeApplication
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.CubeTreePlace
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.framework.cube.PresenterBase
 import br.com.wdc.store.domain.security.AuthenticationService
@@ -24,7 +23,7 @@ import br.com.wdc.store.presentation.presenter.restricted.cart.CartManager
 
 /**
  * The root presenter of the WDC Store: the root of its place tree ([RootKeys.PLACE] is [CubeTreePlace.ROOT]). It owns
- * the page frame — the slot where the first level shows its view, and the unexpected-error alert ([state]) — restores
+ * the page frame — the slot where the first level shows its view, and the unexpected-error alert ([scope]) — restores
  * the session on its first navigation, and takes part in every navigation before the first place
  * ([applyParameters]); it is the presenter of the root view ([PresenterBase]), so the view layers paint it like any
  * other. It extends [CubeApplication] because the root presenter is what holds the whole structure up: the presenters
@@ -48,20 +47,12 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     // :: The page frame
 
-    /** What the root view shows: the view of the first level, and the unexpected-error alert. */
-    val scope = RootScope().also { it.observe(::update) }
-
-    /** The root view: the view the catalog gives for [scope] ([scopeViews]), created on the first navigation. */
-    val view: CubeView? get() = viewOrNull(scope)
+    /** What the root view shows: the view of the first level, and the unexpected-error alert. Each view layer draws it. */
+    val scope = RootScope()
 
     private val contentSlot = ScopeSlot { if (scope.content !== it) scope.content = it }
 
     override val app: CubeApplication get() = this
-
-    /** Asks the root view to repaint. */
-    fun update() {
-        viewOrNull(scope)?.update()
-    }
 
     /** Both the application (every presenter's) and the root presenter (none of its own) have one. */
     override fun commitComputedState() {
@@ -86,13 +77,12 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
         if (e.message.isNullOrBlank()) message else "$message: ${e.message}"
 
     /**
-     * The application's part in every navigation: on the first one, creates the root view and restores the session;
+     * The application's part in every navigation: on the first one, restores the session;
      * the root alone shows nothing, so it goes on to the restricted area, with the intent in transit; otherwise, offers the slot
      * of the first level.
      */
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
         if (initialization) {
-            viewOf(scope)
             restoreSubjectFromSession()
         }
 
@@ -105,11 +95,6 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
         return true
     }
 
-    override fun release() {
-        scope.content = null
-        super.release()
-        releaseView(scope)
-    }
 
     companion object {
         private val LOG = Log.getLogger("RootPresenter")

@@ -26,7 +26,12 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     private var ownerSlot: ScopeSlot? = null
 
     init {
-        scope.onEnter = actionOf2 { userName: String?, password: String? -> enter(userName, password) }
+        scope.onEnter = actionOf2 { userName: String?, password: String? ->
+            enter(
+                userName = userName,
+                password = password,
+            )
+        }
         // a remote view sends what the user typed by sync (the password ciphered), then the event
         onEvent(1) { scope.onEnter(null, null) }
     }
@@ -70,7 +75,10 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         scope.errorMessage = null
 
         try {
-            val subject = CredentialsCheck(scope.userName ?: "", scope.password ?: "").run()
+            val subject = CredentialsCheck(
+                userName = scope.userName ?: "",
+                password = scope.password ?: "",
+            ).run()
 
             scope.loading = false
 

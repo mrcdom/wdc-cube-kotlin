@@ -192,8 +192,8 @@ class VirtualClient(
 
     /**
      * Instance IDs still attached to the Browser view, following every state field that
-     * references another tracked view. The server never announces released views, so
-     * scopes keeps stale entries (e.g. the Login view of a previous session).
+     * references another tracked view. The server announces the views it releases
+     * (`releasedViews`), and they are dropped; this also skips any entry left behind.
      */
     private fun reachableViewIds(): Set<String> {
         val known = HashMap(scopes)
@@ -427,6 +427,10 @@ class VirtualClient(
                 }
                 LOG.debug("[Client-{}] After merge, scopes keys: {}", clientId, scopes.keys)
             }
+
+            // The views the server let go of: it never sends them again
+            @Suppress("UNCHECKED_CAST")
+            (response["releasedViews"] as? List<String>)?.forEach { scopes.remove(it) }
 
             lastResponse = response
 

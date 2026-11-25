@@ -60,7 +60,6 @@ fun MainViewController(baseUrl: String): UIViewController {
     initializePlatform(baseUrl)
 
     val app = IosRootPresenter()
-    app.scopeViews = composeScopeViews(app)
     ViewUpdateScheduler.initialize { app }
     kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
@@ -70,7 +69,7 @@ fun MainViewController(baseUrl: String): UIViewController {
                 modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing),
                 color = MaterialTheme.colorScheme.background
             ) {
-                (app.view as? RootView)?.Render()
+                StoreApp(app)
             }
         }
     }

@@ -9,10 +9,10 @@ import br.com.wdc.store.nativeui.android.theme.*
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.store.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
 
-class ProductViewAndroid(app: RootPresenter, scope: ProductScope) : AbstractViewAndroid<ProductScope>("product-view", app, scope) {
+class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) : AbstractViewAndroid<ProductScope>("product-view", app, scope) {
 
     private lateinit var imageView: ImageView
     private lateinit var nameLabel: TextView

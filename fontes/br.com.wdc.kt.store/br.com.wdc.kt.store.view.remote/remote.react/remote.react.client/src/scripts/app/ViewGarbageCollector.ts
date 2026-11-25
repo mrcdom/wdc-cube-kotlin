@@ -7,6 +7,10 @@ export class ViewGarbageCollector {
   private readonly garbageViewMap = new Map<string, ViewBinding>()
   private readonly holdCount = new Map<string, number>()
   private readonly autoHeldByScope = new Map<string, Set<string>>()
+  /** The views on screen now. */
+  private readonly mountedViews = new Set<string>()
+  /** The views the server let go of that were still on screen: dropped when they leave it. */
+  private readonly releasedByServer = new Set<string>()
 
   private taskHandler = 0
 
@@ -69,8 +73,39 @@ export class ViewGarbageCollector {
     }
   }
 
+  mount(vsid: string) {
+    this.mountedViews.add(vsid)
+  }
+
+  /**
+   * The server let go of these views (`releasedViews`): it will never send them again. Each one is dropped now, or
+   * as soon as it leaves the screen.
+   */
+  released(vsids: string[]) {
+    for (const vsid of vsids) {
+      if (this.mountedViews.has(vsid)) {
+        this.releasedByServer.add(vsid)
+      } else {
+        this.collect(vsid)
+      }
+    }
+  }
+
+  private collect(vsid: string) {
+    this.releaseAutoHolds(vsid)
+    this.app.viewMap.delete(vsid)
+    this.garbageViewMap.delete(vsid)
+    this.releasedByServer.delete(vsid)
+    this.cancelSchedulingIfEmpty()
+  }
+
   mark(binding: ViewBinding) {
     const vsid = binding.getId()
+    this.mountedViews.delete(vsid)
+    if (this.releasedByServer.has(vsid)) {
+      this.collect(vsid)
+      return
+    }
     if (vsid !== BROWSER_VSID) {
       this.garbageViewMap.set(vsid, binding)
       this.scheduleCollection()

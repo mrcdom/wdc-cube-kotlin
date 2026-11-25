@@ -1,60 +1,39 @@
 package br.com.wdc.store.nativeui.web.views
 
-import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.RootScope
 import br.com.wdc.store.nativeui.web.bridge.RenderSlot
-import br.com.wdc.store.nativeui.web.bridge.ReactCubeView
+import br.com.wdc.store.nativeui.web.bridge.ScopeProps
+import br.com.wdc.store.nativeui.web.bridge.useScope
 import mui.material.Alert
 import mui.material.Box
 import mui.material.Button
 import mui.material.Snackbar
 import mui.system.sx
 import react.FC
-import react.Props
 import react.ReactNode
-import react.useEffect
-import react.useState
 import web.cssom.*
 
-class RootView(
-    app: RootPresenter,
-    scope: RootScope,
-) : ReactCubeView<RootScope>("root-view", app, scope) {
+val RootView = FC<ScopeProps<RootScope>> { props ->
+    val scope = useScope(props.scope)
 
-    override val component = FC<Props> {
-        var rev by useState(revision)
-        useEffect(this@RootView) {
-            onUpdate = { rev = revision }
+    Box {
+        sx {
+            position = Position.relative
+            minHeight = 100.vh
+            display = Display.flex
+            flexDirection = FlexDirection.column
         }
 
-        @Suppress("UNUSED_VARIABLE")
-        val unused = rev
+        RenderSlot { this.scope = scope.content }
 
-
-        Box {
-            sx {
-                position = Position.relative
-                minHeight = 100.vh
-                display = Display.flex
-                flexDirection = FlexDirection.column
-            }
-
-            val contentView = scope.content?.let(app::viewOf)
-            if (contentView != null) {
-                RenderSlot {
-                    view = contentView
-                }
-            }
-
-            val errorMessage = scope.errorMessage
-            if (!errorMessage.isNullOrBlank()) {
-                Snackbar {
-                    open = true
-                    message = ReactNode(errorMessage)
-                    autoHideDuration = 6000
-                    onClose = { _, _ ->
-                        scope.errorMessage = null
-                    }
+        val errorMessage = scope.errorMessage
+        if (!errorMessage.isNullOrBlank()) {
+            Snackbar {
+                open = true
+                message = ReactNode(errorMessage)
+                autoHideDuration = 6000
+                onClose = { _, _ ->
+                    scope.errorMessage = null
                 }
             }
         }

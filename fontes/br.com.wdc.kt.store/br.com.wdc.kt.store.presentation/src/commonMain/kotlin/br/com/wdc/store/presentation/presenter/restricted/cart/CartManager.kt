@@ -122,7 +122,10 @@ class CartManager {
 
     /** Buys what is in the cart ([PurchaseCreate]), empties it and tells the listeners; answers the purchase id. */
     suspend fun commit(subject: Subject): Long {
-        val purchaseId = PurchaseCreate(subject.id!!, cart.map { it.copy() }).run()
+        val purchaseId = PurchaseCreate(
+            userId = subject.id!!,
+            cartItems = cart.map { it.copy() },
+        ).run()
         clear()
 
         for (listener in ArrayList(changeListenerMap.values)) {

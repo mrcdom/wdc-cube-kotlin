@@ -180,6 +180,11 @@ export class FlushRequestContext {
         app.applyScopes(response.scopes)
       }
 
+      // after the scopes that let go of them
+      if (response.releasedViews) {
+        app.viewGarbageCollector.released(response.releasedViews)
+      }
+
       me.flush()
       me.setSubmitting(me.userRequestIds.size > 0)
     }

@@ -6,12 +6,12 @@ View implementation using **UIKit** via Kotlin/Native — no SwiftUI, no Storybo
 
 ### Base Class: `AbstractViewIos<S>`
 
-Every view extends `AbstractViewIos<S>`, which implements the framework's `CubeView` interface. A view receives the
-application and the scope it paints — never the presenter — and calls the scope's actions (`scope.onX(...)`) inside
-`safeAction`:
+Every view extends `AbstractViewIos<S>`. The framework knows only scopes: this module is the UIKit rendering
+technology, and it owns its views. A view receives the application (`IosNativeRootPresenter`) and the scope it paints
+— never the presenter — and calls the scope's actions (`scope.onX(...)`) inside `safeAction`:
 
 ```kotlin
-class ProductsPanelViewIos(app: RootPresenter, scope: ProductsPanelScope)
+class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScope)
     : AbstractViewIos<ProductsPanelScope>("products-panel-view", app, scope) {
 
     override fun createView(): UIView = UIKitDom.build {
@@ -26,8 +26,12 @@ class ProductsPanelViewIos(app: RootPresenter, scope: ProductsPanelScope)
 
 The lifecycle is:
 1. `createView()` — builds the `UIView` hierarchy programmatically via `UIKitDom`
-2. `doUpdate()` — called once at creation and then by the scheduler whenever the scope asks for a repaint
+2. `doUpdate()` — called once at creation and then by the scheduler (`redraw()`) whenever the scope asks for a repaint
 3. Guards (`lastX != newX`) avoid unnecessary UIKit manipulation
+4. `release()` — when no view holds it any more (below): takes its updater back, removes its `rootView` from the
+   superview, releases its list slots and GC-retained targets, runs the `onRelease()` hook for the view's own cleanup
+   (`HomeViewIos` removes its orientation observer there), and drops the views it held. A released view is never
+   marked dirty or drawn again
 
 ### DSL: `UIKitDom`
 
@@ -65,10 +69,10 @@ All views use `translatesAutoresizingMaskIntoConstraints = false` (set automatic
 
 The scheduler works via `dispatch_async(dispatch_get_main_queue())`:
 
-1. A scope change calls the view's `update()` → marks the view as dirty
+1. A scope change calls the scope's updater (the view's `update()`) → marks the view as dirty
 2. On the next run loop iteration, the scheduler flushes
 3. Each flush first runs `app.commitComputedState()` once (every live presenter's; views it marks dirty join the same flush)
-4. Then each dirty view runs `doUpdate()` once
+4. Then each dirty view runs `doUpdate()` once (`redraw()`)
 
 ### Implementation Patterns
 
@@ -105,23 +109,32 @@ Breakpoints:
 
 ### Navigation and Slots
 
-Parent views declare a `ViewSlot` over a container `UIView` (`newViewSlot(container)`). The parent scope holds the child's scope (`content`, and
-`productsPanel`/`purchasesPanel` in Home); the parent asks the application for that scope's view, which is created once
-per scope and reused. The slot pins the child view with constraints on all 4 edges:
+Parent views declare a `ViewSlot` over a container `UIView` (`newViewSlot(container)`). The parent scope holds the
+child's scope (`content`, and `productsPanel`/`purchasesPanel` in Home); while it draws, the parent asks for that
+scope's view with its own `viewOf(scope)`, which goes to the application (`IosNativeRootPresenter.viewOf`): the view is
+created once per scope (from the catalog, scope class → view factory), its updater installed in the scope, drawn once
+right away, and reused while the scope is on screen. The slot pins the child view with constraints on all 4 edges:
 
 ```kotlin
-// In HomeViewIos
-detailSlot = newViewSlot(detailContainer)
+// In RootViewIos
+contentSlot = newViewSlot(container)
 
 // In doUpdate(): the slot swaps the visible view when the child scope changes
-detailSlot.sync(scope.content?.let(app::viewOf))
+contentSlot.sync(scope.content?.let(::viewOf))
 ```
 
-The cart draws each row (`CartScope.rows`) with the view of the row's scope (`CartItemViewIos`), so changing a
-quantity repaints that row and the total, not the list.
+**Releasing.** A scope leaves the screen because a field of its parent changed, which redraws the parent's view.
+`redraw()` records the views asked for in that drawing; afterwards, the children not asked for are dropped. Each view
+keeps its `children` and `holders`, and is released only when no view holds it — in cascade, with the views it held.
+So **every `doUpdate()` asks for all the views it holds, on every drawing**, not only when they change (the cart
+calls `rows.map(::viewOf)` outside its "rows changed" guard). The presenters take no part.
 
-The catalog of views (`ScopeViews`, scope class → view) is set on the application in `AppBootstrap.kt` before the
-first navigation.
+The cart draws each row (`CartScope.rows`) with the view of the row's scope (`CartItemViewIos`), so changing a
+quantity repaints that row and the total, not the list. The cards inside list slots (`ProductCardView`,
+`PurchaseCardView`) are `AbstractViewIos` items created by the `ListSlot`, not by the catalog.
+
+The application (`IosNativeRootPresenter`) holds the catalog, the live views (`viewOf`, `forgetView`, `liveViews()`);
+`AppBootstrap.kt` mounts `app.viewOf(app.scope).rootView`.
 
 ### Kotlin/Native ↔ Objective-C Interop
 
@@ -152,8 +165,8 @@ The Xcode project (`StoreNativeApp.xcodeproj`) is generated with [XcodeGen](http
 
 ```
 src/iosMain/kotlin/br/com/wdc/store/nativeui/ios/
-├── AppBootstrap.kt        # Entry point: platform setup and the view catalog (ScopeViews)
-├── IosNativeRootPresenter.kt
+├── AppBootstrap.kt        # Entry point: platform setup; mounts the root scope's view
+├── IosNativeRootPresenter.kt # The application: view catalog, live views, viewOf
 ├── theme/
 │   ├── Colors.kt          # Material Design palette adapted to UIColor
 │   ├── Icons.kt           # SVG path icons → UIBezierPath

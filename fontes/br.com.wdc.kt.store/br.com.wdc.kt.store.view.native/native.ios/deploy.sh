@@ -269,8 +269,9 @@ print('Unknown')
         sleep 3
     fi
 
-    # Open Simulator.app
-    open -a Simulator
+    # Show the simulator: Simulator.app up to Xcode 26; Xcode 27 replaced it with DeviceHub
+    open -a Simulator 2>/dev/null || open -b com.apple.dt.Devices 2>/dev/null \
+        || warn "No Simulator or DeviceHub app found: the app runs in the background simulator"
 
     # Uninstall previous version (ignore errors)
     xcrun simctl uninstall "$SIM_UDID" "$BUNDLE_ID" 2>/dev/null || true

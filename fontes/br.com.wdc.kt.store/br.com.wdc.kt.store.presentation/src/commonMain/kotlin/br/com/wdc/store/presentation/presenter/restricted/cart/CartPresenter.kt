@@ -53,7 +53,10 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     // :: Rows
 
-    /** Makes the rows follow the cart: reuses the ones that stay, creates the new ones, releases the ones that left. */
+    /**
+     * Makes the rows follow the cart: reuses the ones whose item stays (by product id), creates the new ones, and
+     * forgets the ones whose item left — taken out of the list, they leave the screen.
+     */
     private fun syncRows() {
         val items = cart.getCartItems()
         val next = items.map { item ->
@@ -65,14 +68,12 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
             }
         }
         val alive = items.mapTo(HashSet()) { it.id }
-        for (productId in rows.keys.filter { it !in alive }) {
-            detach(rows.remove(productId)!!)
-        }
+        rows.keys.retainAll(alive)
         scope.rows = next
         scope.total = items.sumOf { it.price * it.quantity }
     }
 
-    private fun newRow(productId: Long): CartItemScope = segment(CartItemScope()).also { row ->
+    private fun newRow(productId: Long): CartItemScope = CartItemScope().also { row ->
         row.productId = productId
         row.onRemove = action(1, target = row) { removeProduct(productId) }
         row.onModifyQuantity = actionOf(2, FormParam.int("p.quantity"), target = row) { modifyQuantity(productId, it) }

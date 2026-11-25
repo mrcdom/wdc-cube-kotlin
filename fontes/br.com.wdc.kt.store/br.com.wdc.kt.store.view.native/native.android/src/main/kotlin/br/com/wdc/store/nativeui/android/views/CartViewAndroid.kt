@@ -10,11 +10,11 @@ import br.com.wdc.store.nativeui.android.theme.*
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
 import br.com.wdc.store.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
 
-class CartViewAndroid(app: RootPresenter, scope: CartScope) : AbstractViewAndroid<CartScope>("cart-view", app, scope) {
+class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : AbstractViewAndroid<CartScope>("cart-view", app, scope) {
 
     private lateinit var scrollView: ScrollView
     private lateinit var stackView: LinearLayout
@@ -227,6 +227,8 @@ class CartViewAndroid(app: RootPresenter, scope: CartScope) : AbstractViewAndroi
 
     override fun doUpdate() {
         val rows = scope.rows
+        // Asked for on every drawing: a row view not asked for is released
+        val views = rows.map(::viewOf)
 
         if (rows !== lastRows) {
             lastRows = rows
@@ -238,7 +240,7 @@ class CartViewAndroid(app: RootPresenter, scope: CartScope) : AbstractViewAndroi
                 emptyContainer.visibility = View.GONE
                 scrollView.visibility = View.VISIBLE
             }
-            syncRows(rows)
+            syncRows(views)
         }
 
         val total = scope.total
@@ -261,10 +263,9 @@ class CartViewAndroid(app: RootPresenter, scope: CartScope) : AbstractViewAndroi
 
     /**
      * Hosts the view of each row, in order. A row that stays keeps its view (the application creates one per scope);
-     * the views of rows that left are released by the presenter, so here they are only taken off the screen.
+     * the views of rows that left are released when this drawing ends (they were not asked for).
      */
-    private fun syncRows(rows: List<CartItemScope>) {
-        val next = rows.mapNotNull { app.viewOf(it) as? AbstractViewAndroid<*> }
+    private fun syncRows(next: List<AbstractViewAndroid<*>>) {
         if (next.size == rowViews.size && next.indices.all { next[it] === rowViews[it] }) return
         rowViews = next
         stackView.removeAllViews()

@@ -1,6 +1,5 @@
 package br.com.wdc.store.test.mock.viewimpl
 
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
 import br.com.wdc.store.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
@@ -11,7 +10,7 @@ class ProductViewMock(
 ) : AbstractViewMock<ProductScope>(app, scope) {
 
     companion object {
-        fun cast(view: CubeView?): ProductViewMock {
+        fun cast(view: AbstractViewMock<*>?): ProductViewMock {
             Assertions.assertNotNull(view, "Expecting ProductViewMock but this view was null")
             Assertions.assertInstanceOf(ProductViewMock::class.java, view,
                 "Expecting ProductViewMock but it was ${view!!::class.simpleName}")

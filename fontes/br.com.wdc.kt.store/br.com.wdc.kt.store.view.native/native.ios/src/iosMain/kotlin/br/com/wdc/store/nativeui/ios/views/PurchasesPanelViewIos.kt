@@ -6,7 +6,7 @@ import br.com.wdc.store.nativeui.ios.toolkit.ViewUtils
 import br.com.wdc.store.nativeui.ios.theme.StoreColors
 import br.com.wdc.store.nativeui.ios.theme.UIK
 import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.home.structs.PurchaseInfo
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -22,7 +22,7 @@ import kotlin.math.max
  * Uses ListSlot with PurchaseCardView sub-views for efficient recycling.
  */
 @OptIn(ExperimentalForeignApi::class)
-class PurchasesPanelViewIos(app: RootPresenter, scope: PurchasesPanelScope) : AbstractViewIos<PurchasesPanelScope>("purchases-panel-view", app, scope) {
+class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelScope) : AbstractViewIos<PurchasesPanelScope>("purchases-panel-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var stackView: UIStackView
@@ -170,7 +170,7 @@ class PurchasesPanelViewIos(app: RootPresenter, scope: PurchasesPanelScope) : Ab
         purchasesSlot = newListSlot(
             stackView,
             factory = { PurchaseCardView(app, scope).also { it.initialize() } },
-            updater = { view, item -> view.setState(item); view.forceUpdate() }
+            updater = { view, item -> view.setState(item); view.redraw() }
         )
     }
 
@@ -258,7 +258,7 @@ private class PurchasesPanelActions(private val view: PurchasesPanelViewIos) : N
 // --- Item sub-view: PurchaseCardView ---
 
 @OptIn(ExperimentalForeignApi::class)
-private class PurchaseCardView(app: RootPresenter, scope: PurchasesPanelScope) : AbstractViewIos<PurchasesPanelScope>("purchase-card", app, scope) {
+private class PurchaseCardView(app: IosNativeRootPresenter, scope: PurchasesPanelScope) : AbstractViewIos<PurchasesPanelScope>("purchase-card", app, scope) {
 
     private lateinit var dateLabel: UILabel
     private lateinit var totalLabel: UILabel

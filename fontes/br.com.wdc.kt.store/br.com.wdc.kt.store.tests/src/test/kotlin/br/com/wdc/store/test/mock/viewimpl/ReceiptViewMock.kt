@@ -1,6 +1,5 @@
 package br.com.wdc.store.test.mock.viewimpl
 
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
 import br.com.wdc.store.presentation.presenter.restricted.receipt.structs.ReceiptItem
 import br.com.wdc.store.test.mock.RootPresenterMock
@@ -13,7 +12,7 @@ class ReceiptViewMock(
 ) : AbstractViewMock<ReceiptScope>(app, scope) {
 
     companion object {
-        fun cast(view: CubeView?): ReceiptViewMock {
+        fun cast(view: AbstractViewMock<*>?): ReceiptViewMock {
             Assertions.assertNotNull(view, "Expecting ReceiptViewMock but this view was null")
             Assertions.assertInstanceOf(ReceiptViewMock::class.java, view,
                 "Expecting ReceiptViewMock but it was ${view!!::class.simpleName}")

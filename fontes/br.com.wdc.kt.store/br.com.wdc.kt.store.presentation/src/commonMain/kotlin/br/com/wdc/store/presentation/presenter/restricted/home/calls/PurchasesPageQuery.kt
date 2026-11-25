@@ -20,7 +20,11 @@ class PurchasesPageQuery(private val userId: Long, private val page: Int, privat
             .withUserId(userId)
             .withProjection(PurchaseInfo.projectionWithItems())
             .withOrderBy(PurchaseCriteria.OrderBy.MOST_RECENT_PURCHASE_FIRST)
-        val result = purchaseRepo.fetchPage(criteria, page, pageSize)
+        val result = purchaseRepo.fetchPage(
+            criteria = criteria,
+            page = page,
+            pageSize = pageSize,
+        )
         return Page.of(result.items.mapNotNull { PurchaseInfo.create(it) }, page, pageSize, result.totalItems)
     }
 }

@@ -10,10 +10,10 @@ import android.widget.*
 import br.com.wdc.store.nativeui.android.theme.*
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.open.login.LoginScope
 
-class LoginViewAndroid(app: RootPresenter, scope: LoginScope) : AbstractViewAndroid<LoginScope>("login-view", app, scope) {
+class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : AbstractViewAndroid<LoginScope>("login-view", app, scope) {
 
     private lateinit var userField: EditText
     private lateinit var passwordField: EditText

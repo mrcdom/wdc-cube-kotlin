@@ -1,13 +1,12 @@
 package br.com.wdc.store.nativeui.ios.views
 
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.store.nativeui.ios.theme.StoreColors
 import br.com.wdc.store.nativeui.ios.theme.StoreIcons
 import br.com.wdc.store.nativeui.ios.theme.UIK
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.useContents
@@ -32,7 +31,7 @@ private const val MAX_DETAIL_WIDTH = 560.0
  * - Wide (>=700pt): 1-row header + side-by-side panels
  */
 @OptIn(ExperimentalForeignApi::class)
-class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeScope>("home-view", app, scope) {
+class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewIos<HomeScope>("home-view", app, scope) {
 
     // Compact header UI
     private lateinit var compactHeaderContent: UIView
@@ -63,8 +62,8 @@ class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeSc
     private lateinit var errorLabel: UILabel
 
     private lateinit var detailSlot: ViewSlot
-    private var mountedProductsPanel: CubeView? = null
-    private var mountedPurchasesPanel: CubeView? = null
+    private var mountedProductsPanel: AbstractViewIos<*>? = null
+    private var mountedPurchasesPanel: AbstractViewIos<*>? = null
     private var selectedTab = 0
     private var lastTab = -1
     private var lastNick: String? = null
@@ -462,12 +461,11 @@ class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeSc
         }
     }
 
-    override fun release() {
+    override fun onRelease() {
         orientationObserver?.let {
             NSNotificationCenter.defaultCenter.removeObserver(it)
         }
         orientationObserver = null
-        super.release()
     }
 
     // --- Responsive layout ---
@@ -570,7 +568,7 @@ class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeSc
         purchView.hidden = (selectedTab != 1)
     }
 
-    private fun mountPanel(panel: CubeView, isProducts: Boolean): UIView {
+    private fun mountPanel(panel: AbstractViewIos<*>, isProducts: Boolean): UIView {
         val childView = (panel as AbstractViewIos<*>).rootView
         childView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -616,8 +614,8 @@ class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeSc
         }
 
         // Mount panels
-        val productsPanel = scope.productsPanel?.let(app::viewOf)
-        val purchasesPanel = scope.purchasesPanel?.let(app::viewOf)
+        val productsPanel = scope.productsPanel?.let(::viewOf)
+        val purchasesPanel = scope.purchasesPanel?.let(::viewOf)
 
         if (productsPanel != null && mountedProductsPanel !== productsPanel) {
             mountedProductsPanel = productsPanel
@@ -639,7 +637,7 @@ class HomeViewIos(app: RootPresenter, scope: HomeScope) : AbstractViewIos<HomeSc
         }
 
         // Detail overlay
-        val newContentView = scope.content?.let(app::viewOf)
+        val newContentView = scope.content?.let(::viewOf)
         detailSlot.sync(newContentView)
         val hasDetail = (newContentView != null)
         detailContainer.hidden = !hasDetail

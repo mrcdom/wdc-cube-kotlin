@@ -15,8 +15,8 @@ import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.view.react.skeleton.spi.WebSocketConnection
 import br.com.wdc.store.view.react.skeleton.util.AppSecurity
 import br.com.wdc.store.view.react.skeleton.util.DataSecurity
-import br.com.wdc.store.view.react.skeleton.util.GenericViewImpl
-import br.com.wdc.framework.cube.ScopeViews
+import br.com.wdc.framework.cube.Scope
+import br.com.wdc.store.view.react.skeleton.util.RemoteApplication
 import br.com.wdc.store.presentation.presenter.RootScope
 import br.com.wdc.store.presentation.presenter.open.login.LoginScope
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
@@ -32,14 +32,18 @@ import com.google.gson.stream.JsonWriter
 import java.io.IOException
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
+import java.util.Collections
+import java.util.IdentityHashMap
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
+import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBase {
+class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBase, RemoteApplication {
 
     override val app: CubeApplication get() = this
 
@@ -138,43 +142,56 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
     private var removeInstanceAction: (() -> Unit) = {}
 
-    private val dirtyViewMap = ConcurrentHashMap<String, GenericViewImpl>()
-    private val viewMap = HashMap<String, GenericViewImpl>()
+    private val dirtyViewMap = ConcurrentHashMap<String, ScopeViewImpl<*>>()
+
+    /** The views the client knows, by instance id: where its events go. */
+    private val viewMap = ConcurrentHashMap<String, ScopeViewImpl<*>>()
+
+    /** The view of each scope drawn for the client, until it is released. */
+    private val scopeViews: MutableMap<Scope, ScopeViewImpl<*>> = Collections.synchronizedMap(IdentityHashMap())
+
+    /** The ids of the views released since the last message: the client drops them. */
+    private val releasedViews = ConcurrentLinkedQueue<String>()
     private var lastRequestId: Long = 0L
     private var historyDirty: Boolean = false
     /** The browser tab: its scope's view is the client's top view ("<vid>:0"). */
     internal lateinit var browser: BrowserPresenter
         private set
 
-    internal lateinit var browserView: GenericViewImpl
+    internal lateinit var browserView: ScopeViewImpl<*>
         private set
     private var instanceIdGen: Int = 1
 
-    init {
-        // which client component paints each scope (the vid); the login and the receipt have their own server side
-        scopeViews = ScopeViews()
-            .register<BrowserScope> { ScopeViewImpl(BrowserPresenter.VID, this, it, instanceId = 0) }
-            .register<RootScope> { ScopeViewImpl("f2d345c4a610", this, it) }
-            .register<LoginScope> { LoginReactViewImpl(this, it) }
-            .register<HomeScope> { ScopeViewImpl("473dbdd7a36a", this, it) }
-            .register<ProductScope> { ScopeViewImpl("48b693f67410", this, it) }
-            .register<CartScope> { ScopeViewImpl("7eb485e5f843", this, it) }
-            .register<CartItemScope> { ScopeViewImpl("5d9e3c7a1f42", this, it) }
-            .register<ReceiptScope> { ReceiptReactViewImpl(this, it) }
-            .register<ProductsPanelScope> { ScopeViewImpl("a1b2c3d4e5f6", this, it) }
-            .register<PurchasesPanelScope> { ScopeViewImpl("b3c4d5e6f7a8", this, it) }
+    /**
+     * Which view draws each kind of scope for the client: one [ScopeViewImpl] per scope, carrying the vid of the
+     * client component that paints it; the login has its own server side (it deciphers the password).
+     */
+    private val catalog: Map<KClass<out Scope>, (Scope) -> ScopeViewImpl<*>> = mapOf(
+        BrowserScope::class to { ScopeViewImpl(BrowserPresenter.VID, this, it, instanceId = 0) },
+        RootScope::class to { ScopeViewImpl("f2d345c4a610", this, it) },
+        LoginScope::class to { LoginReactViewImpl(this, it as LoginScope) },
+        HomeScope::class to { ScopeViewImpl("473dbdd7a36a", this, it) },
+        ProductScope::class to { ScopeViewImpl("48b693f67410", this, it) },
+        CartScope::class to { ScopeViewImpl("7eb485e5f843", this, it) },
+        CartItemScope::class to { ScopeViewImpl("5d9e3c7a1f42", this, it) },
+        ReceiptScope::class to { ScopeViewImpl("e8d0bd8ae3bc", this, it) },
+        ProductsPanelScope::class to { ScopeViewImpl("a1b2c3d4e5f6", this, it) },
+        PurchasesPanelScope::class to { ScopeViewImpl("b3c4d5e6f7a8", this, it) },
+    )
 
+    init {
         this.dataSecurity = DataSecurity()
         this.browser = BrowserPresenter(this)
-        this.browserView = viewOf(browser.scope) as GenericViewImpl
-        this.viewMap[browserView.instanceId] = browserView
-        this.dirtyViewMap[browserView.instanceId] = browserView
+        // the client's top view: every other view is asked for by the view that holds its scope
+        this.browserView = viewOf(browser.scope)
         this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.inWholeMilliseconds
     }
 
     override fun release() {
         try {
             try {
+                // the browser's view, and with it every view it refers to
+                this.browserView.release()
                 this.browser.release()
                 this.removeInstanceAction()
                 this.removeInstanceAction = {}
@@ -193,7 +210,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         this.expireMoment = System.currentTimeMillis() + DEFAULT_TIME_SPAN.inWholeMilliseconds
     }
 
-    fun nextInstanceId(): Int = instanceIdGen++
+    override fun nextInstanceId(): Int = instanceIdGen++
 
     fun addReleaseAction(newAction: () -> Unit) {
         val oldAction = this.removeInstanceAction
@@ -254,22 +271,47 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         }
     }
 
-    fun putView(view: GenericViewImpl) {
-        viewMap[view.instanceId] = view
+    // :: Views
+
+    override fun viewOf(scope: Scope): ScopeViewImpl<*> {
+        var made: ScopeViewImpl<*>? = null
+        val view = synchronized(scopeViews) {
+            scopeViews.getOrPut(scope) {
+                val factory = catalog[scope::class]
+                    ?: throw IllegalStateException("No remote view for ${scope::class.simpleName}")
+                factory(scope).also { made = it }
+            }
+        }
+        made?.let {
+            viewMap[it.instanceId] = it
+            scope.setUpdater(it.updater)
+            // the first drawing
+            markDirty(it)
+        }
+        return view
     }
 
-    fun removeView(scopeId: String): GenericViewImpl? {
-        dirtyViewMap.remove(scopeId)
-        return viewMap.remove(scopeId)
+    override fun forgetView(view: ScopeViewImpl<*>) {
+        scopeViews.remove(view.scope, view)
+        dirtyViewMap.remove(view.instanceId, view)
     }
 
-    fun markDirty(view: GenericViewImpl) {
+    override fun removeView(instanceId: String) {
+        dirtyViewMap.remove(instanceId)
+        if (viewMap.remove(instanceId) != null) releasedViews.add(instanceId)
+    }
+
+    override fun markDirty(view: ScopeViewImpl<*>) {
+        if (view.released) return
         dirtyViewMap[view.instanceId] = view
         ViewFlushScheduler.markDirty(this)
     }
 
+    /** A snapshot of the views alive, for what applies to all of them. */
+    fun liveViews(): List<ScopeViewImpl<*>> = synchronized(scopeViews) { scopeViews.values.toList() }
+
     fun updateAllViews() {
-        viewMap.forEach { (_, v) -> markDirty(v) }
+        liveViews().forEach(::markDirty)
     }
 
     /** The browser's alert shows the error; the stack trace goes to the server log, never to the client. */
@@ -301,7 +343,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
      * creates the views of the scopes inside it), so the client gets a parent and its children in the same message.
      * The presenters compute their derived fields first, once per paint cycle.
      */
-    private fun writeScopes(json: ExtensibleObjectOutput, views: List<GenericViewImpl>) {
+    private fun writeScopes(json: ExtensibleObjectOutput, views: List<ScopeViewImpl<*>>) {
         try {
             commitComputedState()
         } catch (e: Exception) {
@@ -311,11 +353,21 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         var pending = views
         while (pending.isNotEmpty()) {
             for (view in pending) {
-                if (written.add(view.instanceId)) view.writeScope(json)
+                // a view released while an earlier one was written is skipped
+                if (!view.released && written.add(view.instanceId)) view.writeScope(json)
             }
             pending = dirtyViewMap.values.filter { it.instanceId !in written }
             pending.forEach { dirtyViewMap.remove(it.instanceId) }
         }
+    }
+
+    /** The views released since the last message, so the client drops them (after the scopes that let go of them). */
+    private fun writeReleasedViews(json: ExtensibleObjectOutput) {
+        if (releasedViews.isEmpty()) return
+        json.name("releasedViews")
+        json.beginArray()
+        while (true) json.value(releasedViews.poll() ?: break)
+        json.endArray()
     }
 
     @Synchronized
@@ -327,7 +379,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         }
 
         LOG.debug("[flushDirtyViews] Flushing dirtyViewMap.keys={}", dirtyViewMap.keys)
-        val allViews = ArrayList<GenericViewImpl>()
+        val allViews = ArrayList<ScopeViewImpl<*>>()
         val iter = dirtyViewMap.entries.iterator()
         while (iter.hasNext()) {
             allViews.add(iter.next().value)
@@ -354,6 +406,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
             json.beginArray()
             writeScopes(json, allViews)
             json.endArray()
+            writeReleasedViews(json)
             json.endObject()
         } finally {
             json.flush()
@@ -460,7 +513,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
             LOG.debug("[ResponsePhase] reqId={} dirtyViewMap.keys={} viewMap.keys={}", requestId, me.dirtyViewMap.keys, me.viewMap.keys)
 
-            val viewsToFlush = ArrayList<GenericViewImpl>()
+            val viewsToFlush = ArrayList<ScopeViewImpl<*>>()
             val iter = me.dirtyViewMap.entries.iterator()
             while (iter.hasNext()) {
                 viewsToFlush.add(iter.next().value)
@@ -469,7 +522,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
             LOG.debug("[ResponsePhase] viewsToFlush={}", viewsToFlush.map { it.instanceId })
 
-            if (!isPing && !me.historyDirty && viewsToFlush.isEmpty()) {
+            if (!isPing && !me.historyDirty && viewsToFlush.isEmpty() && me.releasedViews.isEmpty()) {
                 return false
             }
 
@@ -495,7 +548,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
             return CoerceUtils.asBoolean(request["ping"], false) == true
         }
 
-        private fun writeResponse(json: ExtensibleObjectOutput, requestId: Long, isPing: Boolean, views: List<GenericViewImpl>) {
+        private fun writeResponse(json: ExtensibleObjectOutput, requestId: Long, isPing: Boolean, views: List<ScopeViewImpl<*>>) {
             json.beginObject()
             run {
                 json.name("requestId").value(requestId)
@@ -514,6 +567,8 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
                     me.writeScopes(json, views)
                     json.endArray()
                 }
+
+                me.writeReleasedViews(json)
             }
             json.endObject()
         }

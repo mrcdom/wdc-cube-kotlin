@@ -12,7 +12,7 @@
   - [Actions](#actions)
   - [Segments](#segments)
   - [Keys classes](#keys-classes)
-  - [CubeView and the view catalog](#cubeview-and-the-view-catalog)
+  - [The views and their lifecycle](#the-views-and-their-lifecycle)
   - [CubeApplication](#cubeapplication)
   - [CubeNavigation](#cubenavigation)
 - [Internal Data Model](#internal-data-model)
@@ -104,10 +104,10 @@ interface CubePresenter : PresenterBase {
 |--------|-----------------|------------------|
 | `applyParameters` | During `execute()` | Receive parameters, load what to show, hand the scope to the parent's slot (`parentSlot?.setScope(scope)`). Returns `true` to continue, `false` to stop. |
 | `publishParameters` | During `newIntent()` | Export the presenter's current state to the intent (for deep-linking and history). |
-| `commitComputedState` | Once per paint cycle, right before the scopes are read for painting | Compute the derived fields the view reads. The view layer's scheduler calls `CubeApplication.commitComputedState()`, which runs every live presenter's. |
-| `release` | When the presenter is discarded | Free resources (listeners, connections) and the views of its scope and segments. **Called exactly once.** |
+| `commitComputedState` | Once per paint cycle, right before the scopes are read for painting | Compute the derived fields the view reads. The rendering technology's scheduler calls `CubeApplication.commitComputedState()`, which runs every live presenter's. |
+| `release` | When the presenter is discarded | Free resources (listeners, connections); empty by default. It releases no view: the scopes it showed leave the screen when they leave their parent's field, and the rendering technology lets go of their views. **Called exactly once.** |
 
-Presenters with a screen extend **`AbstractCubePresenter`**, which extends **`AbstractPresenter`**: the application, the bound scope (`bind`), the segments (`segment`, `detach`) and the guarded actions (`action`, `actionOf`, `actionOf2`, `onEvent`). A presenter never creates a view. A presenter with nothing to show (the WDC Store's guard places, below) can implement `CubePresenter` directly.
+Presenters with a screen extend **`AbstractCubePresenter`**, which extends **`AbstractPresenter`**: the application, the bound scope (`bind`) and the guarded actions (`action`, `actionOf`, `actionOf2`, `onEvent`). A presenter never creates a view. A presenter with nothing to show (the WDC Store's guard places, below) can implement `CubePresenter` directly.
 
 ### CubeIntent
 
@@ -126,7 +126,7 @@ class CubeIntent {
 
 ### ScopeSlot
 
-Composition mechanism. A presenter shows its **scope**, not a view: the parent creates a slot, publishes it in the intent (the keys' `parentSlot`), and keeps what it receives in a field of its own scope. The parent's view asks the application for the view of that scope (`app.viewOf(scope)`). `null` empties the slot. There is no direct coupling between parent and child, and neither knows a view.
+Composition mechanism. A presenter shows its **scope**, not a view: the parent creates a slot, publishes it in the intent (the keys' `parentSlot`), and keeps what it receives in a field of its own scope. The parent's view draws that scope in a slot of its own. `null` empties the slot. There is no direct coupling between parent and child, and neither knows a view.
 
 ```kotlin
 fun interface ScopeSlot {
@@ -144,7 +144,7 @@ ownerSlot?.setScope(scope)
 
 ### Scope
 
-A scope is what a presenter shows: the values its view paints, as plain mutable fields, and the actions the view calls. Extend `Scope` and declare each field with `field(...)`: assigning a value different from the current one (`!=`, so lists compare by content) asks for a repaint. The presenter binds it once, with `bind(...)`, and never calls `update()` after a change:
+A scope is what a presenter shows: the values its view paints, as plain mutable fields, and the actions the view calls. Extend `Scope` and declare each field with `field(...)`: assigning a value different from the current one (`!=`, so lists compare by content) is a change, and the scope tells its **updater** — whatever draws it — so its view repaints. The presenter binds it once, with `bind(...)`, and asks for no repaint by hand:
 
 ```kotlin
 class CartScope : Scope() {
@@ -169,19 +169,21 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 }
 ```
 
-**A scope writes itself as JSON** (`write(instanceId, json, viewOf)`, `toJson(instanceId, viewOf)`), for views that receive it serialized (the remote React view), with no code per scope. `field(...)` registers each field as it is declared, and `write` follows these rules:
+**A scope writes itself as JSON** (`write(instanceId, json, viewIdOf)`, `toJson(instanceId, viewIdOf)`), for views that receive it serialized (the remote React view), with no code per scope. `field(...)` registers each field as it is declared, and `write` follows these rules:
 
 - the fields go out in declaration order, after `"id"` (the view instance);
 - `null` and blank strings are left out; numbers and booleans always go;
-- a field holding a `Scope` (the scope of the level below, a segment) goes as `"<name>ViewId"`, with the instance id of the view that draws it (`app.viewOf`); a list declared with `scopes()` goes as `"<name>ViewIds"`, empty included;
-- a `CubeView` goes as `"<name>Id"`; lists, maps, enums, `ScopeValue` and `Externalizable` values are written as themselves; any other type fails, naming the field;
+- a field holding a `Scope` (the scope of the level below, a segment) goes as `"<name>ViewId"`, with the instance id of the view that draws it (given by the `viewIdOf` function the caller passes — the remote React host, which makes the view there); a list declared with `scopes()` goes as `"<name>ViewIds"`, empty included; without `viewIdOf`, both are left out;
+- lists, maps, enums, `ScopeValue` and `Externalizable` values are written as themselves; any other type fails, naming the field;
 - a field declared with `field(initial, sent = false)` never goes (the password the user types in `LoginScope`), and plain `var`s (the actions) never go.
 
 A struct of the presentation that a field holds implements **`ScopeValue`** (`fun writeJson(json: ExtensibleObjectOutput)`) and writes itself as one JSON value. Override `write` only for a shape these rules can't give.
 
 **What the fields cannot see:** a change *inside* an object already assigned — an element added to a mutable list, a field of a nested object, or an object shared with someone who mutates it. Assign a new value (a copy), or call `scope.changed()`. `CartManager.getCartItems()` returns copies for this reason.
 
-A new view needs no `update()` either: every view layer paints the current scope when the view is created. Keep in the scope what the view shows — the WDC Store home keeps the cart count as a field, set by the cart's change listener — and the presenter never calls `update()`. It is still there for state the view reads from somewhere else.
+A new view needs no repaint request either: every rendering technology paints the current scope when the view is created. Keep in the scope what the view shows — the WDC Store home keeps the cart count as a field, set by the cart's change listener. For state the view reads from somewhere else, `scope.changed()` tells the updater.
+
+**The updater.** The framework knows nothing of views: a scope has one updater, a function the rendering technology installs when it starts drawing the scope (`setUpdater(updater)`), and a change calls it, on the thread that made it. `clearUpdater(updater)` takes it back only if it is still the same instance, so a view that stopped drawing the scope does not take the updater of one that started. A scope with no updater just keeps its values. One updater per scope means one view draws a scope at a time. See [The views and their lifecycle](#the-views-and-their-lifecycle).
 
 ### Actions
 
@@ -208,12 +210,12 @@ The code goes to the bound scope (or to `target`, a segment), and `Scope.dispatc
 
 ### Segments
 
-A piece of the screen without navigation of its own (a panel, a row of a list) gets **no presenter**: it is a smaller scope in a field of the owner's, with a view of its own. The owner declares it with `segment(scope)` and binds its actions with `target`:
+A piece of the screen without navigation of its own (a panel, a row of a list) gets **no presenter**: it is a smaller scope in a field of the owner's, with a view of its own. The owner just creates it, binds its actions with `target` and puts it in a field of its scope:
 
 ```kotlin
 // HomePresenter
-private val products = segment(ProductsPanelScope())
-private val purchases = segment(PurchasesPanelScope())
+private val products = ProductsPanelScope()
+private val purchases = PurchasesPanelScope()
 
 init {
     products.onOpenProduct = actionOf(1, FormParam.long("p.productId"), target = products) { openProduct(it) }
@@ -222,7 +224,7 @@ init {
 // in applyParameters: scope.productsPanel = products; scope.purchasesPanel = purchases
 ```
 
-A change in a segment repaints its view, or the owner's until the segment has one. Its view is released with the owner; `detach(segment)` releases one that left the screen (a cart row whose product was removed). See [Segments — Panels without a Presenter](#segments--panels-without-a-presenter).
+A change in a segment repaints its own view, not the owner's. A segment that leaves the screen (a cart row whose product was removed) is just taken out of the field or list; the rendering technology notices it when it redraws the owner's view. See [Segments — Panels without a Presenter](#segments--panels-without-a-presenter).
 
 ### Keys classes
 
@@ -254,28 +256,27 @@ class ProductKeys(app: RootPresenter, intent: CubeIntent? = null) : HomeKeys(app
 }
 ```
 
-### CubeView and the view catalog
+### The views and their lifecycle
 
-Interface for the rendering layer. Each UI technology (Compose, React, etc.) implements this interface:
+**The framework knows only scopes.** A presenter shows its scope; drawing it, and letting go of what drew it, is up to each rendering technology, which keeps its own catalog (scope class → view) and its own views. A nested scope is the slot: the parent keeps the child scope in a field (`content`, a panel, the rows of a list), nothing more. "View" is, in each technology, the element that draws a scope.
 
-```kotlin
-interface CubeView {
-    val instanceId: String
-    fun update()
-    fun release()
-}
-```
+**Every scope leaves the screen because a field of its parent changed.** That change redraws the parent's view, and that is where the technology notices that a child is gone. There are two kinds of technology:
 
-**Presenters do not create views.** Each view layer fills a **`ScopeViews`** catalog (scope class → view factory) and gives it to the application before the first navigation; the application creates the view of a scope the first time it is asked (`app.viewOf(scope)`) and keeps it until `app.releaseView(scope)` (a presenter releases its own on `release()`). Views take `(app, scope)`. The match is by the exact class of the scope; `fallback { … }` answers the ones not registered, and a scope with no view fails naming its class.
+- **Views as functions of the scope** — Compose and the native web (React): the view is a composable / function component that receives the scope. `useScope(scope)` installs it as the scope's updater as it starts drawing (before it reads the scope, so no change is lost) and calls `clearUpdater` when it leaves the composition / unmounts. The technology itself drops what leaves, so nothing is released by hand. Each has a catalog of components (`ScopeComposables`, `ScopeComponents`) and a slot (`RenderSlot(scope)`) that finds the component of a scope. See [architecture-cube-compose.md](architecture-cube-compose.md).
+- **Views as objects** — native iOS and Android, the remote React host (one view per scope on the client's screen). The application of each (`IosNativeRootPresenter`, `AndroidNativeRootPresenter`, `ReactRootPresenter`) holds the catalog, the live views and `viewOf(scope)`, which creates the view the first time (a scope class with no view fails naming it), installs its updater (`scope.setUpdater(view.updater)`) and draws it once.
 
 ```kotlin
-app.scopeViews = ScopeViews()
-    .register<CartScope> { CartView(app, it) }
-    .register<CartItemScope> { CartItemView(app, it) }
-    .register<HomeScope> { HomeView(app, it) }
+// IosNativeRootPresenter
+private val catalog: Map<KClass<out Scope>, (Scope) -> AbstractViewIos<*>> = mapOf(
+    CartScope::class to { CartViewIos(this, it as CartScope) },
+    CartItemScope::class to { CartItemViewIos(this, it as CartItemScope) },
+    // …
+)
 ```
 
-A parent view draws a child by asking for the view of the scope in its field: `scope.content?.let(app::viewOf)`. A new screen is registered once per view layer, in its catalog (`composeScopeViews(app)` for every Compose entry point).
+A view of the second kind asks for the views of the scopes it holds with its own `viewOf(scope)` while it draws (`contentSlot.sync(scope.content?.let(::viewOf))`). Each drawing records the views it asked for; afterwards, the children not asked for are dropped. Each view keeps its `children` and its `holders`, and is **released only when no view holds it**: it is marked released (repeats are ignored), takes its updater back (`scope.clearUpdater(updater)`, the same function), leaves the live map and the dirty set (`app.forgetView`), does the technology's own cleanup (the UIView leaves its superview, observers, retained targets; the remote client is told to drop it) and drops the children it held, in cascade. The cost follows the children that changed, with no global sweep, and a released view is never marked dirty or drawn again. So **every drawing asks for all the views it holds**, not only the ones that changed (the cart asks for its rows' views outside the "rows changed" guard). On the remote host, writing a scope is drawing it: the `viewIdOf` it passes to `Scope.write` asks for the children's views.
+
+The presenter takes no part: it only puts scopes in fields and takes them out. Its `release()` stops what it listens to. The test doubles are a technology of their own (`RootPresenterMock`: a catalog and `viewOf`, without release).
 
 ### CubeApplication
 
@@ -287,8 +288,7 @@ Abstract base class that holds the global application state:
 - **`navigation`**: reference to the navigation in progress (or `null` if none)
 - **`navigate()`**: creates a navigation; **`flip(place, intent)`**, **`flip(address)`** and **`flip(intent)`** build and run one (an address or an intent is resolved by name with `placeOf`, an unknown name going to the root)
 - **`applyParameters(intent, initialization, deepest)`**: the application's own part in every navigation (below)
-- **`scopeViews`, `viewOf(scope)`, `viewOrNull(scope)`, `releaseView(scope)`**: the view catalog and the views alive, one per scope
-- **`commitComputedState()`**: runs every live presenter's; the view layer calls it once per paint cycle
+- **`commitComputedState()`**: runs every live presenter's; the rendering technology calls it once per paint cycle
 - **`alertUnexpectedError(logger, message, e)`**: where the guard of an action sends a failure nobody handled (only logged by default)
 
 ```kotlin
@@ -309,16 +309,12 @@ abstract class CubeApplication(places: List<CubeTreePlace> = emptyList()) {
     open fun release()
     open fun updateHistory()
 
-    var scopeViews: ScopeViews
-    fun viewOf(scope: Scope): CubeView
-    fun viewOrNull(scope: Scope): CubeView?
-    fun releaseView(scope: Scope)
     open fun commitComputedState()
     open fun alertUnexpectedError(logger: Log, message: String, e: Throwable)
 }
 ```
 
-**The application is the root of the place tree** (`CubeTreePlace.ROOT`) and takes part in every navigation, before the first step: `execute()` calls its `applyParameters`, in the same redirect-marked context as a presenter's (a navigation requested from in there is a redirect). `initialization` is `true` only the first time; `deepest` is `true` when there are no steps, that is, a flip to the root itself (`app.flip(CubeTreePlace.ROOT)` runs only this); `false` stops the navigation at the root. On rollback the application is restored first, with the source intent (`false, false`), then the presenters. The WDC Store's `RootPresenter` uses it to own the page frame — it is the presenter of the root view: it creates the root view (`viewOf(scope)`) and restores the session on initialization, goes on to the restricted area (`RestrictedKeys`, which then picks the home or the login) when the root itself is the target, and otherwise offers the slot of the first level (`RootKeys(this, intent).parentSlot`).
+**The application is the root of the place tree** (`CubeTreePlace.ROOT`) and takes part in every navigation, before the first step: `execute()` calls its `applyParameters`, in the same redirect-marked context as a presenter's (a navigation requested from in there is a redirect). `initialization` is `true` only the first time; `deepest` is `true` when there are no steps, that is, a flip to the root itself (`app.flip(CubeTreePlace.ROOT)` runs only this); `false` stops the navigation at the root. On rollback the application is restored first, with the source intent (`false, false`), then the presenters. The WDC Store's `RootPresenter` uses it to own the page frame — it is the presenter of the root scope: it restores the session on initialization, goes on to the restricted area (`RestrictedKeys`, which then picks the home or the login) when the root itself is the target, and otherwise offers the slot of the first level (`RootKeys(this, intent).parentSlot`).
 
 ### CubeNavigation
 
@@ -781,8 +777,8 @@ flowchart LR
     subgraph SYNC["Synchronous World"]
         direction TB
         S1["scope.x = value"]
-        S2["update()"]
-        S3["view.update()"]
+        S2["scope updater"]
+        S3["view marked dirty"]
         S4["ScopeSlot.setScope()"]
         S5["release()"]
         S1 --> S2 --> S3
@@ -852,10 +848,10 @@ The table below summarizes which framework operations are `suspend` and which ar
 | Operation | Suspend? | Why |
 |----------|:--------:|---------|
 | `scope.field = value` | ❌ | Plain in-memory assignment |
-| `update()` | ❌ | Notifies the view to re-render (synchronous) |
-| `CubeView.update()` | ❌ | Only marks dirty / recomposes |
+| `scope.changed()` | ❌ | Calls the scope's updater (synchronous) |
+| The updater (a view's `update()`) | ❌ | Only marks dirty / recomposes |
 | `ScopeSlot.setScope(scope)` | ❌ | Hands the scope to the parent's slot (assignment) |
-| `app.viewOf(scope)` | ❌ | Creates (once) or returns the view of a scope |
+| `viewOf(scope)` | ❌ | Creates (once) or returns the view of a scope, in a technology that keeps view objects (iOS, Android, remote host) |
 | `release()` | ❌ | Frees local resources |
 | `commitComputedState()` | ❌ | Synchronous derived computation |
 | `CubeNavigation.execute()` | ✅ | Calls each presenter's `applyParameters()` |
@@ -874,7 +870,7 @@ The view layer **never calls suspend functions directly**. It uses the `safeCall
 ```mermaid
 sequenceDiagram
     participant User as User
-    participant View as CubeView (UI thread)
+    participant View as View (UI thread)
     participant Safe as safeCall
     participant Scope as presenterScope
     participant Pres as Presenter
@@ -895,18 +891,19 @@ sequenceDiagram
     deactivate Scope
 ```
 
-`ComposeCubeView` and `ReactCubeView` (native web) implement `safeCall` the same way; `AbstractViewIos` and `AbstractViewAndroid` have `safeAction(context) { … }`, which launches on `app.presenterScope` with the same `catch` and no flush of its own:
+Compose and the native web have a top-level `safeCall` in their bridge, both the same way; `AbstractViewIos` and `AbstractViewAndroid` have `safeAction(context) { … }`, which launches on `app.presenterScope` with the same `catch` and no flush of its own:
 
 ```kotlin
-// ComposeCubeView
-protected fun safeCall(action: suspend () -> Unit) {
-    ViewUpdateScheduler.presenterScope.launch {
+// Compose (ViewUpdateScheduler.safeCall)
+internal fun safeCall(action: suspend () -> Unit) {
+    val app = app
+    app.presenterScope.launch {
         try {
             action()
         } catch (e: Exception) {
-            app.alertUnexpectedError(LOG, "Unexpected error in $id", e)
+            app.alertUnexpectedError(LOG, "Unexpected error", e)
         } finally {
-            ViewUpdateScheduler.flush()  // commitComputedState(), then the dirty views
+            flush()  // commitComputedState(), then the dirty views
         }
     }
 }
@@ -979,8 +976,8 @@ override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean
     }
 
     // (2) Hand the scope to the parent — SYNC. The slot is read on every call: a reused presenter goes where its
-    // parent puts it now, which may differ from where it was first put. No view here: the parent's view asks
-    // app.viewOf(scope), and the view layer's catalog creates it.
+    // parent puts it now, which may differ from where it was first put. No view here: the parent's view draws
+    // the scope, with the view its layer has for it.
     ownerSlot = keys.parentSlot
     ownerSlot?.setScope(scope)
     return true
@@ -995,12 +992,11 @@ A panel inside a screen (the Home's products and purchases panels) or a row of a
 sequenceDiagram
     participant Home as HomePresenter
     participant Seg as ProductsPanelScope (segment)
-    participant App as CubeApplication
     participant View as HomeView
     participant Repo as ProductListQuery (→ ProductRepository)
 
     Note over Home: constructor
-    Home->>Seg: products = segment(ProductsPanelScope())
+    Home->>Seg: products = ProductsPanelScope()
     Home->>Seg: products.onOpenProduct = actionOf(1, …, target = products)
 
     Note over Home: applyParameters() — SUSPEND
@@ -1010,25 +1006,10 @@ sequenceDiagram
     Home->>Home: scope.productsPanel = products — SYNC
 
     Note over View: next paint
-    View->>App: viewOf(scope.productsPanel)
-    App-->>View: ProductsPanelView (created once, from the catalog)
+    View->>View: RenderSlot(scope.productsPanel) → ProductsPanelView (from the technology's catalog)
 ```
 
-```kotlin
-// AbstractPresenter
-protected fun <S : Scope> segment(scope: S): S {
-    scope.observe { (app.viewOrNull(scope) ?: boundScope?.let { app.viewOrNull(it) })?.update() }
-    segments += scope
-    return scope
-}
-
-protected fun detach(segment: Scope) {
-    segments.remove(segment)
-    app.releaseView(segment)
-}
-```
-
-A change in a segment repaints its own view (or the owner's until the segment has one), not the owner's whole screen. The cart uses the same mechanism for its rows: `CartScope.rows` is a list declared with `scopes()`, each row a `CartItemScope` segment with its own `onRemove` and `onModifyQuantity`. The presenter reuses a row while its product stays in the cart and `detach`es the one that leaves, so changing a quantity repaints that row and the total, not the list.
+A segment needs nothing from the framework: the presenter creates it (`private val products = ProductsPanelScope()`), binds its actions with `target = products` and puts it in a field of its scope. A change in a segment repaints its own view, not the owner's whole screen. The cart uses the same mechanism for its rows: `CartScope.rows` is a list declared with `scopes()`, each row a `CartItemScope` with its own `onRemove` and `onModifyQuantity`. The presenter reuses a row, by identity, while its product stays in the cart, and drops the one that leaves from the list (`rows.keys.retainAll(alive)`), so changing a quantity repaints that row and the total, not the list. The row that left leaves the screen with the list: the technology notices it when it redraws the cart's view.
 
 ### When to Use and When NOT to Use Suspend
 
@@ -1070,7 +1051,7 @@ private suspend fun removeProduct(productId: Long?) {
         if (cart.getSize() == 0) {
             HomeKeys(app).flip()  // ← suspend: navigates
         } else {
-            syncRows()  // the row that left is detached
+            syncRows()  // the row that left is dropped from the list
         }
     }
 }
@@ -1090,7 +1071,7 @@ The action fields that call them (`action { … }`, `actionOf { … }`) are alwa
 
 2. **Never call `runBlocking` inside a presenter.** The `presenterScope` already is the coroutine; using `runBlocking` inside it causes a deadlock.
 
-3. **Views are never suspend.** The `update()` and `release()` methods and all UI construction are synchronous. Use `safeCall` (or `safeAction`) to call the scope's actions from UI events.
+3. **Views are never suspend.** Installing the updater, painting, a view's `update()`/`release()` and all UI construction are synchronous. Use `safeCall` (or `safeAction`) to call the scope's actions from UI events.
 
 4. **`safeCall` is fire-and-forget.** There is no return value. If you need the result of an async operation to update the UI, mutate `scope` inside the block: the scope asks for the repaint.
 
@@ -1106,7 +1087,7 @@ The action fields that call them (`action { … }`, `actionOf { … }`) are alwa
 flowchart LR
     A["safeCall { ... }"] --> B["suspend I/O\n(fetch, commit)"]
     B --> C["Mutates the scope\n(synchronous)"]
-    C --> D["the field asks for the repaint\n(update(), synchronous)"]
+    C --> D["the field calls the scope's updater\n(synchronous)"]
     D --> E["flush()\n(commitComputedState, then dirty views)"]
 
     style A fill:#fff3e0,stroke:#e65100

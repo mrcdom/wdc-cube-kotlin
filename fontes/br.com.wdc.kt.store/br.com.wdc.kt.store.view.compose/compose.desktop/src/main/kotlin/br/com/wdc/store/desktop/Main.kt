@@ -49,7 +49,6 @@ fun main() {
     } catch (_: Exception) { }
 
     val app = DesktopRootPresenter()
-    app.scopeViews = composeScopeViews(app)
     ViewUpdateScheduler.initialize { app }
     kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
 
@@ -65,7 +64,7 @@ fun main() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    (app.view as? RootView)?.Render()
+                    StoreApp(app)
                 }
             }
         }

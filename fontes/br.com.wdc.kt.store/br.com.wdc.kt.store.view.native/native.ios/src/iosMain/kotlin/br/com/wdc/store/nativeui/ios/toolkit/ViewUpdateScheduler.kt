@@ -9,7 +9,7 @@ import platform.darwin.dispatch_get_main_queue
 /**
  * Centralized dirty-view scheduler for the iOS platform.
  *
- * When a presenter calls view.update(), the view is marked dirty here.
+ * When a scope changes, it calls the updater its view installed, and the view is marked dirty here.
  * A single dispatch_async(main_queue) callback is scheduled to flush all dirty views.
  * Each flush first runs the application's commitComputedState() — once per paint cycle,
  * right before painting — so the presenters compute the derived fields the views read;
@@ -78,7 +78,7 @@ object ViewUpdateScheduler {
 
         for (view in snapshot) {
             try {
-                view.forceUpdate()
+                view.redraw()
             } catch (e: Exception) {
                 NSLog("ViewUpdateScheduler flush error: ${e.message}")
             }

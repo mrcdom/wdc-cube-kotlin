@@ -1,30 +1,17 @@
 package br.com.wdc.store.test.mock.viewimpl
 
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScope
+import br.com.wdc.store.test.mock.RootPresenterMock
 import org.junit.jupiter.api.Assertions
 
-class ProductsPanelViewMock(
-    val scope: ProductsPanelScope,
-) : CubeView {
+class ProductsPanelViewMock(app: RootPresenterMock, scope: ProductsPanelScope) : AbstractViewMock<ProductsPanelScope>(app, scope) {
 
     companion object {
-        fun cast(view: CubeView?): ProductsPanelViewMock {
+        fun cast(view: AbstractViewMock<*>?): ProductsPanelViewMock {
             Assertions.assertNotNull(view, "Expecting ProductsPanelViewMock but this view was null")
             Assertions.assertInstanceOf(ProductsPanelViewMock::class.java, view,
                 "Expecting ProductsPanelViewMock but it was ${view!!::class.simpleName}")
             return view as ProductsPanelViewMock
         }
-    }
-
-    override val instanceId: String = AbstractViewMock.INSTANCE_ID_GEN.incrementAndGet().toString()
-
-
-    override fun release() {
-        // NOOP
-    }
-
-    override fun update() {
-        // NOOP
     }
 }

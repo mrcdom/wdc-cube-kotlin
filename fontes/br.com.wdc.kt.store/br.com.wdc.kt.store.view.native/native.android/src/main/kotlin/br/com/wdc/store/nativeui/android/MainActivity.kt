@@ -1,12 +1,9 @@
 package br.com.wdc.store.nativeui.android
 
-import br.com.wdc.store.presentation.presenter.RootPresenter
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
-import android.os.Looper
 import android.os.StrictMode
-import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import br.com.wdc.store.nativeui.android.theme.StoreColors
@@ -15,29 +12,21 @@ import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.commons.storage.AndroidPersistentSessionStorage
-import br.com.wdc.framework.cube.ScopeViews
 import br.com.wdc.store.domain.security.JceCryptoProvider
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.ViewUpdateScheduler
 import br.com.wdc.store.nativeui.android.toolkit.ViewUtils
-import br.com.wdc.store.nativeui.android.views.*
+import br.com.wdc.store.nativeui.android.views.RootViewAndroid
 import br.com.wdc.store.persistence.client.OkHttpTransport
 import br.com.wdc.store.persistence.client.RestConfig
 import br.com.wdc.store.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.store.presentation.presenter.RootKeys
-import br.com.wdc.store.presentation.presenter.RootScope
-import br.com.wdc.store.presentation.presenter.open.login.LoginScope
-import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
-import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
-import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
-import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScope
-import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelScope
-import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
-import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
 class MainActivity : AppCompatActivity() {
+
+    /** The root view: releasing it takes every view it holds along. */
+    private var root: AbstractViewAndroid<*>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,17 +53,18 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
         val app = AndroidNativeRootPresenter(AndroidPersistentSessionStorage(prefs))
-        registerViews(app)
         ViewUpdateScheduler.initialize { app }
         runBlocking { RootKeys(app).flip() }
 
-        val rootView = (app.view as? AbstractViewAndroid<*>)?.rootView
+        // every other view is asked for by the view that holds its scope
+        val root = app.viewOf(app.scope).also { this.root = it }
+        setContentView(root.rootView)
+    }
 
-        if (rootView != null) {
-            setContentView(rootView)
-        } else {
-            setContentView(FrameLayout(this))
-        }
+    override fun onDestroy() {
+        root?.release()
+        root = null
+        super.onDestroy()
     }
 
     private fun initializePlatform(baseUrl: String) {
@@ -85,30 +75,5 @@ class MainActivity : AppCompatActivity() {
         val transport = OkHttpTransport(baseUrl)
         val config = RestConfig(transport)
         RestRepositoryBootstrap.initialize(config, JceCryptoProvider())
-    }
-
-    /**
-     * The catalog of views, set before the first navigation. Android views must be built on the main
-     * thread; the application creates each view once per scope ([RootPresenter.viewOf]).
-     */
-    private fun registerViews(app: RootPresenter) {
-        app.scopeViews = ScopeViews()
-            .register<RootScope> { onMainThread { RootViewAndroid(app, it).initialize() } }
-            .register<LoginScope> { onMainThread { LoginViewAndroid(app, it).initialize() } }
-            .register<HomeScope> { onMainThread { HomeViewAndroid(app, it).initialize() } }
-            .register<ProductsPanelScope> { onMainThread { ProductsPanelViewAndroid(app, it).initialize() } }
-            .register<PurchasesPanelScope> { onMainThread { PurchasesPanelViewAndroid(app, it).initialize() } }
-            .register<ProductScope> { onMainThread { ProductViewAndroid(app, it).initialize() } }
-            .register<CartScope> { onMainThread { CartViewAndroid(app, it).initialize() } }
-            .register<CartItemScope> { onMainThread { CartItemViewAndroid(app, it).initialize() } }
-            .register<ReceiptScope> { onMainThread { ReceiptViewAndroid(app, it).initialize() } }
-    }
-
-    private fun <T> onMainThread(block: () -> T): T {
-        return if (Looper.myLooper() == Looper.getMainLooper()) {
-            block()
-        } else {
-            runBlocking(Dispatchers.Main) { block() }
-        }
     }
 }

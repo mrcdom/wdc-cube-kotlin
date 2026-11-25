@@ -43,8 +43,8 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private var cart: CartManager? = null
 
     // the two panels: segments of the home scope, without presenters of their own
-    private val products = segment(ProductsPanelScope())
-    private val purchases = segment(PurchasesPanelScope())
+    private val products = ProductsPanelScope()
+    private val purchases = PurchasesPanelScope()
     private var onCartCommitListenerRemover: () -> Unit = NOOP
     private var onCartChangeListenerRemover: () -> Unit = NOOP
 
@@ -64,11 +64,6 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     // :: Cube API
 
     override fun release() {
-        scope.content = null
-
-        scope.productsPanel = null
-        scope.purchasesPanel = null
-
         app.cart = null
 
         onCartCommitListenerRemover()
@@ -76,8 +71,6 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
         onCartChangeListenerRemover()
         onCartChangeListenerRemover = NOOP
-
-        super.release()
     }
 
     override suspend fun applyParameters(intent: CubeIntent, initialization: Boolean, deepest: Boolean): Boolean {
@@ -143,7 +136,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         if (snapshot.userId != app.subject?.id) return
         for ((productId, quantity) in snapshot.quantities) {
             try {
-                cart!!.addProduct(ProductQuery(productId).run(), quantity)
+                cart!!.addProduct(ProductQuery(productId = productId).run(), quantity)
             } catch (_: ProductNotFoundException) {
                 LOG.info("restoreCart: product {} is no longer available", productId)
             }
@@ -277,7 +270,11 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private suspend fun loadPurchases() {
         val subject = app.subject
         if (subject != null && purchases.pageSize > 0) {
-            var page = PurchasesPageQuery(subject.id!!, purchases.page, purchases.pageSize).run()
+            var page = PurchasesPageQuery(
+                userId = subject.id!!,
+                page = purchases.page,
+                pageSize = purchases.pageSize,
+            ).run()
 
             purchases.totalCount = page.totalItems
 
@@ -286,7 +283,11 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
                 // the requested page is past the end (the view capacity changed, or purchases disappeared): show the
                 // last one, with its items — the result above is the one of the page that does not exist
                 purchases.page = totalPages - 1
-                page = PurchasesPageQuery(subject.id!!, purchases.page, purchases.pageSize).run()
+                page = PurchasesPageQuery(
+                    userId = subject.id!!,
+                    page = purchases.page,
+                    pageSize = purchases.pageSize,
+                ).run()
                 purchases.totalCount = page.totalItems
             }
 

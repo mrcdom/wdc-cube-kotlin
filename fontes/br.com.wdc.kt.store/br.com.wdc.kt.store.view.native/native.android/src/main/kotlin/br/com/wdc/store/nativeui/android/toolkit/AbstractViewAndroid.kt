@@ -5,46 +5,93 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import br.com.wdc.framework.commons.log.Log as AppLog
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.framework.cube.Scope
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import kotlinx.coroutines.launch
 
 /**
  * Base class for all Android native views in the Cube MVP architecture.
  *
- * A view paints one [Scope] and calls its actions; it knows the application ([app]) only to reach the views of child
- * scopes ([RootPresenter.viewOf]) and to launch actions on the presenter dispatcher.
+ * A view paints one [Scope] and calls its actions; it knows the application ([app]), never the presenter. The
+ * application makes it the first time the scope is asked for ([AndroidNativeRootPresenter.viewOf]) and installs its
+ * [updater] in the scope: a change marks the view dirty in [ViewUpdateScheduler], which coalesces the changes into
+ * one doUpdate() per flush.
  *
- * Implements dirty-flag update throttling: when the presenter calls update(), the view is marked dirty in
- * [ViewUpdateScheduler], which coalesces multiple update() calls into one doUpdate() per flush.
+ * A view that holds other scopes (a slot, the rows of a list) asks for their views with [viewOf] while it draws
+ * ([redraw]); the views it did not ask for in a drawing are the ones whose scope left, and they are released — with
+ * the views they held in turn, unless another view still holds them. That is how a scope that leaves the screen lets
+ * go of its Android views: the presenters do not take part.
  */
 abstract class AbstractViewAndroid<S : Scope>(
     private val viewId: String,
-    protected val app: RootPresenter,
-    protected val scope: S
-) : CubeView {
+    protected val app: AndroidNativeRootPresenter,
+    val scope: S
+) {
 
     lateinit var rootView: View
         protected set
 
-    private var released = false
+    /** What the scope is told to call on a change: kept to take back only this one. */
+    val updater: () -> Unit = { update() }
+
+    /** The views of the scopes this one holds. */
+    private val children = LinkedHashSet<AbstractViewAndroid<*>>()
+
+    /** The views that hold this one. */
+    private val holders = HashSet<AbstractViewAndroid<*>>()
+
+    /** The views asked for during the drawing under way; `null` outside one. */
+    private var drawn: MutableSet<AbstractViewAndroid<*>>? = null
+
+    /** Whether this view was let go of ([release]): it is never marked dirty nor drawn again. */
+    @Volatile
+    var released = false
+        private set
+
     private var firstRender = true
     private val myListSlots = mutableListOf<ListSlot<*, *>>()
 
-    override val instanceId: String get() = viewId
+    val instanceId: String get() = viewId
 
-    override fun update() {
+    /** The scope changed: draw it again. */
+    fun update() {
         if (released) return
         ViewUpdateScheduler.markDirty(this)
     }
 
-    override fun release() {
+    /** The view of a scope this one holds (a presenter's below, a panel, a row), asked for while drawing. */
+    protected fun viewOf(held: Scope): AbstractViewAndroid<*> {
+        val child = app.viewOf(held)
+        child.holders += this
+        children += child
+        drawn?.add(child)
+        return child
+    }
+
+    /**
+     * Lets go of this view: the scope no longer tells it of changes, its view leaves its parent, and so do the views
+     * it held that no other view holds.
+     */
+    fun release() {
         if (released) return
         released = true
-        ViewUpdateScheduler.removeDirty(this)
+        scope.clearUpdater(updater)
+        app.forgetView(this)
+        if (::rootView.isInitialized) (rootView.parent as? ViewGroup)?.removeView(rootView)
+        onRelease()
         myListSlots.forEach { it.releaseAll() }
         myListSlots.clear()
+        val held = children.toList()
+        children.clear()
+        for (child in held) child.dropHolder(this)
+    }
+
+    /** The view's own cleanup when it is released (listeners, timers). */
+    protected open fun onRelease() {}
+
+    private fun dropHolder(holder: AbstractViewAndroid<*>) {
+        holders -= holder
+        if (holders.isEmpty()) release()
     }
 
     abstract fun createView(): View
@@ -61,16 +108,30 @@ abstract class AbstractViewAndroid<S : Scope>(
 
     fun initialize(): AbstractViewAndroid<S> {
         rootView = createView()
-        forceUpdate()
+        redraw()
         return this
     }
 
-    fun forceUpdate() {
+    /**
+     * Draws the scope now (the scheduler calls it for the dirty views); the held views not asked for while drawing
+     * are released.
+     */
+    fun redraw() {
         if (released) return
+        val asked = HashSet<AbstractViewAndroid<*>>()
+        drawn = asked
         try {
             doUpdate()
         } catch (e: Exception) {
             Log.e("View[$viewId]", "doUpdate error", e)
+        } finally {
+            drawn = null
+            for (child in children.toList()) {
+                if (child !in asked) {
+                    children -= child
+                    child.dropHolder(this)
+                }
+            }
         }
     }
 
@@ -105,13 +166,13 @@ abstract class AbstractViewAndroid<S : Scope>(
     }
 
     class ViewSlot(private val container: FrameLayout) {
-        var current: CubeView? = null
+        var current: AbstractViewAndroid<*>? = null
             private set
 
-        fun sync(newView: CubeView?): Boolean {
+        fun sync(newView: AbstractViewAndroid<*>?): Boolean {
             if (current === newView) return false
             container.removeAllViews()
-            if (newView is AbstractViewAndroid<*>) {
+            if (newView != null) {
                 container.addView(
                     newView.rootView,
                     FrameLayout.LayoutParams(

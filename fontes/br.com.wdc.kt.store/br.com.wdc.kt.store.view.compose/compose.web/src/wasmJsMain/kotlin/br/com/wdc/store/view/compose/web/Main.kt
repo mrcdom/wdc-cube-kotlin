@@ -102,7 +102,6 @@ fun main() {
     initializePlatform(baseUrl)
 
     val app = ComposeRootPresenter()
-    app.scopeViews = composeScopeViews(app)
     ViewUpdateScheduler.initialize { app }
 
     // On irrecoverable auth failure (401 + refresh failed), clear session and go to login
@@ -150,7 +149,7 @@ fun main() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                (app.view as? RootView)?.Render()
+                StoreApp(app)
             }
         }
     }

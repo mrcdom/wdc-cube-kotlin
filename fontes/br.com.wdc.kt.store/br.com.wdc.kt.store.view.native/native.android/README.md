@@ -6,12 +6,12 @@ View implementation using **programmatic Android Views** — no XML layouts, no 
 
 ### Base Class: `AbstractViewAndroid<S>`
 
-Every view extends `AbstractViewAndroid<S>`, which implements the framework's `CubeView` interface. A view receives
-the application and the scope it paints — never the presenter — and calls the scope's actions (`scope.onX(...)`)
-inside `safeAction`:
+Every view extends `AbstractViewAndroid<S>`. The framework knows only scopes: this module is the Android Views
+rendering technology, and it owns its views. A view receives the application (`AndroidNativeRootPresenter`) and the
+scope it paints — never the presenter — and calls the scope's actions (`scope.onX(...)`) inside `safeAction`:
 
 ```kotlin
-class ProductsPanelViewAndroid(app: RootPresenter, scope: ProductsPanelScope)
+class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsPanelScope)
     : AbstractViewAndroid<ProductsPanelScope>("products-panel-view", app, scope) {
 
     override fun createView(): View = AndroidDom.build(ctx) {
@@ -26,8 +26,11 @@ class ProductsPanelViewAndroid(app: RootPresenter, scope: ProductsPanelScope)
 
 The lifecycle is:
 1. `createView()` — builds the view tree programmatically via `AndroidDom`
-2. `doUpdate()` — called once at creation and then by the scheduler whenever the scope asks for a repaint
+2. `doUpdate()` — called once at creation and then by the scheduler (`redraw()`) whenever the scope asks for a repaint
 3. Guards (`lastX != newX`) avoid unnecessary recomputation
+4. `release()` — when no view holds it any more (below): takes its updater back, removes its `rootView` from its
+   parent, releases its list slots, runs the `onRelease()` hook for the view's own cleanup, and drops the views it
+   held. A released view is never marked dirty or drawn again
 
 ### DSL: `AndroidDom`
 
@@ -55,10 +58,10 @@ Available components: `vStack`, `hStack`, `frame`, `scrollView`, `flowLayout`, `
 
 The scheduler works via `Handler(Looper.getMainLooper())`:
 
-1. A scope change calls the view's `update()` → marks the view as dirty
+1. A scope change calls the scope's updater (the view's `update()`) → marks the view as dirty
 2. On the next main-looper pass, the scheduler flushes
 3. Each flush first runs `app.commitComputedState()` once (views it marks dirty join the same flush)
-4. Then each dirty view runs `doUpdate()` once
+4. Then each dirty view runs `doUpdate()` once (`redraw()`)
 
 ### Implementation Patterns
 
@@ -72,22 +75,31 @@ The scheduler works via `Handler(Looper.getMainLooper())`:
 
 ### Navigation and Slots
 
-Parent views declare a `ViewSlot` over a `FrameLayout` (`newViewSlot(container)`). The parent scope holds the child's scope (`content`, and
-`productsPanel`/`purchasesPanel` in Home); the parent asks the application for that scope's view, which is created once
-per scope and reused:
+Parent views declare a `ViewSlot` over a `FrameLayout` (`newViewSlot(container)`). The parent scope holds the child's
+scope (`content`, and `productsPanel`/`purchasesPanel` in Home); while it draws, the parent asks for that scope's view
+with its own `viewOf(scope)`, which goes to the application (`AndroidNativeRootPresenter.viewOf`): the view is created
+once per scope (from the catalog, scope class → view factory), its updater installed in the scope, drawn once right
+away, and reused while the scope is on screen:
 
 ```kotlin
-// In HomeViewAndroid
-detailSlot = newViewSlot(detailContainer)
+// In RootViewAndroid
+contentSlot = newViewSlot(container)
 
 // In doUpdate(): the slot swaps the visible view when the child scope changes
-detailSlot.sync(scope.content?.let(app::viewOf))
+contentSlot.sync(scope.content?.let(::viewOf))
 ```
 
 A child view repaints only when its own scope changes, never along with its parent.
 
-The catalog of views (`ScopeViews`, scope class → view) is set on the application in `MainActivity` before the first
-navigation.
+**Releasing.** A scope leaves the screen because a field of its parent changed, which redraws the parent's view.
+`redraw()` records the views asked for in that drawing; afterwards, the children not asked for are dropped. Each view
+keeps its `children` and `holders`, and is released only when no view holds it — in cascade, with the views it held.
+So **every `doUpdate()` asks for all the views it holds, on every drawing**, not only when they change (the cart
+calls `rows.map(::viewOf)` outside its "rows changed" guard). The presenters take no part.
+
+The application (`AndroidNativeRootPresenter`) holds the catalog and the live views (`viewOf`, `forgetView`,
+`liveViews()`). `MainActivity` shows `app.viewOf(app.scope).rootView`, keeps that root view and releases it in
+`onDestroy()`; the cascade takes the rest.
 
 ## Building and running
 
@@ -106,8 +118,8 @@ cd br.com.wdc.kt.store/br.com.wdc.kt.store.view.native/native.android
 
 ```
 src/main/kotlin/br/com/wdc/store/nativeui/android/
-├── MainActivity.kt        # Entry point: bootstrap and the view catalog (ScopeViews)
-├── AndroidNativeRootPresenter.kt
+├── MainActivity.kt        # Entry point: bootstrap; shows and releases the root scope's view
+├── AndroidNativeRootPresenter.kt # The application: view catalog, live views, viewOf
 ├── AndroidScheduledExecutor.kt
 ├── theme/
 │   ├── Colors.kt          # Material Design palette

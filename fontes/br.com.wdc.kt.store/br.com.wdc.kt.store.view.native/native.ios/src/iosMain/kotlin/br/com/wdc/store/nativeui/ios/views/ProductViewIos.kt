@@ -7,7 +7,7 @@ import br.com.wdc.store.nativeui.ios.theme.StoreColors
 import br.com.wdc.store.nativeui.ios.theme.StoreIcons
 import br.com.wdc.store.nativeui.ios.theme.UIK
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import platform.UIKit.*
@@ -19,7 +19,7 @@ import platform.darwin.NSObject
  * Product detail view — image, name, description, price, quantity selector, add-to-cart button.
  */
 @OptIn(ExperimentalForeignApi::class)
-class ProductViewIos(app: RootPresenter, scope: ProductScope) : AbstractViewIos<ProductScope>("product-view", app, scope) {
+class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : AbstractViewIos<ProductScope>("product-view", app, scope) {
 
     private lateinit var scrollView: UIScrollView
     private lateinit var contentStack: UIStackView

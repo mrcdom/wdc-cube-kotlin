@@ -1,6 +1,5 @@
 package br.com.wdc.store.test.mock.viewimpl
 
-import br.com.wdc.framework.cube.CubeView
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScope
 import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelScope
@@ -16,7 +15,7 @@ class RestrictedViewMock(
 ) : AbstractViewMock<HomeScope>(app, scope) {
 
     companion object {
-        fun cast(view: CubeView?): RestrictedViewMock {
+        fun cast(view: AbstractViewMock<*>?): RestrictedViewMock {
             Assertions.assertNotNull(view, "Expecting RestrictedViewMock but this view was null")
             Assertions.assertInstanceOf(RestrictedViewMock::class.java, view,
                 "Expecting RestrictedViewMock but it was ${view!!::class.simpleName}")
@@ -69,5 +68,5 @@ class RestrictedViewMock(
     }
 
     /** The view of the scope below (asked to the application, as a real view does). */
-    val contentView: CubeView? get() = scope.content?.let(app::viewOf)
+    val contentView: AbstractViewMock<*>? get() = scope.content?.let(app::viewOf)
 }
