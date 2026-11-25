@@ -12,8 +12,6 @@ kotlin {
 
     sourceSets {
         jsMain.dependencies {
-            // the handshake's textbook RSA
-            api(project(":framework-commons"))
             implementation(libs.kotlinx.coroutines.core)
         }
         jsTest.dependencies {

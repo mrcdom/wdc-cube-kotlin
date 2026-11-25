@@ -1,6 +1,6 @@
 import type { ScopeCoordinator } from './ScopeCoordinator'
 import type { BrowserScope, FormMapType } from './types'
-import { BROWSER_VSID, KEEP_ALIVE_INTERVAL } from './constants'
+import { BROWSER_VSID, CAUTHED, KEEP_ALIVE_INTERVAL } from './constants'
 
 export class FlushRequestContext {
   private readonly app: ScopeCoordinator
@@ -11,6 +11,8 @@ export class FlushRequestContext {
   }
 
   socket: WebSocket | null
+  /** Whether the hello (the first message, with the handshake) went on the current socket; nothing goes before it. */
+  private helloSent = false
   requestMap = new Map<number, FormMapType>()
   lastSentRequestId = -1
   requestCount = 0
@@ -56,7 +58,7 @@ export class FlushRequestContext {
 
     const { socket, lastSentRequestId, requestCount, requestMap } = this
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    if (socket && socket.readyState === WebSocket.OPEN && this.helloSent) {
       const requestObj: Partial<RequestObjType> & Record<string, unknown> = {
         event: [],
       }
@@ -111,11 +113,13 @@ export class FlushRequestContext {
     const me = this
     const app = this.app
 
+    this.helloSent = false
     const socket = (this.socket = new WebSocket(url, ['wdc']))
     ;(socket as unknown as Record<string, unknown>).withCredentials = true
 
     const handleDisconnect = (cause: unknown) => {
       this.socket = null
+      this.helloSent = false
       app.isConnected = false
       this.stopKeepAliveChecks()
       this.userRequestIds.clear()
@@ -128,14 +132,31 @@ export class FlushRequestContext {
       this.initKeepAliveChecks()
       this.keepAliveNow()
 
-      socket.send(
-        JSON.stringify({
-          ping: true,
-          requestId: this.lastProcessedId,
-          path: app.path,
-          secret: app.dataSecurity.getSignature(),
-        }),
-      )
+      // Each socket agrees on its own key: the hello carries a new public key, the answer brings the host's.
+      const sendHello = (clientKey?: string) => {
+        if (this.socket !== socket || socket.readyState !== WebSocket.OPEN) {
+          return
+        }
+        socket.send(
+          JSON.stringify({
+            ping: true,
+            requestId: this.lastProcessedId,
+            path: app.path,
+            clientKey,
+          }),
+        )
+        // The queued requests go with the answer, from the last one the host processed.
+        this.helloSent = true
+      }
+
+      app.dataSecurity
+        .startHandshake()
+        .then(sendHello)
+        .catch((error) => {
+          // Without Web Crypto (an insecure context, for instance), the session goes on with nothing to cipher with.
+          CAUTHED(error)
+          sendHello()
+        })
     }
 
     socket.onerror = (error) => {
@@ -169,6 +190,10 @@ export class FlushRequestContext {
         me.requestMap.delete(i)
         me.userRequestIds.delete(i)
         me.lastProcessedId = i
+      }
+
+      if (response.serverKey) {
+        app.dataSecurity.completeHandshake(response.serverKey, app.id).catch(CAUTHED)
       }
 
       if (response.uri) {

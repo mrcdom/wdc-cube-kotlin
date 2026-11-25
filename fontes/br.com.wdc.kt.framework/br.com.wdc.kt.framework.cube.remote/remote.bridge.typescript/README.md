@@ -15,14 +15,12 @@ src/
   FlushRequestContext.ts  # The WebSocket: batches events and form fields, applies scopes and releasedViews,
                           # keep-alive, the "submitting" flag
   ReconnectController.ts  # Reconnection with linear backoff: min(2000·n, 120000) ms
-  DataSecurity.ts         # Handshake (textbook RSA + PBKDF2) and AES-GCM for sensitive fields
+  DataSecurity.ts         # Key agreement (ECDH P-256 + HKDF) and AES-GCM for sensitive fields
   ViewBinding.ts          # Holds one view's scope; calls its forceUpdate when a new scope arrives
   ViewGarbageCollector.ts # Drops views the server released or that left the screen
   types.ts                # BrowserScope, FormMapType
   constants.ts            # Browser view id, keep-alive interval
   utils/
-    RSA.ts                # Textbook RSA (modular exponentiation, no padding) over BigInt
-    BigIntUtils.ts        # BigInt parsing and conversion from bytes
     Base64.ts             # Base64 and URL-safe Base64
     UTF8.ts               # TextEncoder/TextDecoder helpers
     LangUtils.ts          # Small helpers (unique id, clearing an object)
@@ -96,7 +94,7 @@ The view's lifecycle on the client:
 | `setFormField(vsid, name, value)` | Queues a value for the next event |
 | `submit(vsid, eventId)` | Sends an event; raises the `submitting` flag of the browser scope if it takes long |
 | `submitSilent(vsid, eventId)` | Sends an event without the `submitting` flag |
-| `dataSecurity.b64Cipher(text)` | Encrypts a sensitive value with the session key (AES-GCM, Base64) |
+| `dataSecurity.b64Cipher(text)` | Encrypts a sensitive value with the current socket's key (AES-GCM, Base64); waits for the handshake if it has not completed |
 | `connect()` | Reconnects now, without waiting for the backoff |
 | `onStart()` / `onStop()` | Opens the session and listens to the history / stops listening |
 | `baseWebSocketUrl` | The WebSocket base URL |
@@ -105,8 +103,8 @@ Also exported: `ViewBinding` (`getId()`, `getScope()`, `forceUpdate`), `DataSecu
 
 ## Protocol
 
-- The page that serves the shell sets the cookies `app_id` (the session id; kept in `sessionStorage`) and `app_skey` (the server's RSA public key).
-- The WebSocket opens at `ws(s)://<host>/dispatcher/<app_id>`, subprotocol `wdc`. Its first message is a ping with the last processed request id, the current path and the session signature.
+- The page that serves the shell sets one cookie, `app_id`: the session id, `<random>.<signature>` (Base62, signed by the host with HMAC-SHA256), kept in `sessionStorage`.
+- The WebSocket opens at `ws(s)://<host>/dispatcher/<app_id>`, subprotocol `wdc`. Its first message, the hello, is a ping with the last processed request id, the current path and the client's public key for the handshake (`clientKey`); nothing else goes before it. The answer brings the host's key (`serverKey`).
 - Each request carries a `requestId`, the events as `"<vsid>:<eventId>"` and the queued form fields under each view's `vsid`. Requests not yet acknowledged are sent again after a reconnection.
 - Each response carries the last processed `requestId` and, when present, the new `uri` (written to the hash), the `scopes` (one per view, by id) and the `releasedViews` (views the server let go of, applied after the scopes).
 - A scope field ending in `ViewId` references a child view, which is held while referenced. Lists of child views (`<name>ViewIds`) are not held automatically; a view is collected only after it leaves the screen.
@@ -116,5 +114,6 @@ Also exported: `ViewBinding` (`getId()`, `getScope()`, `forceUpdate`), `DataSecu
 
 ## Security
 
-1. **Handshake.** The client generates a random password, derives an AES-256-GCM key from it with PBKDF2 (SHA-256, 250,000 iterations, random salt) and encrypts the password with the server's RSA public key (textbook RSA, no padding). The signature `<rsa password, base 36>.<salt>` goes to the server in the `app_signature` cookie and in the first WebSocket message.
-2. **Sensitive data.** Values passed through `dataSecurity.b64Cipher()` (the password at login, for instance) travel encrypted with the session key, each with a random 12-byte IV of its own in front of it: `Base64(IV ‖ ciphertext and tag)`. Reusing one IV with the same GCM key would let whoever sees two values learn their XOR and forge tags. The server decrypts them (`RemoteDataSecurity`).
+1. **Handshake.** Every time the WebSocket opens, the client makes an ephemeral ECDH P-256 key pair (Web Crypto, private key not extractable) and sends its public key, Base64 SPKI, as `clientKey` in the hello. The host answers with its own public key as `serverKey`. Both sides derive the AES-256-GCM key from the ECDH shared secret with HKDF-SHA256, salt = the session id (UTF-8), info = `wdc-cube-remote/aes-256-gcm/v1`. Neither side keeps a long-lived key for this, so a recorded session cannot be deciphered later (forward secrecy). A reconnection makes a new pair and a new key; values ciphered with the old one are no longer valid.
+2. **Sensitive data.** Values passed through `dataSecurity.b64Cipher()` (the password at login, for instance) travel encrypted with the key of the current socket, each with a random 12-byte IV of its own in front of it: `Base64(IV ‖ ciphertext and tag)`. Reusing one IV with the same GCM key would let whoever sees two values learn their XOR and forge tags. The server decrypts them (`RemoteDataSecurity`). A value ciphered before the handshake completes (a login typed while the socket connects) waits for the key; if no handshake completes in 15 s, `b64Cipher` rejects.
+3. **Cookies and signatures.** The only cookie is `app_id`. The host signs the session id and the addresses it writes to the history with HMAC-SHA256; the client only carries the signatures.

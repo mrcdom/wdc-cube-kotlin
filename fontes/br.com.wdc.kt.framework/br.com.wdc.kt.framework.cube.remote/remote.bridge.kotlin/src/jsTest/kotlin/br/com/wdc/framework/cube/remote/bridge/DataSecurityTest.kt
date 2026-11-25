@@ -6,44 +6,58 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertNotEquals
-import kotlin.test.assertTrue
 
-/** The session's cipher in the browser: the handshake's signature, and a new IV for every value. */
+/**
+ * The session's cipher in the browser, with the real Web Crypto: two sides that ran the ECDH handshake with each other
+ * hold the same key (the host does the same derivation; its own test checks it against a JCA client).
+ */
 class DataSecurityTest {
 
-    /** The host's development key (`RemoteAppSecurity` without keys set). */
-    private val hostKey = "1ekh:3n88eu224huxfvj7lndkkf4n2vye4lus611fecnoc57qod2m7d"
-
-    private suspend fun session() = DataSecurity().apply {
-        updateSecurityKey(hostKey)
-        updateSecretWithRandomPassword()
+    private suspend fun handshake(sessionId: String = "session-1"): Pair<DataSecurity, DataSecurity> {
+        val client = DataSecurity()
+        val host = DataSecurity()
+        val clientKey = client.startHandshake()
+        val hostKey = host.startHandshake()
+        client.completeHandshake(hostKey, sessionId)
+        host.completeHandshake(clientKey, sessionId)
+        return client to host
     }
 
     @Test
-    fun theSignature_isThePasswordForTheHost_andTheSalt() = runTest {
-        val parts = session().signature!!.split('.')
-        assertEquals(2, parts.size, "no IV in the handshake")
-        assertTrue(parts[0].all { it.isLetterOrDigit() }, "base 36")
-        assertEquals(16, Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL).decode(parts[1]).size)
+    fun thePublicKey_isAP256SubjectPublicKeyInfo() = runTest {
+        // DER of an uncompressed P-256 point in SPKI: 91 bytes
+        assertEquals(91, Base64.decode(DataSecurity().startHandshake()).size)
     }
 
     @Test
-    fun eachValue_hasItsOwnIV_andDeciphers() = runTest {
-        val security = session()
-        val first = security.b64Cipher("fulano")
-        val second = security.b64Cipher("fulano")
+    fun afterTheHandshake_bothSidesHoldTheSameKey_andEachValueHasItsOwnIV() = runTest {
+        val (client, host) = handshake()
+        val first = client.b64Cipher("fulano")
+        val second = client.b64Cipher("fulano")
 
         assertNotEquals(first, second)
         assertNotEquals(Base64.decode(first).copyOf(12).toList(), Base64.decode(second).copyOf(12).toList())
-        assertEquals("fulano", security.b64Decipher(first))
-        assertEquals("fulano", security.b64Decipher(second))
+        assertEquals("fulano", host.b64Decipher(first))
+        assertEquals("fulano", host.b64Decipher(second))
+    }
+
+    @Test
+    fun theSessionId_isPartOfTheKey() = runTest {
+        val client = DataSecurity()
+        val host = DataSecurity()
+        val clientKey = client.startHandshake()
+        val hostKey = host.startHandshake()
+        client.completeHandshake(hostKey, "session-1")
+        host.completeHandshake(clientKey, "session-2")
+        val ciphered = client.b64Cipher("fulano")
+        assertFails { host.b64Decipher(ciphered) }
     }
 
     @Test
     fun aChangedByte_isRefused() = runTest {
-        val security = session()
-        val bytes = Base64.decode(security.b64Cipher("fulano"))
+        val (client, host) = handshake()
+        val bytes = Base64.decode(client.b64Cipher("fulano"))
         bytes[bytes.size - 1] = (bytes[bytes.size - 1].toInt() xor 1).toByte()
-        assertFails { security.b64Decipher(Base64.encode(bytes)) }
+        assertFails { host.b64Decipher(Base64.encode(bytes)) }
     }
 }

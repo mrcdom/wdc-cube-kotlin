@@ -92,7 +92,7 @@ The default export, `bridge`:
 | `setFormField(vsid, name, value)` | Queues a value for the next event of that view |
 | `submit(vsid, eventId)` | Sends an event; shows the activity indicator if it takes long |
 | `submitSilent(vsid, eventId)` | Sends an event without the activity indicator |
-| `cipher(text)` | Encrypts a sensitive value with the session key (AES-GCM, Base64, a new random IV per value) |
+| `cipher(text)` | Encrypts a sensitive value with the key of the current socket (ECDH handshake, AES-GCM, Base64, a new random IV per value); waits for the handshake if it has not completed |
 | `connect()` | Reconnects now, without waiting for the backoff |
 | `onStart()` / `onStop()` | Opens the session and listens to the history / stops listening |
 | `getScope<T>(vsid)` / `getBaseUrl()` | The current scope of a view / the WebSocket base URL |

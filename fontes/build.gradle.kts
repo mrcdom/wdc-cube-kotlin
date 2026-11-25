@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.agp) apply false
     alias(libs.plugins.android.kmp.library) apply false
     alias(libs.plugins.maven.publish) apply false
+    alias(libs.plugins.dokka) apply false
 }
 
 allprojects {
@@ -115,6 +116,24 @@ fun Project.publishToCentral(platform: com.vanniktech.maven.publish.Platform) {
 }
 
 configure(subprojects.filter { it.name in publishedModules }) {
+    // The API documentation (KDoc), published as each module's javadoc jar
+    apply(plugin = "org.jetbrains.dokka")
+
+    // The public API of each published module is kept in `api/` (a dump per platform); `check` fails when it changes
+    // and the dump was not updated (`./gradlew updateKotlinAbi`), so a breaking change is never published by accident.
+    pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+            @OptIn(org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation::class)
+            abiValidation()
+        }
+    }
+    pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+        configure<org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension> {
+            @OptIn(org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation::class)
+            abiValidation()
+        }
+    }
+
     // Maven Central namespace verified through the GitHub account; "wdc.kt" mirrors br.com.wdc.kt
     group = "io.github.mrcdom.wdc.kt"
     version = "0.5.0"
@@ -123,7 +142,7 @@ configure(subprojects.filter { it.name in publishedModules }) {
     pluginManager.withPlugin("com.android.kotlin.multiplatform.library") {
         publishToCentral(
             com.vanniktech.maven.publish.KotlinMultiplatform(
-                javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
+                javadocJar = com.vanniktech.maven.publish.JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
                 sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
                 androidVariantsToPublish = listOf("release"),
             )
@@ -135,7 +154,7 @@ configure(subprojects.filter { it.name in publishedModules }) {
         pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
             publishToCentral(
                 com.vanniktech.maven.publish.KotlinMultiplatform(
-                    javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
+                    javadocJar = com.vanniktech.maven.publish.JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
                     sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
                 )
             )
@@ -146,7 +165,7 @@ configure(subprojects.filter { it.name in publishedModules }) {
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
         publishToCentral(
             com.vanniktech.maven.publish.KotlinJvm(
-                javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
+                javadocJar = com.vanniktech.maven.publish.JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
                 sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
             )
         )

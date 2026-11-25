@@ -85,4 +85,18 @@ class RemoteProtocolTest {
 
         assertEquals(signed, lastAnswer()["uri"].asString)
     }
+
+    @Test
+    fun aClientKey_isAnsweredWithTheHostsKey_onceAndOnlyOnce() {
+        val clientPair = java.security.KeyPairGenerator.getInstance("EC")
+            .apply { initialize(java.security.spec.ECGenParameterSpec("secp256r1")) }.generateKeyPair()
+        val clientKey = java.util.Base64.getEncoder().encodeToString(clientPair.public.encoded)
+
+        send(mapOf("requestId" to 1.0, "ping" to true, "clientKey" to clientKey))
+        assertTrue(lastAnswer().has("serverKey"), "the host answers the handshake")
+        assertTrue(app.remote.dataSecurity.ready)
+
+        send(mapOf("requestId" to 2.0, "ping" to true))
+        assertTrue(!lastAnswer().has("serverKey"), "only the answer to the handshake carries it")
+    }
 }

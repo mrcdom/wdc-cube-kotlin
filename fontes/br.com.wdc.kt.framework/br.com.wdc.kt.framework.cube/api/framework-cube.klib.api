@@ -1,0 +1,246 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, js, wasmJs]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.mrcdom.wdc.kt:framework-cube>
+abstract fun interface <#A: kotlin/Any?, #B: kotlin/Any?> br.com.wdc.framework.cube/ActionOf2 { // br.com.wdc.framework.cube/ActionOf2|null[0]
+    abstract suspend fun invoke(#A, #B) // br.com.wdc.framework.cube/ActionOf2.invoke|invoke(1:0;1:1){}[0]
+
+    final object Companion { // br.com.wdc.framework.cube/ActionOf2.Companion|null[0]
+        final fun <#A2: kotlin/Any?, #B2: kotlin/Any?> noop(): br.com.wdc.framework.cube/ActionOf2<#A2, #B2> // br.com.wdc.framework.cube/ActionOf2.Companion.noop|noop(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+    }
+}
+
+abstract fun interface <#A: kotlin/Any?> br.com.wdc.framework.cube/ActionOf { // br.com.wdc.framework.cube/ActionOf|null[0]
+    abstract suspend fun invoke(#A) // br.com.wdc.framework.cube/ActionOf.invoke|invoke(1:0){}[0]
+
+    final object Companion { // br.com.wdc.framework.cube/ActionOf.Companion|null[0]
+        final fun <#A2: kotlin/Any?> noop(): br.com.wdc.framework.cube/ActionOf<#A2> // br.com.wdc.framework.cube/ActionOf.Companion.noop|noop(){0§<kotlin.Any?>}[0]
+    }
+}
+
+abstract fun interface br.com.wdc.framework.cube/Action { // br.com.wdc.framework.cube/Action|null[0]
+    abstract suspend fun invoke() // br.com.wdc.framework.cube/Action.invoke|invoke(){}[0]
+
+    final object Companion { // br.com.wdc.framework.cube/Action.Companion|null[0]
+        final val NOOP // br.com.wdc.framework.cube/Action.Companion.NOOP|{}NOOP[0]
+            final fun <get-NOOP>(): br.com.wdc.framework.cube/Action // br.com.wdc.framework.cube/Action.Companion.NOOP.<get-NOOP>|<get-NOOP>(){}[0]
+    }
+}
+
+abstract fun interface br.com.wdc.framework.cube/ScopeSlot { // br.com.wdc.framework.cube/ScopeSlot|null[0]
+    abstract fun setScope(br.com.wdc.framework.cube/Scope?) // br.com.wdc.framework.cube/ScopeSlot.setScope|setScope(br.com.wdc.framework.cube.Scope?){}[0]
+}
+
+abstract fun interface br.com.wdc.framework.cube/ScopeValue { // br.com.wdc.framework.cube/ScopeValue|null[0]
+    abstract fun writeJson(br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput) // br.com.wdc.framework.cube/ScopeValue.writeJson|writeJson(br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput){}[0]
+}
+
+abstract interface br.com.wdc.framework.cube/CubePlace { // br.com.wdc.framework.cube/CubePlace|null[0]
+    abstract val id // br.com.wdc.framework.cube/CubePlace.id|{}id[0]
+        abstract fun <get-id>(): kotlin/Int // br.com.wdc.framework.cube/CubePlace.id.<get-id>|<get-id>(){}[0]
+    abstract val placeName // br.com.wdc.framework.cube/CubePlace.placeName|{}placeName[0]
+        abstract fun <get-placeName>(): kotlin/String // br.com.wdc.framework.cube/CubePlace.placeName.<get-placeName>|<get-placeName>(){}[0]
+
+    abstract fun <#A1: br.com.wdc.framework.cube/CubeApplication> presenterFactory(): kotlin/Function1<#A1, br.com.wdc.framework.cube/CubePresenter> // br.com.wdc.framework.cube/CubePlace.presenterFactory|presenterFactory(){0§<br.com.wdc.framework.cube.CubeApplication>}[0]
+}
+
+abstract interface br.com.wdc.framework.cube/CubePresenter : br.com.wdc.framework.cube/PresenterBase { // br.com.wdc.framework.cube/CubePresenter|null[0]
+    abstract fun release() // br.com.wdc.framework.cube/CubePresenter.release|release(){}[0]
+    abstract suspend fun applyParameters(br.com.wdc.framework.cube/CubeIntent, kotlin/Boolean, kotlin/Boolean): kotlin/Boolean // br.com.wdc.framework.cube/CubePresenter.applyParameters|applyParameters(br.com.wdc.framework.cube.CubeIntent;kotlin.Boolean;kotlin.Boolean){}[0]
+    open fun publishParameters(br.com.wdc.framework.cube/CubeIntent) // br.com.wdc.framework.cube/CubePresenter.publishParameters|publishParameters(br.com.wdc.framework.cube.CubeIntent){}[0]
+}
+
+abstract interface br.com.wdc.framework.cube/PresenterBase { // br.com.wdc.framework.cube/PresenterBase|null[0]
+    abstract val app // br.com.wdc.framework.cube/PresenterBase.app|{}app[0]
+        abstract fun <get-app>(): br.com.wdc.framework.cube/CubeApplication // br.com.wdc.framework.cube/PresenterBase.app.<get-app>|<get-app>(){}[0]
+
+    abstract fun release() // br.com.wdc.framework.cube/PresenterBase.release|release(){}[0]
+    open fun commitComputedState() // br.com.wdc.framework.cube/PresenterBase.commitComputedState|commitComputedState(){}[0]
+}
+
+abstract class <#A: br.com.wdc.framework.cube/CubeApplication> br.com.wdc.framework.cube/AbstractPresenter : br.com.wdc.framework.cube/PresenterBase { // br.com.wdc.framework.cube/AbstractPresenter|null[0]
+    constructor <init>(#A) // br.com.wdc.framework.cube/AbstractPresenter.<init>|<init>(1:0){}[0]
+
+    open val app // br.com.wdc.framework.cube/AbstractPresenter.app|{}app[0]
+        open fun <get-app>(): #A // br.com.wdc.framework.cube/AbstractPresenter.app.<get-app>|<get-app>(){}[0]
+
+    final fun <#A1: br.com.wdc.framework.cube/Scope> bind(#A1): #A1 // br.com.wdc.framework.cube/AbstractPresenter.bind|bind(0:0){0§<br.com.wdc.framework.cube.Scope>}[0]
+    final fun <#A1: kotlin/Any?, #B1: kotlin/Any?> actionOf2(kotlin.coroutines/SuspendFunction2<#A1, #B1, kotlin/Unit>): br.com.wdc.framework.cube/ActionOf2<#A1, #B1> // br.com.wdc.framework.cube/AbstractPresenter.actionOf2|actionOf2(kotlin.coroutines.SuspendFunction2<0:0,0:1,kotlin.Unit>){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?, #B1: kotlin/Any?> actionOf2(kotlin/Int, br.com.wdc.framework.cube/FormParam<#A1>, br.com.wdc.framework.cube/FormParam<#B1>, br.com.wdc.framework.cube/Scope = ..., kotlin.coroutines/SuspendFunction2<#A1, #B1, kotlin/Unit>): br.com.wdc.framework.cube/ActionOf2<#A1, #B1> // br.com.wdc.framework.cube/AbstractPresenter.actionOf2|actionOf2(kotlin.Int;br.com.wdc.framework.cube.FormParam<0:0>;br.com.wdc.framework.cube.FormParam<0:1>;br.com.wdc.framework.cube.Scope;kotlin.coroutines.SuspendFunction2<0:0,0:1,kotlin.Unit>){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> actionOf(kotlin.coroutines/SuspendFunction1<#A1, kotlin/Unit>): br.com.wdc.framework.cube/ActionOf<#A1> // br.com.wdc.framework.cube/AbstractPresenter.actionOf|actionOf(kotlin.coroutines.SuspendFunction1<0:0,kotlin.Unit>){0§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> actionOf(kotlin/Int, br.com.wdc.framework.cube/FormParam<#A1>, br.com.wdc.framework.cube/Scope = ..., kotlin.coroutines/SuspendFunction1<#A1, kotlin/Unit>): br.com.wdc.framework.cube/ActionOf<#A1> // br.com.wdc.framework.cube/AbstractPresenter.actionOf|actionOf(kotlin.Int;br.com.wdc.framework.cube.FormParam<0:0>;br.com.wdc.framework.cube.Scope;kotlin.coroutines.SuspendFunction1<0:0,kotlin.Unit>){0§<kotlin.Any?>}[0]
+    final fun action(kotlin.coroutines/SuspendFunction0<kotlin/Unit>): br.com.wdc.framework.cube/Action // br.com.wdc.framework.cube/AbstractPresenter.action|action(kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
+    final fun action(kotlin/Int, br.com.wdc.framework.cube/Scope = ..., kotlin.coroutines/SuspendFunction0<kotlin/Unit>): br.com.wdc.framework.cube/Action // br.com.wdc.framework.cube/AbstractPresenter.action|action(kotlin.Int;br.com.wdc.framework.cube.Scope;kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
+    final fun onEvent(kotlin/Int, br.com.wdc.framework.cube/Scope = ..., kotlin.coroutines/SuspendFunction1<kotlin.collections/Map<kotlin/String, kotlin/Any?>, kotlin/Unit>) // br.com.wdc.framework.cube/AbstractPresenter.onEvent|onEvent(kotlin.Int;br.com.wdc.framework.cube.Scope;kotlin.coroutines.SuspendFunction1<kotlin.collections.Map<kotlin.String,kotlin.Any?>,kotlin.Unit>){}[0]
+    final fun scope(): br.com.wdc.framework.cube/Scope? // br.com.wdc.framework.cube/AbstractPresenter.scope|scope(){}[0]
+    open fun onActionFailure(kotlin/Exception) // br.com.wdc.framework.cube/AbstractPresenter.onActionFailure|onActionFailure(kotlin.Exception){}[0]
+    open fun release() // br.com.wdc.framework.cube/AbstractPresenter.release|release(){}[0]
+}
+
+abstract class <#A: br.com.wdc.framework.cube/CubeApplication> br.com.wdc.framework.cube/CubeKeys { // br.com.wdc.framework.cube/CubeKeys|null[0]
+    constructor <init>(#A, br.com.wdc.framework.cube/CubeIntent?, br.com.wdc.framework.cube/CubeTreePlace) // br.com.wdc.framework.cube/CubeKeys.<init>|<init>(1:0;br.com.wdc.framework.cube.CubeIntent?;br.com.wdc.framework.cube.CubeTreePlace){}[0]
+
+    final val app // br.com.wdc.framework.cube/CubeKeys.app|{}app[0]
+        final fun <get-app>(): #A // br.com.wdc.framework.cube/CubeKeys.app.<get-app>|<get-app>(){}[0]
+    final val intent // br.com.wdc.framework.cube/CubeKeys.intent|{}intent[0]
+        final fun <get-intent>(): br.com.wdc.framework.cube/CubeIntent // br.com.wdc.framework.cube/CubeKeys.intent.<get-intent>|<get-intent>(){}[0]
+    final val place // br.com.wdc.framework.cube/CubeKeys.place|{}place[0]
+        final fun <get-place>(): br.com.wdc.framework.cube/CubeTreePlace // br.com.wdc.framework.cube/CubeKeys.place.<get-place>|<get-place>(){}[0]
+
+    open suspend fun flip(): kotlin/Boolean // br.com.wdc.framework.cube/CubeKeys.flip|flip(){}[0]
+}
+
+abstract class br.com.wdc.framework.cube/CubeApplication { // br.com.wdc.framework.cube/CubeApplication|null[0]
+    constructor <init>(kotlin.collections/List<br.com.wdc.framework.cube/CubeTreePlace> = ...) // br.com.wdc.framework.cube/CubeApplication.<init>|<init>(kotlin.collections.List<br.com.wdc.framework.cube.CubeTreePlace>){}[0]
+
+    final val places // br.com.wdc.framework.cube/CubeApplication.places|{}places[0]
+        final fun <get-places>(): kotlin.collections/List<br.com.wdc.framework.cube/CubeTreePlace> // br.com.wdc.framework.cube/CubeApplication.places.<get-places>|<get-places>(){}[0]
+
+    final var fragment // br.com.wdc.framework.cube/CubeApplication.fragment|{}fragment[0]
+        final fun <get-fragment>(): kotlin/String? // br.com.wdc.framework.cube/CubeApplication.fragment.<get-fragment>|<get-fragment>(){}[0]
+        final fun <set-fragment>(kotlin/String?) // br.com.wdc.framework.cube/CubeApplication.fragment.<set-fragment>|<set-fragment>(kotlin.String?){}[0]
+
+    final fun <#A1: br.com.wdc.framework.cube/CubeApplication> navigate(): br.com.wdc.framework.cube/CubeNavigation<#A1> // br.com.wdc.framework.cube/CubeApplication.navigate|navigate(){0§<br.com.wdc.framework.cube.CubeApplication>}[0]
+    final fun forEachPresenter(kotlin/Function1<br.com.wdc.framework.cube/CubePresenter, kotlin/Unit>) // br.com.wdc.framework.cube/CubeApplication.forEachPresenter|forEachPresenter(kotlin.Function1<br.com.wdc.framework.cube.CubePresenter,kotlin.Unit>){}[0]
+    final fun getLastPlace(): br.com.wdc.framework.cube/CubePlace? // br.com.wdc.framework.cube/CubeApplication.getLastPlace|getLastPlace(){}[0]
+    final fun getPresenter(kotlin/Int): br.com.wdc.framework.cube/CubePresenter? // br.com.wdc.framework.cube/CubeApplication.getPresenter|getPresenter(kotlin.Int){}[0]
+    final fun newIntent(): br.com.wdc.framework.cube/CubeIntent // br.com.wdc.framework.cube/CubeApplication.newIntent|newIntent(){}[0]
+    final fun placeOf(kotlin/String?): br.com.wdc.framework.cube/CubeTreePlace // br.com.wdc.framework.cube/CubeApplication.placeOf|placeOf(kotlin.String?){}[0]
+    final fun publishParameters(br.com.wdc.framework.cube/CubeIntent) // br.com.wdc.framework.cube/CubeApplication.publishParameters|publishParameters(br.com.wdc.framework.cube.CubeIntent){}[0]
+    final suspend fun flip(br.com.wdc.framework.cube/CubeIntent): kotlin/Boolean // br.com.wdc.framework.cube/CubeApplication.flip|flip(br.com.wdc.framework.cube.CubeIntent){}[0]
+    final suspend fun flip(br.com.wdc.framework.cube/CubeTreePlace, br.com.wdc.framework.cube/CubeIntent = ...): kotlin/Boolean // br.com.wdc.framework.cube/CubeApplication.flip|flip(br.com.wdc.framework.cube.CubeTreePlace;br.com.wdc.framework.cube.CubeIntent){}[0]
+    final suspend fun flip(kotlin/String): kotlin/Boolean // br.com.wdc.framework.cube/CubeApplication.flip|flip(kotlin.String){}[0]
+    open fun alertUnexpectedError(br.com.wdc.framework.commons.log/Log, kotlin/String, kotlin/Throwable) // br.com.wdc.framework.cube/CubeApplication.alertUnexpectedError|alertUnexpectedError(br.com.wdc.framework.commons.log.Log;kotlin.String;kotlin.Throwable){}[0]
+    open fun commitComputedState() // br.com.wdc.framework.cube/CubeApplication.commitComputedState|commitComputedState(){}[0]
+    open fun getAttribute(kotlin/String): kotlin/Any? // br.com.wdc.framework.cube/CubeApplication.getAttribute|getAttribute(kotlin.String){}[0]
+    open fun release() // br.com.wdc.framework.cube/CubeApplication.release|release(){}[0]
+    open fun removeAttribute(kotlin/String): kotlin/Any? // br.com.wdc.framework.cube/CubeApplication.removeAttribute|removeAttribute(kotlin.String){}[0]
+    open fun setAttribute(kotlin/String, kotlin/Any?): kotlin/Any? // br.com.wdc.framework.cube/CubeApplication.setAttribute|setAttribute(kotlin.String;kotlin.Any?){}[0]
+    open fun updateHistory() // br.com.wdc.framework.cube/CubeApplication.updateHistory|updateHistory(){}[0]
+    open suspend fun applyParameters(br.com.wdc.framework.cube/CubeIntent, kotlin/Boolean, kotlin/Boolean): kotlin/Boolean // br.com.wdc.framework.cube/CubeApplication.applyParameters|applyParameters(br.com.wdc.framework.cube.CubeIntent;kotlin.Boolean;kotlin.Boolean){}[0]
+}
+
+abstract class br.com.wdc.framework.cube/Scope { // br.com.wdc.framework.cube/Scope|null[0]
+    constructor <init>() // br.com.wdc.framework.cube/Scope.<init>|<init>(){}[0]
+
+    final fun <#A1: br.com.wdc.framework.cube/Scope> scopes(): kotlin.properties/PropertyDelegateProvider<br.com.wdc.framework.cube/Scope, kotlin.properties/ReadWriteProperty<br.com.wdc.framework.cube/Scope, kotlin.collections/List<#A1>>> // br.com.wdc.framework.cube/Scope.scopes|scopes(){0§<br.com.wdc.framework.cube.Scope>}[0]
+    final fun <#A1: kotlin/Any?> field(#A1, kotlin/Boolean = ...): kotlin.properties/PropertyDelegateProvider<br.com.wdc.framework.cube/Scope, kotlin.properties/ReadWriteProperty<br.com.wdc.framework.cube/Scope, #A1>> // br.com.wdc.framework.cube/Scope.field|field(0:0;kotlin.Boolean){0§<kotlin.Any?>}[0]
+    final fun changed() // br.com.wdc.framework.cube/Scope.changed|changed(){}[0]
+    final fun clearUpdater(kotlin/Function0<kotlin/Unit>) // br.com.wdc.framework.cube/Scope.clearUpdater|clearUpdater(kotlin.Function0<kotlin.Unit>){}[0]
+    final fun onSync(kotlin/Function1<kotlin.collections/Map<kotlin/String, kotlin/Any?>, kotlin/Unit>) // br.com.wdc.framework.cube/Scope.onSync|onSync(kotlin.Function1<kotlin.collections.Map<kotlin.String,kotlin.Any?>,kotlin.Unit>){}[0]
+    final fun setUpdater(kotlin/Function0<kotlin/Unit>?) // br.com.wdc.framework.cube/Scope.setUpdater|setUpdater(kotlin.Function0<kotlin.Unit>?){}[0]
+    final fun sync(kotlin.collections/Map<kotlin/String, kotlin/Any?>) // br.com.wdc.framework.cube/Scope.sync|sync(kotlin.collections.Map<kotlin.String,kotlin.Any?>){}[0]
+    final fun toJson(kotlin/String, kotlin/Function1<br.com.wdc.framework.cube/Scope, kotlin/String>? = ...): kotlin/String // br.com.wdc.framework.cube/Scope.toJson|toJson(kotlin.String;kotlin.Function1<br.com.wdc.framework.cube.Scope,kotlin.String>?){}[0]
+    final suspend fun dispatch(kotlin/Int, kotlin.collections/Map<kotlin/String, kotlin/Any?>) // br.com.wdc.framework.cube/Scope.dispatch|dispatch(kotlin.Int;kotlin.collections.Map<kotlin.String,kotlin.Any?>){}[0]
+    open fun write(kotlin/String, br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/Function1<br.com.wdc.framework.cube/Scope, kotlin/String>? = ...) // br.com.wdc.framework.cube/Scope.write|write(kotlin.String;br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput;kotlin.Function1<br.com.wdc.framework.cube.Scope,kotlin.String>?){}[0]
+}
+
+final class <#A: br.com.wdc.framework.cube/CubeApplication> br.com.wdc.framework.cube/CubeNavigation { // br.com.wdc.framework.cube/CubeNavigation|null[0]
+    final fun interrupt() // br.com.wdc.framework.cube/CubeNavigation.interrupt|interrupt(){}[0]
+    final fun step(br.com.wdc.framework.cube/CubePlace): br.com.wdc.framework.cube/CubeNavigation<#A> // br.com.wdc.framework.cube/CubeNavigation.step|step(br.com.wdc.framework.cube.CubePlace){}[0]
+    final suspend fun execute(br.com.wdc.framework.cube/CubeIntent): kotlin/Boolean // br.com.wdc.framework.cube/CubeNavigation.execute|execute(br.com.wdc.framework.cube.CubeIntent){}[0]
+
+    final object Companion // br.com.wdc.framework.cube/CubeNavigation.Companion|null[0]
+}
+
+final class <#A: kotlin/Any?> br.com.wdc.framework.cube/FormParam { // br.com.wdc.framework.cube/FormParam|null[0]
+    constructor <init>(kotlin/String, kotlin/Function1<kotlin/Any?, #A>) // br.com.wdc.framework.cube/FormParam.<init>|<init>(kotlin.String;kotlin.Function1<kotlin.Any?,1:0>){}[0]
+
+    final val name // br.com.wdc.framework.cube/FormParam.name|{}name[0]
+        final fun <get-name>(): kotlin/String // br.com.wdc.framework.cube/FormParam.name.<get-name>|<get-name>(){}[0]
+
+    final fun read(kotlin.collections/Map<kotlin/String, kotlin/Any?>): #A // br.com.wdc.framework.cube/FormParam.read|read(kotlin.collections.Map<kotlin.String,kotlin.Any?>){}[0]
+
+    final object Companion { // br.com.wdc.framework.cube/FormParam.Companion|null[0]
+        final fun int(kotlin/String): br.com.wdc.framework.cube/FormParam<kotlin/Int?> // br.com.wdc.framework.cube/FormParam.Companion.int|int(kotlin.String){}[0]
+        final fun long(kotlin/String): br.com.wdc.framework.cube/FormParam<kotlin/Long?> // br.com.wdc.framework.cube/FormParam.Companion.long|long(kotlin.String){}[0]
+        final fun string(kotlin/String): br.com.wdc.framework.cube/FormParam<kotlin/String?> // br.com.wdc.framework.cube/FormParam.Companion.string|string(kotlin.String){}[0]
+    }
+}
+
+final class br.com.wdc.framework.cube.util/QueryStringBuilder { // br.com.wdc.framework.cube.util/QueryStringBuilder|null[0]
+    constructor <init>() // br.com.wdc.framework.cube.util/QueryStringBuilder.<init>|<init>(){}[0]
+
+    final fun append(kotlin.collections/Map<kotlin/String, kotlin/Any>) // br.com.wdc.framework.cube.util/QueryStringBuilder.append|append(kotlin.collections.Map<kotlin.String,kotlin.Any>){}[0]
+    final fun toString(): kotlin/String // br.com.wdc.framework.cube.util/QueryStringBuilder.toString|toString(){}[0]
+
+    final object Companion // br.com.wdc.framework.cube.util/QueryStringBuilder.Companion|null[0]
+}
+
+final class br.com.wdc.framework.cube/CubeIntent { // br.com.wdc.framework.cube/CubeIntent|null[0]
+    constructor <init>() // br.com.wdc.framework.cube/CubeIntent.<init>|<init>(){}[0]
+
+    final var place // br.com.wdc.framework.cube/CubeIntent.place|{}place[0]
+        final fun <get-place>(): br.com.wdc.framework.cube/CubePlace? // br.com.wdc.framework.cube/CubeIntent.place.<get-place>|<get-place>(){}[0]
+        final fun <set-place>(br.com.wdc.framework.cube/CubePlace?) // br.com.wdc.framework.cube/CubeIntent.place.<set-place>|<set-place>(br.com.wdc.framework.cube.CubePlace?){}[0]
+
+    final fun clearParameters() // br.com.wdc.framework.cube/CubeIntent.clearParameters|clearParameters(){}[0]
+    final fun getAttribute(kotlin/String): kotlin/Any? // br.com.wdc.framework.cube/CubeIntent.getAttribute|getAttribute(kotlin.String){}[0]
+    final fun getParameterAsByte(kotlin/String, kotlin/Byte? = ...): kotlin/Byte? // br.com.wdc.framework.cube/CubeIntent.getParameterAsByte|getParameterAsByte(kotlin.String;kotlin.Byte?){}[0]
+    final fun getParameterAsCharacter(kotlin/String, kotlin/Char? = ...): kotlin/Char? // br.com.wdc.framework.cube/CubeIntent.getParameterAsCharacter|getParameterAsCharacter(kotlin.String;kotlin.Char?){}[0]
+    final fun getParameterAsDouble(kotlin/String, kotlin/Double? = ...): kotlin/Double? // br.com.wdc.framework.cube/CubeIntent.getParameterAsDouble|getParameterAsDouble(kotlin.String;kotlin.Double?){}[0]
+    final fun getParameterAsFloat(kotlin/String, kotlin/Float? = ...): kotlin/Float? // br.com.wdc.framework.cube/CubeIntent.getParameterAsFloat|getParameterAsFloat(kotlin.String;kotlin.Float?){}[0]
+    final fun getParameterAsInteger(kotlin/String, kotlin/Int? = ...): kotlin/Int? // br.com.wdc.framework.cube/CubeIntent.getParameterAsInteger|getParameterAsInteger(kotlin.String;kotlin.Int?){}[0]
+    final fun getParameterAsLong(kotlin/String, kotlin/Long? = ...): kotlin/Long? // br.com.wdc.framework.cube/CubeIntent.getParameterAsLong|getParameterAsLong(kotlin.String;kotlin.Long?){}[0]
+    final fun getParameterAsShort(kotlin/String, kotlin/Short? = ...): kotlin/Short? // br.com.wdc.framework.cube/CubeIntent.getParameterAsShort|getParameterAsShort(kotlin.String;kotlin.Short?){}[0]
+    final fun getParameterAsString(kotlin/String, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.cube/CubeIntent.getParameterAsString|getParameterAsString(kotlin.String;kotlin.String?){}[0]
+    final fun getParameterValue(kotlin/String): kotlin/Any? // br.com.wdc.framework.cube/CubeIntent.getParameterValue|getParameterValue(kotlin.String){}[0]
+    final fun getScopeSlot(kotlin/String): br.com.wdc.framework.cube/ScopeSlot? // br.com.wdc.framework.cube/CubeIntent.getScopeSlot|getScopeSlot(kotlin.String){}[0]
+    final fun removeAttribute(kotlin/String): kotlin/Any? // br.com.wdc.framework.cube/CubeIntent.removeAttribute|removeAttribute(kotlin.String){}[0]
+    final fun removeParameter(kotlin/String): kotlin/Any? // br.com.wdc.framework.cube/CubeIntent.removeParameter|removeParameter(kotlin.String){}[0]
+    final fun setAttribute(kotlin/String, kotlin/Any?) // br.com.wdc.framework.cube/CubeIntent.setAttribute|setAttribute(kotlin.String;kotlin.Any?){}[0]
+    final fun setParameter(kotlin/String, kotlin/Any?) // br.com.wdc.framework.cube/CubeIntent.setParameter|setParameter(kotlin.String;kotlin.Any?){}[0]
+    final fun setScopeSlot(kotlin/String, br.com.wdc.framework.cube/ScopeSlot?) // br.com.wdc.framework.cube/CubeIntent.setScopeSlot|setScopeSlot(kotlin.String;br.com.wdc.framework.cube.ScopeSlot?){}[0]
+    final fun toString(): kotlin/String // br.com.wdc.framework.cube/CubeIntent.toString|toString(){}[0]
+
+    final object Companion { // br.com.wdc.framework.cube/CubeIntent.Companion|null[0]
+        final fun parse(kotlin/String?): br.com.wdc.framework.cube/CubeIntent // br.com.wdc.framework.cube/CubeIntent.Companion.parse|parse(kotlin.String?){}[0]
+    }
+}
+
+final class br.com.wdc.framework.cube/CubeTreePlace : br.com.wdc.framework.cube/CubePlace { // br.com.wdc.framework.cube/CubeTreePlace|null[0]
+    final val id // br.com.wdc.framework.cube/CubeTreePlace.id|{}id[0]
+        final fun <get-id>(): kotlin/Int // br.com.wdc.framework.cube/CubeTreePlace.id.<get-id>|<get-id>(){}[0]
+    final val isRoot // br.com.wdc.framework.cube/CubeTreePlace.isRoot|{}isRoot[0]
+        final fun <get-isRoot>(): kotlin/Boolean // br.com.wdc.framework.cube/CubeTreePlace.isRoot.<get-isRoot>|<get-isRoot>(){}[0]
+    final val parent // br.com.wdc.framework.cube/CubeTreePlace.parent|{}parent[0]
+        final fun <get-parent>(): br.com.wdc.framework.cube/CubeTreePlace? // br.com.wdc.framework.cube/CubeTreePlace.parent.<get-parent>|<get-parent>(){}[0]
+    final val path // br.com.wdc.framework.cube/CubeTreePlace.path|{}path[0]
+        final fun <get-path>(): kotlin.collections/List<br.com.wdc.framework.cube/CubeTreePlace> // br.com.wdc.framework.cube/CubeTreePlace.path.<get-path>|<get-path>(){}[0]
+    final val placeName // br.com.wdc.framework.cube/CubeTreePlace.placeName|{}placeName[0]
+        final fun <get-placeName>(): kotlin/String // br.com.wdc.framework.cube/CubeTreePlace.placeName.<get-placeName>|<get-placeName>(){}[0]
+
+    final fun <#A1: br.com.wdc.framework.cube/CubeApplication> child(kotlin/String, kotlin/Function1<#A1, br.com.wdc.framework.cube/CubePresenter>): br.com.wdc.framework.cube/CubeTreePlace // br.com.wdc.framework.cube/CubeTreePlace.child|child(kotlin.String;kotlin.Function1<0:0,br.com.wdc.framework.cube.CubePresenter>){0§<br.com.wdc.framework.cube.CubeApplication>}[0]
+    final fun <#A1: br.com.wdc.framework.cube/CubeApplication> presenterFactory(): kotlin/Function1<#A1, br.com.wdc.framework.cube/CubePresenter> // br.com.wdc.framework.cube/CubeTreePlace.presenterFactory|presenterFactory(){0§<br.com.wdc.framework.cube.CubeApplication>}[0]
+    final fun contains(br.com.wdc.framework.cube/CubeTreePlace): kotlin/Boolean // br.com.wdc.framework.cube/CubeTreePlace.contains|contains(br.com.wdc.framework.cube.CubeTreePlace){}[0]
+    final fun toString(): kotlin/String // br.com.wdc.framework.cube/CubeTreePlace.toString|toString(){}[0]
+
+    final object Companion { // br.com.wdc.framework.cube/CubeTreePlace.Companion|null[0]
+        final val ROOT // br.com.wdc.framework.cube/CubeTreePlace.Companion.ROOT|{}ROOT[0]
+            final fun <get-ROOT>(): br.com.wdc.framework.cube/CubeTreePlace // br.com.wdc.framework.cube/CubeTreePlace.Companion.ROOT.<get-ROOT>|<get-ROOT>(){}[0]
+    }
+}
+
+open class <#A: br.com.wdc.framework.cube/CubeApplication> br.com.wdc.framework.cube/AbstractCubePresenter : br.com.wdc.framework.cube/AbstractPresenter<#A>, br.com.wdc.framework.cube/CubePresenter { // br.com.wdc.framework.cube/AbstractCubePresenter|null[0]
+    constructor <init>(#A) // br.com.wdc.framework.cube/AbstractCubePresenter.<init>|<init>(1:0){}[0]
+
+    open suspend fun applyParameters(br.com.wdc.framework.cube/CubeIntent, kotlin/Boolean, kotlin/Boolean): kotlin/Boolean // br.com.wdc.framework.cube/AbstractCubePresenter.applyParameters|applyParameters(br.com.wdc.framework.cube.CubeIntent;kotlin.Boolean;kotlin.Boolean){}[0]
+}
+
+final object br.com.wdc.framework.cube.util/QueryStringParser { // br.com.wdc.framework.cube.util/QueryStringParser|null[0]
+    final fun parse(br.com.wdc.framework.cube/CubeIntent, kotlin/String?) // br.com.wdc.framework.cube.util/QueryStringParser.parse|parse(br.com.wdc.framework.cube.CubeIntent;kotlin.String?){}[0]
+    final fun parseParameters(br.com.wdc.framework.cube/CubeIntent, kotlin/String) // br.com.wdc.framework.cube.util/QueryStringParser.parseParameters|parseParameters(br.com.wdc.framework.cube.CubeIntent;kotlin.String){}[0]
+}
+
+final object br.com.wdc.framework.cube.util/ReflectArrayCompat { // br.com.wdc.framework.cube.util/ReflectArrayCompat|null[0]
+    final fun get(kotlin/Any, kotlin/Int): kotlin/Any? // br.com.wdc.framework.cube.util/ReflectArrayCompat.get|get(kotlin.Any;kotlin.Int){}[0]
+    final fun getLength(kotlin/Any): kotlin/Int // br.com.wdc.framework.cube.util/ReflectArrayCompat.getLength|getLength(kotlin.Any){}[0]
+    final fun set(kotlin/Any, kotlin/Int, kotlin/Any?) // br.com.wdc.framework.cube.util/ReflectArrayCompat.set|set(kotlin.Any;kotlin.Int;kotlin.Any?){}[0]
+}
+
+final fun (br.com.wdc.framework.cube/CubeIntent).br.com.wdc.framework.cube/getParameterAsBigDecimal(kotlin/String, com.ionspin.kotlin.bignum.decimal/BigDecimal? = ...): com.ionspin.kotlin.bignum.decimal/BigDecimal? // br.com.wdc.framework.cube/getParameterAsBigDecimal|getParameterAsBigDecimal@br.com.wdc.framework.cube.CubeIntent(kotlin.String;com.ionspin.kotlin.bignum.decimal.BigDecimal?){}[0]
+final fun (br.com.wdc.framework.cube/CubeIntent).br.com.wdc.framework.cube/getParameterAsBigInteger(kotlin/String, com.ionspin.kotlin.bignum.integer/BigInteger? = ...): com.ionspin.kotlin.bignum.integer/BigInteger? // br.com.wdc.framework.cube/getParameterAsBigInteger|getParameterAsBigInteger@br.com.wdc.framework.cube.CubeIntent(kotlin.String;com.ionspin.kotlin.bignum.integer.BigInteger?){}[0]

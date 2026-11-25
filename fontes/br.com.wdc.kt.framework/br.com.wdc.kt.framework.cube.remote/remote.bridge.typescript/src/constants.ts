@@ -1,5 +1,4 @@
 export const NOOP_VOID = () => void 0 as void
-export const NOOP_PROMISE_VOID = async () => void 0 as void
 
 export const CAUTHED = (reason: unknown) => {
   console.error('Unexpected', reason)

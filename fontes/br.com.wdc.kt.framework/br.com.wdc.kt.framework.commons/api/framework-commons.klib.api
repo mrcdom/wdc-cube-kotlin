@@ -1,0 +1,514 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, js, wasmJs]
+// Alias: ios => [iosArm64, iosSimulatorArm64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.mrcdom.wdc.kt:framework-commons>
+final enum class br.com.wdc.framework.commons.serialization/SerializationToken : kotlin/Enum<br.com.wdc.framework.commons.serialization/SerializationToken> { // br.com.wdc.framework.commons.serialization/SerializationToken|null[0]
+    enum entry BEGIN_ARRAY // br.com.wdc.framework.commons.serialization/SerializationToken.BEGIN_ARRAY|null[0]
+    enum entry BEGIN_OBJECT // br.com.wdc.framework.commons.serialization/SerializationToken.BEGIN_OBJECT|null[0]
+    enum entry BOOLEAN // br.com.wdc.framework.commons.serialization/SerializationToken.BOOLEAN|null[0]
+    enum entry END_ARRAY // br.com.wdc.framework.commons.serialization/SerializationToken.END_ARRAY|null[0]
+    enum entry END_DOCUMENT // br.com.wdc.framework.commons.serialization/SerializationToken.END_DOCUMENT|null[0]
+    enum entry END_OBJECT // br.com.wdc.framework.commons.serialization/SerializationToken.END_OBJECT|null[0]
+    enum entry NAME // br.com.wdc.framework.commons.serialization/SerializationToken.NAME|null[0]
+    enum entry NULL // br.com.wdc.framework.commons.serialization/SerializationToken.NULL|null[0]
+    enum entry NUMBER // br.com.wdc.framework.commons.serialization/SerializationToken.NUMBER|null[0]
+    enum entry STRING // br.com.wdc.framework.commons.serialization/SerializationToken.STRING|null[0]
+
+    final val entries // br.com.wdc.framework.commons.serialization/SerializationToken.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<br.com.wdc.framework.commons.serialization/SerializationToken> // br.com.wdc.framework.commons.serialization/SerializationToken.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): br.com.wdc.framework.commons.serialization/SerializationToken // br.com.wdc.framework.commons.serialization/SerializationToken.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<br.com.wdc.framework.commons.serialization/SerializationToken> // br.com.wdc.framework.commons.serialization/SerializationToken.values|values#static(){}[0]
+}
+
+abstract fun interface br.com.wdc.framework.commons.function/Registration { // br.com.wdc.framework.commons.function/Registration|null[0]
+    abstract fun remove() // br.com.wdc.framework.commons.function/Registration.remove|remove(){}[0]
+
+    final object Companion { // br.com.wdc.framework.commons.function/Registration.Companion|null[0]
+        final fun noop(): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.function/Registration.Companion.noop|noop(){}[0]
+    }
+}
+
+abstract interface br.com.wdc.framework.commons.concurrent/ScheduledExecutor { // br.com.wdc.framework.commons.concurrent/ScheduledExecutor|null[0]
+    abstract fun execute(kotlin/Function0<kotlin/Unit>): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/ScheduledExecutor.execute|execute(kotlin.Function0<kotlin.Unit>){}[0]
+    abstract fun schedule(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/ScheduledExecutor.schedule|schedule(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration){}[0]
+    abstract fun scheduleAtFixedRate(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/ScheduledExecutor.scheduleAtFixedRate|scheduleAtFixedRate(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration;kotlin.time.Duration){}[0]
+    abstract fun scheduleWithFixedDelay(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/ScheduledExecutor.scheduleWithFixedDelay|scheduleWithFixedDelay(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration;kotlin.time.Duration){}[0]
+
+    final object Companion { // br.com.wdc.framework.commons.concurrent/ScheduledExecutor.Companion|null[0]
+        final val BEAN // br.com.wdc.framework.commons.concurrent/ScheduledExecutor.Companion.BEAN|{}BEAN[0]
+            final fun <get-BEAN>(): br.com.wdc.framework.commons.util/AtomicRef<br.com.wdc.framework.commons.concurrent/ScheduledExecutor> // br.com.wdc.framework.commons.concurrent/ScheduledExecutor.Companion.BEAN.<get-BEAN>|<get-BEAN>(){}[0]
+    }
+}
+
+abstract interface br.com.wdc.framework.commons.serialization/ExtensibleObjectInput { // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput|null[0]
+    abstract fun <#A1: kotlin/Any?> nextNull(): #A1? // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.nextNull|nextNull(){0§<kotlin.Any?>}[0]
+    abstract fun beginArray() // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.beginArray|beginArray(){}[0]
+    abstract fun beginObject() // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.beginObject|beginObject(){}[0]
+    abstract fun endArray() // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.endArray|endArray(){}[0]
+    abstract fun endObject() // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.endObject|endObject(){}[0]
+    abstract fun hasNext(): kotlin/Boolean // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.hasNext|hasNext(){}[0]
+    abstract fun nextBoolean(): kotlin/Boolean // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.nextBoolean|nextBoolean(){}[0]
+    abstract fun nextDouble(): kotlin/Double // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.nextDouble|nextDouble(){}[0]
+    abstract fun nextInt(): kotlin/Int // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.nextInt|nextInt(){}[0]
+    abstract fun nextLong(): kotlin/Long // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.nextLong|nextLong(){}[0]
+    abstract fun nextName(): kotlin/String // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.nextName|nextName(){}[0]
+    abstract fun nextNumber(): kotlin/Number? // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.nextNumber|nextNumber(){}[0]
+    abstract fun nextString(): kotlin/String // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.nextString|nextString(){}[0]
+    abstract fun peek(): br.com.wdc.framework.commons.serialization/SerializationToken // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.peek|peek(){}[0]
+    abstract fun skipValue() // br.com.wdc.framework.commons.serialization/ExtensibleObjectInput.skipValue|skipValue(){}[0]
+}
+
+abstract interface br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput { // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput|null[0]
+    abstract fun beginArray(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.beginArray|beginArray(){}[0]
+    abstract fun beginObject(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.beginObject|beginObject(){}[0]
+    abstract fun endArray(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.endArray|endArray(){}[0]
+    abstract fun endObject(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.endObject|endObject(){}[0]
+    abstract fun name(kotlin/Int, kotlin/String): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.name|name(kotlin.Int;kotlin.String){}[0]
+    abstract fun name(kotlin/String): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.name|name(kotlin.String){}[0]
+    abstract fun nullValue(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.nullValue|nullValue(){}[0]
+    abstract fun value(kotlin/Boolean): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.value|value(kotlin.Boolean){}[0]
+    abstract fun value(kotlin/ByteArray?): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.value|value(kotlin.ByteArray?){}[0]
+    abstract fun value(kotlin/Double): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.value|value(kotlin.Double){}[0]
+    abstract fun value(kotlin/Long): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.value|value(kotlin.Long){}[0]
+    abstract fun value(kotlin/Number?): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.value|value(kotlin.Number?){}[0]
+    abstract fun value(kotlin/String?): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput.value|value(kotlin.String?){}[0]
+}
+
+abstract interface br.com.wdc.framework.commons.serialization/Externalizable { // br.com.wdc.framework.commons.serialization/Externalizable|null[0]
+    abstract fun readExternal(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput) // br.com.wdc.framework.commons.serialization/Externalizable.readExternal|readExternal(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput){}[0]
+    abstract fun writeExternal(br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput) // br.com.wdc.framework.commons.serialization/Externalizable.writeExternal|writeExternal(br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput){}[0]
+}
+
+abstract interface br.com.wdc.framework.commons.storage/SessionStorage { // br.com.wdc.framework.commons.storage/SessionStorage|null[0]
+    abstract val size // br.com.wdc.framework.commons.storage/SessionStorage.size|{}size[0]
+        abstract fun <get-size>(): kotlin/Int // br.com.wdc.framework.commons.storage/SessionStorage.size.<get-size>|<get-size>(){}[0]
+
+    abstract fun clear() // br.com.wdc.framework.commons.storage/SessionStorage.clear|clear(){}[0]
+    abstract fun contains(kotlin/String): kotlin/Boolean // br.com.wdc.framework.commons.storage/SessionStorage.contains|contains(kotlin.String){}[0]
+    abstract fun getBoolean(kotlin/String, kotlin/Boolean? = ...): kotlin/Boolean? // br.com.wdc.framework.commons.storage/SessionStorage.getBoolean|getBoolean(kotlin.String;kotlin.Boolean?){}[0]
+    abstract fun getDouble(kotlin/String, kotlin/Double? = ...): kotlin/Double? // br.com.wdc.framework.commons.storage/SessionStorage.getDouble|getDouble(kotlin.String;kotlin.Double?){}[0]
+    abstract fun getInt(kotlin/String, kotlin/Int? = ...): kotlin/Int? // br.com.wdc.framework.commons.storage/SessionStorage.getInt|getInt(kotlin.String;kotlin.Int?){}[0]
+    abstract fun getLong(kotlin/String, kotlin/Long? = ...): kotlin/Long? // br.com.wdc.framework.commons.storage/SessionStorage.getLong|getLong(kotlin.String;kotlin.Long?){}[0]
+    abstract fun getString(kotlin/String, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.commons.storage/SessionStorage.getString|getString(kotlin.String;kotlin.String?){}[0]
+    abstract fun keys(): kotlin.collections/Set<kotlin/String> // br.com.wdc.framework.commons.storage/SessionStorage.keys|keys(){}[0]
+    abstract fun remove(kotlin/String) // br.com.wdc.framework.commons.storage/SessionStorage.remove|remove(kotlin.String){}[0]
+    abstract fun set(kotlin/String, kotlin/Boolean?) // br.com.wdc.framework.commons.storage/SessionStorage.set|set(kotlin.String;kotlin.Boolean?){}[0]
+    abstract fun set(kotlin/String, kotlin/Double?) // br.com.wdc.framework.commons.storage/SessionStorage.set|set(kotlin.String;kotlin.Double?){}[0]
+    abstract fun set(kotlin/String, kotlin/Int?) // br.com.wdc.framework.commons.storage/SessionStorage.set|set(kotlin.String;kotlin.Int?){}[0]
+    abstract fun set(kotlin/String, kotlin/Long?) // br.com.wdc.framework.commons.storage/SessionStorage.set|set(kotlin.String;kotlin.Long?){}[0]
+    abstract fun set(kotlin/String, kotlin/String?) // br.com.wdc.framework.commons.storage/SessionStorage.set|set(kotlin.String;kotlin.String?){}[0]
+}
+
+final class <#A: kotlin/Any> br.com.wdc.framework.commons.util/AtomicRef { // br.com.wdc.framework.commons.util/AtomicRef|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.util/AtomicRef.<init>|<init>(){}[0]
+
+    final fun get(): #A // br.com.wdc.framework.commons.util/AtomicRef.get|get(){}[0]
+    final fun getOrNull(): #A? // br.com.wdc.framework.commons.util/AtomicRef.getOrNull|getOrNull(){}[0]
+    final fun set(#A?) // br.com.wdc.framework.commons.util/AtomicRef.set|set(1:0?){}[0]
+}
+
+final class <#A: kotlin/Any?> br.com.wdc.framework.commons.concurrent/ThreadLocalRef { // br.com.wdc.framework.commons.concurrent/ThreadLocalRef|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.concurrent/ThreadLocalRef.<init>|<init>(){}[0]
+
+    final fun get(): #A? // br.com.wdc.framework.commons.concurrent/ThreadLocalRef.get|get(){}[0]
+    final fun remove() // br.com.wdc.framework.commons.concurrent/ThreadLocalRef.remove|remove(){}[0]
+    final fun set(#A?) // br.com.wdc.framework.commons.concurrent/ThreadLocalRef.set|set(1:0?){}[0]
+}
+
+final class br.com.wdc.framework.commons.log/Log { // br.com.wdc.framework.commons.log/Log|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.commons.log/Log.<init>|<init>(kotlin.String){}[0]
+
+    final val isDebugEnabled // br.com.wdc.framework.commons.log/Log.isDebugEnabled|{}isDebugEnabled[0]
+        final fun <get-isDebugEnabled>(): kotlin/Boolean // br.com.wdc.framework.commons.log/Log.isDebugEnabled.<get-isDebugEnabled>|<get-isDebugEnabled>(){}[0]
+    final val isTraceEnabled // br.com.wdc.framework.commons.log/Log.isTraceEnabled|{}isTraceEnabled[0]
+        final fun <get-isTraceEnabled>(): kotlin/Boolean // br.com.wdc.framework.commons.log/Log.isTraceEnabled.<get-isTraceEnabled>|<get-isTraceEnabled>(){}[0]
+    final val name // br.com.wdc.framework.commons.log/Log.name|{}name[0]
+        final fun <get-name>(): kotlin/String // br.com.wdc.framework.commons.log/Log.name.<get-name>|<get-name>(){}[0]
+
+    final var debugOut // br.com.wdc.framework.commons.log/Log.debugOut|{}debugOut[0]
+        final fun <get-debugOut>(): kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>? // br.com.wdc.framework.commons.log/Log.debugOut.<get-debugOut>|<get-debugOut>(){}[0]
+        final fun <set-debugOut>(kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>?) // br.com.wdc.framework.commons.log/Log.debugOut.<set-debugOut>|<set-debugOut>(kotlin.Function2<kotlin.String,kotlin.Throwable?,kotlin.Unit>?){}[0]
+    final var errorOut // br.com.wdc.framework.commons.log/Log.errorOut|{}errorOut[0]
+        final fun <get-errorOut>(): kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>? // br.com.wdc.framework.commons.log/Log.errorOut.<get-errorOut>|<get-errorOut>(){}[0]
+        final fun <set-errorOut>(kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>?) // br.com.wdc.framework.commons.log/Log.errorOut.<set-errorOut>|<set-errorOut>(kotlin.Function2<kotlin.String,kotlin.Throwable?,kotlin.Unit>?){}[0]
+    final var infoOut // br.com.wdc.framework.commons.log/Log.infoOut|{}infoOut[0]
+        final fun <get-infoOut>(): kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>? // br.com.wdc.framework.commons.log/Log.infoOut.<get-infoOut>|<get-infoOut>(){}[0]
+        final fun <set-infoOut>(kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>?) // br.com.wdc.framework.commons.log/Log.infoOut.<set-infoOut>|<set-infoOut>(kotlin.Function2<kotlin.String,kotlin.Throwable?,kotlin.Unit>?){}[0]
+    final var traceOut // br.com.wdc.framework.commons.log/Log.traceOut|{}traceOut[0]
+        final fun <get-traceOut>(): kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>? // br.com.wdc.framework.commons.log/Log.traceOut.<get-traceOut>|<get-traceOut>(){}[0]
+        final fun <set-traceOut>(kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>?) // br.com.wdc.framework.commons.log/Log.traceOut.<set-traceOut>|<set-traceOut>(kotlin.Function2<kotlin.String,kotlin.Throwable?,kotlin.Unit>?){}[0]
+    final var warnOut // br.com.wdc.framework.commons.log/Log.warnOut|{}warnOut[0]
+        final fun <get-warnOut>(): kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>? // br.com.wdc.framework.commons.log/Log.warnOut.<get-warnOut>|<get-warnOut>(){}[0]
+        final fun <set-warnOut>(kotlin/Function2<kotlin/String, kotlin/Throwable?, kotlin/Unit>?) // br.com.wdc.framework.commons.log/Log.warnOut.<set-warnOut>|<set-warnOut>(kotlin.Function2<kotlin.String,kotlin.Throwable?,kotlin.Unit>?){}[0]
+
+    final fun debug(kotlin/String) // br.com.wdc.framework.commons.log/Log.debug|debug(kotlin.String){}[0]
+    final fun debug(kotlin/String, kotlin/Array<out kotlin/Any?>...) // br.com.wdc.framework.commons.log/Log.debug|debug(kotlin.String;kotlin.Array<out|kotlin.Any?>...){}[0]
+    final fun debug(kotlin/String, kotlin/Throwable?) // br.com.wdc.framework.commons.log/Log.debug|debug(kotlin.String;kotlin.Throwable?){}[0]
+    final fun error(kotlin/String) // br.com.wdc.framework.commons.log/Log.error|error(kotlin.String){}[0]
+    final fun error(kotlin/String, kotlin/Array<out kotlin/Any?>...) // br.com.wdc.framework.commons.log/Log.error|error(kotlin.String;kotlin.Array<out|kotlin.Any?>...){}[0]
+    final fun error(kotlin/String, kotlin/Throwable?) // br.com.wdc.framework.commons.log/Log.error|error(kotlin.String;kotlin.Throwable?){}[0]
+    final fun info(kotlin/String) // br.com.wdc.framework.commons.log/Log.info|info(kotlin.String){}[0]
+    final fun info(kotlin/String, kotlin/Array<out kotlin/Any?>...) // br.com.wdc.framework.commons.log/Log.info|info(kotlin.String;kotlin.Array<out|kotlin.Any?>...){}[0]
+    final fun info(kotlin/String, kotlin/Throwable?) // br.com.wdc.framework.commons.log/Log.info|info(kotlin.String;kotlin.Throwable?){}[0]
+    final fun trace(kotlin/String) // br.com.wdc.framework.commons.log/Log.trace|trace(kotlin.String){}[0]
+    final fun trace(kotlin/String, kotlin/Array<out kotlin/Any?>...) // br.com.wdc.framework.commons.log/Log.trace|trace(kotlin.String;kotlin.Array<out|kotlin.Any?>...){}[0]
+    final fun trace(kotlin/String, kotlin/Throwable?) // br.com.wdc.framework.commons.log/Log.trace|trace(kotlin.String;kotlin.Throwable?){}[0]
+    final fun warn(kotlin/String) // br.com.wdc.framework.commons.log/Log.warn|warn(kotlin.String){}[0]
+    final fun warn(kotlin/String, kotlin/Array<out kotlin/Any?>...) // br.com.wdc.framework.commons.log/Log.warn|warn(kotlin.String;kotlin.Array<out|kotlin.Any?>...){}[0]
+    final fun warn(kotlin/String, kotlin/Throwable?) // br.com.wdc.framework.commons.log/Log.warn|warn(kotlin.String;kotlin.Throwable?){}[0]
+
+    final enum class Level : kotlin/Enum<br.com.wdc.framework.commons.log/Log.Level> { // br.com.wdc.framework.commons.log/Log.Level|null[0]
+        enum entry DEBUG // br.com.wdc.framework.commons.log/Log.Level.DEBUG|null[0]
+        enum entry ERROR // br.com.wdc.framework.commons.log/Log.Level.ERROR|null[0]
+        enum entry INFO // br.com.wdc.framework.commons.log/Log.Level.INFO|null[0]
+        enum entry TRACE // br.com.wdc.framework.commons.log/Log.Level.TRACE|null[0]
+        enum entry WARN // br.com.wdc.framework.commons.log/Log.Level.WARN|null[0]
+
+        final val entries // br.com.wdc.framework.commons.log/Log.Level.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<br.com.wdc.framework.commons.log/Log.Level> // br.com.wdc.framework.commons.log/Log.Level.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): br.com.wdc.framework.commons.log/Log.Level // br.com.wdc.framework.commons.log/Log.Level.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<br.com.wdc.framework.commons.log/Log.Level> // br.com.wdc.framework.commons.log/Log.Level.values|values#static(){}[0]
+    }
+
+    abstract fun interface Factory { // br.com.wdc.framework.commons.log/Log.Factory|null[0]
+        abstract fun create(kotlin/String): br.com.wdc.framework.commons.log/Log // br.com.wdc.framework.commons.log/Log.Factory.create|create(kotlin.String){}[0]
+    }
+
+    final object Companion { // br.com.wdc.framework.commons.log/Log.Companion|null[0]
+        final var globalLevel // br.com.wdc.framework.commons.log/Log.Companion.globalLevel|{}globalLevel[0]
+            final fun <get-globalLevel>(): br.com.wdc.framework.commons.log/Log.Level // br.com.wdc.framework.commons.log/Log.Companion.globalLevel.<get-globalLevel>|<get-globalLevel>(){}[0]
+            final fun <set-globalLevel>(br.com.wdc.framework.commons.log/Log.Level) // br.com.wdc.framework.commons.log/Log.Companion.globalLevel.<set-globalLevel>|<set-globalLevel>(br.com.wdc.framework.commons.log.Log.Level){}[0]
+
+        final fun getLogger(kotlin/String): br.com.wdc.framework.commons.log/Log // br.com.wdc.framework.commons.log/Log.Companion.getLogger|getLogger(kotlin.String){}[0]
+        final fun setFactory(br.com.wdc.framework.commons.log/Log.Factory?) // br.com.wdc.framework.commons.log/Log.Companion.setFactory|setFactory(br.com.wdc.framework.commons.log.Log.Factory?){}[0]
+    }
+}
+
+final class br.com.wdc.framework.commons.security/RSA { // br.com.wdc.framework.commons.security/RSA|null[0]
+    constructor <init>(com.ionspin.kotlin.bignum.integer/BigInteger, com.ionspin.kotlin.bignum.integer/BigInteger, com.ionspin.kotlin.bignum.integer/BigInteger) // br.com.wdc.framework.commons.security/RSA.<init>|<init>(com.ionspin.kotlin.bignum.integer.BigInteger;com.ionspin.kotlin.bignum.integer.BigInteger;com.ionspin.kotlin.bignum.integer.BigInteger){}[0]
+
+    final var privateKey // br.com.wdc.framework.commons.security/RSA.privateKey|{}privateKey[0]
+        final fun <get-privateKey>(): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.privateKey.<get-privateKey>|<get-privateKey>(){}[0]
+    final var publicExponent // br.com.wdc.framework.commons.security/RSA.publicExponent|{}publicExponent[0]
+        final fun <get-publicExponent>(): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.publicExponent.<get-publicExponent>|<get-publicExponent>(){}[0]
+    final var publicKey // br.com.wdc.framework.commons.security/RSA.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun decrypt(com.ionspin.kotlin.bignum.integer/BigInteger): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.decrypt|decrypt(com.ionspin.kotlin.bignum.integer.BigInteger){}[0]
+    final fun encrypt(com.ionspin.kotlin.bignum.integer/BigInteger): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.encrypt|encrypt(com.ionspin.kotlin.bignum.integer.BigInteger){}[0]
+    final fun toString(): kotlin/String // br.com.wdc.framework.commons.security/RSA.toString|toString(){}[0]
+
+    final object Companion { // br.com.wdc.framework.commons.security/RSA.Companion|null[0]
+        final val N65537 // br.com.wdc.framework.commons.security/RSA.Companion.N65537|{}N65537[0]
+            final fun <get-N65537>(): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.Companion.N65537.<get-N65537>|<get-N65537>(){}[0]
+
+        final fun modPow(com.ionspin.kotlin.bignum.integer/BigInteger, com.ionspin.kotlin.bignum.integer/BigInteger, com.ionspin.kotlin.bignum.integer/BigInteger): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.commons.security/RSA.Companion.modPow|modPow(com.ionspin.kotlin.bignum.integer.BigInteger;com.ionspin.kotlin.bignum.integer.BigInteger;com.ionspin.kotlin.bignum.integer.BigInteger){}[0]
+    }
+}
+
+final class br.com.wdc.framework.commons.serialization/JsonStreamReader : br.com.wdc.framework.commons.serialization/ExtensibleObjectInput { // br.com.wdc.framework.commons.serialization/JsonStreamReader|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.commons.serialization/JsonStreamReader.<init>|<init>(kotlin.String){}[0]
+
+    final fun <#A1: kotlin/Any?> nextNull(): #A1? // br.com.wdc.framework.commons.serialization/JsonStreamReader.nextNull|nextNull(){0§<kotlin.Any?>}[0]
+    final fun beginArray() // br.com.wdc.framework.commons.serialization/JsonStreamReader.beginArray|beginArray(){}[0]
+    final fun beginObject() // br.com.wdc.framework.commons.serialization/JsonStreamReader.beginObject|beginObject(){}[0]
+    final fun endArray() // br.com.wdc.framework.commons.serialization/JsonStreamReader.endArray|endArray(){}[0]
+    final fun endObject() // br.com.wdc.framework.commons.serialization/JsonStreamReader.endObject|endObject(){}[0]
+    final fun hasNext(): kotlin/Boolean // br.com.wdc.framework.commons.serialization/JsonStreamReader.hasNext|hasNext(){}[0]
+    final fun nextBoolean(): kotlin/Boolean // br.com.wdc.framework.commons.serialization/JsonStreamReader.nextBoolean|nextBoolean(){}[0]
+    final fun nextDouble(): kotlin/Double // br.com.wdc.framework.commons.serialization/JsonStreamReader.nextDouble|nextDouble(){}[0]
+    final fun nextInt(): kotlin/Int // br.com.wdc.framework.commons.serialization/JsonStreamReader.nextInt|nextInt(){}[0]
+    final fun nextLong(): kotlin/Long // br.com.wdc.framework.commons.serialization/JsonStreamReader.nextLong|nextLong(){}[0]
+    final fun nextName(): kotlin/String // br.com.wdc.framework.commons.serialization/JsonStreamReader.nextName|nextName(){}[0]
+    final fun nextNumber(): kotlin/Number? // br.com.wdc.framework.commons.serialization/JsonStreamReader.nextNumber|nextNumber(){}[0]
+    final fun nextString(): kotlin/String // br.com.wdc.framework.commons.serialization/JsonStreamReader.nextString|nextString(){}[0]
+    final fun peek(): br.com.wdc.framework.commons.serialization/SerializationToken // br.com.wdc.framework.commons.serialization/JsonStreamReader.peek|peek(){}[0]
+    final fun skipValue() // br.com.wdc.framework.commons.serialization/JsonStreamReader.skipValue|skipValue(){}[0]
+}
+
+final class br.com.wdc.framework.commons.serialization/JsonStreamWriter : br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput { // br.com.wdc.framework.commons.serialization/JsonStreamWriter|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.serialization/JsonStreamWriter.<init>|<init>(){}[0]
+
+    final fun beginArray(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.beginArray|beginArray(){}[0]
+    final fun beginObject(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.beginObject|beginObject(){}[0]
+    final fun endArray(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.endArray|endArray(){}[0]
+    final fun endObject(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.endObject|endObject(){}[0]
+    final fun name(kotlin/Int, kotlin/String): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.name|name(kotlin.Int;kotlin.String){}[0]
+    final fun name(kotlin/String): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.name|name(kotlin.String){}[0]
+    final fun nullValue(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.nullValue|nullValue(){}[0]
+    final fun result(): kotlin/String // br.com.wdc.framework.commons.serialization/JsonStreamWriter.result|result(){}[0]
+    final fun value(kotlin/Boolean): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.value|value(kotlin.Boolean){}[0]
+    final fun value(kotlin/ByteArray?): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.value|value(kotlin.ByteArray?){}[0]
+    final fun value(kotlin/Double): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.value|value(kotlin.Double){}[0]
+    final fun value(kotlin/Long): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.value|value(kotlin.Long){}[0]
+    final fun value(kotlin/Number?): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.value|value(kotlin.Number?){}[0]
+    final fun value(kotlin/String?): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStreamWriter.value|value(kotlin.String?){}[0]
+}
+
+final class br.com.wdc.framework.commons.serialization/JsonStringInput { // br.com.wdc.framework.commons.serialization/JsonStringInput|null[0]
+    constructor <init>(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput) // br.com.wdc.framework.commons.serialization/JsonStringInput.<init>|<init>(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput){}[0]
+
+    final val input // br.com.wdc.framework.commons.serialization/JsonStringInput.input|{}input[0]
+        final fun <get-input>(): br.com.wdc.framework.commons.serialization/ExtensibleObjectInput // br.com.wdc.framework.commons.serialization/JsonStringInput.input.<get-input>|<get-input>(){}[0]
+}
+
+final class br.com.wdc.framework.commons.serialization/JsonStringOutput { // br.com.wdc.framework.commons.serialization/JsonStringOutput|null[0]
+    constructor <init>(br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/Function0<kotlin/String>) // br.com.wdc.framework.commons.serialization/JsonStringOutput.<init>|<init>(br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput;kotlin.Function0<kotlin.String>){}[0]
+
+    final val output // br.com.wdc.framework.commons.serialization/JsonStringOutput.output|{}output[0]
+        final fun <get-output>(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/JsonStringOutput.output.<get-output>|<get-output>(){}[0]
+    final val resultString // br.com.wdc.framework.commons.serialization/JsonStringOutput.resultString|{}resultString[0]
+        final fun <get-resultString>(): kotlin/Function0<kotlin/String> // br.com.wdc.framework.commons.serialization/JsonStringOutput.resultString.<get-resultString>|<get-resultString>(){}[0]
+}
+
+final class br.com.wdc.framework.commons.serialization/MapOrListInput : br.com.wdc.framework.commons.serialization/ExtensibleObjectInput { // br.com.wdc.framework.commons.serialization/MapOrListInput|null[0]
+    constructor <init>(kotlin.collections/List<*>) // br.com.wdc.framework.commons.serialization/MapOrListInput.<init>|<init>(kotlin.collections.List<*>){}[0]
+    constructor <init>(kotlin.collections/Map<*, *>) // br.com.wdc.framework.commons.serialization/MapOrListInput.<init>|<init>(kotlin.collections.Map<*,*>){}[0]
+
+    final fun <#A1: kotlin/Any?> nextNull(): #A1? // br.com.wdc.framework.commons.serialization/MapOrListInput.nextNull|nextNull(){0§<kotlin.Any?>}[0]
+    final fun beginArray() // br.com.wdc.framework.commons.serialization/MapOrListInput.beginArray|beginArray(){}[0]
+    final fun beginObject() // br.com.wdc.framework.commons.serialization/MapOrListInput.beginObject|beginObject(){}[0]
+    final fun endArray() // br.com.wdc.framework.commons.serialization/MapOrListInput.endArray|endArray(){}[0]
+    final fun endObject() // br.com.wdc.framework.commons.serialization/MapOrListInput.endObject|endObject(){}[0]
+    final fun hasNext(): kotlin/Boolean // br.com.wdc.framework.commons.serialization/MapOrListInput.hasNext|hasNext(){}[0]
+    final fun nextBoolean(): kotlin/Boolean // br.com.wdc.framework.commons.serialization/MapOrListInput.nextBoolean|nextBoolean(){}[0]
+    final fun nextDouble(): kotlin/Double // br.com.wdc.framework.commons.serialization/MapOrListInput.nextDouble|nextDouble(){}[0]
+    final fun nextInt(): kotlin/Int // br.com.wdc.framework.commons.serialization/MapOrListInput.nextInt|nextInt(){}[0]
+    final fun nextLong(): kotlin/Long // br.com.wdc.framework.commons.serialization/MapOrListInput.nextLong|nextLong(){}[0]
+    final fun nextName(): kotlin/String // br.com.wdc.framework.commons.serialization/MapOrListInput.nextName|nextName(){}[0]
+    final fun nextNumber(): kotlin/Number? // br.com.wdc.framework.commons.serialization/MapOrListInput.nextNumber|nextNumber(){}[0]
+    final fun nextString(): kotlin/String // br.com.wdc.framework.commons.serialization/MapOrListInput.nextString|nextString(){}[0]
+    final fun peek(): br.com.wdc.framework.commons.serialization/SerializationToken // br.com.wdc.framework.commons.serialization/MapOrListInput.peek|peek(){}[0]
+    final fun skipValue() // br.com.wdc.framework.commons.serialization/MapOrListInput.skipValue|skipValue(){}[0]
+
+    final object Companion // br.com.wdc.framework.commons.serialization/MapOrListInput.Companion|null[0]
+}
+
+final class br.com.wdc.framework.commons.serialization/MapOrListOutput : br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput { // br.com.wdc.framework.commons.serialization/MapOrListOutput|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.serialization/MapOrListOutput.<init>|<init>(){}[0]
+    constructor <init>(kotlin.collections/MutableList<kotlin/Any?>) // br.com.wdc.framework.commons.serialization/MapOrListOutput.<init>|<init>(kotlin.collections.MutableList<kotlin.Any?>){}[0]
+    constructor <init>(kotlin.collections/MutableMap<kotlin/String, kotlin/Any?>) // br.com.wdc.framework.commons.serialization/MapOrListOutput.<init>|<init>(kotlin.collections.MutableMap<kotlin.String,kotlin.Any?>){}[0]
+
+    final val value // br.com.wdc.framework.commons.serialization/MapOrListOutput.value|{}value[0]
+        final fun <get-value>(): kotlin/Any? // br.com.wdc.framework.commons.serialization/MapOrListOutput.value.<get-value>|<get-value>(){}[0]
+
+    final fun beginArray(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.beginArray|beginArray(){}[0]
+    final fun beginObject(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.beginObject|beginObject(){}[0]
+    final fun endArray(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.endArray|endArray(){}[0]
+    final fun endObject(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.endObject|endObject(){}[0]
+    final fun name(kotlin/Int, kotlin/String): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.name|name(kotlin.Int;kotlin.String){}[0]
+    final fun name(kotlin/String): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.name|name(kotlin.String){}[0]
+    final fun nullValue(): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.nullValue|nullValue(){}[0]
+    final fun value(kotlin/Boolean): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.value|value(kotlin.Boolean){}[0]
+    final fun value(kotlin/ByteArray?): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.value|value(kotlin.ByteArray?){}[0]
+    final fun value(kotlin/Double): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.value|value(kotlin.Double){}[0]
+    final fun value(kotlin/Long): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.value|value(kotlin.Long){}[0]
+    final fun value(kotlin/Number?): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.value|value(kotlin.Number?){}[0]
+    final fun value(kotlin/String?): br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput // br.com.wdc.framework.commons.serialization/MapOrListOutput.value|value(kotlin.String?){}[0]
+}
+
+final class br.com.wdc.framework.commons.util/Defer : kotlin/AutoCloseable { // br.com.wdc.framework.commons.util/Defer|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.util/Defer.<init>|<init>(){}[0]
+
+    final fun absorb(br.com.wdc.framework.commons.util/Defer) // br.com.wdc.framework.commons.util/Defer.absorb|absorb(br.com.wdc.framework.commons.util.Defer){}[0]
+    final fun close() // br.com.wdc.framework.commons.util/Defer.close|close(){}[0]
+    final fun push(kotlin/Function0<kotlin/Unit>) // br.com.wdc.framework.commons.util/Defer.push|push(kotlin.Function0<kotlin.Unit>){}[0]
+    final fun run() // br.com.wdc.framework.commons.util/Defer.run|run(){}[0]
+}
+
+final object br.com.wdc.framework.commons.codec/Base62 { // br.com.wdc.framework.commons.codec/Base62|null[0]
+    final fun decode(kotlin/ByteArray): kotlin/ByteArray // br.com.wdc.framework.commons.codec/Base62.decode|decode(kotlin.ByteArray){}[0]
+    final fun decodeFromString(kotlin/String?): kotlin/ByteArray? // br.com.wdc.framework.commons.codec/Base62.decodeFromString|decodeFromString(kotlin.String?){}[0]
+    final fun encode(kotlin/ByteArray): kotlin/ByteArray // br.com.wdc.framework.commons.codec/Base62.encode|encode(kotlin.ByteArray){}[0]
+    final fun encodeToString(kotlin/ByteArray): kotlin/String // br.com.wdc.framework.commons.codec/Base62.encodeToString|encodeToString(kotlin.ByteArray){}[0]
+    final fun isBase62Encoding(kotlin/ByteArray?): kotlin/Boolean // br.com.wdc.framework.commons.codec/Base62.isBase62Encoding|isBase62Encoding(kotlin.ByteArray?){}[0]
+}
+
+final object br.com.wdc.framework.commons.convert/DateUtil { // br.com.wdc.framework.commons.convert/DateUtil|null[0]
+    final val sysTimeZone // br.com.wdc.framework.commons.convert/DateUtil.sysTimeZone|{}sysTimeZone[0]
+        final fun <get-sysTimeZone>(): kotlinx.datetime/TimeZone // br.com.wdc.framework.commons.convert/DateUtil.sysTimeZone.<get-sysTimeZone>|<get-sysTimeZone>(){}[0]
+    final val sysUtcOffset // br.com.wdc.framework.commons.convert/DateUtil.sysUtcOffset|{}sysUtcOffset[0]
+        final fun <get-sysUtcOffset>(): kotlinx.datetime/UtcOffset // br.com.wdc.framework.commons.convert/DateUtil.sysUtcOffset.<get-sysUtcOffset>|<get-sysUtcOffset>(){}[0]
+}
+
+final object br.com.wdc.framework.commons.lang/CoerceUtils { // br.com.wdc.framework.commons.lang/CoerceUtils|null[0]
+    final fun asBigDecimal(kotlin/Any?, com.ionspin.kotlin.bignum.decimal/BigDecimal? = ...): com.ionspin.kotlin.bignum.decimal/BigDecimal? // br.com.wdc.framework.commons.lang/CoerceUtils.asBigDecimal|asBigDecimal(kotlin.Any?;com.ionspin.kotlin.bignum.decimal.BigDecimal?){}[0]
+    final fun asBigInteger(kotlin/Any?, com.ionspin.kotlin.bignum.integer/BigInteger? = ...): com.ionspin.kotlin.bignum.integer/BigInteger? // br.com.wdc.framework.commons.lang/CoerceUtils.asBigInteger|asBigInteger(kotlin.Any?;com.ionspin.kotlin.bignum.integer.BigInteger?){}[0]
+    final fun asBoolean(kotlin/Any?, kotlin/Boolean? = ...): kotlin/Boolean? // br.com.wdc.framework.commons.lang/CoerceUtils.asBoolean|asBoolean(kotlin.Any?;kotlin.Boolean?){}[0]
+    final fun asByte(kotlin/Any?, kotlin/Byte? = ...): kotlin/Byte? // br.com.wdc.framework.commons.lang/CoerceUtils.asByte|asByte(kotlin.Any?;kotlin.Byte?){}[0]
+    final fun asByteArray(kotlin/Any?, kotlin/ByteArray? = ...): kotlin/ByteArray? // br.com.wdc.framework.commons.lang/CoerceUtils.asByteArray|asByteArray(kotlin.Any?;kotlin.ByteArray?){}[0]
+    final fun asCharacter(kotlin/Any?, kotlin/Char? = ...): kotlin/Char? // br.com.wdc.framework.commons.lang/CoerceUtils.asCharacter|asCharacter(kotlin.Any?;kotlin.Char?){}[0]
+    final fun asDouble(kotlin/Any?, kotlin/Double? = ...): kotlin/Double? // br.com.wdc.framework.commons.lang/CoerceUtils.asDouble|asDouble(kotlin.Any?;kotlin.Double?){}[0]
+    final fun asFloat(kotlin/Any?, kotlin/Float? = ...): kotlin/Float? // br.com.wdc.framework.commons.lang/CoerceUtils.asFloat|asFloat(kotlin.Any?;kotlin.Float?){}[0]
+    final fun asInstant(kotlin/Any?, kotlin.time/Instant? = ...): kotlin.time/Instant? // br.com.wdc.framework.commons.lang/CoerceUtils.asInstant|asInstant(kotlin.Any?;kotlin.time.Instant?){}[0]
+    final fun asInteger(kotlin/Any?, kotlin/Int? = ...): kotlin/Int? // br.com.wdc.framework.commons.lang/CoerceUtils.asInteger|asInteger(kotlin.Any?;kotlin.Int?){}[0]
+    final fun asLocalDate(kotlin/Any?, kotlinx.datetime/LocalDate? = ...): kotlinx.datetime/LocalDate? // br.com.wdc.framework.commons.lang/CoerceUtils.asLocalDate|asLocalDate(kotlin.Any?;kotlinx.datetime.LocalDate?){}[0]
+    final fun asLocalDateTime(kotlin/Any?, kotlinx.datetime/LocalDateTime? = ...): kotlinx.datetime/LocalDateTime? // br.com.wdc.framework.commons.lang/CoerceUtils.asLocalDateTime|asLocalDateTime(kotlin.Any?;kotlinx.datetime.LocalDateTime?){}[0]
+    final fun asLong(kotlin/Any?, kotlin/Long? = ...): kotlin/Long? // br.com.wdc.framework.commons.lang/CoerceUtils.asLong|asLong(kotlin.Any?;kotlin.Long?){}[0]
+    final fun asLowerCaseString(kotlin/Any?, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.commons.lang/CoerceUtils.asLowerCaseString|asLowerCaseString(kotlin.Any?;kotlin.String?){}[0]
+    final fun asShort(kotlin/Any?, kotlin/Short? = ...): kotlin/Short? // br.com.wdc.framework.commons.lang/CoerceUtils.asShort|asShort(kotlin.Any?;kotlin.Short?){}[0]
+    final fun asString(kotlin/Any?, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.commons.lang/CoerceUtils.asString|asString(kotlin.Any?;kotlin.String?){}[0]
+    final fun asTrimmedString(kotlin/Any?, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.commons.lang/CoerceUtils.asTrimmedString|asTrimmedString(kotlin.Any?;kotlin.String?){}[0]
+    final fun asUpperCaseString(kotlin/Any?, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.commons.lang/CoerceUtils.asUpperCaseString|asUpperCaseString(kotlin.Any?;kotlin.String?){}[0]
+}
+
+final object br.com.wdc.framework.commons.serialization/InputCoerceUtils { // br.com.wdc.framework.commons.serialization/InputCoerceUtils|null[0]
+    final fun asBigDecimal(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, com.ionspin.kotlin.bignum.decimal/BigDecimal? = ...): com.ionspin.kotlin.bignum.decimal/BigDecimal? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asBigDecimal|asBigDecimal(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;com.ionspin.kotlin.bignum.decimal.BigDecimal?){}[0]
+    final fun asBigInteger(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, com.ionspin.kotlin.bignum.integer/BigInteger? = ...): com.ionspin.kotlin.bignum.integer/BigInteger? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asBigInteger|asBigInteger(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;com.ionspin.kotlin.bignum.integer.BigInteger?){}[0]
+    final fun asBoolean(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Boolean? = ...): kotlin/Boolean? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asBoolean|asBoolean(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.Boolean?){}[0]
+    final fun asByte(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Byte? = ...): kotlin/Byte? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asByte|asByte(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.Byte?){}[0]
+    final fun asByteArray(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/ByteArray? = ...): kotlin/ByteArray? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asByteArray|asByteArray(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.ByteArray?){}[0]
+    final fun asCharacter(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Char? = ...): kotlin/Char? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asCharacter|asCharacter(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.Char?){}[0]
+    final fun asDouble(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Double? = ...): kotlin/Double? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asDouble|asDouble(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.Double?){}[0]
+    final fun asFloat(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Float? = ...): kotlin/Float? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asFloat|asFloat(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.Float?){}[0]
+    final fun asInteger(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Int? = ...): kotlin/Int? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asInteger|asInteger(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.Int?){}[0]
+    final fun asLong(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Long? = ...): kotlin/Long? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asLong|asLong(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.Long?){}[0]
+    final fun asLowerCaseString(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asLowerCaseString|asLowerCaseString(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.String?){}[0]
+    final fun asShort(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Short? = ...): kotlin/Short? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asShort|asShort(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.Short?){}[0]
+    final fun asString(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asString|asString(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.String?){}[0]
+    final fun asTrimmedString(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asTrimmedString|asTrimmedString(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.String?){}[0]
+    final fun asUpperCaseString(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/String? = ...): kotlin/String? // br.com.wdc.framework.commons.serialization/InputCoerceUtils.asUpperCaseString|asUpperCaseString(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.String?){}[0]
+}
+
+final object br.com.wdc.framework.commons.serialization/JsonInputFactory { // br.com.wdc.framework.commons.serialization/JsonInputFactory|null[0]
+    final fun createStringInput(kotlin/String): br.com.wdc.framework.commons.serialization/JsonStringInput // br.com.wdc.framework.commons.serialization/JsonInputFactory.createStringInput|createStringInput(kotlin.String){}[0]
+    final fun install(kotlin/Function1<kotlin/String, br.com.wdc.framework.commons.serialization/JsonStringInput>) // br.com.wdc.framework.commons.serialization/JsonInputFactory.install|install(kotlin.Function1<kotlin.String,br.com.wdc.framework.commons.serialization.JsonStringInput>){}[0]
+}
+
+final object br.com.wdc.framework.commons.serialization/JsonOutputFactory { // br.com.wdc.framework.commons.serialization/JsonOutputFactory|null[0]
+    final fun createStringOutput(): br.com.wdc.framework.commons.serialization/JsonStringOutput // br.com.wdc.framework.commons.serialization/JsonOutputFactory.createStringOutput|createStringOutput(){}[0]
+    final fun install(kotlin/Function0<br.com.wdc.framework.commons.serialization/JsonStringOutput>) // br.com.wdc.framework.commons.serialization/JsonOutputFactory.install|install(kotlin.Function0<br.com.wdc.framework.commons.serialization.JsonStringOutput>){}[0]
+}
+
+final fun (br.com.wdc.framework.commons.serialization/JsonInputFactory).br.com.wdc.framework.commons.serialization/installCommon() // br.com.wdc.framework.commons.serialization/installCommon|installCommon@br.com.wdc.framework.commons.serialization.JsonInputFactory(){}[0]
+final fun (br.com.wdc.framework.commons.serialization/JsonOutputFactory).br.com.wdc.framework.commons.serialization/installCommon() // br.com.wdc.framework.commons.serialization/installCommon|installCommon@br.com.wdc.framework.commons.serialization.JsonOutputFactory(){}[0]
+final fun <#A: kotlin/Any?, #B: kotlin/Any?> br.com.wdc.framework.commons.concurrent/concurrentMutableMapOf(): kotlin.collections/MutableMap<#A, #B> // br.com.wdc.framework.commons.concurrent/concurrentMutableMapOf|concurrentMutableMapOf(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+
+// Targets: [ios]
+final class br.com.wdc.framework.commons.concurrent/IosScheduledExecutor : br.com.wdc.framework.commons.concurrent/ScheduledExecutor { // br.com.wdc.framework.commons.concurrent/IosScheduledExecutor|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.concurrent/IosScheduledExecutor.<init>|<init>(){}[0]
+
+    final fun execute(kotlin/Function0<kotlin/Unit>): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/IosScheduledExecutor.execute|execute(kotlin.Function0<kotlin.Unit>){}[0]
+    final fun schedule(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/IosScheduledExecutor.schedule|schedule(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration){}[0]
+    final fun scheduleAtFixedRate(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/IosScheduledExecutor.scheduleAtFixedRate|scheduleAtFixedRate(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration;kotlin.time.Duration){}[0]
+    final fun scheduleWithFixedDelay(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/IosScheduledExecutor.scheduleWithFixedDelay|scheduleWithFixedDelay(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration;kotlin.time.Duration){}[0]
+}
+
+// Targets: [ios]
+final class br.com.wdc.framework.commons.storage/IosPersistentSessionStorage : br.com.wdc.framework.commons.storage/SessionStorage { // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage|null[0]
+    constructor <init>(kotlin/String = ...) // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.<init>|<init>(kotlin.String){}[0]
+
+    final val size // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.size.<get-size>|<get-size>(){}[0]
+
+    final fun clear() // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.clear|clear(){}[0]
+    final fun contains(kotlin/String): kotlin/Boolean // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.contains|contains(kotlin.String){}[0]
+    final fun getBoolean(kotlin/String, kotlin/Boolean?): kotlin/Boolean? // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.getBoolean|getBoolean(kotlin.String;kotlin.Boolean?){}[0]
+    final fun getDouble(kotlin/String, kotlin/Double?): kotlin/Double? // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.getDouble|getDouble(kotlin.String;kotlin.Double?){}[0]
+    final fun getInt(kotlin/String, kotlin/Int?): kotlin/Int? // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.getInt|getInt(kotlin.String;kotlin.Int?){}[0]
+    final fun getLong(kotlin/String, kotlin/Long?): kotlin/Long? // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.getLong|getLong(kotlin.String;kotlin.Long?){}[0]
+    final fun getString(kotlin/String, kotlin/String?): kotlin/String? // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.getString|getString(kotlin.String;kotlin.String?){}[0]
+    final fun keys(): kotlin.collections/Set<kotlin/String> // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.keys|keys(){}[0]
+    final fun remove(kotlin/String) // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.remove|remove(kotlin.String){}[0]
+    final fun set(kotlin/String, kotlin/Boolean?) // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.set|set(kotlin.String;kotlin.Boolean?){}[0]
+    final fun set(kotlin/String, kotlin/Double?) // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.set|set(kotlin.String;kotlin.Double?){}[0]
+    final fun set(kotlin/String, kotlin/Int?) // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.set|set(kotlin.String;kotlin.Int?){}[0]
+    final fun set(kotlin/String, kotlin/Long?) // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.set|set(kotlin.String;kotlin.Long?){}[0]
+    final fun set(kotlin/String, kotlin/String?) // br.com.wdc.framework.commons.storage/IosPersistentSessionStorage.set|set(kotlin.String;kotlin.String?){}[0]
+}
+
+// Targets: [ios]
+final class br.com.wdc.framework.commons.storage/IosSessionStorage : br.com.wdc.framework.commons.storage/SessionStorage { // br.com.wdc.framework.commons.storage/IosSessionStorage|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.storage/IosSessionStorage.<init>|<init>(){}[0]
+
+    final val size // br.com.wdc.framework.commons.storage/IosSessionStorage.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // br.com.wdc.framework.commons.storage/IosSessionStorage.size.<get-size>|<get-size>(){}[0]
+
+    final fun clear() // br.com.wdc.framework.commons.storage/IosSessionStorage.clear|clear(){}[0]
+    final fun contains(kotlin/String): kotlin/Boolean // br.com.wdc.framework.commons.storage/IosSessionStorage.contains|contains(kotlin.String){}[0]
+    final fun getBoolean(kotlin/String, kotlin/Boolean?): kotlin/Boolean? // br.com.wdc.framework.commons.storage/IosSessionStorage.getBoolean|getBoolean(kotlin.String;kotlin.Boolean?){}[0]
+    final fun getDouble(kotlin/String, kotlin/Double?): kotlin/Double? // br.com.wdc.framework.commons.storage/IosSessionStorage.getDouble|getDouble(kotlin.String;kotlin.Double?){}[0]
+    final fun getInt(kotlin/String, kotlin/Int?): kotlin/Int? // br.com.wdc.framework.commons.storage/IosSessionStorage.getInt|getInt(kotlin.String;kotlin.Int?){}[0]
+    final fun getLong(kotlin/String, kotlin/Long?): kotlin/Long? // br.com.wdc.framework.commons.storage/IosSessionStorage.getLong|getLong(kotlin.String;kotlin.Long?){}[0]
+    final fun getString(kotlin/String, kotlin/String?): kotlin/String? // br.com.wdc.framework.commons.storage/IosSessionStorage.getString|getString(kotlin.String;kotlin.String?){}[0]
+    final fun keys(): kotlin.collections/Set<kotlin/String> // br.com.wdc.framework.commons.storage/IosSessionStorage.keys|keys(){}[0]
+    final fun remove(kotlin/String) // br.com.wdc.framework.commons.storage/IosSessionStorage.remove|remove(kotlin.String){}[0]
+    final fun set(kotlin/String, kotlin/Boolean?) // br.com.wdc.framework.commons.storage/IosSessionStorage.set|set(kotlin.String;kotlin.Boolean?){}[0]
+    final fun set(kotlin/String, kotlin/Double?) // br.com.wdc.framework.commons.storage/IosSessionStorage.set|set(kotlin.String;kotlin.Double?){}[0]
+    final fun set(kotlin/String, kotlin/Int?) // br.com.wdc.framework.commons.storage/IosSessionStorage.set|set(kotlin.String;kotlin.Int?){}[0]
+    final fun set(kotlin/String, kotlin/Long?) // br.com.wdc.framework.commons.storage/IosSessionStorage.set|set(kotlin.String;kotlin.Long?){}[0]
+    final fun set(kotlin/String, kotlin/String?) // br.com.wdc.framework.commons.storage/IosSessionStorage.set|set(kotlin.String;kotlin.String?){}[0]
+}
+
+// Targets: [js]
+final class br.com.wdc.framework.commons.concurrent/JsScheduledExecutor : br.com.wdc.framework.commons.concurrent/ScheduledExecutor { // br.com.wdc.framework.commons.concurrent/JsScheduledExecutor|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.concurrent/JsScheduledExecutor.<init>|<init>(){}[0]
+
+    final fun execute(kotlin/Function0<kotlin/Unit>): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/JsScheduledExecutor.execute|execute(kotlin.Function0<kotlin.Unit>){}[0]
+    final fun schedule(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/JsScheduledExecutor.schedule|schedule(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration){}[0]
+    final fun scheduleAtFixedRate(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/JsScheduledExecutor.scheduleAtFixedRate|scheduleAtFixedRate(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration;kotlin.time.Duration){}[0]
+    final fun scheduleWithFixedDelay(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/JsScheduledExecutor.scheduleWithFixedDelay|scheduleWithFixedDelay(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration;kotlin.time.Duration){}[0]
+}
+
+// Targets: [js]
+final class br.com.wdc.framework.commons.storage/JsSessionStorage : br.com.wdc.framework.commons.storage/SessionStorage { // br.com.wdc.framework.commons.storage/JsSessionStorage|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.storage/JsSessionStorage.<init>|<init>(){}[0]
+
+    final val size // br.com.wdc.framework.commons.storage/JsSessionStorage.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // br.com.wdc.framework.commons.storage/JsSessionStorage.size.<get-size>|<get-size>(){}[0]
+
+    final fun clear() // br.com.wdc.framework.commons.storage/JsSessionStorage.clear|clear(){}[0]
+    final fun contains(kotlin/String): kotlin/Boolean // br.com.wdc.framework.commons.storage/JsSessionStorage.contains|contains(kotlin.String){}[0]
+    final fun getBoolean(kotlin/String, kotlin/Boolean?): kotlin/Boolean? // br.com.wdc.framework.commons.storage/JsSessionStorage.getBoolean|getBoolean(kotlin.String;kotlin.Boolean?){}[0]
+    final fun getDouble(kotlin/String, kotlin/Double?): kotlin/Double? // br.com.wdc.framework.commons.storage/JsSessionStorage.getDouble|getDouble(kotlin.String;kotlin.Double?){}[0]
+    final fun getInt(kotlin/String, kotlin/Int?): kotlin/Int? // br.com.wdc.framework.commons.storage/JsSessionStorage.getInt|getInt(kotlin.String;kotlin.Int?){}[0]
+    final fun getLong(kotlin/String, kotlin/Long?): kotlin/Long? // br.com.wdc.framework.commons.storage/JsSessionStorage.getLong|getLong(kotlin.String;kotlin.Long?){}[0]
+    final fun getString(kotlin/String, kotlin/String?): kotlin/String? // br.com.wdc.framework.commons.storage/JsSessionStorage.getString|getString(kotlin.String;kotlin.String?){}[0]
+    final fun keys(): kotlin.collections/Set<kotlin/String> // br.com.wdc.framework.commons.storage/JsSessionStorage.keys|keys(){}[0]
+    final fun remove(kotlin/String) // br.com.wdc.framework.commons.storage/JsSessionStorage.remove|remove(kotlin.String){}[0]
+    final fun set(kotlin/String, kotlin/Boolean?) // br.com.wdc.framework.commons.storage/JsSessionStorage.set|set(kotlin.String;kotlin.Boolean?){}[0]
+    final fun set(kotlin/String, kotlin/Double?) // br.com.wdc.framework.commons.storage/JsSessionStorage.set|set(kotlin.String;kotlin.Double?){}[0]
+    final fun set(kotlin/String, kotlin/Int?) // br.com.wdc.framework.commons.storage/JsSessionStorage.set|set(kotlin.String;kotlin.Int?){}[0]
+    final fun set(kotlin/String, kotlin/Long?) // br.com.wdc.framework.commons.storage/JsSessionStorage.set|set(kotlin.String;kotlin.Long?){}[0]
+    final fun set(kotlin/String, kotlin/String?) // br.com.wdc.framework.commons.storage/JsSessionStorage.set|set(kotlin.String;kotlin.String?){}[0]
+}
+
+// Targets: [wasmJs]
+final class br.com.wdc.framework.commons.concurrent/WasmScheduledExecutor : br.com.wdc.framework.commons.concurrent/ScheduledExecutor { // br.com.wdc.framework.commons.concurrent/WasmScheduledExecutor|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.concurrent/WasmScheduledExecutor.<init>|<init>(){}[0]
+
+    final fun execute(kotlin/Function0<kotlin/Unit>): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/WasmScheduledExecutor.execute|execute(kotlin.Function0<kotlin.Unit>){}[0]
+    final fun schedule(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/WasmScheduledExecutor.schedule|schedule(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration){}[0]
+    final fun scheduleAtFixedRate(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/WasmScheduledExecutor.scheduleAtFixedRate|scheduleAtFixedRate(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration;kotlin.time.Duration){}[0]
+    final fun scheduleWithFixedDelay(kotlin/Function0<kotlin/Unit>, kotlin.time/Duration, kotlin.time/Duration): br.com.wdc.framework.commons.function/Registration // br.com.wdc.framework.commons.concurrent/WasmScheduledExecutor.scheduleWithFixedDelay|scheduleWithFixedDelay(kotlin.Function0<kotlin.Unit>;kotlin.time.Duration;kotlin.time.Duration){}[0]
+}
+
+// Targets: [wasmJs]
+final class br.com.wdc.framework.commons.storage/WasmSessionStorage : br.com.wdc.framework.commons.storage/SessionStorage { // br.com.wdc.framework.commons.storage/WasmSessionStorage|null[0]
+    constructor <init>() // br.com.wdc.framework.commons.storage/WasmSessionStorage.<init>|<init>(){}[0]
+
+    final val size // br.com.wdc.framework.commons.storage/WasmSessionStorage.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // br.com.wdc.framework.commons.storage/WasmSessionStorage.size.<get-size>|<get-size>(){}[0]
+
+    final fun clear() // br.com.wdc.framework.commons.storage/WasmSessionStorage.clear|clear(){}[0]
+    final fun contains(kotlin/String): kotlin/Boolean // br.com.wdc.framework.commons.storage/WasmSessionStorage.contains|contains(kotlin.String){}[0]
+    final fun getBoolean(kotlin/String, kotlin/Boolean?): kotlin/Boolean? // br.com.wdc.framework.commons.storage/WasmSessionStorage.getBoolean|getBoolean(kotlin.String;kotlin.Boolean?){}[0]
+    final fun getDouble(kotlin/String, kotlin/Double?): kotlin/Double? // br.com.wdc.framework.commons.storage/WasmSessionStorage.getDouble|getDouble(kotlin.String;kotlin.Double?){}[0]
+    final fun getInt(kotlin/String, kotlin/Int?): kotlin/Int? // br.com.wdc.framework.commons.storage/WasmSessionStorage.getInt|getInt(kotlin.String;kotlin.Int?){}[0]
+    final fun getLong(kotlin/String, kotlin/Long?): kotlin/Long? // br.com.wdc.framework.commons.storage/WasmSessionStorage.getLong|getLong(kotlin.String;kotlin.Long?){}[0]
+    final fun getString(kotlin/String, kotlin/String?): kotlin/String? // br.com.wdc.framework.commons.storage/WasmSessionStorage.getString|getString(kotlin.String;kotlin.String?){}[0]
+    final fun keys(): kotlin.collections/Set<kotlin/String> // br.com.wdc.framework.commons.storage/WasmSessionStorage.keys|keys(){}[0]
+    final fun remove(kotlin/String) // br.com.wdc.framework.commons.storage/WasmSessionStorage.remove|remove(kotlin.String){}[0]
+    final fun set(kotlin/String, kotlin/Boolean?) // br.com.wdc.framework.commons.storage/WasmSessionStorage.set|set(kotlin.String;kotlin.Boolean?){}[0]
+    final fun set(kotlin/String, kotlin/Double?) // br.com.wdc.framework.commons.storage/WasmSessionStorage.set|set(kotlin.String;kotlin.Double?){}[0]
+    final fun set(kotlin/String, kotlin/Int?) // br.com.wdc.framework.commons.storage/WasmSessionStorage.set|set(kotlin.String;kotlin.Int?){}[0]
+    final fun set(kotlin/String, kotlin/Long?) // br.com.wdc.framework.commons.storage/WasmSessionStorage.set|set(kotlin.String;kotlin.Long?){}[0]
+    final fun set(kotlin/String, kotlin/String?) // br.com.wdc.framework.commons.storage/WasmSessionStorage.set|set(kotlin.String;kotlin.String?){}[0]
+}

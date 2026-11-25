@@ -13,6 +13,6 @@ Javalin.create { config ->
 
 | Class | Responsibility |
 |-------|----------------|
-| `DispatcherController` | `ws://…/dispatcher/{id}`: checks the session id's signature and the `app_signature` cookie on connect, hands each message to the session of the registry (made on its first message), and releases a session that does not outlive its socket when it closes. |
-| `IndexHtmlController` | Before `/index.html`, and `/<context>/index.html` of the contexts it is given (clients served under one): plants `app_id` (a new session id signed by the host) and `app_skey` (the host's public key for the handshake), and keeps the page out of caches. |
+| `DispatcherController` | `ws://…/dispatcher/{id}`: checks the session id's HMAC on connect, hands each message to the session of the registry (made on its first message), and releases a session that does not outlive its socket when it closes. |
+| `IndexHtmlController` | Before `/index.html`, and `/<context>/index.html` of the contexts it is given (clients served under one): plants `app_id` (a new session id signed by the host) and keeps the page out of caches. |
 | `JavalinWebSocketConnection` (internal) | The session's `WebSocketConnection` over Javalin's socket. |

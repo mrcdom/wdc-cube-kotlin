@@ -1,0 +1,125 @@
+public abstract interface class br/com/wdc/framework/persistence/transaction/RemoteTransactionCoordinator {
+	public abstract fun begin (Ljava/lang/String;)Ljava/lang/String;
+	public fun begin (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun commit (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun exists (Ljava/lang/String;)Z
+	public abstract fun hasOpenTransactionForOwner (Ljava/lang/String;)Z
+	public abstract fun resume (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun rollback (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun stats ()Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionStats;
+	public abstract fun status (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun suspend (Ljava/lang/String;)V
+}
+
+public final class br/com/wdc/framework/persistence/transaction/RemoteTransactionCoordinator$DefaultImpls {
+	public static fun begin (Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionCoordinator;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/persistence/transaction/RemoteTransactionCoordinatorImpl : br/com/wdc/framework/persistence/transaction/RemoteTransactionCoordinator {
+	public fun <init> (Lkotlin/jvm/functions/Function0;Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionOptions;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionOptions;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun begin (Ljava/lang/String;)Ljava/lang/String;
+	public fun begin (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun commit (Ljava/lang/String;Ljava/lang/String;)V
+	public fun exists (Ljava/lang/String;)Z
+	public fun hasOpenTransactionForOwner (Ljava/lang/String;)Z
+	public final fun reapExpired ()V
+	public fun resume (Ljava/lang/String;Ljava/lang/String;)V
+	public fun rollback (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun startReaper (Ljava/util/concurrent/ScheduledExecutorService;J)Ljava/lang/AutoCloseable;
+	public static synthetic fun startReaper$default (Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionCoordinatorImpl;Ljava/util/concurrent/ScheduledExecutorService;JILjava/lang/Object;)Ljava/lang/AutoCloseable;
+	public fun stats ()Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionStats;
+	public fun status (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun suspend (Ljava/lang/String;)V
+}
+
+public final class br/com/wdc/framework/persistence/transaction/RemoteTransactionOptions {
+	public static final field Companion Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionOptions$Companion;
+	public static final field DEFAULT_IDLE_TIMEOUT_MS J
+	public static final field DEFAULT_MAX_LIFETIME_MS J
+	public static final field DEFAULT_MAX_OPEN I
+	public static final field DEFAULT_MAX_OPEN_PER_OWNER I
+	public static final field DEFAULT_OUTCOME_RETENTION_MS J
+	public static final field DEFAULT_REAP_INTERVAL_MS J
+	public fun <init> ()V
+	public fun <init> (JJJIIJ)V
+	public synthetic fun <init> (JJJIIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()J
+	public final fun copy (JJJIIJ)Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionOptions;
+	public static synthetic fun copy$default (Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionOptions;JJJIIJILjava/lang/Object;)Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIdleTimeoutMs ()J
+	public final fun getMaxLifetimeMs ()J
+	public final fun getMaxOpen ()I
+	public final fun getMaxOpenPerOwner ()I
+	public final fun getOutcomeRetentionMs ()J
+	public final fun getReapIntervalMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/persistence/transaction/RemoteTransactionOptions$Companion {
+	public final fun defaults ()Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionOptions;
+	public final fun fromConfig (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionOptions;
+}
+
+public final class br/com/wdc/framework/persistence/transaction/RemoteTransactionStats {
+	public fun <init> (IIIJJJJJ)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun component7 ()J
+	public final fun component8 ()J
+	public final fun copy (IIIJJJJJ)Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionStats;
+	public static synthetic fun copy$default (Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionStats;IIIJJJJJILjava/lang/Object;)Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionStats;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBegun ()J
+	public final fun getCommitted ()J
+	public final fun getOpenNow ()I
+	public final fun getOwnersWithOpen ()I
+	public final fun getReaped ()J
+	public final fun getRejectedByLimit ()J
+	public final fun getRetainedOutcomes ()I
+	public final fun getRolledBack ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/persistence/transaction/TransactionScope : java/lang/AutoCloseable {
+	public static final field Companion Lbr/com/wdc/framework/persistence/transaction/TransactionScope$Companion;
+	public final fun afterCommit (Lkotlin/jvm/functions/Function1;)V
+	public fun close ()V
+	public final fun connection ()Ljava/sql/Connection;
+	public final fun isRollbackOnly ()Z
+	public final fun setRollbackOnly ()V
+	public final fun takeAfterCommit ()Ljava/util/List;
+}
+
+public final class br/com/wdc/framework/persistence/transaction/TransactionScope$Companion {
+	public final fun begin (Ljavax/sql/DataSource;)Lbr/com/wdc/framework/persistence/transaction/TransactionScope;
+	public final fun beginNew (Ljavax/sql/DataSource;)Lbr/com/wdc/framework/persistence/transaction/TransactionScope;
+	public final fun current ()Lbr/com/wdc/framework/persistence/transaction/TransactionScope;
+	public final fun isActive ()Z
+	public final fun resume (Lbr/com/wdc/framework/persistence/transaction/TransactionScope;)V
+	public final fun suspend ()Lbr/com/wdc/framework/persistence/transaction/TransactionScope;
+}
+
+public final class br/com/wdc/framework/persistence/transaction/TransactionServiceImpl : br/com/wdc/framework/domain/transaction/TransactionService {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public fun afterCommit (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun mandatory (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun never (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun notSupported (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun required (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun requiresNew (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun supports (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

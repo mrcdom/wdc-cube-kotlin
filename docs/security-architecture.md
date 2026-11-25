@@ -294,7 +294,7 @@ In the remote React view there is no policy: the presenter is server code, and i
 1. **Ids that come from the client are untrusted.** A route parameter, or an id in an event, is chosen by the user. Every query that takes one must be restricted to whoever is logged in: `ReceiptQuery(purchaseId, userId)` looks up a purchase by id **and** buyer, so another user's receipt is "not found". The user's identity never comes from the address; it comes from the session.
 2. **The scope crosses the wire.** Whatever the presenter puts in its scope reaches the browser. It must not carry a field the screen does not show; a field that must never be sent is declared `field(initial, sent = false)` (the password the user types in `LoginScope`).
 
-The remote channel itself — the HMAC-signed session id, the RSA handshake that sets up an AES-256-GCM key for sensitive values, signed navigation — is described in [React architecture — Security](architecture-react.md#security).
+The remote channel itself — the HMAC-SHA256-signed session id, the per-connection ECDH handshake that sets up an AES-256-GCM key for sensitive values, the HMAC-signed navigation — is described in [React architecture — Security](architecture-react.md#security).
 
 Access to the restricted screens goes through a guard place, as in the Java version: every restricted screen is below `restricted` (`RestrictedKeys`), whose `RestrictedPresenter` — no scope, no view — redirects to the open area (`OpenKeys`, and from there to the login) when there is no signed-in subject. Its counterpart, `OpenPresenter`, sends a signed-in user back to the restricted area.
 
