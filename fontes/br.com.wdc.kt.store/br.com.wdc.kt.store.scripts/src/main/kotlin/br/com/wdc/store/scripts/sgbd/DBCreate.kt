@@ -169,6 +169,18 @@ class DBCreate {
             )
         }
 
+        if ("EN_AUTH_NONCE" !in existing) {
+            conn.execute(
+                """
+                CREATE TABLE EN_AUTH_NONCE (
+                    NONCE VARCHAR(64) NOT NULL,
+                    USERNAME VARCHAR(100) NOT NULL,
+                    EXPIRES_AT TIMESTAMP NOT NULL,
+                    CONSTRAINT PK_AUTH_NONCE PRIMARY KEY (NONCE)
+                )""",
+            )
+        }
+
         // The migrations bring databases created by earlier versions to the schema above; on a new database they change nothing.
         MigrationRunner(conn)
             .run(Migration_0001_AddUserRoles(conn))
@@ -180,6 +192,7 @@ class DBCreate {
             .run(Migration_0007_SessionExpiryToUtc(conn))
             .run(Migration_0008_UserRolesDefaultCustomer(conn))
             .run(Migration_0009_PasswordScramVerifier(conn))
+            .run(Migration_0010_AuthNonceTable(conn))
 
         // The seed comes after the migrations: it already writes in the current format, and must not be migrated.
         if (mustResetDb && !skipReset) {

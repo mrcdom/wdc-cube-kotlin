@@ -5,6 +5,7 @@
 package br.com.wdc.store.persistence.scheme.tables.references
 
 
+import br.com.wdc.store.persistence.scheme.tables.EnAuthNonce
 import br.com.wdc.store.persistence.scheme.tables.EnProduct
 import br.com.wdc.store.persistence.scheme.tables.EnPurchase
 import br.com.wdc.store.persistence.scheme.tables.EnPurchaseitem
@@ -13,6 +14,8 @@ import br.com.wdc.store.persistence.scheme.tables.EnUserIntentSecret
 import br.com.wdc.store.persistence.scheme.tables.EnUserSession
 
 
+
+val EN_AUTH_NONCE: EnAuthNonce = EnAuthNonce.EN_AUTH_NONCE
 
 val EN_PRODUCT: EnProduct = EnProduct.EN_PRODUCT
 
