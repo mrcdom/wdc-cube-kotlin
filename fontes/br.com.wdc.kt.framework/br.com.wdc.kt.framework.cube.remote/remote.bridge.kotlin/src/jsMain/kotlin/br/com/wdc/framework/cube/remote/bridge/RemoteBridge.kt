@@ -25,7 +25,20 @@ class RemoteBridge {
         /** The browser tab's view: the client's top one. */
         const val BROWSER_VID = "7b32e816a191"
         const val BROWSER_VSID = "$BROWSER_VID:0"
+
+        /** The version of the remote protocol this client speaks: it goes in the handshake (`protocol`). */
+        const val PROTOCOL_VERSION = 1
+
+        /** What the user is told when the host does not speak this client's version. */
+        const val OUTDATED_MESSAGE = "This page is out of date. Reload it to continue."
     }
+
+    /**
+     * Whether the host refused this client's protocol version: the page is out of date. Nothing more is sent; the
+     * browser's alert says so, and its OK reloads the page.
+     */
+    var outdated = false
+        private set
 
     /** The session id. */
     val id: String
@@ -150,9 +163,22 @@ class RemoteBridge {
     fun submitSilent(vsid: String, eventId: Int) = send(vsid, eventId, silent = true)
 
     private fun send(vsid: String, eventId: Int, silent: Boolean) {
+        if (outdated) {
+            // the alert's OK: a new page brings a client the host speaks to
+            if (vsid == BROWSER_VSID && eventId == 1) window.location.reload()
+            return
+        }
         val form = formMap
         formMap = js("({})")
         channel.submit(form, vsid, eventId, silent)
+    }
+
+    /** The host does not speak this client's version: stop, and tell the user through the browser's alert. */
+    internal fun markOutdated() {
+        outdated = true
+        val alert: dynamic = js("({ id: -1 })")
+        alert.args = arrayOf(OUTDATED_MESSAGE)
+        viewMap[BROWSER_VSID]?.set("alertMessage", alert)
     }
 
     /** Ciphers a sensitive value (a password) with the session's key, for [setFormField]. */

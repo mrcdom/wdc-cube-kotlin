@@ -123,6 +123,13 @@ public final class br/com/wdc/framework/cube/remote/RemoteDataSecurity {
 public final class br/com/wdc/framework/cube/remote/RemoteDataSecurity$Companion {
 }
 
+public final class br/com/wdc/framework/cube/remote/RemoteProtocol {
+	public static final field INSTANCE Lbr/com/wdc/framework/cube/remote/RemoteProtocol;
+	public static final field UNSUPPORTED Ljava/lang/String;
+	public static final field VERSION I
+	public final fun getSUPPORTED ()Ljava/util/List;
+}
+
 public abstract interface class br/com/wdc/framework/cube/remote/RemoteViewHost {
 	public abstract fun forgetView (Lbr/com/wdc/framework/cube/remote/RemoteViewImpl;)V
 	public abstract fun markDirty (Lbr/com/wdc/framework/cube/remote/RemoteViewImpl;)V

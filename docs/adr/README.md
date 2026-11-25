@@ -21,5 +21,6 @@ A record is not edited once accepted, except to fix a mistake or a link. A decis
 | [0013](0013-the-server-prices-items.md) | The server decides the price of an item | Accepted |
 | [0014](0014-explicit-work-directory.md) | The backend runs from an explicit work directory | Accepted |
 | [0015](0015-action-handlers-carry-the-action-name.md) | The method an action runs carries the action's name | Accepted |
+| [0016](0016-versioned-remote-protocol.md) | The remote protocol is versioned, and specified by shared fixtures | Accepted |
 
 New record: copy the shape of an existing one, take the next number, and add it to this table.

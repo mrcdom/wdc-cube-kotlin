@@ -36,4 +36,4 @@ bridge.start()                // the handshake, then the address in the page's h
 
 ## Tests
 
-`ViewBindingTest` (reading a scope, the views it refers to) and `DataSecurityTest` (the ECDH handshake between two sides with the real Web Crypto, the session id in the key, a new IV per value, a changed byte refused), run in a headless Chrome (`./gradlew :framework-cube-remote-bridge:jsTest`).
+`ClientConformanceTest` (the shared client fixtures of [conformance/client](../conformance/client/), embedded at build time, with a fake WebSocket), `ViewBindingTest` (reading a scope, the views it refers to) and `DataSecurityTest` (the ECDH handshake between two sides with the real Web Crypto, the session id in the key, a new IV per value, a changed byte refused), run in a headless Chrome (`./gradlew :framework-cube-remote-bridge:jsTest`).

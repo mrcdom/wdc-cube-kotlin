@@ -1,0 +1,17 @@
+{
+  "description": "A host that does not speak the client's version: the client stops — it sends nothing more and does not reconnect — and tells the user, in the browser's alert, that the page is out of date.",
+  "steps": [
+    { "start": { "hash": "" } },
+    { "expectSent": { "ping": true, "protocol": 1 } },
+    { "receive": { "requestId": -1, "error": "unsupported-protocol", "protocols": [2] } },
+    { "expectOutdated": true },
+    {
+      "expectScope": {
+        "vsid": "7b32e816a191:0",
+        "scope": { "alertMessage": { "id": -1, "args": ["This page is out of date. Reload it to continue."] } }
+      }
+    },
+    { "fire": { "vsid": "c0ffee000001:1", "event": 1 } },
+    { "expectNothingSent": true }
+  ]
+}

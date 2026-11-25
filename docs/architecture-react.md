@@ -186,10 +186,10 @@ sequenceDiagram
 
     Browser->>Server: WebSocket /dispatcher/appId (the server checks the HMAC)
     Browser->>Browser: Generates an ephemeral ECDH P-256 key pair
-    Browser->>Server: ping with clientKey (its public key)
+    Browser->>Server: ping with clientKey (its public key) and protocol (its version)
     Server->>Server: The registry creates the application (RemoteRootPresenter, first message)
     Server->>Server: Generates its own pair, derives the key:<br/>ECDH, then HKDF-SHA256 (salt = appId)
-    Server-->>Browser: Initial scopes (views) and serverKey
+    Server-->>Browser: Initial scopes (views), serverKey and protocol
     Browser->>Browser: Derives the same key
 ```
 
@@ -198,6 +198,8 @@ The `appId` is `{random}.{HMAC-SHA256(random)}` (`RemoteAppSecurity`, Base62): o
 ---
 
 ## WebSocket Protocol
+
+Version 1. The client sends its version in the handshake (`protocol`, with `clientKey`); the host answers with the version it speaks, or — to a handshake with another version or none, and to any message before an accepted handshake — with `{"error": "unsupported-protocol", "protocols": [1]}`, after which the client stops and tells the user the page is out of date. The full specification, message by message, and the shared fixtures every host and client runs, are in [conformance/](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/conformance/README.md).
 
 ### Client → Server (User Event)
 

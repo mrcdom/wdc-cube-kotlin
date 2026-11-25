@@ -104,13 +104,19 @@ Also exported: `ViewBinding` (`getId()`, `getScope()`, `forceUpdate`), `DataSecu
 ## Protocol
 
 - The page that serves the shell sets one cookie, `app_id`: the session id, `<random>.<signature>` (Base62, signed by the host with HMAC-SHA256), kept in `sessionStorage`.
-- The WebSocket opens at `ws(s)://<host>/dispatcher/<app_id>`, subprotocol `wdc`. Its first message, the hello, is a ping with the last processed request id, the current path and the client's public key for the handshake (`clientKey`); nothing else goes before it. The answer brings the host's key (`serverKey`).
+- The WebSocket opens at `ws(s)://<host>/dispatcher/<app_id>`, subprotocol `wdc`. Its first message, the hello, is a ping with the last processed request id, the current path, the client's public key for the handshake (`clientKey`) and the protocol version (`protocol`, `PROTOCOL_VERSION`); nothing else goes before the host answers it. The answer brings the host's key (`serverKey`) and version. A host that does not speak the version answers `unsupported-protocol`: the client stops (no more requests, no reconnection) and shows, in the browser's alert, that the page is out of date; the alert's OK reloads the page.
 - Each request carries a `requestId`, the events as `"<vsid>:<eventId>"` and the queued form fields under each view's `vsid`. Requests not yet acknowledged are sent again after a reconnection.
 - Each response carries the last processed `requestId` and, when present, the new `uri` (written to the hash), the `scopes` (one per view, by id) and the `releasedViews` (views the server let go of, applied after the scopes).
 - A scope field ending in `ViewId` references a child view, which is held while referenced. Lists of child views (`<name>ViewIds`) are not held automatically; a view is collected only after it leaves the screen.
 - Browser view events: `-1` start (with `p.path`), `-2` history change, `2` keep-alive (every 15 s, and when the page becomes visible or focused). The other events of the browser view (such as dismissing the alert) are the shell's.
 - The browser scope (`BrowserScope`) carries the content view (`contentViewId`), the alert, the reconnection state (`error`) and the activity flag (`submitting`); the client updates the last two itself.
 - Close code `4001` means the session is no longer valid: the page reloads.
+
+The full specification, and the shared fixtures, are in [conformance/](../conformance/README.md).
+
+## Tests
+
+`npm ci && npm test` runs the shared client fixtures of [conformance/client](../conformance/client/) against this client (Vitest, jsdom, a fake WebSocket). The packages it installs are only for the tests: a shell still gives the bridge its peer dependencies.
 
 ## Security
 

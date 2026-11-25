@@ -26,9 +26,10 @@ import kotlin.time.Duration.Companion.minutes
  * - **Views.** One [RemoteViewImpl] per scope drawn, made the first time a scope that holds it is written; the client
  *   component that paints it is the scope's vid, looked up in [vids] by the scope's class. A view no longer referred to
  *   is released, and its id goes to the client in `releasedViews`.
- * - **The protocol.** Each client message ([sendResponse]): the handshake when it carries a `clientKey`
- *   ([RemoteDataSecurity]), what the user typed (`Scope.sync`), the events (`Scope.dispatch`), then the answer — the
- *   scopes of the dirty views, the signed address, and the host's `serverKey` after a handshake. Changes made outside a
+ * - **The protocol** ([RemoteProtocol]). Each client message ([sendResponse]): the handshake when it carries a
+ *   `clientKey` ([RemoteDataSecurity]) and the client's `protocol` version, what the user typed (`Scope.sync`), the
+ *   events (`Scope.dispatch`), then the answer — the scopes of the dirty views, the signed address, and the host's
+ *   `serverKey` and version after a handshake. Nothing is read before a handshake with a version the host speaks. Changes made outside a
  *   message go out at the registry's next flush ([flushDirtyViews]).
  * - **The history.** The address the client shows carries a signature ([RemoteAppSecurity.sign]); an address
  *   with a wrong one is not followed ([safeGo]).
@@ -209,6 +210,10 @@ class RemoteApplicationSupport(
     @Throws(IOException::class)
     fun sendResponse(request: Map<String, Any?>) {
         try {
+            if (!acceptProtocol(request)) {
+                refuse(request)
+                return
+            }
             runBlocking { dispatch(request) }
             respond(request)
         } catch (e: Exception) {
@@ -219,7 +224,7 @@ class RemoteApplicationSupport(
     /** Sends the views that changed outside a client message (the registry's flush). */
     @Synchronized
     fun flushDirtyViews() {
-        if (dirtyViewMap.isEmpty()) return
+        if (dirtyViewMap.isEmpty() || !protocolAccepted) return
         val ws = wsSession ?: return
 
         val views = takeDirtyViews()
@@ -227,6 +232,49 @@ class RemoteApplicationSupport(
 
         doUpdateHistory()
         ws.sendText(answer(lastRequestId, isPing = false, views))
+    }
+
+    /** Whether a handshake with a version this host speaks was accepted: before it, nothing is read. */
+    @Volatile
+    private var protocolAccepted = false
+
+    /** The answer to the handshake carries the version too. */
+    private var pendingProtocol = false
+
+    /**
+     * Whether [request] can be read: a handshake (with a `clientKey`) decides by its `protocol`; any other message,
+     * by the last handshake.
+     */
+    private fun acceptProtocol(request: Map<String, Any?>): Boolean {
+        val isHandshake = CoerceUtils.asString(request["clientKey"])?.isNotBlank() == true
+        if (!isHandshake) return protocolAccepted
+
+        val version = CoerceUtils.asInteger(request["protocol"], null)
+        protocolAccepted = version != null && version in RemoteProtocol.SUPPORTED
+        if (!protocolAccepted) LOG.warn("Session {}: a client of protocol {} (this host speaks {})", id, version, RemoteProtocol.SUPPORTED)
+        pendingProtocol = protocolAccepted
+        return protocolAccepted
+    }
+
+    /** The answer to a client this host cannot talk to: the versions it speaks. */
+    private fun refuse(request: Map<String, Any?>) {
+        val ws = wsSession ?: return
+        val requestId = CoerceUtils.asLong(request["requestId"], lastRequestId) ?: lastRequestId
+        val out = StringWriter()
+        val json = JsonExtensibleObjectOutput(JsonWriter(out))
+        try {
+            json.beginObject()
+            json.name("requestId").value(requestId)
+            json.name("error").value(RemoteProtocol.UNSUPPORTED)
+            json.name("protocols")
+            json.beginArray()
+            RemoteProtocol.SUPPORTED.forEach { json.value(it.toLong()) }
+            json.endArray()
+            json.endObject()
+        } finally {
+            json.flush()
+        }
+        ws.sendText(out.toString())
     }
 
     private suspend fun dispatch(request: Map<String, Any?>) {
@@ -288,7 +336,7 @@ class RemoteApplicationSupport(
         val views = takeDirtyViews()
 
         // a new address alone waits for the next answer
-        if (!isPing && views.isEmpty() && releasedViews.isEmpty() && pendingServerKey == null) return
+        if (!isPing && views.isEmpty() && releasedViews.isEmpty() && pendingServerKey == null && !pendingProtocol) return
 
         val ws = wsSession ?: throw IllegalStateException("Missing WebSocket session")
         ws.sendText(answer(requestId, isPing, views))
@@ -313,6 +361,8 @@ class RemoteApplicationSupport(
             if (isPing) json.name("ping").value(true)
             pendingServerKey?.let { json.name("serverKey").value(it) }
             pendingServerKey = null
+            if (pendingProtocol) json.name("protocol").value(RemoteProtocol.VERSION.toLong())
+            pendingProtocol = false
             uri?.let { json.name("uri").value(it) }
             if (views.isNotEmpty()) {
                 json.name("scopes")

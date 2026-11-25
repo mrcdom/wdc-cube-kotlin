@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.stress
 
+import br.com.wdc.framework.cube.remote.RemoteProtocol
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.ToNumberPolicy
@@ -355,6 +356,7 @@ class VirtualClient(
             "requestId" to -1L,
             "ping" to true,
             "clientKey" to startHandshake(),
+            "protocol" to RemoteProtocol.VERSION,
             "path" to "/",
         )
     }

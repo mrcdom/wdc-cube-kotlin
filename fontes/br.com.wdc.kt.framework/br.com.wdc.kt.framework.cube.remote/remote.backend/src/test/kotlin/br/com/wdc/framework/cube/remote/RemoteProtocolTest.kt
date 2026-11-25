@@ -31,6 +31,20 @@ class RemoteProtocolTest {
         }
     }
 
+    /** A new P-256 public key, as a client sends it (Base64 SubjectPublicKeyInfo). */
+    private fun newClientKey(): String {
+        val pair = java.security.KeyPairGenerator.getInstance("EC")
+            .apply { initialize(java.security.spec.ECGenParameterSpec("secp256r1")) }.generateKeyPair()
+        return java.util.Base64.getEncoder().encodeToString(pair.public.encoded)
+    }
+
+    /** The handshake every client starts with: its key and the version it speaks. */
+    private fun hello(protocol: Any? = RemoteProtocol.VERSION) {
+        val request = mutableMapOf<String, Any?>("requestId" to 0.0, "ping" to true, "clientKey" to newClientKey())
+        if (protocol != null) request["protocol"] = protocol
+        send(request)
+    }
+
     @AfterTest
     fun release() = app.release()
 
@@ -39,11 +53,11 @@ class RemoteProtocolTest {
     private fun lastAnswer() = JsonParser.parseString(sent.last()).asJsonObject
 
     @Test
-    fun theFirstAnswer_bringsTheBrowser_theRootScope_andASignedAddress() {
-        send(mapOf("requestId" to 1.0))
+    fun theAnswerToTheHandshake_bringsTheBrowser_theRootScope_andASignedAddress() {
+        hello()
 
         val answer = lastAnswer()
-        assertEquals(1, answer["requestId"].asInt)
+        assertEquals(0, answer["requestId"].asInt)
         val scopes = answer["scopes"].asJsonArray.map { it.asJsonObject }
         val browser = scopes.first { it["id"].asString == RemoteBrowserPresenter.VSID }
         assertEquals("0123456789ab:1", browser["contentViewId"].asString)
@@ -53,6 +67,7 @@ class RemoteProtocolTest {
 
     @Test
     fun anEvent_runsTheActionBoundToItsCode_andAnAnswerFollows() {
+        hello()
         send(mapOf("requestId" to 1.0))
         app.alertUnexpectedError(Log.getLogger("test"), "Buying a product", IllegalStateException())
 
@@ -65,6 +80,7 @@ class RemoteProtocolTest {
 
     @Test
     fun theAlert_showsOnlyWhatFailed() {
+        hello()
         send(mapOf("requestId" to 1.0))
         app.alertUnexpectedError(Log.getLogger("test"), "Buying a product: connection refused", IllegalStateException())
 
@@ -77,6 +93,7 @@ class RemoteProtocolTest {
 
     @Test
     fun anAddressWithAWrongSignature_isNotFollowed_andTheClientIsCorrected() = kotlinx.coroutines.runBlocking {
+        hello()
         send(mapOf("requestId" to 1.0))
         val signed = app.remote.uri!!
 
@@ -88,15 +105,42 @@ class RemoteProtocolTest {
 
     @Test
     fun aClientKey_isAnsweredWithTheHostsKey_onceAndOnlyOnce() {
-        val clientPair = java.security.KeyPairGenerator.getInstance("EC")
-            .apply { initialize(java.security.spec.ECGenParameterSpec("secp256r1")) }.generateKeyPair()
-        val clientKey = java.util.Base64.getEncoder().encodeToString(clientPair.public.encoded)
-
-        send(mapOf("requestId" to 1.0, "ping" to true, "clientKey" to clientKey))
+        send(mapOf("requestId" to 1.0, "ping" to true, "clientKey" to newClientKey(), "protocol" to RemoteProtocol.VERSION))
         assertTrue(lastAnswer().has("serverKey"), "the host answers the handshake")
+        assertEquals(RemoteProtocol.VERSION, lastAnswer()["protocol"].asInt, "with the version it speaks")
         assertTrue(app.remote.dataSecurity.ready)
 
         send(mapOf("requestId" to 2.0, "ping" to true))
         assertTrue(!lastAnswer().has("serverKey"), "only the answer to the handshake carries it")
+        assertTrue(!lastAnswer().has("protocol"))
+    }
+
+    // :: The protocol's version
+
+    @Test
+    fun aHandshakeOfAnotherVersion_isRefused_withTheVersionsTheHostSpeaks() {
+        hello(protocol = RemoteProtocol.VERSION + 1)
+        assertEquals(RemoteProtocol.UNSUPPORTED, lastAnswer()["error"].asString)
+        assertEquals(listOf(RemoteProtocol.VERSION), lastAnswer()["protocols"].asJsonArray.map { it.asInt })
+        assertTrue(!lastAnswer().has("serverKey"), "no key for a client the host cannot talk to")
+        assertTrue(!app.remote.dataSecurity.ready)
+    }
+
+    @Test
+    fun aHandshakeWithoutAVersion_isRefused() {
+        hello(protocol = null)
+        assertEquals(RemoteProtocol.UNSUPPORTED, lastAnswer()["error"].asString)
+    }
+
+    @Test
+    fun aMessageBeforeAnAcceptedHandshake_isRefused_andNothingRuns() {
+        send(mapOf("requestId" to 1.0, "event" to listOf("${RemoteBrowserPresenter.VSID}:2")))
+        assertEquals(RemoteProtocol.UNSUPPORTED, lastAnswer()["error"].asString)
+        assertTrue(!lastAnswer().has("scopes"), "nothing was read")
+
+        // a refused client stays refused, even with the right version later only through a new handshake
+        hello()
+        send(mapOf("requestId" to 2.0, "ping" to true))
+        assertTrue(!lastAnswer().has("error"))
     }
 }

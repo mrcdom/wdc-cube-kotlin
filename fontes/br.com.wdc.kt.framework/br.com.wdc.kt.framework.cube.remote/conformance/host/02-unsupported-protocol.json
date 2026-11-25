@@ -1,0 +1,21 @@
+{
+  "description": "A client the host cannot talk to: a handshake with another version, or with none, and any message before an accepted handshake, are answered with the versions the host speaks — and nothing in them is read.",
+  "steps": [
+    {
+      "send": { "requestId": 0, "event": ["7b32e816a191:0:2"] },
+      "expect": { "requestId": 0, "error": "unsupported-protocol", "protocols": [1], "scopes": "$absent" }
+    },
+    {
+      "send": { "requestId": -1, "ping": true, "clientKey": "$clientKey", "protocol": 99 },
+      "expect": { "requestId": -1, "error": "unsupported-protocol", "protocols": [1], "serverKey": "$absent" }
+    },
+    {
+      "send": { "requestId": -1, "ping": true, "clientKey": "$clientKey" },
+      "expect": { "requestId": -1, "error": "unsupported-protocol", "protocols": [1], "serverKey": "$absent" }
+    },
+    {
+      "send": { "requestId": -1, "ping": true, "clientKey": "$clientKey", "protocol": 1 },
+      "expect": { "requestId": -1, "protocol": 1, "serverKey": "$string", "error": "$absent" }
+    }
+  ]
+}
