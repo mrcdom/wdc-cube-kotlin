@@ -10,7 +10,7 @@ Demo application for the **Cube MVP** framework in Kotlin Multiplatform, with th
 
 The demo is the **WDC Store**; its code follows the name — packages `br.com.wdc.store`, Gradle modules `:store-*`, classes `Store*`, the `STORE_WORKDIR` variable and the `wedocode-store` database. Until 0.5.0 it was the Storefront, with identifiers in `shopping`: a database from then (`wedocode-shopping.mv.db`) is used again by renaming the file, and the mobile apps install as new apps (their ids changed).
 
-**Documentation:** [Overview](docs/architecture.md) · [Cube Framework](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [React View](docs/architecture-react.md) · [Persistence](docs/architecture-persistence.md) · [Security](docs/security-architecture.md) · [Decision records](docs/adr/README.md)
+**Documentation:** [Overview](docs/architecture.md) · [Cube Framework](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [React View](docs/architecture-react.md) · [Persistence](docs/architecture-persistence.md) · [Security](docs/security-architecture.md) · [Several instances](docs/running-several-instances.md) · [Decision records](docs/adr/README.md)
 
 **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) · **Security:** [SECURITY.md](SECURITY.md) · **Changes:** [CHANGELOG.md](CHANGELOG.md) · **License:** [MIT](LICENSE)
 

@@ -314,7 +314,7 @@ A REST client can make several calls atomic (`/api/tx/begin`, `commit`, `rollbac
 
 ## Known limitations and hardening
 
-The reference implementation favors clarity over a hardened deployment. Before production, weigh these:
+The reference implementation favors clarity over a hardened deployment. Before production, weigh these — and, for more than one backend instance, what each keeps in its own memory ([running-several-instances.md](running-several-instances.md)):
 
 | Area | As implemented | Consequence | Hardening |
 |------|----------------|-------------|-----------|
