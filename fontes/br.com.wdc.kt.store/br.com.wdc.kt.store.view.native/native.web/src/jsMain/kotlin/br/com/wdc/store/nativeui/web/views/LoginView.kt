@@ -138,22 +138,17 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
                         inputRef = userNameRef
                         defaultValue = scope.userName ?: ""
                         disabled = loading
-                        asDynamic().autoComplete = "off"
+                        asDynamic().autoComplete = "username"
                     }
 
-                    // Password
+                    // Password: a real password field, so screen readers don't read it and password managers fill it
                     TextField {
                         fullWidth = true
                         label = ReactNode("Password")
                         inputRef = passwordRef
                         defaultValue = scope.password ?: ""
-                        asDynamic().type = "text"
-                        asDynamic().autoComplete = "off"
-                        asDynamic().InputProps = js("""({
-                            inputProps: {
-                                style: { 'WebkitTextSecurity': 'disc', 'textSecurity': 'disc' }
-                            }
-                        })""")
+                        asDynamic().type = "password"
+                        asDynamic().autoComplete = "current-password"
                         disabled = loading
                         onKeyDown = onPasswordKeyDown
                     }

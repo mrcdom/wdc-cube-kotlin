@@ -149,10 +149,10 @@ val LoginView = FC<RemoteViewProps> { props ->
                             defaultValue = scope.string("userName") ?: ""
                             disabled = loading
                             asDynamic().type = "text"
-                            asDynamic().autoComplete = "off"
+                            asDynamic().autoComplete = "username"
                         }
 
-                        // Password: a text field drawn as discs, so password managers leave it alone
+                        // Password: a real password field, so screen readers don't read it and password managers fill it
                         TextField {
                             fullWidth = true
                             label = ReactNode("Password")
@@ -160,9 +160,8 @@ val LoginView = FC<RemoteViewProps> { props ->
                             inputRef = passwordRef
                             defaultValue = ""
                             disabled = loading
-                            asDynamic().type = "text"
-                            asDynamic().autoComplete = "off"
-                            asDynamic().inputProps = js("({style: {WebkitTextSecurity: 'disc', textSecurity: 'disc'}})")
+                            asDynamic().type = "password"
+                            asDynamic().autoComplete = "current-password"
                             onKeyDown = onPasswordKeyDown
                         }
 

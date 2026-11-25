@@ -94,27 +94,23 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
                   label="Username"
                   type="text"
                   name="login-usr"
-                  autoComplete="off"
+                  autoComplete="username"
                   defaultValue={scope.userName ?? ''}
                   fullWidth
                   disabled={!!scope.loading}
                 />
 
-                {/* Password */}
+                {/* Password: a real password field, so screen readers don't read it and password managers fill it */}
                 <TextField
                   inputRef={this.pwdInputRef}
                   label="Password"
+                  type="password"
                   name="login-pwd"
-                  autoComplete="off"
+                  autoComplete="current-password"
                   defaultValue={scope.password ?? ''}
                   fullWidth
                   disabled={!!scope.loading}
                   onKeyDown={this.onKeyDown}
-                  slotProps={{
-                    htmlInput: {
-                      style: { WebkitTextSecurity: 'disc', textSecurity: 'disc' } as React.CSSProperties,
-                    },
-                  }}
                 />
 
                 {/* Error message */}
