@@ -22,7 +22,7 @@ Root Gradle project containing all modules of the WDC Store application.
 ./gradlew test
 
 # Build the React client bundle the backend serves (not versioned; again after changing the client)
-(cd br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.react/remote.react.client && npm install && npm run build)
+(cd br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript && npm install && npm run build)
 
 # Run backend
 ./gradlew :backend:run

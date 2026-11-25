@@ -3,7 +3,7 @@ plugins {
 }
 
 application {
-    mainClass.set("br.com.wdc.store.view.react.JavalinApplication")
+    mainClass.set("br.com.wdc.store.backend.JavalinApplication")
 }
 
 // The backend requires the work directory; in development it is fontes/work (configuration, database, logs and
@@ -14,7 +14,7 @@ tasks.named<JavaExec>("run") {
 }
 
 dependencies {
-    api(project(":view-remote-react-skeleton"))
+    api(project(":view-remote-skeleton"))
     api(project(":persistence-rest"))
     api(project(":store-scripts"))
     api(project(":store-persistence"))

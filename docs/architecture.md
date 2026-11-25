@@ -176,7 +176,7 @@ graph TB
 | `:framework-cube-remote` | The remote Cube host on Javalin: sessions, one view per scope, the WebSocket protocol, signed history (client side: `@wdc/remote-bridge-react`) |
 | `:framework-cube-remote-bridge` | The client side of the remote host in Kotlin/JS, with React bindings (the Kotlin counterpart of `@wdc/remote-bridge-react`) |
 | `:view-remote-react-kotlin` | The remote view's client written in Kotlin (React + MUI through kotlin-wrappers), served at `/remote-kotlin/` |
-| `:view-remote-react-skeleton` | The WDC Store as a remote application over `:framework-cube-remote` (the vid of each scope, its own routes, the React bundle) |
+| `:view-remote-skeleton` | The WDC Store as a remote application over `:framework-cube-remote` (the vid of each scope, its own routes, the React bundle) |
 | `:backend` | Javalin server — REST API, WebSocket, H2 or PostgreSQL |
 | `:store-scripts` | Database creation (`DBCreate`), migrations and jOOQ schema generation |
 

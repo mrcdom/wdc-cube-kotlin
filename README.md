@@ -37,7 +37,7 @@ wdc-cube-kotlin/
 cd fontes
 
 # React client bundle, served by the backend (not versioned: build it once, and again after changing the client)
-(cd br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.react/remote.react.client && npm install && npm run build)
+(cd br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript && npm install && npm run build)
 
 # Backend (port 8080): http://localhost:8080/ is a landing page that introduces the clients and links to the deployed ones
 ./gradlew :backend:run

@@ -2,7 +2,7 @@
 
 The remote host of Cube MVP, on Javalin: the presenters run on the server, and the views run in a browser, which talks to them over a WebSocket. The server keeps each view's scope and sends what changed; the client paints it and sends back what the user typed and the events. JVM only. Its client for React shells is [`@wdc/remote-bridge-react`](../br.com.wdc.kt.framework.cube.remote.react/).
 
-It is the Kotlin counterpart of the Java version's `remote.backend`. A second client, written in Kotlin and compiled to JS, is [`framework-cube-remote-bridge`](../br.com.wdc.kt.framework.cube.remote.bridge/). The WDC Store's remote React view is built on it: its `ReactRootPresenter` is a complete example.
+It is the Kotlin counterpart of the Java version's `remote.backend`. A second client, written in Kotlin and compiled to JS, is [`framework-cube-remote-bridge`](../br.com.wdc.kt.framework.cube.remote.bridge/). The WDC Store's remote React view is built on it: its `RemoteRootPresenter` is a complete example.
 
 Gradle: `implementation("io.github.mrcdom.wdc.kt:framework-cube-remote:<version>")` (from 0.5.0). It brings `framework-cube`, Javalin 7 and Gson.
 
@@ -68,7 +68,7 @@ ShopRemoteApplication.REGISTRY.startCleanup(executor)    // releases the session
 - **Client → server**: `{requestId, secret?, ping?, event: ["<vsid>:<code>", …], "<vsid>": {form data}}`. The form data of a view is synced into its scope before the events run.
 - **Server → client**: `{requestId, ping?, uri, scopes: [{id, …fields, "<name>ViewId", "<name>ViewIds"}], releasedViews?: [vsid, …]}`. A scope inside a scope goes as the id of its view; a view created while writing goes in the same message.
 
-The WDC Store's [remote React documentation](../../../../docs/architecture-react.md) describes the whole cycle, with diagrams.
+The WDC Store's [remote React documentation](../../../docs/architecture-react.md) describes the whole cycle, with diagrams.
 
 ## Tests
 
