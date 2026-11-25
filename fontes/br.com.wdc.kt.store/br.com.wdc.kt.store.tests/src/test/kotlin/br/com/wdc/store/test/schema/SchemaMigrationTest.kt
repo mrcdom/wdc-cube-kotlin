@@ -55,7 +55,8 @@ class SchemaMigrationTest {
     }
 
     private fun Connection.columns() = rows(
-        """SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE
+        """SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE,
+                  COLUMN_DEFAULT
            FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' ORDER BY TABLE_NAME, COLUMN_NAME"""
     )
 
@@ -224,6 +225,22 @@ class SchemaMigrationTest {
             assertEquals(columns, db.columns())
             assertEquals(users, db.rows("SELECT COUNT(*) FROM EN_USER"))
             assertEquals(migrations, db.rows("SELECT COUNT(*) FROM EN_MIGRATION_LOG"))
+        }
+    }
+
+    @Test
+    fun aUserWrittenWithoutRoles_isACustomer_inANewAndInAMigratedDatabase() {
+        newDatabase().use { fresh ->
+            newDatabase().use { legacy ->
+                DBCreate().withConnection(fresh).withSkipReset().run()
+                legacy.createLegacySchema()
+                DBCreate().withConnection(legacy).run()
+
+                for (db in listOf(fresh, legacy)) {
+                    db.createStatement().use { it.execute("INSERT INTO EN_USER (ID, USERNAME, PASSWORD, NAME) VALUES (90, 'nobody', 'x', 'Nobody')") }
+                    assertEquals(listOf("CUSTOMER"), db.rows("SELECT ROLES FROM EN_USER WHERE ID = 90"))
+                }
+            }
         }
     }
 

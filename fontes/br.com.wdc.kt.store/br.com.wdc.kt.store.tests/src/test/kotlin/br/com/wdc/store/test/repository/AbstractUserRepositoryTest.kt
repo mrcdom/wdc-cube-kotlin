@@ -177,6 +177,15 @@ abstract class AbstractUserRepositoryTest {
     // :: update
 
     @Test
+    fun insert_withoutRoles_isACustomer() = runBlocking {
+        val user = User().apply { userName = "noroles"; password = "digest-of-secret"; name = "No Roles" }
+
+        assertTrue(repo().insert(user))
+
+        assertEquals("CUSTOMER", repo().fetchById(user.id!!, null)!!.roles, "the column's default")
+    }
+
+    @Test
     fun update_existingUser() = runBlocking {
         val original = repo().fetchById(admin)!!
 

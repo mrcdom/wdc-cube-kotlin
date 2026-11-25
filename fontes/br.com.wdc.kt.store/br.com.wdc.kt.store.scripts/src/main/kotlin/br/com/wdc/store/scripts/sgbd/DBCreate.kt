@@ -66,7 +66,7 @@ class DBCreate {
                     USERNAME VARCHAR(255) NOT NULL,
                     PASSWORD CHAR(32) NOT NULL,
                     NAME VARCHAR(255) NOT NULL,
-                    ROLES VARCHAR(255),
+                    ROLES VARCHAR(255) DEFAULT 'CUSTOMER',
                     CONSTRAINT PK_USER PRIMARY KEY (ID)
                 )""",
                 "CREATE SEQUENCE IF NOT EXISTS SQ_USER START WITH 1 INCREMENT BY 1",
@@ -178,6 +178,7 @@ class DBCreate {
             .run(Migration_0005_UnsignedPasswordDigest(conn))
             .run(Migration_0006_PurchaseBuyDateToUtc(conn))
             .run(Migration_0007_SessionExpiryToUtc(conn))
+            .run(Migration_0008_UserRolesDefaultCustomer(conn))
 
         // The seed comes after the migrations: it already writes in the current format, and must not be migrated.
         if (mustResetDb && !skipReset) {

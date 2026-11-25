@@ -70,7 +70,7 @@ This guarantees **idempotency** — running `DBCreate` multiple times is safe. S
 1. Create a `Migration_NNNN_DescriptiveName` class in the `sgbd` package:
 
 ```kotlin
-class Migration_0008_AddProductCategory(private val connection: Connection) {
+class Migration_0009_AddProductCategory(private val connection: Connection) {
 
     fun step01_addCategoryColumn() {
         connection.createStatement().use { stmt ->
@@ -91,8 +91,8 @@ class Migration_0008_AddProductCategory(private val connection: Connection) {
 ```kotlin
 MigrationRunner(conn)
     // …the previous ones
-    .run(Migration_0007_SessionExpiryToUtc(conn))
-    .run(Migration_0008_AddProductCategory(conn))  // new
+    .run(Migration_0008_UserRolesDefaultCustomer(conn))
+    .run(Migration_0009_AddProductCategory(conn))  // new
 ```
 
 3. Make the same change in the `DBCreate` DDL — a new database is born in the final format — and regenerate the jOOQ classes:
@@ -119,6 +119,7 @@ Rules for steps:
 | `Migration_0005_UnsignedPasswordDigest` | 1 | Rewrites the password digests that the old seed stored as signed |
 | `Migration_0006_PurchaseBuyDateToUtc` | 1 | Moves the purchase date from local time to UTC |
 | `Migration_0007_SessionExpiryToUtc` | 1 | Discards the sessions stored with the expiry in local time |
+| `Migration_0008_UserRolesDefaultCustomer` | 1 | Sets `DEFAULT 'CUSTOMER'` on `ROLES` where `DBCreate` had created the column without it: a user written without roles is a customer in every database |
 
 ## Use in the Modules
 
