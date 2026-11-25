@@ -164,7 +164,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
 
     /**
      * Which view draws each kind of scope for the client: one [ScopeViewImpl] per scope, carrying the vid of the
-     * client component that paints it; the login and the receipt have their own server side.
+     * client component that paints it; the login has its own server side (it deciphers the password).
      */
     private val catalog: Map<KClass<out Scope>, (Scope) -> ScopeViewImpl<*>> = mapOf(
         BrowserScope::class to { ScopeViewImpl(BrowserPresenter.VID, this, it, instanceId = 0) },
@@ -174,7 +174,7 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         ProductScope::class to { ScopeViewImpl("48b693f67410", this, it) },
         CartScope::class to { ScopeViewImpl("7eb485e5f843", this, it) },
         CartItemScope::class to { ScopeViewImpl("5d9e3c7a1f42", this, it) },
-        ReceiptScope::class to { ReceiptReactViewImpl(this, it as ReceiptScope) },
+        ReceiptScope::class to { ScopeViewImpl("e8d0bd8ae3bc", this, it) },
         ProductsPanelScope::class to { ScopeViewImpl("a1b2c3d4e5f6", this, it) },
         PurchasesPanelScope::class to { ScopeViewImpl("b3c4d5e6f7a8", this, it) },
     )

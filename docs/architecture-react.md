@@ -236,7 +236,7 @@ The `appId` is self-signed: `{random}.{signature(random)}` (`AppSecurity.signAsH
 
 ## Skeleton — The Bridge Between Presenter and Client
 
-Presenters do not create views; the framework knows only scopes. The remote host is a rendering technology of its own: each session (`ReactRootPresenter`, which implements `RemoteApplication`) keeps a private **catalog** — which view draws each kind of scope, one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it — and the view of each scope on the client's screen. Only the login (deciphers the password) and the receipt (one-time notice) have classes of their own:
+Presenters do not create views; the framework knows only scopes. The remote host is a rendering technology of its own: each session (`ReactRootPresenter`, which implements `RemoteApplication`) keeps a private **catalog** — which view draws each kind of scope, one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it — and the view of each scope on the client's screen. Only the login has a class of its own (it deciphers the password):
 
 ```kotlin
 private val catalog: Map<KClass<out Scope>, (Scope) -> ScopeViewImpl<*>> = mapOf(
@@ -247,7 +247,7 @@ private val catalog: Map<KClass<out Scope>, (Scope) -> ScopeViewImpl<*>> = mapOf
     ProductScope::class to { ScopeViewImpl("48b693f67410", this, it) },
     CartScope::class to { ScopeViewImpl("7eb485e5f843", this, it) },
     CartItemScope::class to { ScopeViewImpl("5d9e3c7a1f42", this, it) },
-    ReceiptScope::class to { ReceiptReactViewImpl(this, it as ReceiptScope) },
+    ReceiptScope::class to { ScopeViewImpl("e8d0bd8ae3bc", this, it) },
     ProductsPanelScope::class to { ScopeViewImpl("a1b2c3d4e5f6", this, it) },
     PurchasesPanelScope::class to { ScopeViewImpl("b3c4d5e6f7a8", this, it) },
 )
@@ -316,7 +316,7 @@ The mapping between hexadecimal View IDs and views is fixed and shared between c
 | Cart | `7eb485e5f843` | CartView.tsx | `ScopeViewImpl` (`CartScope`) | 1 buy, 3 open products |
 | Cart row | `5d9e3c7a1f42` | CartView.tsx (`CartItemView`) | `ScopeViewImpl` (`CartItemScope`) | 1 remove, 2 quantity (`p.quantity`) |
 | Product | `48b693f67410` | ProductView.tsx | `ScopeViewImpl` (`ProductScope`) | 1 open products, 2 add to cart (`p.quantity`) |
-| Receipt | `e8d0bd8ae3bc` | ReceiptView.tsx | ReceiptReactViewImpl.kt | 1 open products |
+| Receipt | `e8d0bd8ae3bc` | ReceiptView.tsx | `ScopeViewImpl` (`ReceiptScope`) | 1 open products |
 | ProductsPanel | `a1b2c3d4e5f6` | home/ProductsPanel.tsx | `ScopeViewImpl` (`ProductsPanelScope`) | 1 open product (`p.productId`) |
 | PurchasesPanel | `b3c4d5e6f7a8` | home/PurchasesPanel.tsx | `ScopeViewImpl` (`PurchasesPanelScope`) | 1 open receipt (`p.purchaseId`), 2 page (`p.page`), 3 capacity (`p.capacity`) |
 
