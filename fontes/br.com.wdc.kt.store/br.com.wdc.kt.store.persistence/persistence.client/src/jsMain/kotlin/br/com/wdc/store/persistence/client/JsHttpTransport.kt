@@ -33,7 +33,7 @@ class JsHttpTransport(private val baseUrl: String) : HttpTransport {
             ?: throw BusinessException("Empty response for POST $path")
     }
 
-    override fun getJson(path: String): String {
+    override fun getJsonPublic(path: String): String {
         return doRequest("GET", baseUrl + path, null, null, null)
             ?: throw BusinessException("Empty response for GET $path")
     }
