@@ -1,0 +1,506 @@
+public final class br/com/wdc/framework/commons/codec/Base62 {
+	public static final field INSTANCE Lbr/com/wdc/framework/commons/codec/Base62;
+	public final fun decode ([B)[B
+	public final fun decodeFromString (Ljava/lang/String;)[B
+	public final fun encode ([B)[B
+	public final fun encodeToString ([B)Ljava/lang/String;
+	public final fun isBase62Encoding ([B)Z
+}
+
+public final class br/com/wdc/framework/commons/concurrent/ConcurrentMutableMapKt {
+	public static final fun concurrentMutableMapOf ()Ljava/util/Map;
+}
+
+public abstract interface class br/com/wdc/framework/commons/concurrent/ScheduledExecutor {
+	public static final field Companion Lbr/com/wdc/framework/commons/concurrent/ScheduledExecutor$Companion;
+	public abstract fun execute (Lkotlin/jvm/functions/Function0;)Lbr/com/wdc/framework/commons/function/Registration;
+	public abstract fun schedule-HG0u8IE (Lkotlin/jvm/functions/Function0;J)Lbr/com/wdc/framework/commons/function/Registration;
+	public abstract fun scheduleAtFixedRate-5qebJ5I (Lkotlin/jvm/functions/Function0;JJ)Lbr/com/wdc/framework/commons/function/Registration;
+	public abstract fun scheduleWithFixedDelay-5qebJ5I (Lkotlin/jvm/functions/Function0;JJ)Lbr/com/wdc/framework/commons/function/Registration;
+}
+
+public final class br/com/wdc/framework/commons/concurrent/ScheduledExecutor$Companion {
+	public final fun getBEAN ()Lbr/com/wdc/framework/commons/util/AtomicRef;
+}
+
+public final class br/com/wdc/framework/commons/concurrent/ThreadLocalRef {
+	public fun <init> ()V
+	public final fun get ()Ljava/lang/Object;
+	public final fun remove ()V
+	public final fun set (Ljava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/commons/convert/DateUtil {
+	public static final field INSTANCE Lbr/com/wdc/framework/commons/convert/DateUtil;
+	public final fun getSysTimeZone ()Lkotlinx/datetime/TimeZone;
+	public final fun getSysUtcOffset ()Lkotlinx/datetime/UtcOffset;
+}
+
+public abstract interface class br/com/wdc/framework/commons/function/Registration {
+	public static final field Companion Lbr/com/wdc/framework/commons/function/Registration$Companion;
+	public abstract fun remove ()V
+}
+
+public final class br/com/wdc/framework/commons/function/Registration$Companion {
+	public final fun noop ()Lbr/com/wdc/framework/commons/function/Registration;
+}
+
+public final class br/com/wdc/framework/commons/gson/JsonExtensibleObjectInput : br/com/wdc/framework/commons/serialization/ExtensibleObjectInput, java/io/Closeable {
+	public fun <init> (Lcom/google/gson/stream/JsonReader;)V
+	public fun beginArray ()V
+	public fun beginObject ()V
+	public fun close ()V
+	public fun endArray ()V
+	public fun endObject ()V
+	public fun hasNext ()Z
+	public fun nextBoolean ()Z
+	public fun nextDouble ()D
+	public fun nextInt ()I
+	public fun nextLong ()J
+	public fun nextName ()Ljava/lang/String;
+	public fun nextNull ()Ljava/lang/Object;
+	public fun nextNumber ()Ljava/lang/Number;
+	public fun nextString ()Ljava/lang/String;
+	public fun peek ()Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public fun skipValue ()V
+}
+
+public final class br/com/wdc/framework/commons/gson/JsonExtensibleObjectOutput : br/com/wdc/framework/commons/serialization/ExtensibleObjectOutput, java/io/Closeable, java/io/Flushable {
+	public fun <init> (Lcom/google/gson/stream/JsonWriter;Z)V
+	public synthetic fun <init> (Lcom/google/gson/stream/JsonWriter;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun beginArray ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun beginObject ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun close ()V
+	public fun endArray ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun endObject ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun flush ()V
+	public fun name (ILjava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun name (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun nullValue ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (D)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (J)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (Ljava/lang/Number;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (Z)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value ([B)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+}
+
+public final class br/com/wdc/framework/commons/gson/JsonReaderHelper {
+	public fun <init> (Lcom/google/gson/stream/JsonReader;)V
+	public final fun arrayAsList (Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public final fun arrayAsSet (Lkotlin/jvm/functions/Function1;)Ljava/util/LinkedHashSet;
+	public final fun notImplemented ()Ljava/lang/Void;
+	public final fun object (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class br/com/wdc/framework/commons/lang/CoerceUtils {
+	public static final field INSTANCE Lbr/com/wdc/framework/commons/lang/CoerceUtils;
+	public final fun asBigDecimal (Ljava/lang/Object;Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;)Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;
+	public static synthetic fun asBigDecimal$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;ILjava/lang/Object;)Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;
+	public final fun asBigInteger (Ljava/lang/Object;Lcom/ionspin/kotlin/bignum/integer/BigInteger;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public static synthetic fun asBigInteger$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Lcom/ionspin/kotlin/bignum/integer/BigInteger;ILjava/lang/Object;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public final fun asBoolean (Ljava/lang/Object;Ljava/lang/Boolean;)Ljava/lang/Boolean;
+	public static synthetic fun asBoolean$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/Boolean;ILjava/lang/Object;)Ljava/lang/Boolean;
+	public final fun asByte (Ljava/lang/Object;Ljava/lang/Byte;)Ljava/lang/Byte;
+	public static synthetic fun asByte$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/Byte;ILjava/lang/Object;)Ljava/lang/Byte;
+	public final fun asByteArray (Ljava/lang/Object;[B)[B
+	public static synthetic fun asByteArray$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;[BILjava/lang/Object;)[B
+	public final fun asCharacter (Ljava/lang/Object;Ljava/lang/Character;)Ljava/lang/Character;
+	public static synthetic fun asCharacter$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/Character;ILjava/lang/Object;)Ljava/lang/Character;
+	public final fun asDouble (Ljava/lang/Object;Ljava/lang/Double;)Ljava/lang/Double;
+	public static synthetic fun asDouble$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/Double;ILjava/lang/Object;)Ljava/lang/Double;
+	public final fun asFloat (Ljava/lang/Object;Ljava/lang/Float;)Ljava/lang/Float;
+	public static synthetic fun asFloat$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/Float;ILjava/lang/Object;)Ljava/lang/Float;
+	public final fun asInstant (Ljava/lang/Object;Lkotlin/time/Instant;)Lkotlin/time/Instant;
+	public static synthetic fun asInstant$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Lkotlin/time/Instant;ILjava/lang/Object;)Lkotlin/time/Instant;
+	public final fun asInteger (Ljava/lang/Object;Ljava/lang/Integer;)Ljava/lang/Integer;
+	public static synthetic fun asInteger$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/Integer;ILjava/lang/Object;)Ljava/lang/Integer;
+	public final fun asLocalDate (Ljava/lang/Object;Lkotlinx/datetime/LocalDate;)Lkotlinx/datetime/LocalDate;
+	public static synthetic fun asLocalDate$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Lkotlinx/datetime/LocalDate;ILjava/lang/Object;)Lkotlinx/datetime/LocalDate;
+	public final fun asLocalDateTime (Ljava/lang/Object;Lkotlinx/datetime/LocalDateTime;)Lkotlinx/datetime/LocalDateTime;
+	public static synthetic fun asLocalDateTime$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Lkotlinx/datetime/LocalDateTime;ILjava/lang/Object;)Lkotlinx/datetime/LocalDateTime;
+	public final fun asLong (Ljava/lang/Object;Ljava/lang/Long;)Ljava/lang/Long;
+	public static synthetic fun asLong$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/Long;ILjava/lang/Object;)Ljava/lang/Long;
+	public final fun asLowerCaseString (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun asLowerCaseString$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun asShort (Ljava/lang/Object;Ljava/lang/Short;)Ljava/lang/Short;
+	public static synthetic fun asShort$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/Short;ILjava/lang/Object;)Ljava/lang/Short;
+	public final fun asString (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun asString$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun asTrimmedString (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun asTrimmedString$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun asUpperCaseString (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun asUpperCaseString$default (Lbr/com/wdc/framework/commons/lang/CoerceUtils;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/commons/log/JulLogFactory : br/com/wdc/framework/commons/log/Log$Factory {
+	public fun <init> ()V
+	public fun create (Ljava/lang/String;)Lbr/com/wdc/framework/commons/log/Log;
+}
+
+public final class br/com/wdc/framework/commons/log/Log {
+	public static final field Companion Lbr/com/wdc/framework/commons/log/Log$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun debug (Ljava/lang/String;)V
+	public final fun debug (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun debug (Ljava/lang/String;[Ljava/lang/Object;)V
+	public final fun error (Ljava/lang/String;)V
+	public final fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun error (Ljava/lang/String;[Ljava/lang/Object;)V
+	public final fun getDebugOut ()Lkotlin/jvm/functions/Function2;
+	public final fun getErrorOut ()Lkotlin/jvm/functions/Function2;
+	public final fun getInfoOut ()Lkotlin/jvm/functions/Function2;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getTraceOut ()Lkotlin/jvm/functions/Function2;
+	public final fun getWarnOut ()Lkotlin/jvm/functions/Function2;
+	public final fun info (Ljava/lang/String;)V
+	public final fun info (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun info (Ljava/lang/String;[Ljava/lang/Object;)V
+	public final fun isDebugEnabled ()Z
+	public final fun isTraceEnabled ()Z
+	public final fun setDebugOut (Lkotlin/jvm/functions/Function2;)V
+	public final fun setErrorOut (Lkotlin/jvm/functions/Function2;)V
+	public final fun setInfoOut (Lkotlin/jvm/functions/Function2;)V
+	public final fun setTraceOut (Lkotlin/jvm/functions/Function2;)V
+	public final fun setWarnOut (Lkotlin/jvm/functions/Function2;)V
+	public final fun trace (Ljava/lang/String;)V
+	public final fun trace (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
+	public final fun warn (Ljava/lang/String;)V
+	public final fun warn (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/commons/log/Log$Companion {
+	public final fun getGlobalLevel ()Lbr/com/wdc/framework/commons/log/Log$Level;
+	public final fun getLogger (Ljava/lang/String;)Lbr/com/wdc/framework/commons/log/Log;
+	public final fun setFactory (Lbr/com/wdc/framework/commons/log/Log$Factory;)V
+	public final fun setGlobalLevel (Lbr/com/wdc/framework/commons/log/Log$Level;)V
+}
+
+public abstract interface class br/com/wdc/framework/commons/log/Log$Factory {
+	public abstract fun create (Ljava/lang/String;)Lbr/com/wdc/framework/commons/log/Log;
+}
+
+public final class br/com/wdc/framework/commons/log/Log$Level : java/lang/Enum {
+	public static final field DEBUG Lbr/com/wdc/framework/commons/log/Log$Level;
+	public static final field ERROR Lbr/com/wdc/framework/commons/log/Log$Level;
+	public static final field INFO Lbr/com/wdc/framework/commons/log/Log$Level;
+	public static final field TRACE Lbr/com/wdc/framework/commons/log/Log$Level;
+	public static final field WARN Lbr/com/wdc/framework/commons/log/Log$Level;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lbr/com/wdc/framework/commons/log/Log$Level;
+	public static fun values ()[Lbr/com/wdc/framework/commons/log/Log$Level;
+}
+
+public final class br/com/wdc/framework/commons/log/Slf4jLogFactory : br/com/wdc/framework/commons/log/Log$Factory {
+	public fun <init> ()V
+	public fun create (Ljava/lang/String;)Lbr/com/wdc/framework/commons/log/Log;
+}
+
+public final class br/com/wdc/framework/commons/security/RSA {
+	public static final field Companion Lbr/com/wdc/framework/commons/security/RSA$Companion;
+	public fun <init> (Lcom/ionspin/kotlin/bignum/integer/BigInteger;Lcom/ionspin/kotlin/bignum/integer/BigInteger;Lcom/ionspin/kotlin/bignum/integer/BigInteger;)V
+	public final fun decrypt (Lcom/ionspin/kotlin/bignum/integer/BigInteger;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public final fun encrypt (Lcom/ionspin/kotlin/bignum/integer/BigInteger;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public final fun getPrivateKey ()Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public final fun getPublicExponent ()Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public final fun getPublicKey ()Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/commons/security/RSA$Companion {
+	public final fun getN65537 ()Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public final fun modPow (Lcom/ionspin/kotlin/bignum/integer/BigInteger;Lcom/ionspin/kotlin/bignum/integer/BigInteger;Lcom/ionspin/kotlin/bignum/integer/BigInteger;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+}
+
+public final class br/com/wdc/framework/commons/security/RSAKt {
+	public static final fun generate (Lbr/com/wdc/framework/commons/security/RSA$Companion;ILjava/util/Random;)Lbr/com/wdc/framework/commons/security/RSA;
+}
+
+public abstract interface class br/com/wdc/framework/commons/serialization/ExtensibleObjectInput {
+	public abstract fun beginArray ()V
+	public abstract fun beginObject ()V
+	public abstract fun endArray ()V
+	public abstract fun endObject ()V
+	public abstract fun hasNext ()Z
+	public abstract fun nextBoolean ()Z
+	public abstract fun nextDouble ()D
+	public abstract fun nextInt ()I
+	public abstract fun nextLong ()J
+	public abstract fun nextName ()Ljava/lang/String;
+	public abstract fun nextNull ()Ljava/lang/Object;
+	public abstract fun nextNumber ()Ljava/lang/Number;
+	public abstract fun nextString ()Ljava/lang/String;
+	public abstract fun peek ()Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public abstract fun skipValue ()V
+}
+
+public abstract interface class br/com/wdc/framework/commons/serialization/ExtensibleObjectOutput {
+	public abstract fun beginArray ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun beginObject ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun endArray ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun endObject ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun name (ILjava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun name (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun nullValue ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun value (D)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun value (J)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun value (Ljava/lang/Number;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun value (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun value (Z)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public abstract fun value ([B)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+}
+
+public abstract interface class br/com/wdc/framework/commons/serialization/Externalizable {
+	public abstract fun readExternal (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;)V
+	public abstract fun writeExternal (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;)V
+}
+
+public final class br/com/wdc/framework/commons/serialization/InputCoerceUtils {
+	public static final field INSTANCE Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;
+	public final fun asBigDecimal (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;)Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;
+	public static synthetic fun asBigDecimal$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;ILjava/lang/Object;)Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;
+	public final fun asBigInteger (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Lcom/ionspin/kotlin/bignum/integer/BigInteger;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public static synthetic fun asBigInteger$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Lcom/ionspin/kotlin/bignum/integer/BigInteger;ILjava/lang/Object;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public final fun asBoolean (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Boolean;)Ljava/lang/Boolean;
+	public static synthetic fun asBoolean$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Boolean;ILjava/lang/Object;)Ljava/lang/Boolean;
+	public final fun asByte (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Byte;)Ljava/lang/Byte;
+	public static synthetic fun asByte$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Byte;ILjava/lang/Object;)Ljava/lang/Byte;
+	public final fun asByteArray (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;[B)[B
+	public static synthetic fun asByteArray$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;[BILjava/lang/Object;)[B
+	public final fun asCharacter (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Character;)Ljava/lang/Character;
+	public static synthetic fun asCharacter$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Character;ILjava/lang/Object;)Ljava/lang/Character;
+	public final fun asDouble (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Double;)Ljava/lang/Double;
+	public static synthetic fun asDouble$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Double;ILjava/lang/Object;)Ljava/lang/Double;
+	public final fun asFloat (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Float;)Ljava/lang/Float;
+	public static synthetic fun asFloat$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Float;ILjava/lang/Object;)Ljava/lang/Float;
+	public final fun asInteger (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Integer;)Ljava/lang/Integer;
+	public static synthetic fun asInteger$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Integer;ILjava/lang/Object;)Ljava/lang/Integer;
+	public final fun asLong (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Long;)Ljava/lang/Long;
+	public static synthetic fun asLong$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Long;ILjava/lang/Object;)Ljava/lang/Long;
+	public final fun asLowerCaseString (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun asLowerCaseString$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun asShort (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Short;)Ljava/lang/Short;
+	public static synthetic fun asShort$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/Short;ILjava/lang/Object;)Ljava/lang/Short;
+	public final fun asString (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun asString$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun asTrimmedString (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun asTrimmedString$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun asUpperCaseString (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun asUpperCaseString$default (Lbr/com/wdc/framework/commons/serialization/InputCoerceUtils;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/commons/serialization/JsonInputFactory {
+	public static final field INSTANCE Lbr/com/wdc/framework/commons/serialization/JsonInputFactory;
+	public final fun createStringInput (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/JsonStringInput;
+	public final fun install (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class br/com/wdc/framework/commons/serialization/JsonInputFactoryKt {
+	public static final fun installCommon (Lbr/com/wdc/framework/commons/serialization/JsonInputFactory;)V
+}
+
+public final class br/com/wdc/framework/commons/serialization/JsonOutputFactory {
+	public static final field INSTANCE Lbr/com/wdc/framework/commons/serialization/JsonOutputFactory;
+	public final fun createStringOutput ()Lbr/com/wdc/framework/commons/serialization/JsonStringOutput;
+	public final fun install (Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class br/com/wdc/framework/commons/serialization/JsonOutputFactoryKt {
+	public static final fun installCommon (Lbr/com/wdc/framework/commons/serialization/JsonOutputFactory;)V
+}
+
+public final class br/com/wdc/framework/commons/serialization/JsonStreamReader : br/com/wdc/framework/commons/serialization/ExtensibleObjectInput {
+	public fun <init> (Ljava/lang/String;)V
+	public fun beginArray ()V
+	public fun beginObject ()V
+	public fun endArray ()V
+	public fun endObject ()V
+	public fun hasNext ()Z
+	public fun nextBoolean ()Z
+	public fun nextDouble ()D
+	public fun nextInt ()I
+	public fun nextLong ()J
+	public fun nextName ()Ljava/lang/String;
+	public fun nextNull ()Ljava/lang/Object;
+	public fun nextNumber ()Ljava/lang/Number;
+	public fun nextString ()Ljava/lang/String;
+	public fun peek ()Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public fun skipValue ()V
+}
+
+public final class br/com/wdc/framework/commons/serialization/JsonStreamWriter : br/com/wdc/framework/commons/serialization/ExtensibleObjectOutput {
+	public fun <init> ()V
+	public fun beginArray ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun beginObject ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun endArray ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun endObject ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun name (ILjava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun name (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun nullValue ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public final fun result ()Ljava/lang/String;
+	public fun value (D)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (J)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (Ljava/lang/Number;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (Z)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value ([B)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+}
+
+public final class br/com/wdc/framework/commons/serialization/JsonStringInput {
+	public fun <init> (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;)V
+	public final fun getInput ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;
+}
+
+public final class br/com/wdc/framework/commons/serialization/JsonStringOutput {
+	public fun <init> (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Lkotlin/jvm/functions/Function0;)V
+	public final fun getOutput ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public final fun getResultString ()Lkotlin/jvm/functions/Function0;
+}
+
+public final class br/com/wdc/framework/commons/serialization/MapOrListInput : br/com/wdc/framework/commons/serialization/ExtensibleObjectInput {
+	public static final field Companion Lbr/com/wdc/framework/commons/serialization/MapOrListInput$Companion;
+	public fun <init> (Ljava/util/List;)V
+	public fun <init> (Ljava/util/Map;)V
+	public fun beginArray ()V
+	public fun beginObject ()V
+	public fun endArray ()V
+	public fun endObject ()V
+	public fun hasNext ()Z
+	public fun nextBoolean ()Z
+	public fun nextDouble ()D
+	public fun nextInt ()I
+	public fun nextLong ()J
+	public fun nextName ()Ljava/lang/String;
+	public fun nextNull ()Ljava/lang/Object;
+	public fun nextNumber ()Ljava/lang/Number;
+	public fun nextString ()Ljava/lang/String;
+	public fun peek ()Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public fun skipValue ()V
+}
+
+public final class br/com/wdc/framework/commons/serialization/MapOrListInput$Companion {
+}
+
+public final class br/com/wdc/framework/commons/serialization/MapOrListOutput : br/com/wdc/framework/commons/serialization/ExtensibleObjectOutput {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public fun <init> (Ljava/util/Map;)V
+	public fun beginArray ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun beginObject ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun endArray ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun endObject ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun name (ILjava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun name (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun nullValue ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (D)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (J)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (Ljava/lang/Number;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value (Z)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+	public fun value ([B)Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;
+}
+
+public final class br/com/wdc/framework/commons/serialization/SerializationToken : java/lang/Enum {
+	public static final field BEGIN_ARRAY Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static final field BEGIN_OBJECT Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static final field BOOLEAN Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static final field END_ARRAY Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static final field END_DOCUMENT Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static final field END_OBJECT Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static final field NAME Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static final field NULL Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static final field NUMBER Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static final field STRING Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+	public static fun values ()[Lbr/com/wdc/framework/commons/serialization/SerializationToken;
+}
+
+public final class br/com/wdc/framework/commons/storage/AndroidPersistentSessionStorage : br/com/wdc/framework/commons/storage/SessionStorage {
+	public fun <init> (Landroid/content/SharedPreferences;Ljava/lang/String;)V
+	public synthetic fun <init> (Landroid/content/SharedPreferences;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun clear ()V
+	public fun contains (Ljava/lang/String;)Z
+	public fun getBoolean (Ljava/lang/String;Ljava/lang/Boolean;)Ljava/lang/Boolean;
+	public fun getDouble (Ljava/lang/String;Ljava/lang/Double;)Ljava/lang/Double;
+	public fun getInt (Ljava/lang/String;Ljava/lang/Integer;)Ljava/lang/Integer;
+	public fun getLong (Ljava/lang/String;Ljava/lang/Long;)Ljava/lang/Long;
+	public fun getSize ()I
+	public fun getString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun keys ()Ljava/util/Set;
+	public fun remove (Ljava/lang/String;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Double;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Integer;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Long;)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class br/com/wdc/framework/commons/storage/JvmSessionStorage : br/com/wdc/framework/commons/storage/SessionStorage {
+	public fun <init> ()V
+	public fun clear ()V
+	public fun contains (Ljava/lang/String;)Z
+	public fun getBoolean (Ljava/lang/String;Ljava/lang/Boolean;)Ljava/lang/Boolean;
+	public fun getDouble (Ljava/lang/String;Ljava/lang/Double;)Ljava/lang/Double;
+	public fun getInt (Ljava/lang/String;Ljava/lang/Integer;)Ljava/lang/Integer;
+	public fun getLong (Ljava/lang/String;Ljava/lang/Long;)Ljava/lang/Long;
+	public fun getSize ()I
+	public fun getString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun keys ()Ljava/util/Set;
+	public fun remove (Ljava/lang/String;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Double;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Integer;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Long;)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public abstract interface class br/com/wdc/framework/commons/storage/SessionStorage {
+	public abstract fun clear ()V
+	public abstract fun contains (Ljava/lang/String;)Z
+	public abstract fun getBoolean (Ljava/lang/String;Ljava/lang/Boolean;)Ljava/lang/Boolean;
+	public static synthetic fun getBoolean$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Ljava/lang/Boolean;
+	public abstract fun getDouble (Ljava/lang/String;Ljava/lang/Double;)Ljava/lang/Double;
+	public static synthetic fun getDouble$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/Double;ILjava/lang/Object;)Ljava/lang/Double;
+	public abstract fun getInt (Ljava/lang/String;Ljava/lang/Integer;)Ljava/lang/Integer;
+	public static synthetic fun getInt$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)Ljava/lang/Integer;
+	public abstract fun getLong (Ljava/lang/String;Ljava/lang/Long;)Ljava/lang/Long;
+	public static synthetic fun getLong$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Ljava/lang/Long;
+	public abstract fun getSize ()I
+	public abstract fun getString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun getString$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public abstract fun keys ()Ljava/util/Set;
+	public abstract fun remove (Ljava/lang/String;)V
+	public abstract fun set (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public abstract fun set (Ljava/lang/String;Ljava/lang/Double;)V
+	public abstract fun set (Ljava/lang/String;Ljava/lang/Integer;)V
+	public abstract fun set (Ljava/lang/String;Ljava/lang/Long;)V
+	public abstract fun set (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class br/com/wdc/framework/commons/storage/SessionStorage$DefaultImpls {
+	public static synthetic fun getBoolean$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Ljava/lang/Boolean;
+	public static synthetic fun getDouble$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/Double;ILjava/lang/Object;)Ljava/lang/Double;
+	public static synthetic fun getInt$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)Ljava/lang/Integer;
+	public static synthetic fun getLong$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Ljava/lang/Long;
+	public static synthetic fun getString$default (Lbr/com/wdc/framework/commons/storage/SessionStorage;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/commons/util/AtomicRef {
+	public fun <init> ()V
+	public final fun get ()Ljava/lang/Object;
+	public final fun getOrNull ()Ljava/lang/Object;
+	public final fun set (Ljava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/commons/util/Defer : java/lang/AutoCloseable {
+	public fun <init> ()V
+	public final fun absorb (Lbr/com/wdc/framework/commons/util/Defer;)V
+	public fun close ()V
+	public final fun push (Lkotlin/jvm/functions/Function0;)V
+	public final fun run ()V
+}
+

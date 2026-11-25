@@ -1,0 +1,30 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.mrcdom.wdc.kt:framework-cube-remote-bridge-react>
+abstract interface br.com.wdc.framework.cube.remote.bridge.react/RemoteViewProps : react/Props { // br.com.wdc.framework.cube.remote.bridge.react/RemoteViewProps|null[0]
+    abstract var vsid // br.com.wdc.framework.cube.remote.bridge.react/RemoteViewProps.vsid|{}vsid[0]
+        abstract fun <get-vsid>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge.react/RemoteViewProps.vsid.<get-vsid>|<get-vsid>(){}[0]
+        abstract fun <set-vsid>(kotlin/String) // br.com.wdc.framework.cube.remote.bridge.react/RemoteViewProps.vsid.<set-vsid>|<set-vsid>(kotlin.String){}[0]
+}
+
+final class br.com.wdc.framework.cube.remote.bridge.react/RemoteViews { // br.com.wdc.framework.cube.remote.bridge.react/RemoteViews|null[0]
+    constructor <init>(br.com.wdc.framework.cube.remote.bridge/RemoteBridge) // br.com.wdc.framework.cube.remote.bridge.react/RemoteViews.<init>|<init>(br.com.wdc.framework.cube.remote.bridge.RemoteBridge){}[0]
+
+    final val bridge // br.com.wdc.framework.cube.remote.bridge.react/RemoteViews.bridge|{}bridge[0]
+        final fun <get-bridge>(): br.com.wdc.framework.cube.remote.bridge/RemoteBridge // br.com.wdc.framework.cube.remote.bridge.react/RemoteViews.bridge.<get-bridge>|<get-bridge>(){}[0]
+
+    final fun register(kotlin/String, react/FC<br.com.wdc.framework.cube.remote.bridge.react/RemoteViewProps>): br.com.wdc.framework.cube.remote.bridge.react/RemoteViews // br.com.wdc.framework.cube.remote.bridge.react/RemoteViews.register|register(kotlin.String;react.FC<br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps>){}[0]
+    final fun render(react/ChildrenBuilder, kotlin/String?) // br.com.wdc.framework.cube.remote.bridge.react/RemoteViews.render|render(react.ChildrenBuilder;kotlin.String?){}[0]
+}
+
+final val br.com.wdc.framework.cube.remote.bridge.react/RemoteViewsContext // br.com.wdc.framework.cube.remote.bridge.react/RemoteViewsContext|{}RemoteViewsContext[0]
+    final fun <get-RemoteViewsContext>(): react/RequiredContext<br.com.wdc.framework.cube.remote.bridge.react/RemoteViews> // br.com.wdc.framework.cube.remote.bridge.react/RemoteViewsContext.<get-RemoteViewsContext>|<get-RemoteViewsContext>(){}[0]
+
+final fun (br.com.wdc.framework.cube.remote.bridge/RemoteBridge).br.com.wdc.framework.cube.remote.bridge.react/useHold(kotlin/String?) // br.com.wdc.framework.cube.remote.bridge.react/useHold|useHold@br.com.wdc.framework.cube.remote.bridge.RemoteBridge(kotlin.String?){}[0]
+final fun (br.com.wdc.framework.cube.remote.bridge/RemoteBridge).br.com.wdc.framework.cube.remote.bridge.react/useView(kotlin/String): br.com.wdc.framework.cube.remote.bridge/RemoteScope // br.com.wdc.framework.cube.remote.bridge.react/useView|useView@br.com.wdc.framework.cube.remote.bridge.RemoteBridge(kotlin.String){}[0]
+final fun (react/ChildrenBuilder).br.com.wdc.framework.cube.remote.bridge.react/remoteView(kotlin/String?) // br.com.wdc.framework.cube.remote.bridge.react/remoteView|remoteView@react.ChildrenBuilder(kotlin.String?){}[0]

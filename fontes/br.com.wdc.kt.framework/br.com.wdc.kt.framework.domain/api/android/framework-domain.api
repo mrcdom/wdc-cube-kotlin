@@ -1,0 +1,426 @@
+public final class br/com/wdc/framework/domain/codec/EntityGraph {
+	public fun <init> ()V
+	public final fun isSeen (Lbr/com/wdc/framework/domain/codec/KeyedEntity;)Z
+	public final fun track (Lbr/com/wdc/framework/domain/codec/KeyedEntity;)Z
+}
+
+public abstract interface class br/com/wdc/framework/domain/codec/KeyedEntity {
+	public abstract fun key ()Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/domain/codec/KeyedEntityKt {
+	public static final fun ref (Lkotlin/jvm/functions/Function0;Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+}
+
+public abstract interface class br/com/wdc/framework/domain/codec/ModelCodec {
+	public abstract fun computeProjection (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public abstract fun getProjection (Ljava/lang/Object;)Ljava/lang/Object;
+	public abstract fun readCriteriaField (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;Ljava/lang/Object;)Z
+	public abstract fun readEntity (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;)Ljava/lang/Object;
+	public abstract fun readEntityForUpdate (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;)Lbr/com/wdc/framework/domain/codec/ModelCodec$UpdateData;
+	public fun readEntityList (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;)Ljava/util/List;
+	public abstract fun setGeneratedId (Ljava/lang/Object;J)V
+	public abstract fun writeCriteriaFields (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Ljava/lang/Object;)V
+	public fun writeEntity (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Ljava/lang/Object;)V
+	public abstract fun writeEntity (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Ljava/lang/Object;Lbr/com/wdc/framework/domain/codec/EntityGraph;)V
+	public abstract fun writeEntityProjected (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Ljava/lang/Object;Ljava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/domain/codec/ModelCodec$DefaultImpls {
+	public static fun readEntityList (Lbr/com/wdc/framework/domain/codec/ModelCodec;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;)Ljava/util/List;
+	public static fun writeEntity (Lbr/com/wdc/framework/domain/codec/ModelCodec;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Ljava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/domain/codec/ModelCodec$UpdateData {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;Ljava/lang/Object;)Lbr/com/wdc/framework/domain/codec/ModelCodec$UpdateData;
+	public static synthetic fun copy$default (Lbr/com/wdc/framework/domain/codec/ModelCodec$UpdateData;Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/Object;)Lbr/com/wdc/framework/domain/codec/ModelCodec$UpdateData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntity ()Ljava/lang/Object;
+	public final fun getProjection ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public class br/com/wdc/framework/domain/criteria/ComparableCriterion : br/com/wdc/framework/domain/criteria/Criterion {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/String;)V
+	public fun and ()Lbr/com/wdc/framework/domain/criteria/ComparableCriterion;
+	public synthetic fun and ()Lbr/com/wdc/framework/domain/criteria/Criterion;
+	public final fun between (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun ge (Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun gt (Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun le (Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun lt (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun or ()Lbr/com/wdc/framework/domain/criteria/ComparableCriterion;
+	public synthetic fun or ()Lbr/com/wdc/framework/domain/criteria/Criterion;
+}
+
+public abstract interface class br/com/wdc/framework/domain/criteria/Criteria {
+	public abstract fun criterions ()Ljava/util/List;
+	public fun getAnyOf ()Ljava/util/List;
+}
+
+public final class br/com/wdc/framework/domain/criteria/Criteria$DefaultImpls {
+	public static fun getAnyOf (Lbr/com/wdc/framework/domain/criteria/Criteria;)Ljava/util/List;
+}
+
+public class br/com/wdc/framework/domain/criteria/Criterion {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/String;)V
+	protected final fun add (Lbr/com/wdc/framework/domain/criteria/Operator;[Ljava/lang/Object;)Ljava/lang/Object;
+	public fun and ()Lbr/com/wdc/framework/domain/criteria/Criterion;
+	public final fun clear ()Ljava/lang/Object;
+	public final fun detached ()Z
+	public final fun eq (Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun getDisjunctive ()Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPredicates ()Ljava/util/List;
+	public final fun isIn (Ljava/util/Collection;)Ljava/lang/Object;
+	public final fun isIn ([Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun isNotNull ()Ljava/lang/Object;
+	public final fun isNull ()Ljava/lang/Object;
+	public final fun isSet ()Z
+	public final fun ne (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun or ()Lbr/com/wdc/framework/domain/criteria/Criterion;
+	protected final fun owner ()Ljava/lang/Object;
+	public final fun rebind (Ljava/lang/Object;)V
+	public final fun restore (Lbr/com/wdc/framework/domain/criteria/Operator;Ljava/util/List;)V
+	public final fun restoreDisjunctive (Z)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/domain/criteria/Criterion$Predicate {
+	public final fun getOperator ()Lbr/com/wdc/framework/domain/criteria/Operator;
+	public final fun getValue ()Ljava/lang/Object;
+	public final fun getValues ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/domain/criteria/CriterionCodec {
+	public static final field ANY_OF Ljava/lang/String;
+	public static final field INSTANCE Lbr/com/wdc/framework/domain/criteria/CriterionCodec;
+	public final fun anyOfDoesNotTravel ()Lbr/com/wdc/framework/domain/exception/InvalidRequestException;
+	public final fun getBOOL_IN ()Lkotlin/jvm/functions/Function1;
+	public final fun getBOOL_OUT ()Lkotlin/jvm/functions/Function2;
+	public final fun getDOUBLE_IN ()Lkotlin/jvm/functions/Function1;
+	public final fun getDOUBLE_OUT ()Lkotlin/jvm/functions/Function2;
+	public final fun getINSTANT_IN ()Lkotlin/jvm/functions/Function1;
+	public final fun getINSTANT_OUT ()Lkotlin/jvm/functions/Function2;
+	public final fun getINT_IN ()Lkotlin/jvm/functions/Function1;
+	public final fun getINT_OUT ()Lkotlin/jvm/functions/Function2;
+	public final fun getLONG_IN ()Lkotlin/jvm/functions/Function1;
+	public final fun getLONG_OUT ()Lkotlin/jvm/functions/Function2;
+	public final fun getSTRING_IN ()Lkotlin/jvm/functions/Function1;
+	public final fun getSTRING_OUT ()Lkotlin/jvm/functions/Function2;
+	public final fun read (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Lbr/com/wdc/framework/domain/criteria/Criterion;Lkotlin/jvm/functions/Function1;)V
+	public final fun readOrderBy (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/util/List;)Ljava/lang/Enum;
+	public final fun readSliceNumber (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;)Ljava/lang/Integer;
+	public final fun refuseAnyOf (Lbr/com/wdc/framework/domain/criteria/Criteria;)V
+	public final fun write (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Ljava/lang/String;Lbr/com/wdc/framework/domain/criteria/Criterion;Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class br/com/wdc/framework/domain/criteria/Operator : java/lang/Enum {
+	public static final field BETWEEN Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field EQ Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field GE Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field GT Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field ILIKE Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field IN Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field IS_NOT_NULL Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field IS_NULL Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field LE Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field LIKE Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field LT Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static final field NE Lbr/com/wdc/framework/domain/criteria/Operator;
+	public final fun accepts (I)Z
+	public final fun getArity ()I
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lbr/com/wdc/framework/domain/criteria/Operator;
+	public static fun values ()[Lbr/com/wdc/framework/domain/criteria/Operator;
+}
+
+public final class br/com/wdc/framework/domain/criteria/TextCriterion : br/com/wdc/framework/domain/criteria/ComparableCriterion {
+	public static final field Companion Lbr/com/wdc/framework/domain/criteria/TextCriterion$Companion;
+	public static final field ESCAPE C
+	public fun <init> (Ljava/lang/Object;Ljava/lang/String;)V
+	public synthetic fun and ()Lbr/com/wdc/framework/domain/criteria/ComparableCriterion;
+	public synthetic fun and ()Lbr/com/wdc/framework/domain/criteria/Criterion;
+	public fun and ()Lbr/com/wdc/framework/domain/criteria/TextCriterion;
+	public final fun containing (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun ilike (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun like (Ljava/lang/String;)Ljava/lang/Object;
+	public synthetic fun or ()Lbr/com/wdc/framework/domain/criteria/ComparableCriterion;
+	public synthetic fun or ()Lbr/com/wdc/framework/domain/criteria/Criterion;
+	public fun or ()Lbr/com/wdc/framework/domain/criteria/TextCriterion;
+	public final fun startingWith (Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/domain/criteria/TextCriterion$Companion {
+	public final fun escape (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public abstract interface annotation class br/com/wdc/framework/domain/doc/ApiDoc : java/lang/annotation/Annotation {
+	public abstract fun example ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public class br/com/wdc/framework/domain/exception/AccessDeniedException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public class br/com/wdc/framework/domain/exception/BusinessException : java/lang/RuntimeException {
+	public static final field Companion Lbr/com/wdc/framework/domain/exception/BusinessException$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun <init> (Ljava/lang/Throwable;)V
+}
+
+public final class br/com/wdc/framework/domain/exception/BusinessException$Companion {
+	public final fun wrap (Ljava/lang/String;Ljava/lang/Exception;)Lbr/com/wdc/framework/domain/exception/BusinessException;
+}
+
+public class br/com/wdc/framework/domain/exception/InvalidRequestException : br/com/wdc/framework/domain/exception/BusinessException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public class br/com/wdc/framework/domain/exception/NotFoundException : br/com/wdc/framework/domain/exception/BusinessException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public class br/com/wdc/framework/domain/exception/OfflineException : br/com/wdc/framework/domain/exception/BusinessException {
+	public fun <init> (Ljava/lang/Throwable;)V
+}
+
+public class br/com/wdc/framework/domain/exception/TooManyRequestsException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getRetryAfterSeconds ()Ljava/lang/Long;
+}
+
+public class br/com/wdc/framework/domain/exception/TransactionConflictException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public class br/com/wdc/framework/domain/exception/TransactionLimitExceededException : br/com/wdc/framework/domain/exception/TooManyRequestsException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public class br/com/wdc/framework/domain/exception/UnauthenticatedException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class br/com/wdc/framework/domain/pagination/Page {
+	public static final field Companion Lbr/com/wdc/framework/domain/pagination/Page$Companion;
+	public fun <init> (Ljava/util/List;III)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun copy (Ljava/util/List;III)Lbr/com/wdc/framework/domain/pagination/Page;
+	public static synthetic fun copy$default (Lbr/com/wdc/framework/domain/pagination/Page;Ljava/util/List;IIIILjava/lang/Object;)Lbr/com/wdc/framework/domain/pagination/Page;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getItems ()Ljava/util/List;
+	public final fun getPage ()I
+	public final fun getTotalItems ()I
+	public final fun getTotalPages ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/domain/pagination/Page$Companion {
+	public final fun of (Ljava/util/List;III)Lbr/com/wdc/framework/domain/pagination/Page;
+}
+
+public abstract interface class br/com/wdc/framework/domain/projection/HasCriteria {
+	public abstract fun getCriteria ()Ljava/lang/Object;
+}
+
+public abstract interface class br/com/wdc/framework/domain/projection/HasSlice {
+	public abstract fun getLimit ()Ljava/lang/Integer;
+	public abstract fun getOffset ()Ljava/lang/Integer;
+}
+
+public final class br/com/wdc/framework/domain/projection/ProjectionCollectionCodec {
+	public static final field INSTANCE Lbr/com/wdc/framework/domain/projection/ProjectionCollectionCodec;
+	public final fun isProjectionEnvelope (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;)Z
+	public final fun read (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/domain/projection/ProjectionList;
+	public final fun write (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Ljava/lang/String;Ljava/util/Collection;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class br/com/wdc/framework/domain/projection/ProjectionList : br/com/wdc/framework/domain/projection/HasCriteria, br/com/wdc/framework/domain/projection/HasSlice, java/util/List, kotlin/jvm/internal/markers/KMutableList {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Integer;)V
+	public synthetic fun <init> (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun add (ILjava/lang/Object;)V
+	public fun add (Ljava/lang/Object;)Z
+	public fun addAll (ILjava/util/Collection;)Z
+	public fun addAll (Ljava/util/Collection;)Z
+	public fun clear ()V
+	public fun contains (Ljava/lang/Object;)Z
+	public fun containsAll (Ljava/util/Collection;)Z
+	public fun equals (Ljava/lang/Object;)Z
+	public fun get (I)Ljava/lang/Object;
+	public fun getCriteria ()Ljava/lang/Object;
+	public fun getLimit ()Ljava/lang/Integer;
+	public fun getOffset ()Ljava/lang/Integer;
+	public fun getSize ()I
+	public fun hashCode ()I
+	public fun indexOf (Ljava/lang/Object;)I
+	public fun isEmpty ()Z
+	public fun iterator ()Ljava/util/Iterator;
+	public fun lastIndexOf (Ljava/lang/Object;)I
+	public fun listIterator ()Ljava/util/ListIterator;
+	public fun listIterator (I)Ljava/util/ListIterator;
+	public final fun remove (I)Ljava/lang/Object;
+	public fun remove (Ljava/lang/Object;)Z
+	public fun removeAll (Ljava/util/Collection;)Z
+	public fun removeAt (I)Ljava/lang/Object;
+	public fun retainAll (Ljava/util/Collection;)Z
+	public fun set (ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun size ()I
+	public fun subList (II)Ljava/util/List;
+	public fun toArray ()[Ljava/lang/Object;
+	public fun toArray ([Ljava/lang/Object;)[Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+	public final fun withLimit (Ljava/lang/Integer;)Lbr/com/wdc/framework/domain/projection/ProjectionList;
+	public final fun withOffset (Ljava/lang/Integer;)Lbr/com/wdc/framework/domain/projection/ProjectionList;
+}
+
+public final class br/com/wdc/framework/domain/projection/ProjectionValues {
+	public static final field INSTANCE Lbr/com/wdc/framework/domain/projection/ProjectionValues;
+	public final fun getBDec ()Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;
+	public final fun getBInt ()Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public final fun getBin ()[B
+	public final fun getBool ()Z
+	public final fun getChr ()C
+	public final fun getF32 ()F
+	public final fun getF64 ()D
+	public final fun getI16 ()S
+	public final fun getI32 ()I
+	public final fun getI64 ()J
+	public final fun getI8 ()B
+	public final fun getInstant ()Lkotlin/time/Instant;
+	public final fun getLocalDate ()Lkotlinx/datetime/LocalDate;
+	public final fun getStr ()Ljava/lang/String;
+	public final fun singletonList (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Integer;)Lbr/com/wdc/framework/domain/projection/ProjectionList;
+	public static synthetic fun singletonList$default (Lbr/com/wdc/framework/domain/projection/ProjectionValues;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Object;)Lbr/com/wdc/framework/domain/projection/ProjectionList;
+}
+
+public abstract interface class br/com/wdc/framework/domain/repository/ReadOnlyRepository {
+	public abstract fun count (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun fetch (Ljava/lang/Object;IILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun fetch$default (Lbr/com/wdc/framework/domain/repository/ReadOnlyRepository;Ljava/lang/Object;IILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun fetchById (Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun fetchById$default (Lbr/com/wdc/framework/domain/repository/ReadOnlyRepository;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun fetchPage (Ljava/lang/Object;IILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun ownFieldsProjection ()Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/domain/repository/ReadOnlyRepository$DefaultImpls {
+	public static synthetic fun fetch$default (Lbr/com/wdc/framework/domain/repository/ReadOnlyRepository;Ljava/lang/Object;IILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun fetchById$default (Lbr/com/wdc/framework/domain/repository/ReadOnlyRepository;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static fun fetchPage (Lbr/com/wdc/framework/domain/repository/ReadOnlyRepository;Ljava/lang/Object;IILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class br/com/wdc/framework/domain/repository/Repository : br/com/wdc/framework/domain/repository/ReadOnlyRepository {
+	public abstract fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun insert (Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun insert$default (Lbr/com/wdc/framework/domain/repository/Repository;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun insertOrUpdate (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun insertOrUpdate$default (Lbr/com/wdc/framework/domain/repository/Repository;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun update (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun update$default (Lbr/com/wdc/framework/domain/repository/Repository;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/domain/repository/Repository$DefaultImpls {
+	public static fun fetchPage (Lbr/com/wdc/framework/domain/repository/Repository;Ljava/lang/Object;IILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun insert$default (Lbr/com/wdc/framework/domain/repository/Repository;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static fun insertOrUpdate (Lbr/com/wdc/framework/domain/repository/Repository;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun insertOrUpdate$default (Lbr/com/wdc/framework/domain/repository/Repository;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun update$default (Lbr/com/wdc/framework/domain/repository/Repository;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract class br/com/wdc/framework/domain/resource/ResourceCall {
+	public fun <init> ()V
+	public abstract fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class br/com/wdc/framework/domain/resource/ResourceCreate : br/com/wdc/framework/domain/resource/ResourceWrite {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	protected abstract fun create (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class br/com/wdc/framework/domain/resource/ResourceDelete : br/com/wdc/framework/domain/resource/ResourceWrite {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	protected abstract fun delete (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class br/com/wdc/framework/domain/resource/ResourceQuery : br/com/wdc/framework/domain/resource/ResourceCall {
+	public fun <init> ()V
+}
+
+public abstract class br/com/wdc/framework/domain/resource/ResourceSave : br/com/wdc/framework/domain/resource/ResourceWrite {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	protected abstract fun save (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class br/com/wdc/framework/domain/resource/ResourceUpdate : br/com/wdc/framework/domain/resource/ResourceWrite {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	protected abstract fun update (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class br/com/wdc/framework/domain/resource/ResourceWrite : br/com/wdc/framework/domain/resource/ResourceCall {
+	public final fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/domain/transaction/AfterCommitTasks {
+	public static final field Companion Lbr/com/wdc/framework/domain/transaction/AfterCommitTasks$Companion;
+	public fun <init> ()V
+	public final fun add (Lkotlin/jvm/functions/Function1;)V
+	public final fun drain ()Ljava/util/List;
+	public final fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/domain/transaction/AfterCommitTasks$Companion {
+	public final fun runAll (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/domain/transaction/RemoteTransactionNotFoundException : br/com/wdc/framework/domain/transaction/TransactionException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class br/com/wdc/framework/domain/transaction/TransactionContext {
+	public abstract fun isActive ()Z
+	public abstract fun isRollbackOnly ()Z
+	public abstract fun setRollbackOnly ()V
+}
+
+public class br/com/wdc/framework/domain/transaction/TransactionException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class br/com/wdc/framework/domain/transaction/TransactionNotAllowedException : br/com/wdc/framework/domain/transaction/TransactionException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class br/com/wdc/framework/domain/transaction/TransactionRequiredException : br/com/wdc/framework/domain/transaction/TransactionException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class br/com/wdc/framework/domain/transaction/TransactionService {
+	public abstract fun afterCommit (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun mandatory (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun never (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun notSupported (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun required (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun requiresNew (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun supports (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/domain/transaction/TransactionSystemException : br/com/wdc/framework/domain/transaction/TransactionException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+

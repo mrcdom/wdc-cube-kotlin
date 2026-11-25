@@ -1,0 +1,792 @@
+public final class br/com/wdc/framework/rest/CompressionOptions {
+	public static final field Companion Lbr/com/wdc/framework/rest/CompressionOptions$Companion;
+	public fun <init> ()V
+	public final fun getGzipLevel ()I
+	public final fun getMimeTypes ()Ljava/util/ArrayList;
+	public final fun getMinSize ()I
+	public final fun setGzipLevel (I)V
+	public final fun setMinSize (I)V
+}
+
+public final class br/com/wdc/framework/rest/CompressionOptions$Companion {
+	public final fun getSPRING_MIME_TYPES ()Ljava/util/List;
+}
+
+public final class br/com/wdc/framework/rest/CorsOptions {
+	public fun <init> ()V
+	public final fun allowOrigins ([Ljava/lang/String;)V
+	public final fun anyOrigin ()V
+	public final fun getAllowCredentials ()Z
+	public final fun getExposedHeaders ()Ljava/util/ArrayList;
+	public final fun getMaxAge ()I
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getReflectClientOrigin ()Z
+	public final fun setAllowCredentials (Z)V
+	public final fun setMaxAge (I)V
+	public final fun setPath (Ljava/lang/String;)V
+	public final fun setReflectClientOrigin (Z)V
+}
+
+public final class br/com/wdc/framework/rest/RawJson {
+	public static final field Companion Lbr/com/wdc/framework/rest/RawJson$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getJson ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/RawJson$Companion {
+	public final fun field (Ljava/lang/String;J)Lbr/com/wdc/framework/rest/RawJson;
+	public final fun field (Ljava/lang/String;Ljava/lang/String;)Lbr/com/wdc/framework/rest/RawJson;
+	public final fun field (Ljava/lang/String;Z)Lbr/com/wdc/framework/rest/RawJson;
+	public final fun write (Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/rest/RawJson;
+}
+
+public final class br/com/wdc/framework/rest/RequestContext {
+	public static final field Companion Lbr/com/wdc/framework/rest/RequestContext$Companion;
+	public final fun asContextElement ()Lkotlin/coroutines/CoroutineContext$Element;
+	public final fun get (Lbr/com/wdc/framework/rest/RequestKey;)Ljava/lang/Object;
+	public final fun getHttp ()Lio/javalin/http/Context;
+	public final fun getMatchedPath ()Ljava/lang/String;
+	public final fun getMethod ()Ljava/lang/String;
+	public final fun getOrPut (Lbr/com/wdc/framework/rest/RequestKey;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getPrincipal ()Lbr/com/wdc/framework/rest/security/RestPrincipal;
+	public final fun header (Ljava/lang/String;)Ljava/lang/String;
+	public final fun headers (Ljava/lang/String;)Ljava/util/List;
+	public final fun pathParam (Ljava/lang/String;)Ljava/lang/String;
+	public final fun queryParam (Ljava/lang/String;)Ljava/lang/String;
+	public final fun set (Lbr/com/wdc/framework/rest/RequestKey;Ljava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/rest/RequestContext$Companion {
+	public final fun current ()Lbr/com/wdc/framework/rest/RequestContext;
+	public final fun currentOrNull ()Lbr/com/wdc/framework/rest/RequestContext;
+	public final fun withCurrent (Lbr/com/wdc/framework/rest/RequestContext;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/rest/RequestKey {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/RestApi {
+	public static final field Companion Lbr/com/wdc/framework/rest/RestApi$Companion;
+	public final fun createServer (Lkotlin/jvm/functions/Function1;)Lio/javalin/Javalin;
+	public static synthetic fun createServer$default (Lbr/com/wdc/framework/rest/RestApi;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/javalin/Javalin;
+	public final fun getErrors ()Lbr/com/wdc/framework/rest/error/ExceptionMapping;
+	public final fun getJson ()Lbr/com/wdc/framework/rest/json/GsonJsonMapper;
+	public final fun getOpenApiDocument ()Ljava/util/Map;
+	public final fun getOpenApiJson ()Ljava/lang/String;
+	public final fun getRoutes ()Ljava/util/List;
+	public final fun getSecurity ()Lbr/com/wdc/framework/rest/security/SecurityConfig;
+	public final fun getTransactions ()Lbr/com/wdc/framework/rest/transaction/RestTransactions;
+	public final fun install (Lio/javalin/config/JavalinConfig;)V
+}
+
+public final class br/com/wdc/framework/rest/RestApi$Builder : br/com/wdc/framework/rest/RestApi$Routes {
+	public final fun after (Ljava/lang/String;Lkotlin/jvm/functions/Function3;)V
+	public static synthetic fun after$default (Lbr/com/wdc/framework/rest/RestApi$Builder;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public final fun before (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
+	public static synthetic fun before$default (Lbr/com/wdc/framework/rest/RestApi$Builder;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+	public final fun compression (Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun compression$default (Lbr/com/wdc/framework/rest/RestApi$Builder;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun cors (Lkotlin/jvm/functions/Function1;)V
+	public final fun errors (Lkotlin/jvm/functions/Function1;)V
+	public final fun getHandleUnmatched ()Z
+	public final fun getJson ()Lbr/com/wdc/framework/rest/json/GsonJsonMapper;
+	public final fun getMaxRequestSize ()Ljava/lang/Long;
+	public final fun getTransactions ()Lbr/com/wdc/framework/rest/transaction/RestTransactions;
+	public final fun openApi (Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun openApi$default (Lbr/com/wdc/framework/rest/RestApi$Builder;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun security (Lkotlin/jvm/functions/Function1;)V
+	public final fun securityHeaders (Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun securityHeaders$default (Lbr/com/wdc/framework/rest/RestApi$Builder;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun serverTiming (Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun serverTiming$default (Lbr/com/wdc/framework/rest/RestApi$Builder;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun setHandleUnmatched (Z)V
+	public final fun setJson (Lbr/com/wdc/framework/rest/json/GsonJsonMapper;)V
+	public final fun setMaxRequestSize (Ljava/lang/Long;)V
+	public final fun transactions (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class br/com/wdc/framework/rest/RestApi$Companion {
+	public final fun invoke (Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/rest/RestApi;
+}
+
+public class br/com/wdc/framework/rest/RestApi$Routes {
+	public final fun delete (Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/rest/RestRoute;
+	public static synthetic fun delete$default (Lbr/com/wdc/framework/rest/RestApi$Routes;Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestRoute;
+	public final fun get (Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/rest/RestRoute;
+	public static synthetic fun get$default (Lbr/com/wdc/framework/rest/RestApi$Routes;Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestRoute;
+	public final fun group (Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;Ljava/util/List;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun group$default (Lbr/com/wdc/framework/rest/RestApi$Routes;Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;Ljava/util/List;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun patch (Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/rest/RestRoute;
+	public static synthetic fun patch$default (Lbr/com/wdc/framework/rest/RestApi$Routes;Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestRoute;
+	public final fun post (Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/rest/RestRoute;
+	public static synthetic fun post$default (Lbr/com/wdc/framework/rest/RestApi$Routes;Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestRoute;
+	public final fun put (Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/rest/RestRoute;
+	public static synthetic fun put$default (Lbr/com/wdc/framework/rest/RestApi$Routes;Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestRoute;
+	public final fun route (Ljava/lang/String;Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/rest/RestRoute;
+	public static synthetic fun route$default (Lbr/com/wdc/framework/rest/RestApi$Routes;Ljava/lang/String;Ljava/lang/String;Lbr/com/wdc/framework/rest/security/AccessRule;ZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestRoute;
+}
+
+public final class br/com/wdc/framework/rest/RestCall {
+	public final fun basicCredentials ()Lkotlin/Pair;
+	public final fun bodyBytes ()[B
+	public final fun bodyInput ()Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;
+	public final fun bodyOrNull (Ljava/lang/reflect/Type;)Ljava/lang/Object;
+	public final fun bodyText ()Ljava/lang/String;
+	public final fun entity (Lbr/com/wdc/framework/domain/codec/ModelCodec;)Ljava/lang/Object;
+	public final fun entityForUpdate (Lbr/com/wdc/framework/domain/codec/ModelCodec;)Lbr/com/wdc/framework/domain/codec/ModelCodec$UpdateData;
+	public final fun explicitNulls ()Ljava/util/Set;
+	public final fun getHttp ()Lio/javalin/http/Context;
+	public final fun getPrincipal ()Lbr/com/wdc/framework/rest/security/RestPrincipal;
+	public final fun getRequest ()Lbr/com/wdc/framework/rest/RequestContext;
+	public final fun header (Ljava/lang/String;)Ljava/lang/String;
+	public final fun header (Ljava/lang/String;Ljava/lang/String;)Lbr/com/wdc/framework/rest/RestCall;
+	public final fun inRemoteTransaction (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun inTransaction (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun mismatch (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lbr/com/wdc/framework/rest/error/RequestParameterException;
+	public final fun missingQuery (Ljava/lang/String;)Lbr/com/wdc/framework/rest/error/RequestParameterException;
+	public final fun path (Ljava/lang/String;)Ljava/lang/String;
+	public final fun pathInt (Ljava/lang/String;)I
+	public final fun pathLong (Ljava/lang/String;)J
+	public final fun pathUuid (Ljava/lang/String;)Ljava/util/UUID;
+	public final fun queries (Ljava/lang/String;)Ljava/util/List;
+	public final fun query (Ljava/lang/String;)Ljava/lang/String;
+	public final fun query (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public final fun queryBoolean (Ljava/lang/String;)Ljava/lang/Boolean;
+	public final fun queryBoolean (Ljava/lang/String;Z)Z
+	public final fun queryDouble (Ljava/lang/String;)Ljava/lang/Double;
+	public final fun queryInt (Ljava/lang/String;)Ljava/lang/Integer;
+	public final fun queryLocalDate (Ljava/lang/String;)Ljava/time/LocalDate;
+	public final fun queryLocalDateTime (Ljava/lang/String;)Ljava/time/LocalDateTime;
+	public final fun queryLong (Ljava/lang/String;)Ljava/lang/Long;
+	public final fun queryUuid (Ljava/lang/String;)Ljava/util/UUID;
+	public final fun readingBody (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public final fun requiredHeader (Ljava/lang/String;)Ljava/lang/String;
+	public final fun requiredQuery (Ljava/lang/String;)Ljava/lang/String;
+	public final fun requiredQueryBoolean (Ljava/lang/String;)Z
+	public final fun requiredQueryDouble (Ljava/lang/String;)D
+	public final fun requiredQueryInt (Ljava/lang/String;)I
+	public final fun requiredQueryLocalDate (Ljava/lang/String;)Ljava/time/LocalDate;
+	public final fun requiredQueryLocalDateTime (Ljava/lang/String;)Ljava/time/LocalDateTime;
+	public final fun requiredQueryLong (Ljava/lang/String;)J
+	public final fun requiredQueryUuid (Ljava/lang/String;)Ljava/util/UUID;
+	public final fun status (I)Lbr/com/wdc/framework/rest/RestCall;
+	public final fun timed (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public static synthetic fun timed$default (Lbr/com/wdc/framework/rest/RestCall;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun timing (Ljava/lang/String;JLjava/lang/String;)V
+	public static synthetic fun timing$default (Lbr/com/wdc/framework/rest/RestCall;Ljava/lang/String;JLjava/lang/String;ILjava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/rest/RestResponse {
+	public static final field Companion Lbr/com/wdc/framework/rest/RestResponse$Companion;
+	public fun <init> (ILjava/lang/Object;Ljava/util/Map;Ljava/lang/String;)V
+	public synthetic fun <init> (ILjava/lang/Object;Ljava/util/Map;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBody ()Ljava/lang/Object;
+	public final fun getContentType ()Ljava/lang/String;
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getStatus ()I
+	public final fun withHeader (Ljava/lang/String;Ljava/lang/String;)Lbr/com/wdc/framework/rest/RestResponse;
+}
+
+public final class br/com/wdc/framework/rest/RestResponse$Companion {
+	public final fun created (Ljava/lang/Object;)Lbr/com/wdc/framework/rest/RestResponse;
+	public static synthetic fun created$default (Lbr/com/wdc/framework/rest/RestResponse$Companion;Ljava/lang/Object;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestResponse;
+	public final fun noContent ()Lbr/com/wdc/framework/rest/RestResponse;
+	public final fun ok (Ljava/lang/Object;)Lbr/com/wdc/framework/rest/RestResponse;
+	public static synthetic fun ok$default (Lbr/com/wdc/framework/rest/RestResponse$Companion;Ljava/lang/Object;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestResponse;
+	public final fun status (ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestResponse;
+	public static synthetic fun status$default (Lbr/com/wdc/framework/rest/RestResponse$Companion;ILjava/lang/Object;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/RestResponse;
+}
+
+public final class br/com/wdc/framework/rest/RestRoute {
+	public final fun getDoc ()Lbr/com/wdc/framework/rest/openapi/OperationDoc;
+	public final fun getHidden ()Z
+	public final fun getMethod ()Ljava/lang/String;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getPublic ()Z
+	public final fun getRule ()Lbr/com/wdc/framework/rest/security/AccessRule;
+	public final fun getTransactional ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/SecurityHeadersOptions {
+	public fun <init> ()V
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getNoCache ()Z
+	public final fun setNoCache (Z)V
+}
+
+public final class br/com/wdc/framework/rest/ServerTimingOptions {
+	public fun <init> ()V
+	public final fun getNames ()Z
+	public final fun setNames (Z)V
+}
+
+public final class br/com/wdc/framework/rest/error/ErrorResponse {
+	public fun <init> (ILjava/lang/Object;Ljava/util/Map;)V
+	public synthetic fun <init> (ILjava/lang/Object;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/Object;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (ILjava/lang/Object;Ljava/util/Map;)Lbr/com/wdc/framework/rest/error/ErrorResponse;
+	public static synthetic fun copy$default (Lbr/com/wdc/framework/rest/error/ErrorResponse;ILjava/lang/Object;Ljava/util/Map;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/error/ErrorResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBody ()Ljava/lang/Object;
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getStatus ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class br/com/wdc/framework/rest/error/ExceptionHandler {
+	public abstract fun handle (Ljava/lang/Throwable;Lbr/com/wdc/framework/rest/RequestContext;)Lbr/com/wdc/framework/rest/error/ErrorResponse;
+}
+
+public final class br/com/wdc/framework/rest/error/ExceptionMapping {
+	public fun <init> ()V
+	public final fun getErrorBody ()Lkotlin/jvm/functions/Function3;
+	public final fun getFallback ()Lkotlin/jvm/functions/Function2;
+	public final fun getUnauthenticatedStatus ()I
+	public final fun on (Ljava/lang/Class;Lbr/com/wdc/framework/rest/error/ExceptionHandler;)V
+	public final fun resolve (Ljava/lang/Throwable;Lbr/com/wdc/framework/rest/RequestContext;)Lbr/com/wdc/framework/rest/error/ErrorResponse;
+	public final fun setErrorBody (Lkotlin/jvm/functions/Function3;)V
+	public final fun setFallback (Lkotlin/jvm/functions/Function2;)V
+	public final fun setUnauthenticatedStatus (I)V
+	public final fun status (Ljava/lang/Class;I)V
+}
+
+public class br/com/wdc/framework/rest/error/RequestBodyException : br/com/wdc/framework/domain/exception/InvalidRequestException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public class br/com/wdc/framework/rest/error/RequestParameterException : br/com/wdc/framework/domain/exception/InvalidRequestException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getParameter ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/json/DateFormats {
+	public fun <init> ()V
+	public final fun getInstant ()Ljava/time/format/DateTimeFormatter;
+	public final fun getLenientLocalDateTime ()Z
+	public final fun getLocalDate ()Ljava/time/format/DateTimeFormatter;
+	public final fun getLocalDateTime ()Ljava/time/format/DateTimeFormatter;
+	public final fun getLocalTime ()Ljava/time/format/DateTimeFormatter;
+	public final fun getOffsetDateTime ()Ljava/time/format/DateTimeFormatter;
+	public final fun getUtilDatePattern ()Ljava/lang/String;
+	public final fun getUtilDateZone ()Ljava/time/ZoneId;
+	public final fun getZonedDateTime ()Ljava/time/format/DateTimeFormatter;
+	public final fun setInstant (Ljava/time/format/DateTimeFormatter;)V
+	public final fun setLenientLocalDateTime (Z)V
+	public final fun setLocalDate (Ljava/time/format/DateTimeFormatter;)V
+	public final fun setLocalDateTime (Ljava/time/format/DateTimeFormatter;)V
+	public final fun setLocalTime (Ljava/time/format/DateTimeFormatter;)V
+	public final fun setOffsetDateTime (Ljava/time/format/DateTimeFormatter;)V
+	public final fun setUtilDatePattern (Ljava/lang/String;)V
+	public final fun setUtilDateZone (Ljava/time/ZoneId;)V
+	public final fun setZonedDateTime (Ljava/time/format/DateTimeFormatter;)V
+}
+
+public final class br/com/wdc/framework/rest/json/GsonJsonMapper : io/javalin/json/JsonMapper {
+	public fun <init> ()V
+	public fun <init> (Lbr/com/wdc/framework/rest/json/JsonOptions;)V
+	public synthetic fun <init> (Lbr/com/wdc/framework/rest/json/JsonOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun fromJsonStream (Ljava/io/InputStream;Ljava/lang/reflect/Type;)Ljava/lang/Object;
+	public fun fromJsonString (Ljava/lang/String;Ljava/lang/reflect/Type;)Ljava/lang/Object;
+	public final fun getGson ()Lcom/google/gson/Gson;
+	public final fun getOptions ()Lbr/com/wdc/framework/rest/json/JsonOptions;
+	public final fun toJson (Ljava/lang/Object;)Ljava/lang/String;
+	public fun toJsonStream (Ljava/lang/Object;Ljava/lang/reflect/Type;)Ljava/io/InputStream;
+	public fun toJsonString (Ljava/lang/Object;Ljava/lang/reflect/Type;)Ljava/lang/String;
+	public fun writeToOutputStream (Ljava/util/stream/Stream;Ljava/io/OutputStream;)V
+}
+
+public final class br/com/wdc/framework/rest/json/JsonDeclarationException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface annotation class br/com/wdc/framework/rest/json/JsonNulls : java/lang/annotation/Annotation {
+	public abstract fun value ()Lbr/com/wdc/framework/rest/json/NullPolicy;
+}
+
+public final class br/com/wdc/framework/rest/json/JsonOptions {
+	public static final field Companion Lbr/com/wdc/framework/rest/json/JsonOptions$Companion;
+	public fun <init> ()V
+	public final fun customize (Lkotlin/jvm/functions/Function1;)V
+	public final fun getDates ()Lbr/com/wdc/framework/rest/json/DateFormats;
+	public final fun getFieldNaming ()Lcom/google/gson/FieldNamingStrategy;
+	public final fun getHtmlEscaping ()Z
+	public final fun getNulls ()Lbr/com/wdc/framework/rest/json/NullPolicy;
+	public final fun getPrettyPrinting ()Z
+	public final fun setFieldNaming (Lcom/google/gson/FieldNamingStrategy;)V
+	public final fun setHtmlEscaping (Z)V
+	public final fun setNulls (Lbr/com/wdc/framework/rest/json/NullPolicy;)V
+	public final fun setPrettyPrinting (Z)V
+}
+
+public final class br/com/wdc/framework/rest/json/JsonOptions$Companion {
+	public final fun springDefaults ()Lbr/com/wdc/framework/rest/json/JsonOptions;
+}
+
+public final class br/com/wdc/framework/rest/json/NullPolicy : java/lang/Enum {
+	public static final field INCLUDE Lbr/com/wdc/framework/rest/json/NullPolicy;
+	public static final field OMIT Lbr/com/wdc/framework/rest/json/NullPolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lbr/com/wdc/framework/rest/json/NullPolicy;
+	public static fun values ()[Lbr/com/wdc/framework/rest/json/NullPolicy;
+}
+
+public final class br/com/wdc/framework/rest/openapi/OpenApiConfig {
+	public fun <init> ()V
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getInfo ()Ljava/util/LinkedHashMap;
+	public final fun getOpenapiVersion ()Ljava/lang/String;
+	public final fun getParameters ()Ljava/util/LinkedHashMap;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getRaw ()Ljava/util/LinkedHashMap;
+	public final fun getSchemas ()Ljava/util/LinkedHashMap;
+	public final fun getSecurityScheme ()Lkotlin/Pair;
+	public final fun getServers ()Ljava/util/ArrayList;
+	public final fun getTags ()Ljava/util/LinkedHashMap;
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun getVersion ()Ljava/lang/String;
+	public final fun setDescription (Ljava/lang/String;)V
+	public final fun setOpenapiVersion (Ljava/lang/String;)V
+	public final fun setPath (Ljava/lang/String;)V
+	public final fun setSecurityScheme (Lkotlin/Pair;)V
+	public final fun setTitle (Ljava/lang/String;)V
+	public final fun setVersion (Ljava/lang/String;)V
+	public final fun tag (Ljava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun tag$default (Lbr/com/wdc/framework/rest/openapi/OpenApiConfig;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun ui (Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun ui$default (Lbr/com/wdc/framework/rest/openapi/OpenApiConfig;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/rest/openapi/OperationDoc {
+	public static final field Companion Lbr/com/wdc/framework/rest/openapi/OperationDoc$Companion;
+	public fun <init> ()V
+	public final fun body (Ljava/lang/Object;ZLjava/lang/String;)V
+	public static synthetic fun body$default (Lbr/com/wdc/framework/rest/openapi/OperationDoc;Ljava/lang/Object;ZLjava/lang/String;ILjava/lang/Object;)V
+	public final fun describedBy (Ljava/lang/Class;)V
+	public final fun getDeprecated ()Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getOperationId ()Ljava/lang/String;
+	public final fun getSummary ()Ljava/lang/String;
+	public final fun getTags ()Ljava/util/ArrayList;
+	public final fun header (Ljava/lang/String;Ljava/lang/reflect/Type;Ljava/lang/String;Z)V
+	public static synthetic fun header$default (Lbr/com/wdc/framework/rest/openapi/OperationDoc;Ljava/lang/String;Ljava/lang/reflect/Type;Ljava/lang/String;ZILjava/lang/Object;)V
+	public final fun parameter (Ljava/util/Map;)V
+	public final fun path (Ljava/lang/String;Ljava/lang/reflect/Type;Ljava/lang/String;)V
+	public static synthetic fun path$default (Lbr/com/wdc/framework/rest/openapi/OperationDoc;Ljava/lang/String;Ljava/lang/reflect/Type;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun pathOf (Ljava/lang/Class;[Ljava/lang/String;)V
+	public final fun query (Ljava/lang/String;Ljava/lang/reflect/Type;Ljava/lang/String;Z)V
+	public static synthetic fun query$default (Lbr/com/wdc/framework/rest/openapi/OperationDoc;Ljava/lang/String;Ljava/lang/reflect/Type;Ljava/lang/String;ZILjava/lang/Object;)V
+	public final fun queryOf (Ljava/lang/Class;[Ljava/lang/String;)V
+	public final fun raw (Ljava/util/Map;)V
+	public final fun response (ILjava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun response (Ljava/lang/String;Ljava/util/Map;)V
+	public static synthetic fun response$default (Lbr/com/wdc/framework/rest/openapi/OperationDoc;ILjava/lang/Object;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun setDeprecated (Z)V
+	public final fun setDescription (Ljava/lang/String;)V
+	public final fun setOperationId (Ljava/lang/String;)V
+	public final fun setSummary (Ljava/lang/String;)V
+	public final fun tags ([Ljava/lang/String;)V
+}
+
+public final class br/com/wdc/framework/rest/openapi/OperationDoc$Companion {
+	public final fun defaultDescription (I)Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/openapi/SchemaGenerator {
+	public fun <init> (Lcom/google/gson/FieldNamingStrategy;)V
+	public final fun getComponents ()Ljava/util/Map;
+	public final fun schemaOf (Ljava/lang/reflect/Type;)Ljava/util/Map;
+}
+
+public final class br/com/wdc/framework/rest/openapi/SwaggerDocument {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lbr/com/wdc/framework/rest/openapi/SwaggerDocument;
+	public static synthetic fun copy$default (Lbr/com/wdc/framework/rest/openapi/SwaggerDocument;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/openapi/SwaggerDocument;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/openapi/SwaggerUiOptions {
+	public fun <init> ()V
+	public final fun document (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getDocuments ()Ljava/util/ArrayList;
+	public final fun getIncludeOwn ()Z
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getPrimary ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun setIncludeOwn (Z)V
+	public final fun setPath (Ljava/lang/String;)V
+	public final fun setPrimary (Ljava/lang/String;)V
+	public final fun setTitle (Ljava/lang/String;)V
+}
+
+public final class br/com/wdc/framework/rest/policy/DataAccess {
+	public final fun checkCreate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun checkUpdate (Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getEntity ()Lbr/com/wdc/framework/rest/policy/EntityDescriptor;
+	public final fun prepareRead (Lbr/com/wdc/framework/domain/criteria/Criteria;)Lbr/com/wdc/framework/rest/policy/DataAccess$ReadPlan;
+	public final fun readBack (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun restrictCount (Lbr/com/wdc/framework/domain/criteria/Criteria;)V
+	public final fun restrictDelete (Lbr/com/wdc/framework/domain/criteria/Criteria;)V
+}
+
+public abstract interface class br/com/wdc/framework/rest/policy/DataAccess$ReadPlan {
+	public abstract fun apply (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun applyAll (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/rest/policy/DataAccess$ReadPlan$DefaultImpls {
+	public static fun applyAll (Lbr/com/wdc/framework/rest/policy/DataAccess$ReadPlan;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/rest/policy/DataGrant {
+	public final fun getCreate ()Ljava/util/Set;
+	public final fun getDelete ()Z
+	public final fun getMasked ()Ljava/util/Map;
+	public final fun getRead ()Ljava/util/Set;
+	public final fun getReads ()Z
+	public final fun getRows ()Lbr/com/wdc/framework/rest/policy/RowScope;
+	public final fun getUpdate ()Ljava/util/Set;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/policy/DataGrant$Builder {
+	public final fun create ([Lkotlin/reflect/KProperty1;)V
+	public final fun delete ()V
+	public final fun mask (Lbr/com/wdc/framework/rest/policy/Mask;[Lkotlin/reflect/KProperty1;)V
+	public final fun read ([Lkotlin/reflect/KProperty1;)V
+	public final fun rows (Lbr/com/wdc/framework/rest/policy/RowScope;)V
+	public final fun update ([Lkotlin/reflect/KProperty1;)V
+}
+
+public final class br/com/wdc/framework/rest/policy/DataPolicy {
+	public fun <init> (Lbr/com/wdc/framework/rest/policy/EntityDescriptor;Lkotlin/jvm/functions/Function1;)V
+	public final fun accessFor (Lbr/com/wdc/framework/rest/security/RestPrincipal;)Lbr/com/wdc/framework/rest/policy/DataAccess;
+	public final fun getEntity ()Lbr/com/wdc/framework/rest/policy/EntityDescriptor;
+	public final fun grantsOf (Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class br/com/wdc/framework/rest/policy/DataPolicy$Builder {
+	public final fun grant ([Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class br/com/wdc/framework/rest/policy/EntityDescriptor {
+	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)V
+	public final fun getFieldNames ()Ljava/util/List;
+	public final fun getKeyName ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/policy/EntityDescriptor$Builder {
+	public final fun anyOf (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
+	public final fun collection (Lkotlin/reflect/KMutableProperty1;Lkotlin/reflect/KMutableProperty1;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun collection$default (Lbr/com/wdc/framework/rest/policy/EntityDescriptor$Builder;Lkotlin/reflect/KMutableProperty1;Lkotlin/reflect/KMutableProperty1;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public final fun criterion (Ljava/lang/String;Lkotlin/reflect/KProperty1;)V
+	public final fun defaultShape (Lkotlin/jvm/functions/Function0;)V
+	public final fun key (Lkotlin/reflect/KMutableProperty1;Ljava/lang/Object;Ljava/lang/String;)V
+	public static synthetic fun key$default (Lbr/com/wdc/framework/rest/policy/EntityDescriptor$Builder;Lkotlin/reflect/KMutableProperty1;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun orderings (Lkotlin/jvm/functions/Function1;)V
+	public final fun projection (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
+	public final fun relation (Lkotlin/reflect/KMutableProperty1;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun relation$default (Lbr/com/wdc/framework/rest/policy/EntityDescriptor$Builder;Lkotlin/reflect/KMutableProperty1;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public final fun value (Lkotlin/reflect/KMutableProperty1;Ljava/lang/Object;Ljava/lang/String;)V
+	public static synthetic fun value$default (Lbr/com/wdc/framework/rest/policy/EntityDescriptor$Builder;Lkotlin/reflect/KMutableProperty1;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun writeOnly (Lkotlin/reflect/KMutableProperty1;Ljava/lang/Object;Ljava/lang/String;)V
+	public static synthetic fun writeOnly$default (Lbr/com/wdc/framework/rest/policy/EntityDescriptor$Builder;Lkotlin/reflect/KMutableProperty1;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/rest/policy/EntityDescriptor$Field {
+	public final fun getName ()Ljava/lang/String;
+	public final fun getTextual ()Z
+	public final fun getWriteOnly ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class br/com/wdc/framework/rest/policy/Mask {
+	public static final field Companion Lbr/com/wdc/framework/rest/policy/Mask$Companion;
+	public static final field FILL C
+	public abstract fun apply (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/policy/Mask$Companion {
+	public static final field FILL C
+	public final fun keepFirst (I)Lbr/com/wdc/framework/rest/policy/Mask;
+	public final fun keepLast (I)Lbr/com/wdc/framework/rest/policy/Mask;
+}
+
+public abstract interface class br/com/wdc/framework/rest/policy/RowScope {
+	public static final field Companion Lbr/com/wdc/framework/rest/policy/RowScope$Companion;
+	public abstract fun covers (Ljava/lang/Object;Lbr/com/wdc/framework/rest/security/RestPrincipal;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun projection ()Ljava/lang/Object;
+	public abstract fun restrict (Ljava/lang/Object;Lbr/com/wdc/framework/rest/security/RestPrincipal;)V
+}
+
+public final class br/com/wdc/framework/rest/policy/RowScope$Companion {
+	public final fun all ()Lbr/com/wdc/framework/rest/policy/RowScope;
+}
+
+public final class br/com/wdc/framework/rest/policy/RowScope$DefaultImpls {
+	public static fun projection (Lbr/com/wdc/framework/rest/policy/RowScope;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/rest/rpc/RepositoryRpc {
+	public static final field Companion Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Companion;
+	public static final field DEFAULT_MAX_LIMIT I
+	public fun <init> (Ljava/lang/String;Lbr/com/wdc/framework/domain/codec/ModelCodec;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public final fun getBasePath ()Ljava/lang/String;
+	public final fun getBeforeInsert ()Lkotlin/jvm/functions/Function3;
+	public final fun getBeforeUpdate ()Lkotlin/jvm/functions/Function3;
+	public final fun getCodec ()Lbr/com/wdc/framework/domain/codec/ModelCodec;
+	public final fun getDoc ()Lkotlin/jvm/functions/Function1;
+	public final fun getIdOf ()Lkotlin/jvm/functions/Function1;
+	public final fun getMaxLimit ()Ljava/lang/Integer;
+	public final fun getNewCriteria ()Lkotlin/jvm/functions/Function0;
+	public final fun getParseId ()Lkotlin/jvm/functions/Function1;
+	public final fun getPolicy ()Lbr/com/wdc/framework/rest/policy/DataPolicy;
+	public final fun getRepository ()Lkotlin/jvm/functions/Function0;
+	public final fun getRestrictToId ()Lkotlin/jvm/functions/Function2;
+	public final fun getRule ()Lkotlin/jvm/functions/Function1;
+	public final fun getSanitizeOutput ()Lkotlin/jvm/functions/Function1;
+	public final fun getSanitizeProjection ()Lkotlin/jvm/functions/Function1;
+	public final fun getScope ()Lkotlin/jvm/functions/Function3;
+	public final fun getSetProjection ()Lkotlin/jvm/functions/Function2;
+	public final fun getWriteId ()Lkotlin/jvm/functions/Function2;
+	public final fun getWrites ()Z
+	public final fun register (Lbr/com/wdc/framework/rest/RestApi$Routes;)V
+	public final fun setBeforeInsert (Lkotlin/jvm/functions/Function3;)V
+	public final fun setBeforeUpdate (Lkotlin/jvm/functions/Function3;)V
+	public final fun setDoc (Lkotlin/jvm/functions/Function1;)V
+	public final fun setMaxLimit (Ljava/lang/Integer;)V
+	public final fun setPolicy (Lbr/com/wdc/framework/rest/policy/DataPolicy;)V
+	public final fun setRule (Lkotlin/jvm/functions/Function1;)V
+	public final fun setSanitizeOutput (Lkotlin/jvm/functions/Function1;)V
+	public final fun setSanitizeProjection (Lkotlin/jvm/functions/Function1;)V
+	public final fun setScope (Lkotlin/jvm/functions/Function3;)V
+	public final fun setWriteId (Lkotlin/jvm/functions/Function2;)V
+	public final fun setWrites (Z)V
+}
+
+public final class br/com/wdc/framework/rest/rpc/RepositoryRpc$Companion {
+}
+
+public final class br/com/wdc/framework/rest/rpc/RepositoryRpc$Operation : java/lang/Enum {
+	public static final field COUNT Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+	public static final field DELETE Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+	public static final field FETCH Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+	public static final field FETCH_BY_ID Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+	public static final field FETCH_PAGE Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+	public static final field GET_BY_ID Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+	public static final field INSERT Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+	public static final field UPDATE Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getRoute ()Ljava/lang/String;
+	public final fun getWrite ()Z
+	public static fun valueOf (Ljava/lang/String;)Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+	public static fun values ()[Lbr/com/wdc/framework/rest/rpc/RepositoryRpc$Operation;
+}
+
+public abstract interface class br/com/wdc/framework/rest/security/AccessRule {
+	public abstract fun allows (Lbr/com/wdc/framework/rest/RequestContext;)Z
+	public fun and (Lbr/com/wdc/framework/rest/security/AccessRule;)Lbr/com/wdc/framework/rest/security/AccessRule;
+	public abstract fun getRequiresAuthentication ()Z
+	public fun or (Lbr/com/wdc/framework/rest/security/AccessRule;)Lbr/com/wdc/framework/rest/security/AccessRule;
+}
+
+public final class br/com/wdc/framework/rest/security/AccessRule$DefaultImpls {
+	public static fun and (Lbr/com/wdc/framework/rest/security/AccessRule;Lbr/com/wdc/framework/rest/security/AccessRule;)Lbr/com/wdc/framework/rest/security/AccessRule;
+	public static fun or (Lbr/com/wdc/framework/rest/security/AccessRule;Lbr/com/wdc/framework/rest/security/AccessRule;)Lbr/com/wdc/framework/rest/security/AccessRule;
+}
+
+public final class br/com/wdc/framework/rest/security/AccessRules {
+	public static final field INSTANCE Lbr/com/wdc/framework/rest/security/AccessRules;
+	public final fun getAuthenticated ()Lbr/com/wdc/framework/rest/security/AccessRule;
+	public final fun getDenyAll ()Lbr/com/wdc/framework/rest/security/AccessRule;
+	public final fun getPermitAll ()Lbr/com/wdc/framework/rest/security/AccessRule;
+	public final fun hasAnyRole ([Ljava/lang/String;)Lbr/com/wdc/framework/rest/security/AccessRule;
+	public final fun hasRole (Ljava/lang/String;)Lbr/com/wdc/framework/rest/security/AccessRule;
+	public final fun principal (Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/rest/security/AccessRule;
+	public final fun rule (ZLkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/rest/security/AccessRule;
+	public static synthetic fun rule$default (Lbr/com/wdc/framework/rest/security/AccessRules;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/security/AccessRule;
+}
+
+public class br/com/wdc/framework/rest/security/AuthenticationException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public class br/com/wdc/framework/rest/security/AuthenticationRequiredException : br/com/wdc/framework/rest/security/AuthenticationException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class br/com/wdc/framework/rest/security/Authenticator {
+	public abstract fun authenticate (Lbr/com/wdc/framework/rest/RequestContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/rest/security/BearerAuthenticator : br/com/wdc/framework/rest/security/Authenticator {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun authenticate (Lbr/com/wdc/framework/rest/RequestContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/rest/security/RateLimitOptions {
+	public fun <init> ()V
+	public final fun getClock ()Ljava/time/Clock;
+	public final fun getKey ()Lkotlin/jvm/functions/Function1;
+	public final fun getPerMinute ()Lkotlin/jvm/functions/Function1;
+	public final fun setClock (Ljava/time/Clock;)V
+	public final fun setKey (Lkotlin/jvm/functions/Function1;)V
+	public final fun setPerMinute (Lkotlin/jvm/functions/Function1;)V
+}
+
+public class br/com/wdc/framework/rest/security/RateLimitedException : java/lang/RuntimeException {
+	public fun <init> (JLjava/lang/String;)V
+	public synthetic fun <init> (JLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getRetryAfterSeconds ()J
+}
+
+public final class br/com/wdc/framework/rest/security/RequestMatcher {
+	public static final field Companion Lbr/com/wdc/framework/rest/security/RequestMatcher$Companion;
+	public final fun getMethod ()Ljava/lang/String;
+	public final fun getPattern ()Ljava/lang/String;
+	public final fun matches (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/security/RequestMatcher$Companion {
+	public final fun of (Ljava/lang/String;)Lbr/com/wdc/framework/rest/security/RequestMatcher;
+}
+
+public abstract interface class br/com/wdc/framework/rest/security/RestPrincipal {
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun getRoles ()Ljava/util/Set;
+	public fun hasAnyRole ([Ljava/lang/String;)Z
+	public fun hasRole (Ljava/lang/String;)Z
+}
+
+public final class br/com/wdc/framework/rest/security/RestPrincipal$DefaultImpls {
+	public static fun hasAnyRole (Lbr/com/wdc/framework/rest/security/RestPrincipal;[Ljava/lang/String;)Z
+	public static fun hasRole (Lbr/com/wdc/framework/rest/security/RestPrincipal;Ljava/lang/String;)Z
+}
+
+public final class br/com/wdc/framework/rest/security/RoleRules {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun hasAnyRole ([Ljava/lang/String;)Lbr/com/wdc/framework/rest/security/AccessRule;
+	public final fun hasRole (Ljava/lang/String;)Lbr/com/wdc/framework/rest/security/AccessRule;
+}
+
+public final class br/com/wdc/framework/rest/security/SecurityConfig {
+	public fun <init> ()V
+	public final fun getAuthenticator ()Lbr/com/wdc/framework/rest/security/Authenticator;
+	public final fun getDefaultRule ()Lbr/com/wdc/framework/rest/security/AccessRule;
+	public final fun getProtectUnmatched ()Z
+	public final fun getRejectInvalidCredentialsOnPublicRoutes ()Z
+	public final fun getUnauthenticatedStatus ()I
+	public final fun permitAll ([Ljava/lang/String;)V
+	public final fun rateLimit (Lkotlin/jvm/functions/Function1;)V
+	public final fun setAuthenticator (Lbr/com/wdc/framework/rest/security/Authenticator;)V
+	public final fun setDefaultRule (Lbr/com/wdc/framework/rest/security/AccessRule;)V
+	public final fun setProtectUnmatched (Z)V
+	public final fun setRejectInvalidCredentialsOnPublicRoutes (Z)V
+	public final fun setUnauthenticatedStatus (I)V
+}
+
+public final class br/com/wdc/framework/rest/security/SimplePrincipal : br/com/wdc/framework/rest/security/RestPrincipal {
+	public fun <init> (Ljava/lang/String;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Set;
+	public final fun copy (Ljava/lang/String;Ljava/util/Set;)Lbr/com/wdc/framework/rest/security/SimplePrincipal;
+	public static synthetic fun copy$default (Lbr/com/wdc/framework/rest/security/SimplePrincipal;Ljava/lang/String;Ljava/util/Set;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/security/SimplePrincipal;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId ()Ljava/lang/String;
+	public fun getRoles ()Ljava/util/Set;
+	public fun hasAnyRole ([Ljava/lang/String;)Z
+	public fun hasRole (Ljava/lang/String;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/testing/RestTestServer : java/lang/AutoCloseable {
+	public fun <init> (Lbr/com/wdc/framework/rest/RestApi;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lbr/com/wdc/framework/rest/RestApi;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun client ()Lbr/com/wdc/framework/rest/testing/TestClient;
+	public fun close ()V
+	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getPort ()I
+}
+
+public final class br/com/wdc/framework/rest/testing/TestClient {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun bearer (Ljava/lang/String;)Lbr/com/wdc/framework/rest/testing/TestClient;
+	public final fun delete (Ljava/lang/String;Ljava/util/Map;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public static synthetic fun delete$default (Lbr/com/wdc/framework/rest/testing/TestClient;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public final fun get (Ljava/lang/String;Ljava/util/Map;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public static synthetic fun get$default (Lbr/com/wdc/framework/rest/testing/TestClient;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public final fun header (Ljava/lang/String;Ljava/lang/String;)Lbr/com/wdc/framework/rest/testing/TestClient;
+	public final fun patch (Ljava/lang/String;Ljava/lang/String;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public static synthetic fun patch$default (Lbr/com/wdc/framework/rest/testing/TestClient;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public final fun post (Ljava/lang/String;Ljava/lang/String;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public static synthetic fun post$default (Lbr/com/wdc/framework/rest/testing/TestClient;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public final fun put (Ljava/lang/String;Ljava/lang/String;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public static synthetic fun put$default (Lbr/com/wdc/framework/rest/testing/TestClient;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public final fun send (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public static synthetic fun send$default (Lbr/com/wdc/framework/rest/testing/TestClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;ILjava/lang/Object;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public final fun sendBytes (Ljava/lang/String;Ljava/lang/String;[BLjava/util/Map;Ljava/util/Map;Z)Lbr/com/wdc/framework/rest/testing/TestResponse;
+	public static synthetic fun sendBytes$default (Lbr/com/wdc/framework/rest/testing/TestClient;Ljava/lang/String;Ljava/lang/String;[BLjava/util/Map;Ljava/util/Map;ZILjava/lang/Object;)Lbr/com/wdc/framework/rest/testing/TestResponse;
+}
+
+public final class br/com/wdc/framework/rest/testing/TestResponse {
+	public fun <init> (ILjava/util/Map;[B)V
+	public final fun getBody ()Ljava/lang/String;
+	public final fun getBytes ()[B
+	public final fun getContentType ()Ljava/lang/String;
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getStatus ()I
+	public final fun header (Ljava/lang/String;)Ljava/lang/String;
+	public final fun json ()Lcom/google/gson/JsonElement;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/rest/transaction/RemoteTransactionRoutes {
+	public static final field INSTANCE Lbr/com/wdc/framework/rest/transaction/RemoteTransactionRoutes;
+	public final fun register (Lbr/com/wdc/framework/rest/RestApi$Routes;Lbr/com/wdc/framework/rest/transaction/RestTransactions;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun register$default (Lbr/com/wdc/framework/rest/transaction/RemoteTransactionRoutes;Lbr/com/wdc/framework/rest/RestApi$Routes;Lbr/com/wdc/framework/rest/transaction/RestTransactions;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class br/com/wdc/framework/rest/transaction/RestTransactions {
+	public fun <init> ()V
+	public final fun getClientHeader ()Ljava/lang/String;
+	public final fun getCoordinator ()Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionCoordinator;
+	public final fun getCoordinatorSource ()Lkotlin/jvm/functions/Function0;
+	public final fun getOwnerKey ()Lkotlin/jvm/functions/Function1;
+	public final fun getQuotaKey ()Lkotlin/jvm/functions/Function1;
+	public final fun getRefuseWritesOutsideOpenTransaction ()Z
+	public final fun getService ()Lbr/com/wdc/framework/domain/transaction/TransactionService;
+	public final fun getServiceSource ()Lkotlin/jvm/functions/Function0;
+	public final fun getTxHeader ()Ljava/lang/String;
+	public final fun joinRemote (Lbr/com/wdc/framework/rest/RequestContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun run (Lbr/com/wdc/framework/rest/RequestContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setClientHeader (Ljava/lang/String;)V
+	public final fun setCoordinator (Lbr/com/wdc/framework/persistence/transaction/RemoteTransactionCoordinator;)V
+	public final fun setCoordinatorSource (Lkotlin/jvm/functions/Function0;)V
+	public final fun setOwnerKey (Lkotlin/jvm/functions/Function1;)V
+	public final fun setQuotaKey (Lkotlin/jvm/functions/Function1;)V
+	public final fun setRefuseWritesOutsideOpenTransaction (Z)V
+	public final fun setService (Lbr/com/wdc/framework/domain/transaction/TransactionService;)V
+	public final fun setServiceSource (Lkotlin/jvm/functions/Function0;)V
+	public final fun setTxHeader (Ljava/lang/String;)V
+}
+

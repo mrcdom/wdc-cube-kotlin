@@ -1,0 +1,190 @@
+public final class br/com/wdc/framework/jooq/CriterionTranslator {
+	public static final field INSTANCE Lbr/com/wdc/framework/jooq/CriterionTranslator;
+	public final fun and (Ljava/util/List;)Lorg/jooq/Condition;
+	public final fun anyOf (Ljava/util/List;Lkotlin/jvm/functions/Function1;)Lorg/jooq/Condition;
+	public final fun column (Lorg/jooq/Table;Lorg/jooq/TableField;)Lorg/jooq/Field;
+	public final fun translate (Lorg/jooq/Field;Lbr/com/wdc/framework/domain/criteria/Criterion;)Lorg/jooq/Condition;
+	public final fun translate (Lorg/jooq/Field;Lbr/com/wdc/framework/domain/criteria/Criterion;Lkotlin/jvm/functions/Function1;)Lorg/jooq/Condition;
+	public final fun translate (Lorg/jooq/Table;Lorg/jooq/TableField;Lbr/com/wdc/framework/domain/criteria/Criterion;)Lorg/jooq/Condition;
+	public final fun translate (Lorg/jooq/Table;Lorg/jooq/TableField;Lbr/com/wdc/framework/domain/criteria/Criterion;Lkotlin/jvm/functions/Function1;)Lorg/jooq/Condition;
+	public final fun translateAny (Ljava/util/List;Lbr/com/wdc/framework/domain/criteria/Criterion;)Lorg/jooq/Condition;
+}
+
+public final class br/com/wdc/framework/jooq/JsonChildQueryBuilder {
+	public final fun dsl ()Lorg/jooq/SelectJoinStep;
+	public final fun getChildTable ()Ljava/lang/Object;
+	public final fun getCriteria ()Ljava/lang/Object;
+	public final fun getCtx ()Lbr/com/wdc/framework/jooq/QueryContext;
+	public final fun getSuperTable ()Ljava/lang/Object;
+	public final fun uniqueName (Ljava/lang/String;)Ljava/lang/String;
+	public final fun where ()Lorg/jooq/SelectConditionStep;
+}
+
+public abstract interface class br/com/wdc/framework/jooq/JsonDialect {
+	public static final field Companion Lbr/com/wdc/framework/jooq/JsonDialect$Companion;
+	public fun initialize (Ljava/sql/Connection;)V
+	public fun insertAndSelect (Lorg/jooq/DSLContext;Lorg/jooq/InsertReturningStep;Lorg/jooq/Table;Ljava/lang/String;Lorg/jooq/Field;Ljava/util/Map;)Ljava/lang/String;
+	public abstract fun jsonArrayAgg (Lorg/jooq/Field;)Lorg/jooq/Field;
+	public fun jsonArrayAgg (Lorg/jooq/Field;Ljava/util/List;)Lorg/jooq/Field;
+	public abstract fun jsonObject (Ljava/util/List;)Lorg/jooq/Field;
+	public fun supportsOrderedAggregation ()Z
+}
+
+public final class br/com/wdc/framework/jooq/JsonDialect$Companion {
+	public final fun of (Lorg/jooq/SQLDialect;)Lbr/com/wdc/framework/jooq/JsonDialect;
+}
+
+public final class br/com/wdc/framework/jooq/JsonDialect$DefaultImpls {
+	public static fun initialize (Lbr/com/wdc/framework/jooq/JsonDialect;Ljava/sql/Connection;)V
+	public static fun insertAndSelect (Lbr/com/wdc/framework/jooq/JsonDialect;Lorg/jooq/DSLContext;Lorg/jooq/InsertReturningStep;Lorg/jooq/Table;Ljava/lang/String;Lorg/jooq/Field;Ljava/util/Map;)Ljava/lang/String;
+	public static fun jsonArrayAgg (Lbr/com/wdc/framework/jooq/JsonDialect;Lorg/jooq/Field;Ljava/util/List;)Lorg/jooq/Field;
+	public static fun supportsOrderedAggregation (Lbr/com/wdc/framework/jooq/JsonDialect;)Z
+}
+
+public final class br/com/wdc/framework/jooq/JsonFieldEntry {
+	public fun <init> (Ljava/lang/String;Lorg/jooq/Field;Lbr/com/wdc/framework/jooq/JsonFieldType;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lorg/jooq/Field;
+	public final fun component3 ()Lbr/com/wdc/framework/jooq/JsonFieldType;
+	public final fun copy (Ljava/lang/String;Lorg/jooq/Field;Lbr/com/wdc/framework/jooq/JsonFieldType;)Lbr/com/wdc/framework/jooq/JsonFieldEntry;
+	public static synthetic fun copy$default (Lbr/com/wdc/framework/jooq/JsonFieldEntry;Ljava/lang/String;Lorg/jooq/Field;Lbr/com/wdc/framework/jooq/JsonFieldType;ILjava/lang/Object;)Lbr/com/wdc/framework/jooq/JsonFieldEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getField ()Lorg/jooq/Field;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getType ()Lbr/com/wdc/framework/jooq/JsonFieldType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/jooq/JsonFieldType : java/lang/Enum {
+	public static final field BINARY Lbr/com/wdc/framework/jooq/JsonFieldType;
+	public static final field BOOLEAN Lbr/com/wdc/framework/jooq/JsonFieldType;
+	public static final field DATETIME Lbr/com/wdc/framework/jooq/JsonFieldType;
+	public static final field NUMBER Lbr/com/wdc/framework/jooq/JsonFieldType;
+	public static final field RAW_JSON Lbr/com/wdc/framework/jooq/JsonFieldType;
+	public static final field STRING Lbr/com/wdc/framework/jooq/JsonFieldType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lbr/com/wdc/framework/jooq/JsonFieldType;
+	public static fun values ()[Lbr/com/wdc/framework/jooq/JsonFieldType;
+}
+
+public abstract interface class br/com/wdc/framework/jooq/JsonQuery {
+	public abstract fun fetchOne (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public abstract fun fetchToList (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/util/List;
+	public abstract fun fields ()Ljava/util/List;
+	public abstract fun hasOrdering ()Z
+	public abstract fun insert (Ljava/lang/Object;Ljava/lang/Object;Z)Z
+	public static synthetic fun insert$default (Lbr/com/wdc/framework/jooq/JsonQuery;Ljava/lang/Object;Ljava/lang/Object;ZILjava/lang/Object;)Z
+	public abstract fun newBean ()Ljava/lang/Object;
+	public abstract fun newProjectionBean (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun newProjectionBean$default (Lbr/com/wdc/framework/jooq/JsonQuery;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun newTable (Ljava/lang/String;)Lorg/jooq/Table;
+	public abstract fun orderingOf (Lorg/jooq/Table;Ljava/lang/Object;)Ljava/util/List;
+	public abstract fun parseJson (Lcom/google/gson/stream/JsonReader;)Ljava/lang/Object;
+	public abstract fun parseJson (Ljava/lang/String;)Ljava/lang/Object;
+	public abstract fun projection (Lbr/com/wdc/framework/jooq/QueryContext;Lorg/jooq/Table;Ljava/lang/Object;)Lorg/jooq/Field;
+	public abstract fun projectsBeyond (Ljava/lang/Object;Ljava/util/Collection;)Z
+	public abstract fun select (Lbr/com/wdc/framework/jooq/QueryContext;Ljava/lang/Object;Lkotlin/jvm/functions/Function2;Z)Lorg/jooq/SelectQuery;
+	public abstract fun select (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Lorg/jooq/SelectQuery;
+	public abstract fun selectOrdered (Lbr/com/wdc/framework/jooq/QueryContext;Ljava/lang/Object;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Ljava/lang/Integer;Ljava/lang/Integer;)Lorg/jooq/SelectQuery;
+}
+
+public final class br/com/wdc/framework/jooq/JsonQuery$DefaultImpls {
+	public static synthetic fun insert$default (Lbr/com/wdc/framework/jooq/JsonQuery;Ljava/lang/Object;Ljava/lang/Object;ZILjava/lang/Object;)Z
+	public static synthetic fun newProjectionBean$default (Lbr/com/wdc/framework/jooq/JsonQuery;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/jooq/JsonQueryBuilder {
+	public fun <init> ()V
+	public final fun addBeanField (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lbr/com/wdc/framework/jooq/JsonQuery;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public static synthetic fun addBeanField$default (Lbr/com/wdc/framework/jooq/JsonQueryBuilder;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lbr/com/wdc/framework/jooq/JsonQuery;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addBeanListField (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lbr/com/wdc/framework/jooq/JsonQuery;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addBin (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addBit (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addDay (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addDec (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addEnm (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ljava/lang/Enum;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public static synthetic fun addEnm$default (Lbr/com/wdc/framework/jooq/JsonQueryBuilder;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ljava/lang/Enum;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addF64 (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addI32 (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addI64 (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addIlt (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addInstantFromLdt (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addInstantFromOdt (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addIzt (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addLdt (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addLocalDate (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addOdt (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addStr (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addUid (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun addUuid (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun build ()Lbr/com/wdc/framework/jooq/JsonQuery;
+	public final fun lazy (Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun setAlias (Ljava/lang/String;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun setBeanFactory (Lkotlin/jvm/functions/Function0;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun setDSLContextSupplier (Lkotlin/jvm/functions/Function0;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun setOrdering (Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+	public final fun setTableFactory (Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/JsonQueryBuilder;
+}
+
+public final class br/com/wdc/framework/jooq/JsonQueryField {
+	public final fun getColumn ()Lkotlin/jvm/functions/Function1;
+	public final fun getGet ()Lkotlin/jvm/functions/Function1;
+	public final fun getMark ()Lkotlin/jvm/functions/Function1;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getProjected ()Lkotlin/jvm/functions/Function1;
+	public final fun getSet ()Lkotlin/jvm/functions/Function2;
+	public final fun getToColumn ()Lkotlin/jvm/functions/Function1;
+	public final fun isColumnOf (Lorg/jooq/Table;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/jooq/QueryContext {
+	public fun <init> (Lorg/jooq/DSLContext;)V
+	public final fun alias (Ljava/lang/String;)Ljava/lang/String;
+	public final fun dsl ()Lorg/jooq/DSLContext;
+	public final fun nextUniqueInt ()I
+}
+
+public final class br/com/wdc/framework/jooq/RelationKey {
+	public final fun addBin (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addBit (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addDay (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addDec (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addEnm (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addF64 (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addI32 (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addI64 (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addLdt (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addOdt (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addStr (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+	public final fun addUid (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/jooq/RelationKey;
+}
+
+public final class br/com/wdc/framework/jooq/TransactionAwareConnectionProvider : org/jooq/ConnectionProvider {
+	public fun <init> (Ljavax/sql/DataSource;)V
+	public fun acquire ()Ljava/sql/Connection;
+	public fun release (Ljava/sql/Connection;)V
+}
+
+public final class br/com/wdc/framework/jooq/dialect/H2JsonDialect : br/com/wdc/framework/jooq/JsonDialect {
+	public static final field INSTANCE Lbr/com/wdc/framework/jooq/dialect/H2JsonDialect;
+	public fun initialize (Ljava/sql/Connection;)V
+	public fun insertAndSelect (Lorg/jooq/DSLContext;Lorg/jooq/InsertReturningStep;Lorg/jooq/Table;Ljava/lang/String;Lorg/jooq/Field;Ljava/util/Map;)Ljava/lang/String;
+	public fun jsonArrayAgg (Lorg/jooq/Field;)Lorg/jooq/Field;
+	public fun jsonArrayAgg (Lorg/jooq/Field;Ljava/util/List;)Lorg/jooq/Field;
+	public fun jsonObject (Ljava/util/List;)Lorg/jooq/Field;
+	public fun supportsOrderedAggregation ()Z
+	public static final fun toBase64 ([B)Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/jooq/dialect/PostgresJsonDialect : br/com/wdc/framework/jooq/JsonDialect {
+	public static final field INSTANCE Lbr/com/wdc/framework/jooq/dialect/PostgresJsonDialect;
+	public fun initialize (Ljava/sql/Connection;)V
+	public fun insertAndSelect (Lorg/jooq/DSLContext;Lorg/jooq/InsertReturningStep;Lorg/jooq/Table;Ljava/lang/String;Lorg/jooq/Field;Ljava/util/Map;)Ljava/lang/String;
+	public fun jsonArrayAgg (Lorg/jooq/Field;)Lorg/jooq/Field;
+	public fun jsonArrayAgg (Lorg/jooq/Field;Ljava/util/List;)Lorg/jooq/Field;
+	public fun jsonObject (Ljava/util/List;)Lorg/jooq/Field;
+	public fun supportsOrderedAggregation ()Z
+}
+

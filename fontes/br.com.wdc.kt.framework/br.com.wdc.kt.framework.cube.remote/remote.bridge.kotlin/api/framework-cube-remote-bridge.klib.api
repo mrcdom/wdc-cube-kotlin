@@ -1,0 +1,80 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.mrcdom.wdc.kt:framework-cube-remote-bridge>
+final class br.com.wdc.framework.cube.remote.bridge/DataSecurity { // br.com.wdc.framework.cube.remote.bridge/DataSecurity|null[0]
+    constructor <init>() // br.com.wdc.framework.cube.remote.bridge/DataSecurity.<init>|<init>(){}[0]
+
+    final suspend fun b64Cipher(kotlin/String): kotlin/String // br.com.wdc.framework.cube.remote.bridge/DataSecurity.b64Cipher|b64Cipher(kotlin.String){}[0]
+    final suspend fun b64Decipher(kotlin/String): kotlin/String // br.com.wdc.framework.cube.remote.bridge/DataSecurity.b64Decipher|b64Decipher(kotlin.String){}[0]
+    final suspend fun completeHandshake(kotlin/String, kotlin/String) // br.com.wdc.framework.cube.remote.bridge/DataSecurity.completeHandshake|completeHandshake(kotlin.String;kotlin.String){}[0]
+    final suspend fun startHandshake(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/DataSecurity.startHandshake|startHandshake(){}[0]
+
+    final object Companion { // br.com.wdc.framework.cube.remote.bridge/DataSecurity.Companion|null[0]
+        final const val INFO // br.com.wdc.framework.cube.remote.bridge/DataSecurity.Companion.INFO|{}INFO[0]
+            final fun <get-INFO>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/DataSecurity.Companion.INFO.<get-INFO>|<get-INFO>(){}[0]
+    }
+}
+
+final class br.com.wdc.framework.cube.remote.bridge/RemoteBridge { // br.com.wdc.framework.cube.remote.bridge/RemoteBridge|null[0]
+    constructor <init>() // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.<init>|<init>(){}[0]
+
+    final val dataSecurity // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.dataSecurity|{}dataSecurity[0]
+        final fun <get-dataSecurity>(): br.com.wdc.framework.cube.remote.bridge/DataSecurity // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.dataSecurity.<get-dataSecurity>|<get-dataSecurity>(){}[0]
+    final val id // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.id|{}id[0]
+        final fun <get-id>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.id.<get-id>|<get-id>(){}[0]
+
+    final var path // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.path|{}path[0]
+        final fun <get-path>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.path.<get-path>|<get-path>(){}[0]
+
+    final fun bindingOf(kotlin/String): br.com.wdc.framework.cube.remote.bridge/ViewBinding // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.bindingOf|bindingOf(kotlin.String){}[0]
+    final fun connect() // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.connect|connect(){}[0]
+    final fun hold(kotlin/String) // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.hold|hold(kotlin.String){}[0]
+    final fun mounted(kotlin/String) // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.mounted|mounted(kotlin.String){}[0]
+    final fun release(kotlin/String) // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.release|release(kotlin.String){}[0]
+    final fun scopeOf(kotlin/String): br.com.wdc.framework.cube.remote.bridge/RemoteScope // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.scopeOf|scopeOf(kotlin.String){}[0]
+    final fun setFormField(kotlin/String, kotlin/String, kotlin/Any?) // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.setFormField|setFormField(kotlin.String;kotlin.String;kotlin.Any?){}[0]
+    final fun start() // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.start|start(){}[0]
+    final fun stop() // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.stop|stop(){}[0]
+    final fun submit(kotlin/String, kotlin/Int) // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.submit|submit(kotlin.String;kotlin.Int){}[0]
+    final fun submitSilent(kotlin/String, kotlin/Int) // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.submitSilent|submitSilent(kotlin.String;kotlin.Int){}[0]
+    final fun unmounted(br.com.wdc.framework.cube.remote.bridge/ViewBinding) // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.unmounted|unmounted(br.com.wdc.framework.cube.remote.bridge.ViewBinding){}[0]
+    final suspend fun cipher(kotlin/String): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.cipher|cipher(kotlin.String){}[0]
+
+    final object Companion { // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion|null[0]
+        final const val BROWSER_VID // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.BROWSER_VID|{}BROWSER_VID[0]
+            final fun <get-BROWSER_VID>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.BROWSER_VID.<get-BROWSER_VID>|<get-BROWSER_VID>(){}[0]
+        final const val BROWSER_VSID // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.BROWSER_VSID|{}BROWSER_VSID[0]
+            final fun <get-BROWSER_VSID>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.BROWSER_VSID.<get-BROWSER_VSID>|<get-BROWSER_VSID>(){}[0]
+    }
+}
+
+final class br.com.wdc.framework.cube.remote.bridge/RemoteScope { // br.com.wdc.framework.cube.remote.bridge/RemoteScope|null[0]
+    final fun boolean(kotlin/String): kotlin/Boolean // br.com.wdc.framework.cube.remote.bridge/RemoteScope.boolean|boolean(kotlin.String){}[0]
+    final fun double(kotlin/String): kotlin/Double? // br.com.wdc.framework.cube.remote.bridge/RemoteScope.double|double(kotlin.String){}[0]
+    final fun get(kotlin/String): dynamic // br.com.wdc.framework.cube.remote.bridge/RemoteScope.get|get(kotlin.String){}[0]
+    final fun has(kotlin/String): kotlin/Boolean // br.com.wdc.framework.cube.remote.bridge/RemoteScope.has|has(kotlin.String){}[0]
+    final fun int(kotlin/String): kotlin/Int? // br.com.wdc.framework.cube.remote.bridge/RemoteScope.int|int(kotlin.String){}[0]
+    final fun long(kotlin/String): kotlin/Long? // br.com.wdc.framework.cube.remote.bridge/RemoteScope.long|long(kotlin.String){}[0]
+    final fun obj(kotlin/String): br.com.wdc.framework.cube.remote.bridge/RemoteScope? // br.com.wdc.framework.cube.remote.bridge/RemoteScope.obj|obj(kotlin.String){}[0]
+    final fun objects(kotlin/String): kotlin.collections/List<br.com.wdc.framework.cube.remote.bridge/RemoteScope> // br.com.wdc.framework.cube.remote.bridge/RemoteScope.objects|objects(kotlin.String){}[0]
+    final fun string(kotlin/String): kotlin/String? // br.com.wdc.framework.cube.remote.bridge/RemoteScope.string|string(kotlin.String){}[0]
+    final fun strings(kotlin/String): kotlin.collections/List<kotlin/String> // br.com.wdc.framework.cube.remote.bridge/RemoteScope.strings|strings(kotlin.String){}[0]
+    final fun viewId(kotlin/String): kotlin/String? // br.com.wdc.framework.cube.remote.bridge/RemoteScope.viewId|viewId(kotlin.String){}[0]
+    final fun viewIds(kotlin/String): kotlin.collections/List<kotlin/String> // br.com.wdc.framework.cube.remote.bridge/RemoteScope.viewIds|viewIds(kotlin.String){}[0]
+}
+
+final class br.com.wdc.framework.cube.remote.bridge/ViewBinding { // br.com.wdc.framework.cube.remote.bridge/ViewBinding|null[0]
+    final val scope // br.com.wdc.framework.cube.remote.bridge/ViewBinding.scope|{}scope[0]
+        final fun <get-scope>(): br.com.wdc.framework.cube.remote.bridge/RemoteScope // br.com.wdc.framework.cube.remote.bridge/ViewBinding.scope.<get-scope>|<get-scope>(){}[0]
+    final val vsid // br.com.wdc.framework.cube.remote.bridge/ViewBinding.vsid|{}vsid[0]
+        final fun <get-vsid>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/ViewBinding.vsid.<get-vsid>|<get-vsid>(){}[0]
+
+    final var onChange // br.com.wdc.framework.cube.remote.bridge/ViewBinding.onChange|{}onChange[0]
+        final fun <get-onChange>(): kotlin/Function0<kotlin/Unit> // br.com.wdc.framework.cube.remote.bridge/ViewBinding.onChange.<get-onChange>|<get-onChange>(){}[0]
+        final fun <set-onChange>(kotlin/Function0<kotlin/Unit>) // br.com.wdc.framework.cube.remote.bridge/ViewBinding.onChange.<set-onChange>|<set-onChange>(kotlin.Function0<kotlin.Unit>){}[0]
+}

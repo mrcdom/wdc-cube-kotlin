@@ -1,0 +1,467 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, js, wasmJs]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.mrcdom.wdc.kt:framework-domain>
+open annotation class br.com.wdc.framework.domain.doc/ApiDoc : kotlin/Annotation { // br.com.wdc.framework.domain.doc/ApiDoc|null[0]
+    constructor <init>(kotlin/String, kotlin/String = ...) // br.com.wdc.framework.domain.doc/ApiDoc.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val example // br.com.wdc.framework.domain.doc/ApiDoc.example|{}example[0]
+        final fun <get-example>(): kotlin/String // br.com.wdc.framework.domain.doc/ApiDoc.example.<get-example>|<get-example>(){}[0]
+    final val value // br.com.wdc.framework.domain.doc/ApiDoc.value|{}value[0]
+        final fun <get-value>(): kotlin/String // br.com.wdc.framework.domain.doc/ApiDoc.value.<get-value>|<get-value>(){}[0]
+}
+
+final enum class br.com.wdc.framework.domain.criteria/Operator : kotlin/Enum<br.com.wdc.framework.domain.criteria/Operator> { // br.com.wdc.framework.domain.criteria/Operator|null[0]
+    enum entry BETWEEN // br.com.wdc.framework.domain.criteria/Operator.BETWEEN|null[0]
+    enum entry EQ // br.com.wdc.framework.domain.criteria/Operator.EQ|null[0]
+    enum entry GE // br.com.wdc.framework.domain.criteria/Operator.GE|null[0]
+    enum entry GT // br.com.wdc.framework.domain.criteria/Operator.GT|null[0]
+    enum entry ILIKE // br.com.wdc.framework.domain.criteria/Operator.ILIKE|null[0]
+    enum entry IN // br.com.wdc.framework.domain.criteria/Operator.IN|null[0]
+    enum entry IS_NOT_NULL // br.com.wdc.framework.domain.criteria/Operator.IS_NOT_NULL|null[0]
+    enum entry IS_NULL // br.com.wdc.framework.domain.criteria/Operator.IS_NULL|null[0]
+    enum entry LE // br.com.wdc.framework.domain.criteria/Operator.LE|null[0]
+    enum entry LIKE // br.com.wdc.framework.domain.criteria/Operator.LIKE|null[0]
+    enum entry LT // br.com.wdc.framework.domain.criteria/Operator.LT|null[0]
+    enum entry NE // br.com.wdc.framework.domain.criteria/Operator.NE|null[0]
+
+    final val arity // br.com.wdc.framework.domain.criteria/Operator.arity|{}arity[0]
+        final fun <get-arity>(): kotlin/Int // br.com.wdc.framework.domain.criteria/Operator.arity.<get-arity>|<get-arity>(){}[0]
+    final val entries // br.com.wdc.framework.domain.criteria/Operator.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<br.com.wdc.framework.domain.criteria/Operator> // br.com.wdc.framework.domain.criteria/Operator.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun accepts(kotlin/Int): kotlin/Boolean // br.com.wdc.framework.domain.criteria/Operator.accepts|accepts(kotlin.Int){}[0]
+    final fun valueOf(kotlin/String): br.com.wdc.framework.domain.criteria/Operator // br.com.wdc.framework.domain.criteria/Operator.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<br.com.wdc.framework.domain.criteria/Operator> // br.com.wdc.framework.domain.criteria/Operator.values|values#static(){}[0]
+}
+
+abstract interface <#A: kotlin/Any?, #B: kotlin/Any?, #C: kotlin/Any?> br.com.wdc.framework.domain.repository/ReadOnlyRepository { // br.com.wdc.framework.domain.repository/ReadOnlyRepository|null[0]
+    abstract fun ownFieldsProjection(): #A // br.com.wdc.framework.domain.repository/ReadOnlyRepository.ownFieldsProjection|ownFieldsProjection(){}[0]
+    abstract suspend fun count(#B): kotlin/Int // br.com.wdc.framework.domain.repository/ReadOnlyRepository.count|count(1:1){}[0]
+    abstract suspend fun fetch(#B, kotlin/Int = ..., kotlin/Int = ...): kotlin.collections/List<#A> // br.com.wdc.framework.domain.repository/ReadOnlyRepository.fetch|fetch(1:1;kotlin.Int;kotlin.Int){}[0]
+    abstract suspend fun fetchById(#C, #A? = ...): #A? // br.com.wdc.framework.domain.repository/ReadOnlyRepository.fetchById|fetchById(1:2;1:0?){}[0]
+    open suspend fun fetchPage(#B, kotlin/Int, kotlin/Int): br.com.wdc.framework.domain.pagination/Page<#A> // br.com.wdc.framework.domain.repository/ReadOnlyRepository.fetchPage|fetchPage(1:1;kotlin.Int;kotlin.Int){}[0]
+}
+
+abstract interface <#A: kotlin/Any?, #B: kotlin/Any?, #C: kotlin/Any?> br.com.wdc.framework.domain.repository/Repository : br.com.wdc.framework.domain.repository/ReadOnlyRepository<#A, #B, #C> { // br.com.wdc.framework.domain.repository/Repository|null[0]
+    abstract suspend fun delete(#B): kotlin/Int // br.com.wdc.framework.domain.repository/Repository.delete|delete(1:1){}[0]
+    abstract suspend fun insert(#A, #A? = ...): kotlin/Boolean // br.com.wdc.framework.domain.repository/Repository.insert|insert(1:0;1:0?){}[0]
+    abstract suspend fun update(#A, #A? = ..., #A? = ...): kotlin/Boolean // br.com.wdc.framework.domain.repository/Repository.update|update(1:0;1:0?;1:0?){}[0]
+    open suspend fun insertOrUpdate(#A, #A?, #A? = ...): kotlin/Boolean // br.com.wdc.framework.domain.repository/Repository.insertOrUpdate|insertOrUpdate(1:0;1:0?;1:0?){}[0]
+}
+
+abstract interface <#A: kotlin/Any?, #B: kotlin/Any?> br.com.wdc.framework.domain.codec/ModelCodec { // br.com.wdc.framework.domain.codec/ModelCodec|null[0]
+    abstract fun computeProjection(#A, #A): #A // br.com.wdc.framework.domain.codec/ModelCodec.computeProjection|computeProjection(1:0;1:0){}[0]
+    abstract fun getProjection(#B): #A? // br.com.wdc.framework.domain.codec/ModelCodec.getProjection|getProjection(1:1){}[0]
+    abstract fun readCriteriaField(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/String, #B): kotlin/Boolean // br.com.wdc.framework.domain.codec/ModelCodec.readCriteriaField|readCriteriaField(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.String;1:1){}[0]
+    abstract fun readEntity(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput): #A // br.com.wdc.framework.domain.codec/ModelCodec.readEntity|readEntity(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput){}[0]
+    abstract fun readEntityForUpdate(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput): br.com.wdc.framework.domain.codec/ModelCodec.UpdateData<#A> // br.com.wdc.framework.domain.codec/ModelCodec.readEntityForUpdate|readEntityForUpdate(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput){}[0]
+    abstract fun setGeneratedId(#A, kotlin/Long) // br.com.wdc.framework.domain.codec/ModelCodec.setGeneratedId|setGeneratedId(1:0;kotlin.Long){}[0]
+    abstract fun writeCriteriaFields(br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, #B) // br.com.wdc.framework.domain.codec/ModelCodec.writeCriteriaFields|writeCriteriaFields(br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput;1:1){}[0]
+    abstract fun writeEntity(br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, #A, br.com.wdc.framework.domain.codec/EntityGraph) // br.com.wdc.framework.domain.codec/ModelCodec.writeEntity|writeEntity(br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput;1:0;br.com.wdc.framework.domain.codec.EntityGraph){}[0]
+    abstract fun writeEntityProjected(br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, #A, #A) // br.com.wdc.framework.domain.codec/ModelCodec.writeEntityProjected|writeEntityProjected(br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput;1:0;1:0){}[0]
+    open fun readEntityList(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput): kotlin.collections/List<#A> // br.com.wdc.framework.domain.codec/ModelCodec.readEntityList|readEntityList(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput){}[0]
+    open fun writeEntity(br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, #A) // br.com.wdc.framework.domain.codec/ModelCodec.writeEntity|writeEntity(br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput;1:0){}[0]
+
+    final class <#A1: kotlin/Any?> UpdateData { // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData|null[0]
+        constructor <init>(#A1, #A1) // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.<init>|<init>(1:0;1:0){}[0]
+
+        final val entity // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.entity|{}entity[0]
+            final fun <get-entity>(): #A1 // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.entity.<get-entity>|<get-entity>(){}[0]
+        final val projection // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.projection|{}projection[0]
+            final fun <get-projection>(): #A1 // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.projection.<get-projection>|<get-projection>(){}[0]
+
+        final fun component1(): #A1 // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.component1|component1(){}[0]
+        final fun component2(): #A1 // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.component2|component2(){}[0]
+        final fun copy(#A1 = ..., #A1 = ...): br.com.wdc.framework.domain.codec/ModelCodec.UpdateData<#A1> // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.copy|copy(1:0;1:0){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // br.com.wdc.framework.domain.codec/ModelCodec.UpdateData.toString|toString(){}[0]
+    }
+}
+
+abstract interface br.com.wdc.framework.domain.codec/KeyedEntity { // br.com.wdc.framework.domain.codec/KeyedEntity|null[0]
+    abstract fun key(): kotlin/Any? // br.com.wdc.framework.domain.codec/KeyedEntity.key|key(){}[0]
+}
+
+abstract interface br.com.wdc.framework.domain.criteria/Criteria { // br.com.wdc.framework.domain.criteria/Criteria|null[0]
+    open val anyOf // br.com.wdc.framework.domain.criteria/Criteria.anyOf|{}anyOf[0]
+        open fun <get-anyOf>(): kotlin.collections/List<br.com.wdc.framework.domain.criteria/Criteria> // br.com.wdc.framework.domain.criteria/Criteria.anyOf.<get-anyOf>|<get-anyOf>(){}[0]
+
+    abstract fun criterions(): kotlin.collections/List<br.com.wdc.framework.domain.criteria/Criterion<*, *>> // br.com.wdc.framework.domain.criteria/Criteria.criterions|criterions(){}[0]
+}
+
+abstract interface br.com.wdc.framework.domain.projection/HasCriteria { // br.com.wdc.framework.domain.projection/HasCriteria|null[0]
+    abstract val criteria // br.com.wdc.framework.domain.projection/HasCriteria.criteria|{}criteria[0]
+        abstract fun <get-criteria>(): kotlin/Any? // br.com.wdc.framework.domain.projection/HasCriteria.criteria.<get-criteria>|<get-criteria>(){}[0]
+}
+
+abstract interface br.com.wdc.framework.domain.projection/HasSlice { // br.com.wdc.framework.domain.projection/HasSlice|null[0]
+    abstract val limit // br.com.wdc.framework.domain.projection/HasSlice.limit|{}limit[0]
+        abstract fun <get-limit>(): kotlin/Int? // br.com.wdc.framework.domain.projection/HasSlice.limit.<get-limit>|<get-limit>(){}[0]
+    abstract val offset // br.com.wdc.framework.domain.projection/HasSlice.offset|{}offset[0]
+        abstract fun <get-offset>(): kotlin/Int? // br.com.wdc.framework.domain.projection/HasSlice.offset.<get-offset>|<get-offset>(){}[0]
+}
+
+abstract interface br.com.wdc.framework.domain.transaction/TransactionContext { // br.com.wdc.framework.domain.transaction/TransactionContext|null[0]
+    abstract fun isActive(): kotlin/Boolean // br.com.wdc.framework.domain.transaction/TransactionContext.isActive|isActive(){}[0]
+    abstract fun isRollbackOnly(): kotlin/Boolean // br.com.wdc.framework.domain.transaction/TransactionContext.isRollbackOnly|isRollbackOnly(){}[0]
+    abstract fun setRollbackOnly() // br.com.wdc.framework.domain.transaction/TransactionContext.setRollbackOnly|setRollbackOnly(){}[0]
+}
+
+abstract interface br.com.wdc.framework.domain.transaction/TransactionService { // br.com.wdc.framework.domain.transaction/TransactionService|null[0]
+    abstract suspend fun <#A1: kotlin/Any?> mandatory(kotlin.coroutines/SuspendFunction1<br.com.wdc.framework.domain.transaction/TransactionContext, #A1>): #A1 // br.com.wdc.framework.domain.transaction/TransactionService.mandatory|mandatory(kotlin.coroutines.SuspendFunction1<br.com.wdc.framework.domain.transaction.TransactionContext,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun <#A1: kotlin/Any?> never(kotlin.coroutines/SuspendFunction1<br.com.wdc.framework.domain.transaction/TransactionContext, #A1>): #A1 // br.com.wdc.framework.domain.transaction/TransactionService.never|never(kotlin.coroutines.SuspendFunction1<br.com.wdc.framework.domain.transaction.TransactionContext,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun <#A1: kotlin/Any?> notSupported(kotlin.coroutines/SuspendFunction1<br.com.wdc.framework.domain.transaction/TransactionContext, #A1>): #A1 // br.com.wdc.framework.domain.transaction/TransactionService.notSupported|notSupported(kotlin.coroutines.SuspendFunction1<br.com.wdc.framework.domain.transaction.TransactionContext,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun <#A1: kotlin/Any?> required(kotlin.coroutines/SuspendFunction1<br.com.wdc.framework.domain.transaction/TransactionContext, #A1>): #A1 // br.com.wdc.framework.domain.transaction/TransactionService.required|required(kotlin.coroutines.SuspendFunction1<br.com.wdc.framework.domain.transaction.TransactionContext,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun <#A1: kotlin/Any?> requiresNew(kotlin.coroutines/SuspendFunction1<br.com.wdc.framework.domain.transaction/TransactionContext, #A1>): #A1 // br.com.wdc.framework.domain.transaction/TransactionService.requiresNew|requiresNew(kotlin.coroutines.SuspendFunction1<br.com.wdc.framework.domain.transaction.TransactionContext,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun <#A1: kotlin/Any?> supports(kotlin.coroutines/SuspendFunction1<br.com.wdc.framework.domain.transaction/TransactionContext, #A1>): #A1 // br.com.wdc.framework.domain.transaction/TransactionService.supports|supports(kotlin.coroutines.SuspendFunction1<br.com.wdc.framework.domain.transaction.TransactionContext,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun afterCommit(kotlin.coroutines/SuspendFunction0<kotlin/Unit>) // br.com.wdc.framework.domain.transaction/TransactionService.afterCommit|afterCommit(kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
+}
+
+abstract class <#A: kotlin/Any?> br.com.wdc.framework.domain.resource/ResourceCall { // br.com.wdc.framework.domain.resource/ResourceCall|null[0]
+    constructor <init>() // br.com.wdc.framework.domain.resource/ResourceCall.<init>|<init>(){}[0]
+
+    abstract suspend fun run(): #A // br.com.wdc.framework.domain.resource/ResourceCall.run|run(){}[0]
+}
+
+abstract class <#A: kotlin/Any?> br.com.wdc.framework.domain.resource/ResourceCreate : br.com.wdc.framework.domain.resource/ResourceWrite<#A> { // br.com.wdc.framework.domain.resource/ResourceCreate|null[0]
+    constructor <init>(kotlin/Function0<br.com.wdc.framework.domain.transaction/TransactionService?>) // br.com.wdc.framework.domain.resource/ResourceCreate.<init>|<init>(kotlin.Function0<br.com.wdc.framework.domain.transaction.TransactionService?>){}[0]
+
+    abstract suspend fun create(): #A // br.com.wdc.framework.domain.resource/ResourceCreate.create|create(){}[0]
+}
+
+abstract class <#A: kotlin/Any?> br.com.wdc.framework.domain.resource/ResourceDelete : br.com.wdc.framework.domain.resource/ResourceWrite<#A> { // br.com.wdc.framework.domain.resource/ResourceDelete|null[0]
+    constructor <init>(kotlin/Function0<br.com.wdc.framework.domain.transaction/TransactionService?>) // br.com.wdc.framework.domain.resource/ResourceDelete.<init>|<init>(kotlin.Function0<br.com.wdc.framework.domain.transaction.TransactionService?>){}[0]
+
+    abstract suspend fun delete(): #A // br.com.wdc.framework.domain.resource/ResourceDelete.delete|delete(){}[0]
+}
+
+abstract class <#A: kotlin/Any?> br.com.wdc.framework.domain.resource/ResourceQuery : br.com.wdc.framework.domain.resource/ResourceCall<#A> { // br.com.wdc.framework.domain.resource/ResourceQuery|null[0]
+    constructor <init>() // br.com.wdc.framework.domain.resource/ResourceQuery.<init>|<init>(){}[0]
+}
+
+abstract class <#A: kotlin/Any?> br.com.wdc.framework.domain.resource/ResourceSave : br.com.wdc.framework.domain.resource/ResourceWrite<#A> { // br.com.wdc.framework.domain.resource/ResourceSave|null[0]
+    constructor <init>(kotlin/Function0<br.com.wdc.framework.domain.transaction/TransactionService?>) // br.com.wdc.framework.domain.resource/ResourceSave.<init>|<init>(kotlin.Function0<br.com.wdc.framework.domain.transaction.TransactionService?>){}[0]
+
+    abstract suspend fun save(): #A // br.com.wdc.framework.domain.resource/ResourceSave.save|save(){}[0]
+}
+
+abstract class <#A: kotlin/Any?> br.com.wdc.framework.domain.resource/ResourceUpdate : br.com.wdc.framework.domain.resource/ResourceWrite<#A> { // br.com.wdc.framework.domain.resource/ResourceUpdate|null[0]
+    constructor <init>(kotlin/Function0<br.com.wdc.framework.domain.transaction/TransactionService?>) // br.com.wdc.framework.domain.resource/ResourceUpdate.<init>|<init>(kotlin.Function0<br.com.wdc.framework.domain.transaction.TransactionService?>){}[0]
+
+    abstract suspend fun update(): #A // br.com.wdc.framework.domain.resource/ResourceUpdate.update|update(){}[0]
+}
+
+abstract class <#A: kotlin/Any?> br.com.wdc.framework.domain.resource/ResourceWrite : br.com.wdc.framework.domain.resource/ResourceCall<#A> { // br.com.wdc.framework.domain.resource/ResourceWrite|null[0]
+    final suspend fun run(): #A // br.com.wdc.framework.domain.resource/ResourceWrite.run|run(){}[0]
+}
+
+final class <#A: kotlin/Any?> br.com.wdc.framework.domain.criteria/TextCriterion : br.com.wdc.framework.domain.criteria/ComparableCriterion<#A, kotlin/String> { // br.com.wdc.framework.domain.criteria/TextCriterion|null[0]
+    constructor <init>(#A?, kotlin/String) // br.com.wdc.framework.domain.criteria/TextCriterion.<init>|<init>(1:0?;kotlin.String){}[0]
+
+    final fun and(): br.com.wdc.framework.domain.criteria/TextCriterion<#A> // br.com.wdc.framework.domain.criteria/TextCriterion.and|and(){}[0]
+    final fun containing(kotlin/String?): #A // br.com.wdc.framework.domain.criteria/TextCriterion.containing|containing(kotlin.String?){}[0]
+    final fun ilike(kotlin/String?): #A // br.com.wdc.framework.domain.criteria/TextCriterion.ilike|ilike(kotlin.String?){}[0]
+    final fun like(kotlin/String?): #A // br.com.wdc.framework.domain.criteria/TextCriterion.like|like(kotlin.String?){}[0]
+    final fun or(): br.com.wdc.framework.domain.criteria/TextCriterion<#A> // br.com.wdc.framework.domain.criteria/TextCriterion.or|or(){}[0]
+    final fun startingWith(kotlin/String?): #A // br.com.wdc.framework.domain.criteria/TextCriterion.startingWith|startingWith(kotlin.String?){}[0]
+
+    final object Companion { // br.com.wdc.framework.domain.criteria/TextCriterion.Companion|null[0]
+        final const val ESCAPE // br.com.wdc.framework.domain.criteria/TextCriterion.Companion.ESCAPE|{}ESCAPE[0]
+            final fun <get-ESCAPE>(): kotlin/Char // br.com.wdc.framework.domain.criteria/TextCriterion.Companion.ESCAPE.<get-ESCAPE>|<get-ESCAPE>(){}[0]
+
+        final fun escape(kotlin/String): kotlin/String // br.com.wdc.framework.domain.criteria/TextCriterion.Companion.escape|escape(kotlin.String){}[0]
+    }
+}
+
+final class <#A: kotlin/Any?> br.com.wdc.framework.domain.pagination/Page { // br.com.wdc.framework.domain.pagination/Page|null[0]
+    constructor <init>(kotlin.collections/List<#A>, kotlin/Int, kotlin/Int, kotlin/Int) // br.com.wdc.framework.domain.pagination/Page.<init>|<init>(kotlin.collections.List<1:0>;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val items // br.com.wdc.framework.domain.pagination/Page.items|{}items[0]
+        final fun <get-items>(): kotlin.collections/List<#A> // br.com.wdc.framework.domain.pagination/Page.items.<get-items>|<get-items>(){}[0]
+    final val page // br.com.wdc.framework.domain.pagination/Page.page|{}page[0]
+        final fun <get-page>(): kotlin/Int // br.com.wdc.framework.domain.pagination/Page.page.<get-page>|<get-page>(){}[0]
+    final val totalItems // br.com.wdc.framework.domain.pagination/Page.totalItems|{}totalItems[0]
+        final fun <get-totalItems>(): kotlin/Int // br.com.wdc.framework.domain.pagination/Page.totalItems.<get-totalItems>|<get-totalItems>(){}[0]
+    final val totalPages // br.com.wdc.framework.domain.pagination/Page.totalPages|{}totalPages[0]
+        final fun <get-totalPages>(): kotlin/Int // br.com.wdc.framework.domain.pagination/Page.totalPages.<get-totalPages>|<get-totalPages>(){}[0]
+
+    final fun component1(): kotlin.collections/List<#A> // br.com.wdc.framework.domain.pagination/Page.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // br.com.wdc.framework.domain.pagination/Page.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // br.com.wdc.framework.domain.pagination/Page.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // br.com.wdc.framework.domain.pagination/Page.component4|component4(){}[0]
+    final fun copy(kotlin.collections/List<#A> = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): br.com.wdc.framework.domain.pagination/Page<#A> // br.com.wdc.framework.domain.pagination/Page.copy|copy(kotlin.collections.List<1:0>;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // br.com.wdc.framework.domain.pagination/Page.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // br.com.wdc.framework.domain.pagination/Page.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // br.com.wdc.framework.domain.pagination/Page.toString|toString(){}[0]
+
+    final object Companion { // br.com.wdc.framework.domain.pagination/Page.Companion|null[0]
+        final fun <#A2: kotlin/Any?> of(kotlin.collections/List<#A2>, kotlin/Int, kotlin/Int, kotlin/Int): br.com.wdc.framework.domain.pagination/Page<#A2> // br.com.wdc.framework.domain.pagination/Page.Companion.of|of(kotlin.collections.List<0:0>;kotlin.Int;kotlin.Int;kotlin.Int){0§<kotlin.Any?>}[0]
+    }
+}
+
+final class <#A: kotlin/Any?> br.com.wdc.framework.domain.projection/ProjectionList : br.com.wdc.framework.domain.projection/HasCriteria, br.com.wdc.framework.domain.projection/HasSlice, kotlin.collections/MutableList<#A> { // br.com.wdc.framework.domain.projection/ProjectionList|null[0]
+    constructor <init>(#A, kotlin/Any?, kotlin/Int? = ..., kotlin/Int? = ...) // br.com.wdc.framework.domain.projection/ProjectionList.<init>|<init>(1:0;kotlin.Any?;kotlin.Int?;kotlin.Int?){}[0]
+
+    final val criteria // br.com.wdc.framework.domain.projection/ProjectionList.criteria|{}criteria[0]
+        final fun <get-criteria>(): kotlin/Any? // br.com.wdc.framework.domain.projection/ProjectionList.criteria.<get-criteria>|<get-criteria>(){}[0]
+    final val limit // br.com.wdc.framework.domain.projection/ProjectionList.limit|{}limit[0]
+        final fun <get-limit>(): kotlin/Int? // br.com.wdc.framework.domain.projection/ProjectionList.limit.<get-limit>|<get-limit>(){}[0]
+    final val offset // br.com.wdc.framework.domain.projection/ProjectionList.offset|{}offset[0]
+        final fun <get-offset>(): kotlin/Int? // br.com.wdc.framework.domain.projection/ProjectionList.offset.<get-offset>|<get-offset>(){}[0]
+    final val size // br.com.wdc.framework.domain.projection/ProjectionList.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // br.com.wdc.framework.domain.projection/ProjectionList.size.<get-size>|<get-size>(){}[0]
+
+    final fun add(#A): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.add|add(1:0){}[0]
+    final fun add(kotlin/Int, #A) // br.com.wdc.framework.domain.projection/ProjectionList.add|add(kotlin.Int;1:0){}[0]
+    final fun addAll(kotlin.collections/Collection<#A>): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.addAll|addAll(kotlin.collections.Collection<1:0>){}[0]
+    final fun addAll(kotlin/Int, kotlin.collections/Collection<#A>): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.addAll|addAll(kotlin.Int;kotlin.collections.Collection<1:0>){}[0]
+    final fun clear() // br.com.wdc.framework.domain.projection/ProjectionList.clear|clear(){}[0]
+    final fun contains(#A): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.contains|contains(1:0){}[0]
+    final fun containsAll(kotlin.collections/Collection<#A>): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.containsAll|containsAll(kotlin.collections.Collection<1:0>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.equals|equals(kotlin.Any?){}[0]
+    final fun get(kotlin/Int): #A // br.com.wdc.framework.domain.projection/ProjectionList.get|get(kotlin.Int){}[0]
+    final fun hashCode(): kotlin/Int // br.com.wdc.framework.domain.projection/ProjectionList.hashCode|hashCode(){}[0]
+    final fun indexOf(#A): kotlin/Int // br.com.wdc.framework.domain.projection/ProjectionList.indexOf|indexOf(1:0){}[0]
+    final fun isEmpty(): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.isEmpty|isEmpty(){}[0]
+    final fun iterator(): kotlin.collections/MutableIterator<#A> // br.com.wdc.framework.domain.projection/ProjectionList.iterator|iterator(){}[0]
+    final fun lastIndexOf(#A): kotlin/Int // br.com.wdc.framework.domain.projection/ProjectionList.lastIndexOf|lastIndexOf(1:0){}[0]
+    final fun listIterator(): kotlin.collections/MutableListIterator<#A> // br.com.wdc.framework.domain.projection/ProjectionList.listIterator|listIterator(){}[0]
+    final fun listIterator(kotlin/Int): kotlin.collections/MutableListIterator<#A> // br.com.wdc.framework.domain.projection/ProjectionList.listIterator|listIterator(kotlin.Int){}[0]
+    final fun remove(#A): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.remove|remove(1:0){}[0]
+    final fun removeAll(kotlin.collections/Collection<#A>): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.removeAll|removeAll(kotlin.collections.Collection<1:0>){}[0]
+    final fun removeAt(kotlin/Int): #A // br.com.wdc.framework.domain.projection/ProjectionList.removeAt|removeAt(kotlin.Int){}[0]
+    final fun retainAll(kotlin.collections/Collection<#A>): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionList.retainAll|retainAll(kotlin.collections.Collection<1:0>){}[0]
+    final fun set(kotlin/Int, #A): #A // br.com.wdc.framework.domain.projection/ProjectionList.set|set(kotlin.Int;1:0){}[0]
+    final fun subList(kotlin/Int, kotlin/Int): kotlin.collections/MutableList<#A> // br.com.wdc.framework.domain.projection/ProjectionList.subList|subList(kotlin.Int;kotlin.Int){}[0]
+    final fun toString(): kotlin/String // br.com.wdc.framework.domain.projection/ProjectionList.toString|toString(){}[0]
+    final fun withLimit(kotlin/Int?): br.com.wdc.framework.domain.projection/ProjectionList<#A> // br.com.wdc.framework.domain.projection/ProjectionList.withLimit|withLimit(kotlin.Int?){}[0]
+    final fun withOffset(kotlin/Int?): br.com.wdc.framework.domain.projection/ProjectionList<#A> // br.com.wdc.framework.domain.projection/ProjectionList.withOffset|withOffset(kotlin.Int?){}[0]
+
+    // Targets: [js]
+    final fun asJsArrayView(): kotlin.js.collections/JsArray<#A> // br.com.wdc.framework.domain.projection/ProjectionList.asJsArrayView|asJsArrayView(){}[0]
+
+    // Targets: [js]
+    final fun asJsReadonlyArrayView(): kotlin.js.collections/JsReadonlyArray<#A> // br.com.wdc.framework.domain.projection/ProjectionList.asJsReadonlyArrayView|asJsReadonlyArrayView(){}[0]
+}
+
+final class br.com.wdc.framework.domain.codec/EntityGraph { // br.com.wdc.framework.domain.codec/EntityGraph|null[0]
+    constructor <init>() // br.com.wdc.framework.domain.codec/EntityGraph.<init>|<init>(){}[0]
+
+    final fun isSeen(br.com.wdc.framework.domain.codec/KeyedEntity?): kotlin/Boolean // br.com.wdc.framework.domain.codec/EntityGraph.isSeen|isSeen(br.com.wdc.framework.domain.codec.KeyedEntity?){}[0]
+    final fun track(br.com.wdc.framework.domain.codec/KeyedEntity?): kotlin/Boolean // br.com.wdc.framework.domain.codec/EntityGraph.track|track(br.com.wdc.framework.domain.codec.KeyedEntity?){}[0]
+}
+
+final class br.com.wdc.framework.domain.transaction/AfterCommitTasks { // br.com.wdc.framework.domain.transaction/AfterCommitTasks|null[0]
+    constructor <init>() // br.com.wdc.framework.domain.transaction/AfterCommitTasks.<init>|<init>(){}[0]
+
+    final fun add(kotlin.coroutines/SuspendFunction0<kotlin/Unit>) // br.com.wdc.framework.domain.transaction/AfterCommitTasks.add|add(kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
+    final fun drain(): kotlin.collections/List<kotlin.coroutines/SuspendFunction0<kotlin/Unit>> // br.com.wdc.framework.domain.transaction/AfterCommitTasks.drain|drain(){}[0]
+    final suspend fun run() // br.com.wdc.framework.domain.transaction/AfterCommitTasks.run|run(){}[0]
+
+    final object Companion { // br.com.wdc.framework.domain.transaction/AfterCommitTasks.Companion|null[0]
+        final suspend fun runAll(kotlin.collections/List<kotlin.coroutines/SuspendFunction0<kotlin/Unit>>) // br.com.wdc.framework.domain.transaction/AfterCommitTasks.Companion.runAll|runAll(kotlin.collections.List<kotlin.coroutines.SuspendFunction0<kotlin.Unit>>){}[0]
+    }
+}
+
+final class br.com.wdc.framework.domain.transaction/RemoteTransactionNotFoundException : br.com.wdc.framework.domain.transaction/TransactionException { // br.com.wdc.framework.domain.transaction/RemoteTransactionNotFoundException|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.domain.transaction/RemoteTransactionNotFoundException.<init>|<init>(kotlin.String){}[0]
+}
+
+final class br.com.wdc.framework.domain.transaction/TransactionNotAllowedException : br.com.wdc.framework.domain.transaction/TransactionException { // br.com.wdc.framework.domain.transaction/TransactionNotAllowedException|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.domain.transaction/TransactionNotAllowedException.<init>|<init>(kotlin.String){}[0]
+}
+
+final class br.com.wdc.framework.domain.transaction/TransactionRequiredException : br.com.wdc.framework.domain.transaction/TransactionException { // br.com.wdc.framework.domain.transaction/TransactionRequiredException|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.domain.transaction/TransactionRequiredException.<init>|<init>(kotlin.String){}[0]
+}
+
+final class br.com.wdc.framework.domain.transaction/TransactionSystemException : br.com.wdc.framework.domain.transaction/TransactionException { // br.com.wdc.framework.domain.transaction/TransactionSystemException|null[0]
+    constructor <init>(kotlin/String, kotlin/Throwable? = ...) // br.com.wdc.framework.domain.transaction/TransactionSystemException.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
+}
+
+open class <#A: kotlin/Any?, #B: kotlin/Any> br.com.wdc.framework.domain.criteria/ComparableCriterion : br.com.wdc.framework.domain.criteria/Criterion<#A, #B> { // br.com.wdc.framework.domain.criteria/ComparableCriterion|null[0]
+    constructor <init>(#A?, kotlin/String) // br.com.wdc.framework.domain.criteria/ComparableCriterion.<init>|<init>(1:0?;kotlin.String){}[0]
+
+    final fun between(#B?, #B?): #A // br.com.wdc.framework.domain.criteria/ComparableCriterion.between|between(1:1?;1:1?){}[0]
+    final fun ge(#B?): #A // br.com.wdc.framework.domain.criteria/ComparableCriterion.ge|ge(1:1?){}[0]
+    final fun gt(#B?): #A // br.com.wdc.framework.domain.criteria/ComparableCriterion.gt|gt(1:1?){}[0]
+    final fun le(#B?): #A // br.com.wdc.framework.domain.criteria/ComparableCriterion.le|le(1:1?){}[0]
+    final fun lt(#B?): #A // br.com.wdc.framework.domain.criteria/ComparableCriterion.lt|lt(1:1?){}[0]
+    open fun and(): br.com.wdc.framework.domain.criteria/ComparableCriterion<#A, #B> // br.com.wdc.framework.domain.criteria/ComparableCriterion.and|and(){}[0]
+    open fun or(): br.com.wdc.framework.domain.criteria/ComparableCriterion<#A, #B> // br.com.wdc.framework.domain.criteria/ComparableCriterion.or|or(){}[0]
+}
+
+open class <#A: kotlin/Any?, #B: kotlin/Any> br.com.wdc.framework.domain.criteria/Criterion { // br.com.wdc.framework.domain.criteria/Criterion|null[0]
+    constructor <init>(#A?, kotlin/String) // br.com.wdc.framework.domain.criteria/Criterion.<init>|<init>(1:0?;kotlin.String){}[0]
+
+    final val name // br.com.wdc.framework.domain.criteria/Criterion.name|{}name[0]
+        final fun <get-name>(): kotlin/String // br.com.wdc.framework.domain.criteria/Criterion.name.<get-name>|<get-name>(){}[0]
+    final val predicates // br.com.wdc.framework.domain.criteria/Criterion.predicates|{}predicates[0]
+        final fun <get-predicates>(): kotlin.collections/List<br.com.wdc.framework.domain.criteria/Criterion.Predicate<#B>> // br.com.wdc.framework.domain.criteria/Criterion.predicates.<get-predicates>|<get-predicates>(){}[0]
+
+    final var disjunctive // br.com.wdc.framework.domain.criteria/Criterion.disjunctive|{}disjunctive[0]
+        final fun <get-disjunctive>(): kotlin/Boolean // br.com.wdc.framework.domain.criteria/Criterion.disjunctive.<get-disjunctive>|<get-disjunctive>(){}[0]
+
+    final fun add(br.com.wdc.framework.domain.criteria/Operator, kotlin/Array<out #B?>...): #A // br.com.wdc.framework.domain.criteria/Criterion.add|add(br.com.wdc.framework.domain.criteria.Operator;kotlin.Array<out|1:1?>...){}[0]
+    final fun clear(): #A // br.com.wdc.framework.domain.criteria/Criterion.clear|clear(){}[0]
+    final fun detached(): kotlin/Boolean // br.com.wdc.framework.domain.criteria/Criterion.detached|detached(){}[0]
+    final fun eq(#B?): #A // br.com.wdc.framework.domain.criteria/Criterion.eq|eq(1:1?){}[0]
+    final fun isIn(kotlin.collections/Collection<#B>?): #A // br.com.wdc.framework.domain.criteria/Criterion.isIn|isIn(kotlin.collections.Collection<1:1>?){}[0]
+    final fun isIn(kotlin/Array<out #B>...): #A // br.com.wdc.framework.domain.criteria/Criterion.isIn|isIn(kotlin.Array<out|1:1>...){}[0]
+    final fun isNotNull(): #A // br.com.wdc.framework.domain.criteria/Criterion.isNotNull|isNotNull(){}[0]
+    final fun isNull(): #A // br.com.wdc.framework.domain.criteria/Criterion.isNull|isNull(){}[0]
+    final fun isSet(): kotlin/Boolean // br.com.wdc.framework.domain.criteria/Criterion.isSet|isSet(){}[0]
+    final fun ne(#B?): #A // br.com.wdc.framework.domain.criteria/Criterion.ne|ne(1:1?){}[0]
+    final fun owner(): #A // br.com.wdc.framework.domain.criteria/Criterion.owner|owner(){}[0]
+    final fun rebind(#A) // br.com.wdc.framework.domain.criteria/Criterion.rebind|rebind(1:0){}[0]
+    final fun restore(br.com.wdc.framework.domain.criteria/Operator, kotlin.collections/List<#B?>?) // br.com.wdc.framework.domain.criteria/Criterion.restore|restore(br.com.wdc.framework.domain.criteria.Operator;kotlin.collections.List<1:1?>?){}[0]
+    final fun restoreDisjunctive(kotlin/Boolean) // br.com.wdc.framework.domain.criteria/Criterion.restoreDisjunctive|restoreDisjunctive(kotlin.Boolean){}[0]
+    open fun and(): br.com.wdc.framework.domain.criteria/Criterion<#A, #B> // br.com.wdc.framework.domain.criteria/Criterion.and|and(){}[0]
+    open fun or(): br.com.wdc.framework.domain.criteria/Criterion<#A, #B> // br.com.wdc.framework.domain.criteria/Criterion.or|or(){}[0]
+    open fun toString(): kotlin/String // br.com.wdc.framework.domain.criteria/Criterion.toString|toString(){}[0]
+
+    final class <#A1: kotlin/Any> Predicate { // br.com.wdc.framework.domain.criteria/Criterion.Predicate|null[0]
+        final val operator // br.com.wdc.framework.domain.criteria/Criterion.Predicate.operator|{}operator[0]
+            final fun <get-operator>(): br.com.wdc.framework.domain.criteria/Operator // br.com.wdc.framework.domain.criteria/Criterion.Predicate.operator.<get-operator>|<get-operator>(){}[0]
+        final val value // br.com.wdc.framework.domain.criteria/Criterion.Predicate.value|{}value[0]
+            final fun <get-value>(): #A1? // br.com.wdc.framework.domain.criteria/Criterion.Predicate.value.<get-value>|<get-value>(){}[0]
+        final val values // br.com.wdc.framework.domain.criteria/Criterion.Predicate.values|{}values[0]
+            final fun <get-values>(): kotlin.collections/List<#A1?> // br.com.wdc.framework.domain.criteria/Criterion.Predicate.values.<get-values>|<get-values>(){}[0]
+
+        final fun toString(): kotlin/String // br.com.wdc.framework.domain.criteria/Criterion.Predicate.toString|toString(){}[0]
+    }
+}
+
+open class br.com.wdc.framework.domain.exception/AccessDeniedException : kotlin/RuntimeException { // br.com.wdc.framework.domain.exception/AccessDeniedException|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.domain.exception/AccessDeniedException.<init>|<init>(kotlin.String){}[0]
+}
+
+open class br.com.wdc.framework.domain.exception/BusinessException : kotlin/RuntimeException { // br.com.wdc.framework.domain.exception/BusinessException|null[0]
+    constructor <init>() // br.com.wdc.framework.domain.exception/BusinessException.<init>|<init>(){}[0]
+    constructor <init>(kotlin/String?) // br.com.wdc.framework.domain.exception/BusinessException.<init>|<init>(kotlin.String?){}[0]
+    constructor <init>(kotlin/String?, kotlin/Throwable?) // br.com.wdc.framework.domain.exception/BusinessException.<init>|<init>(kotlin.String?;kotlin.Throwable?){}[0]
+    constructor <init>(kotlin/Throwable?) // br.com.wdc.framework.domain.exception/BusinessException.<init>|<init>(kotlin.Throwable?){}[0]
+
+    final object Companion { // br.com.wdc.framework.domain.exception/BusinessException.Companion|null[0]
+        final fun wrap(kotlin/String, kotlin/Exception): br.com.wdc.framework.domain.exception/BusinessException // br.com.wdc.framework.domain.exception/BusinessException.Companion.wrap|wrap(kotlin.String;kotlin.Exception){}[0]
+    }
+}
+
+open class br.com.wdc.framework.domain.exception/InvalidRequestException : br.com.wdc.framework.domain.exception/BusinessException { // br.com.wdc.framework.domain.exception/InvalidRequestException|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.domain.exception/InvalidRequestException.<init>|<init>(kotlin.String){}[0]
+}
+
+open class br.com.wdc.framework.domain.exception/NotFoundException : br.com.wdc.framework.domain.exception/BusinessException { // br.com.wdc.framework.domain.exception/NotFoundException|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.domain.exception/NotFoundException.<init>|<init>(kotlin.String){}[0]
+}
+
+open class br.com.wdc.framework.domain.exception/OfflineException : br.com.wdc.framework.domain.exception/BusinessException { // br.com.wdc.framework.domain.exception/OfflineException|null[0]
+    constructor <init>(kotlin/Throwable?) // br.com.wdc.framework.domain.exception/OfflineException.<init>|<init>(kotlin.Throwable?){}[0]
+}
+
+open class br.com.wdc.framework.domain.exception/TooManyRequestsException : kotlin/RuntimeException { // br.com.wdc.framework.domain.exception/TooManyRequestsException|null[0]
+    constructor <init>(kotlin/String, kotlin/Long? = ...) // br.com.wdc.framework.domain.exception/TooManyRequestsException.<init>|<init>(kotlin.String;kotlin.Long?){}[0]
+
+    final val retryAfterSeconds // br.com.wdc.framework.domain.exception/TooManyRequestsException.retryAfterSeconds|{}retryAfterSeconds[0]
+        final fun <get-retryAfterSeconds>(): kotlin/Long? // br.com.wdc.framework.domain.exception/TooManyRequestsException.retryAfterSeconds.<get-retryAfterSeconds>|<get-retryAfterSeconds>(){}[0]
+}
+
+open class br.com.wdc.framework.domain.exception/TransactionConflictException : kotlin/RuntimeException { // br.com.wdc.framework.domain.exception/TransactionConflictException|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.domain.exception/TransactionConflictException.<init>|<init>(kotlin.String){}[0]
+}
+
+open class br.com.wdc.framework.domain.exception/TransactionLimitExceededException : br.com.wdc.framework.domain.exception/TooManyRequestsException { // br.com.wdc.framework.domain.exception/TransactionLimitExceededException|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.domain.exception/TransactionLimitExceededException.<init>|<init>(kotlin.String){}[0]
+}
+
+open class br.com.wdc.framework.domain.exception/UnauthenticatedException : kotlin/RuntimeException { // br.com.wdc.framework.domain.exception/UnauthenticatedException|null[0]
+    constructor <init>(kotlin/String) // br.com.wdc.framework.domain.exception/UnauthenticatedException.<init>|<init>(kotlin.String){}[0]
+}
+
+open class br.com.wdc.framework.domain.transaction/TransactionException : kotlin/RuntimeException { // br.com.wdc.framework.domain.transaction/TransactionException|null[0]
+    constructor <init>(kotlin/String, kotlin/Throwable? = ...) // br.com.wdc.framework.domain.transaction/TransactionException.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
+}
+
+final object br.com.wdc.framework.domain.criteria/CriterionCodec { // br.com.wdc.framework.domain.criteria/CriterionCodec|null[0]
+    final const val ANY_OF // br.com.wdc.framework.domain.criteria/CriterionCodec.ANY_OF|{}ANY_OF[0]
+        final fun <get-ANY_OF>(): kotlin/String // br.com.wdc.framework.domain.criteria/CriterionCodec.ANY_OF.<get-ANY_OF>|<get-ANY_OF>(){}[0]
+
+    final val BOOL_IN // br.com.wdc.framework.domain.criteria/CriterionCodec.BOOL_IN|{}BOOL_IN[0]
+        final fun <get-BOOL_IN>(): kotlin/Function1<br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Boolean?> // br.com.wdc.framework.domain.criteria/CriterionCodec.BOOL_IN.<get-BOOL_IN>|<get-BOOL_IN>(){}[0]
+    final val BOOL_OUT // br.com.wdc.framework.domain.criteria/CriterionCodec.BOOL_OUT|{}BOOL_OUT[0]
+        final fun <get-BOOL_OUT>(): kotlin/Function2<br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/Boolean, kotlin/Unit> // br.com.wdc.framework.domain.criteria/CriterionCodec.BOOL_OUT.<get-BOOL_OUT>|<get-BOOL_OUT>(){}[0]
+    final val DOUBLE_IN // br.com.wdc.framework.domain.criteria/CriterionCodec.DOUBLE_IN|{}DOUBLE_IN[0]
+        final fun <get-DOUBLE_IN>(): kotlin/Function1<br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Double?> // br.com.wdc.framework.domain.criteria/CriterionCodec.DOUBLE_IN.<get-DOUBLE_IN>|<get-DOUBLE_IN>(){}[0]
+    final val DOUBLE_OUT // br.com.wdc.framework.domain.criteria/CriterionCodec.DOUBLE_OUT|{}DOUBLE_OUT[0]
+        final fun <get-DOUBLE_OUT>(): kotlin/Function2<br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/Double, kotlin/Unit> // br.com.wdc.framework.domain.criteria/CriterionCodec.DOUBLE_OUT.<get-DOUBLE_OUT>|<get-DOUBLE_OUT>(){}[0]
+    final val INSTANT_IN // br.com.wdc.framework.domain.criteria/CriterionCodec.INSTANT_IN|{}INSTANT_IN[0]
+        final fun <get-INSTANT_IN>(): kotlin/Function1<br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin.time/Instant?> // br.com.wdc.framework.domain.criteria/CriterionCodec.INSTANT_IN.<get-INSTANT_IN>|<get-INSTANT_IN>(){}[0]
+    final val INSTANT_OUT // br.com.wdc.framework.domain.criteria/CriterionCodec.INSTANT_OUT|{}INSTANT_OUT[0]
+        final fun <get-INSTANT_OUT>(): kotlin/Function2<br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin.time/Instant, kotlin/Unit> // br.com.wdc.framework.domain.criteria/CriterionCodec.INSTANT_OUT.<get-INSTANT_OUT>|<get-INSTANT_OUT>(){}[0]
+    final val INT_IN // br.com.wdc.framework.domain.criteria/CriterionCodec.INT_IN|{}INT_IN[0]
+        final fun <get-INT_IN>(): kotlin/Function1<br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Int?> // br.com.wdc.framework.domain.criteria/CriterionCodec.INT_IN.<get-INT_IN>|<get-INT_IN>(){}[0]
+    final val INT_OUT // br.com.wdc.framework.domain.criteria/CriterionCodec.INT_OUT|{}INT_OUT[0]
+        final fun <get-INT_OUT>(): kotlin/Function2<br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/Int, kotlin/Unit> // br.com.wdc.framework.domain.criteria/CriterionCodec.INT_OUT.<get-INT_OUT>|<get-INT_OUT>(){}[0]
+    final val LONG_IN // br.com.wdc.framework.domain.criteria/CriterionCodec.LONG_IN|{}LONG_IN[0]
+        final fun <get-LONG_IN>(): kotlin/Function1<br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Long?> // br.com.wdc.framework.domain.criteria/CriterionCodec.LONG_IN.<get-LONG_IN>|<get-LONG_IN>(){}[0]
+    final val LONG_OUT // br.com.wdc.framework.domain.criteria/CriterionCodec.LONG_OUT|{}LONG_OUT[0]
+        final fun <get-LONG_OUT>(): kotlin/Function2<br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/Long, kotlin/Unit> // br.com.wdc.framework.domain.criteria/CriterionCodec.LONG_OUT.<get-LONG_OUT>|<get-LONG_OUT>(){}[0]
+    final val STRING_IN // br.com.wdc.framework.domain.criteria/CriterionCodec.STRING_IN|{}STRING_IN[0]
+        final fun <get-STRING_IN>(): kotlin/Function1<br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/String?> // br.com.wdc.framework.domain.criteria/CriterionCodec.STRING_IN.<get-STRING_IN>|<get-STRING_IN>(){}[0]
+    final val STRING_OUT // br.com.wdc.framework.domain.criteria/CriterionCodec.STRING_OUT|{}STRING_OUT[0]
+        final fun <get-STRING_OUT>(): kotlin/Function2<br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/String, kotlin/Unit> // br.com.wdc.framework.domain.criteria/CriterionCodec.STRING_OUT.<get-STRING_OUT>|<get-STRING_OUT>(){}[0]
+
+    final fun <#A1: kotlin/Any> read(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, br.com.wdc.framework.domain.criteria/Criterion<*, #A1>, kotlin/Function1<br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, #A1?>) // br.com.wdc.framework.domain.criteria/CriterionCodec.read|read(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;br.com.wdc.framework.domain.criteria.Criterion<*,0:0>;kotlin.Function1<br.com.wdc.framework.commons.serialization.ExtensibleObjectInput,0:0?>){0§<kotlin.Any>}[0]
+    final fun <#A1: kotlin/Any> write(br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/String, br.com.wdc.framework.domain.criteria/Criterion<*, #A1>?, kotlin/Function2<br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, #A1, kotlin/Unit>) // br.com.wdc.framework.domain.criteria/CriterionCodec.write|write(br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput;kotlin.String;br.com.wdc.framework.domain.criteria.Criterion<*,0:0>?;kotlin.Function2<br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput,0:0,kotlin.Unit>){0§<kotlin.Any>}[0]
+    final fun <#A1: kotlin/Enum<#A1>> readOrderBy(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin.collections/List<#A1>): #A1? // br.com.wdc.framework.domain.criteria/CriterionCodec.readOrderBy|readOrderBy(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.collections.List<0:0>){0§<kotlin.Enum<0:0>>}[0]
+    final fun anyOfDoesNotTravel(): br.com.wdc.framework.domain.exception/InvalidRequestException // br.com.wdc.framework.domain.criteria/CriterionCodec.anyOfDoesNotTravel|anyOfDoesNotTravel(){}[0]
+    final fun readSliceNumber(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/String): kotlin/Int? // br.com.wdc.framework.domain.criteria/CriterionCodec.readSliceNumber|readSliceNumber(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.String){}[0]
+    final fun refuseAnyOf(br.com.wdc.framework.domain.criteria/Criteria?) // br.com.wdc.framework.domain.criteria/CriterionCodec.refuseAnyOf|refuseAnyOf(br.com.wdc.framework.domain.criteria.Criteria?){}[0]
+}
+
+final object br.com.wdc.framework.domain.projection/ProjectionCollectionCodec { // br.com.wdc.framework.domain.projection/ProjectionCollectionCodec|null[0]
+    final fun <#A1: kotlin/Any?> read(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Function1<br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, #A1>, kotlin/Function1<br.com.wdc.framework.commons.serialization/ExtensibleObjectInput, kotlin/Any?>): br.com.wdc.framework.domain.projection/ProjectionList<#A1> // br.com.wdc.framework.domain.projection/ProjectionCollectionCodec.read|read(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput;kotlin.Function1<br.com.wdc.framework.commons.serialization.ExtensibleObjectInput,0:0>;kotlin.Function1<br.com.wdc.framework.commons.serialization.ExtensibleObjectInput,kotlin.Any?>){0§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> write(br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/String, kotlin.collections/Collection<#A1>, kotlin/Function2<br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, #A1, kotlin/Unit>, kotlin/Function2<br.com.wdc.framework.commons.serialization/ExtensibleObjectOutput, kotlin/Any, kotlin/Unit>?) // br.com.wdc.framework.domain.projection/ProjectionCollectionCodec.write|write(br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput;kotlin.String;kotlin.collections.Collection<0:0>;kotlin.Function2<br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput,0:0,kotlin.Unit>;kotlin.Function2<br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput,kotlin.Any,kotlin.Unit>?){0§<kotlin.Any?>}[0]
+    final fun isProjectionEnvelope(br.com.wdc.framework.commons.serialization/ExtensibleObjectInput): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionCollectionCodec.isProjectionEnvelope|isProjectionEnvelope(br.com.wdc.framework.commons.serialization.ExtensibleObjectInput){}[0]
+}
+
+final object br.com.wdc.framework.domain.projection/ProjectionValues { // br.com.wdc.framework.domain.projection/ProjectionValues|null[0]
+    final val bDec // br.com.wdc.framework.domain.projection/ProjectionValues.bDec|{}bDec[0]
+        final fun <get-bDec>(): com.ionspin.kotlin.bignum.decimal/BigDecimal // br.com.wdc.framework.domain.projection/ProjectionValues.bDec.<get-bDec>|<get-bDec>(){}[0]
+    final val bInt // br.com.wdc.framework.domain.projection/ProjectionValues.bInt|{}bInt[0]
+        final fun <get-bInt>(): com.ionspin.kotlin.bignum.integer/BigInteger // br.com.wdc.framework.domain.projection/ProjectionValues.bInt.<get-bInt>|<get-bInt>(){}[0]
+    final val bin // br.com.wdc.framework.domain.projection/ProjectionValues.bin|{}bin[0]
+        final fun <get-bin>(): kotlin/ByteArray // br.com.wdc.framework.domain.projection/ProjectionValues.bin.<get-bin>|<get-bin>(){}[0]
+    final val bool // br.com.wdc.framework.domain.projection/ProjectionValues.bool|{}bool[0]
+        final fun <get-bool>(): kotlin/Boolean // br.com.wdc.framework.domain.projection/ProjectionValues.bool.<get-bool>|<get-bool>(){}[0]
+    final val chr // br.com.wdc.framework.domain.projection/ProjectionValues.chr|{}chr[0]
+        final fun <get-chr>(): kotlin/Char // br.com.wdc.framework.domain.projection/ProjectionValues.chr.<get-chr>|<get-chr>(){}[0]
+    final val f32 // br.com.wdc.framework.domain.projection/ProjectionValues.f32|{}f32[0]
+        final fun <get-f32>(): kotlin/Float // br.com.wdc.framework.domain.projection/ProjectionValues.f32.<get-f32>|<get-f32>(){}[0]
+    final val f64 // br.com.wdc.framework.domain.projection/ProjectionValues.f64|{}f64[0]
+        final fun <get-f64>(): kotlin/Double // br.com.wdc.framework.domain.projection/ProjectionValues.f64.<get-f64>|<get-f64>(){}[0]
+    final val i16 // br.com.wdc.framework.domain.projection/ProjectionValues.i16|{}i16[0]
+        final fun <get-i16>(): kotlin/Short // br.com.wdc.framework.domain.projection/ProjectionValues.i16.<get-i16>|<get-i16>(){}[0]
+    final val i32 // br.com.wdc.framework.domain.projection/ProjectionValues.i32|{}i32[0]
+        final fun <get-i32>(): kotlin/Int // br.com.wdc.framework.domain.projection/ProjectionValues.i32.<get-i32>|<get-i32>(){}[0]
+    final val i64 // br.com.wdc.framework.domain.projection/ProjectionValues.i64|{}i64[0]
+        final fun <get-i64>(): kotlin/Long // br.com.wdc.framework.domain.projection/ProjectionValues.i64.<get-i64>|<get-i64>(){}[0]
+    final val i8 // br.com.wdc.framework.domain.projection/ProjectionValues.i8|{}i8[0]
+        final fun <get-i8>(): kotlin/Byte // br.com.wdc.framework.domain.projection/ProjectionValues.i8.<get-i8>|<get-i8>(){}[0]
+    final val instant // br.com.wdc.framework.domain.projection/ProjectionValues.instant|{}instant[0]
+        final fun <get-instant>(): kotlin.time/Instant // br.com.wdc.framework.domain.projection/ProjectionValues.instant.<get-instant>|<get-instant>(){}[0]
+    final val localDate // br.com.wdc.framework.domain.projection/ProjectionValues.localDate|{}localDate[0]
+        final fun <get-localDate>(): kotlinx.datetime/LocalDate // br.com.wdc.framework.domain.projection/ProjectionValues.localDate.<get-localDate>|<get-localDate>(){}[0]
+    final val str // br.com.wdc.framework.domain.projection/ProjectionValues.str|{}str[0]
+        final fun <get-str>(): kotlin/String // br.com.wdc.framework.domain.projection/ProjectionValues.str.<get-str>|<get-str>(){}[0]
+
+    final fun <#A1: kotlin/Any?> singletonList(#A1, kotlin/Any?, kotlin/Int? = ..., kotlin/Int? = ...): br.com.wdc.framework.domain.projection/ProjectionList<#A1> // br.com.wdc.framework.domain.projection/ProjectionValues.singletonList|singletonList(0:0;kotlin.Any?;kotlin.Int?;kotlin.Int?){0§<kotlin.Any?>}[0]
+}
+
+final inline fun <#A: kotlin/Any?, #B: kotlin/Any> br.com.wdc.framework.domain.codec/ref(kotlin/Function0<#A>, #B?, kotlin/Function2<#A, #B, kotlin/Unit>): #A? // br.com.wdc.framework.domain.codec/ref|ref(kotlin.Function0<0:0>;0:1?;kotlin.Function2<0:0,0:1,kotlin.Unit>){0§<kotlin.Any?>;1§<kotlin.Any>}[0]

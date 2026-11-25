@@ -1,0 +1,249 @@
+public class br/com/wdc/framework/cube/AbstractCubePresenter : br/com/wdc/framework/cube/AbstractPresenter, br/com/wdc/framework/cube/CubePresenter {
+	public fun <init> (Lbr/com/wdc/framework/cube/CubeApplication;)V
+	public fun applyParameters (Lbr/com/wdc/framework/cube/CubeIntent;ZZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun publishParameters (Lbr/com/wdc/framework/cube/CubeIntent;)V
+}
+
+public abstract class br/com/wdc/framework/cube/AbstractPresenter : br/com/wdc/framework/cube/PresenterBase {
+	public fun <init> (Lbr/com/wdc/framework/cube/CubeApplication;)V
+	protected final fun action (ILbr/com/wdc/framework/cube/Scope;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/cube/Action;
+	protected final fun action (Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/cube/Action;
+	public static synthetic fun action$default (Lbr/com/wdc/framework/cube/AbstractPresenter;ILbr/com/wdc/framework/cube/Scope;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lbr/com/wdc/framework/cube/Action;
+	protected final fun actionOf (ILbr/com/wdc/framework/cube/FormParam;Lbr/com/wdc/framework/cube/Scope;Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/cube/ActionOf;
+	protected final fun actionOf (Lkotlin/jvm/functions/Function2;)Lbr/com/wdc/framework/cube/ActionOf;
+	public static synthetic fun actionOf$default (Lbr/com/wdc/framework/cube/AbstractPresenter;ILbr/com/wdc/framework/cube/FormParam;Lbr/com/wdc/framework/cube/Scope;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lbr/com/wdc/framework/cube/ActionOf;
+	protected final fun actionOf2 (ILbr/com/wdc/framework/cube/FormParam;Lbr/com/wdc/framework/cube/FormParam;Lbr/com/wdc/framework/cube/Scope;Lkotlin/jvm/functions/Function3;)Lbr/com/wdc/framework/cube/ActionOf2;
+	protected final fun actionOf2 (Lkotlin/jvm/functions/Function3;)Lbr/com/wdc/framework/cube/ActionOf2;
+	public static synthetic fun actionOf2$default (Lbr/com/wdc/framework/cube/AbstractPresenter;ILbr/com/wdc/framework/cube/FormParam;Lbr/com/wdc/framework/cube/FormParam;Lbr/com/wdc/framework/cube/Scope;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lbr/com/wdc/framework/cube/ActionOf2;
+	protected final fun bind (Lbr/com/wdc/framework/cube/Scope;)Lbr/com/wdc/framework/cube/Scope;
+	public fun commitComputedState ()V
+	public fun getApp ()Lbr/com/wdc/framework/cube/CubeApplication;
+	protected fun onActionFailure (Ljava/lang/Exception;)V
+	protected final fun onEvent (ILbr/com/wdc/framework/cube/Scope;Lkotlin/jvm/functions/Function2;)V
+	public static synthetic fun onEvent$default (Lbr/com/wdc/framework/cube/AbstractPresenter;ILbr/com/wdc/framework/cube/Scope;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+	public fun release ()V
+	public final fun scope ()Lbr/com/wdc/framework/cube/Scope;
+}
+
+public abstract interface class br/com/wdc/framework/cube/Action {
+	public static final field Companion Lbr/com/wdc/framework/cube/Action$Companion;
+	public abstract fun invoke (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/cube/Action$Companion {
+	public final fun getNOOP ()Lbr/com/wdc/framework/cube/Action;
+}
+
+public abstract interface class br/com/wdc/framework/cube/ActionOf {
+	public static final field Companion Lbr/com/wdc/framework/cube/ActionOf$Companion;
+	public abstract fun invoke (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/cube/ActionOf$Companion {
+	public final fun noop ()Lbr/com/wdc/framework/cube/ActionOf;
+}
+
+public abstract interface class br/com/wdc/framework/cube/ActionOf2 {
+	public static final field Companion Lbr/com/wdc/framework/cube/ActionOf2$Companion;
+	public abstract fun invoke (Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/cube/ActionOf2$Companion {
+	public final fun noop ()Lbr/com/wdc/framework/cube/ActionOf2;
+}
+
+public abstract class br/com/wdc/framework/cube/CubeApplication {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun alertUnexpectedError (Lbr/com/wdc/framework/commons/log/Log;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun applyParameters (Lbr/com/wdc/framework/cube/CubeIntent;ZZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun commitComputedState ()V
+	public final fun flip (Lbr/com/wdc/framework/cube/CubeIntent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun flip (Lbr/com/wdc/framework/cube/CubeTreePlace;Lbr/com/wdc/framework/cube/CubeIntent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun flip (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun flip$default (Lbr/com/wdc/framework/cube/CubeApplication;Lbr/com/wdc/framework/cube/CubeTreePlace;Lbr/com/wdc/framework/cube/CubeIntent;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun forEachPresenter (Lkotlin/jvm/functions/Function1;)V
+	public fun getAttribute (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun getFragment ()Ljava/lang/String;
+	protected final fun getLastPlace ()Lbr/com/wdc/framework/cube/CubePlace;
+	public final fun getPlaces ()Ljava/util/List;
+	public final fun getPresenter (I)Lbr/com/wdc/framework/cube/CubePresenter;
+	public final fun navigate ()Lbr/com/wdc/framework/cube/CubeNavigation;
+	public final fun newIntent ()Lbr/com/wdc/framework/cube/CubeIntent;
+	public final fun placeOf (Ljava/lang/String;)Lbr/com/wdc/framework/cube/CubeTreePlace;
+	public final fun publishParameters (Lbr/com/wdc/framework/cube/CubeIntent;)V
+	public fun release ()V
+	public fun removeAttribute (Ljava/lang/String;)Ljava/lang/Object;
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+	protected final fun setFragment (Ljava/lang/String;)V
+	public fun updateHistory ()V
+}
+
+public final class br/com/wdc/framework/cube/CubeIntent {
+	public static final field Companion Lbr/com/wdc/framework/cube/CubeIntent$Companion;
+	public fun <init> ()V
+	public final fun clearParameters ()V
+	public final fun getAttribute (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun getParameterAsByte (Ljava/lang/String;Ljava/lang/Byte;)Ljava/lang/Byte;
+	public static synthetic fun getParameterAsByte$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Ljava/lang/Byte;ILjava/lang/Object;)Ljava/lang/Byte;
+	public final fun getParameterAsCharacter (Ljava/lang/String;Ljava/lang/Character;)Ljava/lang/Character;
+	public static synthetic fun getParameterAsCharacter$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Ljava/lang/Character;ILjava/lang/Object;)Ljava/lang/Character;
+	public final fun getParameterAsDouble (Ljava/lang/String;Ljava/lang/Double;)Ljava/lang/Double;
+	public static synthetic fun getParameterAsDouble$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Ljava/lang/Double;ILjava/lang/Object;)Ljava/lang/Double;
+	public final fun getParameterAsFloat (Ljava/lang/String;Ljava/lang/Float;)Ljava/lang/Float;
+	public static synthetic fun getParameterAsFloat$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Ljava/lang/Float;ILjava/lang/Object;)Ljava/lang/Float;
+	public final fun getParameterAsInteger (Ljava/lang/String;Ljava/lang/Integer;)Ljava/lang/Integer;
+	public static synthetic fun getParameterAsInteger$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)Ljava/lang/Integer;
+	public final fun getParameterAsLong (Ljava/lang/String;Ljava/lang/Long;)Ljava/lang/Long;
+	public static synthetic fun getParameterAsLong$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Ljava/lang/Long;
+	public final fun getParameterAsShort (Ljava/lang/String;Ljava/lang/Short;)Ljava/lang/Short;
+	public static synthetic fun getParameterAsShort$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Ljava/lang/Short;ILjava/lang/Object;)Ljava/lang/Short;
+	public final fun getParameterAsString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun getParameterAsString$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun getParameterValue (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun getPlace ()Lbr/com/wdc/framework/cube/CubePlace;
+	public final fun getScopeSlot (Ljava/lang/String;)Lbr/com/wdc/framework/cube/ScopeSlot;
+	public final fun removeAttribute (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun removeParameter (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public final fun setParameter (Ljava/lang/String;Ljava/lang/Object;)V
+	public final fun setPlace (Lbr/com/wdc/framework/cube/CubePlace;)V
+	public final fun setScopeSlot (Ljava/lang/String;Lbr/com/wdc/framework/cube/ScopeSlot;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/cube/CubeIntent$Companion {
+	public final fun parse (Ljava/lang/String;)Lbr/com/wdc/framework/cube/CubeIntent;
+}
+
+public final class br/com/wdc/framework/cube/CubeIntentJvmKt {
+	public static final fun getParameterAsBigDecimal (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;)Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;
+	public static synthetic fun getParameterAsBigDecimal$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;ILjava/lang/Object;)Lcom/ionspin/kotlin/bignum/decimal/BigDecimal;
+	public static final fun getParameterAsBigInteger (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Lcom/ionspin/kotlin/bignum/integer/BigInteger;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+	public static synthetic fun getParameterAsBigInteger$default (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;Lcom/ionspin/kotlin/bignum/integer/BigInteger;ILjava/lang/Object;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
+}
+
+public abstract class br/com/wdc/framework/cube/CubeKeys {
+	public fun <init> (Lbr/com/wdc/framework/cube/CubeApplication;Lbr/com/wdc/framework/cube/CubeIntent;Lbr/com/wdc/framework/cube/CubeTreePlace;)V
+	public fun flip (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected final fun getApp ()Lbr/com/wdc/framework/cube/CubeApplication;
+	public final fun getIntent ()Lbr/com/wdc/framework/cube/CubeIntent;
+	public final fun getPlace ()Lbr/com/wdc/framework/cube/CubeTreePlace;
+}
+
+public final class br/com/wdc/framework/cube/CubeNavigation {
+	public static final field Companion Lbr/com/wdc/framework/cube/CubeNavigation$Companion;
+	public final fun execute (Lbr/com/wdc/framework/cube/CubeIntent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun interrupt ()V
+	public final fun step (Lbr/com/wdc/framework/cube/CubePlace;)Lbr/com/wdc/framework/cube/CubeNavigation;
+}
+
+public final class br/com/wdc/framework/cube/CubeNavigation$Companion {
+}
+
+public abstract interface class br/com/wdc/framework/cube/CubePlace {
+	public abstract fun getId ()I
+	public abstract fun getPlaceName ()Ljava/lang/String;
+	public abstract fun presenterFactory ()Lkotlin/jvm/functions/Function1;
+}
+
+public abstract interface class br/com/wdc/framework/cube/CubePresenter : br/com/wdc/framework/cube/PresenterBase {
+	public abstract fun applyParameters (Lbr/com/wdc/framework/cube/CubeIntent;ZZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun publishParameters (Lbr/com/wdc/framework/cube/CubeIntent;)V
+	public abstract fun release ()V
+}
+
+public final class br/com/wdc/framework/cube/CubePresenter$DefaultImpls {
+	public static fun commitComputedState (Lbr/com/wdc/framework/cube/CubePresenter;)V
+	public static fun publishParameters (Lbr/com/wdc/framework/cube/CubePresenter;Lbr/com/wdc/framework/cube/CubeIntent;)V
+}
+
+public final class br/com/wdc/framework/cube/CubeTreePlace : br/com/wdc/framework/cube/CubePlace {
+	public static final field Companion Lbr/com/wdc/framework/cube/CubeTreePlace$Companion;
+	public final fun child (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lbr/com/wdc/framework/cube/CubeTreePlace;
+	public final fun contains (Lbr/com/wdc/framework/cube/CubeTreePlace;)Z
+	public fun getId ()I
+	public final fun getParent ()Lbr/com/wdc/framework/cube/CubeTreePlace;
+	public final fun getPath ()Ljava/util/List;
+	public fun getPlaceName ()Ljava/lang/String;
+	public final fun isRoot ()Z
+	public fun presenterFactory ()Lkotlin/jvm/functions/Function1;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/cube/CubeTreePlace$Companion {
+	public final fun getROOT ()Lbr/com/wdc/framework/cube/CubeTreePlace;
+}
+
+public final class br/com/wdc/framework/cube/FormParam {
+	public static final field Companion Lbr/com/wdc/framework/cube/FormParam$Companion;
+	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun read (Ljava/util/Map;)Ljava/lang/Object;
+}
+
+public final class br/com/wdc/framework/cube/FormParam$Companion {
+	public final fun int (Ljava/lang/String;)Lbr/com/wdc/framework/cube/FormParam;
+	public final fun long (Ljava/lang/String;)Lbr/com/wdc/framework/cube/FormParam;
+	public final fun string (Ljava/lang/String;)Lbr/com/wdc/framework/cube/FormParam;
+}
+
+public abstract interface class br/com/wdc/framework/cube/PresenterBase {
+	public fun commitComputedState ()V
+	public abstract fun getApp ()Lbr/com/wdc/framework/cube/CubeApplication;
+	public abstract fun release ()V
+}
+
+public final class br/com/wdc/framework/cube/PresenterBase$DefaultImpls {
+	public static fun commitComputedState (Lbr/com/wdc/framework/cube/PresenterBase;)V
+}
+
+public abstract class br/com/wdc/framework/cube/Scope {
+	public fun <init> ()V
+	public final fun changed ()V
+	public final fun clearUpdater (Lkotlin/jvm/functions/Function0;)V
+	public final fun dispatch (ILjava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected final fun field (Ljava/lang/Object;Z)Lkotlin/properties/PropertyDelegateProvider;
+	public static synthetic fun field$default (Lbr/com/wdc/framework/cube/Scope;Ljava/lang/Object;ZILjava/lang/Object;)Lkotlin/properties/PropertyDelegateProvider;
+	public final fun onSync (Lkotlin/jvm/functions/Function1;)V
+	protected final fun scopes ()Lkotlin/properties/PropertyDelegateProvider;
+	public final fun setUpdater (Lkotlin/jvm/functions/Function0;)V
+	public final fun sync (Ljava/util/Map;)V
+	public final fun toJson (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/String;
+	public static synthetic fun toJson$default (Lbr/com/wdc/framework/cube/Scope;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/String;
+	public fun write (Ljava/lang/String;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun write$default (Lbr/com/wdc/framework/cube/Scope;Ljava/lang/String;Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public abstract interface class br/com/wdc/framework/cube/ScopeSlot {
+	public abstract fun setScope (Lbr/com/wdc/framework/cube/Scope;)V
+}
+
+public abstract interface class br/com/wdc/framework/cube/ScopeValue {
+	public abstract fun writeJson (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;)V
+}
+
+public final class br/com/wdc/framework/cube/util/QueryStringBuilder {
+	public static final field Companion Lbr/com/wdc/framework/cube/util/QueryStringBuilder$Companion;
+	public fun <init> ()V
+	public final fun append (Ljava/util/Map;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class br/com/wdc/framework/cube/util/QueryStringBuilder$Companion {
+}
+
+public final class br/com/wdc/framework/cube/util/QueryStringParser {
+	public static final field INSTANCE Lbr/com/wdc/framework/cube/util/QueryStringParser;
+	public final fun parse (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;)V
+	public final fun parseParameters (Lbr/com/wdc/framework/cube/CubeIntent;Ljava/lang/String;)V
+}
+
+public final class br/com/wdc/framework/cube/util/ReflectArrayCompat {
+	public static final field INSTANCE Lbr/com/wdc/framework/cube/util/ReflectArrayCompat;
+	public final fun get (Ljava/lang/Object;I)Ljava/lang/Object;
+	public final fun getLength (Ljava/lang/Object;)I
+	public final fun set (Ljava/lang/Object;ILjava/lang/Object;)V
+}
+
