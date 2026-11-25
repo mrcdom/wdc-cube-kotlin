@@ -13,8 +13,7 @@ class BrowserPresenter(app: ReactRootPresenter) : AbstractPresenter<ReactRootPre
     companion object {
         private val LOG = Log.getLogger("BrowserPresenter")
 
-        const val VID = "7b32e816a191"
-        const val VSID = "$VID:0"
+        const val VSID = "${BrowserScope.VID}:0"
     }
 
     val scope = bind(BrowserScope())

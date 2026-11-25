@@ -40,8 +40,8 @@ open class ScopeViewImpl<S : Scope>(
         if (!released) app.markDirty(this)
     }
 
-    /** Copies what the client sent (what the user typed) before its event. */
-    open fun syncClientToServer(formData: Map<String, Any?>) {
+    /** Copies what the client sent (what the user typed) before its event: the presenter does it ([Scope.onSync]). */
+    fun syncClientToServer(formData: Map<String, Any?>) {
         scope.sync(formData)
     }
 

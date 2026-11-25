@@ -12,6 +12,11 @@ import br.com.wdc.framework.cube.ScopeValue
  */
 class BrowserScope : Scope() {
 
+    companion object {
+        /** The client component that paints this scope in a remote view: its id in the bridge protocol. */
+        const val VID = "7b32e816a191"
+    }
+
     /** The alert on screen, or none. */
     var alertMessage: BrowserAlert? by field(null)
 

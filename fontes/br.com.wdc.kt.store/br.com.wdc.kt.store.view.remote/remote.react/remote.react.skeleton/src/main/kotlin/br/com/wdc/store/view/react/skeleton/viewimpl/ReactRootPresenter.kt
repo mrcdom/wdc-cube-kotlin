@@ -162,21 +162,18 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
         private set
     private var instanceIdGen: Int = 1
 
-    /**
-     * Which view draws each kind of scope for the client: one [ScopeViewImpl] per scope, carrying the vid of the
-     * client component that paints it; the login has its own server side (it deciphers the password).
-     */
+    /** Which view draws each kind of scope for the client: one [ScopeViewImpl] per scope, with the scope's vid. */
     private val catalog: Map<KClass<out Scope>, (Scope) -> ScopeViewImpl<*>> = mapOf(
-        BrowserScope::class to { ScopeViewImpl(BrowserPresenter.VID, this, it, instanceId = 0) },
-        RootScope::class to { ScopeViewImpl("f2d345c4a610", this, it) },
-        LoginScope::class to { LoginReactViewImpl(this, it as LoginScope) },
-        HomeScope::class to { ScopeViewImpl("473dbdd7a36a", this, it) },
-        ProductScope::class to { ScopeViewImpl("48b693f67410", this, it) },
-        CartScope::class to { ScopeViewImpl("7eb485e5f843", this, it) },
-        CartItemScope::class to { ScopeViewImpl("5d9e3c7a1f42", this, it) },
-        ReceiptScope::class to { ScopeViewImpl("e8d0bd8ae3bc", this, it) },
-        ProductsPanelScope::class to { ScopeViewImpl("a1b2c3d4e5f6", this, it) },
-        PurchasesPanelScope::class to { ScopeViewImpl("b3c4d5e6f7a8", this, it) },
+        BrowserScope::class to { ScopeViewImpl(BrowserScope.VID, this, it, instanceId = 0) },
+        RootScope::class to { ScopeViewImpl(RootScope.VID, this, it) },
+        LoginScope::class to { ScopeViewImpl(LoginScope.VID, this, it) },
+        HomeScope::class to { ScopeViewImpl(HomeScope.VID, this, it) },
+        ProductScope::class to { ScopeViewImpl(ProductScope.VID, this, it) },
+        CartScope::class to { ScopeViewImpl(CartScope.VID, this, it) },
+        CartItemScope::class to { ScopeViewImpl(CartItemScope.VID, this, it) },
+        ReceiptScope::class to { ScopeViewImpl(ReceiptScope.VID, this, it) },
+        ProductsPanelScope::class to { ScopeViewImpl(ProductsPanelScope.VID, this, it) },
+        PurchasesPanelScope::class to { ScopeViewImpl(PurchasesPanelScope.VID, this, it) },
     )
 
     init {
@@ -223,6 +220,8 @@ class ReactRootPresenter(internal val id: String) : RootPresenter(), PresenterBa
     fun isAuthenticated(): Boolean = subject != null
 
     fun getDataSecurity(): DataSecurity = dataSecurity
+
+    override fun b64Decipher(b64Text: String): String = dataSecurity.b64Decipher(b64Text)
 
     override fun updateHistory() {
         this.historyDirty = true

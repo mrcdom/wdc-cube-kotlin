@@ -1,5 +1,6 @@
 package br.com.wdc.store.presentation.presenter.open.login
 
+import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
@@ -25,8 +26,8 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     private var ownerSlot: ScopeSlot? = null
 
     init {
-        // a remote view syncs what the user typed (the password ciphered, deciphered by the remote layer), then fires 1
         scope.onEnter = action(1) { enter() }
+        scope.onSync(::sync)
     }
 
     // :: Cube API
@@ -76,6 +77,19 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     }
 
     // :: User Actions
+
+    /**
+     * What a remote view sends before firing enter (1): what the user typed, with the password ciphered with the
+     * session's key.
+     */
+    private fun sync(formData: Map<String, Any?>) {
+        if (formData.containsKey("userName")) {
+            scope.userName = CoerceUtils.asString(formData["userName"])
+        }
+        if (formData.containsKey("password")) {
+            scope.password = app.b64Decipher(CoerceUtils.asString(formData["password"]) ?: "")
+        }
+    }
 
     private suspend fun enter() {
         scope.loading = true
