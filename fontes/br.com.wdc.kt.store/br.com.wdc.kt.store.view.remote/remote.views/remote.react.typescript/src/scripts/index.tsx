@@ -6,7 +6,6 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 import bridge from '@wdc/remote-bridge-react'
 
 import BrowserView from './views/BrowserView'
-import SlotView from './views/SlotView'
 import RootView from './views/RootView'
 import LoginView from './views/LoginView'
 import RestrictedView from './views/HomeView'
@@ -18,7 +17,6 @@ import PurchasesPanel from './views/home/PurchasesPanel'
 
 bridge.registerComponents(
   BrowserView,
-  SlotView,
   RootView,
   LoginView,
   RestrictedView,

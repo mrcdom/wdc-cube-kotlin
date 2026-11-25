@@ -244,26 +244,6 @@ public final class br/com/wdc/framework/commons/log/Slf4jLogFactory : br/com/wdc
 	public fun create (Ljava/lang/String;)Lbr/com/wdc/framework/commons/log/Log;
 }
 
-public final class br/com/wdc/framework/commons/security/RSA {
-	public static final field Companion Lbr/com/wdc/framework/commons/security/RSA$Companion;
-	public fun <init> (Lcom/ionspin/kotlin/bignum/integer/BigInteger;Lcom/ionspin/kotlin/bignum/integer/BigInteger;Lcom/ionspin/kotlin/bignum/integer/BigInteger;)V
-	public final fun decrypt (Lcom/ionspin/kotlin/bignum/integer/BigInteger;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
-	public final fun encrypt (Lcom/ionspin/kotlin/bignum/integer/BigInteger;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
-	public final fun getPrivateKey ()Lcom/ionspin/kotlin/bignum/integer/BigInteger;
-	public final fun getPublicExponent ()Lcom/ionspin/kotlin/bignum/integer/BigInteger;
-	public final fun getPublicKey ()Lcom/ionspin/kotlin/bignum/integer/BigInteger;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class br/com/wdc/framework/commons/security/RSA$Companion {
-	public final fun getN65537 ()Lcom/ionspin/kotlin/bignum/integer/BigInteger;
-	public final fun modPow (Lcom/ionspin/kotlin/bignum/integer/BigInteger;Lcom/ionspin/kotlin/bignum/integer/BigInteger;Lcom/ionspin/kotlin/bignum/integer/BigInteger;)Lcom/ionspin/kotlin/bignum/integer/BigInteger;
-}
-
-public final class br/com/wdc/framework/commons/security/RSAKt {
-	public static final fun generate (Lbr/com/wdc/framework/commons/security/RSA$Companion;ILjava/util/Random;)Lbr/com/wdc/framework/commons/security/RSA;
-}
-
 public abstract interface class br/com/wdc/framework/commons/serialization/ExtensibleObjectInput {
 	public abstract fun beginArray ()V
 	public abstract fun beginObject ()V

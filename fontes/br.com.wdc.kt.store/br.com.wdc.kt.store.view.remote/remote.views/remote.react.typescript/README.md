@@ -37,7 +37,6 @@ graph TD
     scripts --> views["views/ — Components"]
     views --> BrowserView["BrowserView.tsx<br/><small>Connection, alerts, loading</small>"]
     views --> RootView["RootView.tsx<br/><small>Root container</small>"]
-    views --> SlotView["SlotView.tsx<br/><small>Generic slot</small>"]
     views --> LoginView["LoginView.tsx"]
     views --> HomeView["HomeView.tsx"]
     views --> ProductView["ProductView.tsx"]
