@@ -1,18 +1,25 @@
 package br.com.wdc.store.persistence.client
 
 import br.com.wdc.store.domain.exception.BusinessException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.await
 import kotlin.js.Promise
 
-/** The [HttpTransport] of Kotlin/Wasm: the browser's `fetch`, awaited without blocking the page. */
+/** The [HttpTransport] of Kotlin/Wasm: the browser's `fetch`, awaited without blocking the page; cancelling the call aborts it. */
 class WasmHttpTransport(baseUrl: String) : BaseHttpTransport(baseUrl) {
 
     override suspend fun exchange(method: String, url: String, headers: Map<String, String>, body: ByteArray?): Answer {
         val headerObject = jsNewObject()
         for ((name, value) in headers) jsSetString(headerObject, name.toJsString(), value.toJsString())
 
+        // cancelling the call aborts the request, the body's reading included
+        val controller = jsNewAbortController()
         val result = try {
-            jsFetch(method.toJsString(), url.toJsString(), headerObject, body?.let(::byteArrayToJsUint8Array)).await<JsAny>()
+            jsFetch(method.toJsString(), url.toJsString(), headerObject, body?.let(::byteArrayToJsUint8Array), jsSignalOf(controller))
+                .await<JsAny>()
+        } catch (e: CancellationException) {
+            jsAbort(controller)
+            throw e
         } catch (e: Throwable) {
             // fetch rejects only when the server could not be reached; any status is an answer
             throw BusinessException("Network error: $method $url: ${e.message}")
@@ -23,10 +30,19 @@ class WasmHttpTransport(baseUrl: String) : BaseHttpTransport(baseUrl) {
 
 // --- JS Interop ---
 
-@JsFun("""(method, url, headers, body) =>
-    fetch(url, { method: method, headers: headers, body: body === null ? undefined : body })
+@JsFun("""(method, url, headers, body, signal) =>
+    fetch(url, { method: method, headers: headers, body: body === null ? undefined : body, signal: signal })
         .then(response => response.arrayBuffer().then(buffer => ({ status: response.status, data: new Uint8Array(buffer) })))""")
-private external fun jsFetch(method: JsString, url: JsString, headers: JsAny, body: JsAny?): Promise<JsAny>
+private external fun jsFetch(method: JsString, url: JsString, headers: JsAny, body: JsAny?, signal: JsAny): Promise<JsAny>
+
+@JsFun("() => new AbortController()")
+private external fun jsNewAbortController(): JsAny
+
+@JsFun("(c) => c.signal")
+private external fun jsSignalOf(c: JsAny): JsAny
+
+@JsFun("(c) => c.abort()")
+private external fun jsAbort(c: JsAny)
 
 @JsFun("() => ({})")
 private external fun jsNewObject(): JsAny
