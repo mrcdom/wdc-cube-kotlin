@@ -6,8 +6,7 @@ import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
-import app, { type ViewProps } from '@root/App'
-import { BaseViewClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
 import { Colors, COMPACT_BREAKPOINT } from '@root/theme'
 import HeaderPanel from './home/HeaderPanel'
 
@@ -60,7 +59,7 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
         {/* Content area */}
         {scope.contentViewId ? (
           <Box sx={{ flex: '1 1 0', overflowY: 'auto', overflowX: 'hidden' }}>
-            <Box sx={{ maxWidth: 560, mx: 'auto' }}>{app.createView(scope.contentViewId)}</Box>
+            <Box sx={{ maxWidth: 560, mx: 'auto' }}>{bridge.createView(scope.contentViewId)}</Box>
           </Box>
         ) : this.isCompact ? (
           /* COMPACT: Tabs for Products / Purchases */
@@ -88,8 +87,8 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
               }}
             >
               {this.selectedTab === 0
-                ? app.createView(scope.productsPanelViewId)
-                : app.createView(scope.purchasesPanelViewId)}
+                ? bridge.createView(scope.productsPanelViewId)
+                : bridge.createView(scope.purchasesPanelViewId)}
             </Card>
           </Box>
         ) : (
@@ -109,12 +108,12 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
           >
             {/* Products panel (flex: 3) */}
             <Card elevation={0} sx={{ flex: '3 1 0', borderRadius: '8px', overflowY: 'auto', overflowX: 'hidden' }}>
-              {app.createView(scope.productsPanelViewId)}
+              {bridge.createView(scope.productsPanelViewId)}
             </Card>
 
             {/* Purchases panel (flex: 2) */}
             <Card elevation={0} sx={{ flex: '2 1 0', borderRadius: '8px', overflow: 'hidden' }}>
-              {app.createView(scope.purchasesPanelViewId)}
+              {bridge.createView(scope.purchasesPanelViewId)}
             </Card>
           </Box>
         )}

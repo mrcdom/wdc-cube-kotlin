@@ -9,8 +9,7 @@ import Typography from '@mui/material/Typography'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ReceiptIcon from '@mui/icons-material/Receipt'
-import app, { type ViewProps } from '@root/App'
-import { BaseViewClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as DateUtils from '@root/utils/DateUtils'
 import { Colors } from '@root/theme'
@@ -153,7 +152,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
 
   readonly emitOpenProducts = () => {
     const { vsid } = this
-    app.submit(vsid, ON_OPEN_PRODUCTS)
+    bridge.submit(vsid, ON_OPEN_PRODUCTS)
   }
 }
 

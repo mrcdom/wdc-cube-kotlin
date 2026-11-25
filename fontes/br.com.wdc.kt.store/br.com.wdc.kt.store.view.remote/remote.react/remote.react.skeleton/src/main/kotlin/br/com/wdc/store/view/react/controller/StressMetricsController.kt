@@ -38,7 +38,7 @@ object StressMetricsController {
         }
 
         val metrics = mapOf(
-            "activeSessions" to ReactRootPresenter.getActiveSessionCount(),
+            "activeSessions" to ReactRootPresenter.REGISTRY.activeSessionCount,
             "heapUsedMb" to heapUsed,
             "heapMaxMb" to heapMax,
             "threadCount" to threadCount,

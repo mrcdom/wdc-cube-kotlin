@@ -63,6 +63,7 @@ val publishedModules = mapOf(
     "framework-persistence" to "JDBC transactions with propagation, coroutine-aware, and a coordinator for client-driven remote transactions",
     "framework-jooq" to "Declarative jOOQ queries that load an object graph in one statement, for H2 and PostgreSQL",
     "framework-rest" to "REST APIs on Javalin: resource routes, pluggable security, exception mapping, per-request context and transactions, OpenAPI",
+    "framework-cube-remote" to "Remote Cube MVP host on Javalin: presenters on the server, views in a browser over WebSocket",
 )
 
 /** Publishing to Maven Central, the same for every published module; only the kind of artifact changes. */

@@ -8,7 +8,7 @@ import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScop
 import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelScope
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
-import br.com.wdc.store.view.react.skeleton.viewimpl.BrowserScope
+import br.com.wdc.framework.cube.remote.BrowserScope
 import org.slf4j.LoggerFactory
 import kotlin.random.Random
 

@@ -10,10 +10,12 @@ Reusable base libraries, independent of the WDC Store application.
 - [br.com.wdc.kt.framework.persistence/](br.com.wdc.kt.framework.persistence/) — Transactions over JDBC and remote transaction coordinator (JVM)
 - [br.com.wdc.kt.framework.jooq/](br.com.wdc.kt.framework.jooq/) — Declarative queries over jOOQ, for H2 and PostgreSQL (JVM)
 - [br.com.wdc.kt.framework.rest/](br.com.wdc.kt.framework.rest/) — REST APIs over Javalin: routes, security, errors, per-request context and transaction, OpenAPI (JVM)
+- [br.com.wdc.kt.framework.cube.remote/](br.com.wdc.kt.framework.cube.remote/) — Remote Cube host over Javalin: presenters on the server, views in a browser over WebSocket (JVM)
+- [br.com.wdc.kt.framework.cube.remote.react/](br.com.wdc.kt.framework.cube.remote.react/) — The client side of the remote host for React shells (`@wdc/remote-bridge-react`, TypeScript; not published, imported from source)
 
 ## Using as a dependency
 
-The six modules are published on Maven Central, under the [MIT](LICENSE) license, in the group `io.github.mrcdom.wdc.kt`. All ship with the same version.
+The Kotlin modules are published on Maven Central (`framework-cube-remote` from 0.5.0), under the [MIT](LICENSE) license, in the group `io.github.mrcdom.wdc.kt`. All ship with the same version.
 
 | Artifact | Platforms | Brings along |
 |---|---|---|
@@ -23,6 +25,7 @@ The six modules are published on Maven Central, under the [MIT](LICENSE) license
 | `framework-persistence` | JVM | `framework-domain` |
 | `framework-jooq` | JVM | `framework-persistence`, jOOQ |
 | `framework-rest` | JVM | `framework-persistence`, Javalin 7, Gson |
+| `framework-cube-remote` | JVM | `framework-cube`, Javalin 7, Gson |
 
 Targets: JVM (Java 21), Android (minSdk 26), JS, WasmJS, iosArm64 and iosSimulatorArm64. 0.4.0 is compiled with Kotlin 2.4.21 (0.2.0 and 0.3.0 with Kotlin 2.3): consumers on the JS, WasmJS and iOS targets need a Kotlin at least as new as the one the version was compiled with.
 
@@ -58,6 +61,7 @@ Not yet published. Fixes defects found while reviewing a port of the architectur
 
 | Module | Change | Breaking? | What to do |
 |---|---|---|---|
+| `framework-cube-remote` | **New module**: the remote Cube host, extracted from the WDC Store's remote React view (the Java version's `remote.backend`). An application implements `RemoteApplication` and holds a `RemoteApplicationSupport` (views, protocol, signed history, life), given the vid of each scope class; a `RemoteApplicationRegistry` keeps the sessions, releases the expired ones (`startCleanup`) and pushes changes made outside a client message (`startFlushing`); `DispatcherController.configure(config, registry)` and `IndexHtmlController.configure(config)` add the Javalin routes. Its client for React shells is `@wdc/remote-bridge-react`, in `br.com.wdc.kt.framework.cube.remote.react`. | New | See the module's README; the WDC Store's `ReactRootPresenter` is a complete example. |
 | `framework-domain` | **Security.** `Criterion.restore` (reading the criterion that comes from the wire) refuses with `InvalidRequestException` (400) a number of values the operator does not accept (`BETWEEN` with one, `EQ` with none, `GT` with two) and `null` in an ordering comparison, `LIKE`, `ILIKE` or `BETWEEN`. Before, the predicate was kept, the field counted as set and the translator dropped it from the SQL: a `delete` "with criterion" became a `DELETE` without `WHERE`, and `count`, `fetch` and the per-user scope lost the filter. `EQ`/`NE` with `null` and empty `IN` are still accepted. | Behavior | None, unless a client sent malformed predicates: it now gets 400. |
 | `framework-jooq` | `CriterionTranslator` refuses (`IllegalArgumentException`) a predicate whose operator and values disagree, instead of discarding it. | Behavior | A criterion built in code only gets there through `restore`; nothing to do. |
 | `framework-cube` | **Navigation requested during another one.** `execute()` decides, no longer `navigate()`: requested from inside the current one (the presenter, in `applyParameters`) it is a redirect and interrupts it, as before; requested from outside (view action, history) it **waits** for the current one to finish. Only the last request waits; an earlier one, or one that was waiting for a navigation that failed, returns `false`. The module now depends on `kotlinx-coroutines-core`. | Behavior | Nothing, unless a presenter launches another coroutine to navigate and waits for it inside `applyParameters` (it would wait for itself): navigate directly. |

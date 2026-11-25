@@ -10,8 +10,7 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import LocalMallIcon from '@mui/icons-material/LocalMall'
-import app, { type ViewProps } from '@root/App'
-import { BaseViewClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
 import { Colors } from '@root/theme'
 
 // :: Actions
@@ -166,9 +165,9 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
     const { vsid } = this
     const userName = this.usrInputRef.current?.value ?? ''
     const password = this.pwdInputRef.current?.value ?? ''
-    app.setFormField(vsid, 'userName', userName)
-    app.setFormField(vsid, 'password', await app.cipher(password))
-    app.submit(vsid, ON_ENTER)
+    bridge.setFormField(vsid, 'userName', userName)
+    bridge.setFormField(vsid, 'password', await bridge.cipher(password))
+    bridge.submit(vsid, ON_ENTER)
   }
 
   readonly onKeyDown = (e: React.KeyboardEvent) => {

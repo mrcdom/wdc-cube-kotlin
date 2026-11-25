@@ -9,9 +9,10 @@ import br.com.wdc.store.domain.StoreConfig
 import br.com.wdc.store.domain.config.AppConfig
 import br.com.wdc.store.view.react.supports.LoggingSupport
 import br.com.wdc.store.view.react.supports.WorkDirectory
-import br.com.wdc.store.view.react.controller.DispatcherController
+import br.com.wdc.framework.cube.remote.javalin.DispatcherController
 import br.com.wdc.store.view.react.controller.ImageController
-import br.com.wdc.store.view.react.controller.IndexHtmlController
+import br.com.wdc.framework.cube.remote.javalin.IndexHtmlController
+import br.com.wdc.store.view.react.skeleton.viewimpl.ReactRootPresenter
 import br.com.wdc.store.view.react.controller.StatusController
 import br.com.wdc.store.persistence.rest.RepositoryApiRoutes
 import io.javalin.Javalin
@@ -326,7 +327,7 @@ class JavalinApplication(
             config.routes.get("/$context/") { ctx -> ctx.redirect("/$context/index.html") }
         }
 
-        DispatcherController.configure(config)
+        DispatcherController.configure(config, ReactRootPresenter.REGISTRY)
         IndexHtmlController.configure(config)
 
         config.routes.before { ctx ->
@@ -347,7 +348,7 @@ class JavalinApplication(
 
     fun start() {
         try {
-            ViewFlushScheduler.start()
+            ReactRootPresenter.REGISTRY.startFlushing()
             app.start(port)
             LOG.info("Javalin server started on port {}", port)
             LOG.info("Static files served from {}: {}", staticFilesSettings.location, staticFilesSettings.directory)
@@ -362,7 +363,7 @@ class JavalinApplication(
 
     fun stop() {
         try {
-            ViewFlushScheduler.stop()
+            ReactRootPresenter.REGISTRY.stopFlushing()
             businessContext.stop()
             app.stop()
             LOG.info("Javalin server stopped")

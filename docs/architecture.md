@@ -173,7 +173,8 @@ graph TB
 | `:view-compose-web` | wasmJs (WebAssembly) entry point |
 | `:view-compose-ios` | iOS entry point (via Xcode) |
 | `:persistence-rest` | The WDC Store's REST API (repository RPC per entity, authentication, data policies) over `:framework-rest` |
-| `:view-remote-react-skeleton` | Server side of the remote React view (WebSocket, one view per scope) |
+| `:framework-cube-remote` | The remote Cube host on Javalin: sessions, one view per scope, the WebSocket protocol, signed history (client side: `@wdc/remote-bridge-react`) |
+| `:view-remote-react-skeleton` | The WDC Store as a remote application over `:framework-cube-remote` (the vid of each scope, its own routes, the React bundle) |
 | `:backend` | Javalin server — REST API, WebSocket, H2 or PostgreSQL |
 | `:store-scripts` | Database creation (`DBCreate`), migrations and jOOQ schema generation |
 

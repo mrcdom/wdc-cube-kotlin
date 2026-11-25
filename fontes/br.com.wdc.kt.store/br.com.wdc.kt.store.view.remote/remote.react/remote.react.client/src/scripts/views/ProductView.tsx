@@ -12,8 +12,7 @@ import AddIcon from '@mui/icons-material/Add'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import RemoveIcon from '@mui/icons-material/Remove'
-import app, { type ViewProps } from '@root/App'
-import { BaseViewClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as EndpointUtils from '@root/utils/EndpointUtils'
 import { Colors } from '@root/theme'
@@ -209,19 +208,19 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
 
   readonly emitAddToCart = () => {
     const { vsid, scope } = this
-    app.setFormField(vsid, 'p.quantity', scope.quantity)
-    app.submit(vsid, ON_ADD_TO_CART)
+    bridge.setFormField(vsid, 'p.quantity', scope.quantity)
+    bridge.submit(vsid, ON_ADD_TO_CART)
   }
 
   readonly emitGoHome = () => {
     const { vsid } = this
-    app.submit(vsid, ON_OPEN_PRODUCTS)
+    bridge.submit(vsid, ON_OPEN_PRODUCTS)
   }
 
   readonly emitIncrement = () => {
     const { vsid, scope } = this
     scope.quantity = (scope.quantity ?? 1) + 1
-    app.setFormField(vsid, 'quantity', scope.quantity)
+    bridge.setFormField(vsid, 'quantity', scope.quantity)
     this.forceUpdate()
   }
 
@@ -230,7 +229,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
     const cur = scope.quantity ?? 1
     if (cur > 1) {
       scope.quantity = cur - 1
-      app.setFormField(vsid, 'quantity', scope.quantity)
+      bridge.setFormField(vsid, 'quantity', scope.quantity)
       this.forceUpdate()
     }
   }

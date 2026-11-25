@@ -13,8 +13,7 @@ import AddIcon from '@mui/icons-material/Add'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import RemoveIcon from '@mui/icons-material/Remove'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import app, { type ViewProps } from '@root/App'
-import { BaseViewClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import { Colors } from '@root/theme'
 
@@ -87,7 +86,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
             <Box sx={{ mt: 1.5, mr: -0.75 }}>
               <Stack direction="column" spacing={1}>
                 {rowsViewIds.map((rowViewId) => (
-                  <React.Fragment key={rowViewId}>{app.createView(rowViewId)}</React.Fragment>
+                  <React.Fragment key={rowViewId}>{bridge.createView(rowViewId)}</React.Fragment>
                 ))}
               </Stack>
             </Box>
@@ -146,12 +145,12 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
 
   readonly emitClickFinalizar = () => {
     const { vsid } = this
-    app.submit(vsid, ON_BUY)
+    bridge.submit(vsid, ON_BUY)
   }
 
   readonly emitClickVoltar = () => {
     const { vsid } = this
-    app.submit(vsid, ON_OPEN_PRODUCTS)
+    bridge.submit(vsid, ON_OPEN_PRODUCTS)
   }
 }
 
@@ -230,20 +229,20 @@ class CartItemViewClass extends BaseViewClass<ViewProps, CartItemScope> {
   }
 
   readonly emitRemove = () => {
-    app.submit(this.vsid, ON_REMOVE)
+    bridge.submit(this.vsid, ON_REMOVE)
   }
 
   readonly emitIncrement = () => {
     const { vsid, scope } = this
-    app.setFormField(vsid, 'p.quantity', scope.quantity + 1)
-    app.submit(vsid, ON_MODIFY_QUANTITY)
+    bridge.setFormField(vsid, 'p.quantity', scope.quantity + 1)
+    bridge.submit(vsid, ON_MODIFY_QUANTITY)
   }
 
   readonly emitDecrement = () => {
     const { vsid, scope } = this
     if (scope.quantity > 1) {
-      app.setFormField(vsid, 'p.quantity', scope.quantity - 1)
-      app.submit(vsid, ON_MODIFY_QUANTITY)
+      bridge.setFormField(vsid, 'p.quantity', scope.quantity - 1)
+      bridge.submit(vsid, ON_MODIFY_QUANTITY)
     }
   }
 }

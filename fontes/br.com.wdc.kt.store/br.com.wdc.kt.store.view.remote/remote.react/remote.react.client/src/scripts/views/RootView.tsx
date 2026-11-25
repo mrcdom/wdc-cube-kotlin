@@ -1,8 +1,7 @@
 import React from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
-import app, { type ViewProps } from '@root/App'
-import { BaseViewClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
 
 export type RootScope = {
   contentViewId?: string
@@ -24,7 +23,7 @@ class RootViewClass extends BaseViewClass<ViewProps, RootScope> {
     }
 
     if (scope.contentViewId) {
-      return app.createView(scope.contentViewId)
+      return bridge.createView(scope.contentViewId)
     }
 
     return (
