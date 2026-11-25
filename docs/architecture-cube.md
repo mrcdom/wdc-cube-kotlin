@@ -206,7 +206,7 @@ The view calls the field, inside its own launch: `safeCall { scope.onBuy() }` (C
 scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
 ```
 
-The code goes to the bound scope (or to `target`, a segment), and `Scope.dispatch(eventCode, formData)` runs it; an unknown code is an error (`IllegalArgumentException`), and binding a code twice fails. What the user typed arrives before the event by `Scope.sync(formData)`, which runs what the presenter set with `scope.onSync { … }`. An action whose values the form data can't give reads them from the scope, which the sync filled first — the login: the user name and the password (ciphered on the wire, deciphered by the remote layer) arrive by sync, and `action(1) { enter() }` reads them from the scope. `onEvent(code) { … }` handles a code by hand, when the action itself can't be bound to it.
+The code goes to the bound scope (or to `target`, a segment), and `Scope.dispatch(eventCode, formData)` runs it; an unknown code is an error (`IllegalArgumentException`), and binding a code twice fails. What the user typed arrives before the event by `Scope.sync(formData)`, which runs what the presenter set with `scope.onSync(…)` — a method of the presenter (`scope.onSync(::sync)`), like the actions' bodies: the constructor only binds. An action whose values the form data can't give reads them from the scope, which the sync filled first — the login: the user name and the password (ciphered on the wire; the presenter deciphers it with `app.b64Decipher`, which only the remote host implements) arrive by sync, and `action(1) { enter() }` reads them from the scope. `onEvent(code) { … }` handles a code by hand, when the action itself can't be bound to it.
 
 ### Segments
 

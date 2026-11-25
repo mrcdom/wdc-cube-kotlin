@@ -261,8 +261,9 @@ private val catalog: Map<KClass<out Scope>, (Scope) -> ScopeViewImpl<*>> = mapOf
 open class ScopeViewImpl<S : Scope>(vid: String, protected val app: RemoteApplication, val scope: S,
                                     instanceId: Int = app.nextInstanceId()) {
 
-    // 1. What the user typed (client → server): what the presenter set with scope.onSync { … }
-    open fun syncClientToServer(formData: Map<String, Any?>) {
+    // 1. What the user typed (client → server): what the presenter set with scope.onSync(…); not open — copying
+    //    the form into the scope is the presentation's work
+    fun syncClientToServer(formData: Map<String, Any?>) {
         scope.sync(formData)
     }
 
@@ -520,7 +521,7 @@ sequenceDiagram
     Note over URepo: Direct SQL (H2 or PostgreSQL)<br/>no intermediate REST
     URepo-->>LPres: Subject(id, nickName)
 
-    LPres->>LPres: app.subject = subject
+    LPres->>LPres: app.startSession(subject)
     LPres->>LPres: HomeKeys(app).flip()
 
     Note over LPres: Creates HomePresenter<br/>(its panels are segments of HomeScope)
