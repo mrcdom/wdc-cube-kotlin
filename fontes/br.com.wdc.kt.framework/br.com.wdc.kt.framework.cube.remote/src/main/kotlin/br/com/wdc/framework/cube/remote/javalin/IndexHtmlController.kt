@@ -8,16 +8,22 @@ import jakarta.servlet.http.Cookie
 import java.security.SecureRandom
 
 /**
- * Before the client's page (`/index.html`) is served: plants the cookies it starts a session with — `app_id`, a new
+ * Before a remote client's page (`/index.html`, or `/<context>/index.html` for a client served under a context) is
+ * served: plants the cookies it starts a session with — `app_id`, a new
  * session id signed by the host ([RemoteAppSecurity.signAsHash]), and `app_skey`, the host's public key for the
  * handshake — and keeps the page out of caches.
  */
 class IndexHtmlController {
 
     companion object {
-        fun configure(config: JavalinConfig) {
+        /**
+         * Plants the cookies on `/index.html` and on `/<context>/index.html` of each of [contexts] (the contexts that
+         * serve a remote client; the other pages of the site do not start a session).
+         */
+        fun configure(config: JavalinConfig, vararg contexts: String) {
             val controller = IndexHtmlController()
             config.routes.before("/index.html", controller::handle)
+            for (context in contexts) config.routes.before("/$context/index.html", controller::handle)
         }
     }
 

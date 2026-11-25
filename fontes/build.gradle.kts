@@ -19,7 +19,7 @@ allprojects {
 }
 
 // KMP modules handle their own plugin configuration
-val kmpModules = setOf("framework-commons", "framework-cube", "framework-domain", "store-domain", "store-presentation", "store-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android")
+val kmpModules = setOf("framework-commons", "framework-cube", "framework-cube-remote-bridge", "framework-domain", "store-domain", "store-presentation", "store-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android", "view-remote-react-kotlin")
 
 subprojects {
     if (name !in kmpModules) {
@@ -64,7 +64,11 @@ val publishedModules = mapOf(
     "framework-jooq" to "Declarative jOOQ queries that load an object graph in one statement, for H2 and PostgreSQL",
     "framework-rest" to "REST APIs on Javalin: resource routes, pluggable security, exception mapping, per-request context and transactions, OpenAPI",
     "framework-cube-remote" to "Remote Cube MVP host on Javalin: presenters on the server, views in a browser over WebSocket",
+    "framework-cube-remote-bridge" to "Kotlin/JS client of the remote Cube MVP host, with React bindings: views in the browser, presenters on the server",
 )
+
+/** Published multiplatform modules that have no Android target: published as soon as the Kotlin plugin is applied. */
+val kmpWithoutAndroid = setOf("framework-cube-remote-bridge")
 
 /** Publishing to Maven Central, the same for every published module; only the kind of artifact changes. */
 fun Project.publishToCentral(platform: com.vanniktech.maven.publish.Platform) {
@@ -122,6 +126,18 @@ configure(subprojects.filter { it.name in publishedModules }) {
                 androidVariantsToPublish = listOf("release"),
             )
         )
+    }
+
+    // Multiplatform modules without an Android target (a browser-only library)
+    if (name in kmpWithoutAndroid) {
+        pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+            publishToCentral(
+                com.vanniktech.maven.publish.KotlinMultiplatform(
+                    javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
+                    sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
+                )
+            )
+        }
     }
 
     // JVM-only modules

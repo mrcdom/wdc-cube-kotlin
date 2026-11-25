@@ -2,7 +2,7 @@
 
 The remote host of Cube MVP, on Javalin: the presenters run on the server, and the views run in a browser, which talks to them over a WebSocket. The server keeps each view's scope and sends what changed; the client paints it and sends back what the user typed and the events. JVM only. Its client for React shells is [`@wdc/remote-bridge-react`](../br.com.wdc.kt.framework.cube.remote.react/).
 
-It is the Kotlin counterpart of the Java version's `remote.backend`. The WDC Store's remote React view is built on it: its `ReactRootPresenter` is a complete example.
+It is the Kotlin counterpart of the Java version's `remote.backend`. A second client, written in Kotlin and compiled to JS, is [`framework-cube-remote-bridge`](../br.com.wdc.kt.framework.cube.remote.bridge/). The WDC Store's remote React view is built on it: its `ReactRootPresenter` is a complete example.
 
 Gradle: `implementation("io.github.mrcdom.wdc.kt:framework-cube-remote:<version>")` (from 0.5.0). It brings `framework-cube`, Javalin 7 and Gson.
 
@@ -42,7 +42,7 @@ class ShopRemoteApplication(id: String) : ShopRootPresenter(), RemoteApplication
 // in the server
 Javalin.create { config ->
     DispatcherController.configure(config, ShopRemoteApplication.REGISTRY) // ws://…/dispatcher/{id}
-    IndexHtmlController.configure(config)                                  // the session cookies on /index.html
+    IndexHtmlController.configure(config, "kotlin-client")                 // the session cookies on /index.html and /kotlin-client/index.html
 }
 ShopRemoteApplication.REGISTRY.startFlushing()           // pushes changes made outside a client message
 ShopRemoteApplication.REGISTRY.startCleanup(executor)    // releases the sessions whose client went away
@@ -61,7 +61,7 @@ ShopRemoteApplication.REGISTRY.startCleanup(executor)    // releases the session
 | `RemoteAppSecurity` | The host's keys: textbook RSA for the handshake (the client ciphers its session password with it) and `SHA256withRSA` to sign session ids and addresses. Read from the system properties `wdc.web.public_key`/`wdc.web.private_key` and `wdc.sign.wdc.web.public_key`/`wdc.sign.wdc.web.private_key`; without them, fixed development keys — **set your own in production** (`RemoteAppSecurity.main` prints a new set). |
 | `RemoteDataSecurity` | A session's cipher for sensitive values (a typed password): AES-256-GCM, key derived by PBKDF2 (250,000 iterations) from the password of the handshake (`<password ciphered with RSA>.<salt>`); every value carries a random IV of its own in front of it, `Base64(IV ‖ ciphertext and tag)`. |
 | `javalin.DispatcherController` | `ws://…/dispatcher/{id}`: checks the session id's signature and the `app_signature` cookie on connect, hands each message to the session, and releases a session that does not outlive its socket when it closes. |
-| `javalin.IndexHtmlController` | Before `/index.html`: plants `app_id` (a new signed session id) and `app_skey` (the host's public key), and keeps the page out of caches. |
+| `javalin.IndexHtmlController` | Before `/index.html` (and `/<context>/index.html` of the contexts it is given, for clients served under one): plants `app_id` (a new signed session id) and `app_skey` (the host's public key), and keeps the page out of caches. |
 
 ## The protocol, in short
 
