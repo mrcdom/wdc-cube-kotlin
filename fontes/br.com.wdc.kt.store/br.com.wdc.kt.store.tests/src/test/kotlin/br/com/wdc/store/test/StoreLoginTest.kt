@@ -9,6 +9,7 @@ import br.com.wdc.store.test.util.BasePresentationTest
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.util.Base64
 
 class StoreLoginTest : BasePresentationTest() {
 
@@ -36,6 +37,21 @@ class StoreLoginTest : BasePresentationTest() {
         // Check if it keeps bean login view
         loginView = LoginViewMock.cast(rootView.contentView)
         assertTrue(loginView.scope.errorCode == 1, "The user should not have been validated")
+    }
+
+    /** A remote view sends what the user typed by sync, the password ciphered; the presenter deciphers it. */
+    @Test
+    fun testLoginFromARemoteView() = runBlocking {
+        LoginKeys(app).flip()
+
+        val rootView = app.getRootView()!!
+        val loginView = LoginViewMock.cast(rootView.contentView)
+        val ciphered = Base64.getEncoder().encodeToString("admin".toByteArray())
+        loginView.scope.sync(mapOf("userName" to "admin", "password" to ciphered))
+        loginView.scope.dispatch(1, emptyMap())
+
+        val restrictedView = RestrictedViewMock.cast(rootView.contentView)
+        assertEquals("John Smith", restrictedView.scope.nickName)
     }
 
     @Test

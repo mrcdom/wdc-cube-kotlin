@@ -136,6 +136,14 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
 
     protected abstract fun createSessionStorage(): SessionStorage
 
+    /**
+     * Deciphers what a remote view sent ciphered with the session's key (the password typed at the login). Only the
+     * remote host has that key: in an app whose views run in the same process, nothing comes ciphered, and nothing
+     * calls this.
+     */
+    open fun b64Decipher(b64Text: String): String =
+        throw UnsupportedOperationException("Only a remote view sends ciphered values")
+
     // :: Session
 
     /**

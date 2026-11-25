@@ -6,6 +6,11 @@ import br.com.wdc.framework.cube.Scope
 
 class CartScope : Scope() {
 
+    companion object {
+        /** The client component that paints this scope in a remote view: its id in the bridge protocol. */
+        const val VID = "7eb485e5f843"
+    }
+
     /** One row per product in the cart, each a view of its own. */
     var rows: List<CartItemScope> by scopes()
 
@@ -20,6 +25,11 @@ class CartScope : Scope() {
 
 /** A row of the cart: one product, its quantity and its own actions. */
 class CartItemScope : Scope() {
+
+    companion object {
+        /** The client component that paints this scope in a remote view: its id in the bridge protocol. */
+        const val VID = "5d9e3c7a1f42"
+    }
 
     var productId: Long by field(0L)
     var name: String? by field(null)

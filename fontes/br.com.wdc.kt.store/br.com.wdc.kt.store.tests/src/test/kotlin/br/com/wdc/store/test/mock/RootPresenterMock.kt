@@ -23,6 +23,7 @@ import br.com.wdc.store.test.mock.viewimpl.PurchasesPanelViewMock
 import br.com.wdc.store.test.mock.viewimpl.ReceiptViewMock
 import br.com.wdc.store.test.mock.viewimpl.RestrictedViewMock
 import br.com.wdc.store.test.mock.viewimpl.RootViewMock
+import java.util.Base64
 import java.util.Collections
 import java.util.WeakHashMap
 import kotlin.reflect.KClass
@@ -55,6 +56,9 @@ class RootPresenterMock(private val storage: SessionStorage = JvmSessionStorage(
             ?: throw IllegalStateException("No view mock for ${scope::class.simpleName}")
         factory(scope).also { scope.setUpdater(it.updater) }
     }
+
+    /** A remote view's cipher stands in as plain Base64: the tests check who deciphers, not the cipher. */
+    override fun b64Decipher(b64Text: String): String = String(Base64.getDecoder().decode(b64Text), Charsets.UTF_8)
 
     override fun createSessionStorage(): SessionStorage = storage
 

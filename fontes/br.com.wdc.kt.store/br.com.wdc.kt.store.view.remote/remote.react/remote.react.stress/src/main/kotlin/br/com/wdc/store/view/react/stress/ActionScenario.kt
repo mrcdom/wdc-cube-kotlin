@@ -1,5 +1,14 @@
 package br.com.wdc.store.view.react.stress
 
+import br.com.wdc.store.presentation.presenter.open.login.LoginScope
+import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
+import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
+import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
+import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScope
+import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelScope
+import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
+import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
+import br.com.wdc.store.view.react.skeleton.viewimpl.BrowserScope
 import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
@@ -71,19 +80,19 @@ sealed class ActionScenario(val name: String) {
 }
 
 /**
- * View type identifiers (VIDs) — fixed 12-char hex per view class.
+ * View type identifiers (VIDs): each scope declares the one of the client component that paints it.
  * Instance IDs are assigned dynamically at runtime as "{vid}:{sequentialNum}".
  */
 object Vid {
-    const val BROWSER = "7b32e816a191"
-    const val LOGIN = "c677cda52d14"
-    const val HOME = "473dbdd7a36a"
-    const val PRODUCTS_PANEL = "a1b2c3d4e5f6"
-    const val PURCHASES_PANEL = "b3c4d5e6f7a8"
-    const val PRODUCT = "48b693f67410"
-    const val CART = "7eb485e5f843"
-    const val CART_ITEM = "5d9e3c7a1f42"
-    const val RECEIPT = "e8d0bd8ae3bc"
+    const val BROWSER = BrowserScope.VID
+    const val LOGIN = LoginScope.VID
+    const val HOME = HomeScope.VID
+    const val PRODUCTS_PANEL = ProductsPanelScope.VID
+    const val PURCHASES_PANEL = PurchasesPanelScope.VID
+    const val PRODUCT = ProductScope.VID
+    const val CART = CartScope.VID
+    const val CART_ITEM = CartItemScope.VID
+    const val RECEIPT = ReceiptScope.VID
 }
 
 /**

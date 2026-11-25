@@ -129,7 +129,7 @@ sequenceDiagram
     participant Browser as React Client
     participant WS as WebSocket
     participant Dispatch as DispatchPhaseBhv
-    participant ViewImpl as LoginReactViewImpl
+    participant ViewImpl as ScopeViewImpl (login)
     participant Presenter as LoginPresenter
     participant Repo as UserRepository (JDBC)
     participant Response as ResponsePhaseBhv
@@ -137,7 +137,7 @@ sequenceDiagram
     Browser->>WS: JSON with event and formData
     WS->>Dispatch: parses request
     Dispatch->>ViewImpl: syncClientToServer(formData)
-    ViewImpl->>Presenter: scope.userName = formData.userName
+    ViewImpl->>Presenter: scope.sync(formData) → onSync: scope.userName = formData.userName
     Dispatch->>ViewImpl: submit(eventCode=1, ...)
     ViewImpl->>Presenter: scope.dispatch(1, formData) → onEnter
     Presenter->>Repo: CredentialsCheck(user, pass).run()
@@ -236,20 +236,20 @@ The `appId` is self-signed: `{random}.{signature(random)}` (`AppSecurity.signAsH
 
 ## Skeleton — The Bridge Between Presenter and Client
 
-Presenters do not create views; the framework knows only scopes. The remote host is a rendering technology of its own: each session (`ReactRootPresenter`, which implements `RemoteApplication`) keeps a private **catalog** — which view draws each kind of scope, one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it — and the view of each scope on the client's screen. Only the login has a class of its own (it deciphers the password):
+Presenters do not create views; the framework knows only scopes. The remote host is a rendering technology of its own: each session (`ReactRootPresenter`, which implements `RemoteApplication`) keeps a private **catalog** — which view draws each kind of scope, one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it — and the view of each scope on the client's screen. Each scope declares its vid (`LoginScope.VID`): the presentation names what paints it in the bridge protocol, and the WDC Store speaks that protocol. No scope has a view class of its own:
 
 ```kotlin
 private val catalog: Map<KClass<out Scope>, (Scope) -> ScopeViewImpl<*>> = mapOf(
-    BrowserScope::class to { ScopeViewImpl(BrowserPresenter.VID, this, it, instanceId = 0) },
-    RootScope::class to { ScopeViewImpl("f2d345c4a610", this, it) },
-    LoginScope::class to { LoginReactViewImpl(this, it as LoginScope) },
-    HomeScope::class to { ScopeViewImpl("473dbdd7a36a", this, it) },
-    ProductScope::class to { ScopeViewImpl("48b693f67410", this, it) },
-    CartScope::class to { ScopeViewImpl("7eb485e5f843", this, it) },
-    CartItemScope::class to { ScopeViewImpl("5d9e3c7a1f42", this, it) },
-    ReceiptScope::class to { ScopeViewImpl("e8d0bd8ae3bc", this, it) },
-    ProductsPanelScope::class to { ScopeViewImpl("a1b2c3d4e5f6", this, it) },
-    PurchasesPanelScope::class to { ScopeViewImpl("b3c4d5e6f7a8", this, it) },
+    BrowserScope::class to { ScopeViewImpl(BrowserScope.VID, this, it, instanceId = 0) },
+    RootScope::class to { ScopeViewImpl(RootScope.VID, this, it) },
+    LoginScope::class to { ScopeViewImpl(LoginScope.VID, this, it) },
+    HomeScope::class to { ScopeViewImpl(HomeScope.VID, this, it) },
+    ProductScope::class to { ScopeViewImpl(ProductScope.VID, this, it) },
+    CartScope::class to { ScopeViewImpl(CartScope.VID, this, it) },
+    CartItemScope::class to { ScopeViewImpl(CartItemScope.VID, this, it) },
+    ReceiptScope::class to { ScopeViewImpl(ReceiptScope.VID, this, it) },
+    ProductsPanelScope::class to { ScopeViewImpl(ProductsPanelScope.VID, this, it) },
+    PurchasesPanelScope::class to { ScopeViewImpl(PurchasesPanelScope.VID, this, it) },
 )
 ```
 
@@ -301,17 +301,17 @@ scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
 scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
 ```
 
-The login's values arrive by sync, not as form parameters of the event: the password goes ciphered with the session key, which only the skeleton knows, so `LoginReactViewImpl` overrides `syncClientToServer` to decipher it into the scope. The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { enter() }`, reading the user name and password from the scope.
+The login's values arrive by sync, not as form parameters of the event, and the presenter copies them into the scope (`scope.onSync(::sync)` in `LoginPresenter`). The password goes ciphered with the session key; the presenter deciphers it with `app.b64Decipher`, which only the remote host implements (`ReactRootPresenter`, with the session's `DataSecurity`). The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { enter() }`, reading the user name and password from the scope.
 
 The browser tab itself is a scope of the remote layer (`BrowserScope`: the alert and the root scope, sent as `contentViewId`), whose actions `BrowserPresenter` binds with their codes like any presenter; the presentation knows nothing of it.
 
-The mapping between hexadecimal View IDs and views is fixed and shared between client and server:
+The mapping between hexadecimal View IDs and views is fixed and shared between client and server; on the server, each is the `VID` of its scope:
 
 | View | Hex VID | Client (TSX) | Server (Kotlin) | Events |
 |------|---------|---------------|-------------------|--------|
 | Browser | `7b32e816a191` | BrowserView.tsx | `ScopeViewImpl` (`BrowserScope`, actions bound by `BrowserPresenter`; instance `:0`) | 1 alert OK, 2 keep-alive, -1 start (`p.path`), -2 history changed (`p.path`) |
 | Root | `f2d345c4a610` | RootView.tsx | `ScopeViewImpl` (`RootScope`) | |
-| Login | `c677cda52d14` | LoginView.tsx | LoginReactViewImpl.kt | 1 enter |
+| Login | `c677cda52d14` | LoginView.tsx | `ScopeViewImpl` (`LoginScope`; `LoginPresenter` deciphers the password on sync) | 1 enter |
 | Home | `473dbdd7a36a` | HomeView.tsx | `ScopeViewImpl` (`HomeScope`) | 1 exit, 2 open cart |
 | Cart | `7eb485e5f843` | CartView.tsx | `ScopeViewImpl` (`CartScope`) | 1 buy, 3 open products |
 | Cart row | `5d9e3c7a1f42` | CartView.tsx (`CartItemView`) | `ScopeViewImpl` (`CartItemScope`) | 1 remove, 2 quantity (`p.quantity`) |
@@ -495,7 +495,7 @@ sequenceDiagram
     participant React as React Client
     participant WS as WebSocket
     participant Disp as DispatchPhaseBhv
-    participant LView as LoginReactViewImpl
+    participant LView as ScopeViewImpl (login)
     participant LPres as LoginPresenter
     participant URepo as UserRepository (JDBC)
     participant Resp as ResponsePhaseBhv
@@ -509,9 +509,9 @@ sequenceDiagram
     WS->>Disp: parses request JSON
 
     Disp->>LView: syncClientToServer(formData)
-    LView->>LPres: scope.userName = admin
-    LView->>LView: scope.password = decipher(AES)
-    LView->>LPres: scope.password = real_password
+    LView->>LPres: scope.sync(formData) → onSync
+    LPres->>LPres: scope.userName = admin
+    LPres->>LPres: scope.password = app.b64Decipher(AES)
 
     Disp->>LView: submit(eventCode=1, ...)
     LView->>LPres: scope.dispatch(1) → scope.onEnter()

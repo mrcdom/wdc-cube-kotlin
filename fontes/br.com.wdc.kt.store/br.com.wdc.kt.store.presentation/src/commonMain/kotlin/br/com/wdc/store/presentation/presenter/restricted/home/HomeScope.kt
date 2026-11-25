@@ -12,6 +12,11 @@ import br.com.wdc.store.presentation.presenter.restricted.products.structs.Produ
  */
 class HomeScope : Scope() {
 
+    companion object {
+        /** The client component that paints this scope in a remote view: its id in the bridge protocol. */
+        const val VID = "473dbdd7a36a"
+    }
+
     /** The scope of the place below the home (product, cart, receipt), or none. */
     var content: Scope? by field(null)
     var productsPanel: ProductsPanelScope? by field(null)
@@ -28,6 +33,11 @@ class HomeScope : Scope() {
 /** The home's products panel: the catalog, without descriptions. */
 class ProductsPanelScope : Scope() {
 
+    companion object {
+        /** The client component that paints this scope in a remote view: its id in the bridge protocol. */
+        const val VID = "a1b2c3d4e5f6"
+    }
+
     var products: List<ProductInfo>? by field(null)
 
     var onOpenProduct: ActionOf<Long?> = ActionOf.noop()
@@ -35,6 +45,11 @@ class ProductsPanelScope : Scope() {
 
 /** The home's purchases panel: one page of the user's statement. */
 class PurchasesPanelScope : Scope() {
+
+    companion object {
+        /** The client component that paints this scope in a remote view: its id in the bridge protocol. */
+        const val VID = "b3c4d5e6f7a8"
+    }
 
     var purchases: List<PurchaseInfo> by field(emptyList())
     var page: Int by field(0)
