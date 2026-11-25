@@ -131,6 +131,29 @@ class ScramLoginTest {
     }
 
     @Test
+    fun aChallengeAnsweredByOneInstance_isTakenByAnother_once(): Unit = runBlocking {
+        // two backend instances on the same database: the nonce is there, not in one instance's memory
+        val instanceA = AuthenticationService.BEAN.get()
+        val instanceB = AuthenticationServiceImpl(UserRepository.BEAN.get(), "scram-login-secret-0123456789-0123")
+        val challenge = instanceA.challenge("fulano")
+        val proof = Scram(JceCryptoProvider()).respond("fulano", "fulano", challenge).proof
+
+        val signedIn = instanceB.login(
+            userName = "fulano",
+            proof = proof,
+            nonce = challenge.nonce,
+        )
+        assertNotNull(signedIn, "the other instance knows the nonce")
+
+        val again = instanceA.login(
+            userName = "fulano",
+            proof = proof,
+            nonce = challenge.nonce,
+        )
+        assertNull(again, "and it was used up for both")
+    }
+
+    @Test
     fun manyFailuresOnOneUser_makeItWait_evenWithTheRightPassword(): Unit = runBlocking {
         repeat(6) { assertNull(client().login("beotrano", "wrong-$it")) }
         val e = assertFailsWith<TooManyRequestsException> { client().login("beotrano", "beotrano") }

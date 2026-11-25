@@ -5,6 +5,7 @@
 package br.com.wdc.store.persistence.scheme.keys
 
 
+import br.com.wdc.store.persistence.scheme.tables.EnAuthNonce
 import br.com.wdc.store.persistence.scheme.tables.EnProduct
 import br.com.wdc.store.persistence.scheme.tables.EnPurchase
 import br.com.wdc.store.persistence.scheme.tables.EnPurchaseitem
@@ -23,6 +24,7 @@ import org.jooq.impl.Internal
 // UNIQUE and PRIMARY KEY definitions
 // -------------------------------------------------------------------------
 
+val PK_AUTH_NONCE: UniqueKey<Record> = Internal.createUniqueKey(EnAuthNonce.EN_AUTH_NONCE, DSL.name("PK_AUTH_NONCE"), arrayOf(EnAuthNonce.EN_AUTH_NONCE.NONCE), true)
 val PK_PRODUCT: UniqueKey<Record> = Internal.createUniqueKey(EnProduct.EN_PRODUCT, DSL.name("PK_PRODUCT"), arrayOf(EnProduct.EN_PRODUCT.ID), true)
 val PK_PURCHASE: UniqueKey<Record> = Internal.createUniqueKey(EnPurchase.EN_PURCHASE, DSL.name("PK_PURCHASE"), arrayOf(EnPurchase.EN_PURCHASE.ID), true)
 val PK_PURCHASEITEM: UniqueKey<Record> = Internal.createUniqueKey(EnPurchaseitem.EN_PURCHASEITEM, DSL.name("PK_PURCHASEITEM"), arrayOf(EnPurchaseitem.EN_PURCHASEITEM.ID), true)
