@@ -1,0 +1,40 @@
+{
+  "description": "Events and form data change the scopes, and the answer carries only the views that changed. The same event twice in one message runs once. A view created while answering goes out in the same answer; a view no longer referred to goes out in releasedViews.",
+  "steps": [
+    {
+      "send": { "requestId": -1, "ping": true, "clientKey": "$clientKey", "protocol": 1 },
+      "expect": {
+        "scopes": [
+          { "id": "7b32e816a191:0", "contentViewId": "$capture:counter" },
+          { "id": "${counter}", "count": 0 }
+        ]
+      }
+    },
+    {
+      "send": { "requestId": 0, "event": ["${counter}:1"] },
+      "expect": { "requestId": 0, "scopes": [{ "id": "${counter}", "count": 1 }], "releasedViews": "$absent" }
+    },
+    {
+      "send": { "requestId": 1, "event": ["${counter}:1", "${counter}:1"] },
+      "expect": { "requestId": 1, "scopes": [{ "id": "${counter}", "count": 2 }] }
+    },
+    {
+      "send": { "requestId": 2, "event": ["${counter}:2"], "${counter}": { "p.label": "first" } },
+      "expect": {
+        "requestId": 2,
+        "scopes": [
+          { "id": "${counter}", "rowsViewIds": ["$capture:row"] },
+          { "id": "${row}", "label": "first" }
+        ]
+      }
+    },
+    {
+      "send": { "requestId": 3, "event": ["${row}:1"] },
+      "expect": {
+        "requestId": 3,
+        "scopes": [{ "id": "${counter}", "rowsViewIds": [] }],
+        "releasedViews": ["${row}"]
+      }
+    }
+  ]
+}

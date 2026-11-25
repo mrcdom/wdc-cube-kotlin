@@ -8,3 +8,10 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.logback.classic)
 }
+
+// the shared conformance fixtures (../conformance): the host's runner reads them from there
+tasks.withType<Test>().configureEach {
+    val conformance = layout.projectDirectory.dir("../conformance")
+    inputs.dir(conformance).withPropertyName("conformance")
+    systemProperty("conformance.dir", conformance.asFile.absolutePath)
+}

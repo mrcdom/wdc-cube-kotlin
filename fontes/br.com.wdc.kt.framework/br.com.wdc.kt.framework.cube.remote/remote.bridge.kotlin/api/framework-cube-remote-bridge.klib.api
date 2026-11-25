@@ -28,6 +28,8 @@ final class br.com.wdc.framework.cube.remote.bridge/RemoteBridge { // br.com.wdc
     final val id // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.id|{}id[0]
         final fun <get-id>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.id.<get-id>|<get-id>(){}[0]
 
+    final var outdated // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.outdated|{}outdated[0]
+        final fun <get-outdated>(): kotlin/Boolean // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.outdated.<get-outdated>|<get-outdated>(){}[0]
     final var path // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.path|{}path[0]
         final fun <get-path>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.path.<get-path>|<get-path>(){}[0]
 
@@ -50,6 +52,10 @@ final class br.com.wdc.framework.cube.remote.bridge/RemoteBridge { // br.com.wdc
             final fun <get-BROWSER_VID>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.BROWSER_VID.<get-BROWSER_VID>|<get-BROWSER_VID>(){}[0]
         final const val BROWSER_VSID // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.BROWSER_VSID|{}BROWSER_VSID[0]
             final fun <get-BROWSER_VSID>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.BROWSER_VSID.<get-BROWSER_VSID>|<get-BROWSER_VSID>(){}[0]
+        final const val OUTDATED_MESSAGE // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.OUTDATED_MESSAGE|{}OUTDATED_MESSAGE[0]
+            final fun <get-OUTDATED_MESSAGE>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.OUTDATED_MESSAGE.<get-OUTDATED_MESSAGE>|<get-OUTDATED_MESSAGE>(){}[0]
+        final const val PROTOCOL_VERSION // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.PROTOCOL_VERSION|{}PROTOCOL_VERSION[0]
+            final fun <get-PROTOCOL_VERSION>(): kotlin/Int // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.Companion.PROTOCOL_VERSION.<get-PROTOCOL_VERSION>|<get-PROTOCOL_VERSION>(){}[0]
     }
 }
 

@@ -1,0 +1,34 @@
+{
+  "description": "What the user typed goes with the event that follows, under the view's id; the scopes of the answer replace the client's; a released view the client does not show is dropped.",
+  "steps": [
+    { "start": { "hash": "" } },
+    { "expectSent": { "ping": true, "protocol": 1 } },
+    {
+      "receive": {
+        "requestId": -1,
+        "ping": true,
+        "serverKey": "$serverKey",
+        "protocol": 1,
+        "scopes": [
+          { "id": "7b32e816a191:0", "contentViewId": "c0ffee000001:1" },
+          { "id": "c0ffee000001:1", "count": 0, "rowsViewIds": ["c0ffee000002:2"] },
+          { "id": "c0ffee000002:2", "label": "first" }
+        ]
+      }
+    },
+    { "expectSent": { "requestId": "$capture:start", "event": ["7b32e816a191:0:-1"] } },
+    { "receive": { "requestId": "${start}" } },
+    { "setField": { "vsid": "c0ffee000001:1", "name": "p.label", "value": "second" } },
+    { "fire": { "vsid": "c0ffee000001:1", "event": 2 } },
+    { "expectSent": { "requestId": "$capture:fire", "event": ["c0ffee000001:1:2"], "c0ffee000001:1": { "p.label": "second" } } },
+    {
+      "receive": {
+        "requestId": "${fire}",
+        "scopes": [{ "id": "c0ffee000001:1", "count": 0, "rowsViewIds": [] }],
+        "releasedViews": ["c0ffee000002:2"]
+      }
+    },
+    { "expectScope": { "vsid": "c0ffee000001:1", "scope": { "rowsViewIds": [] } } },
+    { "expectNoView": "c0ffee000002:2" }
+  ]
+}

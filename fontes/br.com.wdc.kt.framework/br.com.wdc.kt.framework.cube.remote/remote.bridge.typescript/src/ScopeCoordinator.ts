@@ -3,7 +3,7 @@ import * as LangUtils from './utils/LangUtils'
 import CookieConstructor from 'universal-cookie'
 
 import type { FormMapType } from './types'
-import { NOOP_VOID, CAUTHED, BROWSER_VSID } from './constants'
+import { NOOP_VOID, CAUTHED, BROWSER_VSID, OUTDATED_MESSAGE } from './constants'
 import { ViewBinding } from './ViewBinding'
 import { DataSecurity } from './DataSecurity'
 import { FlushRequestContext } from './FlushRequestContext'
@@ -31,6 +31,13 @@ export class ScopeCoordinator {
   formMap: FormMapType = {}
 
   isConnected = false
+
+  /**
+   * Whether the host refused this client's protocol version: the page is out of date. Nothing more is sent; the
+   * browser's alert says so, and its OK reloads the page.
+   */
+  outdated = false
+
   path = ''
   baseWebSocketUrl = ''
   unlistenHistory = NOOP_VOID
@@ -155,7 +162,24 @@ export class ScopeCoordinator {
     }
   }
 
+  /** The host does not speak this client's version: stop, and tell the user through the browser's alert. */
+  markOutdated() {
+    this.outdated = true
+    const browser = this.viewMap.get(BROWSER_VSID)
+    if (browser) {
+      browser.getScope().alertMessage = { id: -1, args: [OUTDATED_MESSAGE] }
+      browser.forceUpdate()
+    }
+  }
+
   submit(vsid: string, eventId: number) {
+    if (this.outdated) {
+      // the alert's OK: a new page brings a client the host speaks to
+      if (vsid === BROWSER_VSID && eventId === 1) {
+        window.location.reload()
+      }
+      return
+    }
     const oldFormMap = this.formMap
     this.formMap = {}
     const silent = vsid === BROWSER_VSID
@@ -163,6 +187,9 @@ export class ScopeCoordinator {
   }
 
   submitSilent(vsid: string, eventId: number) {
+    if (this.outdated) {
+      return
+    }
     const oldFormMap = this.formMap
     this.formMap = {}
     this.contextExchanger.submit(oldFormMap, vsid, eventId, true)

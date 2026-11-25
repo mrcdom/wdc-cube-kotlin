@@ -1,6 +1,6 @@
 import type { ScopeCoordinator } from './ScopeCoordinator'
 import type { BrowserScope, FormMapType } from './types'
-import { BROWSER_VSID, CAUTHED, KEEP_ALIVE_INTERVAL } from './constants'
+import { BROWSER_VSID, CAUTHED, KEEP_ALIVE_INTERVAL, PROTOCOL_VERSION } from './constants'
 
 export class FlushRequestContext {
   private readonly app: ScopeCoordinator
@@ -11,8 +11,13 @@ export class FlushRequestContext {
   }
 
   socket: WebSocket | null
-  /** Whether the hello (the first message, with the handshake) went on the current socket; nothing goes before it. */
+  /**
+   * Whether the hello (with the handshake's `clientKey`) went out on the current socket, and whether the host answered
+   * it. Requests wait for the answer, which says up to which request the host already has: sent before it, they could
+   * reach a host that has not taken the handshake, or go twice.
+   */
   private helloSent = false
+  private helloAnswered = false
   requestMap = new Map<number, FormMapType>()
   lastSentRequestId = -1
   requestCount = 0
@@ -58,7 +63,7 @@ export class FlushRequestContext {
 
     const { socket, lastSentRequestId, requestCount, requestMap } = this
 
-    if (socket && socket.readyState === WebSocket.OPEN && this.helloSent) {
+    if (socket && socket.readyState === WebSocket.OPEN && this.helloAnswered) {
       const requestObj: Partial<RequestObjType> & Record<string, unknown> = {
         event: [],
       }
@@ -114,17 +119,22 @@ export class FlushRequestContext {
     const app = this.app
 
     this.helloSent = false
+    this.helloAnswered = false
     const socket = (this.socket = new WebSocket(url, ['wdc']))
     ;(socket as unknown as Record<string, unknown>).withCredentials = true
 
     const handleDisconnect = (cause: unknown) => {
       this.socket = null
       this.helloSent = false
+      this.helloAnswered = false
       app.isConnected = false
       this.stopKeepAliveChecks()
       this.userRequestIds.clear()
       this.setSubmitting(false)
-      app.reconnectController.reconnect(cause)
+      // an out-of-date page does not come back by reconnecting
+      if (!app.outdated) {
+        app.reconnectController.reconnect(cause)
+      }
     }
 
     socket.onopen = () => {
@@ -143,6 +153,7 @@ export class FlushRequestContext {
             requestId: this.lastProcessedId,
             path: app.path,
             clientKey,
+            protocol: PROTOCOL_VERSION,
           }),
         )
         // The queued requests go with the answer, from the last one the host processed.
@@ -179,7 +190,22 @@ export class FlushRequestContext {
       }
       const response = JSON.parse(e.data)
 
-      //console.log(response);
+      // the host does not speak this client's version (`protocols` says which it does): the page is out of date
+      if (response.error === 'unsupported-protocol') {
+        console.warn(
+          `Remote bridge: the host speaks protocol ${JSON.stringify(response.protocols)}, this page ${PROTOCOL_VERSION}`,
+        )
+        app.markOutdated()
+        me.stopKeepAliveChecks()
+        me.setSubmitting(false)
+        socket.close()
+        return
+      }
+
+      // the first message on this socket answers the hello: the requests that waited can go
+      if (me.helloSent) {
+        me.helloAnswered = true
+      }
 
       if (response.ping) {
         me.lastSentRequestId = response.requestId

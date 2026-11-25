@@ -60,11 +60,13 @@ ShopRemoteApplication.REGISTRY.startCleanup(executor)    // releases the session
 
 ## The protocol, in short
 
-- **Client → server**: `{requestId, clientKey?, ping?, event: ["<vsid>:<code>", …], "<vsid>": {form data}}`. The form data of a view is synced into its scope before the events run.
-- **Server → client**: `{requestId, ping?, serverKey?, uri, scopes: [{id, …fields, "<name>ViewId", "<name>ViewIds"}], releasedViews?: [vsid, …]}`. A scope inside a scope goes as the id of its view; a view created while writing goes in the same message.
+- **Client → server**: `{requestId, clientKey?, protocol?, ping?, event: ["<vsid>:<code>", …], "<vsid>": {form data}}`. The form data of a view is synced into its scope before the events run. The handshake carries the `clientKey` and the `protocol` version (`RemoteProtocol.VERSION`, 1); nothing is read before a handshake with a version the host speaks.
+- **Server → client**: `{requestId, ping?, serverKey?, protocol?, uri, scopes: [{id, …fields, "<name>ViewId", "<name>ViewIds"}], releasedViews?: [vsid, …]}`. A scope inside a scope goes as the id of its view; a view created while writing goes in the same message. A client the host cannot talk to gets `{requestId, error: "unsupported-protocol", protocols: [1]}`.
+
+The full specification, and the shared fixtures, are in [conformance/](../conformance/README.md).
 
 The WDC Store's [remote view documentation](../../../../docs/architecture-react.md) describes the whole cycle, with diagrams.
 
 ## Tests
 
-`RemoteViewReleaseTest` (views released in cascade), `ExpiredApplicationsTest` (registry and life), `RemoteProtocolTest` (a message and its answer, the alert, a forged address) and `RemoteDataSecurityTest` (the ECDH handshake with a JCA client, a new key per handshake, a new IV per value, a changed byte or another curve refused, the HMAC signatures).
+`HostConformanceTest` (the shared host fixtures of [conformance/host](../conformance/host/), against the conformance application), `RemoteViewReleaseTest` (views released in cascade), `ExpiredApplicationsTest` (registry and life), `RemoteProtocolTest` (a message and its answer, the alert, a forged address, the protocol version) and `RemoteDataSecurityTest` (the ECDH handshake with a JCA client, a new key per handshake, a new IV per value, a changed byte or another curve refused, the HMAC signatures).

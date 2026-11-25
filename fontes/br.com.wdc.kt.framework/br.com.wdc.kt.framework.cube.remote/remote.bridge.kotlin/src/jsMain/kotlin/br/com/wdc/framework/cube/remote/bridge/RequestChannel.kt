@@ -34,10 +34,12 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
     private val userRequestIds = HashSet<Int>()
 
     /**
-     * Whether the hello (with the handshake's `clientKey`) went out on the current socket. Requests wait for it, and
-     * then for its answer, which says up to which request the host already has.
+     * Whether the hello (with the handshake's `clientKey`) went out on the current socket, and whether the host answered
+     * it. Requests wait for the answer, which says up to which request the host already has: sent before it, they
+     * could reach a host that has not taken the handshake, or go twice.
      */
     private var helloSent = false
+    private var helloAnswered = false
 
     init {
         val onBack: (dynamic) -> Unit = { if (!document.asDynamic().hidden.unsafeCast<Boolean>()) keepAliveNow() }
@@ -61,7 +63,7 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
     /** Sends, as one message, every request not sent yet. */
     fun flush() {
         val ws = socket ?: return
-        if (ws.readyState != WebSocket.OPEN || !helloSent) return
+        if (ws.readyState != WebSocket.OPEN || !helloAnswered) return
 
         val message: dynamic = js("({ event: [] })")
         var hasData = false
@@ -102,10 +104,12 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
             stopKeepAliveChecks()
             userRequestIds.clear()
             setSubmitting(false)
-            bridge.reconnect.reconnect(cause)
+            // an out-of-date page does not come back by reconnecting
+            if (!bridge.outdated) bridge.reconnect.reconnect(cause)
         }
 
         helloSent = false
+        helloAnswered = false
         ws.onopen = {
             bridge.isConnected = true
             initKeepAliveChecks()
@@ -118,6 +122,7 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
                     hello.requestId = lastProcessedId
                     hello.path = bridge.path
                     hello.clientKey = clientKey
+                    hello.protocol = RemoteBridge.PROTOCOL_VERSION
                     ws.send(JSON.stringify(hello))
                     // the queued requests go with the answer: the host says there which ones it already has
                     helloSent = true
@@ -135,6 +140,16 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
     private fun receive(response: dynamic) {
         if (bridge.reconnect.count > 0) bridge.reconnect.reset()
 
+        // the host does not speak this client's version (`protocols` says which it does): the page is out of date
+        if (response.error == "unsupported-protocol") {
+            console.warn("Remote bridge: the host speaks protocol ${JSON.stringify(response.protocols)}, this page ${RemoteBridge.PROTOCOL_VERSION}")
+            bridge.markOutdated()
+            stopKeepAliveChecks()
+            setSubmitting(false)
+            socket?.close()
+            return
+        }
+
         val serverKey = response.serverKey
         if (serverKey != null && serverKey != undefined) {
             GlobalScope.launch {
@@ -145,6 +160,9 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
                 }
             }
         }
+
+        // the first message on this socket answers the hello: the requests that waited can go
+        if (helloSent) helloAnswered = true
 
         val requestId = (response.requestId as Number).toInt()
         if (response.ping == true) {

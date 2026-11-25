@@ -102,6 +102,13 @@ jobs:
       - name: Bundle
         run: npm run build
 
+      # the TypeScript bridge runs the shared conformance fixtures of the remote protocol (vitest, jsdom)
+      - name: Bridge conformance tests
+        working-directory: fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript
+        run: |
+          npm ci
+          npm test
+
   starter:
     name: Starter project (presenter tests, browser bundle)
     runs-on: ubuntu-latest

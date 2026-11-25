@@ -1,0 +1,23 @@
+{
+  "description": "The handshake: the client's key and version are answered with the host's key and version, and with the first scopes — the browser and the application's root scope inside it — and a signed address.",
+  "steps": [
+    {
+      "send": { "requestId": -1, "ping": true, "path": "/", "clientKey": "$clientKey", "protocol": 1 },
+      "expect": {
+        "requestId": -1,
+        "ping": true,
+        "serverKey": "$string",
+        "protocol": 1,
+        "uri": "$string",
+        "scopes": [
+          { "id": "7b32e816a191:0", "contentViewId": "$capture:counter" },
+          { "id": "${counter}", "count": 0, "rowsViewIds": [] }
+        ]
+      }
+    },
+    {
+      "send": { "requestId": 0, "ping": true },
+      "expect": { "requestId": 0, "ping": true, "serverKey": "$absent", "protocol": "$absent", "error": "$absent" }
+    }
+  ]
+}

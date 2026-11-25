@@ -1,0 +1,24 @@
+{
+  "description": "A client starts with the handshake — its key and version, on a new socket — and sends nothing else before the host answers it. Then the requests that waited go out (the browser's start, with the page's address), and the scopes the answer brought are the client's.",
+  "steps": [
+    { "start": { "hash": "" } },
+    { "expectSent": { "ping": true, "requestId": -1, "clientKey": "$string", "protocol": 1, "event": "$absent" } },
+    { "expectNothingSent": true },
+    {
+      "receive": {
+        "requestId": -1,
+        "ping": true,
+        "serverKey": "$serverKey",
+        "protocol": 1,
+        "uri": "start?sign=abc",
+        "scopes": [
+          { "id": "7b32e816a191:0", "contentViewId": "c0ffee000001:1" },
+          { "id": "c0ffee000001:1", "count": 0, "rowsViewIds": [] }
+        ]
+      }
+    },
+    { "expectSent": { "event": ["7b32e816a191:0:-1"], "7b32e816a191:0": { "p.path": "$string" } } },
+    { "expectScope": { "vsid": "7b32e816a191:0", "scope": { "contentViewId": "c0ffee000001:1" } } },
+    { "expectScope": { "vsid": "c0ffee000001:1", "scope": { "count": 0, "rowsViewIds": [] } } }
+  ]
+}
