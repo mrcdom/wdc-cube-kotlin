@@ -17,7 +17,7 @@ The demo was built and tested as one instance. Nothing below was run against sev
 | A **remote view session**: the presenters and views of one browser tab | `RemoteApplicationRegistry` | The registry there makes a new, empty session under the same id: what was on the screen is gone | The session id, the last segment of the WebSocket's path (`/dispatcher/<app_id>`) |
 | The **key that signs remote session ids** | `RemoteAppSecurity`. The WDC Store's backend derives it from `security.jwt.secret` (`RemoteSigningKey`, given to `useKey`): the same on every instance of the same configuration. **Without the secret it is random per process** | With the secret, nothing: a page served by one instance and its socket on another accept the same id (checked with two instances). Without it, the signature does not check there, the host closes the socket with `4001`, and the page reloads | With the secret, nothing. Without it, the page (`/index.html`, which plants the `app_id` cookie) and its socket must reach the same instance |
 | A **remote transaction** of the REST API, which holds a database connection | `RemoteTransactionCoordinatorImpl` | The calls that carry its `X-Tx-Id` get 410: the transaction is unknown there | The client, `X-Client-Id` (sent on every call, from the `begin` on) |
-| A **session's state in memory** (an access token's session) | `AccessContextCache` | It works: the instance reads the session from the database. But a session ended or renewed on one instance stays valid, until its access token expires (30 minutes), on another that had already read it | — |
+| A **session's state in memory** (an access token's session) | `AccessContextCache` | It works: the instance reads the session from the database. A session ended or renewed on one instance is dropped by the others within a moment **on PostgreSQL** (`PostgresSessionEvents`, `LISTEN`/`NOTIFY`); on H2, which is for one instance, it would stay valid on another that had already read it, until its access token expires (30 minutes) | — |
 | **Limits**: failed sign-ins per user, `/api/auth` requests per address and minute, the API's per-minute limit | `LoginThrottle`, `AuthRateLimit`, `rateLimit` | Each instance counts its own: the effective limit is the configured one times the number of instances | — |
 | The **product images** already served | the image cache of `ProductApiController` | After an image changes, only the instance that saved it drops the old one; another can keep serving it | — |
 
@@ -62,7 +62,6 @@ When an instance stops, what it held in memory is gone: its remote view sessions
 
 ## What to change for a real deployment
 
-- **Ending sessions everywhere**: telling the other instances when a session ends or is renewed, or not keeping sessions in memory at all.
 - **Shared counts** for the limits.
 - **Invalidating the image cache** on every instance, or not caching images in the instance.
 

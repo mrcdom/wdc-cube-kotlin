@@ -15,6 +15,8 @@ class AccessContextCache(
     refreshTokenTtlDays: Int = 7,
     /** The time, for the access token's expiry and the refresh token's window; a test passes its own. */
     private val clock: Clock = Clock.systemUTC(),
+    /** How the other instances learn that a session ended here, and this one learns of theirs. */
+    private val events: SessionEvents = SessionEvents.LOCAL,
 ) {
 
     companion object {
@@ -36,6 +38,26 @@ class AccessContextCache(
     private val refreshTokenIndex = ConcurrentHashMap<String, String>() // refreshToken → sessionId
 
     val accessTokenTtl: Duration get() = ACCESS_TOKEN_TTL
+
+    init {
+        // a session ended on another instance stops being accepted here at once; after missed notices, nothing kept
+        // in memory is trusted, and the sessions are read from the database again
+        events.listen(
+            onEnded = ::forget,
+            onMissed = ::forgetAll,
+        )
+    }
+
+    /** Drops [sessionId] from memory only: it ended elsewhere, which already took it out of the database. */
+    private fun forget(sessionId: String) {
+        bySessionId.remove(sessionId)?.let { refreshTokenIndex.remove(it.refreshToken) }
+    }
+
+    private fun forgetAll() {
+        bySessionId.clear()
+        refreshTokenIndex.clear()
+        LOG.info("Session cache cleared: notices of ended sessions may have been missed")
+    }
 
     fun createSession(userId: Long, userName: String, roles: Set<String>): AccessContext {
         val keyPair = generateRsaKeyPair()
@@ -94,10 +116,11 @@ class AccessContextCache(
         val ctx = AccessContext(newSessionId, existing.userId, existing.userName, existing.roles,
             generateRsaKeyPair(), expiresAt, newRefreshToken, intentSignSecret)
 
-        // Remove old session
+        // Remove old session, here and, through the events, on the other instances
         bySessionId.remove(sessionId)
         refreshTokenIndex.remove(refreshToken)
         sessionStore.deleteBySessionId(sessionId!!)
+        events.sessionEnded(sessionId)
 
         // Add new session
         bySessionId[newSessionId] = ctx
@@ -146,6 +169,7 @@ class AccessContextCache(
             refreshTokenIndex.remove(ctx.refreshToken)
         }
         sessionStore.deleteBySessionId(sessionId)
+        events.sessionEnded(sessionId)
         LOG.info("Session removed: sessionId={}", sessionId)
     }
 
@@ -160,6 +184,8 @@ class AccessContextCache(
         val ctx = sessionStore.findByRefreshToken(refreshToken)
         if (ctx != null) {
             sessionStore.deleteByRefreshToken(refreshToken)
+            // not in this instance's memory, but perhaps in another's
+            events.sessionEnded(ctx.sessionId!!)
             LOG.info("Session removed from DB: refreshToken={}", refreshToken)
             return true
         }
