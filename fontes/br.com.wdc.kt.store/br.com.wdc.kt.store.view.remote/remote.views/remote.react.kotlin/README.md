@@ -3,7 +3,7 @@
 The **remote view's client written in Kotlin**: React + Material UI through kotlin-wrappers, compiled to JavaScript by
 the Kotlin toolchain (Kotlin/JS, webpack through the Gradle plugin).
 
-In the remote view the presenters run on the server (`framework-cube-remote`, a Javalin host). The server sends the
+In the remote view the presenters run on the server (`framework-cube-remote-host`, on Javalin). The server sends the
 scopes over a WebSocket; this client only paints them and sends back what the user typed (form fields) and did
 (events). It knows the protocol — vids, field names, event codes — and nothing else: no presenters, no domain, no
 persistence.
@@ -11,8 +11,8 @@ persistence.
 It is the Kotlin counterpart of the TypeScript client ([`remote.react.typescript`](../remote.react.typescript/)) and of the
 Java version's TeaVM client: same screens, same texts, same protocol, so the same server drives any of them.
 
-It builds on the framework module [`:framework-cube-remote-bridge`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote.bridge/)
-(`RemoteBridge`, `RemoteScope`, and the React bindings `RemoteViews`, `useView`, `remoteView`), which does the
+It builds on the framework modules [`:framework-cube-remote-bridge`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.kotlin/) and [`:framework-cube-remote-bridge-react`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.kotlin.react/)
+(`RemoteBridge`, `RemoteScope`, and the React bindings `RemoteViews`, `useView`, `remoteView`), which do the
 session, the security handshake, the WebSocket exchange, the history and the view collection.
 
 ## How a view looks

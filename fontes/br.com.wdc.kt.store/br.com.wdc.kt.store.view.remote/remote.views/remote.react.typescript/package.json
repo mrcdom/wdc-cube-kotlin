@@ -15,7 +15,8 @@
   },
   "alias": {
     "@root/*": "./src/scripts/$1",
-    "@wdc/remote-bridge-react": "../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote.react/src/bridge/index.tsx",
+    "@wdc/remote-bridge-react": "../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript.react/src/index.tsx",
+    "@wdc/remote-bridge": "../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript/src/index.ts",
     "react": "./node_modules/react",
     "history": "./node_modules/history",
     "universal-cookie": "./node_modules/universal-cookie"

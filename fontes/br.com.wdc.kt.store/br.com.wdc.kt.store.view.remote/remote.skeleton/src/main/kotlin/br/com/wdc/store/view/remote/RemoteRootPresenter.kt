@@ -20,7 +20,7 @@ import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
 import kotlin.reflect.KClass
 
 /**
- * The WDC Store as a remote application (`framework-cube-remote`): its root presenter, with a remote session around
+ * The WDC Store as a remote application (`framework-cube-remote-host`): its root presenter, with a remote session around
  * it. The session's work — views, protocol, history, life — is the framework's ([RemoteApplicationSupport]); what is
  * the Store's is here: which client component paints each of its scopes ([VIDS]), that a signed-in user's session
  * outlives its connection, and the text of an unexpected error.

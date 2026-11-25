@@ -20,7 +20,7 @@ kotlin {
     sourceSets {
         getByName("jsMain") {
             dependencies {
-                implementation(project(":framework-cube-remote-bridge"))
+                implementation(project(":framework-cube-remote-bridge-react"))
                 implementation(libs.kotlinx.coroutines.core)
 
                 implementation(kotlinWrappers.react)

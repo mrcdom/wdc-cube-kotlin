@@ -1,0 +1,25 @@
+{
+  "name": "@wdc/remote-bridge",
+  "version": "0.5.0",
+  "private": true,
+  "license": "MIT",
+  "author": "Marcelo Domingos <WeDoCode Consultoria LTDA>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrcdom/wdc-cube-kotlin.git",
+    "directory": "fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript"
+  },
+  "source": "src/index.ts",
+  "main": "src/index.ts",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.8.2"
+  },
+  "peerDependencies": {
+    "history": "^5.3.0",
+    "universal-cookie": "^7.2.2"
+  }
+}
