@@ -5,12 +5,16 @@ package br.com.wdc.store.persistence.security
  * so that none keeps accepting it from its memory. Each instance keeps the sessions it has read ([AccessContextCache]);
  * without this, one ended on another instance stays valid here until its access token expires.
  *
- * [LOCAL] tells no one: right for one instance (and for an embedded H2 database, which only one process opens).
- * [PostgresSessionEvents] tells every instance on the same PostgreSQL database.
+ * [LOCAL] tells no one: right for one instance. [PostgresSessionEvents] tells every instance on the same PostgreSQL
+ * database; the backend's mesh between instances (`StoreCluster`, with `cluster.peers`) tells the instances it
+ * connects, on any database.
  */
 interface SessionEvents {
 
-    /** Tells the other instances that [sessionId] ended. Sent when the current transaction commits, if there is one. */
+    /**
+     * Tells the other instances that [sessionId] ended; called once its end is stored. PostgreSQL's `NOTIFY` goes out
+     * when the current transaction commits, if there is one; the mesh sends at once.
+     */
     fun sessionEnded(sessionId: String)
 
     /**

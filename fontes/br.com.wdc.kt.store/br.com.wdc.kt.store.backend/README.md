@@ -31,5 +31,6 @@ The backend reads `config/application.toml` in the work directory. Without the f
 - **Database** — H2 (default) or PostgreSQL, chosen by the `url`; connection pool; remote transactions.
 - **Security** — with `security.jwt.secret`, the API requires authentication. Without it, it stays open: development only.
 - **Server** — port and CORS.
+- **Cluster** — with `cluster.peers`, the other instances of this backend, to tell them of the sessions that end, the images that change and the remote view sessions that move ([running-several-instances.md](../../../docs/running-several-instances.md)). Needs `security.jwt.secret`.
 
 The log is configured by `config/logback.xml` and written to `log/`, with rotation.

@@ -6,7 +6,7 @@
 # starting the service (--workdir=<folder> or the STORE_WORKDIR variable); in development it is fontes/work.
 #
 # Every key is optional: commented out, the indicated default applies. The reader accepts sections and
-# key = value pairs; it does not accept lists or end-of-line comments.
+# key = value pairs, and lists of double-quoted strings, without commas inside, on one line (["a", "b"]); it does not accept end-of-line comments.
 #
 # The log configuration sits next to it, in logback.xml.
 
@@ -70,3 +70,10 @@
 
 # Requests to /api/auth (challenge, login, refresh) per client address and minute; above it, 429. 0 = no limit.
 # auth.requestsPerMinute = 60
+
+[cluster]
+# The other instances of this backend, to tell them of the sessions that end, the product images that change and the
+# remote view sessions that move (docs/running-several-instances.md). One list can serve every instance: each one
+# leaves its own address alone. Needs security.jwt.secret, from which the instances' shared key is derived. Use
+# wss:// between instances that are not on a private network.
+# peers = ["ws://store-a:8080", "ws://store-b:8080"]

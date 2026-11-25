@@ -74,4 +74,19 @@ class StoreConfigTest {
         assertEquals(9123, config.getInt("server.port", 8080))
         assertEquals("abc", StoreConfig.jwtSecret)
     }
+
+    @Test
+    fun aListOnOneLine_isReadAsAList() = preservingTheConfiguration {
+        val work = Files.createTempDirectory("store-work")
+        StoreConfig.Internals.useWorkDir(work)
+        Files.writeString(
+            work.resolve("config/application.toml"),
+            "[cluster]\npeers = [\"ws://store-a:8080\", \"ws://store-b:8080\"]\none = \"ws://store-c:8080\"\nnone = []\n",
+        )
+        val config = StoreConfig.Internals.loadConfig()
+        assertEquals(listOf("ws://store-a:8080", "ws://store-b:8080"), config.getList("cluster.peers"))
+        assertEquals(listOf("ws://store-c:8080"), config.getList("cluster.one"))
+        assertEquals(emptyList(), config.getList("cluster.none"))
+        assertEquals(emptyList(), config.getList("cluster.missing"))
+    }
 }

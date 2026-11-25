@@ -23,7 +23,6 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
-import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 
 /**
@@ -34,11 +33,6 @@ import javax.imageio.ImageIO
 internal object ProductApiController {
 
     private val LOG = Log.getLogger("ProductApiController")
-    private const val IMAGE_CACHE_MAX_SIZE = 200
-
-    // Key: "id" for original, "id_size" for resized
-    private val imageCache = ConcurrentHashMap<String, ByteArray>()
-
     private fun repo(): ProductRepository = ProductRepository.BEAN.get()
 
     fun register(routes: RestApi.Routes) {
@@ -69,17 +63,13 @@ internal object ProductApiController {
         val size = call.query("size")?.toIntOrNull()?.coerceIn(16, 1024)
         val cacheKey = if (size != null) "${id}_$size" else "$id"
 
-        val resultBytes: ByteArray? = imageCache[cacheKey] ?: try {
-            val originalBytes = imageCache["$id"] ?: repo().fetchImage(id)?.also { bytes ->
-                if (imageCache.size < IMAGE_CACHE_MAX_SIZE) {
-                    imageCache["$id"] = bytes
-                }
+        val resultBytes: ByteArray? = ProductImageCache[cacheKey] ?: try {
+            val originalBytes = ProductImageCache["$id"] ?: repo().fetchImage(id)?.also { bytes ->
+                ProductImageCache.put("$id", bytes)
             }
             if (originalBytes != null && size != null) {
                 val resized = resizeImage(originalBytes, size)
-                if (imageCache.size < IMAGE_CACHE_MAX_SIZE) {
-                    imageCache[cacheKey] = resized
-                }
+                ProductImageCache.put(cacheKey, resized)
                 resized
             } else {
                 originalBytes
@@ -106,10 +96,6 @@ internal object ProductApiController {
     private fun etagOf(bytes: ByteArray): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
         return "\"" + digest.take(16).joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') } + "\""
-    }
-
-    private fun evictImage(id: Long) {
-        imageCache.keys.filter { it == "$id" || it.startsWith("${id}_") }.forEach { imageCache.remove(it) }
     }
 
     private fun resizeImage(originalBytes: ByteArray, targetSize: Int): ByteArray {
@@ -146,7 +132,7 @@ internal object ProductApiController {
                 // Only after commit: clearing earlier would let a GET in between (which reads the committed, old
                 // image) put it back in the cache. In a remote transaction, the commit is the client's.
                 val transactions = StoreTransactions.BEAN.getOrNull()
-                if (transactions == null) evictImage(id) else transactions.afterCommit { evictImage(id) }
+                if (transactions == null) ProductImageCache.changed(id) else transactions.afterCommit { ProductImageCache.changed(id) }
                 updated
             }
             return mapOf("success" to success)

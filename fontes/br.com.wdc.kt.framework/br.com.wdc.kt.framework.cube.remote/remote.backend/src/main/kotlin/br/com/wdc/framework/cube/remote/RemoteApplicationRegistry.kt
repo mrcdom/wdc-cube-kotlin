@@ -3,6 +3,7 @@ package br.com.wdc.framework.cube.remote
 import br.com.wdc.framework.commons.log.Log
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -28,6 +29,8 @@ class RemoteApplicationRegistry(private val factory: (id: String) -> RemoteAppli
 
     private var flusher: ScheduledExecutorService? = null
 
+    private val createdListeners = CopyOnWriteArrayList<(id: String) -> Unit>()
+
     fun get(id: String?): RemoteApplication? = if (id.isNullOrBlank()) null else apps[id]
 
     val activeSessionCount: Int get() = apps.size
@@ -36,7 +39,30 @@ class RemoteApplicationRegistry(private val factory: (id: String) -> RemoteAppli
      * The session [id], made on its first message ([request]): the browser's start event says where the client is
      * (`p.path`), and the application goes there before answering.
      */
-    fun getOrCreate(id: String, request: Map<String, Any?>): RemoteApplication = apps.computeIfAbsent(id) { create(id, request) }
+    fun getOrCreate(id: String, request: Map<String, Any?>): RemoteApplication {
+        var created = false
+        val app = apps.computeIfAbsent(id) { create(id, request).also { created = true } }
+        if (created) {
+            for (listener in createdListeners) {
+                try {
+                    listener(id)
+                } catch (e: Exception) {
+                    LOG.error("Telling that session {} was created", id, e)
+                }
+            }
+        }
+        return app
+    }
+
+    /**
+     * Calls [listener] with the id of each session made here ([getOrCreate]). With several instances, a session made
+     * here under an id another instance knows means the client moved here: that one can let go of its own
+     * ([releaseIdle]). Closing the result stops it.
+     */
+    fun onCreated(listener: (id: String) -> Unit): AutoCloseable {
+        createdListeners += listener
+        return AutoCloseable { createdListeners -= listener }
+    }
 
     private fun create(id: String, request: Map<String, Any?>): RemoteApplication {
         val app = factory(id)
@@ -85,6 +111,17 @@ class RemoteApplicationRegistry(private val factory: (id: String) -> RemoteAppli
             if (!session.isExpired(now)) continue
             if (session.wsSession == null) app.release() else session.extendLife()
         }
+    }
+
+    /**
+     * Releases the session [id] if it is here and has no socket: its client went on elsewhere. One with a socket is
+     * kept — its client is still here. `true` if it was released.
+     */
+    fun releaseIdle(id: String): Boolean {
+        val app = apps[id] ?: return false
+        if (app.remote.wsSession != null) return false
+        app.release()
+        return true
     }
 
     /** The session was released ([RemoteApplicationSupport.release]). */

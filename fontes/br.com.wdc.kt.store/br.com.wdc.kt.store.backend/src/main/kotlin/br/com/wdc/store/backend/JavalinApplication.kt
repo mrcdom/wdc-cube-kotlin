@@ -347,6 +347,8 @@ class JavalinApplication(
         }
 
         DispatcherController.configure(config, RemoteRootPresenter.REGISTRY)
+        // the other instances' connections, with cluster.peers
+        businessContext.cluster?.mesh?.configure(config)
         // the TypeScript client at the root, the Kotlin one under its context
         IndexHtmlController.configure(config, REMOTE_KOTLIN_CONTEXT)
 
@@ -372,6 +374,7 @@ class JavalinApplication(
             RemoteRootPresenter.REGISTRY.startFlushing()
             app.start(port)
             LOG.info("Javalin server started on port {}", port)
+            businessContext.startCluster()
             LOG.info("Static files served from {}: {}", staticFilesSettings.location, staticFilesSettings.directory)
             if (deployedContexts.isNotEmpty()) {
                 LOG.info("Deployed frontends: {}", deployedContexts.joinToString(", ") { "/$it/" })
