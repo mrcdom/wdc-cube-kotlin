@@ -1,0 +1,85 @@
+import React from 'react'
+import { ScopeCoordinator, BROWSER_VSID } from '@wdc/remote-bridge'
+import { ReactViews } from './ReactViews'
+import type { IViewFactory, ViewComponent } from './types'
+
+const coordinator = new ScopeCoordinator()
+const views = new ReactViews(coordinator)
+
+/** The bridge's public API: what a React shell and its views use to render scopes and send events. */
+const bridge = new (class {
+  getBaseUrl() {
+    return coordinator.baseWebSocketUrl
+  }
+
+  getScope<T>(vsid: string) {
+    var binding = coordinator.viewMap.get(vsid)
+    return binding ? (binding.getScope() as T) : ({} as T)
+  }
+
+  connect() {
+    coordinator.connect()
+  }
+
+  submit(vsid: string, eventId: number) {
+    coordinator.submit(vsid, eventId)
+  }
+
+  submitSilent(vsid: string, eventId: number) {
+    coordinator.submitSilent(vsid, eventId)
+  }
+
+  async cipher(value: string) {
+    return coordinator.dataSecurity.b64Cipher(value)
+  }
+
+  setFormField(vsid: string, fieldName: string, fieldValue: unknown) {
+    coordinator.setFormField(vsid, fieldName, fieldValue)
+  }
+
+  registerView(viewId: string, factory: IViewFactory) {
+    views.register(viewId, factory)
+  }
+
+  registerComponent(Component: ViewComponent) {
+    // Memoized: a parent repaint does not repaint the child views. Cube views are independent; each one repaints
+    // itself when its own state arrives (bindView's forceUpdate), and a parent only repaints a child it swaps.
+    const View = React.memo(Component)
+    views.register(Component.VIEW_ID, (vsid, props) => <View vsid={vsid} {...props} />)
+  }
+
+  registerComponents(...components: ViewComponent[]) {
+    for (const Component of components) {
+      this.registerComponent(Component)
+    }
+  }
+
+  createView(vsid: string | null | undefined, props?: Record<string, unknown>) {
+    if (!vsid) {
+      return null
+    }
+    return views.create(vsid, props)
+  }
+
+  createBrowserView() {
+    return views.create(BROWSER_VSID)
+  }
+
+  bindView<T>(vsid: string) {
+    return views.useBinding<T>(vsid)
+  }
+
+  holdView(vsid: string | undefined) {
+    views.useHold(vsid)
+  }
+
+  onStart() {
+    coordinator.onStart()
+  }
+
+  onStop() {
+    coordinator.onStop()
+  }
+})()
+
+export default bridge

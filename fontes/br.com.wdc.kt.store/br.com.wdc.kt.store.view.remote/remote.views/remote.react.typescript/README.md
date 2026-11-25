@@ -17,7 +17,7 @@ See the [architecture documentation](../../../../../docs/architecture-react.md) 
 | history | 5.3.0 | Hash-based navigation |
 | universal-cookie | 7.2.2 | Cookie management |
 
-The protocol client (coordinator, WebSocket, security handshake, view bindings, view base classes) is the framework package [`@wdc/remote-bridge-react`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote.react/), imported from source through an alias. This client supplies the views, the theme and the texts.
+The protocol client (coordinator, WebSocket, security handshake, view bindings) is the framework package [`@wdc/remote-bridge`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript/), and its React bindings (the `bridge` object, the hooks, the view base classes) are [`@wdc/remote-bridge-react`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript.react/); both are imported from source through aliases. This client supplies the views, the theme and the texts.
 
 ## Project Structure
 
@@ -77,7 +77,7 @@ export default BaseViewClass.FC(LoginViewClass, 'c677cda52d14')
 - The **scope** (`scope`) comes from the backend (presenter); it is not managed locally
 - **Events** are sent to the backend via `bridge.submit(vsid, eventId)`
 - **Form data** is attached via `bridge.setFormField(vsid, field, value)` before the submit
-- Each view is identified by a unique **VIEW_ID** (hash) that maps to a kind of scope on the backend (the skeleton's view catalog). A list of child views arrives as `<name>ViewIds` (the cart rows, `rowsViewIds`, each painted by `CartItemView`)
+- Each view is identified by a unique **VIEW_ID** (hash) that maps to a kind of scope on the backend (the vid each scope declares, read by the remote host). A list of child views arrives as `<name>ViewIds` (the cart rows, `rowsViewIds`, each painted by `CartItemView`)
 
 ### WebSocket Communication
 
@@ -98,8 +98,8 @@ The bridge sets `submitting` on the browser scope, and `BrowserView` shows a `Li
 ## Import Aliases
 
 - `@root/*` maps to `./src/scripts/*`.
-- `@wdc/remote-bridge-react` maps to the bridge's source entry, `src/bridge/index.tsx`.
-- `react`, `history` and `universal-cookie` map to this client's `node_modules`: the bridge has none of its own, and its files, outside this folder, resolve these peer dependencies here (one copy of React for both).
+- `@wdc/remote-bridge` and `@wdc/remote-bridge-react` map to the source entries of the two framework packages (`src/index.ts`, `src/index.tsx`).
+- `react`, `history` and `universal-cookie` map to this client's `node_modules`: the bridge packages have none of their own, and their files, outside this folder, resolve these peer dependencies here (one copy of React for both).
 
 ```typescript
 import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
@@ -110,13 +110,13 @@ Configured in `package.json` (Parcel `alias`) and `tsconfig.json` (`paths`, for 
 
 ## Build Output
 
-The compiled assets are written straight into the `skeleton` module:
+The compiled assets are written straight into the `remote.host` module:
 
 ```
-../../remote.skeleton/src/main/resources/META-INF/resources/
+../../remote.host/src/main/resources/META-INF/resources/
 ```
 
-This lets the Javalin server serve the static files automatically from the classpath. The bundle is generated, not versioned (the skeleton's `.gitignore` excludes it): run `npm run build` after cloning and after changing the client, before starting the backend; without it, the backend starts without the React view.
+This lets the Javalin server serve the static files automatically from the classpath. The bundle is generated, not versioned (the host's `.gitignore` excludes it): run `npm run build` after cloning and after changing the client, before starting the backend; without it, the backend starts without the React view.
 
 ## Commands
 

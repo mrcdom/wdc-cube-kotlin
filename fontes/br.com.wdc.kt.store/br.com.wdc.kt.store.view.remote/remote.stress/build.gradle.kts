@@ -7,7 +7,7 @@ application {
 }
 
 dependencies {
-    implementation(project(":view-remote-skeleton"))
+    implementation(project(":view-remote-host"))
     implementation(project(":framework-commons"))
     implementation(libs.okhttp)
     implementation(libs.gson)

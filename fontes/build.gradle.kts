@@ -19,7 +19,7 @@ allprojects {
 }
 
 // KMP modules handle their own plugin configuration
-val kmpModules = setOf("framework-commons", "framework-cube", "framework-cube-remote-bridge", "framework-domain", "store-domain", "store-presentation", "store-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android", "view-remote-react-kotlin")
+val kmpModules = setOf("framework-commons", "framework-cube", "framework-cube-remote-bridge", "framework-cube-remote-bridge-react", "framework-domain", "store-domain", "store-presentation", "store-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android", "view-remote-react-kotlin")
 
 subprojects {
     if (name !in kmpModules) {
@@ -63,12 +63,14 @@ val publishedModules = mapOf(
     "framework-persistence" to "JDBC transactions with propagation, coroutine-aware, and a coordinator for client-driven remote transactions",
     "framework-jooq" to "Declarative jOOQ queries that load an object graph in one statement, for H2 and PostgreSQL",
     "framework-rest" to "REST APIs on Javalin: resource routes, pluggable security, exception mapping, per-request context and transactions, OpenAPI",
-    "framework-cube-remote" to "Remote Cube MVP host on Javalin: presenters on the server, views in a browser over WebSocket",
-    "framework-cube-remote-bridge" to "Kotlin/JS client of the remote Cube MVP host, with React bindings: views in the browser, presenters on the server",
+    "framework-cube-remote-backend" to "Remote Cube MVP host: presenters on the server, views in a client over the remote protocol (sessions, views, dispatch, signed history)",
+    "framework-cube-remote-backend-javalin" to "The remote Cube MVP host on Javalin: the WebSocket route and the session cookies of the client page",
+    "framework-cube-remote-bridge" to "Kotlin/JS client of the remote Cube MVP host, with no UI technology: session, handshake, WebSocket, scopes and events",
+    "framework-cube-remote-bridge-react" to "React bindings (kotlin-wrappers) for the Kotlin/JS client of the remote Cube MVP host",
 )
 
 /** Published multiplatform modules that have no Android target: published as soon as the Kotlin plugin is applied. */
-val kmpWithoutAndroid = setOf("framework-cube-remote-bridge")
+val kmpWithoutAndroid = setOf("framework-cube-remote-bridge", "framework-cube-remote-bridge-react")
 
 /** Publishing to Maven Central, the same for every published module; only the kind of artifact changes. */
 fun Project.publishToCentral(platform: com.vanniktech.maven.publish.Platform) {

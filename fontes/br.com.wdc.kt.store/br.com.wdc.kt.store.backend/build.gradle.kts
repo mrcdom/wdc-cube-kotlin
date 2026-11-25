@@ -14,7 +14,9 @@ tasks.named<JavaExec>("run") {
 }
 
 dependencies {
-    api(project(":view-remote-skeleton"))
+    api(project(":view-remote-host"))
+    // the remote view's routes: the WebSocket and the session cookies of the client pages
+    implementation(project(":framework-cube-remote-backend-javalin"))
     api(project(":persistence-rest"))
     api(project(":store-scripts"))
     api(project(":store-persistence"))

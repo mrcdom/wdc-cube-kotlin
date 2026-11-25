@@ -10,12 +10,13 @@
   "source": "src/index.html",
   "targets": {
     "default": {
-      "distDir": "../../remote.skeleton/src/main/resources/META-INF/resources"
+      "distDir": "../../remote.host/src/main/resources/META-INF/resources"
     }
   },
   "alias": {
     "@root/*": "./src/scripts/$1",
-    "@wdc/remote-bridge-react": "../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote.react/src/bridge/index.tsx",
+    "@wdc/remote-bridge-react": "../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript.react/src/index.tsx",
+    "@wdc/remote-bridge": "../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript/src/index.ts",
     "react": "./node_modules/react",
     "history": "./node_modules/history",
     "universal-cookie": "./node_modules/universal-cookie"
@@ -23,9 +24,9 @@
   "scripts": {
     "start": "parcel watch --public-url ./",
     "watch": "parcel watch --public-url ./",
-    "clean:watch": "rm -rf .parcel-cache && find ../../remote.skeleton/src/main/resources/META-INF/resources -maxdepth 1 -type f -delete && parcel watch --public-url ./",
+    "clean:watch": "rm -rf .parcel-cache && find ../../remote.host/src/main/resources/META-INF/resources -maxdepth 1 -type f -delete && parcel watch --public-url ./",
     "build": "parcel build --public-url ./",
-    "clean:build": "rm -rf .parcel-cache && find ../../remote.skeleton/src/main/resources/META-INF/resources -maxdepth 1 -type f -delete && parcel build --public-url ./",
+    "clean:build": "rm -rf .parcel-cache && find ../../remote.host/src/main/resources/META-INF/resources -maxdepth 1 -type f -delete && parcel build --public-url ./",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

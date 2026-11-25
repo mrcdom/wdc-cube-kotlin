@@ -21,7 +21,7 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Simulates a single browser client connecting to the remote.react skeleton via WebSocket.
+ * Simulates a single browser client connecting to the remote host via WebSocket.
  * Handles the full lifecycle: HTTP session creation, crypto handshake, event dispatch, and response parsing.
  */
 class VirtualClient(
