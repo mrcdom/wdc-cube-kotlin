@@ -6,7 +6,11 @@ import br.com.wdc.store.presentation.presenter.open.login.LoginScope
 import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
+import platform.CoreGraphics.CGRectInset
+import platform.CoreGraphics.CGRectUnion
 import platform.CoreGraphics.CGSizeMake
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSOperationQueue
 import platform.UIKit.*
 import platform.objc.sel_registerName
 import platform.darwin.NSObject
@@ -14,6 +18,10 @@ import platform.darwin.NSObject
 /**
  * Login screen — gradient background, centered card with logo, fields, and button.
  * Matches the web reference exactly.
+ *
+ * The keyboard never hides what the user needs: the card sits in a scroll view that ends where the keyboard begins,
+ * and the field being edited — with the button below it — is scrolled into sight. Return on the user name goes to the
+ * password; return on the password signs in. A tap outside the fields, or a drag of the card, closes the keyboard.
  */
 @OptIn(ExperimentalForeignApi::class)
 class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractViewIos<LoginScope>("login-view", app, scope) {
@@ -24,6 +32,8 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
     private lateinit var errorLabel: UILabel
     private lateinit var loginButton: UIButton
     private lateinit var loadingIndicator: UIActivityIndicatorView
+    private lateinit var scroll: UIScrollView
+    private var keyboardObserver: Any? = null
 
     // Change guards
     private var lastLoading: Boolean? = null
@@ -49,111 +59,165 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
             ))
         }
 
-        // White card
-        val card = view(configure = {
-            backgroundColor = UIColor.whiteColor
-            layer.cornerRadius = 12.0
-            layer.shadowColor = UIColor.blackColor.CGColor
-            layer.shadowOpacity = 0.12f
-            layer.shadowOffset = CGSizeMake(0.0, 2.0)
-            layer.shadowRadius = 8.0
-            clipsToBounds = false
-            val preferredWidth = widthAnchor.constraintEqualToConstant(560.0)
-            preferredWidth.priority = 750.0f
+        // The card scrolls, in a scroll view that ends at the keyboard
+        scroll = scrollView(configure = {
+            keyboardDismissMode = UIScrollViewKeyboardDismissMode.UIScrollViewKeyboardDismissModeInteractive
+            alwaysBounceVertical = true
             NSLayoutConstraint.activateConstraints(listOf(
-                centerXAnchor.constraintEqualToAnchor(root.centerXAnchor),
-                centerYAnchor.constraintEqualToAnchor(root.centerYAnchor),
-                leadingAnchor.constraintGreaterThanOrEqualToAnchor(root.leadingAnchor, 24.0),
-                trailingAnchor.constraintLessThanOrEqualToAnchor(root.trailingAnchor, -24.0),
-                widthAnchor.constraintLessThanOrEqualToConstant(560.0),
-                preferredWidth
+                topAnchor.constraintEqualToAnchor(root.safeAreaLayoutGuide.topAnchor),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
+                bottomAnchor.constraintEqualToAnchor(root.keyboardLayoutGuide.topAnchor)
             ))
         }) {
-            val stack = vStack(spacing = 20.0, configure = {
-                layoutMarginsRelativeArrangement = true
-                layoutMargins = UIEdgeInsetsMake(32.0, 24.0, 32.0, 24.0)
+            val sv = parent() as UIScrollView
+            // At least as tall as the visible area, so the card stays centered; taller when the card does not fit
+            view(configure = {
+                val fillVisibleArea = heightAnchor.constraintEqualToAnchor(sv.frameLayoutGuide.heightAnchor)
+                fillVisibleArea.priority = 250.0f
+                NSLayoutConstraint.activateConstraints(listOf(
+                    topAnchor.constraintEqualToAnchor(sv.contentLayoutGuide.topAnchor),
+                    bottomAnchor.constraintEqualToAnchor(sv.contentLayoutGuide.bottomAnchor),
+                    leadingAnchor.constraintEqualToAnchor(sv.contentLayoutGuide.leadingAnchor),
+                    trailingAnchor.constraintEqualToAnchor(sv.contentLayoutGuide.trailingAnchor),
+                    widthAnchor.constraintEqualToAnchor(sv.frameLayoutGuide.widthAnchor),
+                    heightAnchor.constraintGreaterThanOrEqualToAnchor(sv.frameLayoutGuide.heightAnchor),
+                    fillVisibleArea
+                ))
             }) {
-                // Logo: centered rounded square with LocalMall SVG icon
-                view {
-                    val logo = view(configure = {
-                        backgroundColor = StoreColors.Primary
-                        layer.cornerRadius = 18.0
-                        clipsToBounds = true
-                    }) {
-                        val iconIv = imageView {
-                            image = StoreIcons.localMall(40.0, UIColor.whiteColor)
-                            contentMode = UIK.ContentModeScaleAspectFit
-                        }
-                        center(iconIv, inside = parent())
-                        size(iconIv, width = 40.0, height = 40.0)
-                    }
-                    size(logo, width = 72.0, height = 72.0)
-                    center(logo)
-                    size(parent(), height = 72.0)
-                }
+                val content = parent()
 
-                // Title
-                label {
-                    text = "WDC Store"
-                    font = UIFont.boldSystemFontOfSize(28.0)
-                    textColor = StoreColors.OnSurface
-                    textAlignment = UIK.TextAlignCenter
-                }
-
-                // Subtitle
-                label {
-                    text = "Sign in to continue"
-                    font = UIFont.systemFontOfSize(14.0)
-                    textColor = StoreColors.OnSurfaceVariant
-                    textAlignment = UIK.TextAlignCenter
-                    numberOfLines = 0
-                }
-
-                // Username field
-                userField = textField("Username") {
-                    autocorrectionType = UIK.AutocorrectionNo
-                    autocapitalizationType = UIK.AutocapNone
-                    textContentType = null
-                    heightAnchor.constraintEqualToConstant(48.0).active = true
-                }
-
-                // Password field
-                passwordField = textField("Password") {
-                    secureTextEntry = true
-                    autocorrectionType = UIK.AutocorrectionNo
-                    autocapitalizationType = UIK.AutocapNone
-                    textContentType = null
-                    returnKeyType = UIK.ReturnKeyGo
-                    delegate = actions
-                    heightAnchor.constraintEqualToConstant(48.0).active = true
-                }
-
-                // Error label (hidden)
-                errorLabel = label {
-                    textColor = StoreColors.Error
-                    font = UIFont.systemFontOfSize(14.0)
-                    numberOfLines = 0
-                    textAlignment = UIK.TextAlignCenter
-                    hidden = true
-                }
-
-                // Login button
-                loginButton = button("Sign in") {
-                    setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
-                    backgroundColor = StoreColors.Primary
+                // White card
+                view(configure = {
+                    backgroundColor = UIColor.whiteColor
                     layer.cornerRadius = 12.0
-                    titleLabel?.font = UIFont.boldSystemFontOfSize(16.0)
-                    heightAnchor.constraintEqualToConstant(48.0).active = true
-                    addTarget(actions, action = sel_registerName("onLoginTapped"), forControlEvents = UIControlEventTouchUpInside)
-                }
+                    layer.shadowColor = UIColor.blackColor.CGColor
+                    layer.shadowOpacity = 0.12f
+                    layer.shadowOffset = CGSizeMake(0.0, 2.0)
+                    layer.shadowRadius = 8.0
+                    clipsToBounds = false
+                    val preferredWidth = widthAnchor.constraintEqualToConstant(560.0)
+                    preferredWidth.priority = 750.0f
+                    NSLayoutConstraint.activateConstraints(listOf(
+                        centerXAnchor.constraintEqualToAnchor(content.centerXAnchor),
+                        centerYAnchor.constraintEqualToAnchor(content.centerYAnchor),
+                        topAnchor.constraintGreaterThanOrEqualToAnchor(content.topAnchor, 24.0),
+                        bottomAnchor.constraintLessThanOrEqualToAnchor(content.bottomAnchor, -24.0),
+                        leadingAnchor.constraintGreaterThanOrEqualToAnchor(content.leadingAnchor, 24.0),
+                        trailingAnchor.constraintLessThanOrEqualToAnchor(content.trailingAnchor, -24.0),
+                        widthAnchor.constraintLessThanOrEqualToConstant(560.0),
+                        preferredWidth
+                    ))
+                }) {
+                    val stack = vStack(spacing = 20.0, configure = {
+                        layoutMarginsRelativeArrangement = true
+                        layoutMargins = UIEdgeInsetsMake(32.0, 24.0, 32.0, 24.0)
+                    }) {
+                        // Logo: centered rounded square with LocalMall SVG icon
+                        view {
+                            val logo = view(configure = {
+                                backgroundColor = StoreColors.Primary
+                                layer.cornerRadius = 18.0
+                                clipsToBounds = true
+                            }) {
+                                val iconIv = imageView {
+                                    image = StoreIcons.localMall(40.0, UIColor.whiteColor)
+                                    contentMode = UIK.ContentModeScaleAspectFit
+                                }
+                                center(iconIv, inside = parent())
+                                size(iconIv, width = 40.0, height = 40.0)
+                            }
+                            size(logo, width = 72.0, height = 72.0)
+                            center(logo)
+                            size(parent(), height = 72.0)
+                        }
 
-                // Loading indicator
-                loadingIndicator = activityIndicator {
-                    color = StoreColors.Primary
+                        // Title
+                        label {
+                            text = "WDC Store"
+                            font = UIFont.boldSystemFontOfSize(28.0)
+                            textColor = StoreColors.OnSurface
+                            textAlignment = UIK.TextAlignCenter
+                        }
+
+                        // Subtitle
+                        label {
+                            text = "Sign in to continue"
+                            font = UIFont.systemFontOfSize(14.0)
+                            textColor = StoreColors.OnSurfaceVariant
+                            textAlignment = UIK.TextAlignCenter
+                            numberOfLines = 0
+                        }
+
+                        // Username field
+                        userField = textField("Username") {
+                            autocorrectionType = UIK.AutocorrectionNo
+                            autocapitalizationType = UIK.AutocapNone
+                            // what the field is, so the system's password AutoFill can fill it
+                            textContentType = UITextContentTypeUsername
+                            returnKeyType = UIK.ReturnKeyNext
+                            delegate = actions
+                            heightAnchor.constraintEqualToConstant(48.0).active = true
+                        }
+
+                        // Password field
+                        passwordField = textField("Password") {
+                            secureTextEntry = true
+                            autocorrectionType = UIK.AutocorrectionNo
+                            autocapitalizationType = UIK.AutocapNone
+                            textContentType = UITextContentTypePassword
+                            returnKeyType = UIK.ReturnKeyGo
+                            delegate = actions
+                            heightAnchor.constraintEqualToConstant(48.0).active = true
+                        }
+
+                        // Error label (hidden)
+                        errorLabel = label {
+                            textColor = StoreColors.Error
+                            font = UIFont.systemFontOfSize(14.0)
+                            numberOfLines = 0
+                            textAlignment = UIK.TextAlignCenter
+                            hidden = true
+                        }
+
+                        // Login button
+                        loginButton = button("Sign in") {
+                            setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
+                            backgroundColor = StoreColors.Primary
+                            layer.cornerRadius = 12.0
+                            titleLabel?.font = UIFont.boldSystemFontOfSize(16.0)
+                            heightAnchor.constraintEqualToConstant(48.0).active = true
+                            addTarget(actions, action = sel_registerName("onLoginTapped"), forControlEvents = UIControlEventTouchUpInside)
+                        }
+
+                        // Loading indicator
+                        loadingIndicator = activityIndicator {
+                            color = StoreColors.Primary
+                        }
+                    }
+                    pin(stack)
                 }
             }
-            pin(stack)
         }
+
+        // A tap outside the fields closes the keyboard; the tap still reaches what it touched
+        root.addGestureRecognizer(
+            UITapGestureRecognizer(target = actions, action = sel_registerName("onBackgroundTapped"))
+                .apply { cancelsTouchesInView = false }
+                .also { retainForGC(it) }
+        )
+
+        // The keyboard is up: the field being edited comes into sight above it
+        keyboardObserver = NSNotificationCenter.defaultCenter.addObserverForName(
+            name = UIKeyboardDidShowNotification,
+            `object` = null,
+            queue = NSOperationQueue.mainQueue
+        ) { _ -> revealEditedField() }
+    }
+
+    override fun onRelease() {
+        keyboardObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
+        keyboardObserver = null
     }
 
     override fun doUpdate() {
@@ -182,6 +246,31 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
         }
     }
 
+    /** Return on a field: from the user name to the password; on the password, sign in. */
+    internal fun onReturn(textField: UITextField) {
+        if (textField == userField) {
+            passwordField.becomeFirstResponder()
+        } else {
+            textField.resignFirstResponder()
+            performLogin()
+        }
+    }
+
+    internal fun dismissKeyboard() {
+        rootView.endEditing(true)
+    }
+
+    /** Scrolls the field being edited into sight — with the button below it, so the user sees where to go next. */
+    internal fun revealEditedField() {
+        val field = listOf(userField, passwordField).firstOrNull { it.isFirstResponder() } ?: return
+        scroll.layoutIfNeeded()
+        val area = CGRectUnion(
+            field.convertRect(field.bounds, toView = scroll),
+            loginButton.convertRect(loginButton.bounds, toView = scroll)
+        )
+        scroll.scrollRectToVisible(CGRectInset(area, 0.0, -16.0), animated = true)
+    }
+
     internal fun performLogin() {
         safeAction("login") {
             scope.userName = userField.text ?: ""
@@ -198,8 +287,18 @@ private class LoginActions(private val view: LoginViewIos) : NSObject(), UITextF
         view.performLogin()
     }
 
+    @ObjCAction
+    fun onBackgroundTapped() {
+        view.dismissKeyboard()
+    }
+
     override fun textFieldShouldReturn(textField: UITextField): Boolean {
-        view.performLogin()
+        view.onReturn(textField)
         return true
+    }
+
+    override fun textFieldDidBeginEditing(textField: UITextField) {
+        // when the keyboard is already up (moving from one field to the other), there is no new "did show"
+        view.revealEditedField()
     }
 }
