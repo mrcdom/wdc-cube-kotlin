@@ -3,7 +3,7 @@ import * as LangUtils from './utils/LangUtils'
 import CookieConstructor from 'universal-cookie'
 
 import type { FormMapType } from './types'
-import { NOOP_VOID, NOOP_PROMISE_VOID, CAUTHED, BROWSER_VSID } from './constants'
+import { NOOP_VOID, CAUTHED, BROWSER_VSID } from './constants'
 import { ViewBinding } from './ViewBinding'
 import { DataSecurity } from './DataSecurity'
 import { FlushRequestContext } from './FlushRequestContext'
@@ -41,8 +41,6 @@ export class ScopeCoordinator {
   /** Public: the technology binding reports views entering and leaving the screen, and holds views. */
   readonly viewGarbageCollector: ViewGarbageCollector
 
-  readyToStart = NOOP_PROMISE_VOID
-
   constructor() {
     this.viewMap.set(BROWSER_VSID, new ViewBinding(BROWSER_VSID))
 
@@ -62,23 +60,6 @@ export class ScopeCoordinator {
     }
 
     this.id = appId
-
-    const appSKey = Cookie.get('app_skey')
-    if (appSKey) {
-      this.dataSecurity.updateSecurityKey(appSKey)
-      Cookie.remove('app_skey')
-
-      this.readyToStart = async () => {
-        try {
-          await this.dataSecurity.updateSecretWithRandomPassword()
-
-          Cookie.set('app_signature', this.dataSecurity.getSignature())
-          this.readyToStart = NOOP_PROMISE_VOID
-        } catch (error) {
-          CAUTHED(error)
-        }
-      }
-    }
 
     const contextPath = location.pathname.split('/')[1]
 
@@ -123,9 +104,6 @@ export class ScopeCoordinator {
 
   onStart() {
     const action = async () => {
-      // Wait construction async initialization
-      await this.readyToStart()
-
       this.assureContextExchangerIsConnected()
 
       this.unlistenHistory()

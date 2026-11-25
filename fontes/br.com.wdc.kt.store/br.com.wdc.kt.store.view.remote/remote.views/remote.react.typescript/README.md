@@ -84,7 +84,7 @@ export default BaseViewClass.FC(LoginViewClass, 'c677cda52d14')
 - **Protocol**: WebSocket with the `wdc` subprotocol
 - **Keep-alive**: Automatic every 15 seconds to keep the connection alive
 - **Reconnection**: Progressive backoff (2s, 4s, 6s, ... up to 120s) with an option to reconnect right away
-- **Security**: Sensitive data encrypted with AES-GCM; key exchanged via RSA in the handshake
+- **Security**: Sensitive data encrypted with AES-256-GCM, with a key agreed on each connection by ECDH P-256 (see the bridge's README)
 
 ### Activity Indicator
 

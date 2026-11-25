@@ -12,8 +12,8 @@ import kotlin.random.Random
  * The client side of one remote application (`framework-cube-remote-backend`), in the browser: the session id, the security
  * handshake, the WebSocket exchange, the history, and the scopes of the views the host publishes. One per page.
  *
- * The page comes from the host, which plants two cookies: `app_id` (the session id, signed by the host) and
- * `app_skey` (its public key). [start] runs the handshake and asks for the address in the page's hash; from then on
+ * The page comes from the host, which plants the `app_id` cookie (the session id, signed by the host). Each connection
+ * agrees on the session's key ([DataSecurity]); [start] connects and asks for the address in the page's hash; from then on
  * the host sends the scopes, which the views read ([scopeOf], [ViewBinding]), and the views send what the user typed
  * ([setFormField]) and the events ([submit]).
  *
@@ -48,7 +48,6 @@ class RemoteBridge {
     internal val reconnect: ReconnectController
 
     private var formMap: dynamic = js("({})")
-    private var readyToStart: suspend () -> Unit = {}
     private var hashListener: ((dynamic) -> Unit)? = null
 
     init {
@@ -59,17 +58,6 @@ class RemoteBridge {
             ?: appIdFromCookie?.also { sessionStorage.setItem("app_id", it) }
             ?: "${Random.nextLong().toString(36)}.fake"
 
-        Cookies.get("app_skey")?.let { appSKey ->
-            dataSecurity.updateSecurityKey(appSKey)
-            Cookies.remove("app_skey")
-            readyToStart = {
-                dataSecurity.updateSecretWithRandomPassword()
-                // the socket's path is at the root: the cookie goes there
-                Cookies.set("app_signature", dataSecurity.signature!!)
-                readyToStart = {}
-            }
-        }
-
         // the host's routes are at the root, whatever context served the page
         baseWebSocketUrl = (if (window.location.protocol == "http:") "ws://" else "wss://") + window.location.host
 
@@ -79,15 +67,10 @@ class RemoteBridge {
 
     // :: Life
 
-    /** Runs the handshake, connects, and asks the host for the address in the page's hash (the browser's event -1). */
+    /** Connects (the handshake runs on each connection) and asks the host for the page's address (the browser's event -1). */
     @OptIn(DelicateCoroutinesApi::class)
     fun start() {
         GlobalScope.launch {
-            try {
-                readyToStart()
-            } catch (e: Throwable) {
-                console.error("Remote bridge: the handshake failed", e)
-            }
             ensureConnected()
 
             hashListener?.let { window.removeEventListener("hashchange", it) }
@@ -176,7 +159,7 @@ class RemoteBridge {
     suspend fun cipher(value: String): String = dataSecurity.b64Cipher(value)
 }
 
-/** The page's cookies, read and written for the whole site (`path=/`). */
+/** The page's cookies: the session id the host planted, read once and removed (`path=/`). */
 internal object Cookies {
 
     fun get(name: String): String? = document.cookie.split(";")
@@ -184,10 +167,6 @@ internal object Cookies {
         .firstOrNull { it.startsWith("$name=") }
         ?.substringAfter("=")
         ?.let { js("decodeURIComponent")(it) as String }
-
-    fun set(name: String, value: String) {
-        document.cookie = "$name=${js("encodeURIComponent")(value)}; path=/"
-    }
 
     fun remove(name: String) {
         document.cookie = "$name=; path=/; max-age=0"

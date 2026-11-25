@@ -174,7 +174,7 @@ The whole cycle happens in a single WebSocket exchange — the client sends the 
 
 ## Session Establishment
 
-The session is established in two steps with a cryptographic key exchange:
+The session is established in two steps: the page gets a session id signed by the host, and each WebSocket connection agrees on a key for sensitive values.
 
 ```mermaid
 sequenceDiagram
@@ -182,21 +182,18 @@ sequenceDiagram
     participant Server as Server
 
     Browser->>Server: GET /index.html
-    Server->>Server: Generates appId = random.sign(random)
-    Server-->>Browser: Cookies: app_id, app_skey (the server's RSA public key)
+    Server-->>Browser: Cookie app_id = random.HMAC(random)
 
-    Browser->>Browser: Generates a random password and salt
-    Browser->>Browser: Encrypts the password with the RSA public key
-    Browser->>Browser: Sets the app_signature cookie
-
-    Browser->>Server: WebSocket /dispatcher/appId (checks the appId and the cookie)
-    Browser->>Server: ping with secret=app_signature
-    Server->>Server: Decrypts the password with the RSA private key,<br/>derives the AES-256-GCM key (PBKDF2)
+    Browser->>Server: WebSocket /dispatcher/appId (the server checks the HMAC)
+    Browser->>Browser: Generates an ephemeral ECDH P-256 key pair
+    Browser->>Server: ping with clientKey (its public key)
     Server->>Server: The registry creates the application (RemoteRootPresenter, first message)
-    Server-->>Browser: Initial scopes (views)
+    Server->>Server: Generates its own pair, derives the key:<br/>ECDH, then HKDF-SHA256 (salt = appId)
+    Server-->>Browser: Initial scopes (views) and serverKey
+    Browser->>Browser: Derives the same key
 ```
 
-The `appId` is self-signed: `{random}.{signature(random)}` (`RemoteAppSecurity.signAsHash`, Base62) — this prevents forging session IDs. The RSA key pair is the server's, fixed (`wdc.web.public_key` / `wdc.web.private_key`, with a development fallback), not one per session.
+The `appId` is `{random}.{HMAC-SHA256(random)}` (`RemoteAppSecurity`, Base62): only the server holds the HMAC key, so session ids cannot be forged. The key is random per process unless the application gives one (`RemoteAppSecurity.useKey`, needed when several instances serve the same clients). Neither side keeps a long-lived key for the cipher: every connection makes new key pairs, so a recorded session cannot be deciphered later.
 
 ---
 
@@ -395,12 +392,10 @@ The client keeps a reference system for views (`ViewGarbageCollector`). A view t
 
 ```mermaid
 graph LR
-    subgraph "Handshake"
-        A["Server generates RSA key pair"] --> B["Sends pub key via cookie"]
-        B --> C["Client generates AES-256-GCM password"]
-        C --> D["Encrypts password with RSA pub"]
-        D --> E["Sends via app_signature cookie"]
-        E --> F["Server decrypts with RSA priv"]
+    subgraph "Handshake (each connection)"
+        A["Client: ephemeral ECDH P-256 pair"] --> B["clientKey in the first message"]
+        B --> C["Server: its own pair, serverKey in the answer"]
+        C --> F["Both: ECDH + HKDF-SHA256 = AES-256-GCM key"]
     end
 
     subgraph "Session"
@@ -408,9 +403,10 @@ graph LR
     end
 ```
 
-- **Session ID**: self-signed with HMAC — prevents forging
-- **Sensitive fields**: encrypted end to end with AES-256-GCM (e.g., passwords), each value with a random IV of its own sent in front of it (`Base64(IV ‖ ciphertext and tag)`); the handshake (`<password ciphered with RSA>.<salt>`) carries no IV
-- **Navigation**: URLs signed with a hash to prevent parameter tampering
+- **Transport**: TLS in production; the cipher below is a second layer for sensitive values, not a replacement
+- **Session ID**: signed by the server with HMAC-SHA256 — prevents forging
+- **Sensitive fields** (the password at login): AES-256-GCM with a key agreed per connection by ECDH P-256 and HKDF-SHA256 (salt = the session id, info `wdc-cube-remote/aes-256-gcm/v1`); each value carries a random IV of its own in front of it (`Base64(IV ‖ ciphertext and tag)`); forward secrecy — no long-lived key to leak
+- **Navigation**: addresses signed by the server with HMAC-SHA256 (the `sign` parameter) to prevent parameter tampering
 
 ### Security Inherent to the Architecture
 

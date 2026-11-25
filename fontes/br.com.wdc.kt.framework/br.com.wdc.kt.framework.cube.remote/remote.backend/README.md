@@ -54,17 +54,17 @@ ShopRemoteApplication.REGISTRY.startCleanup(executor)    // releases the session
 | `RemoteViewImpl` | The remote view of any scope, known by `"<vid>:<n>"`. Writing it is drawing it: it releases the views it no longer refers to (in cascade, once no view holds them), and their ids go to the client in `releasedViews`. |
 | `RemoteViewHost` | What a view needs from its session (`viewOf`, `markDirty`, …); `RemoteApplicationSupport` is the real one. |
 | `BrowserScope`, `RemoteBrowserPresenter` | The client's browser tab, its top view (`7b32e816a191:0`): the alert, the application's root scope (`contentViewId`), start (`-1`), history (`-2`), the alert's OK (`1`), keep-alive (`2`). |
-| `RemoteAppSecurity` | The host's keys: textbook RSA for the handshake (the client ciphers its session password with it) and `SHA256withRSA` to sign session ids and addresses. Read from the system properties `wdc.web.public_key`/`wdc.web.private_key` and `wdc.sign.wdc.web.public_key`/`wdc.sign.wdc.web.private_key`; without them, fixed development keys — **set your own in production** (`RemoteAppSecurity.main` prints a new set). |
-| `RemoteDataSecurity` | A session's cipher for sensitive values (a typed password): AES-256-GCM, key derived by PBKDF2 (250,000 iterations) from the password of the handshake (`<password ciphered with RSA>.<salt>`); every value carries a random IV of its own in front of it, `Base64(IV ‖ ciphertext and tag)`. |
+| `RemoteAppSecurity` | The host's signatures: HMAC-SHA256 of the session ids (`newSessionId`, `isSessionId`) and of the navigation addresses (`sign`, `verify`). The key is random per process; several instances serving the same clients share one with `useKey`. Only the server signs and checks: there is no public key. |
+| `RemoteDataSecurity` | A session's cipher for sensitive values (a typed password), on top of TLS: each connection agrees on an AES-256-GCM key by ECDH P-256 (`handshake(clientKey)` returns the `serverKey`) and HKDF-SHA256 (salt = the session id, info `wdc-cube-remote/aes-256-gcm/v1`); every value carries a random IV of its own, `Base64(IV ‖ ciphertext and tag)`. No long-lived key: forward secrecy. |
 | `WebSocketConnection` | Where a session sends its messages: the web server's socket, given by the routes (`remote.wsSession`). |
 
 ## The protocol, in short
 
-- **Client → server**: `{requestId, secret?, ping?, event: ["<vsid>:<code>", …], "<vsid>": {form data}}`. The form data of a view is synced into its scope before the events run.
-- **Server → client**: `{requestId, ping?, uri, scopes: [{id, …fields, "<name>ViewId", "<name>ViewIds"}], releasedViews?: [vsid, …]}`. A scope inside a scope goes as the id of its view; a view created while writing goes in the same message.
+- **Client → server**: `{requestId, clientKey?, ping?, event: ["<vsid>:<code>", …], "<vsid>": {form data}}`. The form data of a view is synced into its scope before the events run.
+- **Server → client**: `{requestId, ping?, serverKey?, uri, scopes: [{id, …fields, "<name>ViewId", "<name>ViewIds"}], releasedViews?: [vsid, …]}`. A scope inside a scope goes as the id of its view; a view created while writing goes in the same message.
 
 The WDC Store's [remote view documentation](../../../../docs/architecture-react.md) describes the whole cycle, with diagrams.
 
 ## Tests
 
-`RemoteViewReleaseTest` (views released in cascade), `ExpiredApplicationsTest` (registry and life), `RemoteProtocolTest` (a message and its answer, the alert, a forged address) and `RemoteDataSecurityTest` (the client's handshake, a new IV per value, a changed byte refused).
+`RemoteViewReleaseTest` (views released in cascade), `ExpiredApplicationsTest` (registry and life), `RemoteProtocolTest` (a message and its answer, the alert, a forged address) and `RemoteDataSecurityTest` (the ECDH handshake with a JCA client, a new key per handshake, a new IV per value, a changed byte or another curve refused, the HMAC signatures).

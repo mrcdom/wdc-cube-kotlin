@@ -1,6 +1,5 @@
 package br.com.wdc.framework.cube.remote
 
-import br.com.wdc.framework.commons.codec.Base62
 import br.com.wdc.framework.commons.gson.JsonExtensibleObjectOutput
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
@@ -13,7 +12,6 @@ import com.google.gson.stream.JsonWriter
 import kotlinx.coroutines.runBlocking
 import java.io.IOException
 import java.io.StringWriter
-import java.nio.charset.StandardCharsets
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.ConcurrentHashMap
@@ -28,10 +26,11 @@ import kotlin.time.Duration.Companion.minutes
  * - **Views.** One [RemoteViewImpl] per scope drawn, made the first time a scope that holds it is written; the client
  *   component that paints it is the scope's vid, looked up in [vids] by the scope's class. A view no longer referred to
  *   is released, and its id goes to the client in `releasedViews`.
- * - **The protocol.** Each client message ([sendResponse]): the secret, what the user typed (`Scope.sync`), the events
- *   (`Scope.dispatch`), then the answer — the scopes of the dirty views and the signed address. Changes made outside a
+ * - **The protocol.** Each client message ([sendResponse]): the handshake when it carries a `clientKey`
+ *   ([RemoteDataSecurity]), what the user typed (`Scope.sync`), the events (`Scope.dispatch`), then the answer — the
+ *   scopes of the dirty views, the signed address, and the host's `serverKey` after a handshake. Changes made outside a
  *   message go out at the registry's next flush ([flushDirtyViews]).
- * - **The history.** The address the client shows carries a signature ([RemoteAppSecurity.signAsHash]); an address
+ * - **The history.** The address the client shows carries a signature ([RemoteAppSecurity.sign]); an address
  *   with a wrong one is not followed ([safeGo]).
  * - **The browser tab** ([browser], [RemoteBrowserPresenter]), the top view, around the application's root scope.
  * - **Life.** [lifeSpan] without a message and without a socket, and the registry releases it.
@@ -63,8 +62,11 @@ class RemoteApplicationSupport(
     @Volatile
     internal var expireMoment: Long = System.currentTimeMillis() + lifeSpan.inWholeMilliseconds
 
-    /** The session's cipher for sensitive values (the client sends the secret in its messages). */
-    val dataSecurity = RemoteDataSecurity()
+    /** The session's cipher for sensitive values (the client starts it with its `clientKey`). */
+    val dataSecurity = RemoteDataSecurity(id)
+
+    /** The host's public key of the last handshake, until an answer carries it to the client. */
+    private var pendingServerKey: String? = null
 
     /** The client's connection, when there is one. */
     @Volatile
@@ -198,8 +200,7 @@ class RemoteApplicationSupport(
         }
     }
 
-    private fun sign(intent: CubeIntent): String =
-        Base62.encodeToString(RemoteAppSecurity.signAsHash(intent.toString().toByteArray(StandardCharsets.UTF_8)))
+    private fun sign(intent: CubeIntent): String = RemoteAppSecurity.sign(intent.toString())
 
     // :: Protocol
 
@@ -229,7 +230,14 @@ class RemoteApplicationSupport(
     }
 
     private suspend fun dispatch(request: Map<String, Any?>) {
-        CoerceUtils.asString(request["secret"])?.takeIf { it.isNotBlank() }?.let(dataSecurity::updateSecret)
+        CoerceUtils.asString(request["clientKey"])?.takeIf { it.isNotBlank() }?.let { clientKey ->
+            pendingServerKey = try {
+                dataSecurity.handshake(clientKey)
+            } catch (e: Exception) {
+                LOG.warn("Session {}: the handshake failed ({})", id, e.message)
+                null
+            }
+        }
 
         // what the user typed, before the events
         for ((key, value) in request) {
@@ -280,7 +288,7 @@ class RemoteApplicationSupport(
         val views = takeDirtyViews()
 
         // a new address alone waits for the next answer
-        if (!isPing && views.isEmpty() && releasedViews.isEmpty()) return
+        if (!isPing && views.isEmpty() && releasedViews.isEmpty() && pendingServerKey == null) return
 
         val ws = wsSession ?: throw IllegalStateException("Missing WebSocket session")
         ws.sendText(answer(requestId, isPing, views))
@@ -303,6 +311,8 @@ class RemoteApplicationSupport(
             json.beginObject()
             json.name("requestId").value(requestId)
             if (isPing) json.name("ping").value(true)
+            pendingServerKey?.let { json.name("serverKey").value(it) }
+            pendingServerKey = null
             uri?.let { json.name("uri").value(it) }
             if (views.isNotEmpty()) {
                 json.name("scopes")

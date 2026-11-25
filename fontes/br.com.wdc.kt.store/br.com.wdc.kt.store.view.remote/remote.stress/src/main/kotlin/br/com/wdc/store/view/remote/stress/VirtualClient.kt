@@ -6,7 +6,6 @@ import com.google.gson.ToNumberPolicy
 import com.google.gson.reflect.TypeToken
 import okhttp3.*
 import org.slf4j.LoggerFactory
-import java.math.BigInteger
 import java.security.SecureRandom
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -15,9 +14,7 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import javax.crypto.Cipher
-import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
@@ -48,10 +45,9 @@ class VirtualClient(
 
     // Session state
     private var appId: String = ""
-    private var rsaExponent: BigInteger = BigInteger.ZERO
-    private var rsaPublicKey: BigInteger = BigInteger.ZERO
-    private var signature: String = ""
-    private var aesKey: SecretKeySpec? = null
+    /** This connection's ECDH pair, until the host's `serverKey` completes the handshake. */
+    private var ecPair: java.security.KeyPair? = null
+    @Volatile private var aesKey: SecretKeySpec? = null
 
     // WebSocket
     private var webSocket: WebSocket? = null
@@ -80,9 +76,6 @@ class VirtualClient(
                 LOG.error("[Client-{}] Failed to fetch session cookies", clientId)
                 return false
             }
-
-            // Step 2: Build crypto signature
-            buildCryptoSignature()
 
             // Step 3: Connect WebSocket and wait for Login view to appear in state
             if (!connectWebSocket()) {
@@ -248,21 +241,13 @@ class VirtualClient(
                 cookie.startsWith("app_id=") -> {
                     appId = cookie.substringAfter("app_id=").substringBefore(";")
                 }
-                cookie.startsWith("app_skey=") -> {
-                    val skey = cookie.substringAfter("app_skey=").substringBefore(";")
-                    val parts = skey.split(":")
-                    if (parts.size == 2) {
-                        rsaExponent = BigInteger(parts[0], 36)
-                        rsaPublicKey = BigInteger(parts[1], 36)
-                    }
-                }
             }
         }
 
         response.close()
 
-        if (appId.isBlank() || rsaPublicKey == BigInteger.ZERO) {
-            LOG.error("[Client-{}] Missing cookies: appId={}, rsaKey={}", clientId, appId, rsaPublicKey != BigInteger.ZERO)
+        if (appId.isBlank()) {
+            LOG.error("[Client-{}] Missing the app_id cookie", clientId)
             return false
         }
 
@@ -271,32 +256,30 @@ class VirtualClient(
 
     // :: Private — Crypto
 
-    private fun buildCryptoSignature() {
-        // Generate random password (12 bytes, base64url — same as the browser client)
-        val password = ByteArray(12)
-        random.nextBytes(password)
-        val passwordB64 = Base64.getUrlEncoder().withoutPadding().encodeToString(password)
+    /** A new ECDH P-256 pair for this connection; its public key goes to the host as `clientKey` (Base64 SPKI). */
+    private fun startHandshake(): String {
+        val pair = java.security.KeyPairGenerator.getInstance("EC")
+            .apply { initialize(java.security.spec.ECGenParameterSpec("secp256r1"), random) }
+            .generateKeyPair()
+        ecPair = pair
+        return Base64.getEncoder().encodeToString(pair.public.encoded)
+    }
 
-        // Generate random salt (each ciphered value gets its own IV)
-        val salt = ByteArray(16)
-        random.nextBytes(salt)
-
-        // Derive AES-256 key using PBKDF2
-        val spec = PBEKeySpec(passwordB64.toCharArray(), salt, 250_000, 256)
-        val keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-        val secretKey = keyFactory.generateSecret(spec)
-        aesKey = SecretKeySpec(secretKey.encoded, "AES")
-
-        // Encrypt password with RSA (raw BigInteger modular exponentiation).
-        // The server Base64-decodes the RSA payload to recover the PBKDF2 password.
-        val passwordBytes = Base64.getEncoder().encode(passwordB64.toByteArray(Charsets.UTF_8))
-        val passwordBigInt = BigInteger(1, passwordBytes)
-        val encrypted = passwordBigInt.modPow(rsaExponent, rsaPublicKey)
-        val encryptedBase36 = encrypted.toString(36)
-
-        // Build signature: {encrypted_password}.{base64url_salt}
-        val saltB64 = Base64.getUrlEncoder().withoutPadding().encodeToString(salt)
-        signature = "$encryptedBase36.$saltB64"
+    /** The host's `serverKey`: ECDH, then HKDF-SHA256 (salt = the session id), as the browser bridges do. */
+    private fun completeHandshake(serverKey: String) {
+        val pair = ecPair ?: return
+        val serverPublic = java.security.KeyFactory.getInstance("EC")
+            .generatePublic(java.security.spec.X509EncodedKeySpec(Base64.getDecoder().decode(serverKey)))
+        val shared = javax.crypto.KeyAgreement.getInstance("ECDH").run {
+            init(pair.private)
+            doPhase(serverPublic, true)
+            generateSecret()
+        }
+        fun hmac(key: ByteArray, data: ByteArray) =
+            javax.crypto.Mac.getInstance("HmacSHA256").apply { init(SecretKeySpec(key, "HmacSHA256")) }.doFinal(data)
+        val prk = hmac(appId.toByteArray(Charsets.UTF_8), shared)
+        aesKey = SecretKeySpec(hmac(prk, "wdc-cube-remote/aes-256-gcm/v1".toByteArray(Charsets.UTF_8) + byteArrayOf(1)), "AES")
+        ecPair = null
     }
 
     /** Ciphers as the browser does: a new random IV, in front of the ciphertext. */
@@ -319,7 +302,6 @@ class VirtualClient(
 
         val request = Request.Builder()
             .url(wsUrl)
-            .header("Cookie", "app_signature=$signature")
             .header("Sec-WebSocket-Protocol", "wdc")
             .build()
 
@@ -372,7 +354,7 @@ class VirtualClient(
         return mapOf(
             "requestId" to -1L,
             "ping" to true,
-            "secret" to signature,
+            "clientKey" to startHandshake(),
             "path" to "/",
         )
     }
@@ -408,6 +390,8 @@ class VirtualClient(
         try {
             LOG.debug("[Client-{}] Raw response ({} chars): {}", clientId, text.length, text)
             val response: Map<String, Any?> = GSON.fromJson(text, RESPONSE_TYPE.type)
+
+            (response["serverKey"] as? String)?.let(::completeHandshake)
 
             // Update URI if present
             val uri = response["uri"] as? String

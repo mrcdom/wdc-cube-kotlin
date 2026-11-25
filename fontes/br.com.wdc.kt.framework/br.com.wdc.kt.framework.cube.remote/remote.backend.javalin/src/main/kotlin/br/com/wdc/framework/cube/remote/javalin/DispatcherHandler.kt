@@ -1,6 +1,5 @@
 package br.com.wdc.framework.cube.remote.javalin
 
-import br.com.wdc.framework.commons.codec.Base62
 import br.com.wdc.framework.commons.lang.CoerceUtils
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.remote.RemoteAppSecurity
@@ -41,7 +40,6 @@ internal class DispatcherHandler(
         private val REQUEST_TYPE = object : TypeToken<Map<String, Any?>>() {}
     }
 
-    private var appSignature: String? = null
     private var wsSession: WebSocketConnection? = null
     private var activeWsSessionId: String? = null
 
@@ -60,37 +58,13 @@ internal class DispatcherHandler(
                 return
             }
 
-            val security = RemoteAppSecurity
-            val b62 = Base62
-
-            val appIdParts = appId.split('.')
-            if (appIdParts.size != 2) {
-                LOG.warn("WebSocket connection rejected: invalid session ID format")
-                ctx.closeSession(CLOSE_SESSION_INVALID, "reload_required")
-                return
-            }
-
-            val appIdPart1 = appIdParts[0]
-            val appIdPart2 = appIdParts[1]
-
-            val expectedAppIdPart2 = b62.encodeToString(
-                security.signAsHash(appIdPart1.toByteArray())
-            )
-
-            if (appIdPart2 != expectedAppIdPart2) {
+            // the id the page got from the host: a random part and the host's signature of it
+            if (!RemoteAppSecurity.isSessionId(appId)) {
                 LOG.warn("WebSocket connection rejected: invalid session ID signature")
                 ctx.closeSession(CLOSE_SESSION_INVALID, "reload_required")
                 return
             }
 
-            val signature = ctx.cookie("app_signature")
-            if (signature.isNullOrEmpty()) {
-                LOG.warn("WebSocket connection rejected: missing app_signature cookie for session: {}", appId)
-                ctx.closeSession(CLOSE_SESSION_INVALID, "reload_required")
-                return
-            }
-
-            this.appSignature = signature
             ctx.enableAutomaticPings(15, TimeUnit.SECONDS)
             this.activeWsSessionId = ctx.sessionId()
             this.wsSession = JavalinWebSocketConnection(ctx)
@@ -185,9 +159,7 @@ internal class DispatcherHandler(
         var app = registry.get(appId)
 
         if (app == null) {
-            val mutableRequest = request.toMutableMap()
-            mutableRequest["secret"] = appSignature
-            app = registry.getOrCreate(appId, mutableRequest)
+            app = registry.getOrCreate(appId, request)
         }
 
         app.remote.wsSession = wsSession

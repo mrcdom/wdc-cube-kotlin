@@ -5,6 +5,9 @@ import kotlinx.browser.window
 import org.w3c.dom.CloseEvent
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 /**
  * The WebSocket exchange: the requests waiting for the host, by request id, sent in order and merged into one message
@@ -30,6 +33,12 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
     private var submittingTimeout = 0
     private val userRequestIds = HashSet<Int>()
 
+    /**
+     * Whether the hello (with the handshake's `clientKey`) went out on the current socket. Requests wait for it, and
+     * then for its answer, which says up to which request the host already has.
+     */
+    private var helloSent = false
+
     init {
         val onBack: (dynamic) -> Unit = { if (!document.asDynamic().hidden.unsafeCast<Boolean>()) keepAliveNow() }
         document.addEventListener("visibilitychange", onBack)
@@ -52,7 +61,7 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
     /** Sends, as one message, every request not sent yet. */
     fun flush() {
         val ws = socket ?: return
-        if (ws.readyState != WebSocket.OPEN) return
+        if (ws.readyState != WebSocket.OPEN || !helloSent) return
 
         val message: dynamic = js("({ event: [] })")
         var hasData = false
@@ -80,6 +89,7 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
     }
 
     /** Opens the socket to [url], unless it is open or opening. */
+    @OptIn(DelicateCoroutinesApi::class)
     fun open(url: String) {
         socket?.let { if (it.readyState == WebSocket.OPEN || it.readyState == WebSocket.CONNECTING) return }
 
@@ -95,15 +105,24 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
             bridge.reconnect.reconnect(cause)
         }
 
+        helloSent = false
         ws.onopen = {
             bridge.isConnected = true
             initKeepAliveChecks()
             keepAliveNow()
-            val hello: dynamic = js("({ ping: true })")
-            hello.requestId = lastProcessedId
-            hello.path = bridge.path
-            hello.secret = bridge.dataSecurity.signature
-            ws.send(JSON.stringify(hello))
+            // the hello goes first, with this connection's public key: the host answers with its own
+            GlobalScope.launch {
+                val clientKey = bridge.dataSecurity.startHandshake()
+                if (socket === ws && ws.readyState == WebSocket.OPEN) {
+                    val hello: dynamic = js("({ ping: true })")
+                    hello.requestId = lastProcessedId
+                    hello.path = bridge.path
+                    hello.clientKey = clientKey
+                    ws.send(JSON.stringify(hello))
+                    // the queued requests go with the answer: the host says there which ones it already has
+                    helloSent = true
+                }
+            }
         }
         ws.onerror = { disconnected(it) }
         ws.onclose = { event ->
@@ -115,6 +134,17 @@ internal class RequestChannel(private val bridge: RemoteBridge) {
 
     private fun receive(response: dynamic) {
         if (bridge.reconnect.count > 0) bridge.reconnect.reset()
+
+        val serverKey = response.serverKey
+        if (serverKey != null && serverKey != undefined) {
+            GlobalScope.launch {
+                try {
+                    bridge.dataSecurity.completeHandshake(serverKey as String, bridge.id)
+                } catch (e: Throwable) {
+                    console.error("Remote bridge: the handshake failed", e)
+                }
+            }
+        }
 
         val requestId = (response.requestId as Number).toInt()
         if (response.ping == true) {
