@@ -2,10 +2,11 @@
 
 The application server, on **Javalin** (port 8080).
 
-It has three responsibilities:
+It has four responsibilities:
 - **REST API** (`/api/repo`, `/api/tx`, `/api/auth`, `/openapi.json`) — for the Compose and native clients — [architecture](../../../docs/architecture-persistence.md#rest-api)
 - **WebSocket** (`/dispatcher/{id}`) — for the React client (remote view) — [architecture](../../../docs/architecture-react.md)
-- **Static files** — serves the web clients
+- **Static files** — serves the web clients: the React client at the root (`/index.html`) and each deployed one under its context (`/native/`, `/compose/`, `/remote-kotlin/`)
+- **Landing page** (`/`) — what the demo is, a card per web client (a link when deployed, the command that deploys it when not), the demo users, and a warning when security is off; unknown paths come back to it (`LandingPage`, `resources/landing/index.html`)
 
 On startup, it builds the connection pool, creates the missing tables and runs the migrations.
 

@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WDC Store</title>
+  <meta name="description" content="The WDC Store: one shopping app, the same presenters, several user interfaces. Pick one to try.">
+  <style>
+    :root {
+      --primary: #1B5E7B;
+      --on-primary: #FFFFFF;
+      --primary-container: #D0E8F2;
+      --background: #F5F7FA;
+      --surface: #FFFFFF;
+      --on-surface: #1A1C1E;
+      --muted: #5C6670;
+      --border: #DDE3E8;
+      --tag: #EEF2F5;
+      --warning-bg: #FFF4E0;
+      --warning-border: #F0C36D;
+      --code-bg: #F0F3F6;
+      --header-bg: #1B5E7B;
+      --header-fg: #FFFFFF;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary: #7CC4E2;
+        --on-primary: #00293A;
+        --primary-container: #12465C;
+        --background: #101417;
+        --surface: #1A2025;
+        --on-surface: #E3E7EA;
+        --muted: #9AA5AE;
+        --border: #2C353C;
+        --tag: #232B31;
+        --warning-bg: #3A2D12;
+        --warning-border: #8A6A2A;
+        --code-bg: #232B31;
+        --header-bg: #0E3A4D;
+        --header-fg: #E3F1F7;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--on-surface);
+      font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    a { color: var(--primary); }
+    code {
+      font: 0.88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+      overflow-wrap: anywhere;
+    }
+    header {
+      background: var(--header-bg);
+      color: var(--header-fg);
+      padding: 40px 16px 44px;
+    }
+    .wrap { max-width: 1040px; margin: 0 auto; }
+    main .wrap { padding: 0 16px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .logo {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: rgba(255, 255, 255, 0.16);
+      display: grid; place-items: center;
+      flex: none;
+    }
+    h1 { margin: 0; font-size: 30px; letter-spacing: -0.01em; }
+    .lead { max-width: 720px; margin: 18px 0 0; font-size: 17px; opacity: 0.94; }
+    h2 { font-size: 20px; margin: 40px 0 6px; }
+    .section-lead { margin: 0 0 18px; color: var(--muted); max-width: 760px; }
+    .warning {
+      margin: 24px 0 0;
+      padding: 12px 16px;
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      border-radius: 10px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex; flex-direction: column;
+    }
+    .card h3 { margin: 0 0 2px; font-size: 18px; }
+    .kind { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+    .card p { margin: 0 0 12px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; padding: 0; list-style: none; }
+    .tags li { background: var(--tag); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
+    .best { font-size: 14px; color: var(--muted); }
+    .actions { margin-top: auto; padding-top: 6px; }
+    .open {
+      display: inline-block;
+      background: var(--primary); color: var(--on-primary);
+      padding: 9px 16px; border-radius: 10px;
+      text-decoration: none; font-weight: 600;
+    }
+    .open:focus-visible { outline: 3px solid var(--primary-container); outline-offset: 2px; }
+    .missing-note { font-size: 14px; color: var(--muted); margin: 0; }
+    .card.available .missing-note, .card.missing .open { display: none; }
+    .card.missing { border-style: dashed; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 14px; overflow: hidden; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { font-size: 14px; color: var(--muted); font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+    .panel h3 { margin: 0 0 8px; font-size: 16px; }
+    .panel ul { margin: 0; padding-left: 20px; }
+    .panel li { margin: 4px 0; }
+    footer { color: var(--muted); font-size: 14px; padding: 40px 16px 48px; text-align: center; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm0 10c-2.76 0-5-2.24-5-5h2c0 1.66 1.34 3 3 3s3-1.34 3-3h2c0 2.76-2.24 5-5 5z"/></svg>
+      </div>
+      <h1>WDC Store</h1>
+    </div>
+    <p class="lead">
+      A small shop — sign in, browse products, fill a cart, buy, see the receipt — written once with the
+      <strong>Cube MVP</strong> framework in Kotlin Multiplatform. The screens' logic lives in shared
+      <em>presenters</em>; each user interface below only paints what they show. Same app, same presenters,
+      different technologies: pick one to try.
+    </p>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    {{security-warning}}
+
+    <h2>In the browser</h2>
+    <p class="section-lead">
+      Two ways to split the work. In a <strong>remote view</strong>, the presenters run on this server and the page
+      only paints and sends clicks. In a <strong>local view</strong>, the presenters run in the browser and fetch data
+      through the REST API.
+    </p>
+
+    <div class="cards">
+      <article class="card {{remote-react}}">
+        <h3>React · TypeScript</h3>
+        <p class="kind">Remote view</p>
+        <p>The presenters run here, on the server; the page is a thin React client that paints the scopes it receives
+          over a WebSocket and sends back what the user does. No business code reaches the browser.</p>
+        <ul class="tags"><li>presenters on the server</li><li>WebSocket</li><li>TypeScript</li></ul>
+        <p class="best">Choose it to see the thinnest client: logic and data stay on the server.</p>
+        <div class="actions">
+          <a class="open" href="/index.html">Open the React client</a>
+          <p class="missing-note">Not built. In <code>remote.react.client</code>, run <code>npm install &amp;&amp; npm run build</code>, then restart the backend.</p>
+        </div>
+      </article>
+
+      <article class="card {{remote-kotlin}}">
+        <h3>React · Kotlin</h3>
+        <p class="kind">Remote view</p>
+        <p>The same server and protocol as the TypeScript client, with the page written in Kotlin (React through
+          kotlin-wrappers) and compiled to JavaScript by the Kotlin toolchain itself.</p>
+        <ul class="tags"><li>presenters on the server</li><li>WebSocket</li><li>Kotlin/JS</li></ul>
+        <p class="best">Choose it to see a browser client with no TypeScript at all.</p>
+        <div class="actions">
+          <a class="open" href="/remote-kotlin/">Open the Kotlin client</a>
+          <p class="missing-note">Not deployed. Run <code>remote.react.kotlin/deploy.sh</code>, then restart the backend.</p>
+        </div>
+      </article>
+
+      <article class="card {{native}}">
+        <h3>Native web · Kotlin</h3>
+        <p class="kind">Local view</p>
+        <p>The presenters — the same ones the mobile apps run — compiled to JavaScript and running in the page, with
+          hand-written React views. Data comes from the REST API.</p>
+        <ul class="tags"><li>presenters in the browser</li><li>REST</li><li>Kotlin/JS</li></ul>
+        <p class="best">Choose it to see the shared presenters running in the browser.</p>
+        <div class="actions">
+          <a class="open" href="/native/">Open the native web client</a>
+          <p class="missing-note">Not deployed. Run <code>native.web/deploy.sh</code>, then restart the backend.</p>
+        </div>
+      </article>
+
+      <article class="card {{compose}}">
+        <h3>Compose Multiplatform · Web</h3>
+        <p class="kind">Local view</p>
+        <p>The very same Compose screens as the desktop, Android and iOS apps, compiled to WebAssembly and drawn on a
+          canvas. The presenters run in the page; data comes from the REST API.</p>
+        <ul class="tags"><li>presenters in the browser</li><li>REST</li><li>Kotlin/Wasm</li></ul>
+        <p class="best">Choose it to see one UI codebase reach the web as well.</p>
+        <div class="actions">
+          <a class="open" href="/compose/">Open the Compose client</a>
+          <p class="missing-note">Not deployed. Run <code>compose.web/deploy.sh</code>, then restart the backend.</p>
+        </div>
+      </article>
+    </div>
+
+    <h2>Side by side</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Client</th><th>Presenters run</th><th>Data</th><th>UI written in</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>React · TypeScript</td><td>Server</td><td>Repositories, in process</td><td>TypeScript + MUI</td></tr>
+          <tr><td>React · Kotlin</td><td>Server</td><td>Repositories, in process</td><td>Kotlin + MUI</td></tr>
+          <tr><td>Native web</td><td>Browser</td><td>REST API</td><td>Kotlin + MUI</td></tr>
+          <tr><td>Compose web</td><td>Browser</td><td>REST API</td><td>Compose (Kotlin)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Before you start</h2>
+    <div class="two">
+      <section class="panel">
+        <h3>Demo users</h3>
+        <p>The password is the same as the user name.</p>
+        <ul>
+          <li><code>admin</code> — John Smith, administrator</li>
+          <li><code>fulano</code> — John Doe, customer</li>
+          <li><code>beotrano</code> — Jane Roe, customer</li>
+        </ul>
+      </section>
+      <section class="panel">
+        <h3>Outside the browser</h3>
+        <p>The same presenters also run in apps; run them from <code>fontes/</code>:</p>
+        <ul>
+          <li>Compose desktop — <code>./gradlew :view-compose-desktop:run</code></li>
+          <li>Compose Android and iOS, native Android (Views) and native iOS (UIKit) — the <code>deploy.sh</code> of each module</li>
+        </ul>
+      </section>
+    </div>
+
+    <h2>Under the hood</h2>
+    <p class="section-lead">
+      The REST API the local views use is described in <a href="/openapi.json">/openapi.json</a>.
+      The source, with the architecture documents, is at
+      <a href="https://github.com/mrcdom/wdc-cube-kotlin">github.com/mrcdom/wdc-cube-kotlin</a>.
+    </p>
+  </div>
+</main>
+
+<footer>WDC Store — a demonstration of the Cube MVP framework for Kotlin Multiplatform.</footer>
+</body>
+</html>

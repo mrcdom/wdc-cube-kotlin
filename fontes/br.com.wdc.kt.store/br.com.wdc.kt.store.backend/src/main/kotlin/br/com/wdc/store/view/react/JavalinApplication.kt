@@ -185,6 +185,19 @@ class JavalinApplication(
             ?: emptyList()
     }
 
+    /**
+     * The browser clients there to open: the remote React client's bundle (built into the static files) and the
+     * deployed contexts.
+     */
+    private fun availableClients(): Set<String> {
+        val reactBundle = when (staticFilesSettings.location) {
+            Location.EXTERNAL -> File(staticFilesSettings.directory, "index.html").exists()
+            else -> javaClass.classLoader.getResource("${staticFilesSettings.directory}/index.html") != null
+        }
+        val contexts = deployedContexts.toSet()
+        return LandingPage.CLIENTS.filter { if (it == "remote-react") reactBundle else it in contexts }.toSet()
+    }
+
     private fun createJavalinApp(): Javalin {
         val gson = Gson()
         val gsonMapper = object : JsonMapper {
@@ -321,7 +334,9 @@ class JavalinApplication(
             br.com.wdc.store.view.react.controller.StressMetricsController.handle(ctx)
         }
 
-        config.routes.get("/") { ctx -> ctx.redirect("/index.html") }
+        // the landing page: what the demo is, and which client to open
+        val landing = LandingPage(availableClients(), securityOn = !StoreConfig.jwtSecret.isNullOrBlank())
+        config.routes.get("/") { ctx -> ctx.html(landing.html) }
 
         // Deployed frontend context routes: /{context} and /{context}/ → /{context}/index.html
         for (context in deployedContexts) {
@@ -340,11 +355,12 @@ class JavalinApplication(
                 && !path.startsWith("/health")
                 && !path.startsWith("/dispatcher")
                 && path != "/index.html"
+                && path != "/"
                 && !isStaticResource(path)
                 && deployedContexts.none { path.startsWith("/$it/") || path == "/$it" }
             ) {
-                LOG.debug("SPA fallback for path: {}", path)
-                ctx.redirect("/index.html")
+                LOG.debug("Unknown path, to the landing page: {}", path)
+                ctx.redirect("/")
             }
         }
     }
