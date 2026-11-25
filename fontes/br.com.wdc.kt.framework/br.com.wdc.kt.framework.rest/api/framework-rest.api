@@ -12,6 +12,16 @@ public final class br/com/wdc/framework/rest/CompressionOptions$Companion {
 	public final fun getSPRING_MIME_TYPES ()Ljava/util/List;
 }
 
+public final class br/com/wdc/framework/rest/Cors {
+	public static final field Companion Lbr/com/wdc/framework/rest/Cors$Companion;
+}
+
+public final class br/com/wdc/framework/rest/Cors$Companion {
+	public final fun install (Lio/javalin/config/JavalinConfig;Lbr/com/wdc/framework/rest/CorsOptions;Ljava/util/List;)V
+	public final fun install (Lio/javalin/config/JavalinConfig;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun install$default (Lbr/com/wdc/framework/rest/Cors$Companion;Lio/javalin/config/JavalinConfig;Lbr/com/wdc/framework/rest/CorsOptions;Ljava/util/List;ILjava/lang/Object;)V
+}
+
 public final class br/com/wdc/framework/rest/CorsOptions {
 	public fun <init> ()V
 	public final fun allowOrigins ([Ljava/lang/String;)V

@@ -7,6 +7,7 @@ import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.commons.serialization.installCommon
 import br.com.wdc.framework.cube.remote.javalin.DispatcherController
 import br.com.wdc.framework.cube.remote.javalin.IndexHtmlController
+import br.com.wdc.framework.rest.Cors
 import br.com.wdc.store.backend.supports.LoggingSupport
 import br.com.wdc.store.backend.supports.WorkDirectory
 import br.com.wdc.store.domain.StoreConfig
@@ -229,18 +230,18 @@ class JavalinApplication(
                 }
             }
 
-            config.bundledPlugins.enableCors { cors ->
-                cors.addRule { rule ->
-                    if (corsAllowAll) {
-                        rule.anyHost()
-                    } else {
-                        rule.allowHost(
-                            "tauri://localhost", "https://tauri.localhost",
-                            "http://tauri.localhost",
-                            "http://localhost:8080", "http://store-wdc.localhost:8080"
-                        )
-                        rule.allowCredentials = true
-                    }
+            // the backend's own pages pass whatever their host and port (Cors skips same-origin requests); these are
+            // the other origins allowed to call it
+            Cors.install(config) {
+                if (corsAllowAll) {
+                    anyOrigin()
+                } else {
+                    allowOrigins(
+                        "tauri://localhost", "https://tauri.localhost",
+                        "http://tauri.localhost",
+                        "http://localhost:8080", "http://store-wdc.localhost:8080",
+                    )
+                    allowCredentials = true
                 }
             }
 

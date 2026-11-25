@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream
 import java.util.zip.GZIPInputStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class HttpOptionsTest {
@@ -63,6 +64,56 @@ class HttpOptionsTest {
         RestTestServer(api { cors { allowOrigins("https://ok.example"); allowCredentials = true } }).use { server ->
             assertEquals("https://ok.example", server.client().header("Origin", "https://ok.example").get("/small").header("Access-Control-Allow-Origin"))
             assertNull(server.client().header("Origin", "https://evil.example").get("/small").header("Access-Control-Allow-Origin"))
+        }
+    }
+
+    @Test
+    fun cors_notAllowedOrigin_isAnsweredWithoutTheHeaders_notRefused() {
+        RestTestServer(api { cors { allowOrigins("https://ok.example"); allowCredentials = true } }).use { server ->
+            val response = server.client().header("Origin", "https://evil.example").get("/small")
+            assertEquals(200, response.status)
+            assertNull(response.header("Access-Control-Allow-Origin"))
+            assertNull(response.header("Access-Control-Allow-Credentials"))
+
+            val preflight = server.client().send(
+                "OPTIONS", "/small",
+                extraHeaders = mapOf("Origin" to "https://evil.example", "Access-Control-Request-Method" to "DELETE"),
+            )
+            assertNull(preflight.header("Access-Control-Allow-Origin"))
+            assertNull(preflight.header("Access-Control-Allow-Methods"))
+        }
+    }
+
+    @Test
+    fun cors_sameOrigin_passesWhateverTheAllowedOrigins() {
+        // a browser sends Origin on its own pages' module scripts and POSTs: the server's own origin is not CORS
+        RestTestServer(api { cors { allowOrigins("https://ok.example"); allowCredentials = true } }).use { server ->
+            val response = server.client().header("Origin", server.baseUrl).post("/upload", "abc")
+            assertEquals(200, response.status)
+            assertEquals("3", response.body)
+            assertNull(response.header("Access-Control-Allow-Origin"))
+        }
+    }
+
+    @Test
+    fun cors_originsWithoutScheme_andWildcardSubdomains() {
+        RestTestServer(api { cors { allowOrigins("ok.example", "https://*.apps.example", "http://localhost:3000", "tauri://localhost") } }).use { server ->
+            fun allowOrigin(origin: String) = server.client().header("Origin", origin).get("/small").header("Access-Control-Allow-Origin")
+            assertEquals("https://ok.example", allowOrigin("https://ok.example"))
+            assertNull(allowOrigin("http://ok.example"), "no scheme means https")
+            assertEquals("https://a.apps.example", allowOrigin("https://a.apps.example"))
+            assertNull(allowOrigin("https://apps.example"), "the wildcard is for subdomains")
+            assertEquals("http://localhost:3000", allowOrigin("http://localhost:3000"))
+            assertNull(allowOrigin("http://localhost:3001"), "the port is part of the origin")
+            assertEquals("tauri://localhost", allowOrigin("tauri://localhost"), "an app's own scheme, without a port")
+            assertNull(allowOrigin("null"))
+        }
+    }
+
+    @Test
+    fun cors_anyOriginWithCredentials_isAConfigurationError() {
+        assertFailsWith<IllegalArgumentException> {
+            RestTestServer(api { cors { anyOrigin(); allowCredentials = true } }).close()
         }
     }
 

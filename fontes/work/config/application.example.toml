@@ -56,7 +56,8 @@
 # HTTP port.
 # port = 8080
 
-# Accepts any origin in CORS (development).
+# Accepts any origin in CORS (development). Without it, only the origins listed in the code (the desktop app, port
+# 8080) may call the backend from another origin; its own pages pass on any host and port.
 # cors.allowAll = false
 
 [security]
