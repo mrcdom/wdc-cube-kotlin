@@ -51,7 +51,7 @@ Clears all tables in the right order (respecting foreign keys) and inserts sampl
 
 Every table's ids start at 1 (the Home refuses a non-positive product id); existing databases keep their ids until a reset. The generated IDs are available as static fields (`DBReset.ADMIN_ID`, `DBReset.COFFEE_MAKER_ID`, etc.) for use in tests.
 
-Passwords are stored as an unsigned MD5 digest in base 36 — the same that `PasswordUtil.hashPassword` computes. Dates are stored in UTC.
+Passwords are stored as SCRAM-SHA-256 verifiers with a random salt per user (`PasswordVerifiers`), the form the login checks; see [security-architecture.md](../../../docs/security-architecture.md#login-by-challenge-and-response-scram-sha-256). Dates are stored in UTC.
 
 ### MigrationRunner
 
@@ -70,7 +70,7 @@ This guarantees **idempotency** — running `DBCreate` multiple times is safe. S
 1. Create a `Migration_NNNN_DescriptiveName` class in the `sgbd` package:
 
 ```kotlin
-class Migration_0009_AddProductCategory(private val connection: Connection) {
+class Migration_0010_AddProductCategory(private val connection: Connection) {
 
     fun step01_addCategoryColumn() {
         connection.createStatement().use { stmt ->
@@ -91,8 +91,8 @@ class Migration_0009_AddProductCategory(private val connection: Connection) {
 ```kotlin
 MigrationRunner(conn)
     // …the previous ones
-    .run(Migration_0008_UserRolesDefaultCustomer(conn))
-    .run(Migration_0009_AddProductCategory(conn))  // new
+    .run(Migration_0009_PasswordScramVerifier(conn))
+    .run(Migration_0010_AddProductCategory(conn))  // new
 ```
 
 3. Make the same change in the `DBCreate` DDL — a new database is born in the final format — and regenerate the jOOQ classes:
@@ -120,6 +120,7 @@ Rules for steps:
 | `Migration_0006_PurchaseBuyDateToUtc` | 1 | Moves the purchase date from local time to UTC |
 | `Migration_0007_SessionExpiryToUtc` | 1 | Discards the sessions stored with the expiry in local time |
 | `Migration_0008_UserRolesDefaultCustomer` | 1 | Sets `DEFAULT 'CUSTOMER'` on `ROLES` where `DBCreate` had created the column without it: a user written without roles is a customer in every database |
+| `Migration_0009_PasswordScramVerifier` | 2 | Widens `PASSWORD` and turns every stored MD5 digest into a SCRAM-SHA-256 verifier derived from it: no password needed, and every user keeps theirs |
 
 ## Use in the Modules
 

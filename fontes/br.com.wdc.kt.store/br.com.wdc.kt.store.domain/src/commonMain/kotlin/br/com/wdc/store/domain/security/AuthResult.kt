@@ -9,4 +9,6 @@ data class AuthResult(
     val expiresAt: Instant,
     val publicKey: String,
     val intentSignKey: String,
+    /** The server's SCRAM signature (Base64): the client checks it to know the server holds its verifier. */
+    val serverSignature: String,
 )

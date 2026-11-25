@@ -87,7 +87,7 @@ object RepositoryApiDocs {
 
     fun transactionDoc(name: String) = operation("/api/tx/$name", if (name == "status") "get" else "post")
 
-    fun authDoc(name: String) = operation("/api/auth/$name", if (name == "challenge") "get" else "post")
+    fun authDoc(name: String) = operation("/api/auth/$name", "post")
 
     /** What does not come from the routes: intro, tags, schemas and reusable parameters. */
     fun configure(config: OpenApiConfig) {
@@ -202,6 +202,7 @@ object RepositoryApiDocs {
             "expiresAt" to string("When the access token expires.") + mapOf("format" to "date-time"),
             "publicKey" to string("RSA public key (Base64) to encrypt a password sent on a user write."),
             "intentSignKey" to string("Per-user key the web clients use to sign navigation intents."),
+            "serverSignature" to string("On login only: the Base64 SCRAM server signature. A client that does not get the one it expects is not talking to the real server."),
         )
 
         return schemas
@@ -431,28 +432,41 @@ object RepositoryApiDocs {
             body(mapOf("type" to "object", "required" to fields.map { it.first }, "properties" to mapOf(*fields)))
         return linkedMapOf(
             "/api/auth/challenge" to mapOf(
-                "get" to operation(tag, "Get a login nonce", "") + open + mapOf(
+                "post" to operation(
+                    tag, "Start a sign-in",
+                    "SCRAM-SHA-256 (RFC 5802, RFC 7677): a nonce for the user, and the salt and iteration count of the user's verifier. An unknown user gets made-up parameters, the same every time.",
+                ) + open + mapOf(
+                    "requestBody" to credentials("userName" to string("Login.")),
                     "responses" to mapOf(
                         "200" to okResponse(
                             mapOf(
                                 "type" to "object",
                                 "properties" to mapOf(
-                                    "nonce" to string("Single use."),
+                                    "nonce" to string("Single use, for this user only."),
+                                    "salt" to string("Base64 salt of the user's verifier."),
+                                    "iterations" to mapOf("type" to "integer", "description" to "PBKDF2 iterations of the user's verifier."),
                                     "expiresAt" to string("When the nonce stops being accepted.") + mapOf("format" to "date-time"),
                                 ),
                             )
                         ),
+                        "429" to error("Too many requests from this address."),
                     ),
                 ),
             ),
             "/api/auth/login" to mapOf(
-                "post" to operation(tag, "Log in", "The password never travels: the client proves it knows the password digest.") + open + mapOf(
+                "post" to operation(
+                    tag, "Log in",
+                    "The password never travels: the client sends its SCRAM proof over `n=<userName>,r=<nonce>`, and the answer carries the server's signature, for the client to check.",
+                ) + open + mapOf(
                     "requestBody" to credentials(
                         "userName" to string("Login."),
-                        "digest" to string("Hex HMAC-SHA256 of `userName + nonce`, keyed by the password digest."),
-                        "nonce" to string("The nonce from `/api/auth/challenge`."),
+                        "proof" to string("Base64 SCRAM-SHA-256 client proof."),
+                        "nonce" to string("The nonce from `/api/auth/challenge`, made for this user."),
                     ),
-                    "responses" to responses("AuthTokens") + mapOf("401" to error("Invalid credentials.")),
+                    "responses" to responses("AuthTokens") + mapOf(
+                        "401" to error("Invalid credentials."),
+                        "429" to error("Too many requests from this address, or too many failed sign-ins on this user (see `Retry-After`)."),
+                    ),
                 ),
             ),
             "/api/auth/refresh" to mapOf(

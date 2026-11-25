@@ -1,5 +1,6 @@
 package br.com.wdc.store.test.util
 
+import br.com.wdc.framework.domain.exception.UnauthenticatedException
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.log.Slf4jLogFactory
@@ -67,13 +68,14 @@ class RestTestEnvironment(
     /** The client transport, for tests that talk to the API without going through the repositories. */
     lateinit var transport: OkHttpTransport; private set
 
-    private lateinit var restConfig: RestConfig
+    lateinit var restConfig: RestConfig
+        private set
 
     /** Authenticates the client as the given user (the demo seed password is the login itself). */
     fun loginAs(userName: String, password: String = userName) {
         val authClient = RestAuthClient(restConfig)
         restConfig.setAuthClientInstance(authClient)
-        authClient.login(userName, PasswordUtil.hashPassword(password))
+        authClient.login(userName, password) ?: throw UnauthenticatedException("Invalid credentials for $userName")
     }
 
     /** The authentication client of the current session, or `null` without login. */

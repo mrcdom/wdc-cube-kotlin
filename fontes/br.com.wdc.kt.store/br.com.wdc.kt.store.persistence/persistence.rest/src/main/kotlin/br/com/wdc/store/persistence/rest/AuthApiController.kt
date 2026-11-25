@@ -9,35 +9,46 @@ import br.com.wdc.store.persistence.rest.doc.RepositoryApiDocs
 /**
  * HTTP adapter for the [AuthenticationService]. Public routes:
  *
- * - `GET /api/auth/challenge` — generates a nonce for login
- * - `POST /api/auth/login` — authenticates via HMAC challenge-response
+ * - `POST /api/auth/challenge` — starts a user's sign-in: a nonce and the parameters of the user's SCRAM verifier
+ * - `POST /api/auth/login` — ends it with the client's SCRAM proof; the answer carries the server's signature
  * - `POST /api/auth/refresh` — renews the access token
  * - `POST /api/auth/logout` — ends the session
  */
 internal object AuthApiController {
 
-    class LoginRequest(val userName: String? = null, val digest: String? = null, val nonce: String? = null)
+    class ChallengeRequest(val userName: String? = null)
+
+    class LoginRequest(val userName: String? = null, val proof: String? = null, val nonce: String? = null)
 
     class RefreshRequest(val refreshToken: String? = null)
 
     /** [requestsPerMinute]: challenge, login and refresh per client address and minute (`0` = no limit). */
     fun register(routes: RestApi.Routes, authService: AuthenticationService, requestsPerMinute: Int = 60) {
         val limit = AuthRateLimit(requestsPerMinute)
-        routes.get("/api/auth/challenge", doc = RepositoryApiDocs.authDoc("challenge")) { call ->
+        // a POST: the user name goes in the body, not in an address that logs keep
+        routes.post("/api/auth/challenge", doc = RepositoryApiDocs.authDoc("challenge")) { call ->
             limit.check(call.http.ip())
-            val result = authService.challenge()
-            mapOf("nonce" to result.nonce, "expiresAt" to result.expiresAt.toString())
+            val userName = call.bodyOrNull<ChallengeRequest>()?.userName
+                ?: return@post RestResponse.status(400, mapOf("error" to "Missing required field: userName"))
+            val result = authService.challenge(userName)
+            linkedMapOf(
+                "nonce" to result.nonce,
+                "salt" to result.salt,
+                "iterations" to result.iterations,
+                "expiresAt" to result.expiresAt.toString(),
+            )
         }
 
         routes.post("/api/auth/login", doc = RepositoryApiDocs.authDoc("login")) { call ->
             limit.check(call.http.ip())
             val body = call.bodyOrNull<LoginRequest>() ?: LoginRequest()
-            if (body.userName == null || body.digest == null || body.nonce == null) {
-                return@post RestResponse.status(400, mapOf("error" to "Missing required fields: userName, digest, nonce"))
+            if (body.userName == null || body.proof == null || body.nonce == null) {
+                return@post RestResponse.status(400, mapOf("error" to "Missing required fields: userName, proof, nonce"))
             }
-            val result = authService.login(body.userName, body.digest, body.nonce)
+            // too many failures for the user: TooManyRequestsException, 429 with Retry-After
+            val result = authService.login(body.userName, body.proof, body.nonce)
                 ?: return@post RestResponse.status(401, mapOf("error" to "Invalid credentials"))
-            tokens(result)
+            tokens(result) + ("serverSignature" to result.serverSignature)
         }
 
         routes.post("/api/auth/refresh", doc = RepositoryApiDocs.authDoc("refresh")) { call ->

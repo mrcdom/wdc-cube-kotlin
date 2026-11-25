@@ -1,5 +1,6 @@
 package br.com.wdc.store.test.repository
 
+import br.com.wdc.framework.domain.exception.UnauthenticatedException
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.store.domain.exception.BusinessException
 import br.com.wdc.store.domain.product.Product
@@ -53,7 +54,7 @@ class SecuredRestProductRepositoryTest {
 
     @Test
     fun wrongPassword_doesNotAuthenticate() {
-        assertThrows(BusinessException::class.java) { env.loginAs("admin", "wrong-password") }
+        assertThrows(UnauthenticatedException::class.java) { env.loginAs("admin", "wrong-password") }
         assertHttp(401) { repo().fetch(ProductCriteria()) }
     }
 

@@ -117,7 +117,10 @@ class AuthRateLimitTest {
     @Test
     fun aboveTheLimit_theChallengeAnswers429_withRetryAfter() {
         val client = HttpClient.newHttpClient()
-        val request = HttpRequest.newBuilder(URI("http://127.0.0.1:${env.port}/api/auth/challenge")).GET().build()
+        val request = HttpRequest.newBuilder(URI("http://127.0.0.1:${env.port}/api/auth/challenge"))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString("""{"userName":"admin"}"""))
+            .build()
         // the count is per clock minute: too close to its end, wait for the next one
         val intoTheMinute = System.currentTimeMillis() % 60_000
         if (intoTheMinute > 50_000) Thread.sleep(60_000 - intoTheMinute + 100)

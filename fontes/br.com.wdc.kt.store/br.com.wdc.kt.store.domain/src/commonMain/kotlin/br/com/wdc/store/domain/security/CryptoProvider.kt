@@ -8,6 +8,8 @@ interface CryptoProvider {
 
     fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray
 
+    fun sha256(input: ByteArray): ByteArray
+
     fun rsaEncryptOaep(publicKeyBase64: String, data: ByteArray): ByteArray
 
     companion object {

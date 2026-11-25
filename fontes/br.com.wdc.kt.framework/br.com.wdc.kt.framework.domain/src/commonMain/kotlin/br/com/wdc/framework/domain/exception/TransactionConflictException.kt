@@ -4,4 +4,4 @@ package br.com.wdc.framework.domain.exception
 open class TransactionConflictException(message: String) : RuntimeException(message)
 
 /** Cap of open remote transactions reached — the REST layer returns 429. */
-open class TransactionLimitExceededException(message: String) : RuntimeException(message)
+open class TransactionLimitExceededException(message: String) : TooManyRequestsException(message)

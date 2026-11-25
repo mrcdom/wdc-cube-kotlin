@@ -6,7 +6,7 @@ REST endpoints of the repositories, on top of [`framework-rest`](../../../br.com
 |---|---|
 | `/api/repo/<entity>/…` | The repository operations (`insert`, `update`, `delete`, `count`, `fetch`, `fetch-page`, `fetch-by-id`) |
 | `/api/tx/…` | Client-driven remote transaction (`begin`, `commit`, `rollback`, `status`) |
-| `/api/auth/…` | Challenge login, session renewal and logout — only with security on; limited per client address (`security.auth.requestsPerMinute`, 429 above it) |
+| `/api/auth/…` | SCRAM-SHA-256 login (`challenge`, `login`), session renewal and logout — only with security on; limited per client address (`security.auth.requestsPerMinute`) and, on failed sign-ins, per user (`LoginThrottle`); 429 with `Retry-After` above either |
 | `/openapi.json` | The API's OpenAPI description, derived from the domain |
 
 Each controller configures the `RepositoryRpc` of its entity, which reads and writes with the domain codec — the same one the client uses. **Access is decided by the entity's data policy** (package `security`, on `framework-rest`'s [data policy](../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md#data-policy)) — the only authorization of the repository API; the routes only require an authenticated caller. Every write is atomic; errors are mapped to status codes (400, 401, 403, 404, 409, 429).

@@ -12,6 +12,8 @@ class JceCryptoProvider : CryptoProvider {
     override fun md5(input: ByteArray): ByteArray =
         MessageDigest.getInstance("MD5").digest(input)
 
+    override fun sha256(input: ByteArray): ByteArray = MessageDigest.getInstance("SHA-256").digest(input)
+
     override fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray {
         val mac = Mac.getInstance(HMAC_ALGORITHM)
         mac.init(SecretKeySpec(key, HMAC_ALGORITHM))

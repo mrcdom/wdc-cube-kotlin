@@ -5,7 +5,8 @@ import br.com.wdc.framework.domain.exception.BusinessException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
-import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
+import br.com.wdc.framework.domain.exception.TooManyRequestsException
+import br.com.wdc.framework.domain.exception.UnauthenticatedException
 import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -37,11 +38,13 @@ internal fun httpFailure(status: Int, body: String? = null): RuntimeException {
     val message = if (body.isNullOrEmpty()) "HTTP $status" else "HTTP $status: $body"
     return when (status) {
         400 -> InvalidRequestException(message)
+        401 -> UnauthenticatedException(message)
         403 -> AccessDeniedException(message)
         404 -> NotFoundException(message)
         409 -> TransactionConflictException(message)
         410 -> RemoteTransactionNotFoundException(message)
-        429 -> TransactionLimitExceededException(message)
+        // the open remote transactions, the auth requests of an address, the failed sign-ins of a user
+        429 -> TooManyRequestsException(message)
         else -> BusinessException(message)
     }
 }

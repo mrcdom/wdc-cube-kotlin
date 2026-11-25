@@ -5,6 +5,7 @@ import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.ScopeSlot
+import br.com.wdc.framework.domain.exception.TooManyRequestsException
 import br.com.wdc.store.domain.exception.OfflineException
 import br.com.wdc.store.domain.security.AuthenticationService
 import br.com.wdc.store.presentation.presenter.RootPresenter
@@ -53,6 +54,15 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         scope.errorMessage = "The database is offline!"
     }
 
+    private fun alertTooManyAttempts(retryAfterSeconds: Long?) {
+        scope.errorCode = 6
+        scope.errorMessage = if (retryAfterSeconds != null) {
+            "Too many failed sign-ins. Try again in $retryAfterSeconds seconds."
+        } else {
+            "Too many failed sign-ins. Try again in a few minutes."
+        }
+    }
+
     private fun alertConnectionError(caught: Throwable) {
         scope.errorCode = 5
         scope.errorMessage = "Failed to communicate with the server. Check your connection."
@@ -99,6 +109,11 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
             if (caught is OfflineException) {
                 alertDatabaseIsOffline()
+                return
+            }
+
+            if (caught is TooManyRequestsException) {
+                alertTooManyAttempts(caught.retryAfterSeconds)
                 return
             }
 

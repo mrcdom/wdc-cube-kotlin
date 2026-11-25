@@ -63,7 +63,7 @@ open class EnUser(
 
     val USERNAME: TableField<Record, String?> = createField(DSL.name("USERNAME"), SQLDataType.VARCHAR(255).nullable(false), this, "")
 
-    val PASSWORD: TableField<Record, String?> = createField(DSL.name("PASSWORD"), SQLDataType.CHAR(32).nullable(false), this, "")
+    val PASSWORD: TableField<Record, String?> = createField(DSL.name("PASSWORD"), SQLDataType.VARCHAR(255).nullable(false), this, "")
 
     val NAME: TableField<Record, String?> = createField(DSL.name("NAME"), SQLDataType.VARCHAR(255).nullable(false), this, "")
 

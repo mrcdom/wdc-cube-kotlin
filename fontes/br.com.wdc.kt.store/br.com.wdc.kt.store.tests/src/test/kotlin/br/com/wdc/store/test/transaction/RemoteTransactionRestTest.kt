@@ -3,7 +3,7 @@ package br.com.wdc.store.test.transaction
 import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
-import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
+import br.com.wdc.framework.domain.exception.TooManyRequestsException
 import br.com.wdc.framework.domain.transaction.TransactionNotAllowedException
 import br.com.wdc.framework.domain.transaction.TransactionRequiredException
 import br.com.wdc.framework.domain.transaction.TransactionSystemException
@@ -504,7 +504,7 @@ class RemoteTransactionRestTest {
         val first = begin(client)
         val second = begin(client)
         try {
-            val e = assertThrows(TransactionLimitExceededException::class.java) { begin(client) }
+            val e = assertThrows(TooManyRequestsException::class.java) { begin(client) }
             assertTrue(e.message!!.startsWith("HTTP 429"), e.message)
         } finally {
             finish(client, first, "rollback")

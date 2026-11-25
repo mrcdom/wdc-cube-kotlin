@@ -1,5 +1,6 @@
 package br.com.wdc.store.test.repository
 
+import br.com.wdc.store.test.util.StoredPasswords
 import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.store.domain.security.PasswordUtil
 import br.com.wdc.store.domain.user.User
@@ -30,19 +31,21 @@ class UserRepositoryTest : AbstractUserRepositoryTest() {
     private val digestProjection get() = User().apply { id = ProjectionValues.i64; password = ProjectionValues.str }
 
     @Test
-    fun passwordDigest_comesOnlyWhenProjected() = runBlocking {
+    fun theVerifier_comesOnlyWhenProjected() = runBlocking {
         val stored = repo().fetch(UserCriteria().withUserName("admin").withProjection(digestProjection)).single()
-        // it is the digest, not the password; the column is CHAR(32), so it comes padded with spaces
-        assertEquals("1ymiigxvce4vzea4zp5bsfbgj", stored.password!!.trim())
+        // the SCRAM verifier, not the password nor anything that signs in
+        assertTrue(stored.password!!.startsWith("SCRAM-SHA-256\$"), stored.password)
         assertNull(repo().fetch(UserCriteria().withUserName("admin")).single().password)
     }
 
     @Test
-    fun seededDigests_areWhatTheApplicationComputes() = runBlocking {
-        for (user in listOf("admin", "fulano", "beotrano")) {
-            val stored = repo().fetch(UserCriteria().withUserName(user).withProjection(digestProjection)).single()
-            assertEquals(PasswordUtil.hashPassword(user), stored.password!!.trim(), user)
+    fun seededPasswords_areStoredAsVerifiers_eachWithItsOwnSalt() = runBlocking {
+        val verifiers = listOf("admin", "fulano", "beotrano").map { user ->
+            val stored = repo().fetch(UserCriteria().withUserName(user).withProjection(digestProjection)).single().password
+            assertTrue(StoredPasswords.matches(stored, user), user)
+            stored
         }
+        assertEquals(3, verifiers.toSet().size)
     }
 
     @Test
