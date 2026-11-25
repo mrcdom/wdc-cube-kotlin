@@ -10,7 +10,9 @@ Demo application for the **Cube MVP** framework in Kotlin Multiplatform, with th
 
 The demo is the **WDC Store**; its code follows the name — packages `br.com.wdc.store`, Gradle modules `:store-*`, classes `Store*`, the `STORE_WORKDIR` variable and the `wedocode-store` database. Until 0.5.0 it was the Storefront, with identifiers in `shopping`: a database from then (`wedocode-shopping.mv.db`) is used again by renaming the file, and the mobile apps install as new apps (their ids changed).
 
-**Documentation:** [Overview](docs/architecture.md) · [Cube Framework](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [React View](docs/architecture-react.md) · [Persistence](docs/architecture-persistence.md) · [Security](docs/security-architecture.md)
+**Documentation:** [Overview](docs/architecture.md) · [Cube Framework](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [React View](docs/architecture-react.md) · [Persistence](docs/architecture-persistence.md) · [Security](docs/security-architecture.md) · [Decision records](docs/adr/README.md)
+
+**Starting your own application?** Copy [starter/](starter/README.md): the smallest Cube application (a task list with a detail, in the browser, and a small backend), with its tests.
 
 ## Structure
 
@@ -18,12 +20,14 @@ The demo is the **WDC Store**; its code follows the name — packages `br.com.wd
 wdc-cube-kotlin/
 ├── docs/                  ← Architecture documentation
 ├── fontes/                ← Source code (Gradle project)
-└── iosApp/                ← Xcode project (native iOS host)
+├── iosApp/                ← Xcode project (native iOS host)
+└── starter/               ← The smallest Cube application, to copy (Gradle project of its own)
 ```
 
 - [fontes/](fontes/) — Gradle project with all modules
 - [docs/](docs/) — Architecture documentation
 - [iosApp/](iosApp/) — Xcode project to run on iOS
+- [starter/](starter/) — A starting point for a new application
 
 ## Prerequisites
 
@@ -60,6 +64,6 @@ cd fontes
 (cd br.com.wdc.kt.store/br.com.wdc.kt.store.e2e && ./prepare.sh && npm ci && npx playwright install chromium && npx playwright test)
 ```
 
-The CI ([`.github/workflows/build.yml`](.github/workflows/build.yml)) runs `./gradlew build`, the TypeScript checks and the browser tests on every push and pull request, and the iOS simulator tests on the main branch, weekly and on demand.
+The CI ([`.github/workflows/build.yml`](.github/workflows/build.yml)) runs `./gradlew build`, the TypeScript checks, the browser tests and the starter's build on every push and pull request, and the iOS simulator tests on the main branch, weekly and on demand.
 
 For **iOS**, open `iosApp/StoreiOS.xcodeproj` in Xcode and run it on the simulator.

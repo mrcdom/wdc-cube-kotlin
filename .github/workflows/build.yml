@@ -102,6 +102,36 @@ jobs:
       - name: Bundle
         run: npm run build
 
+  starter:
+    name: Starter project (presenter tests, browser bundle)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: starter
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # the starter builds the framework from fontes/ (includeBuild), whose Android modules need an SDK to configure
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Use the runner's JDK and Android SDK
+        run: |
+          mkdir -p ~/.gradle && echo "org.gradle.java.home=$JAVA_HOME" >> ~/.gradle/gradle.properties
+          echo "sdk.dir=$ANDROID_HOME" > ../fontes/local.properties
+
+      - name: Build
+        run: ./gradlew build
+
   browser:
     name: Browser tests (the four web clients against a real backend)
     runs-on: ubuntu-latest
