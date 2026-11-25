@@ -54,6 +54,9 @@ class RestTestEnvironment(
 ) : StoreTestEnvironment {
 
     private lateinit var database: TestDatabase
+
+    /** The database of this environment, for a test that plays a second backend instance on it. */
+    val dataSource: javax.sql.DataSource get() = database.dataSource
     private lateinit var executor: ScheduledExecutorForTest
     private val cleanUp = Defer()
     private lateinit var javalin: Javalin

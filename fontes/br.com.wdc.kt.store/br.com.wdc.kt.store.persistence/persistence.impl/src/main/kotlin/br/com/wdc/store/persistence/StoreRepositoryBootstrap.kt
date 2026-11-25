@@ -14,6 +14,8 @@ import br.com.wdc.store.persistence.repository.purchase.PurchaseRepositoryImpl
 import br.com.wdc.store.persistence.repository.purchaseitem.PurchaseItemRepositoryImpl
 import br.com.wdc.store.persistence.repository.user.UserRepositoryImpl
 import br.com.wdc.store.persistence.security.AuthenticationServiceImpl
+import br.com.wdc.store.persistence.security.PostgresSessionEvents
+import br.com.wdc.store.persistence.security.SessionEvents
 import javax.sql.DataSource
 import org.jooq.SQLDialect
 import org.jooq.conf.RenderNameCase
@@ -35,7 +37,13 @@ object StoreRepositoryBootstrap {
      * @param dialect    database in use ([SQLDialect.H2] or [SQLDialect.POSTGRES])
      * @param cleanUp    receives the action that undoes what was registered here
      */
+    /** What [initialize] was given: [initializeSecurity] picks the session events by it. */
+    private var dataSource: DataSource? = null
+    private var dialect: SQLDialect = SQLDialect.H2
+
     fun initialize(dataSource: DataSource, logSql: Boolean = false, dialect: SQLDialect = SQLDialect.H2, cleanUp: Defer) {
+        this.dataSource = dataSource
+        this.dialect = dialect
         var settings = Settings().withExecuteLogging(logSql)
         if (dialect == SQLDialect.POSTGRES) {
             // The generated classes come from H2: schema "PUBLIC" and upper-case names. On PostgreSQL the DDL
@@ -67,8 +75,28 @@ object StoreRepositoryBootstrap {
      *
      * @param cleanUp receives the action that removes the authentication service
      */
+    /**
+     * Registers the authentication service. On PostgreSQL, the backend instances sharing the database tell each other
+     * of the sessions that end ([PostgresSessionEvents], listening until [cleanUp]); on H2, opened by one process, there
+     * is no one to tell.
+     */
     fun initializeSecurity(jwtSecret: String, refreshTokenTtlDays: Int = 7, cleanUp: Defer) {
-        AuthenticationService.BEAN.set(AuthenticationServiceImpl(UserRepository.BEAN.get(), jwtSecret, refreshTokenTtlDays))
+        val events = sessionEvents(cleanUp)
+        val service = AuthenticationServiceImpl(
+            rawUserRepo = UserRepository.BEAN.get(),
+            jwtSecret = jwtSecret,
+            refreshTokenTtlDays = refreshTokenTtlDays,
+            sessionEvents = events,
+        )
+        AuthenticationService.BEAN.set(service)
         cleanUp.push { AuthenticationService.BEAN.set(null) }
+    }
+
+    private fun sessionEvents(cleanUp: Defer): SessionEvents {
+        val source = dataSource
+        if (dialect != SQLDialect.POSTGRES || source == null) return SessionEvents.LOCAL
+        val events = PostgresSessionEvents(source).start()
+        cleanUp.push { events.close() }
+        return events
     }
 }

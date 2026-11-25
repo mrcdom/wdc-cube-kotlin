@@ -34,6 +34,8 @@ class AuthenticationServiceImpl(
     jwtSecret: String,
     refreshTokenTtlDays: Int = 7,
     private val throttle: LoginThrottle = LoginThrottle(),
+    /** How the backend instances tell each other that a session ended ([SessionEvents]). */
+    sessionEvents: SessionEvents = SessionEvents.LOCAL,
 ) : AuthenticationService {
 
     companion object {
@@ -41,7 +43,12 @@ class AuthenticationServiceImpl(
         private const val HMAC_ALGORITHM = "HmacSHA256"
     }
 
-    private val cache = AccessContextCache(jwtSecret, IntentSecretStore(), refreshTokenTtlDays)
+    private val cache = AccessContextCache(
+        jwtSecret = jwtSecret,
+        intentSecretStore = IntentSecretStore(),
+        refreshTokenTtlDays = refreshTokenTtlDays,
+        events = sessionEvents,
+    )
     private val nonceStore = NonceStore()
     private val scram = Scram(JceCryptoProvider())
 
