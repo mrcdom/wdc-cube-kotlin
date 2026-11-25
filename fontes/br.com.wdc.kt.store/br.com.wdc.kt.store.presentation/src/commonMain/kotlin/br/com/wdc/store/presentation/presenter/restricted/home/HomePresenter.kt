@@ -49,16 +49,16 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private var onCartChangeListenerRemover: () -> Unit = NOOP
 
     init {
-        scope.onExit = action(1) { exit() }
-        scope.onOpenCart = action(2) { CartKeys(app).flip() }
+        scope.onExit = action(1) { onExit() }
+        scope.onOpenCart = action(2) { onOpenCart() }
 
-        products.onOpenProduct = actionOf(1, FormParam.long("p.productId"), target = products) { openProduct(it) }
+        products.onOpenProduct = actionOf(1, FormParam.long("p.productId"), target = products) { onOpenProduct(it) }
 
         // not navigations: the guard republishes the address, which follows the page
-        purchases.onOpenReceipt = actionOf(1, FormParam.long("p.purchaseId"), target = purchases) { openReceipt(it) }
-        purchases.onPageChange = actionOf(2, FormParam.int("p.page"), target = purchases) { changePage(it ?: 0) }
+        purchases.onOpenReceipt = actionOf(1, FormParam.long("p.purchaseId"), target = purchases) { onOpenReceipt(it) }
+        purchases.onPageChange = actionOf(2, FormParam.int("p.page"), target = purchases) { onPageChange(it) }
         purchases.onItemSizeCapacityChanged =
-            actionOf(3, FormParam.int("p.capacity"), target = purchases) { changeCapacity(it ?: 0) }
+            actionOf(3, FormParam.int("p.capacity"), target = purchases) { onItemSizeCapacityChanged(it) }
     }
 
     // :: Cube API
@@ -154,7 +154,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     /** Opens the receipt of a purchase: the purchases panel's action. */
-    private suspend fun openReceipt(purchaseId: Long?) {
+    private suspend fun onOpenReceipt(purchaseId: Long?) {
         if (purchaseId == null || purchaseId <= 0) {
             alertPurchaseIdRequired()
             LOG.warn("onOpenReceipt: {}", scope.errorMessage)
@@ -170,7 +170,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     }
 
     /** Opens a product: the products panel's action. */
-    private suspend fun openProduct(productId: Long?) {
+    private suspend fun onOpenProduct(productId: Long?) {
         if (productId == null || productId <= 0) {
             alertProductIdRequired()
             LOG.warn("onOpenProduct: {}", scope.errorMessage)
@@ -185,7 +185,21 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         }
     }
 
-    private suspend fun exit() {
+    private suspend fun onOpenCart() {
+        CartKeys(app).flip()
+    }
+
+    /** A page of the purchases panel: the panel's action. */
+    private suspend fun onPageChange(page: Int?) {
+        changePage(page ?: 0)
+    }
+
+    /** How many purchases the panel's view fits: the panel's action. */
+    private suspend fun onItemSizeCapacityChanged(capacity: Int?) {
+        changeCapacity(capacity ?: 0)
+    }
+
+    private suspend fun onExit() {
         cart!!.clear()
         app.endSession()
         setContent(null)

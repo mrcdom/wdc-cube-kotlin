@@ -292,7 +292,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     init {
         // the init only binds: the action is a field of the scope, bound once and guarded (an unhandled failure →
         // "Unexpected error: …"); what a remote view typed comes by sync, handled by a method of the presenter
-        scope.onEnter = action(1) { enter() }
+        scope.onEnter = action(1) { onEnter() }
         scope.onSync(::sync)
     }
 
@@ -303,7 +303,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         return false
     }
 
-    private suspend fun enter() {
+    private suspend fun onEnter() {
         scope.loading = true
 
         // a resource call: a new instance per use, the request in its constructor
@@ -485,8 +485,8 @@ Errors are handled at **two levels**:
 2. **In the action's guard** — every action bound with `action { … }` / `actionOf { … }` catches what its body did not handle and hands it to `RootPresenter.alertUnexpectedError()`, which sets the root view's `scope.errorMessage` (`"Unexpected error: <cause>"`) and logs the stack trace; then it republishes the address (`app.updateHistory()`). The view's `safeCall` keeps a last `catch` for failures of the view's own code
 
 ```kotlin
-// Level 1: Specific handling in the Presenter (the body of scope.onBuy = action(1) { buy() })
-private suspend fun buy() {
+// Level 1: Specific handling in the Presenter (the body of scope.onBuy = action(1) { onBuy() })
+private suspend fun onBuy() {
     try {
         val purchaseId = cart.commit(app.subject!!)
         ReceiptKeys(app).apply { this.purchaseId = purchaseId }.flip()
@@ -573,7 +573,7 @@ sequenceDiagram
     LV->>SC: safeCall - scope.onEnter()
     Note over LV: UI thread released
 
-    SC->>LP: onEnter → enter() on background thread (guarded)
+    SC->>LP: onEnter → onEnter() on background thread (guarded)
     LP->>LP: scope.loading = true (the scope asks for the repaint)
     Note over LV: Recomposes: spinner + disabled fields
 

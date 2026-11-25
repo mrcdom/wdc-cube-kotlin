@@ -26,8 +26,8 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
     private var ownerSlot: ScopeSlot? = null
 
     init {
-        scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
-        scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
+        scope.onOpenProducts = action(1) { onOpenProducts() }
+        scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { onAddToCart(it) }
     }
 
     // :: Cube API
@@ -68,7 +68,11 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     // :: User Actions
 
-    private suspend fun addToCart(quantity: Int?) {
+    private suspend fun onOpenProducts() {
+        HomeKeys(app).flip()
+    }
+
+    private suspend fun onAddToCart(quantity: Int?) {
         if (quantity == null) {
             errorInvalidQuantity()
             LOG.warn("onAddToCart.errorInvalidQuantity: {}", scope.errorMessage)

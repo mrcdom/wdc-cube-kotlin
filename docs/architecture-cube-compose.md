@@ -236,7 +236,7 @@ sequenceDiagram
     View->>SC: safeCall { scope.onEnter() }
     Note over View: UI thread released
 
-    SC->>P: onEnter → enter() (guarded)
+    SC->>P: onEnter → onEnter() (guarded)
     P->>S: scope.loading = true
     S->>SCH: markDirty (LoginView's counter)
     Note over SCH: flush: commitComputedState(), counter++
@@ -555,10 +555,10 @@ stateDiagram-v2
     }
 ```
 
-**In the presenter** (linear code; the body of the `onEnter` action, bound in the constructor with `scope.onEnter = action(1) { enter() }`; the view has put the user name and password in the scope):
+**In the presenter** (linear code; the body of the `onEnter` action, bound in the constructor with `scope.onEnter = action(1) { onEnter() }`; the view has put the user name and password in the scope):
 
 ```kotlin
-private suspend fun enter() {
+private suspend fun onEnter() {
     scope.loading = true  // → UI shows spinner (the view is the scope's updater)
 
     try {
