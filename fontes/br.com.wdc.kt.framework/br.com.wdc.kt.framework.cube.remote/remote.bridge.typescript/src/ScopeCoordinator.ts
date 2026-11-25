@@ -116,7 +116,7 @@ export class ScopeCoordinator {
       this.unlistenHistory()
       this.unlistenHistory = this.history.listen(({ action, location }) => {
         if (action === 'POP') {
-          let path = `${location.pathname}${location.search ? location.search : ''}`
+          const path = `${location.pathname}${location.search ? location.search : ''}`
           if (this.path !== path) {
             this.onHistoryChange(path)
           }
@@ -149,7 +149,7 @@ export class ScopeCoordinator {
 
   applyScopes(scopeList: { id: string }[]) {
     for (let i = 0, ilen = scopeList.length; i < ilen; i++) {
-      let scope = scopeList[i]
+      const scope = scopeList[i]
       if (!scope || !scope.id) {
         continue
       }
@@ -196,7 +196,7 @@ export class ScopeCoordinator {
   }
 
   setFormField(vsid: string, fieldName: string, fieldValue: unknown) {
-    var formData = this.formMap[vsid] as Record<string, unknown>
+    let formData = this.formMap[vsid] as Record<string, unknown>
     if (!formData) {
       formData = {}
       this.formMap[vsid] = formData

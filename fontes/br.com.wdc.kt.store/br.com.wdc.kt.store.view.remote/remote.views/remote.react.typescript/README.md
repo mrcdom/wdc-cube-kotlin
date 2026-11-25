@@ -134,4 +134,5 @@ npm run format
 
 # Check formatting
 npm run format:check
+npm run lint                # ESLint: typescript-eslint and the rules of React hooks
 ```

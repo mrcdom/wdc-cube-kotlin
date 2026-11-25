@@ -115,6 +115,8 @@ export class FlushRequestContext {
       return
     }
 
+    // the socket's handlers below are functions of their own, with their own `this`
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const me = this
     const app = this.app
 

@@ -37,9 +37,12 @@ export class ReactViews {
       throw new Error(`Missing View Scope for id(${vsid})`)
     }
 
+    // a hook as a method of the coordinator's view class: called only from function components, in the same order
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const [, setUpdateCount] = React.useState(0)
     binding.forceUpdate = () => setUpdateCount((count) => count + 1)
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks -- as above
     React.useEffect(() => {
       // attached
       coordinator.viewGarbageCollector.mount(vsid)
@@ -47,6 +50,8 @@ export class ReactViews {
         // detached
         coordinator.viewGarbageCollector.mark(binding)
       }
+      // once per mount: a component draws one view for its whole life
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return { scope: binding.getScope() as T, binding }
@@ -55,6 +60,7 @@ export class ReactViews {
   /** Hook: keeps a view the component does not draw from being collected. */
   useHold(vsid: string | undefined) {
     const collector = this.coordinator.viewGarbageCollector
+    // eslint-disable-next-line react-hooks/rules-of-hooks -- a hook as a method, as above
     React.useEffect(() => {
       if (vsid) {
         collector.hold(vsid)
@@ -64,6 +70,8 @@ export class ReactViews {
           collector.release(vsid)
         }
       }
+      // the collector is the coordinator's, the same for the component's whole life
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [vsid])
   }
 }

@@ -128,7 +128,7 @@ async function runFixture(fixture: { steps: Record<string, any>[] }) {
         throw new Error(`unknown step ${JSON.stringify(step)}`)
       }
     } catch (e) {
-      throw new Error(`step ${index + 1}: ${(e as Error).message}`)
+      throw new Error(`step ${index + 1}: ${(e as Error).message}`, { cause: e })
     }
   }
   client?.onStop()

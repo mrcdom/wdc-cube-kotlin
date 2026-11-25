@@ -61,7 +61,7 @@ function stripHtml(html: string): string {
 }
 
 class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
-  override render({ className }: ViewProps) {
+  override render() {
     const { scope } = this
     const quantity = (scope.quantity = scope.quantity ?? 1)
     const product = scope.product ?? DefaultProduct

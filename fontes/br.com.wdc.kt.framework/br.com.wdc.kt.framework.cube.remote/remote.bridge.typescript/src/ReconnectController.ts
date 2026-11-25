@@ -67,7 +67,7 @@ export class ReconnectController {
 
     if (this.delay > 0) {
       this.delay -= 1000
-      this.delay < 0 && (this.delay = 0)
+      if (this.delay < 0) this.delay = 0
       bvScope.error.delay = this.delay
     }
 

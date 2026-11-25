@@ -7,12 +7,12 @@ export function formatDate(dateOrMillis: number | Date | null | undefined) {
   const purchaseDate = typeof dateOrMillis === 'number' ? new Date(dateOrMillis) : dateOrMillis
 
   // The calendar date in UTC, as the other views show it. getDay() is the day of the week, not of the month.
-  let purchaseDay = purchaseDate.getUTCDate()
-  let purchaseMonth = purchaseDate.getUTCMonth() + 1 // January is zero
-  let purchaseFullYear = purchaseDate.getUTCFullYear()
+  const purchaseDay = purchaseDate.getUTCDate()
+  const purchaseMonth = purchaseDate.getUTCMonth() + 1 // January is zero
+  const purchaseFullYear = purchaseDate.getUTCFullYear()
 
-  let dayOutput = purchaseDay < 10 ? '0' + purchaseDay : purchaseDay
-  let monthOutput = purchaseMonth < 10 ? '0' + purchaseMonth : purchaseMonth
+  const dayOutput = purchaseDay < 10 ? '0' + purchaseDay : purchaseDay
+  const monthOutput = purchaseMonth < 10 ? '0' + purchaseMonth : purchaseMonth
 
   return monthOutput + '/' + dayOutput + '/' + purchaseFullYear
 }
