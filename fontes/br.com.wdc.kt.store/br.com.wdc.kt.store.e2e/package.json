@@ -1,0 +1,16 @@
+{
+  "name": "wdc-store-e2e",
+  "private": true,
+  "license": "MIT",
+  "description": "Browser tests of the WDC Store's web clients against a real backend",
+  "scripts": {
+    "prepare-clients": "./prepare.sh",
+    "test": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "prettier": "3.8.2"
+  }
+}

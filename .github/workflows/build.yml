@@ -1,0 +1,187 @@
+# The build of the whole repository: what `./gradlew build` checks on a developer's machine, on every push and pull
+# request. GitHub-hosted runners are free for public repositories.
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # weekly, so the iOS job also runs when nothing is pushed
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: fontes
+
+jobs:
+  build:
+    name: Build and test (JVM, Android, JS, Wasm, PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # the runner has an Android SDK: accept its licenses (AGP downloads the platform it needs); the action's default
+      # package list still asks for "tools", which the SDK repository no longer has
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript/package-lock.json
+
+      # gradle.properties and local.properties point at a developer's machine: the runner's JDK goes in the user's
+      # gradle.properties (which wins over the project's, for every Gradle call), and its Android SDK in local.properties
+      - name: Use the runner's JDK and Android SDK
+        run: |
+          mkdir -p ~/.gradle && echo "org.gradle.java.home=$JAVA_HOME" >> ~/.gradle/gradle.properties
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      # the Kotlin/JS and Kotlin/Wasm yarn locks are not versioned: make them for this checkout
+      - name: Yarn locks
+        run: ./gradlew kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock
+
+      - name: Build
+        run: ./gradlew build
+
+      - name: Test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: fontes/**/build/reports/tests/
+          retention-days: 7
+
+  typescript:
+    name: TypeScript client and bridges
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript/package-lock.json
+
+      - run: npm ci
+
+      - name: Type check (the client and, through its aliases, both bridge packages)
+        run: npx -y -p typescript@5.7.3 tsc --noEmit -p tsconfig.json
+
+      - name: Formatting
+        run: |
+          npm run format:check
+          for bridge in remote.bridge.typescript remote.bridge.typescript.react; do
+            (cd "$GITHUB_WORKSPACE/fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/$bridge" && npx -y prettier@3.8.2 --check .)
+          done
+          (cd "$GITHUB_WORKSPACE/fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e" && npx -y prettier@3.8.2 --check .)
+
+      - name: Bundle
+        run: npm run build
+
+  browser:
+    name: Browser tests (the four web clients against a real backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Use the runner's JDK and Android SDK
+        run: |
+          mkdir -p ~/.gradle && echo "org.gradle.java.home=$JAVA_HOME" >> ~/.gradle/gradle.properties
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Yarn locks
+        run: ./gradlew kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock
+
+      # the TypeScript client's bundle, the native web, Compose web and Kotlin remote clients, and the backend
+      - name: Build the clients and the backend
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e
+        run: ./prepare.sh
+
+      - name: Install Playwright
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e
+        run: npx playwright test
+
+      - name: Browser test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e/playwright-report/
+            fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e/test-results/
+            fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e/build/e2e-work/log/
+          retention-days: 7
+
+  ios:
+    name: iOS tests (simulator)
+    # long and only needed now and then: on the main branch, weekly, and on demand
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    # a simulator test can hang without an error: stop it instead of waiting for the 6-hour limit
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # the modules with an Android target need an SDK to configure, even to run the iOS tests
+      - name: Use the runner's JDK and Android SDK
+        run: |
+          mkdir -p ~/.gradle && echo "org.gradle.java.home=$JAVA_HOME" >> ~/.gradle/gradle.properties
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: iOS simulator tests and the native iOS app's compilation
+        run: >
+          ./gradlew iosSimulatorArm64Test :view-native-ios:compileKotlinIosSimulatorArm64
+         
