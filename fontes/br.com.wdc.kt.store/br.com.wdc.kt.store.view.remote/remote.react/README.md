@@ -17,8 +17,8 @@ See the [architecture documentation](../../../../docs/architecture-react.md) for
 
 | Product Details | Cart |
 |:---:|:---:|
-| ![Product Details](screenshots/03-detalhes-produto.png) | ![Cart](screenshots/04-carrinho.png) |
+| ![Product Details](screenshots/03-product-details.png) | ![Cart](screenshots/04-cart.png) |
 
 | Receipt |
 |:---:|
-| ![Receipt](screenshots/05-recibo.png) |
+| ![Receipt](screenshots/05-receipt.png) |
