@@ -1,6 +1,6 @@
 package br.com.wdc.store.view.react.controller
 
-import br.com.wdc.store.view.react.skeleton.viewimpl.ReactRootPresenter
+import br.com.wdc.store.view.react.ReactRootPresenter
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import io.javalin.http.Context
@@ -38,7 +38,7 @@ object StressMetricsController {
         }
 
         val metrics = mapOf(
-            "activeSessions" to ReactRootPresenter.getActiveSessionCount(),
+            "activeSessions" to ReactRootPresenter.REGISTRY.activeSessionCount,
             "heapUsedMb" to heapUsed,
             "heapMaxMb" to heapMax,
             "threadCount" to threadCount,

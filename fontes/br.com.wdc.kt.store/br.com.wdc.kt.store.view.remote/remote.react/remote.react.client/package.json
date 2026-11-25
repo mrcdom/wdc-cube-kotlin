@@ -14,7 +14,11 @@
     }
   },
   "alias": {
-    "@root/*": "./src/scripts/$1"
+    "@root/*": "./src/scripts/$1",
+    "@wdc/remote-bridge-react": "../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote.react/src/bridge/index.tsx",
+    "react": "./node_modules/react",
+    "history": "./node_modules/history",
+    "universal-cookie": "./node_modules/universal-cookie"
   },
   "scripts": {
     "start": "parcel watch --public-url ./",

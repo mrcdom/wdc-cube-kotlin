@@ -7,8 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import LinearProgress from '@mui/material/LinearProgress'
 import Link from '@mui/material/Link'
 import Typography from '@mui/material/Typography'
-import app, { type ViewProps, BROWSER_VID, type BrowserScope } from '@root/App'
-import { BaseViewClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, type ViewProps, BROWSER_VID, type BrowserScope } from '@wdc/remote-bridge-react'
 
 // :: Actions
 
@@ -23,9 +22,9 @@ class BrowserViewClass extends BaseViewClass<ViewProps, BrowserScope> {
     const { scope } = this
 
     React.useEffect(() => {
-      app.onStart()
+      bridge.onStart()
       return () => {
-        app.onStop()
+        bridge.onStop()
       }
     }, [])
 
@@ -36,7 +35,7 @@ class BrowserViewClass extends BaseViewClass<ViewProps, BrowserScope> {
 
     let rootView: ReactNode
     if (scope.contentViewId) {
-      rootView = app.createView(scope.contentViewId)
+      rootView = bridge.createView(scope.contentViewId)
     } else {
       rootView = (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -76,11 +75,11 @@ class BrowserViewClass extends BaseViewClass<ViewProps, BrowserScope> {
 
   readonly emitAlertOk = () => {
     const { vsid } = this
-    app.submit(vsid, ON_ALERT_OK)
+    bridge.submit(vsid, ON_ALERT_OK)
   }
 
   readonly onRecconectNow = () => {
-    app.connect()
+    bridge.connect()
   }
 }
 

@@ -8,7 +8,7 @@
 - [Communication Cycle](#communication-cycle)
 - [Session Establishment](#session-establishment)
 - [WebSocket Protocol](#websocket-protocol)
-- [Skeleton — The Bridge Between Presenter and Client](#skeleton--the-bridge-between-presenter-and-client)
+- [The Remote Host — The Bridge Between Presenter and Client](#the-remote-host--the-bridge-between-presenter-and-client)
 - [Scope Synchronization](#scope-synchronization)
 - [Security](#security)
 - [Session Management and Lifecycle](#session-management-and-lifecycle)
@@ -88,11 +88,13 @@ graph LR
 graph TB
     subgraph "Client (TypeScript)"
         RC["react.client<br/>React + MUI + Parcel"]
+        BRG["@wdc/remote-bridge-react<br/>Protocol client (framework)"]
     end
 
     subgraph "Server (Kotlin/JVM)"
         BACK["backend<br/>Javalin HTTP/WS"]
-        SKEL["react.skeleton<br/>View Impls + Dispatcher"]
+        SKEL["react.skeleton<br/>The Store's remote application"]
+        FCR["framework-cube-remote<br/>Remote host: sessions, views, protocol"]
         PRES["presentation<br/>Presenters (KMP commonMain)"]
         PERS["persistence<br/>Repositories jOOQ"]
         PERSR["persistence.rest<br/>REST API (for Compose)"]
@@ -100,8 +102,12 @@ graph TB
         CUBE["framework-cube<br/>MVP Engine"]
     end
 
-    RC <-->|WebSocket| BACK
+    RC --> BRG
+    BRG <-->|WebSocket| BACK
     BACK --> SKEL
+    BACK --> FCR
+    SKEL --> FCR
+    FCR --> CUBE
     BACK --> PERSR
     SKEL --> PRES
     PRES --> DOM
@@ -113,8 +119,10 @@ graph TB
 
 | Module | Role |
 |--------|-------|
-| **react.client** (`remote.react.client`, npm) | Pure rendering in React/TypeScript with Material UI. Receives the views' scopes as JSON and sends user events. Bundled with Parcel (`npm run build`) into the skeleton's resources. |
-| **react.skeleton** (`:view-remote-react-skeleton`) | Server-side bridge: one `ScopeViewImpl` per scope dispatches the client's events to the actions the presenter bound with their codes and writes the scope as JSON; the session's view catalog holds each client component's vid, and the session releases the views whose scopes left. |
+| **react.client** (`remote.react.client`, npm) | The Store's views in React/TypeScript with Material UI, registered by vid with the bridge. Bundled with Parcel (`npm run build`) into the skeleton's resources. |
+| **remote bridge** (`@wdc/remote-bridge-react`, framework, `br.com.wdc.kt.framework.cube.remote.react`) | The client side of the protocol, for any React shell: the WebSocket session and reconnection, the security handshake and cipher, the scopes of the views (`ViewBinding`), event delivery, the release of views (`ViewGarbageCollector`), `BaseViewClass`. Imported from source by a Parcel alias (and a tsconfig `paths` entry); its peer dependencies (React, history, universal-cookie) come from the shell's `node_modules`. |
+| **framework-cube-remote** (`:framework-cube-remote`, framework) | The server side of the protocol, for any Cube application: the sessions (`RemoteApplicationRegistry`), each one's work (`RemoteApplicationSupport`: views, dispatch, answer, signed history, life), one `RemoteViewImpl` per scope, the browser tab (`BrowserScope`, `RemoteBrowserPresenter`), the keys and cipher (`RemoteAppSecurity`, `RemoteDataSecurity`) and the Javalin routes (`DispatcherController`, `IndexHtmlController`). |
+| **react.skeleton** (`:view-remote-react-skeleton`) | The Store as a remote application: `ReactRootPresenter` (its root presenter, implementing `RemoteApplication`, with the vid of each of its scopes and its registry), plus the Store's own routes (product images, health, stress metrics) and the client bundle. |
 | **backend** (`:backend`) | Javalin server that hosts the WebSocket (`/dispatcher/{id}`), serves the React static files, and exposes the REST API for Compose clients. |
 | **presentation** (`:store-presentation`) | Shared presenters (KMP commonMain) — the same code used by both React and Compose. |
 | **persistence** (`:store-persistence`) | jOOQ implementation of the repositories (H2 or PostgreSQL) — used directly by the presenters in the React architecture. |
@@ -129,7 +137,7 @@ sequenceDiagram
     participant Browser as React Client
     participant WS as WebSocket
     participant Dispatch as DispatchPhaseBhv
-    participant ViewImpl as ScopeViewImpl (login)
+    participant ViewImpl as RemoteViewImpl (login)
     participant Presenter as LoginPresenter
     participant Repo as UserRepository (JDBC)
     participant Response as ResponsePhaseBhv
@@ -168,18 +176,18 @@ sequenceDiagram
     Server->>Server: Generates appId = random.sign(random)
     Server-->>Browser: Cookies: app_id, app_skey (the server's RSA public key)
 
-    Browser->>Browser: Generates a random password, salt and IV
+    Browser->>Browser: Generates a random password and salt
     Browser->>Browser: Encrypts the password with the RSA public key
     Browser->>Browser: Sets the app_signature cookie
 
     Browser->>Server: WebSocket /dispatcher/appId (checks the appId and the cookie)
     Browser->>Server: ping with secret=app_signature
     Server->>Server: Decrypts the password with the RSA private key,<br/>derives the AES-256-GCM key (PBKDF2)
-    Server->>Server: Creates ReactRootPresenter (first message)
+    Server->>Server: The registry creates the application (ReactRootPresenter, first message)
     Server-->>Browser: Initial scopes (views)
 ```
 
-The `appId` is self-signed: `{random}.{signature(random)}` (`AppSecurity.signAsHash`, Base62) — this prevents forging session IDs. The RSA key pair is the server's, fixed (`wdc.web.public_key` / `wdc.web.private_key`, with a development fallback), not one per session.
+The `appId` is self-signed: `{random}.{signature(random)}` (`RemoteAppSecurity.signAsHash`, Base62) — this prevents forging session IDs. The RSA key pair is the server's, fixed (`wdc.web.public_key` / `wdc.web.private_key`, with a development fallback), not one per session.
 
 ---
 
@@ -234,31 +242,40 @@ The `appId` is self-signed: `{random}.{signature(random)}` (`AppSecurity.signAsH
 
 ---
 
-## Skeleton — The Bridge Between Presenter and Client
+## The Remote Host — The Bridge Between Presenter and Client
 
-Presenters do not create views; the framework knows only scopes. The remote host is a rendering technology of its own: each session (`ReactRootPresenter`, which implements `RemoteApplication`) keeps a private **catalog** — which view draws each kind of scope, one `ScopeViewImpl` per scope, carrying the vid of the client component that paints it — and the view of each scope on the client's screen. Each scope declares its vid (`LoginScope.VID`): the presentation names what paints it in the bridge protocol, and the WDC Store speaks that protocol. No scope has a view class of its own:
+Presenters do not create views; the framework knows only scopes. The remote host (`framework-cube-remote`) is a rendering technology of its own. An application becomes remote by implementing `RemoteApplication` and holding a `RemoteApplicationSupport`, which does the session's work: the view of each scope on the client's screen, one `RemoteViewImpl` per scope, carrying the vid of the client component that paints it. Each scope declares its vid (`LoginScope.VID`): the presentation names what paints it in the bridge protocol, and the WDC Store speaks that protocol. What the Store supplies is the vid of each scope class; the browser's is built in. No scope has a view class of its own:
 
 ```kotlin
-private val catalog: Map<KClass<out Scope>, (Scope) -> ScopeViewImpl<*>> = mapOf(
-    BrowserScope::class to { ScopeViewImpl(BrowserScope.VID, this, it, instanceId = 0) },
-    RootScope::class to { ScopeViewImpl(RootScope.VID, this, it) },
-    LoginScope::class to { ScopeViewImpl(LoginScope.VID, this, it) },
-    HomeScope::class to { ScopeViewImpl(HomeScope.VID, this, it) },
-    ProductScope::class to { ScopeViewImpl(ProductScope.VID, this, it) },
-    CartScope::class to { ScopeViewImpl(CartScope.VID, this, it) },
-    CartItemScope::class to { ScopeViewImpl(CartItemScope.VID, this, it) },
-    ReceiptScope::class to { ScopeViewImpl(ReceiptScope.VID, this, it) },
-    ProductsPanelScope::class to { ScopeViewImpl(ProductsPanelScope.VID, this, it) },
-    PurchasesPanelScope::class to { ScopeViewImpl(PurchasesPanelScope.VID, this, it) },
-)
+class ReactRootPresenter(id: String) : RootPresenter(), RemoteApplication {
+
+    companion object {
+        val VIDS: Map<KClass<out Scope>, String> = mapOf(
+            RootScope::class to RootScope.VID,
+            LoginScope::class to LoginScope.VID,
+            HomeScope::class to HomeScope.VID,
+            // … product, cart, cart row, receipt, the Home's panels
+        )
+
+        /** The Store's remote sessions: the backend gives it to the WebSocket route and starts its cleanup and flush. */
+        val REGISTRY = RemoteApplicationRegistry(::ReactRootPresenter)
+    }
+
+    override val remote = RemoteApplicationSupport(id, this, VIDS, content = scope)
+
+    override fun keepsSessionWithoutConnection() = subject != null   // a signed-in user's session waits for the client
+    override fun b64Decipher(b64Text: String) = remote.dataSecurity.b64Decipher(b64Text)
+    override fun updateHistory() = remote.updateHistory()
+    // alertUnexpectedError → remote.browser.alertUnexpectedError(text); release → remote.release(), then super.release()
+}
 ```
 
 `viewOf(scope)` creates a view the first time a scope that holds its scope is written: it registers it in the view map by instance id, installs its updater in the scope (`scope.setUpdater(view.updater)`) and marks it dirty for its first drawing. From then on each change of the scope marks it dirty, and it goes out in the next message. The browser's view (instance `:0`) is the top one; every other view is asked for by the view that holds its scope.
 
-**Writing a scope is drawing it**, and that is where a scope that left is noticed. `ScopeViewImpl` does four things, all generic:
+**Writing a scope is drawing it**, and that is where a scope that left is noticed. `RemoteViewImpl` does four things, all generic:
 
 ```kotlin
-open class ScopeViewImpl<S : Scope>(vid: String, protected val app: RemoteApplication, val scope: S,
+open class RemoteViewImpl<S : Scope>(vid: String, protected val app: RemoteViewHost, val scope: S,
                                     instanceId: Int = app.nextInstanceId()) {
 
     // 1. What the user typed (client → server): what the presenter set with scope.onSync(…); not open — copying
@@ -275,7 +292,7 @@ open class ScopeViewImpl<S : Scope>(vid: String, protected val app: RemoteApplic
     // 3. The scope as JSON, with the ids of the views of the scopes inside it; the views it no longer refers to
     //    are released
     open fun writeScope(json: ExtensibleObjectOutput) {
-        val written = LinkedHashSet<ScopeViewImpl<*>>()
+        val written = LinkedHashSet<RemoteViewImpl<*>>()
         scope.write(instanceId, json) { inner ->
             val child = app.viewOf(inner)
             child.holders += this
@@ -302,24 +319,24 @@ scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
 scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
 ```
 
-The login's values arrive by sync, not as form parameters of the event, and the presenter copies them into the scope (`scope.onSync(::sync)` in `LoginPresenter`). The password goes ciphered with the session key; the presenter deciphers it with `app.b64Decipher`, which only the remote host implements (`ReactRootPresenter`, with the session's `DataSecurity`). The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { enter() }`, reading the user name and password from the scope.
+The login's values arrive by sync, not as form parameters of the event, and the presenter copies them into the scope (`scope.onSync(::sync)` in `LoginPresenter`). The password goes ciphered with the session key; the presenter deciphers it with `app.b64Decipher`, which only the remote application implements (`ReactRootPresenter`, with the session's `RemoteDataSecurity`). The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { enter() }`, reading the user name and password from the scope.
 
-The browser tab itself is a scope of the remote layer (`BrowserScope`: the alert and the root scope, sent as `contentViewId`), whose actions `BrowserPresenter` binds with their codes like any presenter; the presentation knows nothing of it.
+The browser tab itself is a scope of the remote layer (`BrowserScope`: the alert and the root scope, sent as `contentViewId`), whose actions `RemoteBrowserPresenter` binds with their codes like any presenter; the presentation knows nothing of it.
 
 The mapping between hexadecimal View IDs and views is fixed and shared between client and server; on the server, each is the `VID` of its scope:
 
 | View | Hex VID | Client (TSX) | Server (Kotlin) | Events |
 |------|---------|---------------|-------------------|--------|
-| Browser | `7b32e816a191` | BrowserView.tsx | `ScopeViewImpl` (`BrowserScope`, actions bound by `BrowserPresenter`; instance `:0`) | 1 alert OK, 2 keep-alive, -1 start (`p.path`), -2 history changed (`p.path`) |
-| Root | `f2d345c4a610` | RootView.tsx | `ScopeViewImpl` (`RootScope`) | |
-| Login | `c677cda52d14` | LoginView.tsx | `ScopeViewImpl` (`LoginScope`; `LoginPresenter` deciphers the password on sync) | 1 enter |
-| Home | `473dbdd7a36a` | HomeView.tsx | `ScopeViewImpl` (`HomeScope`) | 1 exit, 2 open cart |
-| Cart | `7eb485e5f843` | CartView.tsx | `ScopeViewImpl` (`CartScope`) | 1 buy, 3 open products |
-| Cart row | `5d9e3c7a1f42` | CartView.tsx (`CartItemView`) | `ScopeViewImpl` (`CartItemScope`) | 1 remove, 2 quantity (`p.quantity`) |
-| Product | `48b693f67410` | ProductView.tsx | `ScopeViewImpl` (`ProductScope`) | 1 open products, 2 add to cart (`p.quantity`) |
-| Receipt | `e8d0bd8ae3bc` | ReceiptView.tsx | `ScopeViewImpl` (`ReceiptScope`) | 1 open products |
-| ProductsPanel | `a1b2c3d4e5f6` | home/ProductsPanel.tsx | `ScopeViewImpl` (`ProductsPanelScope`) | 1 open product (`p.productId`) |
-| PurchasesPanel | `b3c4d5e6f7a8` | home/PurchasesPanel.tsx | `ScopeViewImpl` (`PurchasesPanelScope`) | 1 open receipt (`p.purchaseId`), 2 page (`p.page`), 3 capacity (`p.capacity`) |
+| Browser | `7b32e816a191` | BrowserView.tsx | `RemoteViewImpl` (`BrowserScope`, actions bound by `RemoteBrowserPresenter`; instance `:0`) | 1 alert OK, 2 keep-alive, -1 start (`p.path`), -2 history changed (`p.path`) |
+| Root | `f2d345c4a610` | RootView.tsx | `RemoteViewImpl` (`RootScope`) | |
+| Login | `c677cda52d14` | LoginView.tsx | `RemoteViewImpl` (`LoginScope`; `LoginPresenter` deciphers the password on sync) | 1 enter |
+| Home | `473dbdd7a36a` | HomeView.tsx | `RemoteViewImpl` (`HomeScope`) | 1 exit, 2 open cart |
+| Cart | `7eb485e5f843` | CartView.tsx | `RemoteViewImpl` (`CartScope`) | 1 buy, 3 open products |
+| Cart row | `5d9e3c7a1f42` | CartView.tsx (`CartItemView`) | `RemoteViewImpl` (`CartItemScope`) | 1 remove, 2 quantity (`p.quantity`) |
+| Product | `48b693f67410` | ProductView.tsx | `RemoteViewImpl` (`ProductScope`) | 1 open products, 2 add to cart (`p.quantity`) |
+| Receipt | `e8d0bd8ae3bc` | ReceiptView.tsx | `RemoteViewImpl` (`ReceiptScope`) | 1 open products |
+| ProductsPanel | `a1b2c3d4e5f6` | home/ProductsPanel.tsx | `RemoteViewImpl` (`ProductsPanelScope`) | 1 open product (`p.productId`) |
+| PurchasesPanel | `b3c4d5e6f7a8` | home/PurchasesPanel.tsx | `RemoteViewImpl` (`PurchasesPanelScope`) | 1 open receipt (`p.purchaseId`), 2 page (`p.page`), 3 capacity (`p.capacity`) |
 
 The products and purchases panels are segments of the Home's scope (no presenter of their own); their events go to the segment's view and run actions the `HomePresenter` bound with `target = products` / `target = purchases`. Each cart row is a segment of the cart's scope with its own view, so changing a quantity repaints that row and the total (computed on the server), not the whole list.
 
@@ -329,7 +346,7 @@ The products and purchases panels are segments of the Home's scope (no presenter
 
 ### Dirty Tracking
 
-When a field of a scope changes, the scope calls its updater (the view's `update()`), and the view is marked "dirty" in `ReactRootPresenter`. In the response, `app.commitComputedState()` runs first (every live presenter's, once per cycle), then only dirty views are serialized — plus any view created while writing them (a scope sent for the first time), so a parent and its children go out in the same message:
+When a field of a scope changes, the scope calls its updater (the view's `update()`), and the view is marked "dirty" in its session (`RemoteApplicationSupport`). In the response, `app.commitComputedState()` runs first (every live presenter's, once per cycle), then only dirty views are serialized — plus any view created while writing them (a scope sent for the first time), so a parent and its children go out in the same message:
 
 ```mermaid
 graph TB
@@ -347,13 +364,13 @@ graph TB
 
 ### Server Push
 
-When a view is marked dirty outside the request/response cycle (for example, by an asynchronous operation), the `ViewFlushScheduler` pushes it over WebSocket on its next tick (every 50 ms):
+When a view is marked dirty outside the request/response cycle (for example, by an asynchronous operation), the registry pushes it over WebSocket on its next tick, every 50 ms (`RemoteApplicationRegistry.startFlushing`, started by the backend):
 
 ```kotlin
-override fun markDirty(view: ScopeViewImpl<*>) {
+override fun markDirty(view: RemoteViewImpl<*>) {
     if (view.released) return
     dirtyViewMap[view.instanceId] = view
-    ViewFlushScheduler.markDirty(this)  // push when outside a request
+    registry?.markDirty(this)  // push when outside a request
 }
 ```
 
@@ -383,7 +400,7 @@ graph LR
 ```
 
 - **Session ID**: self-signed with HMAC — prevents forging
-- **Sensitive fields**: encrypted end to end with AES-256-GCM (e.g., passwords)
+- **Sensitive fields**: encrypted end to end with AES-256-GCM (e.g., passwords), each value with a random IV of its own sent in front of it (`Base64(IV ‖ ciphertext and tag)`); the handshake (`<password ciphered with RSA>.<salt>`) carries no IV
 - **Navigation**: URLs signed with a hash to prevent parameter tampering
 
 ### Security Inherent to the Architecture
@@ -410,9 +427,9 @@ stateDiagram-v2
 ```
 
 - **Creation**: when `/index.html` is accessed, session cookies are set
-- **Lifetime**: 3 minutes (`DEFAULT_TIME_SPAN`) — extended on every message, including the keep-alive event (every 15 s)
+- **Lifetime**: 3 minutes (`RemoteApplicationSupport.DEFAULT_LIFE_SPAN`) — extended on every message, including the keep-alive event (every 15 s)
 - **Reconnection**: if the WebSocket drops, the client reconnects and finds the same session (if it has not expired)
-- **Cleanup**: a session ends when its WebSocket closes unauthenticated; an authenticated one lives on without a socket until its life runs out. `ReactRootPresenter.startCleanup`, started by the backend, runs `removeExpireds()` every 30 seconds: an application past its life with no socket is released, one with a socket gets more life.
+- **Cleanup**: a session ends when its WebSocket closes unauthenticated; an authenticated one lives on without a socket until its life runs out. `RemoteApplicationRegistry.startCleanup`, started by the backend on the Store's registry, runs `removeExpireds()` every 30 seconds: an application past its life with no socket is released, one with a socket gets more life.
 - **Logout/Disconnection**: an unauthenticated session is released immediately when the WebSocket closes
 
 ---
@@ -496,7 +513,7 @@ sequenceDiagram
     participant React as React Client
     participant WS as WebSocket
     participant Disp as DispatchPhaseBhv
-    participant LView as ScopeViewImpl (login)
+    participant LView as RemoteViewImpl (login)
     participant LPres as LoginPresenter
     participant URepo as UserRepository (JDBC)
     participant Resp as ResponsePhaseBhv

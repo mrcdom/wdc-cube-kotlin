@@ -8,8 +8,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import app, { type ViewProps } from '@root/App'
-import { BaseViewClass, BasePanelClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, BasePanelClass, type ViewProps } from '@wdc/remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as EndpointUtils from '@root/utils/EndpointUtils'
 import { Colors } from '@root/theme'
@@ -151,8 +150,8 @@ class CardProdutoClass extends BasePanelClass<CardProdutoProps> {
 
   emitOpenProduct = () => {
     const { vsid, product } = this
-    app.setFormField(vsid, 'p.productId', product.id)
-    app.submit(vsid, ON_OPEN_PRODUCT)
+    bridge.setFormField(vsid, 'p.productId', product.id)
+    bridge.submit(vsid, ON_OPEN_PRODUCT)
   }
 }
 

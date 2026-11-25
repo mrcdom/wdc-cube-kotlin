@@ -10,8 +10,7 @@ import Typography from '@mui/material/Typography'
 import LocalMallIcon from '@mui/icons-material/LocalMall'
 import LogoutIcon from '@mui/icons-material/Logout'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import app from '@root/App'
-import { BasePanelClass } from '@root/utils/ViewUtils'
+import bridge, { BasePanelClass } from '@wdc/remote-bridge-react'
 import { Colors } from '@root/theme'
 
 // :: Actions
@@ -180,12 +179,12 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
 
   readonly emitOpenCart = () => {
     const { vsid } = this
-    app.submit(vsid, ON_OPEN_CART)
+    bridge.submit(vsid, ON_OPEN_CART)
   }
 
   readonly emitExit = () => {
     const { vsid } = this
-    app.submit(vsid, ON_EXIT)
+    bridge.submit(vsid, ON_EXIT)
   }
 }
 

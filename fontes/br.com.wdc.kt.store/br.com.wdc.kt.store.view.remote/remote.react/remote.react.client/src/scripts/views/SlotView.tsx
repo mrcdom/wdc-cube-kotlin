@@ -1,5 +1,5 @@
 import React from 'react'
-import app, { type ViewProps } from '@root/App'
+import bridge, { type ViewProps } from '@wdc/remote-bridge-react'
 
 export type SlotScope = {
   slot?: string
@@ -8,6 +8,6 @@ export type SlotScope = {
 SlotView.VIEW_ID = '798574115fcd'
 
 export default function SlotView({ vsid }: ViewProps) {
-  const { scope } = app.bindView<SlotScope>(vsid)
-  return scope.slot ? app.createView(scope.slot) : <></>
+  const { scope } = bridge.bindView<SlotScope>(vsid)
+  return scope.slot ? bridge.createView(scope.slot) : <></>
 }

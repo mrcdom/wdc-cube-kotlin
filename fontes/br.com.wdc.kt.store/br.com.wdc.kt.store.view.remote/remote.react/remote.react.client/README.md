@@ -17,6 +17,8 @@ See the [architecture documentation](../../../../../docs/architecture-react.md) 
 | history | 5.3.0 | Hash-based navigation |
 | universal-cookie | 7.2.2 | Cookie management |
 
+The protocol client (coordinator, WebSocket, security handshake, view bindings, view base classes) is the framework package [`@wdc/remote-bridge-react`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote.react/), imported from source through an alias. This client supplies the views, the theme and the texts.
+
 ## Project Structure
 
 ```mermaid
@@ -25,23 +27,12 @@ graph TD
     src --> indexHtml["index.html"]
     src --> scripts["scripts/"]
 
-    scripts --> indexTsx["index.tsx<br/><small>Bootstrap: theme, registration, render</small>"]
-    scripts --> AppTsx["App.tsx<br/><small>Application facade</small>"]
-
-    scripts --> app["app/ — Infrastructure"]
-    app --> Application["Application.ts<br/><small>Views, forms, WebSocket</small>"]
-    app --> Flush["FlushRequestContext.ts<br/><small>WS communication</small>"]
-    app --> Reconnect["ReconnectController.ts<br/><small>Progressive backoff</small>"]
-    app --> DataSec["DataSecurity.ts<br/><small>RSA + AES-GCM</small>"]
-    app --> ViewBinding["ViewBinding.ts<br/><small>Per-view scope holder</small>"]
-    app --> ViewGC["ViewGarbageCollector.ts"]
-    app --> constants["constants.ts + types.ts"]
+    scripts --> indexTsx["index.tsx<br/><small>Bootstrap: theme, view registration, render</small>"]
+    scripts --> theme["theme.ts<br/><small>Colors and breakpoint</small>"]
 
     scripts --> utils["utils/ — Utilities"]
-    utils --> ViewUtils["ViewUtils.tsx<br/><small>Base classes</small>"]
-    utils --> CryptoUtils["RSA.ts, Base64.ts, BigIntUtils.ts"]
     utils --> FormatUtils["DateUtils.ts, NumberUtils.ts"]
-    utils --> OtherUtils["LangUtils.ts, EndpointUtils.ts, UTF8.ts"]
+    utils --> EndpointUtils["EndpointUtils.ts<br/><small>Product image path</small>"]
 
     scripts --> views["views/ — Components"]
     views --> BrowserView["BrowserView.tsx<br/><small>Connection, alerts, loading</small>"]
@@ -53,20 +44,24 @@ graph TD
     views --> CartView["CartView.tsx<br/><small>CartView, CartItemView</small>"]
     views --> ReceiptView["ReceiptView.tsx"]
     views --> home["home/<br/><small>HeaderPanel,<br/>ProductsPanel, PurchasesPanel</small>"]
+
+    bridgeFw["@wdc/remote-bridge-react (framework)<br/><small>bridge, ScopeCoordinator, FlushRequestContext, ReconnectController,<br/>DataSecurity, ViewBinding, ViewGarbageCollector, BaseViewClass</small>"]
+    views --> bridgeFw
+    indexTsx --> bridgeFw
 ```
 
 ## How It Works
 
 ### Lifecycle
 
-1. **Bootstrap** (`index.tsx`): Creates the MUI theme, registers all views and renders the `BrowserView`
-2. **Connection** (`BrowserView`): On mount, calls `app.onStart()`, which opens the WebSocket
-3. **Receiving scopes**: The backend sends the serialized scopes (`scopes`) over the WebSocket → `Application.applyScopes()` updates the `ViewBinding`s → React re-renders; the ids in `releasedViews` (views the server let go of) go to the `ViewGarbageCollector`, which drops each at once, or when it unmounts if it is still on screen
-4. **Sending events**: User actions call `app.submit(vsid, eventId)` (values first with `app.setFormField(vsid, 'p.name', value)`), which sends the event over the WebSocket; on the backend the view's scope runs the action the presenter bound with that code
+1. **Bootstrap** (`index.tsx`): Creates the MUI theme, registers all views with `bridge.registerComponents(...)` and renders `bridge.createBrowserView()`
+2. **Connection** (`BrowserView`): On mount, calls `bridge.onStart()`, which opens the WebSocket
+3. **Receiving scopes**: The backend sends the serialized scopes (`scopes`) over the WebSocket → the bridge's `ScopeCoordinator.applyScopes()` updates the `ViewBinding`s → React re-renders; the ids in `releasedViews` (views the server let go of) go to its `ViewGarbageCollector`, which drops each at once, or when it unmounts if it is still on screen
+4. **Sending events**: User actions call `bridge.submit(vsid, eventId)` (values first with `bridge.setFormField(vsid, 'p.name', value)`), which sends the event over the WebSocket; on the backend the view's scope runs the action the presenter bound with that code
 
 ### View Pattern
 
-Each view is a class that extends `BaseViewClass<Props, Scope>` and is turned into a Functional Component via `BaseViewClass.FC()`:
+Each view is a class that extends the bridge's `BaseViewClass<Props, Scope>` and is turned into a Functional Component via `BaseViewClass.FC()`:
 
 ```typescript
 class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
@@ -80,8 +75,8 @@ export default BaseViewClass.FC(LoginViewClass, 'c677cda52d14')
 ```
 
 - The **scope** (`scope`) comes from the backend (presenter); it is not managed locally
-- **Events** are sent to the backend via `app.submit(vsid, eventId)`
-- **Form data** is attached via `app.setFormField(vsid, field, value)` before the submit
+- **Events** are sent to the backend via `bridge.submit(vsid, eventId)`
+- **Form data** is attached via `bridge.setFormField(vsid, field, value)` before the submit
 - Each view is identified by a unique **VIEW_ID** (hash) that maps to a kind of scope on the backend (the skeleton's view catalog). A list of child views arrives as `<name>ViewIds` (the cart rows, `rowsViewIds`, each painted by `CartItemView`)
 
 ### WebSocket Communication
@@ -93,23 +88,25 @@ export default BaseViewClass.FC(LoginViewClass, 'c677cda52d14')
 
 ### Activity Indicator
 
-A `LinearProgress` (MUI) shows at the top of the page during user submits. Characteristics:
+The bridge sets `submitting` on the browser scope, and `BrowserView` shows a `LinearProgress` (MUI) at the top of the page during user submits. Characteristics:
 
 - `position: fixed` — does not affect the layout
 - 200ms delay — does not flicker on fast operations
 - 15s timeout — clears itself if the response never arrives
 - User actions only — keep-alive and ping are silent
 
-## Import Alias
+## Import Aliases
 
-The `@root/*` alias maps to `./src/scripts/*`:
+- `@root/*` maps to `./src/scripts/*`.
+- `@wdc/remote-bridge-react` maps to the bridge's source entry, `src/bridge/index.tsx`.
+- `react`, `history` and `universal-cookie` map to this client's `node_modules`: the bridge has none of its own, and its files, outside this folder, resolve these peer dependencies here (one copy of React for both).
 
 ```typescript
-import app from '@root/App'
-import { BaseViewClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
+import * as NumberUtils from '@root/utils/NumberUtils'
 ```
 
-Configured in `package.json` (Parcel) and `tsconfig.json` (TypeScript/IDE).
+Configured in `package.json` (Parcel `alias`) and `tsconfig.json` (`paths`, for TypeScript and the IDE).
 
 ## Build Output
 

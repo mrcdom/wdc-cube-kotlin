@@ -11,8 +11,7 @@ import Typography from '@mui/material/Typography'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
-import app, { type ViewProps } from '@root/App'
-import { BaseViewClass, BasePanelClass } from '@root/utils/ViewUtils'
+import bridge, { BaseViewClass, BasePanelClass, type ViewProps } from '@wdc/remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as DateUtils from '@root/utils/DateUtils'
 import { Colors } from '@root/theme'
@@ -62,8 +61,8 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelScope> 
     }
     const capacity = Math.max(1, Math.floor(containerHeight / itemHeight))
     const { vsid } = this
-    app.setFormField(vsid, 'p.capacity', capacity)
-    app.submitSilent(vsid, ON_PAGE_SIZE_CHANGE)
+    bridge.setFormField(vsid, 'p.capacity', capacity)
+    bridge.submitSilent(vsid, ON_PAGE_SIZE_CHANGE)
   }
 
   private onResize = () => {
@@ -144,8 +143,8 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelScope> 
 
   readonly emitPageChange = (page: number) => {
     const { vsid } = this
-    app.setFormField(vsid, 'p.page', page)
-    app.submit(vsid, ON_PAGE_CHANGE)
+    bridge.setFormField(vsid, 'p.page', page)
+    bridge.submit(vsid, ON_PAGE_CHANGE)
   }
 
   readonly emitNextPage = () => {
@@ -209,8 +208,8 @@ class PurchaseItemRowClass extends BasePanelClass<PurchaseItemRowProps> {
 
   readonly emitOpenReceipt = () => {
     const { vsid, purchase } = this
-    app.setFormField(vsid, 'p.purchaseId', purchase.id)
-    app.submit(vsid, ON_OPEN_RECEIPT)
+    bridge.setFormField(vsid, 'p.purchaseId', purchase.id)
+    bridge.submit(vsid, ON_OPEN_RECEIPT)
   }
 }
 

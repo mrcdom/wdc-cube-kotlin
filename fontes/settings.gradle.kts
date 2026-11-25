@@ -30,6 +30,7 @@ include(":framework-domain")
 include(":framework-persistence")
 include(":framework-jooq")
 include(":framework-rest")
+include(":framework-cube-remote")
 
 // Store modules
 include(":store-domain")
@@ -58,6 +59,7 @@ project(":framework-domain").projectDir       = file("br.com.wdc.kt.framework/br
 project(":framework-persistence").projectDir  = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.persistence")
 project(":framework-jooq").projectDir         = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.jooq")
 project(":framework-rest").projectDir         = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest")
+project(":framework-cube-remote").projectDir  = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote")
 project(":store-domain").projectDir        = file("br.com.wdc.kt.store/br.com.wdc.kt.store.domain")
 project(":store-persistence").projectDir   = file("br.com.wdc.kt.store/br.com.wdc.kt.store.persistence/persistence.impl")
 project(":persistence-rest").projectDir       = file("br.com.wdc.kt.store/br.com.wdc.kt.store.persistence/persistence.rest")
