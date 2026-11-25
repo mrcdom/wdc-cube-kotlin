@@ -9,6 +9,7 @@ import br.com.wdc.store.persistence.scheme.sequences.SQ_PURCHASE
 import br.com.wdc.store.persistence.scheme.sequences.SQ_PURCHASEITEM
 import br.com.wdc.store.persistence.scheme.sequences.SQ_USER
 import br.com.wdc.store.persistence.scheme.tables.EnAuthNonce
+import br.com.wdc.store.persistence.scheme.tables.EnLoginFailure
 import br.com.wdc.store.persistence.scheme.tables.EnProduct
 import br.com.wdc.store.persistence.scheme.tables.EnPurchase
 import br.com.wdc.store.persistence.scheme.tables.EnPurchaseitem
@@ -34,6 +35,8 @@ open class Public : SchemaImpl(DSL.name("PUBLIC"), DefaultCatalog.DEFAULT_CATALO
 
     val EN_AUTH_NONCE: EnAuthNonce get() = EnAuthNonce.EN_AUTH_NONCE
 
+    val EN_LOGIN_FAILURE: EnLoginFailure get() = EnLoginFailure.EN_LOGIN_FAILURE
+
     val EN_PRODUCT: EnProduct get() = EnProduct.EN_PRODUCT
 
     val EN_PURCHASE: EnPurchase get() = EnPurchase.EN_PURCHASE
@@ -57,6 +60,7 @@ open class Public : SchemaImpl(DSL.name("PUBLIC"), DefaultCatalog.DEFAULT_CATALO
 
     override fun getTables(): List<Table<*>> = listOf(
         EnAuthNonce.EN_AUTH_NONCE,
+        EnLoginFailure.EN_LOGIN_FAILURE,
         EnProduct.EN_PRODUCT,
         EnPurchase.EN_PURCHASE,
         EnPurchaseitem.EN_PURCHASEITEM,

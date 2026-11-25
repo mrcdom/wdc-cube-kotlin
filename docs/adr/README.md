@@ -23,5 +23,6 @@ A record is not edited once accepted, except to fix a mistake or a link. A decis
 | [0015](0015-action-handlers-carry-the-action-name.md) | The method an action runs carries the action's name | Accepted |
 | [0016](0016-versioned-remote-protocol.md) | The remote protocol is versioned, and specified by shared fixtures | Accepted |
 | [0017](0017-mesh-between-instances.md) | The backend instances tell each other over a WebSocket mesh | Accepted |
+| [0018](0018-failed-sign-ins-in-the-database.md) | Failed sign-ins are counted in the database; the per-address limit stays per instance | Accepted |
 
 New record: copy the shape of an existing one, take the next number, and add it to this table.

@@ -6,7 +6,7 @@ The demo was built and tested as one instance. Nothing below was run against sev
 
 ## What every instance shares
 
-- **The database.** All the data, and also what makes a user's session outlive one instance: the sessions (`EN_USER_SESSION`), the intent signing secrets (`EN_USER_INTENT_SECRET`) and the sign-in challenges in flight (`EN_AUTH_NONCE`: a challenge answered by one instance and the login sent to another find the same nonce, used up once). An instance that does not know a session reads it from there.
+- **The database.** All the data, and also what makes a user's session outlive one instance: the sessions (`EN_USER_SESSION`), the intent signing secrets (`EN_USER_INTENT_SECRET`) the sign-in challenges in flight (`EN_AUTH_NONCE`: a challenge answered by one instance and the login sent to another find the same nonce, used up once) and the failed sign-ins per user (`EN_LOGIN_FAILURE`: attempts spread over the instances count as one). An instance that does not know a session reads it from there.
 - **The configuration**, in particular `security.jwt.secret`: it signs the access tokens, encrypts the sessions' private keys in the database, makes the salts answered for unknown users, and gives the keys that sign the remote view's session ids and that the instances of the mesh prove to each other. Instances with different secrets reject each other's tokens, session ids and mesh connections.
 - **The deployed web clients** (`deployment/`), the same version everywhere.
 
@@ -18,7 +18,7 @@ The demo was built and tested as one instance. Nothing below was run against sev
 | The **key that signs remote session ids** | `RemoteAppSecurity`. The WDC Store's backend derives it from `security.jwt.secret` (`RemoteSigningKey`, given to `useKey`): the same on every instance of the same configuration. **Without the secret it is random per process** | With the secret, nothing: a page served by one instance and its socket on another accept the same id (checked with two instances). Without it, the signature does not check there, the host closes the socket with `4001`, and the page reloads | With the secret, nothing. Without it, the page (`/index.html`, which plants the `app_id` cookie) and its socket must reach the same instance |
 | A **remote transaction** of the REST API, which holds a database connection | `RemoteTransactionCoordinatorImpl` | The calls that carry its `X-Tx-Id` get 410: the transaction is unknown there | The client, `X-Client-Id` (sent on every call, from the `begin` on) |
 | A **session's state in memory** (an access token's session) | `AccessContextCache` | It works: the instance reads the session from the database. A session ended or renewed on one instance is dropped by the others within a moment, told by the **mesh** when there is one, otherwise **on PostgreSQL** by the database (`PostgresSessionEvents`, `LISTEN`/`NOTIFY`); on H2 without the mesh it would stay valid on another instance that had already read it, until its access token expires (30 minutes) | — |
-| **Limits**: failed sign-ins per user, `/api/auth` requests per address and minute, the API's per-minute limit | `LoginThrottle`, `AuthRateLimit`, `rateLimit` | Each instance counts its own: the effective limit is the configured one times the number of instances | — |
+| **Limits per address**: `/api/auth` requests per address and minute | `AuthRateLimit` | Each instance counts its own: the effective limit is the configured one times the number of instances. That is on purpose: it guards against load, and counting every request in the database would cost a write each; the proxy is the place for it (below). Guessing one account's password is slowed down per user, in the database, however many instances there are | — |
 | The **product images** already served | the image cache of `ProductApiController` | With the mesh, every instance drops it when it changes. Without it, only the instance that saved it does; another can keep serving the old one | — |
 
 ## The mesh between instances
@@ -78,6 +78,13 @@ When an instance stops, what it held in memory is gone: its remote view sessions
 
 ## What to change for a real deployment
 
-- **Shared counts** for the limits.
+- **Limiting requests per address at the proxy**, where every instance's traffic passes, for example with nginx's `limit_req` (also not tested):
+
+  ```nginx
+  limit_req_zone $binary_remote_addr zone=auth:10m rate=60r/m;
+  location /api/auth/ { limit_req zone=auth burst=20 nodelay; limit_req_status 429; proxy_pass http://store; }
+  ```
+
+  Behind a proxy, every client also reaches the backend from the proxy's address, so the backend's own per-address limit counts them all together: raise `security.auth.requestsPerMinute`, or set it to `0`, and let the proxy limit.
 
 See also: [security-architecture.md](security-architecture.md) (sessions, limits), [architecture-react.md](architecture-react.md) (the remote view's sessions), [architecture-persistence.md](architecture-persistence.md) (remote transactions).
