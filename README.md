@@ -1,5 +1,7 @@
 # WDC Cube Kotlin — WDC Store Demo
 
+[![Build](https://github.com/mrcdom/wdc-cube-kotlin/actions/workflows/build.yml/badge.svg)](https://github.com/mrcdom/wdc-cube-kotlin/actions/workflows/build.yml)
+
 Demo application for the **Cube MVP** framework in Kotlin Multiplatform, with three view modalities:
 
 - **Compose Multiplatform** — presenters on the client (Desktop, Android, iOS, Web/WASM)
@@ -51,8 +53,13 @@ cd fontes
 # Android
 ./gradlew :view-compose-android:assembleDebug
 
-# Tests
+# Tests (the whole check: ./gradlew build)
 ./gradlew test
+
+# Browser tests of the web clients against a real backend (see br.com.wdc.kt.store.e2e/README.md)
+(cd br.com.wdc.kt.store/br.com.wdc.kt.store.e2e && ./prepare.sh && npm ci && npx playwright install chromium && npx playwright test)
 ```
+
+The CI ([`.github/workflows/build.yml`](.github/workflows/build.yml)) runs `./gradlew build`, the TypeScript checks and the browser tests on every push and pull request, and the iOS simulator tests on the main branch, weekly and on demand.
 
 For **iOS**, open `iosApp/StoreiOS.xcodeproj` in Xcode and run it on the simulator.
