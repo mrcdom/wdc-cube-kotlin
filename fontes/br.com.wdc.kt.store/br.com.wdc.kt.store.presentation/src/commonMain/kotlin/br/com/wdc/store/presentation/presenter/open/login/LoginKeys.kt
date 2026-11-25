@@ -5,10 +5,7 @@ import br.com.wdc.framework.cube.CubeTreePlace
 import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.open.OpenKeys
 
-/**
- * The keys of the login place. It has no names of its own yet, but every place has its keys: it is where they will
- * go, and where navigating to the place starts. See [RootKeys].
- */
+/** The keys of the login place. See [RootKeys]. */
 class LoginKeys(app: RootPresenter, intent: CubeIntent? = null) : OpenKeys(app, intent, PLACE) {
 
     companion object {
@@ -16,4 +13,14 @@ class LoginKeys(app: RootPresenter, intent: CubeIntent? = null) : OpenKeys(app, 
 
         val PLACE: CubeTreePlace = OpenKeys.PLACE.child("public/login", ::LoginPresenter)
     }
+
+    private object A {
+        /** Set when the server would not renew the session: the login tells the user why they are back. */
+        const val SESSION_EXPIRED = "$PREFIX-session-expired"
+    }
+
+    /** Whether the user comes back to the login because the session expired (not from the address). */
+    var sessionExpired: Boolean
+        get() = intent.getAttribute(A.SESSION_EXPIRED) == true
+        set(value) = intent.setAttribute(A.SESSION_EXPIRED, value.takeIf { it })
 }

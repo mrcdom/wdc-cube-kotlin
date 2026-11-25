@@ -1,5 +1,6 @@
 package br.com.wdc.store.persistence.client
 
+import br.com.wdc.framework.domain.exception.UnauthenticatedException
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectInput
 import br.com.wdc.framework.commons.serialization.ExtensibleObjectOutput
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
@@ -14,14 +15,16 @@ class RestConfig(val transport: HttpTransport) {
         this.authClient = authClient
         if (authClient != null) {
             transport.accessTokenSupplier = { authClient.accessToken }
+            // a refused renewal loses the session; a failure to reach the server goes to the caller, the session kept
             transport.refreshHandler = {
                 try {
                     authClient.refresh()
                     true
-                } catch (_: Exception) {
+                } catch (_: UnauthenticatedException) {
                     false
                 }
             }
+            transport.onAuthFailure = { authClient.sessionLost() }
         } else {
             transport.accessTokenSupplier = null
             transport.refreshHandler = null

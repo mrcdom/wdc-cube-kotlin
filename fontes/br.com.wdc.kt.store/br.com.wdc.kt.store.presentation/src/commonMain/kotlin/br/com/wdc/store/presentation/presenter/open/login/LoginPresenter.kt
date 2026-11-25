@@ -1,13 +1,11 @@
 package br.com.wdc.store.presentation.presenter.open.login
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.framework.commons.serialization.JsonOutputFactory
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.framework.domain.exception.TooManyRequestsException
 import br.com.wdc.store.domain.exception.OfflineException
-import br.com.wdc.store.domain.security.AuthenticationService
 import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.store.presentation.presenter.open.login.calls.CredentialsCheck
@@ -39,6 +37,10 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
         ownerSlot?.setScope(scope)
 
+        if (LoginKeys(app, intent).sessionExpired) {
+            alertSessionExpired()
+        }
+
         return false
     }
 
@@ -61,6 +63,11 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         } else {
             "Too many failed sign-ins. Try again in a few minutes."
         }
+    }
+
+    private fun alertSessionExpired() {
+        scope.errorCode = 7
+        scope.errorMessage = "Your session has expired. Please sign in again."
     }
 
     private fun alertConnectionError(caught: Throwable) {
@@ -87,21 +94,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
                 app.subject = null
                 alertUserOrPasswordNotRecognize()
             } else {
-                app.subject = subject
-
-                // Serialize subject to sessionStorage
-                val out = JsonOutputFactory.createStringOutput()
-                subject.writeExternal(out.output)
-                app.sessionStorage.set("subject", out.resultString())
-
-                // Serialize auth tokens to sessionStorage
-                val authService = AuthenticationService.BEAN.getOrNull()
-                if (authService != null) {
-                    val authOut = JsonOutputFactory.createStringOutput()
-                    authService.writeAuthState(authOut.output)
-                    app.sessionStorage.set("authState", authOut.resultString())
-                }
-
+                app.startSession(subject)
                 HomeKeys(app).flip()
             }
         } catch (caught: Exception) {
