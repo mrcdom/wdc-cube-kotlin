@@ -101,21 +101,10 @@ class RestApi private constructor(builder: Builder) {
     /** Registers routes, filters, CORS, compression and limits on the Javalin being configured. */
     fun install(config: JavalinConfig) {
         cors?.let { options ->
-            config.bundledPlugins.enableCors { plugin ->
-                plugin.addRule { rule ->
-                    if (options.anyOrigin) rule.anyHost()
-                    if (options.origins.isNotEmpty()) rule.allowHost(options.origins.first(), *options.origins.drop(1).toTypedArray())
-                    rule.allowCredentials = options.allowCredentials
-                    rule.reflectClientOrigin = options.reflectClientOrigin
-                    rule.maxAge = options.maxAge
-                    rule.path = options.path
-                    options.exposedHeaders.forEach(rule::exposeHeader)
-                    // unless exposed, the browser hides the header from callers on another origin
-                    if (serverTiming != null && options.exposedHeaders.none { it.equals(ServerTiming.HEADER, ignoreCase = true) }) {
-                        rule.exposeHeader(ServerTiming.HEADER)
-                    }
-                }
-            }
+            // unless exposed, the browser hides the header from callers on another origin
+            val timing = if (serverTiming != null) listOf(ServerTiming.HEADER) else emptyList()
+            val extra = timing.filter { h -> options.exposedHeaders.none { it.equals(h, ignoreCase = true) } }
+            Cors.install(config, options, extra)
         }
         compression?.let { options ->
             val strategy = CompressionStrategy(null, Gzip(options.gzipLevel))
@@ -135,7 +124,7 @@ class RestApi private constructor(builder: Builder) {
                 securityHeaders?.writeTo(ctx)
             }
         }
-        // the CORS preflight is answered by the plugin, without going through a route or unmatched
+        // the CORS preflight is answered by Cors, without going through a route or unmatched
         val corsPath = cors?.path
         if (securityHeaders != null && corsPath != null) {
             config.routes.after(corsPath) { ctx -> if (isPreflight(ctx)) securityHeaders.writeTo(ctx) }

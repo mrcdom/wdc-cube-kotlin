@@ -176,7 +176,8 @@ The owner of a remote transaction is `user:<principal.id>/client:<X-Client-Id>` 
 
 ## CORS, compression and body limit
 
-- `cors { anyOrigin() | allowOrigins(…); allowCredentials; reflectClientOrigin; maxAge; exposedHeaders }` uses Javalin's plugin, which answers the preflight before the routes.
+- `cors { anyOrigin() | allowOrigins(…); allowCredentials; reflectClientOrigin; maxAge; exposedHeaders }` answers the preflight before the routes and security. An origin without a scheme means `https://`; `https://*.example.com` allows the subdomains; the port is part of the origin. A request from the server's own origin (the `Origin` matches the `Host`) is not a CORS request and passes untouched; one from an origin not allowed is answered without the CORS headers (the browser hides the answer from the page), not refused. `anyOrigin()` with `allowCredentials` is a configuration error: use `reflectClientOrigin`.
+- `Cors.install(config) { … }` does the same on a Javalin server without a `RestApi` (pages, WebSocket hosts).
 - `compression { gzipLevel; minSize; mimeTypes }` uses gzip. The default `minSize` is 2 KB, as in Spring Boot.
 - `maxRequestSize = bytes`: a larger body gets 413.
 
