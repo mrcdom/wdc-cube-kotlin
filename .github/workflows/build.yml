@@ -48,17 +48,19 @@ jobs:
           cache: npm
           cache-dependency-path: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript/package-lock.json
 
-      # gradle.properties and local.properties point at a developer's machine: every Gradle call below passes the
-      # runner's JDK (-Dorg.gradle.java.home), and local.properties gets the runner's Android SDK
-      - name: Use the runner's Android SDK
-        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+      # gradle.properties and local.properties point at a developer's machine: the runner's JDK goes in the user's
+      # gradle.properties (which wins over the project's, for every Gradle call), and its Android SDK in local.properties
+      - name: Use the runner's JDK and Android SDK
+        run: |
+          mkdir -p ~/.gradle && echo "org.gradle.java.home=$JAVA_HOME" >> ~/.gradle/gradle.properties
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       # the Kotlin/JS and Kotlin/Wasm yarn locks are not versioned: make them for this checkout
       - name: Yarn locks
-        run: ./gradlew kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock -Dorg.gradle.java.home="$JAVA_HOME"
+        run: ./gradlew kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock
 
       - name: Build
-        run: ./gradlew build -Dorg.gradle.java.home="$JAVA_HOME"
+        run: ./gradlew build
 
       - name: Test reports
         if: failure()
@@ -95,9 +97,66 @@ jobs:
           for bridge in remote.bridge.typescript remote.bridge.typescript.react; do
             (cd "$GITHUB_WORKSPACE/fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/$bridge" && npx -y prettier@3.8.2 --check .)
           done
+          (cd "$GITHUB_WORKSPACE/fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e" && npx -y prettier@3.8.2 --check .)
 
       - name: Bundle
         run: npm run build
+
+  browser:
+    name: Browser tests (the four web clients against a real backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Use the runner's JDK and Android SDK
+        run: |
+          mkdir -p ~/.gradle && echo "org.gradle.java.home=$JAVA_HOME" >> ~/.gradle/gradle.properties
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Yarn locks
+        run: ./gradlew kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock
+
+      # the TypeScript client's bundle, the native web, Compose web and Kotlin remote clients, and the backend
+      - name: Build the clients and the backend
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e
+        run: ./prepare.sh
+
+      - name: Install Playwright
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e
+        run: npx playwright test
+
+      - name: Browser test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e/playwright-report/
+            fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e/test-results/
+            fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e/build/e2e-work/log/
+          retention-days: 7
 
   ios:
     name: iOS tests (simulator)
@@ -117,10 +176,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       # the modules with an Android target need an SDK to configure, even to run the iOS tests
-      - name: Use the runner's Android SDK
-        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+      - name: Use the runner's JDK and Android SDK
+        run: |
+          mkdir -p ~/.gradle && echo "org.gradle.java.home=$JAVA_HOME" >> ~/.gradle/gradle.properties
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: iOS simulator tests and the native iOS app's compilation
         run: >
           ./gradlew iosSimulatorArm64Test :view-native-ios:compileKotlinIosSimulatorArm64
-          -Dorg.gradle.java.home="$JAVA_HOME"
+         
