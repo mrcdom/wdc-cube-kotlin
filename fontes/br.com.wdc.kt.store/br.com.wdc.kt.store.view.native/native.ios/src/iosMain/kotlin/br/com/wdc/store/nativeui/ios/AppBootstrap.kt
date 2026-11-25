@@ -14,6 +14,7 @@ import br.com.wdc.store.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.store.presentation.presenter.RootKeys
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.*
+import kotlinx.coroutines.launch
 
 /**
  * Initializes platform services (serialization, HTTP transport, repositories).
@@ -47,8 +48,9 @@ fun createRootViewController(baseUrl: String): UIViewController {
     val viewController = UIViewController()
     viewController.view.backgroundColor = StoreColors.Background
 
-    // Start navigation
-    kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
+    // the first navigation runs in the presenters' scope: the network is waited for without blocking the main thread,
+    // and the root view, mounted right away, repaints when it arrives
+    app.presenterScope.launch { RootKeys(app).flip() }
 
     // Mount the root view: every other view is asked for by the view that holds its scope
     run {

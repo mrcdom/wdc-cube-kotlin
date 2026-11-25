@@ -93,18 +93,18 @@ class ScramLoginTest {
     private fun client() = RestAuthClient(env.restConfig)
 
     @Test
-    fun theUserSignsIn_andTheServerProvesItHoldsTheVerifier() {
+    fun theUserSignsIn_andTheServerProvesItHoldsTheVerifier(): Unit = runBlocking {
         val result = assertNotNull(client().login("fulano", "fulano"))
         assertTrue(result.serverSignature.isNotEmpty())
     }
 
     @Test
-    fun aWrongPassword_isRefused() {
+    fun aWrongPassword_isRefused(): Unit = runBlocking {
         assertNull(client().login("fulano", "not-the-password"))
     }
 
     @Test
-    fun anUnknownUser_getsAChallengeLikeAKnownOne() {
+    fun anUnknownUser_getsAChallengeLikeAKnownOne(): Unit = runBlocking {
         val ghost = client().challenge("ghost")
         assertEquals(ghost.salt, client().challenge("ghost").salt, "the same made-up salt every time")
         assertEquals(ScramVerifier.DEFAULT_ITERATIONS, ghost.iterations)
@@ -114,7 +114,7 @@ class ScramLoginTest {
     }
 
     @Test
-    fun aNonce_isForTheUserItWasMadeFor_andForOneAttempt() {
+    fun aNonce_isForTheUserItWasMadeFor_andForOneAttempt(): Unit = runBlocking {
         val auth = client()
         val fulano = auth.challenge("fulano")
         val beotranosNonce = auth.challenge("beotrano").nonce
@@ -131,7 +131,7 @@ class ScramLoginTest {
     }
 
     @Test
-    fun manyFailuresOnOneUser_makeItWait_evenWithTheRightPassword() {
+    fun manyFailuresOnOneUser_makeItWait_evenWithTheRightPassword(): Unit = runBlocking {
         repeat(6) { assertNull(client().login("beotrano", "wrong-$it")) }
         val e = assertFailsWith<TooManyRequestsException> { client().login("beotrano", "beotrano") }
         assertTrue(e.message!!.startsWith("HTTP 429"), e.message)

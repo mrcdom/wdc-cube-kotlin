@@ -92,7 +92,7 @@ class AuthenticationServiceImpl(
         )
     }
 
-    override fun refresh(refreshToken: String): AuthResult? {
+    override suspend fun refresh(refreshToken: String): AuthResult? {
         val session = cache.refresh(refreshToken) ?: return null
 
         val accessToken = JwtUtil.create(session.sessionId, session.userId!!, session.userName!!,
@@ -102,7 +102,7 @@ class AuthenticationServiceImpl(
         return AuthResult(session.userId!!, accessToken, session.refreshToken, session.expiresAt.toKotlinInstant(), session.publicKeyBase64, session.intentSignSecret, "")
     }
 
-    override fun logout(refreshToken: String) {
+    override suspend fun logout(refreshToken: String) {
         cache.removeByRefreshToken(refreshToken)
     }
 

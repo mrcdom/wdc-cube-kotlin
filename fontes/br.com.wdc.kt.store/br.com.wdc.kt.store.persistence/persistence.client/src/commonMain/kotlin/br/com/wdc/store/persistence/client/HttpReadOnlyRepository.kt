@@ -58,7 +58,7 @@ abstract class HttpReadOnlyRepository<E, C, K>(
 
     // :: Support
 
-    protected inline fun post(operation: String, write: (ExtensibleObjectOutput) -> Unit): ExtensibleObjectInput {
+    protected suspend inline fun post(operation: String, write: (ExtensibleObjectOutput) -> Unit): ExtensibleObjectInput {
         val writer = JsonStreamWriter()
         write(writer)
         return JsonStreamReader(transport.postJson("$basePath/$operation", writer.result()))
@@ -68,7 +68,7 @@ abstract class HttpReadOnlyRepository<E, C, K>(
      * Sends `{ <criteria fields>, "projection": {…}?, <extra> }`. The projection is written as an entity, and
      * that is how a projection collection carries its criteria and its subset to the server.
      */
-    protected inline fun postCriteria(
+    protected suspend inline fun postCriteria(
         operation: String,
         criteria: C,
         extra: (ExtensibleObjectOutput) -> Unit = {},

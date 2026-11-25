@@ -29,6 +29,7 @@ import br.com.wdc.store.view.compose.bridge.ViewUpdateScheduler
 import br.com.wdc.store.view.compose.theme.StoreTheme
 import br.com.wdc.store.view.compose.util.PlatformConfig
 import br.com.wdc.store.view.compose.views.*
+import kotlinx.coroutines.launch
 
 fun main() {
     // Set macOS app name before any AWT initialization
@@ -50,7 +51,9 @@ fun main() {
 
     val app = DesktopRootPresenter()
     ViewUpdateScheduler.initialize { app }
-    kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
+    // the first navigation runs in the presenters' scope: the network is waited for without blocking this thread,
+    // and the window, shown right away, repaints when it arrives
+    app.presenterScope.launch { RootKeys(app).flip() }
 
     application {
         Window(

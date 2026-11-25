@@ -151,7 +151,7 @@ class SecuredRestPurchaseRepositoryTest {
         assertEquals(1, env.userRepo.count(UserCriteria().also { it.userId.or().isNotNull() }))
 
         // the same raw request, as any client would send it
-        val raw = env.transport.postJson(
+        val raw = env.postJson(
             "/api/repo/purchase/count", """{"userId":{"or":true,"p":[{"o":"IS_NOT_NULL"}]}}""",
         )
         assertEquals("""{"count":1}""", raw)
@@ -285,7 +285,7 @@ class SecuredRestPurchaseRepositoryTest {
         env.loginAs("admin")
         for (path in listOf("purchase/fetch", "purchase/count", "purchase-item/fetch", "user/fetch", "product/delete")) {
             val e = assertThrows(BusinessException::class.java) {
-                env.transport.postJson("/api/repo/$path", """{"anyOf":[{"userId":${DBReset.FULANO_ID}}]}""")
+                env.postJson("/api/repo/$path", """{"anyOf":[{"userId":${DBReset.FULANO_ID}}]}""")
             }
             assertTrue(e.message!!.startsWith("HTTP 400") && "anyOf" in e.message!!, e.message)
         }
@@ -306,17 +306,17 @@ class SecuredRestPurchaseRepositoryTest {
             "/api/repo/purchase/fetch-by-id" to """{"id":${DBReset.ADMIN_FIRST_PURCHASE_ID},"projection":{"id":1,$withPassword}}""",
         )
         for ((path, body) in refused) {
-            val e = assertThrows(RuntimeException::class.java) { env.transport.postJson(path, body) }
+            val e = assertThrows(RuntimeException::class.java) { env.postJson(path, body) }
             assertTrue(e.message!!.startsWith("HTTP 403") && "[password]" in e.message!!, e.message)
         }
 
         val user = """"user":{"id":1,"userName":"~"}"""
         val bodies = listOf(
-            env.transport.postJson("/api/repo/purchase/fetch", """{"projection":{"id":1,$user}}"""),
-            env.transport.postJson("/api/repo/purchase/fetch-page", """{"page":0,"pageSize":10,"projection":{"id":1,$user}}"""),
-            env.transport.postJson("/api/repo/purchase/fetch-by-id", """{"id":${DBReset.ADMIN_FIRST_PURCHASE_ID},"projection":{"id":1,$user}}"""),
-            env.transport.postJson("/api/repo/purchase/fetch", "{}"),
-            env.transport.postJson("/api/repo/purchase-item/fetch", """{"projection":{"id":1,"purchaseId":1}}"""),
+            env.postJson("/api/repo/purchase/fetch", """{"projection":{"id":1,$user}}"""),
+            env.postJson("/api/repo/purchase/fetch-page", """{"page":0,"pageSize":10,"projection":{"id":1,$user}}"""),
+            env.postJson("/api/repo/purchase/fetch-by-id", """{"id":${DBReset.ADMIN_FIRST_PURCHASE_ID},"projection":{"id":1,$user}}"""),
+            env.postJson("/api/repo/purchase/fetch", "{}"),
+            env.postJson("/api/repo/purchase-item/fetch", """{"projection":{"id":1,"purchaseId":1}}"""),
         )
         for (body in bodies) {
             assertTrue("admin" in body || "purchaseId" in body || "John Smith" in body, body)
@@ -327,8 +327,8 @@ class SecuredRestPurchaseRepositoryTest {
     @Test
     fun unknownOrderBy_and_emptyDelete_are400() {
         env.loginAs("admin")
-        assertHttp(400) { env.transport.postJson("/api/repo/purchase/fetch", """{"orderBy":"DESCENDING"}""") }
-        assertHttp(400) { env.transport.postJson("/api/repo/purchase-item/fetch", """{"orderBy":"BY_MAGIC"}""") }
+        assertHttp(400) { env.postJson("/api/repo/purchase/fetch", """{"orderBy":"DESCENDING"}""") }
+        assertHttp(400) { env.postJson("/api/repo/purchase-item/fetch", """{"orderBy":"BY_MAGIC"}""") }
         assertHttp(400) { purchases().delete(PurchaseCriteria()) }
         assertHttp(400) { items().delete(PurchaseItemCriteria()) }
     }

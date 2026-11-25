@@ -39,7 +39,7 @@ class RestAuthClient(private val config: RestConfig) {
     var sessionListener: SessionListener? = null
 
     /** Starts [userName]'s sign-in. */
-    fun challenge(userName: String): ChallengeResult {
+    suspend fun challenge(userName: String): ChallengeResult {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("userName").value(userName)
@@ -68,7 +68,7 @@ class RestAuthClient(private val config: RestConfig) {
      * Ends the sign-in with a SCRAM [proof] already computed, and keeps the session. `null` when the server refuses
      * it (401). The caller checks the server's signature in the result.
      */
-    fun login(userName: String, proof: String, nonce: String): AuthResult? {
+    suspend fun login(userName: String, proof: String, nonce: String): AuthResult? {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("userName").value(userName)
@@ -90,7 +90,7 @@ class RestAuthClient(private val config: RestConfig) {
      * credentials; [BusinessException] when the server's signature is not the expected one — it does not hold the
      * user's verifier, so it is not the real server — and then no session is kept.
      */
-    fun login(userName: String, password: String): AuthResult? {
+    suspend fun login(userName: String, password: String): AuthResult? {
         val challenge = challenge(userName)
         val response = Scram.current().respond(userName, password, challenge)
         val result = login(userName, response.proof, challenge.nonce) ?: return null
@@ -106,7 +106,7 @@ class RestAuthClient(private val config: RestConfig) {
      * refresh token, so the one kept before no longer works. [UnauthenticatedException] when there is no session or
      * the server refuses to renew it; a failure to reach the server goes as it came.
      */
-    fun refresh() {
+    suspend fun refresh() {
         val rt = refreshToken ?: throw UnauthenticatedException("No session to renew")
         refreshWith(rt) ?: throw UnauthenticatedException("Invalid or expired refresh token")
         sessionListener?.sessionRenewed()
@@ -119,7 +119,7 @@ class RestAuthClient(private val config: RestConfig) {
     }
 
     /** Renews the session of [refreshToken] and keeps it; `null` when the server refuses it (401). */
-    fun refreshWith(refreshToken: String): AuthResult? {
+    suspend fun refreshWith(refreshToken: String): AuthResult? {
         val body = config.toJson { out ->
             out.beginObject()
             out.name("refreshToken").value(refreshToken)
@@ -138,7 +138,7 @@ class RestAuthClient(private val config: RestConfig) {
      * Ends the session: the server revokes it by its refresh token — a public call, so it works even when the access
      * token has expired — and the client forgets it. A failure to reach the server does not keep the session here.
      */
-    fun logout() {
+    suspend fun logout() {
         val rt = refreshToken
         if (rt != null) {
             try {

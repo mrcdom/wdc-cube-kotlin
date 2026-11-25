@@ -18,6 +18,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import br.com.wdc.store.persistence.client.inRemoteTransaction
+import kotlin.test.assertFailsWith
 
 /** The remote transaction with security on: it requires authentication, and the owner is the user. */
 class SecuredRemoteTransactionRestTest {
@@ -48,7 +50,7 @@ class SecuredRemoteTransactionRestTest {
 
     @Test
     fun withoutAuthentication_theTransactionEndpointsAreRefused() {
-        val e = assertThrows(UnauthenticatedException::class.java) { env.transport.postJson("/api/tx/begin", "{}") }
+        val e = assertThrows(UnauthenticatedException::class.java) { env.postJson("/api/tx/begin", "{}") }
         assertTrue(e.message!!.startsWith("HTTP 401"), e.message)
     }
 
@@ -89,18 +91,16 @@ class SecuredRemoteTransactionRestTest {
     @Test
     fun transactionOfOneUser_cannotBeUsedByAnother() = runBlocking {
         env.loginAs("fulano")
-        val txId = Regex("\"txId\":\"([^\"]+)\"").find(env.transport.postJson("/api/tx/begin", "{}"))!!.groupValues[1]
-        env.transport.transactionIdSupplier = { txId }
-        try {
+        val txId = Regex("\"txId\":\"([^\"]+)\"").find(env.postJson("/api/tx/begin", "{}"))!!.groupValues[1]
+        // the calls inside the block carry the txId (a nested runBlocking would not: it starts a context of its own)
+        env.transport.inRemoteTransaction(txId) {
             env.loginAs("beotrano")
-            assertThrows(AccessDeniedException::class.java) { env.transport.postJson("/api/tx/commit", "{}") }
-            assertThrows(AccessDeniedException::class.java) {
-                runBlocking { env.purchaseRepo.insert(Purchase().apply { buyDate = Clock.System.now() }) }
+            assertFailsWith<AccessDeniedException> { env.transport.postJson("/api/tx/commit", "{}") }
+            assertFailsWith<AccessDeniedException> {
+                env.purchaseRepo.insert(Purchase().apply { buyDate = Clock.System.now() })
             }
             env.loginAs("fulano")
             assertTrue("rolledback" in env.transport.postJson("/api/tx/rollback", "{}"))
-        } finally {
-            env.transport.transactionIdSupplier = null
         }
     }
 }

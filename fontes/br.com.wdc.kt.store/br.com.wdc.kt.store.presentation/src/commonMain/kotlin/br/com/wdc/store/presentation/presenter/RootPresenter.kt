@@ -160,7 +160,7 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
     }
 
     /** The user signs out: the server revokes the session, and nothing of it stays here, not even the saved cart. */
-    fun endSession() {
+    suspend fun endSession() {
         AuthenticationService.BEAN.getOrNull()?.signOut()
         subject = null
         sessionStorage.clear()

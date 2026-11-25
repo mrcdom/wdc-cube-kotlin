@@ -21,9 +21,9 @@ interface AuthenticationService {
      */
     suspend fun login(userName: String, proof: String, nonce: String): AuthResult?
 
-    fun refresh(refreshToken: String): AuthResult?
+    suspend fun refresh(refreshToken: String): AuthResult?
 
-    fun logout(refreshToken: String)
+    suspend fun logout(refreshToken: String)
 
     fun resolveToken(jwtToken: String): SecurityContext?
 
@@ -34,7 +34,7 @@ interface AuthenticationService {
     fun readAuthState(input: ExtensibleObjectInput) {}
 
     /** Ends the session this client holds: the server revokes it, and the client forgets it. */
-    fun signOut() {}
+    suspend fun signOut() {}
 
     /** Who hears when the session this client holds is renewed or lost; `null` for no one. */
     fun setSessionListener(listener: SessionListener?) {}

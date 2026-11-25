@@ -1,13 +1,13 @@
 package br.com.wdc.store.persistence.client
 
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
-import br.com.wdc.framework.commons.util.AtomicRef
 import br.com.wdc.framework.domain.transaction.AfterCommitTasks
 import br.com.wdc.framework.domain.transaction.TransactionContext
 import br.com.wdc.framework.domain.transaction.TransactionNotAllowedException
 import br.com.wdc.framework.domain.transaction.TransactionRequiredException
 import br.com.wdc.framework.domain.transaction.TransactionService
 import br.com.wdc.framework.domain.transaction.TransactionSystemException
+import kotlinx.coroutines.withContext
 
 /**
  * The client's [TransactionService]: demarcates, over REST, a transaction that lives on the server.
@@ -20,11 +20,11 @@ import br.com.wdc.framework.domain.transaction.TransactionSystemException
  * owner rolls back and throws [TransactionSystemException] instead of returning the block's result. Only an explicit
  * `setRollbackOnly` rolls back without throwing. Same as the local transaction (`TransactionServiceImpl`).
  *
- * **The current transaction is one per instance** — that is, per client application —, not per thread: the
- * presentation's actions run serially and HTTP is blocking, so no two run at the same time. Hence the rule for
- * users: **the calls of a remote transaction are serialized**; a block that suspends waiting for something
- * other than its own HTTP leaves room for another action to inherit the `txId` (the server refuses concurrent
- * use of the same `txId` anyway).
+ * **The current transaction goes with the coroutine** that opened it, in its context (and in the coroutines it
+ * starts), not with the instance or a thread: HTTP suspends, and an action that runs while the block waits on the
+ * network does not inherit the `txId`. The calls of one transaction are still meant to be serial: two calls of the
+ * same block at the same time (in coroutines of their own) would both carry the `txId`, and the server refuses
+ * concurrent use of it (409).
  *
  * Reads made inside the block run in the transaction too (the transport sends the `txId` on them): they see what it
  * already wrote, and are not blocked by the rows it locked.
@@ -38,58 +38,44 @@ import br.com.wdc.framework.domain.transaction.TransactionSystemException
  */
 class RestTransactionService(private val transport: HttpTransport) : TransactionService {
 
-    private val current = AtomicRef<TxState>()
+    /** The current coroutine's transaction, opened by this service. */
+    private suspend fun current(): TxState? = transport.currentRemoteTransaction()?.tx as? TxState
 
-    init {
-        // the transport sends X-Tx-Id whenever there is a current remote transaction
-        transport.transactionIdSupplier = { current.getOrNull()?.txId }
-    }
+    /** Runs [block] outside any remote transaction of the transport: its calls carry no `txId`. */
+    private suspend fun <T> outside(block: suspend () -> T): T =
+        withContext(RemoteTransactionElement(transport, null, null)) { block() }
 
     override suspend fun <T> required(work: suspend (TransactionContext) -> T): T {
-        val existing = current.getOrNull()
+        val existing = current()
         return if (existing != null) participate(existing, work) else runInNewTx(work)
     }
 
-    override suspend fun <T> requiresNew(work: suspend (TransactionContext) -> T): T {
+    override suspend fun <T> requiresNew(work: suspend (TransactionContext) -> T): T =
         // suspends the outer one: the block's calls do not carry its txId
-        val outer = current.getOrNull()
-        current.set(null)
-        try {
-            return runInNewTx(work)
-        } finally {
-            current.set(outer)
-        }
-    }
+        outside { runInNewTx(work) }
 
     override suspend fun <T> mandatory(work: suspend (TransactionContext) -> T): T {
-        val state = current.getOrNull() ?: throw TransactionRequiredException("mandatory: no active remote transaction")
+        val state = current() ?: throw TransactionRequiredException("mandatory: no active remote transaction")
         return participate(state, work)
     }
 
     override suspend fun <T> supports(work: suspend (TransactionContext) -> T): T {
-        val state = current.getOrNull() ?: return work(NoTx)
+        val state = current() ?: return work(NoTx)
         return participate(state, work)
     }
 
-    override suspend fun <T> notSupported(work: suspend (TransactionContext) -> T): T {
-        val outer = current.getOrNull()
-        current.set(null)
-        try {
-            return work(NoTx)
-        } finally {
-            current.set(outer)
-        }
-    }
+    override suspend fun <T> notSupported(work: suspend (TransactionContext) -> T): T =
+        outside { work(NoTx) }
 
     override suspend fun <T> never(work: suspend (TransactionContext) -> T): T {
-        if (current.getOrNull() != null) {
+        if (current() != null) {
             throw TransactionNotAllowedException("never: a remote transaction is active")
         }
         return work(NoTx)
     }
 
     override suspend fun afterCommit(task: suspend () -> Unit) {
-        val state = current.getOrNull()
+        val state = current()
         if (state != null) state.afterCommit.add(task) else AfterCommitTasks.runAll(listOf(task))
     }
 
@@ -109,21 +95,19 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
 
     private suspend fun <T> runInNewTx(work: suspend (TransactionContext) -> T): T {
         val state = TxState(remoteBegin())
-        current.set(state)
-        val result: T
-        try {
-            result = try {
+        val result: T = withContext(RemoteTransactionElement(transport, state.txId, state)) {
+            val value = try {
                 work(state)
             } catch (e: Throwable) {
                 // the block's failure is the one that matters
                 rollbackQuietly()
                 throw e
             }
-            // the txId is still the current one: it goes in the commit/rollback header
+            // still inside the transaction: its txId goes in the commit/rollback header
             if (state.isRollbackOnly()) transport.postJson("/api/tx/rollback", "{}") else commit()
-        } finally {
-            current.set(null)
+            value
         }
+        // out of the transaction's context: the after-commit tasks run with no current transaction
         val tasks = state.afterCommit.drain()
         if (state.failed) {
             // a participant failed and the block carried on: it was rolled back, so the result is not a success
@@ -140,7 +124,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
      * (`GET /api/tx/status`) before deciding. Committed: success. Still open: roll back and fail. Rolled back,
      * unknown or no answer: fail.
      */
-    private fun commit() {
+    private suspend fun commit() {
         try {
             transport.postJson("/api/tx/commit", "{}")
         } catch (e: Throwable) {
@@ -157,7 +141,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
     }
 
     /** The outcome of the current transaction on the server, or `null` if not even that could be learned. */
-    private fun remoteStatus(): String? = try {
+    private suspend fun remoteStatus(): String? = try {
         // getBytes is authenticated and carries X-Tx-Id in every transport
         val text = transport.getBytes("/api/tx/status")?.decodeToString() ?: return null
         val input = JsonInputFactory.createStringInput(text).input
@@ -172,7 +156,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         null
     }
 
-    private fun rollbackQuietly() {
+    private suspend fun rollbackQuietly() {
         try {
             transport.postJson("/api/tx/rollback", "{}")
         } catch (_: Exception) {
@@ -180,7 +164,7 @@ class RestTransactionService(private val transport: HttpTransport) : Transaction
         }
     }
 
-    private fun remoteBegin(): String {
+    private suspend fun remoteBegin(): String {
         val input = JsonInputFactory.createStringInput(transport.postJson("/api/tx/begin", "{}")).input
         var txId: String? = null
         input.beginObject()

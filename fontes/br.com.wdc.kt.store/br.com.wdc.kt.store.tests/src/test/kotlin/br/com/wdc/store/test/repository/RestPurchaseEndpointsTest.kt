@@ -18,7 +18,7 @@ class RestPurchaseEndpointsTest {
         val envExtension = TestEnvironmentExtension(env)
     }
 
-    private fun post(operation: String, body: String) = env.transport.postJson("/api/repo/purchase/$operation", body)
+    private fun post(operation: String, body: String) = env.postJson("/api/repo/purchase/$operation", body)
 
     @Test
     fun projectedItems_withNegativeSlice_areRefused() {

@@ -27,7 +27,7 @@ class RestProductEndpointsTest {
         val envExtension = TestEnvironmentExtension(env)
     }
 
-    private fun post(operation: String, body: String) = env.transport.postJson("/api/repo/product/$operation", body)
+    private fun post(operation: String, body: String) = env.postJson("/api/repo/product/$operation", body)
 
     @Test
     fun looseValueCriterion_fromOlderClients_stillMeansEquality() {
@@ -136,13 +136,13 @@ class RestProductEndpointsTest {
 
     @Test
     fun fetchById_byGetAndByPost() {
-        val byGet = env.transport.getJsonPublic("/api/repo/product/${DBReset.THREAD_SEAL_TAPE_ID}")
+        val byGet = env.getJsonPublic("/api/repo/product/${DBReset.THREAD_SEAL_TAPE_ID}")
         assertTrue(byGet.startsWith("""{"id":${DBReset.THREAD_SEAL_TAPE_ID},"name":"Thread Seal Tape","price":2.67"""), byGet)
 
         val byPost = post("fetch-by-id", """{"id":${DBReset.THREAD_SEAL_TAPE_ID},"projection":{"name":"~"}}""")
         assertEquals("""{"id":${DBReset.THREAD_SEAL_TAPE_ID},"name":"Thread Seal Tape"}""", byPost)
 
-        assertNull(env.transport.postJsonNullable("/api/repo/product/fetch-by-id", """{"id":${Long.MAX_VALUE}}"""))
+        assertNull(env.postJsonNullable("/api/repo/product/fetch-by-id", """{"id":${Long.MAX_VALUE}}"""))
     }
 
     @Test
@@ -173,7 +173,7 @@ class RestProductEndpointsTest {
 
     @Test
     fun insertedUser_comesBackWithoutThePassword() {
-        val inserted = env.transport.postJson(
+        val inserted = env.postJson(
             "/api/repo/user/insert",
             """{"entity":{"userName":"nosecret","password":"0123456789abcdef0123456789abcdef","name":"No Secret","roles":"CUSTOMER"}}""",
         )
@@ -181,13 +181,13 @@ class RestProductEndpointsTest {
         assertTrue(""""userName":"nosecret"""" in inserted, inserted)
         assertFalse("password" in inserted, inserted)
         val id = Regex(""""id":(\d+)""").find(inserted)!!.groupValues[1]
-        env.transport.postJson("/api/repo/user/delete", """{"userId":$id}""")
+        env.postJson("/api/repo/user/delete", """{"userId":$id}""")
     }
 
     @Test
     fun removedRoutes_noLongerExist() {
         for (old in listOf("upsert", "fetchPage", "fetchById")) {
-            assertNull(env.transport.postJsonNullable("/api/repo/product/$old", "{}"), old)
+            assertNull(env.postJsonNullable("/api/repo/product/$old", "{}"), old)
         }
     }
 }

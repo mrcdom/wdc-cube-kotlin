@@ -62,7 +62,7 @@ class RestSessionLifecycleTest {
         var stale = true
         val renew = env.transport.refreshHandler!!
         env.transport.accessTokenSupplier = { if (stale) "expired.access.token" else client.accessToken }
-        env.transport.refreshHandler = { renew().also { if (it) stale = false } }
+        env.transport.refreshHandler = { renew(client.accessToken!!).also { if (it) stale = false } }
     }
 
     @Test
@@ -102,10 +102,10 @@ class RestSessionLifecycleTest {
         val client = env.authClient!!
         val refreshToken = client.refreshToken!!
 
-        client.logout()
+        runBlocking { client.logout() }
 
         assertNull(client.accessToken)
-        assertNull(server.refresh(refreshToken), "the server no longer renews it")
+        assertNull(runBlocking { server.refresh(refreshToken) }, "the server no longer renews it")
     }
 }
 
@@ -142,7 +142,7 @@ class AppSessionLifecycleTest {
             this.listener = listener
         }
 
-        override fun signOut() {
+        override suspend fun signOut() {
             signedOut = true
         }
     }

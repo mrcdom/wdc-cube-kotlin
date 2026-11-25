@@ -36,6 +36,7 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.lang.reflect.Type
 import java.nio.file.Paths
+import kotlinx.coroutines.runBlocking
 
 /**
  * Test environment that starts an in-process Javalin with the
@@ -75,8 +76,16 @@ class RestTestEnvironment(
     fun loginAs(userName: String, password: String = userName) {
         val authClient = RestAuthClient(restConfig)
         restConfig.setAuthClientInstance(authClient)
-        authClient.login(userName, password) ?: throw UnauthenticatedException("Invalid credentials for $userName")
+        runBlocking { authClient.login(userName, password) } ?: throw UnauthenticatedException("Invalid credentials for $userName")
     }
+
+    // :: The transport's calls, waited for: for tests that talk to the API without the repositories
+
+    fun postJson(path: String, body: String): String = runBlocking { transport.postJson(path, body) }
+
+    fun postJsonNullable(path: String, body: String): String? = runBlocking { transport.postJsonNullable(path, body) }
+
+    fun getJsonPublic(path: String): String = runBlocking { transport.getJsonPublic(path) }
 
     /** The authentication client of the current session, or `null` without login. */
     val authClient: RestAuthClient? get() = restConfig.authClient

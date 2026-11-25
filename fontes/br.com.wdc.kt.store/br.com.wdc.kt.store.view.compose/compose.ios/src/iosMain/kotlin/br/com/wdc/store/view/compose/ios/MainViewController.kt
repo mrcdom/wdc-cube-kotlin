@@ -31,6 +31,7 @@ import br.com.wdc.store.view.compose.theme.StoreTheme
 import br.com.wdc.store.view.compose.util.PlatformConfig
 import br.com.wdc.store.view.compose.views.*
 import platform.UIKit.UIViewController
+import kotlinx.coroutines.launch
 
 private class IosRootPresenter : RootPresenter() {
 
@@ -61,7 +62,9 @@ fun MainViewController(baseUrl: String): UIViewController {
 
     val app = IosRootPresenter()
     ViewUpdateScheduler.initialize { app }
-    kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
+    // the first navigation runs in the presenters' scope: the network is waited for without blocking this thread,
+    // and the window, shown right away, repaints when it arrives
+    app.presenterScope.launch { RootKeys(app).flip() }
 
     return ComposeUIViewController {
         StoreTheme {

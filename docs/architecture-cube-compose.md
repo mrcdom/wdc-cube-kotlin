@@ -397,7 +397,7 @@ fun main() {
 
     val app = DesktopRootPresenter()
     ViewUpdateScheduler.initialize { app }
-    runBlocking { RootKeys(app).flip() }
+    app.presenterScope.launch { RootKeys(app).flip() }  // the network is awaited off this thread
 
     application {
         Window(title = "WDC Store", ...) {
@@ -459,7 +459,7 @@ class MainActivity : ComponentActivity() {
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
         app = AndroidRootPresenter(AndroidPersistentSessionStorage(prefs))
         ViewUpdateScheduler.initialize { app }
-        runBlocking { RootKeys(app).flip() }
+        app.presenterScope.launch { RootKeys(app).flip() }  // the network is awaited off this thread
 
         setContent {
             StoreTheme {
@@ -482,7 +482,7 @@ fun MainViewController(baseUrl: String): UIViewController {
 
     val app = IosRootPresenter()
     ViewUpdateScheduler.initialize { app }
-    runBlocking { RootKeys(app).flip() }
+    app.presenterScope.launch { RootKeys(app).flip() }  // the network is awaited off this thread
 
     return ComposeUIViewController {
         StoreTheme {

@@ -3,7 +3,6 @@ package br.com.wdc.store.nativeui.android
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
-import android.os.StrictMode
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import br.com.wdc.store.nativeui.android.theme.StoreColors
@@ -21,7 +20,7 @@ import br.com.wdc.store.persistence.client.OkHttpTransport
 import br.com.wdc.store.persistence.client.RestConfig
 import br.com.wdc.store.persistence.client.RestRepositoryBootstrap
 import br.com.wdc.store.presentation.presenter.RootKeys
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,11 +40,6 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = StoreColors.Primary
 
-        // Allow synchronous network on main thread (Cube MVP pattern)
-        StrictMode.setThreadPolicy(
-            StrictMode.ThreadPolicy.Builder().permitNetwork().build()
-        )
-
         val baseUrl = BuildConfig.BASE_URL
         initializePlatform(baseUrl)
         ViewUtils.baseUrl = baseUrl
@@ -54,7 +48,9 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
         val app = AndroidNativeRootPresenter(AndroidPersistentSessionStorage(prefs))
         ViewUpdateScheduler.initialize { app }
-        runBlocking { RootKeys(app).flip() }
+        // the first navigation runs in the presenters' scope: the network is waited for without blocking this thread,
+        // and the root view, mounted right away, repaints when it arrives
+        app.presenterScope.launch { RootKeys(app).flip() }
 
         // every other view is asked for by the view that holds its scope
         val root = app.viewOf(app.scope).also { this.root = it }

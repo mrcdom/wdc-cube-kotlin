@@ -8,6 +8,11 @@ import br.com.wdc.framework.domain.exception.TransactionConflictException
 import br.com.wdc.framework.domain.exception.TooManyRequestsException
 import br.com.wdc.framework.domain.exception.UnauthenticatedException
 import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
+import br.com.wdc.framework.domain.transaction.TransactionContext
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -21,8 +26,35 @@ const val CLIENT_HEADER = "X-Client-Id"
 @OptIn(ExperimentalUuidApi::class)
 internal fun newClientId(): String = Uuid.random().toString()
 
+/**
+ * The remote transaction of a coroutine, for the calls of one client: it goes with the coroutine that opened it
+ * (and the ones it starts), so another action running meanwhile does not carry its id. [tx] `null` = no transaction
+ * ([RestTransactionService] suspends the outer one this way). The client is told by its [HttpTransport.clientId] —
+ * the identity the server knows it by —, so a transport that wraps another (to log, to measure) is the same client.
+ */
+internal class RemoteTransactionElement(
+    val clientId: String,
+    val txId: String?,
+    val tx: TransactionContext?,
+) : AbstractCoroutineContextElement(Key) {
+    constructor(transport: HttpTransport, txId: String?, tx: TransactionContext?) : this(transport.clientId, txId, tx)
+
+    companion object Key : CoroutineContext.Key<RemoteTransactionElement>
+}
+
+/** The current coroutine's remote transaction of this transport's client, if any. */
+internal suspend fun HttpTransport.currentRemoteTransaction(): RemoteTransactionElement? =
+    currentCoroutineContext()[RemoteTransactionElement]?.takeIf { it.clientId == clientId }
+
 /** The `X-Tx-Id` to send, if there is a current remote transaction. */
-internal fun HttpTransport.currentTxId(): String? = transactionIdSupplier?.invoke()?.takeIf { it.isNotBlank() }
+internal suspend fun HttpTransport.currentTxId(): String? = currentRemoteTransaction()?.txId?.takeIf { it.isNotBlank() }
+
+/**
+ * Runs [block] with its calls of this transport inside the remote transaction [txId] (`null`: outside any), as
+ * [RestTransactionService] does. For a test, or a caller that manages `/api/tx` by hand.
+ */
+suspend fun <T> HttpTransport.inRemoteTransaction(txId: String?, block: suspend () -> T): T =
+    withContext(RemoteTransactionElement(this, txId, null)) { block() }
 
 /**
  * The exception for an error response: the status becomes the same type the server threw, so the caller

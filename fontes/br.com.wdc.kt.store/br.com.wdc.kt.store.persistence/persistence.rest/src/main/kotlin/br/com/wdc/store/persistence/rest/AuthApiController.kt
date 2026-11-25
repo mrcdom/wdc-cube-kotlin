@@ -61,7 +61,7 @@ internal object AuthApiController {
         }
 
         routes.post("/api/auth/logout", doc = RepositoryApiDocs.authDoc("logout")) { call ->
-            call.bodyOrNull<RefreshRequest>()?.refreshToken?.let(authService::logout)
+            call.bodyOrNull<RefreshRequest>()?.refreshToken?.let { authService.logout(it) }
             mapOf("success" to true)
         }
     }

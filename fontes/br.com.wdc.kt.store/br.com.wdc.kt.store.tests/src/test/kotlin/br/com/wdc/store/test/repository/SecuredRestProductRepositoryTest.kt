@@ -132,7 +132,7 @@ class SecuredRestProductRepositoryTest {
     fun unknownOrderBy_is400_namingTheValueAndTheAcceptedOnes() {
         env.loginAs("admin")
         val e = assertThrows(BusinessException::class.java) {
-            env.transport.postJson("/api/repo/product/fetch", """{"orderBy":"RANDOM"}""")
+            env.postJson("/api/repo/product/fetch", """{"orderBy":"RANDOM"}""")
         }
         assertTrue(e.message!!.startsWith("HTTP 400"), e.message)
         assertTrue("unknown ordering" in e.message!! && "RANDOM" in e.message!!, e.message)

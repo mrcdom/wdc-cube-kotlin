@@ -234,7 +234,7 @@ graph TB
 | Component          | JVM / Android                                   | wasmJs                                   | iOS                                   |
 |--------------------|-------------------------------------------------|------------------------------------------|---------------------------------------|
 | JSON               | Framework's pure-Kotlin reader/writer (`installCommon()`) | same                           | same                                  |
-| HTTP               | `OkHttpTransport` (OkHttp)                      | `WasmHttpTransport` (synchronous XMLHttpRequest) | `IosHttpTransport` (NSURLSession) |
+| HTTP               | `OkHttpTransport` (OkHttp, asynchronous call)   | `WasmHttpTransport` (`fetch`)            | `IosHttpTransport` (NSURLSession data task) |
 | Crypto             | `JceCryptoProvider` (JCE)                       | `WasmCryptoProvider` (pure Kotlin MD5/SHA-256/HMAC, no RSA) | `IosCryptoProvider` (pure Kotlin MD5/SHA-256/HMAC, no RSA) |
 | Scheduler          | Swing `Timer` (desktop), `Handler` (Android)    | `setTimeout`                             | `dispatch_after` on the main queue    |
 | ThreadLocalRef     | `java.lang.ThreadLocal`                         | Plain field                              | Plain field                           |

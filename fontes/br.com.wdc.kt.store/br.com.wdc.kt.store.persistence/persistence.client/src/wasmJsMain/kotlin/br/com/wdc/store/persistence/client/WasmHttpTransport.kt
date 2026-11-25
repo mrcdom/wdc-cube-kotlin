@@ -1,256 +1,44 @@
 package br.com.wdc.store.persistence.client
 
 import br.com.wdc.store.domain.exception.BusinessException
+import kotlinx.coroutines.await
+import kotlin.js.Promise
 
-/**
- * HttpTransport implementation for wasmJs using synchronous XMLHttpRequest.
- * Note: synchronous XHR is deprecated in browsers but necessary for the current
- * synchronous HttpTransport interface. A future refactoring to async/coroutines
- * would be preferable.
- */
-class WasmHttpTransport(private val baseUrl: String) : HttpTransport {
+/** The [HttpTransport] of Kotlin/Wasm: the browser's `fetch`, awaited without blocking the page. */
+class WasmHttpTransport(baseUrl: String) : BaseHttpTransport(baseUrl) {
 
-    override var accessTokenSupplier: (() -> String?)? = null
-    override var refreshHandler: (() -> Boolean)? = null
-    override var onAuthFailure: (() -> Unit)? = null
-    override var transactionIdSupplier: (() -> String?)? = null
-    override val clientId: String = newClientId()
+    override suspend fun exchange(method: String, url: String, headers: Map<String, String>, body: ByteArray?): Answer {
+        val headerObject = jsNewObject()
+        for ((name, value) in headers) jsSetString(headerObject, name.toJsString(), value.toJsString())
 
-    override fun postJson(path: String, body: String): String {
-        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), txId = currentTxId())
-            ?: throw BusinessException("Empty response for POST $path")
-    }
-
-    override fun postJsonNullable(path: String, body: String): String? {
-        return doRequestNullable("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), txId = currentTxId())
-    }
-
-    override fun postJsonPublic(path: String, body: String): String {
-        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, null)
-            ?: throw BusinessException("Empty response for POST $path")
-    }
-
-    override fun postJsonWithAuth(path: String, body: String, token: String): String {
-        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, "Bearer $token")
-            ?: throw BusinessException("Empty response for POST $path")
-    }
-
-    override fun getJsonPublic(path: String): String {
-        return doRequest("GET", baseUrl + path, null, null, null)
-            ?: throw BusinessException("Empty response for GET $path")
-    }
-
-    override fun getBytes(path: String): ByteArray? {
-        return doRequestBytes("GET", baseUrl + path, null, null, authHeader(), currentTxId())
-    }
-
-    override fun putBytes(path: String, data: ByteArray): Boolean = putBytes(baseUrl + path, data, authHeader(), currentTxId())
-
-    private fun putBytes(url: String, data: ByteArray, authorization: String?, txId: String?): Boolean {
-        val result = xhrSyncPutBytes(
-            url.toJsString(),
-            byteArrayToJsUint8Array(data),
-            OCTET_CONTENT_TYPE.toJsString(),
-            (authorization ?: "").toJsString(),
-            clientId.toJsString(),
-            (txId ?: "").toJsString()
-        )
-        val status = xhrResultStatus(result)
-        val responseText = xhrResultBody(result).toString()
-
-        if (status in 200..299) {
-            return responseText.contains("\"success\":true") || responseText.contains("\"success\": true")
+        val result = try {
+            jsFetch(method.toJsString(), url.toJsString(), headerObject, body?.let(::byteArrayToJsUint8Array)).await<JsAny>()
+        } catch (e: Throwable) {
+            // fetch rejects only when the server could not be reached; any status is an answer
+            throw BusinessException("Network error: $method $url: ${e.message}")
         }
-
-        if (status == 401 && authorization != null) {
-            if (refreshHandler?.invoke() == true) {
-                return putBytes(url, data, authHeader(), txId)
-            }
-            onAuthFailure?.invoke()
-        }
-
-        throw httpFailure(status, responseText)
-    }
-
-    private fun authHeader(): String? {
-        val supplier = accessTokenSupplier ?: return null
-        val token = supplier() ?: return null
-        return "Bearer $token"
-    }
-
-    private fun doRequest(
-        method: String,
-        url: String,
-        body: String?,
-        contentType: String?,
-        authorization: String?,
-        txId: String? = null
-    ): String? {
-        val result = xhrSyncRequest(
-            method.toJsString(),
-            url.toJsString(),
-            body?.toJsString() ?: "".toJsString(),
-            (contentType ?: "").toJsString(),
-            (authorization ?: "").toJsString(),
-            clientId.toJsString(),
-            (txId ?: "").toJsString()
-        )
-        val status = xhrResultStatus(result)
-        val responseText = xhrResultBody(result).toString()
-
-        if (status in 200..299) {
-            return responseText
-        }
-
-        // On 401 with auth header: try refresh and retry once
-        if (status == 401 && authorization != null) {
-            if (refreshHandler?.invoke() == true) {
-                return doRequest(method, url, body, contentType, authHeader(), txId)
-            }
-            onAuthFailure?.invoke()
-        }
-
-        throw httpFailure(status, responseText)
-    }
-
-    private fun doRequestNullable(
-        method: String,
-        url: String,
-        body: String?,
-        contentType: String?,
-        authorization: String?,
-        txId: String? = null
-    ): String? {
-        val result = xhrSyncRequest(
-            method.toJsString(),
-            url.toJsString(),
-            body?.toJsString() ?: "".toJsString(),
-            (contentType ?: "").toJsString(),
-            (authorization ?: "").toJsString(),
-            clientId.toJsString(),
-            (txId ?: "").toJsString()
-        )
-        val status = xhrResultStatus(result)
-        if (status == 404) return null
-        val responseText = xhrResultBody(result).toString()
-        if (status in 200..299) {
-            return responseText
-        }
-
-        if (status == 401 && authorization != null) {
-            if (refreshHandler?.invoke() == true) {
-                return doRequestNullable(method, url, body, contentType, authHeader(), txId)
-            }
-            onAuthFailure?.invoke()
-        }
-
-        throw httpFailure(status, responseText)
-    }
-
-    private fun doRequestBytes(
-        method: String,
-        url: String,
-        body: String?,
-        contentType: String?,
-        authorization: String?,
-        txId: String? = null
-    ): ByteArray? {
-        val result = xhrSyncRequestBytes(
-            method.toJsString(),
-            url.toJsString(),
-            body?.toJsString() ?: "".toJsString(),
-            (contentType ?: "").toJsString(),
-            (authorization ?: "").toJsString(),
-            clientId.toJsString(),
-            (txId ?: "").toJsString()
-        )
-        val status = xhrBytesResultStatus(result)
-        // 204 = no content ("no image"); 404 = not found, an error like the others
-        if (status == 204) return null
-        if (status in 200..299) {
-            val jsArray = xhrBytesResultData(result) ?: return null
-            return jsUint8ArrayToByteArray(jsArray)
-        }
-
-        if (status == 401 && authorization != null) {
-            if (refreshHandler?.invoke() == true) {
-                return doRequestBytes(method, url, body, contentType, authHeader(), txId)
-            }
-            onAuthFailure?.invoke()
-        }
-
-        throw httpFailure(status)
-    }
-
-    companion object {
-        private const val JSON_CONTENT_TYPE = "application/json; charset=utf-8"
-        private const val OCTET_CONTENT_TYPE = "application/octet-stream"
+        return Answer(jsResultStatus(result), jsUint8ArrayToByteArray(jsResultData(result)))
     }
 }
 
 // --- JS Interop ---
 
-@JsFun("""(method, url, body, contentType, authorization, clientId, txId) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open(method, url, false);
-    if (contentType !== '') xhr.setRequestHeader('Content-Type', contentType);
-    if (authorization !== '') xhr.setRequestHeader('Authorization', authorization);
-    xhr.setRequestHeader('X-Client-Id', clientId);
-    if (txId !== '') xhr.setRequestHeader('X-Tx-Id', txId);
-    xhr.send(body !== '' ? body : null);
-    return { status: xhr.status, body: xhr.responseText };
-}""")
-private external fun xhrSyncRequest(
-    method: JsString, url: JsString, body: JsString,
-    contentType: JsString, authorization: JsString, clientId: JsString, txId: JsString
-): JsAny
+@JsFun("""(method, url, headers, body) =>
+    fetch(url, { method: method, headers: headers, body: body === null ? undefined : body })
+        .then(response => response.arrayBuffer().then(buffer => ({ status: response.status, data: new Uint8Array(buffer) })))""")
+private external fun jsFetch(method: JsString, url: JsString, headers: JsAny, body: JsAny?): Promise<JsAny>
 
-@JsFun("""(url, data, contentType, authorization, clientId, txId) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url, false);
-    xhr.setRequestHeader('Content-Type', contentType);
-    if (authorization !== '') xhr.setRequestHeader('Authorization', authorization);
-    xhr.setRequestHeader('X-Client-Id', clientId);
-    if (txId !== '') xhr.setRequestHeader('X-Tx-Id', txId);
-    xhr.send(data);
-    return { status: xhr.status, body: xhr.responseText };
-}""")
-private external fun xhrSyncPutBytes(
-    url: JsString, data: JsAny, contentType: JsString,
-    authorization: JsString, clientId: JsString, txId: JsString
-): JsAny
+@JsFun("() => ({})")
+private external fun jsNewObject(): JsAny
+
+@JsFun("(o, k, v) => { o[k] = v; }")
+private external fun jsSetString(o: JsAny, k: JsString, v: JsString)
 
 @JsFun("(r) => r.status")
-private external fun xhrResultStatus(r: JsAny): Int
-
-@JsFun("(r) => r.body")
-private external fun xhrResultBody(r: JsAny): JsString
-
-@JsFun("""(method, url, body, contentType, authorization, clientId, txId) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open(method, url, false);
-    // a synchronous request from a page can't set responseType: read the body as text, one byte per char
-    xhr.overrideMimeType('text/plain; charset=x-user-defined');
-    if (contentType !== '') xhr.setRequestHeader('Content-Type', contentType);
-    if (authorization !== '') xhr.setRequestHeader('Authorization', authorization);
-    xhr.setRequestHeader('X-Client-Id', clientId);
-    if (txId !== '') xhr.setRequestHeader('X-Tx-Id', txId);
-    xhr.send(body !== '' ? body : null);
-    const text = xhr.responseText;
-    const data = new Uint8Array(text.length);
-    for (let i = 0; i < text.length; i++) data[i] = text.charCodeAt(i) & 0xff;
-    return { status: xhr.status, data: data };
-}""")
-private external fun xhrSyncRequestBytes(
-    method: JsString, url: JsString, body: JsString,
-    contentType: JsString, authorization: JsString, clientId: JsString, txId: JsString
-): JsAny
-
-@JsFun("(r) => r.status")
-private external fun xhrBytesResultStatus(r: JsAny): Int
+private external fun jsResultStatus(r: JsAny): Int
 
 @JsFun("(r) => r.data")
-private external fun xhrBytesResultData(r: JsAny): JsAny?
+private external fun jsResultData(r: JsAny): JsAny
 
 private fun jsUint8ArrayToByteArray(uint8Array: JsAny): ByteArray {
     val len = jsUint8ArrayLength(uint8Array)

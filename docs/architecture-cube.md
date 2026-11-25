@@ -200,6 +200,8 @@ The view calls the field, inside its own launch: `safeCall { scope.onBuy() }` (C
 
 **The guard.** Every bound action catches what its body did not handle and hands it to `onActionFailure`, which by default calls `CubeApplication.alertUnexpectedError` (in the WDC Store the user sees `"Unexpected error: <cause>"` and the log gets the stack trace). At the end, failing or not, it calls `app.updateHistory()`, since the action may have changed what the presenters publish. Expected failures (an invalid item, an offline database) stay in the body, which turns them into messages of its own. `CancellationException` passes through.
 
+**One action at a time.** The guarded actions of an application run through `CubeApplication.runAction`: an action that starts while another waits on I/O waits for it to finish (a `Mutex` per application; no thread is blocked). Two clicks on "Buy" make one purchase after the other, never interleaved, and no action sees another one's state halfway. An action that runs another one (directly, or in a coroutine it starts) runs it at once: the lock goes along with the coroutine context. Navigation keeps its own rule (below).
+
 **Remote views: event codes.** An action a remote view fires is bound with its **event code**, and with how to read its values from the form data the client sends (`FormParam.long/int/string(name)`):
 
 ```kotlin

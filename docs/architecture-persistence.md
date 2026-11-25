@@ -286,7 +286,7 @@ Two limits to keep in mind:
 - **Reads participate** in the remote transaction: inside the block, `fetch`, `count`, `fetch-page` and `fetch-by-id` carry the `X-Tx-Id` and see what the transaction already wrote. Another client keeps seeing only what is committed.
 - `notSupported` inside a remote transaction is for reading, not writing — the server can't tell "suspended transaction" from "lost header". To write outside it, use `requiresNew`.
 
-The client's current transaction is kept per service instance (one per application). Presentation actions run serially and HTTP is blocking; therefore, **the calls of a remote transaction must be sequential**.
+The client's current transaction goes with the **coroutine** that opened it, in its context (and in the coroutines that one starts): HTTP suspends, and an action that runs while the block waits on the network does not carry its `X-Tx-Id`. The transaction is told apart by the client's `clientId`, so a transport that wraps another (to log, to measure) is the same client. Two consequences: **the calls of one remote transaction must still be sequential** (two at once would both carry the `txId`, and the server refuses concurrent use of it, 409); and a block that starts a context of its own — a nested `runBlocking`, a coroutine of another scope — leaves the transaction. `inRemoteTransaction(txId) { }` runs a block in a transaction opened by hand (tests).
 
 ---
 
@@ -332,9 +332,9 @@ Errors come back as `{"error": "…"}`:
 
 `HttpReadOnlyRepository<E, C, K>` implements the queries once for all entities, and `HttpRepository<E, C, K>` extends it with writing; each `HttpXxxRepository` only provides the codec and the path. A read-only repository on the client extends `HttpReadOnlyRepository` directly. `HttpProductRepository` adds reading and writing the image.
 
-`HttpTransport` has one implementation per platform — `OkHttpTransport` (JVM and Android), `JsHttpTransport`, `WasmHttpTransport`, and `IosHttpTransport` —, all blocking. Each one:
+`HttpTransport` is `suspend` on every platform: no thread waits for the network. `BaseHttpTransport` does what is common, and each platform only sends a request and awaits its answer — `OkHttpTransport` (JVM and Android: OkHttp's asynchronous call, so Android needs no `permitNetwork`), `JsHttpTransport` and `WasmHttpTransport` (the browser's `fetch`), `IosHttpTransport` (an `NSURLSession` data task). The common part:
 
-- sends the access token and, on 401, renews the session and retries the call once;
+- sends the access token and, on 401, renews the session and retries the call once. **Calls refused at the same time renew once** (`RestConfig`): the server replaces the refresh token on each renewal, so the first renews and the others, finding the token already replaced, just repeat their call;
 - always sends `X-Client-Id`, and `X-Tx-Id` when there is a current remote transaction;
 - turns the error response into the exception the server threw — 400 `InvalidRequestException`, 401 `UnauthenticatedException`, 403 `AccessDeniedException`, 404 `NotFoundException`, 409 `TransactionConflictException`, 410 `RemoteTransactionNotFoundException`, 429 `TooManyRequestsException` (too many open remote transactions, auth requests from the address or failed sign-ins on the user); anything else, `BusinessException`. The message is always `HTTP <status>: <body>` (`HTTP <status>` when the body is empty).
 
