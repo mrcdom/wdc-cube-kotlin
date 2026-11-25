@@ -34,8 +34,8 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
     private val rows = LinkedHashMap<Long, CartItemScope>()
 
     init {
-        scope.onBuy = action(1) { buy() }
-        scope.onOpenProducts = action(3) { HomeKeys(app).flip() }
+        scope.onBuy = action(1) { onBuy() }
+        scope.onOpenProducts = action(3) { onOpenProducts() }
     }
 
     // :: Cube API
@@ -75,13 +75,13 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private fun newRow(productId: Long): CartItemScope = CartItemScope().also { row ->
         row.productId = productId
-        row.onRemove = action(1, target = row) { removeProduct(productId) }
-        row.onModifyQuantity = actionOf(2, FormParam.int("p.quantity"), target = row) { modifyQuantity(productId, it) }
+        row.onRemove = action(1, target = row) { onRemove(productId) }
+        row.onModifyQuantity = actionOf(2, FormParam.int("p.quantity"), target = row) { onModifyQuantity(productId, it) }
     }
 
     // :: User Actions
 
-    private fun modifyQuantity(productId: Long?, quantity: Int?) {
+    private fun onModifyQuantity(productId: Long?, quantity: Int?) {
         if (productId == null) {
             errorMalformedProductId()
             LOG.warn("onModifyQuantity.errorMalformedProductId: {}", scope.errorMessage)
@@ -109,7 +109,7 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         }
     }
 
-    private suspend fun removeProduct(productId: Long?) {
+    private suspend fun onRemove(productId: Long?) {
         if (productId == null) {
             errorMalformedProductId()
             LOG.warn("onRemoveProduct: {}", scope.errorMessage)
@@ -126,7 +126,11 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
         }
     }
 
-    private suspend fun buy() {
+    private suspend fun onOpenProducts() {
+        HomeKeys(app).flip()
+    }
+
+    private suspend fun onBuy() {
         if (cart.getSize() == 0) {
             alertPurchaseOfEmptyCart()
             LOG.warn("onBuy: {}", scope.errorMessage)

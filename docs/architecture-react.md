@@ -325,7 +325,7 @@ scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
 scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
 ```
 
-The login's values arrive by sync, not as form parameters of the event, and the presenter copies them into the scope (`scope.onSync(::sync)` in `LoginPresenter`). The password goes ciphered with the session key; the presenter deciphers it with `app.b64Decipher`, which only the remote application implements (`RemoteRootPresenter`, with the session's `RemoteDataSecurity`). The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { enter() }`, reading the user name and password from the scope.
+The login's values arrive by sync, not as form parameters of the event, and the presenter copies them into the scope (`scope.onSync(::sync)` in `LoginPresenter`). The password goes ciphered with the session key; the presenter deciphers it with `app.b64Decipher`, which only the remote application implements (`RemoteRootPresenter`, with the session's `RemoteDataSecurity`). The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { onEnter() }`, reading the user name and password from the scope.
 
 The browser tab itself is a scope of the remote layer (`BrowserScope`: the alert and the root scope, sent as `contentViewId`), whose actions `RemoteBrowserPresenter` binds with their codes like any presenter; the presentation knows nothing of it.
 

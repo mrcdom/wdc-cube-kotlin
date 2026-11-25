@@ -26,7 +26,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
     private var ownerSlot: ScopeSlot? = null
 
     init {
-        scope.onEnter = action(1) { enter() }
+        scope.onEnter = action(1) { onEnter() }
         scope.onSync(::sync)
     }
 
@@ -91,7 +91,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
         }
     }
 
-    private suspend fun enter() {
+    private suspend fun onEnter() {
         scope.loading = true
         scope.errorCode = 0
         scope.errorMessage = null

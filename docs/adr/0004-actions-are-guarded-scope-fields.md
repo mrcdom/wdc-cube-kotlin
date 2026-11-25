@@ -14,8 +14,8 @@ With blocking HTTP, two user actions could never interleave: the second waited f
 An action is a field of the scope (`Action`, `ActionOf<T>`, `ActionOf2<T, U>`, each with `suspend operator fun invoke`), bound once: in the presenter's constructor, or when the presenter creates a segment (a cart row, bound in the method that creates it):
 
 ```kotlin
-scope.onBuy = action(1) { buy() }
-row.onModifyQuantity = actionOf(2, FormParam.int("p.quantity"), target = row) { modifyQuantity(productId, it) }
+scope.onBuy = action(1) { onBuy() }
+row.onModifyQuantity = actionOf(2, FormParam.int("p.quantity"), target = row) { onModifyQuantity(productId, it) }
 ```
 
 Every bound action runs through one **guard**: what the body did not handle goes to `onActionFailure` (by default `alertUnexpectedError`, "Unexpected error: <cause>"), `CancellationException` passes through, and at the end the application republishes the address. The optional event code and `FormParam`s let a remote view fire the same action by code.
