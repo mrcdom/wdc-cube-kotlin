@@ -13,7 +13,7 @@ import AddIcon from '@mui/icons-material/Add'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import RemoveIcon from '@mui/icons-material/Remove'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
+import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import { Colors } from '@root/theme'
 

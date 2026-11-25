@@ -1,0 +1,53 @@
+# Publishes the remote bridge's two TypeScript packages to npmjs.com: wdc-cube-remote-bridge and
+# wdc-cube-remote-bridge-react. Runs on a version tag (the framework's, vX.Y.Z), or by hand.
+#
+# No token. npm's trusted publishing exchanges GitHub's OIDC identity for a short-lived credential: each package names
+# this repository and this file (publish-npm.yml) on npmjs.com under Trusted Publisher, so renaming the file breaks
+# publishing until both are updated. Provenance comes with it, automatically, for a public package from a public
+# repository.
+name: Publish npm
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # without it there is no OIDC token to exchange
+  id-token: write
+
+defaults:
+  run:
+    working-directory: fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      # trusted publishing needs npm 11.5.1 or later; an older one falls back to asking for a token
+      - run: npm install --global npm@latest
+
+      - name: Install, test, build
+        run: |
+          (cd remote.bridge.typescript && npm ci && npm test && npm run build)
+          (cd remote.bridge.typescript.react && npm ci && npm run build)
+
+      # before publishing: the packed packages, installed into a project that is not this one
+      - run: node scripts/verify-npm.mjs
+
+      # the core first: the React package names it as a peer
+      - name: Publish
+        run: |
+          (cd remote.bridge.typescript && npm publish --access public)
+          (cd remote.bridge.typescript.react && npm publish --access public)
+
+      # a green publish is not a release: ask the registry until both versions are there
+      - run: node scripts/check-published.mjs

@@ -88,7 +88,7 @@ graph LR
 graph TB
     subgraph "Client (TypeScript)"
         RC["remote.react.typescript<br/>React + MUI + Parcel"]
-        BRG["@wdc/remote-bridge(-react)<br/>Protocol client + React bindings (framework)"]
+        BRG["wdc-cube-remote-bridge(-react)<br/>Protocol client + React bindings (framework)"]
     end
 
     subgraph "Client (Kotlin/JS)"
@@ -127,7 +127,7 @@ graph TB
 | Module | Role |
 |--------|-------|
 | **remote.react.typescript** (npm) | The Store's views in React/TypeScript with Material UI, registered by vid with the bridge. Bundled with Parcel (`npm run build`) into the host's resources (`remote.host`). |
-| **TypeScript bridge** (`@wdc/remote-bridge` + `@wdc/remote-bridge-react`, framework, `br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript[.react]`) | The client side of the protocol, with no UI technology: the WebSocket session and reconnection, the security handshake and cipher, the scopes of the views (`ViewBinding`), event delivery, the release of views (`ViewGarbageCollector`). Its React bindings (the default `bridge`, `registerComponents`, the hooks, `BaseViewClass`) are a package of their own. Imported from source by Parcel aliases (and tsconfig `paths`); the peer dependencies (React, history, universal-cookie) come from the shell's `node_modules`. |
+| **TypeScript bridge** (`wdc-cube-remote-bridge` + `wdc-cube-remote-bridge-react`, framework, `br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript[.react]`) | The client side of the protocol, with no UI technology: the WebSocket session and reconnection, the security handshake and cipher, the scopes of the views (`ViewBinding`), event delivery, the release of views (`ViewGarbageCollector`). Its React bindings (the default `bridge`, `registerComponents`, the hooks, `BaseViewClass`) are a package of their own. Imported from source by Parcel aliases (and tsconfig `paths`); the peer dependencies (React, history, universal-cookie) come from the shell's `node_modules`. |
 | **remote.react.kotlin** (`:view-remote-react-kotlin`) | A second client of the same server, written in Kotlin with React and MUI (kotlin-wrappers) and compiled to JS by the Kotlin toolchain: the same vids, fields and event codes as the TypeScript client. Deployed by its `deploy.sh` to the `remote-kotlin` context (`/remote-kotlin/`). |
 | **Kotlin bridge** (`:framework-cube-remote-bridge` + `:framework-cube-remote-bridge-react`, framework) | The client side of the protocol in Kotlin/JS, with no UI technology: `RemoteBridge` (session, handshake, WebSocket, history, events), `RemoteScope` (a scope read by name). Its React bindings (`RemoteViews`, `useView`, `useHold`, `remoteView`, with kotlin-wrappers) are a module of their own. |
 | **Remote backend** (`:framework-cube-remote-backend` + `:framework-cube-remote-backend-javalin`, framework) | The server side of the protocol, for any Cube application and free of web-server code: the sessions (`RemoteApplicationRegistry`), each one's work (`RemoteApplicationSupport`: views, dispatch, answer, signed history, life), one `RemoteViewImpl` per scope, the browser tab (`BrowserScope`, `RemoteBrowserPresenter`) and the keys and cipher (`RemoteAppSecurity`, `RemoteDataSecurity`). Its routes on Javalin (`DispatcherController`, `IndexHtmlController`) are a module of their own. |

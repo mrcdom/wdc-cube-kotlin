@@ -94,7 +94,7 @@ jobs:
       - name: Formatting
         run: |
           npm run format:check
-          for bridge in remote.bridge.typescript remote.bridge.typescript.react; do
+          for bridge in remote.bridge.typescript remote.bridge.typescript.react scripts; do
             (cd "$GITHUB_WORKSPACE/fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/$bridge" && npx -y prettier@3.8.2 --check .)
           done
           (cd "$GITHUB_WORKSPACE/fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e" && npx -y prettier@3.8.2 --check .)
@@ -108,6 +108,13 @@ jobs:
         run: |
           npm ci
           npm test
+
+      # the two npm packages as they would be published: packed, installed into another project, type-checked, imported
+      - name: npm packages (packed and installed elsewhere)
+        working-directory: fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote
+        run: |
+          (cd remote.bridge.typescript.react && npm ci)
+          node scripts/verify-npm.mjs
 
   starter:
     name: Starter project (presenter tests, browser bundle)

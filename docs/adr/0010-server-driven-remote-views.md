@@ -12,7 +12,7 @@ Besides running presenters on the device, the architecture offers a **remote vie
 The protocol is a framework concern, with each side split from its technology bindings:
 
 - **Server:** `framework-cube-remote-backend` (sessions, views, dispatch, signed history, no web server), and `framework-cube-remote-backend-javalin` (WebSocket routes, the page that plants the session cookie).
-- **Client:** `framework-cube-remote-bridge` (Kotlin/JS) and `@wdc/remote-bridge` (TypeScript), both without UI; `framework-cube-remote-bridge-react` and `@wdc/remote-bridge-react` add the React bindings.
+- **Client:** `framework-cube-remote-bridge` (Kotlin/JS) and `wdc-cube-remote-bridge` (TypeScript), both without UI; `framework-cube-remote-bridge-react` and `wdc-cube-remote-bridge-react` add the React bindings.
 
 The protocol over WebSocket:
 

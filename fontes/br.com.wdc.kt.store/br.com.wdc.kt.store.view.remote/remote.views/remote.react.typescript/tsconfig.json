@@ -9,10 +9,10 @@
     //"jsxImportSource": "preact"
     "paths": {
       "@root/*": ["./src/scripts/*"],
-      "@wdc/remote-bridge-react": [
+      "wdc-cube-remote-bridge-react": [
         "../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript.react/src/index.tsx"
       ],
-      "@wdc/remote-bridge": [
+      "wdc-cube-remote-bridge": [
         "../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript/src/index.ts"
       ],
       // The bridge packages have no node_modules of their own: their peer dependencies resolve to this client's.

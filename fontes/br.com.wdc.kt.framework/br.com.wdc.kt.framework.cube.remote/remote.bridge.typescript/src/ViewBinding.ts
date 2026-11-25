@@ -1,5 +1,5 @@
-import * as LangUtils from './utils/LangUtils'
-import { NOOP_VOID } from './constants'
+import * as LangUtils from './utils/LangUtils.js'
+import { NOOP_VOID } from './constants.js'
 
 /** Holds one view's scope, as the server last published it. */
 export class ViewBinding {

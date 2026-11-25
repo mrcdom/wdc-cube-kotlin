@@ -1,14 +1,14 @@
 import * as history from 'history'
-import * as LangUtils from './utils/LangUtils'
+import * as LangUtils from './utils/LangUtils.js'
 import CookieConstructor from 'universal-cookie'
 
-import type { FormMapType } from './types'
-import { NOOP_VOID, CAUTHED, BROWSER_VSID, OUTDATED_MESSAGE } from './constants'
-import { ViewBinding } from './ViewBinding'
-import { DataSecurity } from './DataSecurity'
-import { FlushRequestContext } from './FlushRequestContext'
-import { ReconnectController } from './ReconnectController'
-import { ViewGarbageCollector } from './ViewGarbageCollector'
+import type { FormMapType } from './types.js'
+import { NOOP_VOID, CAUTHED, BROWSER_VSID, OUTDATED_MESSAGE } from './constants.js'
+import { ViewBinding } from './ViewBinding.js'
+import { DataSecurity } from './DataSecurity.js'
+import { FlushRequestContext } from './FlushRequestContext.js'
+import { ReconnectController } from './ReconnectController.js'
+import { ViewGarbageCollector } from './ViewGarbageCollector.js'
 
 const Cookie = new CookieConstructor()
 
@@ -16,7 +16,7 @@ const Cookie = new CookieConstructor()
  * The client side of one remote application: the session id, the security handshake, the WebSocket exchange, the
  * history and the bindings of the views the server publishes.
  *
- * It knows no UI technology. A technology binding (such as `@wdc/remote-bridge-react`) creates one coordinator, draws
+ * It knows no UI technology. A technology binding (such as `wdc-cube-remote-bridge-react`) creates one coordinator, draws
  * each view from its binding (`viewBinding`, `findView`), sets `ViewBinding.forceUpdate` to repaint it, and tells the
  * collector when a view enters and leaves the screen (`viewGarbageCollector.mount`/`mark`) and which views it keeps
  * alive without drawing them (`hold`/`release`).

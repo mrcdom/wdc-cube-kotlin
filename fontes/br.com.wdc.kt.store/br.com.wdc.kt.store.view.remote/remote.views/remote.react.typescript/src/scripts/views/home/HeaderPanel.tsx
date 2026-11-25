@@ -10,7 +10,7 @@ import Typography from '@mui/material/Typography'
 import LocalMallIcon from '@mui/icons-material/LocalMall'
 import LogoutIcon from '@mui/icons-material/Logout'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import bridge, { BasePanelClass } from '@wdc/remote-bridge-react'
+import bridge, { BasePanelClass } from 'wdc-cube-remote-bridge-react'
 import { Colors } from '@root/theme'
 
 // :: Actions

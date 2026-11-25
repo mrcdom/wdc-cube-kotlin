@@ -7,7 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import LinearProgress from '@mui/material/LinearProgress'
 import Link from '@mui/material/Link'
 import Typography from '@mui/material/Typography'
-import bridge, { BaseViewClass, type ViewProps, BROWSER_VID, type BrowserScope } from '@wdc/remote-bridge-react'
+import bridge, { BaseViewClass, type ViewProps, BROWSER_VID, type BrowserScope } from 'wdc-cube-remote-bridge-react'
 
 // :: Actions
 

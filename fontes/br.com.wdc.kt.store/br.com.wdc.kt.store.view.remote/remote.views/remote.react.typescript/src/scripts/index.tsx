@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom/client'
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 
-import bridge from '@wdc/remote-bridge-react'
+import bridge from 'wdc-cube-remote-bridge-react'
 
 import BrowserView from './views/BrowserView'
 import RootView from './views/RootView'

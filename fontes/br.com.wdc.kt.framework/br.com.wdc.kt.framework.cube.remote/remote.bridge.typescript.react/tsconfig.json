@@ -8,7 +8,7 @@
     "isolatedModules": true,
     "paths": {
       // Not published: the core resolves to its sources, next to this folder.
-      "@wdc/remote-bridge": ["../remote.bridge.typescript/src/index.ts"]
+      "wdc-cube-remote-bridge": ["../remote.bridge.typescript/src/index.ts"]
     }
   },
   "include": ["src"]

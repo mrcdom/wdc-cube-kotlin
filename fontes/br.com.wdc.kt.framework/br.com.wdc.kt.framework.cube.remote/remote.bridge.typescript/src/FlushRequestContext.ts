@@ -1,6 +1,6 @@
-import type { ScopeCoordinator } from './ScopeCoordinator'
-import type { BrowserScope, FormMapType } from './types'
-import { BROWSER_VSID, CAUTHED, KEEP_ALIVE_INTERVAL, PROTOCOL_VERSION } from './constants'
+import type { ScopeCoordinator } from './ScopeCoordinator.js'
+import type { BrowserScope, FormMapType } from './types.js'
+import { BROWSER_VSID, CAUTHED, KEEP_ALIVE_INTERVAL, PROTOCOL_VERSION } from './constants.js'
 
 export class FlushRequestContext {
   private readonly app: ScopeCoordinator
