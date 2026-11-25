@@ -1,7 +1,7 @@
 import React from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
-import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
+import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 
 export type RootScope = {
   contentViewId?: string

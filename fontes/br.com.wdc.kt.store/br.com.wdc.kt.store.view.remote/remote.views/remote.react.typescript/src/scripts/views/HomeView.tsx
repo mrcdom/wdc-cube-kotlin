@@ -6,7 +6,7 @@ import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
-import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
+import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 import { Colors, COMPACT_BREAKPOINT } from '@root/theme'
 import HeaderPanel from './home/HeaderPanel'
 

@@ -1,5 +1,5 @@
-import UTF8 from './utils/UTF8'
-import Base64 from './utils/Base64'
+import UTF8 from './utils/UTF8.js'
+import Base64 from './utils/Base64.js'
 
 /** Bytes of the IV in front of every ciphered value (the size GCM is made for). */
 const IV_SIZE = 12

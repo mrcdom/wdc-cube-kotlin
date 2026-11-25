@@ -1,6 +1,6 @@
-import type { ScopeCoordinator } from './ScopeCoordinator'
-import type { BrowserScope } from './types'
-import { BROWSER_VSID } from './constants'
+import type { ScopeCoordinator } from './ScopeCoordinator.js'
+import type { BrowserScope } from './types.js'
+import { BROWSER_VSID } from './constants.js'
 
 export class ReconnectController {
   app: ScopeCoordinator

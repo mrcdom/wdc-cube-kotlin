@@ -1,0 +1,16 @@
+{
+  // What npm gets: ES modules with their types, in lib/.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "rootDir": "src",
+    "outDir": "lib",
+    // the core as a consumer sees it: the package (built first), not its sources
+    "paths": {}
+  },
+  "include": ["src"]
+}

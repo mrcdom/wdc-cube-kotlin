@@ -1,6 +1,6 @@
 import React from 'react'
-import type { ScopeCoordinator } from '@wdc/remote-bridge'
-import type { IViewFactory } from './types'
+import type { ScopeCoordinator } from 'wdc-cube-remote-bridge'
+import type { IViewFactory } from './types.js'
 
 /**
  * The React side of a coordinator: the registry of view factories, and the hooks that bind a component to its view's

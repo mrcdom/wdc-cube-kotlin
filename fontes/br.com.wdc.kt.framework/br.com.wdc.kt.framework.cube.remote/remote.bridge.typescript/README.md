@@ -2,9 +2,15 @@
 
 TypeScript client of the **remote Cube MVP** protocol: the browser side of the remote backend ([`framework-cube-remote-backend`](../remote.backend/)). The presenters run on the server; this package connects to it over WebSocket, does the security handshake, keeps the scopes the server publishes (each presenter's view state, serialized), follows the history, and sends the views' events and form fields back.
 
-It depends on no UI technology: it never draws anything. Painting a scope is the job of a technology binding on top of it — [`@wdc/remote-bridge-react`](../remote.bridge.typescript.react/) for React — or of a shell that talks to it directly. It knows nothing about any application either: which views exist and how they look belong to the shell (in this repository, the WDC Store client, [`remote.react.typescript`](../../../br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript/)). The same protocol has a Kotlin/JS client, [`framework-cube-remote-bridge`](../remote.bridge.kotlin/).
+It depends on no UI technology: it never draws anything. Painting a scope is the job of a technology binding on top of it — [`wdc-cube-remote-bridge-react`](../remote.bridge.typescript.react/) for React — or of a shell that talks to it directly. It knows nothing about any application either: which views exist and how they look belong to the shell (in this repository, the WDC Store client, [`remote.react.typescript`](../../../br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript/)). The same protocol has a Kotlin/JS client, [`framework-cube-remote-bridge`](../remote.bridge.kotlin/).
 
-The package name is `@wdc/remote-bridge`. It is not published to npm: a shell imports it from source, through a bundler alias.
+The package name is `wdc-cube-remote-bridge`, on npm from 0.5.0 (the same version as the framework, whose remote backend it speaks to):
+
+```bash
+npm install wdc-cube-remote-bridge history universal-cookie
+```
+
+It ships as ES modules with their types (`lib/`, built from `src/` by `npm run build`); `history` and `universal-cookie` are peer dependencies. In this repository, the WDC Store client imports it from source instead, through a bundler alias (below), so a change to the bridge shows at once.
 
 ## Structure
 
@@ -34,7 +40,7 @@ The package has no `node_modules` of its own. Its runtime libraries are **peer d
 
 ```json
 "alias": {
-  "@wdc/remote-bridge": "<path to this folder>/src/index.ts",
+  "wdc-cube-remote-bridge": "<path to this folder>/src/index.ts",
   "history": "./node_modules/history",
   "universal-cookie": "./node_modules/universal-cookie"
 }
@@ -44,20 +50,20 @@ The package has no `node_modules` of its own. Its runtime libraries are **peer d
 
 ```jsonc
 "paths": {
-  "@wdc/remote-bridge": ["<path to this folder>/src/index.ts"],
+  "wdc-cube-remote-bridge": ["<path to this folder>/src/index.ts"],
   "history": ["./node_modules/history"],
   "universal-cookie": ["./node_modules/universal-cookie"]
 }
 ```
 
-A shell that uses a technology binding declares this package's alias too: the binding imports it as `@wdc/remote-bridge`.
+A shell that uses a technology binding declares this package's alias too: the binding imports it as `wdc-cube-remote-bridge`.
 
 ## Writing a binding for a UI library
 
 A binding (or a shell) creates **one** `ScopeCoordinator` per page and drives it:
 
 ```ts
-import { ScopeCoordinator, BROWSER_VSID, type BrowserScope } from '@wdc/remote-bridge'
+import { ScopeCoordinator, BROWSER_VSID, type BrowserScope } from 'wdc-cube-remote-bridge'
 
 const coordinator = new ScopeCoordinator()
 

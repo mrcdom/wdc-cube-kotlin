@@ -10,7 +10,7 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import LocalMallIcon from '@mui/icons-material/LocalMall'
-import bridge, { BaseViewClass, type ViewProps } from '@wdc/remote-bridge-react'
+import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 import { Colors } from '@root/theme'
 
 // :: Actions

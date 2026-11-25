@@ -174,7 +174,7 @@ graph TB
 | `:view-compose-ios` | iOS entry point (via Xcode) |
 | `:persistence-rest` | The WDC Store's REST API (repository RPC per entity, authentication, data policies) over `:framework-rest` |
 | `:framework-cube-remote-backend` | The remote Cube backend: sessions, one view per scope, the protocol, signed history; its Javalin routes are `:framework-cube-remote-backend-javalin` (clients: the Kotlin and TypeScript bridges) |
-| `:framework-cube-remote-bridge` | The client side of the remote backend in Kotlin/JS, with no UI technology (the Kotlin counterpart of `@wdc/remote-bridge`); its React bindings are `:framework-cube-remote-bridge-react` |
+| `:framework-cube-remote-bridge` | The client side of the remote backend in Kotlin/JS, with no UI technology (the Kotlin counterpart of `wdc-cube-remote-bridge`); its React bindings are `:framework-cube-remote-bridge-react` |
 | `:view-remote-react-kotlin` | The remote view's client written in Kotlin (React + MUI through kotlin-wrappers), served at `/remote-kotlin/` |
 | `:view-remote-host` | The WDC Store as a remote application over `:framework-cube-remote-backend` (the vid of each scope, its own routes, the React bundle) |
 | `:backend` | Javalin server — REST API, WebSocket, H2 or PostgreSQL |

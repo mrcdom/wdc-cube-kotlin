@@ -1,7 +1,7 @@
 import React from 'react'
-import bridge from './Bridge'
-import type { ViewProps } from './types'
-import type { ViewBinding } from '@wdc/remote-bridge'
+import bridge from './Bridge.js'
+import type { ViewProps } from './types.js'
+import type { ViewBinding } from 'wdc-cube-remote-bridge'
 
 const ZERO_DEPS: React.DependencyList = []
 

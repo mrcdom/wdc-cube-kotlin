@@ -1,6 +1,6 @@
-import type { ScopeCoordinator } from './ScopeCoordinator'
-import { ViewBinding } from './ViewBinding'
-import { BROWSER_VSID } from './constants'
+import type { ScopeCoordinator } from './ScopeCoordinator.js'
+import { ViewBinding } from './ViewBinding.js'
+import { BROWSER_VSID } from './constants.js'
 
 /**
  * Drops the bindings of views the server released or that left the screen. The technology binding reports a view
