@@ -5,7 +5,7 @@ import br.com.wdc.framework.domain.exception.AccessDeniedException
 import br.com.wdc.framework.domain.exception.InvalidRequestException
 import br.com.wdc.framework.domain.exception.NotFoundException
 import br.com.wdc.framework.domain.exception.TransactionConflictException
-import br.com.wdc.framework.domain.exception.TransactionLimitExceededException
+import br.com.wdc.framework.domain.exception.TooManyRequestsException
 import br.com.wdc.framework.domain.transaction.RemoteTransactionNotFoundException
 import br.com.wdc.framework.rest.RequestContext
 import br.com.wdc.framework.rest.security.AuthenticationException
@@ -34,7 +34,7 @@ fun interface ExceptionHandler<in E : Throwable> {
  * | `NotFoundException` | 404 |
  * | `TransactionConflictException` (including a remote transaction in use by another request) | 409 |
  * | `RemoteTransactionNotFoundException` (unknown or expired remote transaction) | 410 |
- * | `TransactionLimitExceededException` | 429 |
+ * | `TooManyRequestsException` (including `TransactionLimitExceededException`) | 429, with `Retry-After` when it knows the wait |
  * | `RateLimitedException` (per-minute limit) | 429, with `Retry-After` |
  * | Javalin's `HttpResponseException` | its status |
  *
@@ -62,7 +62,10 @@ class ExceptionMapping {
         status(NotFoundException::class.java, 404)
         status(TransactionConflictException::class.java, 409)
         status(RemoteTransactionNotFoundException::class.java, 410)
-        status(TransactionLimitExceededException::class.java, 429)
+        on(TooManyRequestsException::class.java) { e, r ->
+            val retryAfter = e.retryAfterSeconds?.let { mapOf("Retry-After" to it.toString()) } ?: emptyMap()
+            ErrorResponse(429, errorBody(429, e.message, r), retryAfter)
+        }
         on(RateLimitedException::class.java) { e, r ->
             ErrorResponse(429, errorBody(429, e.message, r), mapOf("Retry-After" to e.retryAfterSeconds.toString()))
         }

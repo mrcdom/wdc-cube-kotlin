@@ -1,6 +1,6 @@
 package br.com.wdc.store.test.repository
 
-import br.com.wdc.store.domain.exception.BusinessException
+import br.com.wdc.framework.domain.exception.UnauthenticatedException
 import br.com.wdc.store.domain.product.Product
 import br.com.wdc.store.domain.product.ProductCriteria
 import br.com.wdc.store.scripts.sgbd.DBReset
@@ -91,7 +91,7 @@ class SecuredRestTokenRefreshTest {
         env.transport.refreshHandler = { refreshes++; false }
         env.transport.onAuthFailure = { failures++ }
 
-        val e = assertThrows(BusinessException::class.java) { runBlocking { env.productRepo.count(ProductCriteria()) } }
+        val e = assertThrows(UnauthenticatedException::class.java) { runBlocking { env.productRepo.count(ProductCriteria()) } }
 
         assertTrue(e.message!!.startsWith("HTTP 401"), e.message)
         assertEquals(1, refreshes)
@@ -105,7 +105,7 @@ class SecuredRestTokenRefreshTest {
         env.transport.accessTokenSupplier = { "token.vencido.invalido" }
         env.transport.refreshHandler = { refreshes++; true }
 
-        val e = assertThrows(BusinessException::class.java) { runBlocking { env.productRepo.count(ProductCriteria()) } }
+        val e = assertThrows(UnauthenticatedException::class.java) { runBlocking { env.productRepo.count(ProductCriteria()) } }
 
         assertTrue(e.message!!.startsWith("HTTP 401"), e.message)
         assertEquals(1, refreshes)
@@ -116,7 +116,7 @@ class SecuredRestTokenRefreshTest {
         var refreshes = 0
         env.transport.refreshHandler = { refreshes++; true }
         try {
-            val e = assertThrows(BusinessException::class.java) { runBlocking { env.productRepo.count(ProductCriteria()) } }
+            val e = assertThrows(UnauthenticatedException::class.java) { runBlocking { env.productRepo.count(ProductCriteria()) } }
             assertTrue(e.message!!.startsWith("HTTP 401"), e.message)
             assertEquals(0, refreshes)
         } finally {

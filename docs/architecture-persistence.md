@@ -336,7 +336,7 @@ Errors come back as `{"error": "…"}`:
 
 - sends the access token and, on 401, renews the session and retries the call once;
 - always sends `X-Client-Id`, and `X-Tx-Id` when there is a current remote transaction;
-- turns the error response into the exception the server threw — 400 `InvalidRequestException`, 403 `AccessDeniedException`, 404 `NotFoundException`, 409 `TransactionConflictException`, 410 `RemoteTransactionNotFoundException`, 429 `TransactionLimitExceededException`; anything else, `BusinessException`. The message is always `HTTP <status>: <body>` (`HTTP <status>` when the body is empty).
+- turns the error response into the exception the server threw — 400 `InvalidRequestException`, 401 `UnauthenticatedException`, 403 `AccessDeniedException`, 404 `NotFoundException`, 409 `TransactionConflictException`, 410 `RemoteTransactionNotFoundException`, 429 `TooManyRequestsException` (too many open remote transactions, auth requests from the address or failed sign-ins on the user); anything else, `BusinessException`. The message is always `HTTP <status>: <body>` (`HTTP <status>` when the body is empty).
 
 `RestRepositoryBootstrap.initialize(config, cryptoProvider)` registers the four HTTP repositories, the authentication service, and the `RestTransactionService`. Every client entry point calls it.
 

@@ -1,7 +1,7 @@
 package br.com.wdc.store.test.transaction
 
+import br.com.wdc.framework.domain.exception.UnauthenticatedException
 import br.com.wdc.framework.domain.exception.AccessDeniedException
-import br.com.wdc.store.domain.exception.BusinessException
 import br.com.wdc.store.domain.product.Product
 import br.com.wdc.store.domain.purchase.Purchase
 import br.com.wdc.store.domain.purchase.PurchaseCriteria
@@ -48,7 +48,7 @@ class SecuredRemoteTransactionRestTest {
 
     @Test
     fun withoutAuthentication_theTransactionEndpointsAreRefused() {
-        val e = assertThrows(BusinessException::class.java) { env.transport.postJson("/api/tx/begin", "{}") }
+        val e = assertThrows(UnauthenticatedException::class.java) { env.transport.postJson("/api/tx/begin", "{}") }
         assertTrue(e.message!!.startsWith("HTTP 401"), e.message)
     }
 

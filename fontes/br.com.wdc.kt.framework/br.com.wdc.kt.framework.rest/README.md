@@ -114,7 +114,7 @@ Repository entities travel through their `ModelCodec`, without reflection. The r
 | `AccessDeniedException` | 403 |
 | `NotFoundException` | 404 |
 | `TransactionConflictException` | 409 |
-| `TransactionLimitExceededException` | 429 |
+| `TooManyRequestsException` (including `TransactionLimitExceededException`) | 429, with `Retry-After` when it knows the wait |
 | `RateLimitedException` (per-minute limit) | 429, with `Retry-After` |
 | `RemoteTransactionNotFoundException` (unknown or expired remote transaction) | 410 |
 | Javalin's `HttpResponseException` (`NotFoundResponse`…) | its status |
