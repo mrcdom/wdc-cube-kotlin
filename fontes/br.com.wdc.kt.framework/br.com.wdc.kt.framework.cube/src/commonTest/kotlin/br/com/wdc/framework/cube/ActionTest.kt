@@ -1,6 +1,9 @@
 package br.com.wdc.framework.cube
 
 import br.com.wdc.framework.commons.log.Log
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -98,5 +101,47 @@ class ActionTest {
         presenter.scope.onSync { presenter.scope.count = (it["count"] as String).toInt() }
         presenter.scope.sync(mapOf("count" to "4"))
         assertEquals(4, presenter.scope.count)
+    }
+
+    private class SlowPresenter(app: App) : AbstractCubePresenter<App>(app) {
+        val scope = bind(ShopScope())
+        val log = mutableListOf<String>()
+        val network = CompletableDeferred<Unit>()
+
+        init {
+            // waits on "the network" between its two steps
+            scope.onAdd = action {
+                log += "buy:start"
+                network.await()
+                log += "buy:end"
+            }
+            scope.onSet = actionOf { log += "set:$it" }
+            // an action that runs another one of the same application
+            scope.onMove = actionOf2 { _, _ ->
+                log += "move"
+                scope.onSet(1)
+            }
+        }
+    }
+
+    @Test
+    fun anActionThatStartsWhileAnotherWaitsOnIO_runsAfterIt_notInterleaved() = runTest {
+        val presenter = SlowPresenter(App())
+        launch { presenter.scope.onAdd() }
+        runCurrent()
+        launch { presenter.scope.onSet(2) }
+        runCurrent()
+        assertEquals(listOf("buy:start"), presenter.log, "the second action waits")
+
+        presenter.network.complete(Unit)
+        runCurrent()
+        assertEquals(listOf("buy:start", "buy:end", "set:2"), presenter.log)
+    }
+
+    @Test
+    fun anActionThatRunsAnother_doesNotWaitForItself() = runTest {
+        val presenter = SlowPresenter(App())
+        presenter.scope.onMove(1L, 2)
+        assertEquals(listOf("move", "set:1"), presenter.log)
     }
 }

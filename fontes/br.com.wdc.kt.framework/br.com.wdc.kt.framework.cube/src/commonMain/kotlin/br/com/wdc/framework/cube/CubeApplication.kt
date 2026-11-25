@@ -3,6 +3,12 @@ package br.com.wdc.framework.cube
 import br.com.wdc.framework.commons.concurrent.concurrentMutableMapOf
 import br.com.wdc.framework.commons.log.Log
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 
 /**
  * The application: the presenters alive, the navigation in progress, and the root of the place tree.
@@ -42,6 +48,26 @@ abstract class CubeApplication(places: List<CubeTreePlace> = emptyList()) {
     internal var applied: Boolean = false
 
     fun getPresenter(placeId: Int): CubePresenter? = presenterMap[placeId]
+
+    /** One action at a time ([runAction]). */
+    private val actionMutex = Mutex()
+
+    /**
+     * Runs [block] as the application's only action in progress: an action that starts while another waits on I/O
+     * waits for it to finish, so two clicks on "Buy" make one purchase after the other, never interleaved, and an
+     * action never sees another one's state halfway. No thread is blocked meanwhile. An action that starts another
+     * (directly, or in a coroutine of its own) runs it at once: the lock goes along with the coroutine context.
+     * The guarded actions of [AbstractPresenter] run through here.
+     */
+    suspend fun <T> runAction(block: suspend () -> T): T {
+        if (currentCoroutineContext()[ActionInProgress]?.app === this) return block()
+        return actionMutex.withLock { withContext(ActionInProgress(this)) { block() } }
+    }
+
+    /** The mark of an action in progress in a coroutine's context. */
+    private class ActionInProgress(val app: CubeApplication) : AbstractCoroutineContextElement(ActionInProgress) {
+        companion object Key : CoroutineContext.Key<ActionInProgress>
+    }
 
     /**
      * Runs every live presenter's `commitComputedState()`: the view layer calls it once per paint cycle, right before

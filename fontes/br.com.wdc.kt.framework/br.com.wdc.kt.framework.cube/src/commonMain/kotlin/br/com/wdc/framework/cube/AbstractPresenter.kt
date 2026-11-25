@@ -12,7 +12,8 @@ import kotlinx.coroutines.CancellationException
  * guard catches whatever the body did not handle and hands it to [onActionFailure] (by default
  * [CubeApplication.alertUnexpectedError]); at the end, failing or not, the application republishes the address
  * ([CubeApplication.updateHistory]), since the action may have changed what the presenters publish. Expected failures
- * (an invalid item, an offline database) stay in the body, which turns them into messages of its own.
+ * (an invalid item, an offline database) stay in the body, which turns them into messages of its own. The actions of
+ * an application run one at a time ([CubeApplication.runAction]), even when one of them waits on I/O.
  *
  * An action a remote view fires is bound with its **event code**, and with how to read its values from the form data
  * ([FormParam]): `actionOf(2, FormParam.long("p.productId")) { removeProduct(it) }`. The code goes to the bound scope,
@@ -82,7 +83,7 @@ abstract class AbstractPresenter<A : CubeApplication>(override val app: A) : Pre
         app.alertUnexpectedError(log, "Unexpected error", caught)
     }
 
-    private suspend fun guard(block: suspend () -> Unit) {
+    private suspend fun guard(block: suspend () -> Unit) = app.runAction {
         try {
             block()
         } catch (e: CancellationException) {

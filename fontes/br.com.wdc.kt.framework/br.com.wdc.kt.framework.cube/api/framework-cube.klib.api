@@ -111,6 +111,7 @@ abstract class br.com.wdc.framework.cube/CubeApplication { // br.com.wdc.framewo
     final fun newIntent(): br.com.wdc.framework.cube/CubeIntent // br.com.wdc.framework.cube/CubeApplication.newIntent|newIntent(){}[0]
     final fun placeOf(kotlin/String?): br.com.wdc.framework.cube/CubeTreePlace // br.com.wdc.framework.cube/CubeApplication.placeOf|placeOf(kotlin.String?){}[0]
     final fun publishParameters(br.com.wdc.framework.cube/CubeIntent) // br.com.wdc.framework.cube/CubeApplication.publishParameters|publishParameters(br.com.wdc.framework.cube.CubeIntent){}[0]
+    final suspend fun <#A1: kotlin/Any?> runAction(kotlin.coroutines/SuspendFunction0<#A1>): #A1 // br.com.wdc.framework.cube/CubeApplication.runAction|runAction(kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
     final suspend fun flip(br.com.wdc.framework.cube/CubeIntent): kotlin/Boolean // br.com.wdc.framework.cube/CubeApplication.flip|flip(br.com.wdc.framework.cube.CubeIntent){}[0]
     final suspend fun flip(br.com.wdc.framework.cube/CubeTreePlace, br.com.wdc.framework.cube/CubeIntent = ...): kotlin/Boolean // br.com.wdc.framework.cube/CubeApplication.flip|flip(br.com.wdc.framework.cube.CubeTreePlace;br.com.wdc.framework.cube.CubeIntent){}[0]
     final suspend fun flip(kotlin/String): kotlin/Boolean // br.com.wdc.framework.cube/CubeApplication.flip|flip(kotlin.String){}[0]
