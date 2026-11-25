@@ -27,9 +27,17 @@ interface AuthenticationService {
 
     fun resolveToken(jwtToken: String): SecurityContext?
 
+    // :: The session a client holds. The server holds none: there, these do nothing.
+
     fun writeAuthState(out: ExtensibleObjectOutput) {}
 
     fun readAuthState(input: ExtensibleObjectInput) {}
+
+    /** Ends the session this client holds: the server revokes it, and the client forgets it. */
+    fun signOut() {}
+
+    /** Who hears when the session this client holds is renewed or lost; `null` for no one. */
+    fun setSessionListener(listener: SessionListener?) {}
 
     companion object {
         val BEAN = AtomicRef<AuthenticationService>()

@@ -7,6 +7,7 @@ import br.com.wdc.store.domain.security.AuthResult
 import br.com.wdc.store.domain.security.AuthenticationService
 import br.com.wdc.store.domain.security.ChallengeResult
 import br.com.wdc.store.domain.security.SecurityContext
+import br.com.wdc.store.domain.security.SessionListener
 
 /** The [AuthenticationService] of a client: the server's `/api/auth`, through [RestAuthClient]. */
 class RestAuthenticationService(private val config: RestConfig) : AuthenticationService {
@@ -42,6 +43,12 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
     override fun resolveToken(jwtToken: String): SecurityContext? {
         // Token resolution is server-side only.
         return null
+    }
+
+    override fun signOut() = authClient.logout()
+
+    override fun setSessionListener(listener: SessionListener?) {
+        authClient.sessionListener = listener
     }
 
     override fun writeAuthState(out: ExtensibleObjectOutput) {

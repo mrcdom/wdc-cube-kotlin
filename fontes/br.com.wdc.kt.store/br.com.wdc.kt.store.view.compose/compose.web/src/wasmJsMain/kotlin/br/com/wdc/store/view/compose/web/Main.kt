@@ -104,14 +104,6 @@ fun main() {
     val app = ComposeRootPresenter()
     ViewUpdateScheduler.initialize { app }
 
-    // On irrecoverable auth failure (401 + refresh failed), clear session and go to login
-    platformConfig.transport.onAuthFailure = {
-        ViewUpdateScheduler.launchPresenterAction {
-            platformConfig.authClient?.clearTokens()
-            app.sessionStorage.remove("authState")
-            RootKeys(app).flip()
-        }
-    }
 
     // Restore auth state (including intentSignSecret) BEFORE first navigation,
     // so that safeGo() can verify URL signatures made with the session key.
@@ -164,12 +156,12 @@ private external fun jsLocationOrigin(): JsString
  */
 private fun restoreAuthState(app: ComposeRootPresenter) {
     val authService = AuthenticationService.BEAN.getOrNull() ?: return
-    val json = app.sessionStorage.getString("authState") ?: return
+    val json = app.sessionStorage.getString(RootPresenter.AUTH_STATE_KEY) ?: return
     try {
         val inp = JsonInputFactory.createStringInput(json).input
         authService.readAuthState(inp)
     } catch (_: Exception) {
-        app.sessionStorage.remove("authState")
+        app.sessionStorage.remove(RootPresenter.AUTH_STATE_KEY)
     }
 }
 

@@ -187,8 +187,7 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private suspend fun exit() {
         cart!!.clear()
-        app.subject = null
-        app.sessionStorage.clear()
+        app.endSession()
         setContent(null)
         reloadPurchasesIfNeeded()
 

@@ -7,6 +7,7 @@ import br.com.wdc.store.domain.security.AuthResult
 import br.com.wdc.store.domain.security.ChallengeResult
 import br.com.wdc.store.domain.security.CryptoProvider
 import br.com.wdc.store.domain.security.Scram
+import br.com.wdc.store.domain.security.SessionListener
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Instant
@@ -33,6 +34,9 @@ class RestAuthClient(private val config: RestConfig) {
 
     val isAuthenticated: Boolean
         get() = accessToken != null
+
+    /** Hears when the transport renews the session ([refresh]) and when it cannot ([sessionLost]). */
+    var sessionListener: SessionListener? = null
 
     /** Starts [userName]'s sign-in. */
     fun challenge(userName: String): ChallengeResult {
@@ -97,10 +101,21 @@ class RestAuthClient(private val config: RestConfig) {
         return result
     }
 
-    /** Renews the session with the refresh token it holds. */
+    /**
+     * Renews the session with the refresh token it holds, and tells the [sessionListener]: the server replaced the
+     * refresh token, so the one kept before no longer works. [UnauthenticatedException] when there is no session or
+     * the server refuses to renew it; a failure to reach the server goes as it came.
+     */
     fun refresh() {
-        val rt = refreshToken ?: throw BusinessException("No refresh token available — login first")
+        val rt = refreshToken ?: throw UnauthenticatedException("No session to renew")
         refreshWith(rt) ?: throw UnauthenticatedException("Invalid or expired refresh token")
+        sessionListener?.sessionRenewed()
+    }
+
+    /** The server refused the session and would not renew it: forgets it and tells the [sessionListener]. */
+    fun sessionLost() {
+        clearTokens()
+        sessionListener?.sessionLost()
     }
 
     /** Renews the session of [refreshToken] and keeps it; `null` when the server refuses it (401). */
@@ -119,18 +134,22 @@ class RestAuthClient(private val config: RestConfig) {
         return result
     }
 
+    /**
+     * Ends the session: the server revokes it by its refresh token — a public call, so it works even when the access
+     * token has expired — and the client forgets it. A failure to reach the server does not keep the session here.
+     */
     fun logout() {
-        if (accessToken != null) {
+        val rt = refreshToken
+        if (rt != null) {
             try {
-                // the server revokes the session by the refresh token; without it, it would only answer success
                 val body = config.toJson { out ->
                     out.beginObject()
-                    refreshToken?.let { out.name("refreshToken").value(it) }
+                    out.name("refreshToken").value(rt)
                     out.endObject()
                 }
-                config.postJsonWithAuth("/api/auth/logout", body, accessToken!!)
+                config.postJsonPublic("/api/auth/logout", body)
             } catch (_: Exception) {
-                // Ignore network errors on logout
+                // the server forgets the session when its refresh token expires
             }
         }
         clearTokens()
