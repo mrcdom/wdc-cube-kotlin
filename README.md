@@ -12,6 +12,8 @@ The demo is the **WDC Store**; its code follows the name — packages `br.com.wd
 
 **Documentation:** [Overview](docs/architecture.md) · [Cube Framework](docs/architecture-cube.md) · [Cube + Compose](docs/architecture-cube-compose.md) · [React View](docs/architecture-react.md) · [Persistence](docs/architecture-persistence.md) · [Security](docs/security-architecture.md) · [Decision records](docs/adr/README.md)
 
+**Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) · **Security:** [SECURITY.md](SECURITY.md) · **Changes:** [CHANGELOG.md](CHANGELOG.md) · **License:** [MIT](LICENSE)
+
 **Starting your own application?** Copy [starter/](starter/README.md): the smallest Cube application (a task list with a detail, in the browser, and a small backend), with its tests.
 
 ## Structure
