@@ -11,7 +11,7 @@ Blocking also guaranteed things nobody had written down: two actions never ran a
 
 ## Decision
 
-`HttpTransport` is `suspend` on every platform, and no thread waits for the network. `BaseHttpTransport` does what is common (headers, renewal of the session on 401, reading each kind of answer); each platform only sends one request: `fetch` in JS and Wasm, an `NSURLSession` data task on iOS, OkHttp's `enqueue` on the JVM and Android. On iOS and on the JVM and Android, cancelling a call cancels the request; in JS and Wasm the `fetch` is not aborted (no `AbortController` yet): the request runs to its end and its answer is dropped. The apps start their first navigation in the presenters' scope instead of `runBlocking`.
+`HttpTransport` is `suspend` on every platform, and no thread waits for the network. `BaseHttpTransport` does what is common (headers, renewal of the session on 401, reading each kind of answer); each platform only sends one request: `fetch` in JS and Wasm, an `NSURLSession` data task on iOS, OkHttp's `enqueue` on the JVM and Android. Cancelling a call cancels the request: the data task on iOS, the OkHttp call, and the `fetch` through an `AbortController` in JS and Wasm. The cancellation goes up as itself, never as a network error. The apps start their first navigation in the presenters' scope instead of `runBlocking`.
 
 What blocking guaranteed by itself is now explicit:
 
