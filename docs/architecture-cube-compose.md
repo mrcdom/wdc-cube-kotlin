@@ -471,7 +471,7 @@ class MainActivity : ComponentActivity() {
 ```
 
 - `ScheduledExecutor`: Android `Handler` + `Looper`
-- `SessionStorage`: `AndroidPersistentSessionStorage` (`SharedPreferences`)
+- `SessionStorage`: `AndroidPersistentSessionStorage` (`SharedPreferences`, each value encrypted with a key in the Android Keystore)
 - `updateHistory()`: no-op
 
 ### iOS
@@ -493,7 +493,7 @@ fun MainViewController(baseUrl: String): UIViewController {
 ```
 
 - `ScheduledExecutor`: `dispatch_async` / `dispatch_after` on the main queue
-- `SessionStorage`: `IosPersistentSessionStorage` (`NSUserDefaults`)
+- `SessionStorage`: `IosPersistentSessionStorage` (the Keychain)
 - `updateHistory()`: no-op
 
 ---
