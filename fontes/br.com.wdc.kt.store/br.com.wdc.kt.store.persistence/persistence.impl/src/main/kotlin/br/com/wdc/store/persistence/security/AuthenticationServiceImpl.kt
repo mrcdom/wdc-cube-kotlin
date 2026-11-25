@@ -1,25 +1,26 @@
 package br.com.wdc.store.persistence.security
 
 import br.com.wdc.framework.commons.log.Log
-import br.com.wdc.store.domain.user.UserCriteria
-import br.com.wdc.store.domain.user.User
-import br.com.wdc.store.domain.user.UserRepository
+import br.com.wdc.framework.domain.exception.TooManyRequestsException
+import br.com.wdc.framework.domain.projection.ProjectionValues
 import br.com.wdc.store.domain.security.AuthResult
 import br.com.wdc.store.domain.security.AuthenticationService
 import br.com.wdc.store.domain.security.ChallengeResult
-import br.com.wdc.store.domain.security.Role
-import br.com.wdc.store.domain.security.SecurityContext
-import br.com.wdc.framework.domain.projection.ProjectionValues
-import kotlin.time.toKotlinInstant
-import java.nio.charset.StandardCharsets
 import br.com.wdc.store.domain.security.JceCryptoProvider
+import br.com.wdc.store.domain.security.Role
 import br.com.wdc.store.domain.security.Scram
 import br.com.wdc.store.domain.security.ScramVerifier
+import br.com.wdc.store.domain.security.SecurityContext
+import br.com.wdc.store.domain.user.User
+import br.com.wdc.store.domain.user.UserCriteria
+import br.com.wdc.store.domain.user.UserRepository
+import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import kotlin.time.toKotlinInstant
 
 /**
  * Signs users in with SCRAM-SHA-256 ([Scram]) against the verifier each user has in the database, and keeps the
@@ -50,6 +51,11 @@ class AuthenticationServiceImpl(
         events = sessionEvents,
     )
     private val nonceStore = NonceStore()
+
+    init {
+        // the sign-in counters exist from the start, at zero
+        SecurityMeters.signedIn
+    }
     private val scram = Scram(JceCryptoProvider())
 
     /** The key of the made-up salts: derived from the JWT secret, so they stay the same across restarts. */
@@ -68,7 +74,12 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun login(userName: String, proof: String, nonce: String): AuthResult? {
-        throttle.check(userName)
+        try {
+            throttle.check(userName)
+        } catch (e: TooManyRequestsException) {
+            SecurityMeters.throttled.increment()
+            throw e
+        }
 
         val user = findUser(userName)
         val verifier = ScramVerifier.parse(user?.password)
@@ -84,10 +95,12 @@ class AuthenticationServiceImpl(
 
         if (user == null || verifier == null || !nonceOk || !proofOk) {
             throttle.failed(userName)
+            SecurityMeters.refused.increment()
             LOG.warn("Login refused: {}", if (!nonceOk) "invalid, expired or foreign nonce" else "wrong credentials")
             return null
         }
         throttle.succeeded(userName)
+        SecurityMeters.signedIn.increment()
 
         val session = cache.createSession(user.id!!, user.userName!!, Role.names(Role.parse(user.roles)))
         val accessToken = JwtUtil.create(session.sessionId, user.id!!, user.userName!!, cache.accessTokenTtl, cache.jwtSecret)
@@ -101,6 +114,7 @@ class AuthenticationServiceImpl(
 
     override suspend fun refresh(refreshToken: String): AuthResult? {
         val session = cache.refresh(refreshToken) ?: return null
+        SecurityMeters.renewed.increment()
 
         val accessToken = JwtUtil.create(session.sessionId, session.userId!!, session.userName!!,
             cache.accessTokenTtl, cache.jwtSecret)
@@ -112,6 +126,9 @@ class AuthenticationServiceImpl(
     override suspend fun logout(refreshToken: String) {
         cache.removeByRefreshToken(refreshToken)
     }
+
+    /** The sessions this instance holds in memory now. */
+    val liveSessions: Int get() = cache.liveSessions
 
     override fun resolveToken(jwtToken: String): SecurityContext? {
         val claims = JwtUtil.validate(jwtToken, cache.jwtSecret) ?: return null

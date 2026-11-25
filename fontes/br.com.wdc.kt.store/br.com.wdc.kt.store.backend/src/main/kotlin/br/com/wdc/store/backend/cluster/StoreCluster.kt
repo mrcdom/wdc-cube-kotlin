@@ -4,6 +4,7 @@ import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.remote.RemoteApplicationRegistry
 import br.com.wdc.store.persistence.rest.ProductImageCache
 import br.com.wdc.store.persistence.security.SessionEvents
+import io.micrometer.core.instrument.Metrics
 
 /**
  * What the WDC Store's instances tell each other on the [mesh]:
@@ -17,6 +18,15 @@ import br.com.wdc.store.persistence.security.SessionEvents
  * and every image it holds — they are read again from the database. Remote view sessions are left to expire.
  */
 class StoreCluster(val mesh: ClusterMesh) {
+
+    init {
+        // the series exist from the start, at zero, not from the first message
+        for (type in listOf(SESSION_ENDED, IMAGE_CHANGED, REMOTE_SESSION_MADE)) {
+            Metrics.counter("store.cluster.messages.sent", "type", type)
+            Metrics.counter("store.cluster.messages.received", "type", type)
+        }
+        Metrics.counter("store.cluster.connections")
+    }
 
     companion object {
         const val SESSION_ENDED = "session-ended"

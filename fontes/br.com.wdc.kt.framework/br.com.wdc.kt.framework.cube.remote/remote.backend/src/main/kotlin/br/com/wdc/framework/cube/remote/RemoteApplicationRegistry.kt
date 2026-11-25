@@ -31,6 +31,8 @@ class RemoteApplicationRegistry(private val factory: (id: String) -> RemoteAppli
 
     private val createdListeners = CopyOnWriteArrayList<(id: String) -> Unit>()
 
+    private val messageListeners = CopyOnWriteArrayList<(nanos: Long, failed: Boolean) -> Unit>()
+
     fun get(id: String?): RemoteApplication? = if (id.isNullOrBlank()) null else apps[id]
 
     val activeSessionCount: Int get() = apps.size
@@ -110,6 +112,28 @@ class RemoteApplicationRegistry(private val factory: (id: String) -> RemoteAppli
             val session = app.remote
             if (!session.isExpired(now)) continue
             if (session.wsSession == null) app.release() else session.extendLife()
+        }
+    }
+
+    // :: Messages
+
+    /**
+     * Calls [listener] after each client message the transport handled, with how long it took and whether it failed
+     * (unreadable, or an error while answering): for metrics. Closing the result stops it.
+     */
+    fun onMessage(listener: (nanos: Long, failed: Boolean) -> Unit): AutoCloseable {
+        messageListeners += listener
+        return AutoCloseable { messageListeners -= listener }
+    }
+
+    /** Told by the transport ([onMessage]): a client message took [nanos] to handle. */
+    fun messageHandled(nanos: Long, failed: Boolean) {
+        for (listener in messageListeners) {
+            try {
+                listener(nanos, failed)
+            } catch (e: Exception) {
+                LOG.error("Telling a message was handled", e)
+            }
         }
     }
 

@@ -50,8 +50,12 @@ class AccessContextCache(
 
     /** Drops [sessionId] from memory only: it ended elsewhere, which already took it out of the database. */
     private fun forget(sessionId: String) {
+        SecurityMeters.endedElsewhere.increment()
         bySessionId.remove(sessionId)?.let { refreshTokenIndex.remove(it.refreshToken) }
     }
+
+    /** The sessions held in memory now. */
+    val liveSessions: Int get() = bySessionId.size
 
     private fun forgetAll() {
         bySessionId.clear()

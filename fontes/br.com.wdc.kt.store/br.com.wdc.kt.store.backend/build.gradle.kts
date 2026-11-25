@@ -28,6 +28,9 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.agroal.pool)
     implementation(libs.logback.classic)
+    // the metrics, in Prometheus format at /metrics
+    implementation(libs.micrometer.core)
+    implementation(libs.micrometer.registry.prometheus)
     implementation(libs.slf4j.api)
 
     testImplementation(libs.kotlin.test.junit5)

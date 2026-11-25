@@ -9,6 +9,7 @@ import br.com.wdc.framework.persistence.transaction.RemoteTransactionOptions
 import br.com.wdc.store.backend.cluster.ClusterKey
 import br.com.wdc.store.backend.cluster.ClusterMesh
 import br.com.wdc.store.backend.cluster.StoreCluster
+import br.com.wdc.store.backend.observability.Observability
 import br.com.wdc.store.backend.supports.SqlDataSourceSupport
 import br.com.wdc.store.domain.StoreConfig
 import br.com.wdc.store.domain.config.AppConfig
@@ -40,6 +41,10 @@ class BusinessContext(private val config: AppConfig) {
     var cluster: StoreCluster? = null
         private set
 
+    /** The metrics and health checks; set by [start]. */
+    lateinit var observability: Observability
+        private set
+
     /** The addresses of `cluster.peers`, connected to once the server is up ([startCluster]). */
     private val peers: List<String> = config.getList("cluster.peers")
 
@@ -69,6 +74,16 @@ class BusinessContext(private val config: AppConfig) {
             }
 
             StoreRepositoryBootstrap.initialize(dataSource, dataSourceSupport.logSql, dataSourceSupport.dialect, cleanUp)
+
+            // first, so that what the rest counts from its start reaches /metrics
+            observability = Observability(
+                token = config.get("management.token")?.takeIf { it.isNotBlank() },
+                dataSource = dataSource,
+                remoteApps = RemoteRootPresenter.REGISTRY,
+                transactions = { RemoteTransactions.COORDINATOR.getOrNull() },
+                cluster = { cluster },
+            )
+            observability.start(cleanUp)
 
             // the transactions the REST clients open and close on their own
             val coordinator = RemoteTransactionCoordinatorImpl({ dataSource }, RemoteTransactionOptions.fromConfig("", config::getInt))

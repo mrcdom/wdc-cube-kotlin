@@ -71,6 +71,11 @@
 # Requests to /api/auth (challenge, login, refresh) per client address and minute; above it, 429. 0 = no limit.
 # auth.requestsPerMinute = 60
 
+[management]
+# Token for the metrics at /metrics (Prometheus format; Authorization: Bearer <token>). Without it, there is no
+# /metrics. The health checks, /health/live and /health/ready, are always there, open.
+# token = "a-long-random-token"
+
 [cluster]
 # The other instances of this backend, to tell them of the sessions that end, the product images that change and the
 # remote view sessions that move (docs/running-several-instances.md). One list can serve every instance: each one

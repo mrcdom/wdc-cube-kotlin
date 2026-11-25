@@ -3,6 +3,7 @@ package br.com.wdc.store.backend.cluster
 import br.com.wdc.framework.commons.log.Log
 import com.google.gson.Gson
 import io.javalin.config.JavalinConfig
+import io.micrometer.core.instrument.Metrics
 import io.javalin.websocket.WsConnectContext
 import io.javalin.websocket.WsContext
 import io.javalin.websocket.WsMessageContext
@@ -115,6 +116,7 @@ class ClusterMesh(
 
     /** Tells every other instance; one not connected now gets it when it is. */
     fun publish(type: String, id: String) {
+        Metrics.counter("store.cluster.messages.sent", "type", type).increment()
         val text = GSON.toJson(mapOf("type" to type, "id" to id))
         for (link in links) link.send(text)
     }
@@ -212,6 +214,7 @@ class ClusterMesh(
 
         val type = message["type"] as? String ?: return
         val id = message["id"] as? String ?: return
+        Metrics.counter("store.cluster.messages.received", "type", type).increment()
         handlers[type]?.forEach { runHandler(type) { it(id) } }
     }
 
@@ -409,6 +412,7 @@ class ClusterMesh(
                             sender.execute { transmit(this, webSocket, waiting) }
                         }
                     }
+                    Metrics.counter("store.cluster.connections").increment()
                     LOG.info("Cluster peer {} connected ({})", uri, serverNode)
                 }
             }
