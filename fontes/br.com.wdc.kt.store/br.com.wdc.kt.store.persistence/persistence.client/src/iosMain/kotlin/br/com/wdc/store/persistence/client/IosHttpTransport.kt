@@ -1,212 +1,58 @@
 package br.com.wdc.store.persistence.client
 
 import br.com.wdc.store.domain.exception.BusinessException
-import kotlinx.cinterop.*
-import platform.Foundation.*
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.suspendCancellableCoroutine
+import platform.Foundation.NSData
+import platform.Foundation.NSHTTPURLResponse
+import platform.Foundation.NSMutableURLRequest
+import platform.Foundation.NSURL
+import platform.Foundation.NSURLSession
+import platform.Foundation.create
+import platform.Foundation.dataTaskWithRequest
+import platform.Foundation.setHTTPBody
+import platform.Foundation.setHTTPMethod
+import platform.Foundation.setValue
 import platform.posix.memcpy
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
- * HttpTransport implementation for iOS using synchronous NSURLSession requests.
+ * The [HttpTransport] of iOS: an `NSURLSession` data task, whose completion resumes the call. No thread waits for
+ * it (the main thread's run loop is not spun, as it was with the old blocking transport); cancelling the call
+ * cancels the task.
  */
-class IosHttpTransport(private val baseUrl: String) : HttpTransport {
+class IosHttpTransport(baseUrl: String) : BaseHttpTransport(baseUrl) {
 
-    override var accessTokenSupplier: (() -> String?)? = null
-    override var refreshHandler: (() -> Boolean)? = null
-    override var onAuthFailure: (() -> Unit)? = null
-    override var transactionIdSupplier: (() -> String?)? = null
-    override val clientId: String = newClientId()
-
-    override fun postJson(path: String, body: String): String {
-        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), currentTxId())
-            ?: throw BusinessException("Empty response for POST $path")
-    }
-
-    override fun postJsonNullable(path: String, body: String): String? {
-        return doRequestNullable("POST", baseUrl + path, body, JSON_CONTENT_TYPE, authHeader(), currentTxId())
-    }
-
-    override fun postJsonPublic(path: String, body: String): String {
-        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, null)
-            ?: throw BusinessException("Empty response for POST $path")
-    }
-
-    override fun postJsonWithAuth(path: String, body: String, token: String): String {
-        return doRequest("POST", baseUrl + path, body, JSON_CONTENT_TYPE, "Bearer $token")
-            ?: throw BusinessException("Empty response for POST $path")
-    }
-
-    override fun getJsonPublic(path: String): String {
-        return doRequest("GET", baseUrl + path, null, null, null)
-            ?: throw BusinessException("Empty response for GET $path")
-    }
-
-    override fun getBytes(path: String): ByteArray? {
-        return doRequestBytes("GET", baseUrl + path, authHeader(), currentTxId())
-    }
-
-    override fun putBytes(path: String, data: ByteArray): Boolean {
-        val request = createRequest("PUT", baseUrl + path)
-        request.setValue(OCTET_CONTENT_TYPE, forHTTPHeaderField = "Content-Type")
-        authHeader()?.let { request.setValue(it, forHTTPHeaderField = "Authorization") }
-        currentTxId()?.let { request.setValue(it, forHTTPHeaderField = TX_HEADER) }
-
-        data.usePinned { pinned ->
-            request.setHTTPBody(NSData.create(bytes = pinned.addressOf(0), length = data.size.toULong()))
-        }
-
-        val (responseData, response) = sendSynchronous(request)
-        val statusCode = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
-        if (statusCode in 200..299) {
-            val text = responseData?.toKotlinString() ?: ""
-            return text.contains("\"success\":true") || text.contains("\"success\": true")
-        }
-        throw httpFailure(statusCode)
-    }
-
-    private fun authHeader(): String? {
-        val supplier = accessTokenSupplier ?: return null
-        val token = supplier() ?: return null
-        return "Bearer $token"
-    }
-
-    private fun createRequest(method: String, url: String): NSMutableURLRequest {
+    override suspend fun exchange(method: String, url: String, headers: Map<String, String>, body: ByteArray?): Answer {
         val nsUrl = NSURL.URLWithString(url) ?: throw BusinessException("Invalid URL: $url")
         val request = NSMutableURLRequest.requestWithURL(nsUrl)
         request.setHTTPMethod(method)
-        request.setValue(clientId, forHTTPHeaderField = CLIENT_HEADER)
-        return request
-    }
+        for ((name, value) in headers) request.setValue(value, forHTTPHeaderField = name)
+        if (body != null) request.setHTTPBody(body.toNSData())
 
-    private fun doRequest(
-        method: String,
-        url: String,
-        body: String?,
-        contentType: String?,
-        authorization: String?,
-        txId: String? = null
-    ): String? {
-        val request = createRequest(method, url)
-        contentType?.let { request.setValue(it, forHTTPHeaderField = "Content-Type") }
-        authorization?.let { request.setValue(it, forHTTPHeaderField = "Authorization") }
-        txId?.let { request.setValue(it, forHTTPHeaderField = TX_HEADER) }
-        body?.let {
-            request.setHTTPBody((it as NSString).dataUsingEncoding(NSUTF8StringEncoding))
-        }
-
-        val (responseData, response) = sendSynchronous(request)
-        val statusCode = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
-        val responseText = responseData?.toKotlinString() ?: ""
-
-        if (statusCode in 200..299) {
-            return responseText
-        }
-
-        if (statusCode == 401 && authorization != null) {
-            if (refreshHandler?.invoke() == true) {
-                return doRequest(method, url, body, contentType, authHeader(), txId)
+        return suspendCancellableCoroutine { continuation ->
+            val task = NSURLSession.sharedSession.dataTaskWithRequest(request) { data, response, error ->
+                if (error != null) {
+                    continuation.resumeWithException(BusinessException("Network error: $method $url: ${error.localizedDescription}"))
+                } else {
+                    val status = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
+                    continuation.resume(Answer(status, data?.toByteArray() ?: ByteArray(0)))
+                }
             }
-            onAuthFailure?.invoke()
+            continuation.invokeOnCancellation { task.cancel() }
+            task.resume()
         }
-
-        throw httpFailure(statusCode, responseText)
-    }
-
-    private fun doRequestNullable(
-        method: String,
-        url: String,
-        body: String?,
-        contentType: String?,
-        authorization: String?,
-        txId: String? = null
-    ): String? {
-        val request = createRequest(method, url)
-        contentType?.let { request.setValue(it, forHTTPHeaderField = "Content-Type") }
-        authorization?.let { request.setValue(it, forHTTPHeaderField = "Authorization") }
-        txId?.let { request.setValue(it, forHTTPHeaderField = TX_HEADER) }
-        body?.let {
-            request.setHTTPBody((it as NSString).dataUsingEncoding(NSUTF8StringEncoding))
-        }
-
-        val (responseData, response) = sendSynchronous(request)
-        val statusCode = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
-        if (statusCode == 404) return null
-        val responseText = responseData?.toKotlinString() ?: ""
-        if (statusCode in 200..299) {
-            return responseText
-        }
-
-        if (statusCode == 401 && authorization != null) {
-            if (refreshHandler?.invoke() == true) {
-                return doRequestNullable(method, url, body, contentType, authHeader(), txId)
-            }
-            onAuthFailure?.invoke()
-        }
-
-        throw httpFailure(statusCode, responseText)
-    }
-
-    private fun doRequestBytes(method: String, url: String, authorization: String?, txId: String? = null): ByteArray? {
-        val request = createRequest(method, url)
-        authorization?.let { request.setValue(it, forHTTPHeaderField = "Authorization") }
-        txId?.let { request.setValue(it, forHTTPHeaderField = TX_HEADER) }
-
-        val (responseData, response) = sendSynchronous(request)
-        val statusCode = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
-        // 204 = no content ("no image"); 404 = not found, an error like the others
-        if (statusCode == 204) return null
-        if (statusCode in 200..299) {
-            return responseData?.toKotlinByteArray()
-        }
-
-        if (statusCode == 401 && authorization != null) {
-            if (refreshHandler?.invoke() == true) {
-                return doRequestBytes(method, url, authHeader(), txId)
-            }
-            onAuthFailure?.invoke()
-        }
-
-        throw httpFailure(statusCode)
-    }
-
-    @Suppress("CAST_NEVER_SUCCEEDS")
-    private fun sendSynchronous(request: NSMutableURLRequest): Pair<NSData?, NSURLResponse?> {
-        var resultData: NSData? = null
-        var resultResponse: NSURLResponse? = null
-        var resultError: NSError? = null
-        var done = false
-
-        val session = NSURLSession.sharedSession
-        val task = session.dataTaskWithRequest(request) { data, response, error ->
-            resultData = data
-            resultResponse = response
-            resultError = error
-            done = true
-        }
-        task.resume()
-
-        // Block until complete (main thread friendly via runloop)
-        val runLoop = NSRunLoop.currentRunLoop
-        while (!done) {
-            runLoop.runMode(NSDefaultRunLoopMode, beforeDate = NSDate.dateWithTimeIntervalSinceNow(0.01))
-        }
-
-        if (resultError != null) {
-            throw BusinessException("Network error: ${resultError!!.localizedDescription}")
-        }
-        return Pair(resultData, resultResponse)
-    }
-
-    companion object {
-        private const val JSON_CONTENT_TYPE = "application/json; charset=utf-8"
-        private const val OCTET_CONTENT_TYPE = "application/octet-stream"
     }
 }
 
-private fun NSData.toKotlinString(): String {
-    return NSString.create(this, NSUTF8StringEncoding) as? String ?: ""
+private fun ByteArray.toNSData(): NSData {
+    if (isEmpty()) return NSData()
+    return usePinned { pinned -> NSData.create(bytes = pinned.addressOf(0), length = size.toULong()) }
 }
 
-private fun NSData.toKotlinByteArray(): ByteArray {
+private fun NSData.toByteArray(): ByteArray {
     val len = this.length.toInt()
     if (len == 0) return ByteArray(0)
     val bytes = ByteArray(len)

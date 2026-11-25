@@ -75,6 +75,7 @@ public abstract class br/com/wdc/framework/cube/CubeApplication {
 	public final fun publishParameters (Lbr/com/wdc/framework/cube/CubeIntent;)V
 	public fun release ()V
 	public fun removeAttribute (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun runAction (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
 	protected final fun setFragment (Ljava/lang/String;)V
 	public fun updateHistory ()V

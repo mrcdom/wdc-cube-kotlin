@@ -42,6 +42,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":store-domain"))
+            implementation(libs.kotlinx.coroutines.core)
         }
 
         getByName("jvmCommonMain") {

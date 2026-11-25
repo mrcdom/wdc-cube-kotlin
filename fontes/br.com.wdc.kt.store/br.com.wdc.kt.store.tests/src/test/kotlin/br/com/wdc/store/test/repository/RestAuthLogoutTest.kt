@@ -9,6 +9,7 @@ import java.net.http.HttpResponse
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import kotlinx.coroutines.runBlocking
 
 /** The client logout revokes the session on the server: the refresh token stops being valid. */
 class RestAuthLogoutTest {
@@ -41,7 +42,7 @@ class RestAuthLogoutTest {
         env.loginAs("fulano")
         val client = env.authClient!!
         val refreshToken = client.refreshToken!!
-        client.logout()
+        runBlocking { client.logout() }
         assertNull(client.refreshToken)
         assertEquals(401, refreshStatus(refreshToken), "after logout, the refresh token is no longer valid")
         env.logout()

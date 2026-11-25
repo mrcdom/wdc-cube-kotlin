@@ -139,7 +139,7 @@ class SecuredRestUserRepositoryTest {
     @Test
     fun unknownOrderBy_is400() {
         env.loginAs("admin")
-        val e = assertThrows(BusinessException::class.java) { env.transport.postJson("/api/repo/user/fetch", """{"orderBy":"RANDOM"}""") }
+        val e = assertThrows(BusinessException::class.java) { env.postJson("/api/repo/user/fetch", """{"orderBy":"RANDOM"}""") }
         assertTrue(e.message!!.startsWith("HTTP 400"), e.message)
         assertTrue("OLDEST_FIRST, NEWEST_FIRST, NAME_A_TO_Z, LOGIN_A_TO_Z" in e.message!!, e.message)
     }
@@ -148,7 +148,7 @@ class SecuredRestUserRepositoryTest {
     fun passwordIsNotACriteriaField() {
         env.loginAs("admin")
         // an old client that still sends "password" in the criteria does not filter by it: the field is ignored
-        val response = env.transport.postJson("/api/repo/user/count", """{"userName":"admin","password":"anything"}""")
+        val response = env.postJson("/api/repo/user/count", """{"userName":"admin","password":"anything"}""")
         assertEquals("""{"count":1}""", response)
     }
 
@@ -169,20 +169,20 @@ class SecuredRestUserRepositoryTest {
             "/api/repo/user/fetch-by-id" to """{"id":${DBReset.ADMIN_ID},"projection":{"password":"~"}}""",
         )
         for ((path, body) in requests) {
-            val e = assertThrows(AccessDeniedException::class.java) { env.transport.postJson(path, body) }
+            val e = assertThrows(AccessDeniedException::class.java) { env.postJson(path, body) }
             assertTrue(e.message!!.startsWith("HTTP 403") && "[password]" in e.message!!, e.message)
         }
         val bodies = listOf(
-            env.transport.postJson("/api/repo/user/fetch", "{}"),
-            env.transport.postJson("/api/repo/user/fetch-page", """{"page":0,"pageSize":10}"""),
-            env.transport.postJson("/api/repo/user/fetch-by-id", """{"id":${DBReset.ADMIN_ID}}"""),
+            env.postJson("/api/repo/user/fetch", "{}"),
+            env.postJson("/api/repo/user/fetch-page", """{"page":0,"pageSize":10}"""),
+            env.postJson("/api/repo/user/fetch-by-id", """{"id":${DBReset.ADMIN_ID}}"""),
         )
         for (body in bodies) {
             assertTrue("admin" in body, body)
             assertFalse("password" in body, body)
         }
         // nor the insert's answer, which carries the entity as stored
-        val inserted = env.transport.postJson(
+        val inserted = env.postJson(
             "/api/repo/user/insert",
             """{"entity":{"userName":"raw","password":"${env.authClient!!.encryptPassword("s3cret")}","name":"Raw","roles":"CUSTOMER"}}""",
         )

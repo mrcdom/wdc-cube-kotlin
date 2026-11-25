@@ -40,9 +40,10 @@ class SecuredRestTokenRefreshTest {
         var stale = true
         var refreshes = 0
         env.transport.accessTokenSupplier = { if (stale) "token.vencido.invalido" else env.authClient!!.accessToken }
+        // the server refused the fake token: renew the session the client really holds
         env.transport.refreshHandler = {
             refreshes++
-            renew().also { renewed -> if (renewed) stale = false }
+            renew(env.authClient!!.accessToken!!).also { renewed -> if (renewed) stale = false }
         }
         return { refreshes }
     }
@@ -88,7 +89,7 @@ class SecuredRestTokenRefreshTest {
         var failures = 0
         var refreshes = 0
         env.transport.accessTokenSupplier = { "token.vencido.invalido" }
-        env.transport.refreshHandler = { refreshes++; false }
+        env.transport.refreshHandler = { _ -> refreshes++; false }
         env.transport.onAuthFailure = { failures++ }
 
         val e = assertThrows(UnauthenticatedException::class.java) { runBlocking { env.productRepo.count(ProductCriteria()) } }
@@ -103,7 +104,7 @@ class SecuredRestTokenRefreshTest {
         env.loginAs("admin")
         var refreshes = 0
         env.transport.accessTokenSupplier = { "token.vencido.invalido" }
-        env.transport.refreshHandler = { refreshes++; true }
+        env.transport.refreshHandler = { _ -> refreshes++; true }
 
         val e = assertThrows(UnauthenticatedException::class.java) { runBlocking { env.productRepo.count(ProductCriteria()) } }
 
@@ -114,7 +115,7 @@ class SecuredRestTokenRefreshTest {
     @Test
     fun withoutAToken_a401IsNotARenewal() {
         var refreshes = 0
-        env.transport.refreshHandler = { refreshes++; true }
+        env.transport.refreshHandler = { _ -> refreshes++; true }
         try {
             val e = assertThrows(UnauthenticatedException::class.java) { runBlocking { env.productRepo.count(ProductCriteria()) } }
             assertTrue(e.message!!.startsWith("HTTP 401"), e.message)

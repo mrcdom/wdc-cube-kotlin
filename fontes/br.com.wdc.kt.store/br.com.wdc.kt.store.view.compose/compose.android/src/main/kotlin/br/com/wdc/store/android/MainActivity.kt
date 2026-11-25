@@ -1,7 +1,6 @@
 package br.com.wdc.store.android
 
 import android.os.Bundle
-import android.os.StrictMode
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,6 +31,7 @@ import br.com.wdc.store.view.compose.bridge.ViewUpdateScheduler
 import br.com.wdc.store.view.compose.theme.StoreTheme
 import br.com.wdc.store.view.compose.util.PlatformConfig
 import br.com.wdc.store.view.compose.views.*
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -41,19 +41,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Allow synchronous network calls on the main thread
-        // (required by the Cube MVP architecture's synchronous presenter pattern)
-        StrictMode.setThreadPolicy(
-            StrictMode.ThreadPolicy.Builder().permitNetwork().build()
-        )
-
         val baseUrl = BuildConfig.BASE_URL
         initializePlatform(baseUrl)
 
         val prefs = getSharedPreferences("wdc_session", MODE_PRIVATE)
         app = AndroidRootPresenter(AndroidPersistentSessionStorage(prefs))
         ViewUpdateScheduler.initialize { app }
-        kotlinx.coroutines.runBlocking { RootKeys(app).flip() }
+        // the first navigation runs in the presenters' scope: the network is waited for without blocking this thread,
+        // and the root view, mounted right away, repaints when it arrives
+        app.presenterScope.launch { RootKeys(app).flip() }
 
         setContent {
             StoreTheme {

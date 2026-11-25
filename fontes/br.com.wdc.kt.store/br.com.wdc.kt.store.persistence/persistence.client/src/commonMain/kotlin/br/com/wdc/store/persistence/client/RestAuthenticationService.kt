@@ -24,9 +24,9 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
     override suspend fun login(userName: String, proof: String, nonce: String): AuthResult? =
         authClient.login(userName, proof, nonce)
 
-    override fun refresh(refreshToken: String): AuthResult? = authClient.refreshWith(refreshToken)
+    override suspend fun refresh(refreshToken: String): AuthResult? = authClient.refreshWith(refreshToken)
 
-    override fun logout(refreshToken: String) {
+    override suspend fun logout(refreshToken: String) {
         try {
             val body = config.toJson { out ->
                 out.beginObject()
@@ -45,7 +45,7 @@ class RestAuthenticationService(private val config: RestConfig) : Authentication
         return null
     }
 
-    override fun signOut() = authClient.logout()
+    override suspend fun signOut() = authClient.logout()
 
     override fun setSessionListener(listener: SessionListener?) {
         authClient.sessionListener = listener

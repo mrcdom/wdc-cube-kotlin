@@ -47,7 +47,7 @@ class RestUserRepositoryTest : AbstractUserRepositoryTest() {
 
         // without a projection, the repository's default: no password
         assertTrue(repo().fetch(UserCriteria()).all { it.password == null })
-        val raw = env.transport.postJson("/api/repo/user/fetch", "{}")
+        val raw = env.postJson("/api/repo/user/fetch", "{}")
         assertFalse("password" in raw, raw)
     }
 

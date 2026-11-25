@@ -27,10 +27,14 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import kotlin.time.Clock
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import br.com.wdc.store.persistence.client.inRemoteTransaction
+import kotlin.test.assertFailsWith
 
 /**
  * The client-driven remote transaction: several HTTP writes take part in the same physical transaction on the
@@ -59,16 +63,10 @@ class RemoteTransactionRestTest {
     private fun anotherClient() = OkHttpTransport("http://127.0.0.1:${env.port}")
 
     private fun begin(transport: OkHttpTransport): String =
-        Regex("\"txId\":\"([^\"]+)\"").find(transport.postJson("/api/tx/begin", "{}"))!!.groupValues[1]
+        Regex("\"txId\":\"([^\"]+)\"").find(runBlocking { transport.postJson("/api/tx/begin", "{}") })!!.groupValues[1]
 
-    private fun finish(transport: OkHttpTransport, txId: String, outcome: String): String {
-        transport.transactionIdSupplier = { txId }
-        try {
-            return transport.postJson("/api/tx/$outcome", "{}")
-        } finally {
-            transport.transactionIdSupplier = null
-        }
-    }
+    private fun finish(transport: OkHttpTransport, txId: String, outcome: String): String =
+        runBlocking { transport.inRemoteTransaction(txId) { transport.postJson("/api/tx/$outcome", "{}") } }
 
     // :: afterCommit
 
@@ -216,7 +214,7 @@ class RemoteTransactionRestTest {
     /** The environment's transport, but the commit gets lost on the way: before reaching the server, or on the way back. */
     private class LossyCommit(private val target: br.com.wdc.store.persistence.client.HttpTransport, private val loseRequest: Boolean) :
         br.com.wdc.store.persistence.client.HttpTransport by target {
-        override fun postJson(path: String, body: String): String {
+        override suspend fun postJson(path: String, body: String): String {
             if (path != "/api/tx/commit") return target.postJson(path, body)
             if (loseRequest) throw IllegalStateException("connection refused")
             target.postJson(path, body)
@@ -443,8 +441,35 @@ class RemoteTransactionRestTest {
         assertThrows(IllegalStateException::class.java) { runBlocking { service.supports { it.setRollbackOnly() } } }
         service.required {
             assertTrue(service.supports { it.isActive() })
-            assertThrows(TransactionNotAllowedException::class.java) { runBlocking { service.never { } } }
+            // inline, so the block stays in the transaction's context (a nested runBlocking would start one of its own)
+            assertFailsWith<TransactionNotAllowedException> { service.never { } }
         }
+    }
+
+    @Test
+    fun anotherCoroutine_runningWhileTheTransactionWaits_doesNotInheritIt() = runBlocking {
+        val client = anotherClient()
+        val repo = HttpProductRepository(client)
+        val service = RestTransactionService(client)
+        val opened = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val owner = launch {
+            service.required {
+                repo.insert(product("rtx-inside"))
+                opened.complete(Unit)
+                release.await() // the block waits, as an action waits on the network
+            }
+        }
+        opened.await()
+        // another action meanwhile, not started by the block: its call goes without the txId, and the server refuses a
+        // write without it from someone with an open transaction (with the txId per instance, it joined the transaction)
+        val e = assertFailsWith<TransactionConflictException> { repo.insert(product("rtx-outside")) }
+        assertTrue(e.message!!.startsWith("HTTP 409"), e.message)
+        release.complete(Unit)
+        owner.join()
+
+        assertEquals(1, env.productRepo.count(ProductCriteria().withName("rtx-inside")))
+        assertEquals(0, env.productRepo.count(ProductCriteria().withName("rtx-outside")))
     }
 
     // :: Server defenses
@@ -479,9 +504,8 @@ class RemoteTransactionRestTest {
             val e = assertThrows(AccessDeniedException::class.java) { finish(intruder, txId, "commit") }
             assertTrue(e.message!!.startsWith("HTTP 403"), e.message)
 
-            intruder.transactionIdSupplier = { txId }
             assertThrows(AccessDeniedException::class.java) {
-                runBlocking { HttpProductRepository(intruder).insert(product("rtx-intruder")) }
+                runBlocking { intruder.inRemoteTransaction(txId) { HttpProductRepository(intruder).insert(product("rtx-intruder")) } }
             }
         } finally {
             assertTrue("rolledback" in finish(owner, txId, "rollback"))
@@ -517,7 +541,7 @@ class RemoteTransactionRestTest {
     @Test
     fun outcomeWithoutTheHeader_isRefused() {
         // malformed request (400), not a refusal of access (403)
-        assertThrows(InvalidRequestException::class.java) { anotherClient().postJson("/api/tx/commit", "{}") }
+        assertThrows(InvalidRequestException::class.java) { runBlocking { anotherClient().postJson("/api/tx/commit", "{}") } }
     }
 
     @Test
@@ -550,13 +574,12 @@ class RemoteTransactionRestTest {
             assertTrue(e.message!!.startsWith("HTTP 410"), e.message)
         }
         // a write carrying the txId of a transaction that no longer exists
-        client.transactionIdSupplier = { "no-such-transaction" }
-        try {
-            assertThrows(RemoteTransactionNotFoundException::class.java) {
-                client.postJson("/api/repo/product/insert", """{"name":"x","price":1.5,"description":"d"}""")
+        assertThrows(RemoteTransactionNotFoundException::class.java) {
+            runBlocking {
+                client.inRemoteTransaction("no-such-transaction") {
+                    client.postJson("/api/repo/product/insert", """{"name":"x","price":1.5,"description":"d"}""")
+                }
             }
-        } finally {
-            client.transactionIdSupplier = null
         }
     }
 
