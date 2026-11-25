@@ -43,6 +43,9 @@ class JavalinApplication(
         private const val STATIC_FILES_EXTERNAL_DIR_PROPERTY = "store.staticFilesDir"
         private const val STATIC_HOSTED_IMAGE_PATH = "/images"
 
+        /** The deployment context of the remote view's Kotlin client (`remote.react.kotlin`). */
+        private const val REMOTE_KOTLIN_CONTEXT = "remote-kotlin"
+
         private const val DEFAULT_PORT = 8080
 
         init {
@@ -327,7 +330,8 @@ class JavalinApplication(
         }
 
         DispatcherController.configure(config, ReactRootPresenter.REGISTRY)
-        IndexHtmlController.configure(config)
+        // the TypeScript client at the root, the Kotlin one under its context
+        IndexHtmlController.configure(config, REMOTE_KOTLIN_CONTEXT)
 
         config.routes.before { ctx ->
             val path = ctx.path()

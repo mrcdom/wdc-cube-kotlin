@@ -91,6 +91,11 @@ graph TB
         BRG["@wdc/remote-bridge-react<br/>Protocol client (framework)"]
     end
 
+    subgraph "Client (Kotlin/JS)"
+        RK["react.kotlin<br/>Kotlin + React + MUI"]
+        BRK["framework-cube-remote-bridge<br/>Protocol client (framework)"]
+    end
+
     subgraph "Server (Kotlin/JVM)"
         BACK["backend<br/>Javalin HTTP/WS"]
         SKEL["react.skeleton<br/>The Store's remote application"]
@@ -104,6 +109,8 @@ graph TB
 
     RC --> BRG
     BRG <-->|WebSocket| BACK
+    RK --> BRK
+    BRK <-->|WebSocket| BACK
     BACK --> SKEL
     BACK --> FCR
     SKEL --> FCR
@@ -121,6 +128,8 @@ graph TB
 |--------|-------|
 | **react.client** (`remote.react.client`, npm) | The Store's views in React/TypeScript with Material UI, registered by vid with the bridge. Bundled with Parcel (`npm run build`) into the skeleton's resources. |
 | **remote bridge** (`@wdc/remote-bridge-react`, framework, `br.com.wdc.kt.framework.cube.remote.react`) | The client side of the protocol, for any React shell: the WebSocket session and reconnection, the security handshake and cipher, the scopes of the views (`ViewBinding`), event delivery, the release of views (`ViewGarbageCollector`), `BaseViewClass`. Imported from source by a Parcel alias (and a tsconfig `paths` entry); its peer dependencies (React, history, universal-cookie) come from the shell's `node_modules`. |
+| **react.kotlin** (`:view-remote-react-kotlin`) | A second client of the same server, written in Kotlin with React and MUI (kotlin-wrappers) and compiled to JS by the Kotlin toolchain: the same vids, fields and event codes as the TypeScript client. Deployed by its `deploy.sh` to the `remote-kotlin` context (`/remote-kotlin/`). |
+| **Kotlin remote bridge** (`:framework-cube-remote-bridge`, framework) | The client side of the protocol in Kotlin/JS: `RemoteBridge` (session, handshake, WebSocket, history, events), `RemoteScope` (a scope read by name), and React bindings (`RemoteViews`, `useView`, `useHold`, `remoteView`). |
 | **framework-cube-remote** (`:framework-cube-remote`, framework) | The server side of the protocol, for any Cube application: the sessions (`RemoteApplicationRegistry`), each one's work (`RemoteApplicationSupport`: views, dispatch, answer, signed history, life), one `RemoteViewImpl` per scope, the browser tab (`BrowserScope`, `RemoteBrowserPresenter`), the keys and cipher (`RemoteAppSecurity`, `RemoteDataSecurity`) and the Javalin routes (`DispatcherController`, `IndexHtmlController`). |
 | **react.skeleton** (`:view-remote-react-skeleton`) | The Store as a remote application: `ReactRootPresenter` (its root presenter, implementing `RemoteApplication`, with the vid of each of its scopes and its registry), plus the Store's own routes (product images, health, stress metrics) and the client bundle. |
 | **backend** (`:backend`) | Javalin server that hosts the WebSocket (`/dispatcher/{id}`), serves the React static files, and exposes the REST API for Compose clients. |
