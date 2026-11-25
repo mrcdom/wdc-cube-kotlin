@@ -27,8 +27,6 @@ reset = true
 
 [server]
 port = $PORT
-# the backend's CORS rule lists only localhost:8080, and it refuses even its own pages on another port
-cors.allowAll = true
 
 [security]
 jwt.secret = "$(openssl rand -hex 32)"
