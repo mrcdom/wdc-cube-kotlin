@@ -3,6 +3,7 @@ package br.com.wdc.store.backend
 import br.com.wdc.framework.commons.concurrent.ScheduledExecutor
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.util.Defer
+import br.com.wdc.framework.cube.remote.RemoteAppSecurity
 import br.com.wdc.framework.persistence.transaction.RemoteTransactionCoordinatorImpl
 import br.com.wdc.framework.persistence.transaction.RemoteTransactionOptions
 import br.com.wdc.store.backend.supports.SqlDataSourceSupport
@@ -71,12 +72,18 @@ class BusinessContext(private val config: AppConfig) {
 
             val jwtSecret = StoreConfig.jwtSecret
             if (!jwtSecret.isNullOrBlank()) {
+                // the remote view's session ids are signed with a key every instance of this configuration shares
+                RemoteAppSecurity.useKey(RemoteSigningKey.from(jwtSecret))
                 StoreRepositoryBootstrap.initializeSecurity(jwtSecret, StoreConfig.refreshTokenTtlDays, cleanUp)
                 // drops the expired sessions and the unanswered login challenges, even when no one signs in
                 (AuthenticationService.BEAN.getOrNull() as? AuthenticationServiceImpl)?.let { auth ->
                     val cleanup = auth.startCleanup(scheduledExecutor)
                     cleanUp.push { cleanup.close() }
                 }
+            }
+
+            if (jwtSecret.isNullOrBlank()) {
+                LOG.info("Remote session ids are signed with a key of this process: one instance only (security.jwt.secret shares one)")
             }
 
             LOG.info("WDC Store backend context initialized with database {}", dataSourceSupport.jdbcUrl)

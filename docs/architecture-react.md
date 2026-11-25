@@ -438,7 +438,7 @@ stateDiagram-v2
 - **Reconnection**: if the WebSocket drops, the client reconnects and finds the same session (if it has not expired)
 - **Cleanup**: a session ends when its WebSocket closes unauthenticated; an authenticated one lives on without a socket until its life runs out. `RemoteApplicationRegistry.startCleanup`, started by the backend on the Store's registry, runs `removeExpireds()` every 30 seconds: an application past its life with no socket is released, one with a socket gets more life.
 - **Logout/Disconnection**: an unauthenticated session is released immediately when the WebSocket closes
-- **Several instances**: a session lives in the memory of the instance that made it, and the key that signs session ids is per process unless the application gives one (`RemoteAppSecurity.useKey`): a tab's page and socket, and its reconnections, have to reach the same instance. See [running-several-instances.md](running-several-instances.md).
+- **Several instances**: a session lives in the memory of the instance that made it, so a tab's socket, and its reconnections, have to reach the same instance. The key that signs session ids is per process unless the application gives one (`RemoteAppSecurity.useKey`); the WDC Store's backend derives it from `security.jwt.secret`, so the page can come from any instance of the same configuration. See [running-several-instances.md](running-several-instances.md).
 
 ---
 
