@@ -301,7 +301,7 @@ scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
 scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
 ```
 
-The login is the exception: its values arrive by sync (the password ciphered with the session key, which only the skeleton knows), so `LoginReactViewImpl` overrides `syncClientToServer`, and the presenter handles the event by hand: `onEvent(1) { scope.onEnter(null, null) }`.
+The login's values arrive by sync, not as form parameters of the event: the password goes ciphered with the session key, which only the skeleton knows, so `LoginReactViewImpl` overrides `syncClientToServer` to decipher it into the scope. The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { enter() }`, reading the user name and password from the scope.
 
 The browser tab itself is a scope of the remote layer (`BrowserScope`: the alert and the root scope, sent as `contentViewId`), whose actions `BrowserPresenter` binds with their codes like any presenter; the presentation knows nothing of it.
 
@@ -514,7 +514,7 @@ sequenceDiagram
     LView->>LPres: scope.password = real_password
 
     Disp->>LView: submit(eventCode=1, ...)
-    LView->>LPres: scope.dispatch(1) → scope.onEnter(null, null)
+    LView->>LPres: scope.dispatch(1) → scope.onEnter()
 
     LPres->>URepo: CredentialsCheck(admin, password).run()
     Note over URepo: Direct SQL (H2 or PostgreSQL)<br/>no intermediate REST

@@ -43,7 +43,11 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
     val emitOnEnter: () -> Unit = {
         val userName = userNameRef.current?.value ?: ""
         val password = passwordRef.current?.value ?: ""
-        safeCall { scope.onEnter(userName, password) }
+        safeCall {
+            scope.userName = userName
+            scope.password = password
+            scope.onEnter()
+        }
     }
 
     val onEnterClick: MouseEventHandler<HTMLButtonElement> = { emitOnEnter() }

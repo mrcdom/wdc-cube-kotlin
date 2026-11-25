@@ -31,7 +31,7 @@ class StoreLoginTest : BasePresentationTest() {
         var loginView = LoginViewMock.cast(rootView.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "unrecognized password"
-        loginView.scope.onEnter(null, null)
+        loginView.scope.onEnter()
 
         // Check if it keeps bean login view
         loginView = LoginViewMock.cast(rootView.contentView)
@@ -47,7 +47,7 @@ class StoreLoginTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(rootView.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.scope.onEnter(null, null)
+        loginView.scope.onEnter()
 
         val restrictedView = RestrictedViewMock.cast(rootView.contentView)
 

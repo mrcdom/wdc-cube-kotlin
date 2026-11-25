@@ -1,7 +1,7 @@
 package br.com.wdc.store.presentation.presenter.open.login
 
 import br.com.wdc.framework.cube.Scope
-import br.com.wdc.framework.cube.ActionOf2
+import br.com.wdc.framework.cube.Action
 
 class LoginScope : Scope() {
 
@@ -11,6 +11,10 @@ class LoginScope : Scope() {
     var errorMessage: String? by field(null)
     var loading: Boolean by field(false)
 
-    /** Signs in with the given user name and password; `null` keeps what the view already put in the scope. */
-    var onEnter: ActionOf2<String?, String?> = ActionOf2.noop()
+    /**
+     * Signs in with the user name and password in this scope: the view puts what the user typed there first. A remote
+     * view does it by sync, with the password ciphered with the session's key, which only the remote layer deciphers;
+     * the password never goes back to a view (`sent = false`).
+     */
+    var onEnter: Action = Action.NOOP
 }

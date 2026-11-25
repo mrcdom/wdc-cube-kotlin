@@ -233,7 +233,7 @@ sequenceDiagram
     participant CR as Compose Runtime
 
     User->>View: Clicks "Sign in"
-    View->>SC: safeCall { scope.onEnter(null, null) }
+    View->>SC: safeCall { scope.onEnter() }
     Note over View: UI thread released
 
     SC->>P: onEnter → enter() (guarded)
@@ -282,7 +282,7 @@ fun LoginView(scope: LoginScope) {
 
     // (5) Actions are fields of the scope, called via safeCall
     Button(
-        onClick = { safeCall { scope.onEnter(null, null) } },
+        onClick = { safeCall { scope.onEnter() } },
         enabled = !loading,
     ) {
         if (loading) CircularProgressIndicator() else Text("Sign in")
@@ -555,13 +555,10 @@ stateDiagram-v2
     }
 ```
 
-**In the presenter** (linear code; the body of the `onEnter` action, bound in the constructor with `scope.onEnter = actionOf2 { userName: String?, password: String? -> enter(userName, password) }`):
+**In the presenter** (linear code; the body of the `onEnter` action, bound in the constructor with `scope.onEnter = action(1) { enter() }`; the view has put the user name and password in the scope):
 
 ```kotlin
-private suspend fun enter(userName: String?, password: String?) {
-    if (userName != null) scope.userName = userName
-    if (password != null) scope.password = password
-
+private suspend fun enter() {
     scope.loading = true  // → UI shows spinner (the view is the scope's updater)
 
     try {
@@ -588,7 +585,7 @@ private suspend fun enter(userName: String?, password: String?) {
 
 ```kotlin
 Button(
-    onClick = { safeCall { scope.onEnter(null, null) } },
+    onClick = { safeCall { scope.onEnter() } },
     enabled = !loading,
 ) {
     if (loading) CircularProgressIndicator() else Text("Sign in")

@@ -116,7 +116,7 @@ class PlaceKeysTest : BasePresentationTest() {
         val loginView = LoginViewMock.cast(app.getRootView()!!.contentView)
         loginView.scope.userName = "admin"
         loginView.scope.password = "admin"
-        loginView.scope.onEnter(null, null)
+        loginView.scope.onEnter()
     }
 
     private fun home(): RestrictedViewMock = RestrictedViewMock.cast(app.getRootView()!!.contentView)

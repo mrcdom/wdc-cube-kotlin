@@ -93,7 +93,7 @@ fun LoginView(scope: LoginScope) {
                     enabled = !loading,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { safeCall { scope.onEnter(null, null) } })
+                    keyboardActions = KeyboardActions(onDone = { safeCall { scope.onEnter() } })
                 )
 
                 val errorMessage = scope.errorMessage
@@ -115,7 +115,7 @@ fun LoginView(scope: LoginScope) {
                 Spacer(Modifier.height(4.dp))
 
                 Button(
-                    onClick = { safeCall { scope.onEnter(null, null) } },
+                    onClick = { safeCall { scope.onEnter() } },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(12.dp),
                     enabled = !loading,

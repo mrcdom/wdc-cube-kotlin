@@ -44,7 +44,7 @@ class CartReloadTest {
         val loginView = LoginViewMock.cast(app.getRootView()!!.contentView)
         loginView.scope.userName = user
         loginView.scope.password = password
-        loginView.scope.onEnter(null, null)
+        loginView.scope.onEnter()
         return RestrictedViewMock.cast(app.getRootView()!!.contentView)
     }
 
