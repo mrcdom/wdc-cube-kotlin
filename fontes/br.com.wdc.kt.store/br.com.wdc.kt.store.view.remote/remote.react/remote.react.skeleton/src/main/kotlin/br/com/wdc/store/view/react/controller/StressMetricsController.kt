@@ -1,6 +1,6 @@
 package br.com.wdc.store.view.react.controller
 
-import br.com.wdc.store.view.react.skeleton.viewimpl.ReactRootPresenter
+import br.com.wdc.store.view.react.ReactRootPresenter
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import io.javalin.http.Context

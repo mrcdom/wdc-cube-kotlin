@@ -18,7 +18,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import br.com.wdc.store.persistence.security.AuthenticationServiceImpl
 import br.com.wdc.store.domain.security.AuthenticationService
-import br.com.wdc.store.view.react.skeleton.viewimpl.ReactRootPresenter
 
 /**
  * @param config the service configuration, already loaded from the work directory

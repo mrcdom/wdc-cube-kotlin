@@ -12,7 +12,6 @@ import br.com.wdc.store.view.react.supports.WorkDirectory
 import br.com.wdc.framework.cube.remote.javalin.DispatcherController
 import br.com.wdc.store.view.react.controller.ImageController
 import br.com.wdc.framework.cube.remote.javalin.IndexHtmlController
-import br.com.wdc.store.view.react.skeleton.viewimpl.ReactRootPresenter
 import br.com.wdc.store.view.react.controller.StatusController
 import br.com.wdc.store.persistence.rest.RepositoryApiRoutes
 import io.javalin.Javalin

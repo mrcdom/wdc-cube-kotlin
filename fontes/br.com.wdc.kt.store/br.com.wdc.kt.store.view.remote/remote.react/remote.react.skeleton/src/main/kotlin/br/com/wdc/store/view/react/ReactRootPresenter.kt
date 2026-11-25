@@ -1,4 +1,4 @@
-package br.com.wdc.store.view.react.skeleton.viewimpl
+package br.com.wdc.store.view.react
 
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.storage.JvmSessionStorage
