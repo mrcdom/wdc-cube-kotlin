@@ -11,6 +11,8 @@ import br.com.wdc.store.domain.security.ScramVerifier
 import br.com.wdc.store.domain.user.UserRepository
 import br.com.wdc.store.persistence.client.RestAuthClient
 import br.com.wdc.store.persistence.security.AuthenticationServiceImpl
+import br.com.wdc.store.persistence.StoreDSLContext
+import br.com.wdc.store.persistence.scheme.tables.references.EN_LOGIN_FAILURE
 import br.com.wdc.store.persistence.security.LoginThrottle
 import br.com.wdc.store.presentation.presenter.open.login.calls.CredentialsCheck
 import br.com.wdc.store.test.util.RestTestEnvironment
@@ -22,6 +24,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -37,11 +40,27 @@ private class MovableClock(var now: Instant = Instant.parse("2026-11-25T10:00:00
     override fun instant() = now
 }
 
-/** Failed sign-ins on one account wait longer and longer; a success, or an hour, clears them. */
+/**
+ * Failed sign-ins on one account wait longer and longer; a success, or an hour, clears them. The count is in the
+ * database: instances sharing it count as one.
+ */
 class LoginThrottleTest {
+
+    companion object {
+        private val env = TestEnvironment("wedocode-store-login-throttle")
+
+        @JvmField
+        @RegisterExtension
+        val envExtension = TestEnvironmentExtension(env)
+    }
 
     private val clock = MovableClock()
     private val throttle = LoginThrottle(clock = clock)
+
+    @BeforeTest
+    fun noFailures() {
+        StoreDSLContext.BEAN.get().deleteFrom(EN_LOGIN_FAILURE).execute()
+    }
 
     @Test
     fun fiveFailuresAreFree_thenEachOneWaits_doublingTheWait() {
@@ -76,6 +95,44 @@ class LoginThrottleTest {
     fun theWait_hasACeiling() {
         repeat(30) { throttle.failed("fulano") }
         assertEquals(15 * 60, assertFailsWith<TooManyRequestsException> { throttle.check("fulano") }.retryAfterSeconds)
+    }
+
+    @Test
+    fun failuresOnTwoInstances_countAsOne() {
+        val other = LoginThrottle(clock = clock)
+        repeat(3) { throttle.failed("fulano") }
+        repeat(3) { other.failed("fulano") }
+
+        assertFailsWith<TooManyRequestsException> { throttle.check("fulano") }
+        assertFailsWith<TooManyRequestsException> { other.check("fulano") }
+
+        other.succeeded("fulano")
+        throttle.check("fulano")
+    }
+
+    @Test
+    fun failuresAtTheSameTime_areAllCounted() {
+        val threads = (1..20).map { Thread.ofVirtual().start { LoginThrottle(clock = clock).failed("fulano") } }
+        threads.forEach { it.join() }
+
+        val failures = StoreDSLContext.BEAN.get().select(EN_LOGIN_FAILURE.FAILURES).from(EN_LOGIN_FAILURE)
+            .where(EN_LOGIN_FAILURE.USERNAME.eq("fulano")).fetchOne(EN_LOGIN_FAILURE.FAILURES)
+        assertEquals(20, failures)
+    }
+
+    @Test
+    fun aVeryLongName_isCountedToo() {
+        val name = "x".repeat(300)
+        repeat(6) { throttle.failed(name) }
+        assertFailsWith<TooManyRequestsException> { throttle.check(name.uppercase()) }
+    }
+
+    @Test
+    fun evictExpired_dropsTheForgottenFailures() {
+        repeat(6) { throttle.failed("fulano") }
+        clock.now = clock.now.plus(Duration.ofMinutes(61))
+        throttle.evictExpired()
+        assertEquals(0, StoreDSLContext.BEAN.get().fetchCount(EN_LOGIN_FAILURE))
     }
 }
 
