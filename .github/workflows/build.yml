@@ -34,7 +34,11 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      # the runner has an Android SDK: accept its licenses (AGP downloads the platform it needs); the action's default
+      # package list still asks for "tools", which the SDK repository no longer has
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - uses: gradle/actions/setup-gradle@v4
 
