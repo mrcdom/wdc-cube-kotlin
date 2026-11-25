@@ -190,7 +190,8 @@ src/iosMain/kotlin/br/com/wdc/store/nativeui/ios/
     └── ReceiptViewIos.kt        # Purchase receipt
 
 app/
-├── AppDelegate.swift        # Swift entry point (Kotlin framework bootstrap)
+├── AppDelegate.swift        # Swift entry point: starts the Kotlin side once (the root view controller)
+├── SceneDelegate.swift      # The app's window, in its scene (iOS 27 requires the scene life cycle)
 ├── Info.plist               # App configuration (orientations, ATS)
 └── Assets.xcassets/         # App icon
 ```
