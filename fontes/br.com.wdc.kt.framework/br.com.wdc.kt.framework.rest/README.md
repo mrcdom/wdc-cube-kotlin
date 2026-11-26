@@ -10,7 +10,7 @@ dependencies {
 }
 ```
 
-This README describes the code in this repository, which is ahead of the last published version (0.4.0): the data policy, `NotFoundException` (404), `RemoteTransactionNotFoundException` (410), `inRemoteTransaction` and the query cap of `RepositoryRpc` come with 0.5.0, not yet published. See the [0.5.0 release notes](../README.md#050-release-notes).
+This README describes the code in this repository, which is ahead of the last published version (0.4.0): the data policy, `NotFoundException` (404), `RemoteTransactionNotFoundException` (410), `inRemoteTransaction`, the query cap of `RepositoryRpc`, the library's own CORS (`Cors.install`), `TooManyRequestsException` (429) and integer-only slice numbers come with 0.5.0, not yet published. See the [0.5.0 release notes](../README.md#050-release-notes).
 
 ## Example
 
@@ -237,6 +237,8 @@ openApi {
 **Reads join the client's remote transaction.** With `X-Tx-Id`, `count`, `fetch`, `fetch-page`, `fetch-by-id` and `GET {id}` run in it, as participants: they see what it already wrote and are not blocked by the rows it locked. Without the header, they run with no transaction. A handler of your own does the same with `call.inRemoteTransaction { … }`.
 
 **Queries have a cap**, `maxLimit` (1000 by default; `null` turns it off). A `limit` or `pageSize` above it is 400, and so is a `fetch` without `limit` that would bring more rows: it is refused, not cut short, so the client never takes a partial list for the whole one. Page with `limit` and `offset`, or with `fetch-page`.
+
+`limit`, `offset`, `page` and `pageSize` are JSON integers: text, a boolean, a fraction or `null` is 400 — leave out what is not given.
 
 `insert` receives `{"entity", "projection"?}` (or, as before 0.4.0, the bare entity) and answers `{"success", "id", "entity"}`, with the entity as the repository left it — the generated key and the column defaults —, passed through `sanitizeOutput` (with a policy, shaped as a read of what it carries). When nothing was inserted, only `{"success": false}`.
 

@@ -6,7 +6,7 @@ The WDC Store as a remote application. The remote backend itself is the framewor
   - the vid of each of its scopes (`VIDS`, read from each scope's `VID`);
   - its registry (`REGISTRY`, which the backend gives to `DispatcherController` and starts the cleanup and the flush of);
   - that a signed-in user's session outlives its connection (`keepsSessionWithoutConnection`);
-  - the text of an unexpected error, shown in the browser's alert;
+  - an unexpected error, as a catalog message (`:store-i18n`) sent to the browser's alert with the code `RemoteRootPresenter.ALERT_MESSAGE` (-3): `args` are the key, then each argument's name and value; both clients translate it (the cause and the stack trace go only to the server log);
   - `b64Decipher`, with the session's key, for what the client ciphered (the login's password, which `LoginPresenter` deciphers on sync).
 - `controller/` — the Store's own route for product images (`ImageController`). The backend serves the health checks and the metrics.
 - `src/main/resources/META-INF/resources` — where `npm run build` of the [TypeScript client](../remote.views/remote.react.typescript/) writes the bundle (not versioned).

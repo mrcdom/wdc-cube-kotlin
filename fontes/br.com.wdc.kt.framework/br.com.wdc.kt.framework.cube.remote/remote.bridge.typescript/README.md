@@ -4,7 +4,7 @@ TypeScript client of the **remote Cube MVP** protocol: the browser side of the r
 
 It depends on no UI technology: it never draws anything. Painting a scope is the job of a technology binding on top of it — [`wdc-cube-remote-bridge-react`](../remote.bridge.typescript.react/) for React — or of a shell that talks to it directly. It knows nothing about any application either: which views exist and how they look belong to the shell (in this repository, the WDC Store client, [`remote.react.typescript`](../../../br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript/)). The same protocol has a Kotlin/JS client, [`framework-cube-remote-bridge`](../remote.bridge.kotlin/).
 
-The package name is `wdc-cube-remote-bridge`, on npm from 0.5.0 (the same version as the framework, whose remote backend it speaks to):
+The package name is `wdc-cube-remote-bridge`, to be published on npm with 0.5.0 (the same version as the framework, whose remote backend it speaks to; not published yet):
 
 ```bash
 npm install wdc-cube-remote-bridge history universal-cookie
@@ -25,16 +25,16 @@ src/
   ViewBinding.ts          # Holds one view's scope; calls its forceUpdate when a new scope arrives
   ViewGarbageCollector.ts # Drops views the server released or that left the screen
   types.ts                # BrowserScope, FormMapType
-  constants.ts            # Browser view id, keep-alive interval
+  constants.ts            # Browser view id, keep-alive interval, PROTOCOL_VERSION, OUTDATED_MESSAGE
   utils/
-    Base64.ts             # Base64 and URL-safe Base64
+    Base64.ts             # Standard Base64 through btoa/atob; invalid input throws
     UTF8.ts               # TextEncoder/TextDecoder helpers
     LangUtils.ts          # Small helpers (unique id, clearing an object)
 ```
 
 ## Integrating it
 
-The package has no `node_modules` of its own. Its runtime libraries are **peer dependencies** (`history` for the hash history, `universal-cookie` for the session cookies), installed in the shell. Because its files live outside the shell's folder, both the bundler and TypeScript must be told where to find it and where its peer dependencies are.
+Its own `node_modules` are only for building, testing and linting. At runtime its libraries are **peer dependencies** (`history` for the hash history, `universal-cookie` for the session cookies), installed in the shell. Because its files live outside the shell's folder, both the bundler and TypeScript must be told where to find it and where its peer dependencies are.
 
 `package.json` of the shell (Parcel):
 
@@ -104,8 +104,9 @@ The view's lifecycle on the client:
 | `connect()` | Reconnects now, without waiting for the backoff |
 | `onStart()` / `onStop()` | Opens the session and listens to the history / stops listening |
 | `baseWebSocketUrl` | The WebSocket base URL |
+| `outdatedMessage` | The text shown in the browser's alert when the host refuses the protocol version; English (`OUTDATED_MESSAGE`) by default, an application may give a translation |
 
-Also exported: `ViewBinding` (`getId()`, `getScope()`, `forceUpdate`), `DataSecurity`, `BROWSER_VID` and `BROWSER_VSID` (the browser view, instance 0, root of every screen), and the types `BrowserScope` and `FormMapType`.
+Also exported: `ViewBinding` (`getId()`, `getScope()`, `forceUpdate`), `DataSecurity`, `BROWSER_VID` and `BROWSER_VSID` (the browser view, instance 0, root of every screen), `PROTOCOL_VERSION`, and the types `BrowserScope` and `FormMapType`.
 
 ## Protocol
 
@@ -122,7 +123,9 @@ The full specification, and the shared fixtures, are in [conformance/](../confor
 
 ## Tests
 
-`npm ci && npm test` runs the shared client fixtures of [conformance/client](../conformance/client/) against this client (Vitest, jsdom, a fake WebSocket). The packages it installs are only for the tests: a shell still gives the bridge its peer dependencies.
+`npm ci && npm test` runs the shared client fixtures of [conformance/client](../conformance/client/) against this client (Vitest, jsdom, a fake WebSocket). The packages it installs are only for building, testing and linting: a shell still gives the bridge its peer dependencies.
+
+Other commands: `npm run build` (compiles `src/` to `lib/`), `npm run lint` (Oxlint), `npm run format:check` (Prettier).
 
 ## Security
 

@@ -8,7 +8,7 @@ Data access contracts, independent of database and transport (KMP).
 - `codec` — `ModelCodec`, the contract for reading and writing an entity and its criteria.
 - `transaction` — `TransactionService` and `TransactionContext`.
 - `resource` — `ResourceCall` and its verbs, the presentation's operations on the data ([below](#resource-calls)).
-- `exception` — `BusinessException`, `InvalidRequestException`, `NotFoundException`, `AccessDeniedException` and the transaction ones.
+- `exception` — `BusinessException`, `InvalidRequestException`, `NotFoundException`, `AccessDeniedException`, `TooManyRequestsException` (429, with `retryAfterSeconds` when the wait is known), `UnauthenticatedException` and the transaction ones.
 
 **Platforms:** JVM, Android, iOS, JS, wasmJs. Published on Maven Central as `io.github.mrcdom.wdc.kt:framework-domain`.
 

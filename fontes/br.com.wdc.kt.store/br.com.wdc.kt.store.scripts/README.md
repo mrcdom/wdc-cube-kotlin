@@ -1,6 +1,6 @@
 # store-scripts
 
-Scripts for creating, seeding and migrating the database (H2 and PostgreSQL), and the jOOQ class generator.
+Scripts for creating, seeding and migrating the database (H2 and PostgreSQL), the jOOQ class generator, and the generators of design tokens and UI texts.
 
 ## Overview
 
@@ -19,6 +19,8 @@ This module is responsible for the whole lifecycle of the database schema:
 | `MigrationRunner` | Runs migration scripts, recording the steps already executed |
 | `Migration_NNNN_*` | Individual migration scripts with numbered steps |
 | `GenerateJooqSchema` | Generates the jOOQ classes of `:store-persistence` from the `DBCreate` DDL |
+| `GenerateDesignTokens` | `:store-design`'s `tokens.json` → `StoreTokens.kt`, the TypeScript client's `tokens.ts` and the landing page's `tokens.css` (`./gradlew :store-scripts:generateDesignTokens`; `DesignTokensTest` fails while they are stale) |
+| `GenerateMessages` | `:store-i18n`'s `messages.<language>.json` → `StoreMessages.kt` and the TypeScript client's `messages.ts` (`./gradlew :store-scripts:generateMessages`; `MessagesCatalogTest` fails while they are stale) |
 
 ## How It Works
 
@@ -70,7 +72,7 @@ This guarantees **idempotency** — running `DBCreate` multiple times is safe. S
 1. Create a `Migration_NNNN_DescriptiveName` class in the `sgbd` package:
 
 ```kotlin
-class Migration_0010_AddProductCategory(private val connection: Connection) {
+class Migration_0012_AddProductCategory(private val connection: Connection) {
 
     fun step01_addCategoryColumn() {
         connection.createStatement().use { stmt ->
@@ -91,8 +93,8 @@ class Migration_0010_AddProductCategory(private val connection: Connection) {
 ```kotlin
 MigrationRunner(conn)
     // …the previous ones
-    .run(Migration_0009_PasswordScramVerifier(conn))
-    .run(Migration_0010_AddProductCategory(conn))  // new
+    .run(Migration_0011_LoginFailureTable(conn))
+    .run(Migration_0012_AddProductCategory(conn))  // new
 ```
 
 3. Make the same change in the `DBCreate` DDL — a new database is born in the final format — and regenerate the jOOQ classes:
@@ -121,6 +123,8 @@ Rules for steps:
 | `Migration_0007_SessionExpiryToUtc` | 1 | Discards the sessions stored with the expiry in local time |
 | `Migration_0008_UserRolesDefaultCustomer` | 1 | Sets `DEFAULT 'CUSTOMER'` on `ROLES` where `DBCreate` had created the column without it: a user written without roles is a customer in every database |
 | `Migration_0009_PasswordScramVerifier` | 2 | Widens `PASSWORD` and turns every stored MD5 digest into a SCRAM-SHA-256 verifier derived from it: no password needed, and every user keeps theirs |
+| `Migration_0010_AuthNonceTable` | 1 | Creates `EN_AUTH_NONCE`: the login nonces in the database, shared by every instance |
+| `Migration_0011_LoginFailureTable` | 1 | Creates `EN_LOGIN_FAILURE`: failed sign-ins per user, shared by every instance |
 
 ## Use in the Modules
 

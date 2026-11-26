@@ -14,7 +14,7 @@ version of the framework. It receives the scope in its props (never the presente
 val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
     val scope = useScope(props.scope)
     // JSX through Kotlin/JS wrappers
-    Typography { +"Products" }
+    Typography { +messages.productsTitle() }
     for (product in scope.products) {
         CardActionArea { onClick = { safeCall { scope.onOpenProduct(product.id) } } }
     }
@@ -22,8 +22,8 @@ val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
 ```
 
 `useScope(scope)` installs the component as the scope's updater (`scope.setUpdater`) as it starts rendering — before
-it reads the scope, so no change is lost — and takes it back (`clearUpdater`) in the cleanup of a
-a `useEffect` whose coroutine is cancelled when it unmounts: the component's lifecycle is the view's, React drops what leaves the screen,
+it reads the scope, so no change is lost — and takes it back (`clearUpdater`) in the `finally` after `awaitCancellation()` in a
+`useEffect` coroutine, which is cancelled when the component unmounts: the component's lifecycle is the view's, React drops what leaves the screen,
 and nothing is released by hand. A scope has one updater, so one component draws a scope at a time (the Home draws
 each panel in its compact *or* its wide layout, never both).
 
@@ -53,7 +53,7 @@ The bridge between the Cube framework (imperative) and React (declarative) is th
 | **RenderSlot** | Memoized component that draws the view of a child scope, from the catalog |
 | **Responsive breakpoints** | `window.innerWidth` against 518px (`COMPACT_BREAKPOINT`, in `HomeView`) to switch between compact and wide layouts |
 | **Hash routing** | `window.location.hash` kept in sync with Cube navigation (in `Main.kt`) |
-| **MUI theming** | Colors, styles and the MUI theme through constants (`StoreColors`, `StoreStyles`, `StoreTheme`) |
+| **MUI theming** | Colors, styles and the MUI theme through constants (`StoreColors`, `StoreStyles`, `StoreTheme`); the colors come from the design tokens (`TokenColors.css(StoreTokens.Color…)`), and on-scale spacing, radius and font sizes from `StoreTokens` |
 | **useScope** | Each view is its scope's updater while mounted, to repaint when it changes |
 
 ### Navigation and Slots
@@ -88,6 +88,9 @@ fresh UI state. The cart draws each row (`CartScope.rows`) in a slot of its own,
   fresh for each scope the slot shows.
 - Text fields are uncontrolled where the value is only needed on submit (login): `useRef` + `inputRef` +
   `defaultValue`, read when the handler runs, so typing repaints nothing.
+- UI texts come from `messages` (`util/PageMessages.kt`, in `navigator.language`, US English when there is no
+  catalog for it): typed accessors such as `messages.productsTitle()`, and `messages.show(message)` for a `Message` a
+  presenter put in the scope. Dates follow the language (`formatDate`, `util/FormatUtils.kt`); prices stay in dollars.
 - A listener on the window (the Home's resize) is added in a `useEffect` and removed in its `finally`, when the effect's coroutine is cancelled as the view unmounts.
 
 ## How to build and run
@@ -114,9 +117,10 @@ src/jsMain/kotlin/br/com/wdc/store/nativeui/web/
 │   ├── RenderSlot.kt           # ScopeProps, the catalog (ScopeComponents), RenderSlot, useScope, safeCall
 │   └── ViewUpdateScheduler.kt  # The paint cycle, once per animation frame
 ├── theme/
-│   └── StoreTheme.kt      # Palette (StoreColors), styles (StoreStyles) and the MUI theme
+│   └── StoreTheme.kt      # Palette (StoreColors, from the design tokens), styles (StoreStyles) and the MUI theme
 ├── util/
-│   └── FormatUtils.kt     # Price and date formatting, image URLs
+│   ├── FormatUtils.kt     # Price and date formatting, image URLs
+│   └── PageMessages.kt    # UI texts in navigator.language
 └── views/
     ├── StoreViews.kt            # The catalog: which component draws each scope
     ├── RootView.kt              # App shell

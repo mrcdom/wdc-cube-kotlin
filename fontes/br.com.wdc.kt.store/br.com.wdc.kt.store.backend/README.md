@@ -1,12 +1,13 @@
 # backend
 
-The application server, on **Javalin** (port 8080).
+The application server, on **Javalin** (port 8080 by default; `server.port` in the configuration, a port argument after `--workdir`, or the `SERVER_PORT` environment variable, which wins).
 
-It has four responsibilities:
+It has five responsibilities:
 - **REST API** (`/api/repo`, `/api/tx`, `/api/auth`, `/openapi.json`) — for the Compose and native clients — [architecture](../../../docs/architecture-persistence.md#rest-api)
 - **WebSocket** (`/dispatcher/{id}`) — for the React client (remote view) — [architecture](../../../docs/architecture-react.md)
 - **Static files** — serves the web clients: the React client at the root (`/index.html`) and each deployed one under its context (`/native/`, `/compose/`, `/remote-kotlin/`)
 - **Landing page** (`/`) — what the demo is, a card per web client (a link when deployed, the command that deploys it when not), the demo users, and a warning when security is off; unknown paths come back to it (`LandingPage`, `resources/landing/index.html`)
+- **Instance mesh** (`/cluster`, WebSocket) — only with `cluster.peers`: tells the other instances of a session that ended, a product image that changed, a remote view session that moved (`ClusterMesh`) — [several instances](../../../docs/running-several-instances.md)
 
 On startup, it builds the connection pool, creates the missing tables and runs the migrations.
 

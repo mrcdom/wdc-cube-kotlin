@@ -19,7 +19,7 @@ echo "=== Compose Web (Wasm/Compose) Deploy ==="
 echo ""
 
 # Step 1: Build production bundle
-echo "[1/2] Building production bundle..."
+echo "[1/3] Building production bundle..."
 cd "$FONTES_DIR"
 ./gradlew :view-compose-web:wasmJsBrowserDistribution --quiet
 

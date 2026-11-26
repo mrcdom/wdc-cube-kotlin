@@ -13,6 +13,6 @@ Say what is affected (a framework module and version, or the WDC Store demo), ho
 
 ## Known limitations
 
-The demo's security design, its trust boundaries and the limitations it accepts are described in [docs/security-architecture.md](docs/security-architecture.md) (for example: session storage in the browser is readable by a script injected into the page; counters of sign-in failures and requests are kept in memory, per instance). A report of one of those is welcome when it shows a way to make it worse than described.
+The demo's security design, its trust boundaries and the limitations it accepts are described in [docs/security-architecture.md](docs/security-architecture.md) (for example: session storage in the browser is readable by a script injected into the page; the per-address request limit of `/api/auth` is kept in memory, per instance, while sign-in failures per user are in the database). A report of one of those is welcome when it shows a way to make it worse than described.
 
 A backend started without `security.jwt.secret` runs with its API open, by design, for development; see the work directory's example configuration.

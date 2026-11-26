@@ -47,13 +47,18 @@ xcodebuild -project StoreiOS.xcodeproj \
 # 3. Find the generated .app
 APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "StoreiOS.app" -path "*/Debug-iphonesimulator/*" | head -1)
 
-# 4. Boot the simulator (if it is not running)
+# 4. Boot the simulator (if it is not running) and show it: Simulator.app, or DeviceHub on Xcode 27
 xcrun simctl boot "iPhone 17 Pro" 2>/dev/null || true
+open -a Simulator 2>/dev/null || open -b com.apple.dt.Devices
 
-# 5. Install and launch on the simulator
+# 5. Install and launch on the simulator, pointing the app at the backend
 xcrun simctl install booted "$APP_PATH"
-xcrun simctl launch booted br.com.wdc.store.ios
+SIMCTL_CHILD_BACKEND_URL=http://localhost:8080 xcrun simctl launch booted br.com.wdc.store.ios
 ```
+
+The app reads the backend address from `BACKEND_URL` (default `http://localhost:8080`). The simulator passes the app
+only the environment variables prefixed with `SIMCTL_CHILD_`, without the prefix; an app opened from its icon gets
+none and uses the default.
 
 ## Deploying to a Real Device
 

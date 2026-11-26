@@ -153,7 +153,7 @@ class CartScope : Scope() {
 
     var total: Double by field(0.0)
     var errorCode: Int by field(0)
-    var errorMessage: String? by field(null)
+    var errorMessage: Message? by field(null) // a key and its arguments; the view translates it
 
     var onBuy: Action = Action.NOOP
     var onOpenProducts: Action = Action.NOOP
@@ -164,7 +164,7 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private fun alertPurchaseOfEmptyCart() {
         scope.errorCode = 3
-        scope.errorMessage = "…" // the view repaints; several changes in a row still cost one paint
+        scope.errorMessage = Message(MessageKeys.ErrorEmptyCartPurchase) // the view repaints; several changes in a row still cost one paint
     }
 }
 ```
@@ -191,24 +191,24 @@ An action is an entry point of a presenter, kept in a **field of its scope**: `A
 
 ```kotlin
 init {
-    scope.onBuy = action(1) { buy() }
-    scope.onOpenProducts = action(3) { HomeKeys(app).flip() }
+    scope.onBuy = action(1) { onBuy() }
+    scope.onOpenProducts = action(3) { onOpenProducts() }
 }
 ```
 
-The view calls the field, inside its own launch: `safeCall { scope.onBuy() }` (Compose, native web), `safeAction("buy") { scope.onBuy() }` (native Android and iOS). A test calls it directly and sees the result on the next line. The body is a private method of the presenter; presenters no longer have public `onXxx` methods.
+The view calls the field, inside its own launch: `safeCall { scope.onBuy() }` (Compose, native web), `safeAction("buy") { scope.onBuy() }` (native Android and iOS). A test calls it directly and sees the result on the next line. The body is a private method of the presenter, named after the action it backs (`onBuy` for `scope.onBuy`; [ADR 0015](adr/0015-action-handlers-carry-the-action-name.md)); presenters have no public action methods.
 
-**The guard.** Every bound action catches what its body did not handle and hands it to `onActionFailure`, which by default calls `CubeApplication.alertUnexpectedError` (in the WDC Store the user sees `"Unexpected error: <cause>"` and the log gets the stack trace). At the end, failing or not, it calls `app.updateHistory()`, since the action may have changed what the presenters publish. Expected failures (an invalid item, an offline database) stay in the body, which turns them into messages of its own. `CancellationException` passes through.
+**The guard.** Every bound action catches what its body did not handle and hands it to `onActionFailure`, which by default calls `CubeApplication.alertUnexpectedError` (in the WDC Store the user sees the catalog message `error.unexpectedWithCause` — or `error.unexpected` — in their language, and the log gets the stack trace). At the end, failing or not, it calls `app.updateHistory()`, since the action may have changed what the presenters publish. Expected failures (an invalid item, an offline database) stay in the body, which turns them into messages of its own. `CancellationException` passes through.
 
 **One action at a time.** The guarded actions of an application run through `CubeApplication.runAction`: an action that starts while another waits on I/O waits for it to finish (a `Mutex` per application; no thread is blocked). Two clicks on "Buy" make one purchase after the other, never interleaved, and no action sees another one's state halfway. An action that runs another one (directly, or in a coroutine it starts) runs it at once: the lock goes along with the coroutine context. Navigation keeps its own rule (below).
 
 **Remote views: event codes.** An action a remote view fires is bound with its **event code**, and with how to read its values from the form data the client sends (`FormParam.long/int/string(name)`):
 
 ```kotlin
-scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
+scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { onAddToCart(it) }
 ```
 
-The code goes to the bound scope (or to `target`, a segment), and `Scope.dispatch(eventCode, formData)` runs it; an unknown code is an error (`IllegalArgumentException`), and binding a code twice fails. What the user typed arrives before the event by `Scope.sync(formData)`, which runs what the presenter set with `scope.onSync(…)` — a method of the presenter (`scope.onSync(::sync)`), like the actions' bodies: the constructor only binds. An action whose values the form data can't give reads them from the scope, which the sync filled first — the login: the user name and the password (ciphered on the wire; the presenter deciphers it with `app.b64Decipher`, which only the remote host implements) arrive by sync, and `action(1) { enter() }` reads them from the scope. `onEvent(code) { … }` handles a code by hand, when the action itself can't be bound to it.
+The code goes to the bound scope (or to `target`, a segment), and `Scope.dispatch(eventCode, formData)` runs it; an unknown code is an error (`IllegalArgumentException`), and binding a code twice fails. What the user typed arrives before the event by `Scope.sync(formData)`, which runs what the presenter set with `scope.onSync(…)` — a method of the presenter (`scope.onSync(::sync)`), like the actions' bodies: the constructor only binds. An action whose values the form data can't give reads them from the scope, which the sync filled first — the login: the user name and the password (ciphered on the wire; the presenter deciphers it with `app.b64Decipher`, which only the remote host implements) arrive by sync, and `action(1) { onEnter() }` reads them from the scope. `onEvent(code) { … }` handles a code by hand, when the action itself can't be bound to it.
 
 ### Segments
 
@@ -220,8 +220,8 @@ private val products = ProductsPanelScope()
 private val purchases = PurchasesPanelScope()
 
 init {
-    products.onOpenProduct = actionOf(1, FormParam.long("p.productId"), target = products) { openProduct(it) }
-    purchases.onPageChange = actionOf(2, FormParam.int("p.page"), target = purchases) { changePage(it ?: 0) }
+    products.onOpenProduct = actionOf(1, FormParam.long("p.productId"), target = products) { onOpenProduct(it) }
+    purchases.onPageChange = actionOf(2, FormParam.int("p.page"), target = purchases) { onPageChange(it) }
 }
 // in applyParameters: scope.productsPanel = products; scope.purchasesPanel = purchases
 ```
@@ -862,8 +862,8 @@ The table below summarizes which framework operations are `suspend` and which ar
 | `XxxKeys(app).flip()` | ✅ | Calls `navigate().execute()` |
 | `repository.fetch/insert/update()` | ✅ | Network or database access |
 | Calls (`ProductQuery(id).run()`, `PurchaseCreate(…).run()`) | ✅ | Reach a repository |
-| Action bodies with I/O (`buy()`) | ✅ | Call repositories or navigate |
-| Action bodies without I/O (`modifyQuantity()`) | ❌ | Only mutate the scope (the action field itself is still `suspend`) |
+| Action bodies with I/O (`onBuy()`) | ✅ | Call repositories or navigate |
+| Action bodies without I/O (`onModifyQuantity()`) | ❌ | Only mutate the scope (the action field itself is still `suspend`) |
 
 ### The safeCall Pattern — Bridge between View and Presenter
 
@@ -884,7 +884,7 @@ sequenceDiagram
     Note over View: UI thread freed immediately
 
     activate Scope
-    Scope->>Pres: onBuy() — guarded body buy()
+    Scope->>Pres: guarded body onBuy()
     Pres->>Repo: cart.commit(subject) — suspend
     Repo-->>Pres: purchaseId
     Pres->>Pres: ReceiptKeys(app).flip()
@@ -1038,7 +1038,7 @@ flowchart TD
 // the bodies behind the row's actions (onModifyQuantity, onRemove) and the cart's onBuy
 
 // ❌ NOT suspend — only works on the local (in-memory) cart
-private fun modifyQuantity(productId: Long?, quantity: Int?) {
+private fun onModifyQuantity(productId: Long?, quantity: Int?) {
     // … validation …
     val found = cart.modifyProductQuantity(productId, quantity)  // sync
     if (found) {
@@ -1047,7 +1047,7 @@ private fun modifyQuantity(productId: Long?, quantity: Int?) {
 }
 
 // ✅ suspend — may navigate (HomeKeys.flip)
-private suspend fun removeProduct(productId: Long?) {
+private suspend fun onRemove(productId: Long?) {
     val modified = cart.removeProduct(productId)  // sync
     if (modified) {
         if (cart.getSize() == 0) {
@@ -1059,7 +1059,7 @@ private suspend fun removeProduct(productId: Long?) {
 }
 
 // ✅ suspend — does I/O (cart.commit) and navigates (ReceiptKeys.flip)
-private suspend fun buy() {
+private suspend fun onBuy() {
     val purchaseId = cart.commit(app.subject!!)  // ← suspend: persists the purchase
     ReceiptKeys(app).apply { this.purchaseId = purchaseId; purchaseMade = true }.flip()  // ← suspend: navigates
 }
@@ -1111,7 +1111,7 @@ Presenters reach `presenterScope` through `app.presenterScope` (defined in `Root
 
 ```kotlin
 // Inside a presenter (app is RootPresenter)
-private suspend fun enter() {
+private suspend fun onEnter() {
     // Show immediately with partial data
     scope.loading = true
 
@@ -1127,7 +1127,7 @@ private suspend fun enter() {
             }
         } catch (e: Exception) {
             app.presenterScope.launch {
-                scope.errorMessage = e.message
+                scope.errorMessage = Message(MessageKeys.ErrorUnexpectedWithCause, "cause" to e.message)
                 scope.loading = false
             }
         }

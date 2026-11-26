@@ -9,7 +9,7 @@ REST endpoints of the repositories, on top of [`framework-rest`](../../../br.com
 | `/api/auth/…` | SCRAM-SHA-256 login (`challenge`, `login`), session renewal and logout — only with security on; limited per client address (`security.auth.requestsPerMinute`) and, on failed sign-ins, per user (`LoginThrottle`, counted in the database); 429 with `Retry-After` above either |
 | `/openapi.json` | The API's OpenAPI description, derived from the domain |
 
-Each controller configures the `RepositoryRpc` of its entity, which reads and writes with the domain codec — the same one the client uses. **Access is decided by the entity's data policy** (package `security`, on `framework-rest`'s [data policy](../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md#data-policy)) — the only authorization of the repository API; the routes only require an authenticated caller. Every write is atomic; errors are mapped to status codes (400, 401, 403, 404, 409, 429).
+Each controller configures the `RepositoryRpc` of its entity, which reads and writes with the domain codec — the same one the client uses. **Access is decided by the entity's data policy** (package `security`, on `framework-rest`'s [data policy](../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md#data-policy)) — the only authorization of the repository API; the routes only require an authenticated caller. Every write is atomic; errors are mapped to status codes (400, 401, 403, 404, 409, 410 for an unknown or expired remote transaction, 429).
 
 | Entity | ADMIN | CUSTOMER | MANAGER |
 |---|---|---|---|
@@ -19,7 +19,7 @@ Each controller configures the `RepositoryRpc` of its entity, which reads and wr
 | `purchase-item` | reads, creates, updates, deletes | reads the items of their own purchases, adds items to them without a price | reads the items of their own purchases |
 
 - **A purchase is a receipt**: once written, only an ADMIN changes it or its items.
-- **The password is write-only**: in no read grant; projecting it is refused (403, naming `password`), with security on or off. On insert and update it is stored as its digest (`beforeInsert`/`beforeUpdate`, after the policy's check): encrypted with the session's RSA key when there is a session (otherwise 400), as typed without security.
+- **The password is write-only**: in no read grant; projecting it is refused (403, naming `password`), with security on or off. On insert and update it is stored as a SCRAM-SHA-256 verifier with a fresh salt (`PasswordVerifiers.fromPassword`, in `beforeInsert`/`beforeUpdate`, after the policy's check): encrypted with the session's RSA key when there is a session (otherwise 400), as typed without security.
 - **The price of an item is the server's**: the repository reads the product's in the INSERT; an update that touches the price or the product gets the current one (`ItemPrices`, in `beforeUpdate`).
 - **Default shapes**, for a read without a projection (security on): a purchase is its receipt (date, buyer's name, items with quantity, price and the product's name and price); an item is its quantity, price and product (name and price); a user or a product, every field the role reads. Without security, the repository's own fields.
 - Projecting, filtering or sorting by a field the caller's roles do not read is 403, naming it; the alternative groups of a criteria (`anyOf`) are refused (400).

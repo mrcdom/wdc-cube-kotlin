@@ -34,7 +34,7 @@ wdc-cube-kotlin/
 ## Prerequisites
 
 - JDK 21
-- Gradle 9.8 (via wrapper)
+- Gradle 9.9.1 (via wrapper)
 - Android Studio (for Android and Compose Web)
 - Xcode 16+ (for iOS)
 - Node.js (for the React client)
@@ -64,8 +64,11 @@ cd fontes
 
 # Browser tests of the web clients against a real backend (see br.com.wdc.kt.store.e2e/README.md)
 (cd br.com.wdc.kt.store/br.com.wdc.kt.store.e2e && ./prepare.sh && npm ci && npx playwright install chromium && npx playwright test)
+
+# Two instances behind nginx, with PostgreSQL and Prometheus: prepare.sh, a .env with three secrets,
+# docker compose up (the steps are in br.com.wdc.kt.store.docker/README.md)
 ```
 
-The CI ([`.github/workflows/build.yml`](.github/workflows/build.yml)) runs `./gradlew build`, the TypeScript checks, the browser tests and the starter's build on every push and pull request, and the iOS simulator tests on the main branch, weekly and on demand.
+The CI ([`.github/workflows/build.yml`](.github/workflows/build.yml)) runs `./gradlew build`, the TypeScript checks, the browser tests, the starter's build and the Docker compose setup (two instances behind nginx, checked by `check.py` and the browser tests) on every push and pull request, and the iOS simulator tests on the main branch, weekly and on demand.
 
 For **iOS**, open `iosApp/StoreiOS.xcodeproj` in Xcode and run it on the simulator.

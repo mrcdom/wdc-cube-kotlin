@@ -9,13 +9,14 @@ See the [architecture documentation](../../../../../docs/architecture-react.md) 
 | Technology | Version | Purpose |
 |-----------|--------|------------|
 | React | 19 | Reactive UI |
-| TypeScript | ES2024 | Static typing |
+| TypeScript | ES2024 target | Static typing (no `typescript` dependency: Parcel compiles it) |
 | MUI (Material UI) | 9 | Visual components |
 | Emotion | 11 | CSS-in-JS (MUI engine) |
 | Parcel | 2.13.3 | Bundler |
-| Prettier | 3.8.2 | Code formatting |
+| Prettier | 3.10.1 | Code formatting |
+| Oxlint | 1.93.0 | Linting |
 | history | 5.3.0 | Hash-based navigation |
-| universal-cookie | 7.2.2 | Cookie management |
+| universal-cookie | 8.1.2 | Cookie management |
 
 The protocol client (coordinator, WebSocket, security handshake, view bindings) is the framework package [`wdc-cube-remote-bridge`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript/), and its React bindings (the `bridge` object, the hooks, the view base classes) are [`wdc-cube-remote-bridge-react`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript.react/); both are imported from source through aliases. This client supplies the views, the theme and the texts.
 
@@ -28,7 +29,10 @@ graph TD
     src --> scripts["scripts/"]
 
     scripts --> indexTsx["index.tsx<br/><small>Bootstrap: theme, view registration, render</small>"]
-    scripts --> theme["theme.ts<br/><small>Colors and breakpoint</small>"]
+    scripts --> theme["theme.ts<br/><small>MUI theme from the design tokens, breakpoint</small>"]
+    scripts --> tokens["tokens.ts<br/><small>Design tokens, generated from :store-design<br/>(./gradlew :store-scripts:generateDesignTokens)</small>"]
+    scripts --> messages["messages.ts<br/><small>Text catalogs, generated from :store-i18n<br/>(./gradlew :store-scripts:generateMessages)</small>"]
+    scripts --> i18n["i18n.ts<br/><small>The page's Messages, from navigator.language</small>"]
 
     scripts --> utils["utils/ — Utilities"]
     utils --> FormatUtils["DateUtils.ts, NumberUtils.ts"]
@@ -98,7 +102,7 @@ The bridge sets `submitting` on the browser scope, and `BrowserView` shows a `Li
 
 - `@root/*` maps to `./src/scripts/*`.
 - `wdc-cube-remote-bridge` and `wdc-cube-remote-bridge-react` map to the source entries of the two framework packages (`src/index.ts`, `src/index.tsx`).
-- `react`, `history` and `universal-cookie` map to this client's `node_modules`: the bridge packages have none of their own, and their files, outside this folder, resolve these peer dependencies here (one copy of React for both).
+- `react`, `history` and `universal-cookie` map to this client's `node_modules`: the bridge packages' own `node_modules` are only for building, testing and linting, and their files, outside this folder, resolve these peer dependencies here (one copy of React for both).
 
 ```typescript
 import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
