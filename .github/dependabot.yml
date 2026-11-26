@@ -15,12 +15,6 @@ updates:
     groups:
       gradle-minor-and-patch:
         update-types: [minor, patch]
-    ignore:
-      # they need the Android 37 platform (minCompileSdk 37 in their AARs); compileSdk is 36
-      - dependency-name: "org.jetbrains.compose*"
-        versions: [">=1.12.0"]
-      - dependency-name: "com.squareup.okhttp3:*"
-        versions: [">=5.5.0"]
 
   - package-ecosystem: npm
     directories:
