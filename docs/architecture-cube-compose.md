@@ -412,6 +412,7 @@ fun main() {
 - `ScheduledExecutor`: Swing `javax.swing.Timer`
 - `SessionStorage`: `JvmSessionStorage` (in memory, lost when the app closes)
 - `updateHistory()`: no-op (no browser)
+- UI language: the JVM's default locale (`-Duser.language=pt -Duser.country=BR` for pt-BR), read by `StoreTheme` through `Locale.current`; `DesktopLanguageTest` (jvmTest) draws the views under pt-BR, en-US and a language without a catalog
 
 ### Web (wasmJs)
 
