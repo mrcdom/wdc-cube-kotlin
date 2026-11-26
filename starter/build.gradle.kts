@@ -13,7 +13,7 @@ allprojects {
 /** The framework's version: one for all its modules. */
 extra["cube"] = "0.5.0"
 extra["coroutines"] = "1.11.0"
-extra["serialization"] = "1.11.0"
+extra["serialization"] = "1.13.0"
 
 // The npm packages of the JS side (React, webpack…) are pinned in a yarn.lock, which the build checks. They are the
 // frontend's: the lock lives in its folder, versioned, so whoever copies the starter gets the same versions.
