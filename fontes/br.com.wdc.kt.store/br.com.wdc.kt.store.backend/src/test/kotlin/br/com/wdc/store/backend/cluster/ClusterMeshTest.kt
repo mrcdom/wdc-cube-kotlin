@@ -3,6 +3,7 @@ package br.com.wdc.store.backend.cluster
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.log.Slf4jLogFactory
 import io.javalin.Javalin
+import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.AfterTest
@@ -40,17 +41,26 @@ class ClusterMeshTest {
 
     private val nodes = ArrayList<Node>()
 
+    private companion object {
+        val FAST = ClusterMesh.Timing(
+            firstRetry = Duration.ofMillis(100),
+            maxRetry = Duration.ofMillis(500),
+            ping = Duration.ofMillis(500),
+        )
+    }
+
     @AfterTest
     fun stopAll() = nodes.forEach { it.stop() }
 
     private fun node(key: ByteArray = ClusterKey.from("secret"), port: Int = 0): Node {
-        val mesh = ClusterMesh(key)
+        // short retries and pings: a slow machine must not outlast the waits below
+        val mesh = ClusterMesh(key, timing = FAST)
         val server = Javalin.create { mesh.configure(it) }.start("127.0.0.1", port)
         return Node(mesh, server).also { nodes += it }
     }
 
     private fun waitFor(what: String, condition: () -> Boolean) {
-        val until = System.currentTimeMillis() + 15_000
+        val until = System.currentTimeMillis() + 30_000
         while (System.currentTimeMillis() < until) {
             if (condition()) return
             Thread.sleep(50)
