@@ -12,7 +12,8 @@
 #     --backend-url <url>         Backend URL (default: http://10.0.2.2:8080 for emulator, http://<host-ip>:8080 for device)
 #     --skip-build                Skip Gradle build step
 #     --clean                     Clean build before compiling
-#     --cold-boot                 Cold boot the emulator (wipe snapshot)
+#     --cold-boot                 Restart the emulator from scratch: shut it down if it is running,
+#                                 boot it without loading or saving a snapshot
 #     --fresh                     Fresh install (clear icon cache by restarting launcher)
 #     --netspeed <speed>          Emulator network speed (full, lte, hsdpa, umts, edge, gprs; default: full)
 #     --netdelay <delay>           Emulator network delay (none, umts, gprs, edge; default: none)
@@ -241,6 +242,18 @@ start_emulator() {
     # Check if the requested AVD is already running
     local serial
     serial=$(get_serial_for_avd "$EMULATOR_NAME")
+
+    if [[ -n "$serial" && "$COLD_BOOT" == true ]]; then
+        info "Shutting down the running emulator ($serial) for a cold boot..."
+        "$ADB" -s "$serial" emu kill &>/dev/null || true
+        local waited=0
+        while [[ -n "$(get_serial_for_avd "$EMULATOR_NAME")" ]]; do
+            ((waited >= 60)) && die "Emulator $serial did not shut down within 60s"
+            sleep 2
+            ((waited += 2))
+        done
+        serial=""
+    fi
 
     if [[ -n "$serial" ]]; then
         ok "Emulator already running ($serial)"

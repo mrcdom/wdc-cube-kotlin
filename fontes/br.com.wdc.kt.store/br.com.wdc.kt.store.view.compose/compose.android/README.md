@@ -21,7 +21,7 @@ To build, install and launch in one step, use `deploy.sh` in this directory:
   `http://<host-ip>:8080` on a device); it has no effect with `--skip-build`, since the APK is not rebuilt;
 - `--emulator-name <name>` — the AVD (default: interactive selection);
 - `--skip-build` — installs the APK already built;
-- `--cold-boot` — boots the emulator without its snapshot;
+- `--cold-boot` — restarts the emulator from scratch: shuts it down if it is running, then boots it without loading or saving a snapshot (the cure when the emulator's System UI stops responding);
 - `--fresh` — restarts the launcher to clear its icon cache;
 - `--release` (default: debug), `--clean` (see `./deploy.sh --help`).
 

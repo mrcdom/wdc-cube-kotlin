@@ -120,7 +120,7 @@ The backend URL is baked into the APK as `BuildConfig.BASE_URL` at build time (`
 - `--backend-url <url>` — passed to the build as `-PbaseUrl` (default `http://10.0.2.2:8080` on the emulator,
   `http://<host-ip>:8080` on a device); it has no effect with `--skip-build`, since the APK is not rebuilt;
 - `--emulator-name <name>` — the AVD (default: interactive selection);
-- `--cold-boot` — boots the emulator without its snapshot;
+- `--cold-boot` — restarts the emulator from scratch: shuts it down if it is running, then boots it without loading or saving a snapshot (the cure when the emulator's System UI stops responding);
 - `--netspeed <speed>` / `--netdelay <delay>` — the emulator's network speed and latency;
 - also `--release`, `--skip-build`, `--clean`, `--fresh` (see `./deploy.sh --help`).
 
