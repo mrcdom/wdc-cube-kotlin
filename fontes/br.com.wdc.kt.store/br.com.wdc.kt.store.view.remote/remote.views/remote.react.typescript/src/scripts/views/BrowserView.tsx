@@ -22,7 +22,7 @@ class BrowserViewClass extends BaseViewClass<ViewProps, BrowserScope> {
     const { scope } = this
 
     // render() runs as the body of the view's function component (BaseViewClass.FC): hooks are allowed here
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    // oxlint-disable-next-line react-hooks/rules-of-hooks
     React.useEffect(() => {
       bridge.onStart()
       return () => {
