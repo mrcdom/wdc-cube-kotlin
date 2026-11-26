@@ -5,6 +5,7 @@ import com.example.tasks.detail.TaskScope
 import com.example.tasks.list.TaskListScope
 import com.example.tasks.list.TaskRowScope
 import react.FC
+import react.Key
 import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.form
@@ -58,7 +59,7 @@ val TaskListView = FC<ScopeProps<TaskListScope>> { props ->
             ul {
                 for (row in scope.rows) {
                     Slot {
-                        key = keyOf(row)
+                        key = Key(keyOf(row))
                         this.scope = row
                     }
                 }
@@ -100,7 +101,7 @@ val TaskView = FC<ScopeProps<TaskScope>> { props ->
         // keyed by the task: opening another task reuses this presenter, its scope and this view, but the form is a
         // new component, whose text starts from the new title instead of keeping the one being typed for the last
         TaskTitleForm {
-            key = scope.id.toString()
+            key = Key(scope.id.toString())
             this.scope = scope
         }
         scope.errorMessage?.let { message -> p { className = ClassName("error"); +message } }

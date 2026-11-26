@@ -2,16 +2,18 @@ package br.com.wdc.store.nativeui.web.bridge
 
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.Scope
+import kotlin.reflect.KClass
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import react.FC
+import react.Key
 import react.Props
 import react.createRequiredContext
 import react.memo
-import react.useEffectWithCleanup
+import react.useEffect
 import react.useMemo
 import react.useRequired
 import react.useState
-import kotlin.reflect.KClass
 
 /** The props of a view: the scope it draws. */
 external interface ScopeProps<S : Scope> : Props {
@@ -58,7 +60,7 @@ val RenderSlot = memo(FC<RenderSlotProps> { props ->
     val scope = props.scope ?: return@FC
     val view = useRequired(ScopeComponentsContext).componentOf(scope)
     view {
-        key = scopeKey(scope)
+        key = Key(scopeKey(scope))
         this.scope = scope
     }
 })
@@ -90,8 +92,11 @@ fun <S : Scope> useScope(scope: S): S {
     val setPainted = useState(0).component2()
     val painter = useMemo(scope) { Painter { setPainted { it + 1 } } }
     scope.setUpdater(painter.updater)
-    useEffectWithCleanup(scope) {
-        onCleanup {
+    // the effect's coroutine lives while the component is mounted: its cancellation is the cleanup
+    useEffect(scope) {
+        try {
+            awaitCancellation()
+        } finally {
             scope.clearUpdater(painter.updater)
             ViewUpdateScheduler.removeDirty(painter.repaint)
         }

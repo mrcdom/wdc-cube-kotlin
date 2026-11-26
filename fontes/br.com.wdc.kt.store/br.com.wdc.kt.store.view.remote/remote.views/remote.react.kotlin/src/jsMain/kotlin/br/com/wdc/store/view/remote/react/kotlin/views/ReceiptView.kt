@@ -1,8 +1,8 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
-import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
 import br.com.wdc.store.view.remote.react.kotlin.util.formatDate
 import br.com.wdc.store.view.remote.react.kotlin.util.formatPrice
@@ -24,6 +24,7 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
+import react.Key
 import react.ReactNode
 import react.create
 import web.cssom.*
@@ -138,7 +139,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                     spacing = responsive(1)
                     receipt.objects("items").forEachIndexed { index, item ->
                         Paper {
-                            key = "$index"
+                            key = Key("$index")
                             elevation = 0
                             sx {
                                 padding = StoreTokens.Spacing.Md.px

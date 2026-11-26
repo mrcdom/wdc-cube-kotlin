@@ -1,8 +1,8 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
-import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
 import br.com.wdc.store.view.remote.react.kotlin.theme.jsObject
 import br.com.wdc.store.view.remote.react.kotlin.util.formatPrice
@@ -23,6 +23,7 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
+import react.Key
 import react.ReactNode
 import react.dom.html.ReactHTML.img
 import web.cssom.*
@@ -107,7 +108,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                     val id = product["id"]
                     val name = product.string("name") ?: ""
                     Card {
-                        key = "$id"
+                        key = Key("$id")
                         elevation = 0
                         sx {
                             borderRadius = StoreTokens.Radius.Sm.px

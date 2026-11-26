@@ -1,9 +1,9 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
-import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
-import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
+import br.com.wdc.framework.cube.remote.bridge.react.useView
+import br.com.wdc.store.design.StoreTokens
 import mui.material.Alert
 import mui.material.AlertTitle
 import mui.material.Box
@@ -19,6 +19,7 @@ import mui.material.styles.TypographyVariant
 import mui.system.sx
 import react.FC
 import react.Fragment
+import react.Key
 import react.Props
 import react.create
 import react.dom.html.ReactHTML.span
@@ -39,7 +40,7 @@ val BrowserView = FC<RemoteViewProps> { props ->
     Box {
         if (scope.boolean("submitting")) {
             LinearProgress {
-                key = "submitting"
+                key = Key("submitting")
                 sx {
                     position = Position.fixed
                     top = 0.px
@@ -52,7 +53,7 @@ val BrowserView = FC<RemoteViewProps> { props ->
 
         scope.obj("error")?.let { error ->
             ConnectionAlert {
-                key = "connection"
+                key = Key("connection")
                 delay = error.int("delay") ?: 0
                 onReconnectNow = { bridge.connect() }
             }
@@ -60,7 +61,7 @@ val BrowserView = FC<RemoteViewProps> { props ->
 
         scope.obj("alertMessage")?.let { alert ->
             AppAlert {
-                key = "alert"
+                key = Key("alert")
                 code = alert.int("id") ?: 0
                 args = alert.strings("args").toTypedArray()
                 onDismiss = { bridge.submit(props.vsid, ON_ALERT_OK) }
@@ -70,12 +71,12 @@ val BrowserView = FC<RemoteViewProps> { props ->
         val contentViewId = scope.viewId("content")
         if (contentViewId != null) {
             Fragment {
-                key = "content"
+                key = Key("content")
                 remoteView(contentViewId)
             }
         } else {
             Box {
-                key = "loading"
+                key = Key("loading")
                 sx {
                     display = Display.flex
                     justifyContent = JustifyContent.center

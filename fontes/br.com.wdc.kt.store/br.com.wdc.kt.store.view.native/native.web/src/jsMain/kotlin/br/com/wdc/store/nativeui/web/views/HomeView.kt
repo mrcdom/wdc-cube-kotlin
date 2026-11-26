@@ -7,6 +7,7 @@ import br.com.wdc.store.nativeui.web.bridge.safeCall
 import br.com.wdc.store.nativeui.web.bridge.useScope
 import br.com.wdc.store.nativeui.web.theme.StoreColors
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
+import kotlinx.coroutines.awaitCancellation
 import mui.icons.material.Inventory2
 import mui.icons.material.LocalMall
 import mui.icons.material.Logout
@@ -34,7 +35,7 @@ import react.ReactNode
 import react.create
 import react.dom.events.MouseEventHandler
 import react.dom.events.SyntheticEvent
-import react.useEffectWithCleanup
+import react.useEffect
 import react.useState
 import web.cssom.*
 import web.html.HTMLButtonElement
@@ -58,12 +59,16 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
     var isCompact by useState(kotlinx.browser.window.innerWidth < COMPACT_BREAKPOINT)
 
     // Track window width for responsiveness
-    useEffectWithCleanup(Unit) {
+    useEffect(Unit) {
         val handler: (dynamic) -> Unit = {
             isCompact = kotlinx.browser.window.innerWidth < COMPACT_BREAKPOINT
         }
         kotlinx.browser.window.addEventListener("resize", handler)
-        onCleanup { kotlinx.browser.window.removeEventListener("resize", handler) }
+        try {
+            awaitCancellation()
+        } finally {
+            kotlinx.browser.window.removeEventListener("resize", handler)
+        }
     }
 
     Box {

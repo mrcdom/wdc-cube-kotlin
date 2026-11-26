@@ -27,6 +27,7 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
+import react.Key
 import react.ReactNode
 import react.dom.html.ReactHTML.img
 import web.cssom.*
@@ -115,7 +116,7 @@ val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
 
                 for (product in products) {
                     Card {
-                        key = "${product.id}"
+                        key = Key("${product.id}")
                         elevation = 0
                         sx {
                             borderRadius = StoreTokens.Radius.Sm.px

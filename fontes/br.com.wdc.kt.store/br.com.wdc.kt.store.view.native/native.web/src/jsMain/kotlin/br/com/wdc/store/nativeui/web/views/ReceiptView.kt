@@ -27,6 +27,7 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
+import react.Key
 import react.ReactNode
 import react.dom.events.MouseEventHandler
 import web.cssom.*
@@ -146,7 +147,7 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
 
                         for (item in receipt.items) {
                             Paper {
-                                key = "${item.id}"
+                                key = Key("${item.id}")
                                 sx {
                                     padding = StoreTokens.Spacing.Md.px
                                     borderRadius = StoreTokens.Radius.Sm.px
