@@ -206,6 +206,68 @@ jobs:
             fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e/build/e2e-work/log/
           retention-days: 7
 
+  docker:
+    name: Docker compose (two instances, mesh, nginx, Prometheus)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Use the runner's JDK and Android SDK
+        run: |
+          mkdir -p ~/.gradle && echo "org.gradle.java.home=$JAVA_HOME" >> ~/.gradle/gradle.properties
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Yarn locks
+        run: ./gradlew kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock
+
+      # the backend and the web clients, staged for the image
+      - name: Build what the image takes
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.docker
+        run: ./prepare.sh
+
+      - name: Start the compose setup
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.docker
+        run: |
+          printf 'STORE_DB_PASSWORD=%s\nSTORE_JWT_SECRET=%s\nSTORE_MANAGEMENT_TOKEN=%s\n' \
+            "$(openssl rand -hex 24)" "$(openssl rand -hex 24)" "$(openssl rand -hex 24)" > .env
+          docker compose up -d --build --wait
+
+      - name: Check it end to end
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.docker
+        run: python3 check.py
+
+      - name: Install Playwright
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # the browser tests against nginx, in front of the two instances (E2E_REUSE: use the server already up)
+      - name: Browser tests through nginx
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e
+        run: E2E_PORT=8080 E2E_REUSE=1 npx playwright test
+
+      - name: Compose logs
+        if: failure()
+        working-directory: fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.docker
+        run: docker compose logs --no-color > compose.log; tail -200 compose.log
+
   ios:
     name: iOS tests (simulator)
     # long and only needed now and then: on the main branch, weekly, and on demand

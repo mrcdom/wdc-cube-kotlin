@@ -2,7 +2,7 @@
 
 One backend instance needs nothing in this document. It is for putting several behind one address — for capacity, or so that one can stop while the others serve — and says what they must share, what each keeps in its own memory, and how requests have to be routed so that each reaches the instance that holds what it needs.
 
-The demo was built and tested as one instance. Nothing below was run against several; it comes from reading what each part keeps and where.
+The demo is tested with two instances behind nginx, in the compose setup of [`br.com.wdc.kt.store.docker`](../fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.docker/README.md), on every push. What it does not exercise comes from reading what each part keeps and where.
 
 ## What every instance shares
 
@@ -46,47 +46,12 @@ Two rules cover the table:
 
 Each instance answers `GET /health/ready` with 503 when its database does not answer: point the load balancer's health check there. nginx open source has no active checks and never calls it: it takes an instance out only after connection errors, or the statuses listed in `proxy_next_upstream`.
 
-A sketch for nginx, **not tested** (rule 1 by the id in the socket's path, rule 2 by `X-Client-Id`):
-
-```nginx
-map $uri $affinity_from_path {
-    ~^/dispatcher/(?<sid>[^/]+)$  $sid;
-    default                        "";
-}
-map $affinity_from_path $affinity {
-    ""       $http_x_client_id;   # API calls: the client's id
-    default  $affinity_from_path; # remote view: the session id
-}
-
-upstream store {
-    hash $affinity consistent;
-    server store-a:8080;
-    server store-b:8080;
-}
-
-server {
-    location / {
-        proxy_pass http://store;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;     # the WebSocket
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_read_timeout 300s;                    # the host closes idle sockets after 5 minutes
-    }
-}
-```
+The compose setup in [`br.com.wdc.kt.store.docker`](../fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.docker/README.md) runs this: two instances on their mesh, PostgreSQL, Prometheus, and nginx in front with [`nginx.conf`](../fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.docker/nginx.conf) — rule 1 by the id in the socket's path, rule 2 by `X-Client-Id`, and the `/api/auth` limit per address. The CI brings it up on every push and checks it end to end: the browser tests, both remote clients included, run through nginx; a session ended on one instance is refused by the other; nginx limits `/api/auth`; Prometheus scrapes both.
 
 When an instance stops, what it held in memory is gone: its remote view sessions (a tab starts over on another instance — reloading, if the instances sign ids with different keys — and its user signs in again) and its open remote transactions (rolled back; their clients get 410 on the next call). The sessions of the REST API's users are in the database and survive.
 
 ## What to change for a real deployment
 
-- **Limiting requests per address at the proxy**, where every instance's traffic passes, for example with nginx's `limit_req` (also not tested):
-
-  ```nginx
-  limit_req_zone $binary_remote_addr zone=auth:10m rate=60r/m;
-  location /api/auth/ { limit_req zone=auth burst=20 nodelay; limit_req_status 429; proxy_pass http://store; }
-  ```
-
-  Behind a proxy, every client also reaches the backend from the proxy's address, so the backend's own per-address limit counts them all together: raise `security.auth.requestsPerMinute`, or set it to `0`, and let the proxy limit.
+- **Limiting requests per address at the proxy**, where every instance's traffic passes, with nginx's `limit_req` as the compose setup's `nginx.conf` does. Behind a proxy, every client also reaches the backend from the proxy's address, so the backend's own per-address limit counts them all together: raise `security.auth.requestsPerMinute`, or set it to `0`, and let the proxy limit.
 
 See also: [security-architecture.md](security-architecture.md) (sessions, limits), [architecture-react.md](architecture-react.md) (the remote view's sessions), [architecture-persistence.md](architecture-persistence.md) (remote transactions).

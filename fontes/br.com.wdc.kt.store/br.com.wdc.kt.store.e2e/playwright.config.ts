@@ -33,7 +33,8 @@ export default defineConfig({
     command: './start-backend.sh',
     url: `http://localhost:${port}/health`,
     timeout: 120_000,
-    reuseExistingServer: !process.env.CI,
+    // outside the CI, or when told to (E2E_REUSE: the compose setup's nginx), use a server already up
+    reuseExistingServer: !process.env.CI || !!process.env.E2E_REUSE,
     stdout: 'ignore',
     stderr: 'pipe',
   },
