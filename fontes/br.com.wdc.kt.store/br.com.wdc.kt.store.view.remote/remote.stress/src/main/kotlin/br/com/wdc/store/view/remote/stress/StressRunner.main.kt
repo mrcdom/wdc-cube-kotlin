@@ -1,7 +1,7 @@
 package br.com.wdc.store.view.remote.stress
 
 /**
- * Stress Test Runner for Remote React Skeleton
+ * Stress Test Runner for the remote view (the WDC Store's remote host)
  *
  * Usage:
  *   ./gradlew :view-remote-stress:run
@@ -16,7 +16,7 @@ fun main(args: Array<String>) {
 
     println()
     println("╔══════════════════════════════════════════════════╗")
-    println("║   Remote React Skeleton — Stress Test Tool      ║")
+    println("║   Remote View — Stress Test Tool                ║")
     println("╚══════════════════════════════════════════════════╝")
     println()
 
@@ -60,7 +60,7 @@ private fun parseArgs(args: Array<String>): StressConfig {
 
 private fun printHelp() {
     println("""
-        Remote React Skeleton — Stress Test Tool
+        Remote View — Stress Test Tool
         
         Options:
           --clients=N      Number of virtual clients (default: 10)

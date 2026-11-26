@@ -19,6 +19,7 @@
   - [iOS](#ios)
 - [Deep-Linking and History (Web)](#deep-linking-and-history-web)
 - [Loading Pattern](#loading-pattern)
+- [Theme and Texts](#theme-and-texts)
 
 ---
 
@@ -263,6 +264,7 @@ Every Compose view follows the same pattern:
 fun LoginView(scope: LoginScope) {
     // (1) Subscribes to the scope while on screen
     useScope(scope)
+    val messages = LocalMessages.current  // the UI texts in the platform's language
 
     // (2) Reads the scope it draws
     val loading = scope.loading
@@ -285,7 +287,7 @@ fun LoginView(scope: LoginScope) {
         onClick = { safeCall { scope.onEnter() } },
         enabled = !loading,
     ) {
-        if (loading) CircularProgressIndicator() else Text("Sign in")
+        if (loading) CircularProgressIndicator() else Text(messages.loginSignIn())
     }
 }
 ```
@@ -362,7 +364,7 @@ fun RootView(scope: RootScope) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         RenderSlot(scope.content)  // ← draws the child view
-        // scope.errorMessage → Snackbar (the unexpected-error alert)
+        // scope.errorMessage (a Message) → Snackbar with messages.text(errorMessage)
     }
 }
 ```
@@ -570,17 +572,19 @@ private suspend fun onEnter() {
         scope.loading = false
 
         if (subject?.id != null) {
-            app.subject = subject
+            app.startSession(subject)
             HomeKeys(app).flip()
         } else {
-            scope.errorMessage = "Username or password not recognized!"
+            alertUserOrPasswordNotRecognize()  // scope.errorMessage = Message(MessageKeys.ErrorUserOrPasswordNotRecognized)
         }
     } catch (caught: Exception) {
         scope.loading = false
-        scope.errorMessage = "Failed to communicate with the server. Check your connection."
+        alertConnectionError(caught)  // scope.errorMessage = Message(MessageKeys.ErrorConnectionFailed)
     }
 }
 ```
+
+`errorMessage` is a `Message` (a key and its arguments), not a text: the presenter does not know the user's language, and the view translates it with `LocalMessages.current.text(message)`.
 
 **In the view** (Compose reacts automatically):
 
@@ -589,8 +593,21 @@ Button(
     onClick = { safeCall { scope.onEnter() } },
     enabled = !loading,
 ) {
-    if (loading) CircularProgressIndicator() else Text("Sign in")
+    if (loading) CircularProgressIndicator() else Text(messages.loginSignIn())
 }
 ```
 
 The presenter changes `scope.loading`; the scope tells the view that draws it (its updater, installed by `useScope`), and Compose recomposes. No callbacks in the presenter, no explicit bindings.
+
+---
+
+## Theme and Texts
+
+`StoreTheme` (`theme/StoreTheme.kt`) wraps every entry point. It provides:
+
+- **`LocalMessages`** — the UI texts in the platform's language, read once through `Locale.current` (a language without a catalog falls back to US English);
+- **the color scheme**, built from the design tokens (`StoreTokens.Color`, module `:store-design`).
+
+Views read `val messages = LocalMessages.current` and call its typed accessors (`messages.loginSignIn()`); a presenter's `Message` is translated with `messages.text(message)` (`i18n/LocalMessages.kt`). Spacing, corner radius and font size that sit on the scale come from `StoreTokens.Spacing`, `StoreTokens.Radius` and `StoreTokens.FontSize` (`StoreTokens.Spacing.Md.dp`); sizes off the scale stay literal.
+
+Decisions: [ADR 0020 — design tokens](adr/0020-design-tokens.md) and [ADR 0021 — the UI texts in one catalog](adr/0021-ui-texts-in-one-catalog.md).

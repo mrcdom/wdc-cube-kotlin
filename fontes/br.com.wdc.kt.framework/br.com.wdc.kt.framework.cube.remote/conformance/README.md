@@ -39,7 +39,7 @@ A vsid is `<vid>:<instance>`: the vid names the client component that draws that
 
 ### The version
 
-The host answers a handshake with a version it does not speak — or with none — and any message before an accepted handshake with `{"requestId": …, "error": "unsupported-protocol", "protocols": [1]}`, and reads nothing in it. The client then sends nothing more, does not reconnect, and tells the user the page is out of date (the browser's alert, `{"id": -1, "args": ["This page is out of date. Reload it to continue."]}`; its OK reloads the page). The version goes up only when the wire changes in a way the other side cannot read.
+The host answers a handshake with a version it does not speak — or with none — and any message before an accepted handshake with `{"requestId": …, "error": "unsupported-protocol", "protocols": [1]}`, and reads nothing in it. The client then sends nothing more, does not reconnect, and tells the user the page is out of date (the browser's alert, `{"id": -1, "args": ["This page is out of date. Reload it to continue."]}`; its OK reloads the page). That text is the client's default: an application may supply its own (translated); the fixtures check the default. The version goes up only when the wire changes in a way the other side cannot read.
 
 ## The fixtures
 

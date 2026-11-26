@@ -9,7 +9,7 @@ scopes over a WebSocket; this client only paints them and sends back what the us
 persistence.
 
 It is the Kotlin counterpart of the TypeScript client ([`remote.react.typescript`](../remote.react.typescript/)) and of the
-Java version's TeaVM client: same screens, same texts, same protocol, so the same server drives any of them.
+Java version's TeaVM client: same screens, the same text catalog (`:store-i18n`), in en-US or pt-BR, same protocol, so the same server drives any of them.
 
 It builds on the framework modules [`:framework-cube-remote-bridge`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.kotlin/) and [`:framework-cube-remote-bridge-react`](../../../../br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.kotlin.react/)
 (`RemoteBridge`, `RemoteScope`, and the React bindings `RemoteViews`, `useView`, `remoteView`), which do the
@@ -78,10 +78,11 @@ remote.react.kotlin/
     ├── resources/
     │   ├── index.html        the page: fonts, scrollbars, #root
     │   └── favicon.png
-    └── kotlin/br/com/wdc/store/view/remote/kotlin/
+    └── kotlin/br/com/wdc/store/view/remote/react/kotlin/
         ├── Main.kt           creates the bridge, registers the views, renders the browser view, starts
-        ├── theme/StoreTheme.kt   palette and MUI theme
-        ├── util/Format.kt    prices, dates (MM/DD/YYYY, UTC), product image path, HTML to text
+        ├── theme/StoreTheme.kt   MUI theme from the design tokens (`StoreTokens`)
+        ├── util/Format.kt    prices, dates (in the page's language, UTC), product image path, HTML to text
+        ├── util/PageMessages.kt  the page's Messages (navigator.language) and RemoteScope.message(name)
         └── views/
             ├── StoreViews.kt     the vids and their registration; useBridge()
             ├── BrowserView.kt    progress bar, "Not connected" bar, the server's alert, the content

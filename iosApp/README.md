@@ -12,4 +12,4 @@ Generated with **XcodeGen** from `project.yml`.
 
 The build phase compiles the Kotlin framework through Gradle automatically.
 
-The backend must be running on port 8080.
+The app talks to the backend at `http://localhost:8080` unless the `BACKEND_URL` environment variable says otherwise (`deploy.sh --backend-url` passes it to the simulator as `SIMCTL_CHILD_BACKEND_URL`).

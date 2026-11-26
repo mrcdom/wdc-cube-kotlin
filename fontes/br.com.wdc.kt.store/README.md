@@ -11,7 +11,12 @@ Modules of the WDC Store application, organized in layers: domain, persistence, 
   - [persistence.impl/](br.com.wdc.kt.store.persistence/persistence.impl/) — Repositories on jOOQ, for H2 and PostgreSQL (JVM)
   - [persistence.rest/](br.com.wdc.kt.store.persistence/persistence.rest/) — REST API of the repositories (JVM)
   - [persistence.client/](br.com.wdc.kt.store.persistence/persistence.client/) — REST client of the repositories (KMP)
-- [br.com.wdc.kt.store.scripts/](br.com.wdc.kt.store.scripts/) — Database creation and migration scripts (JVM)
+- [br.com.wdc.kt.store.scripts/](br.com.wdc.kt.store.scripts/) — Database creation and migration scripts, and the generators of jOOQ classes, design tokens and UI texts (JVM)
+
+### Design and Texts
+
+- [br.com.wdc.kt.store.design/](br.com.wdc.kt.store.design/) — Design tokens (colors, spacing, radii, type) for every view technology, generated from `tokens.json` (KMP)
+- [br.com.wdc.kt.store.i18n/](br.com.wdc.kt.store.i18n/) — UI texts in en-US and pt-BR for every view technology, generated from `messages.<language>.json` (KMP)
 
 ### Presentation
 
@@ -27,3 +32,5 @@ Modules of the WDC Store application, organized in layers: domain, persistence, 
 
 - [br.com.wdc.kt.store.backend/](br.com.wdc.kt.store.backend/) — Javalin server (HTTP + WebSocket)
 - [br.com.wdc.kt.store.tests/](br.com.wdc.kt.store.tests/) — Integration tests
+- [br.com.wdc.kt.store.e2e/](br.com.wdc.kt.store.e2e/) — Browser tests of the web clients against a real backend (Playwright)
+- [br.com.wdc.kt.store.docker/](br.com.wdc.kt.store.docker/) — Two instances on the mesh behind nginx, with PostgreSQL and Prometheus (Docker compose)

@@ -29,7 +29,7 @@ graph LR
     end
 
     subgraph "Server (JVM)"
-        SKEL["Skeleton<br/>(bridge view)"]
+        SKEL["Remote host<br/>(one view per scope)"]
         PRES["Presenters<br/>(presentation logic)"]
         REPO["Repositories<br/>(JDBC data access)"]
         DB[(H2 or PostgreSQL)]
@@ -145,11 +145,11 @@ graph TB
 sequenceDiagram
     participant Browser as React Client
     participant WS as WebSocket
-    participant Dispatch as DispatchPhaseBhv
+    participant Dispatch as RemoteApplicationSupport (dispatch)
     participant ViewImpl as RemoteViewImpl (login)
     participant Presenter as LoginPresenter
     participant Repo as UserRepository (JDBC)
-    participant Response as ResponsePhaseBhv
+    participant Response as RemoteApplicationSupport (respond)
 
     Browser->>WS: JSON with event and formData
     WS->>Dispatch: parses request
@@ -274,7 +274,8 @@ class RemoteRootPresenter(id: String) : RootPresenter(), RemoteApplication {
     override fun keepsSessionWithoutConnection() = subject != null   // a signed-in user's session waits for the client
     override fun b64Decipher(b64Text: String) = remote.dataSecurity.b64Decipher(b64Text)
     override fun updateHistory() = remote.updateHistory()
-    // alertUnexpectedError → remote.browser.alertUnexpectedError(text); release → remote.release(), then super.release()
+    // alertUnexpectedError → remote.browser.alert({}, ALERT_MESSAGE /* -3 */, key, name, value, …): a catalog message
+    // that both clients translate; release → remote.release(), then super.release()
 }
 ```
 
@@ -323,13 +324,15 @@ The event codes live in the presenter, next to the action they fire, with how to
 
 ```kotlin
 // ProductPresenter
-scope.onOpenProducts = action(1) { HomeKeys(app).flip() }
-scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { addToCart(it) }
+scope.onOpenProducts = action(1) { onOpenProducts() }
+scope.onAddToCart = actionOf(2, FormParam.int("p.quantity")) { onAddToCart(it) }
 ```
 
 The login's values arrive by sync, not as form parameters of the event, and the presenter copies them into the scope (`scope.onSync(::sync)` in `LoginPresenter`). The password goes ciphered with the session key; the presenter deciphers it with `app.b64Decipher`, which only the remote application implements (`RemoteRootPresenter`, with the session's `RemoteDataSecurity`). The server applies the sync before it dispatches the events, so the presenter binds the action like any other: `scope.onEnter = action(1) { onEnter() }`, reading the user name and password from the scope.
 
 The browser tab itself is a scope of the remote layer (`BrowserScope`: the alert and the root scope, sent as `contentViewId`), whose actions `RemoteBrowserPresenter` binds with their codes like any presenter; the presentation knows nothing of it.
+
+**Texts travel as keys** ([ADR 0021](adr/0021-ui-texts-in-one-catalog.md), [ADR 0022](adr/0022-remote-alerts-in-the-users-language.md)). A scope's `errorMessage` is a `Message` and goes as `{"key": …, "args": {…}}`; each client translates it from the `:store-i18n` catalog in the browser's language (`navigator.language`). The browser's alert has three codes: -1, a text; -2, an address that could not be reached; and the Store's own -3 (`RemoteRootPresenter.ALERT_MESSAGE`): `args` are the key, then the name and value of each argument — an unexpected error goes this way, and both clients translate it. The text the bridges show when the host refuses the protocol version comes from the application too (`RemoteBridge.outdatedMessage` in Kotlin, `bridge.setOutdatedMessage(text)` in TypeScript; English by default): the Store passes `browser.outdated`.
 
 The mapping between hexadecimal View IDs and views is fixed and shared between client and server; on the server, each is the `VID` of its scope:
 
@@ -433,7 +436,7 @@ stateDiagram-v2
     Disconnected --> [*]: release() when not signed in
 ```
 
-- **Creation**: when `/index.html` is accessed, session cookies are set
+- **Creation**: when `/index.html` is accessed, the `app_id` cookie (the signed session id) is set; the application itself is made on the first WebSocket message (`RemoteApplicationRegistry.getOrCreate`)
 - **Lifetime**: 3 minutes (`RemoteApplicationSupport.DEFAULT_LIFE_SPAN`) — extended on every message, including the keep-alive event (every 15 s)
 - **Reconnection**: if the WebSocket drops, the client reconnects and finds the same session (if it has not expired)
 - **Cleanup**: a session ends when its WebSocket closes unauthenticated; an authenticated one lives on without a socket until its life runs out. `RemoteApplicationRegistry.startCleanup`, started by the backend on the Store's registry, runs `removeExpireds()` every 30 seconds: an application past its life with no socket is released, one with a socket gets more life.
@@ -520,11 +523,11 @@ sequenceDiagram
     participant User as User
     participant React as React Client
     participant WS as WebSocket
-    participant Disp as DispatchPhaseBhv
+    participant Disp as RemoteApplicationSupport (dispatch)
     participant LView as RemoteViewImpl (login)
     participant LPres as LoginPresenter
     participant URepo as UserRepository (JDBC)
-    participant Resp as ResponsePhaseBhv
+    participant Resp as RemoteApplicationSupport (respond)
 
     User->>React: Fills in user name and password and clicks Sign in
 

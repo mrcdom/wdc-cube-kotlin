@@ -309,7 +309,7 @@ All entities have the same operations, under `/api/repo/<entity>` (`user`, `prod
 
 Every write is atomic: it runs in the remote transaction given by `X-Tx-Id` or, without it, in a transaction of the request's own.
 
-Entity routes are a [`framework-rest`](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md) `RepositoryRpc`, one per entity, and `RepositoryApiRoutes.create()` assembles the whole API. Each controller configures its entity's RPC: the entity's **data policy** (`rpc.policy`, package `security`), which decides every access, and the transformations before each write (the password digest, the item price on update). The transaction bridge and the `/api/tx` routes also come from the framework.
+Entity routes are a [`framework-rest`](../fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.rest/README.md) `RepositoryRpc`, one per entity, and `RepositoryApiRoutes.create()` assembles the whole API. Each controller configures its entity's RPC: the entity's **data policy** (`rpc.policy`, package `security`), which decides every access, and the transformations before each write (the password's verifier, the item price on update). The transaction bridge and the `/api/tx` routes also come from the framework.
 
 Errors come back as `{"error": "…"}`:
 
@@ -321,7 +321,7 @@ Errors come back as `{"error": "…"}`:
 | 404 | Not found: `fetch-by-id` or `GET {id}` of a row that doesn't exist or that the caller doesn't reach, the image of a product that doesn't exist, or an update of a row the caller's update grants do not reach and they cannot read either (told the same way as a missing row; no WDC Store role has such a grant today) |
 | 409 | Remote transaction conflict |
 | 410 | Unknown or expired remote transaction |
-| 429 | Too many open remote transactions; `/api/auth` requests from one address above `security.auth.requestsPerMinute` (with `Retry-After`) |
+| 429 | Too many open remote transactions; `/api/auth` requests from one address above `security.auth.requestsPerMinute`; a login while the user's failed sign-ins are being slowed down (`LoginThrottle`); both with `Retry-After` |
 | 500 | Unexpected failure: `{"error": "Internal server error"}`, with the error recorded in the log |
 
 **The full description is at `GET /openapi.json`** (OpenAPI 3). The criteria fields, orderings, and operators it lists are read from the domain at runtime, and `OpenApiSpecTest` checks that every documented route exists.
@@ -396,7 +396,7 @@ How the policies decide:
 - **Masks** (`Mask.keepFirst`, `Mask.keepLast`) apply to text fields; a masked field cannot be filtered, sorted by, or written by the grant that masks it.
 - **`anyOf` is server side only**: the policies use it to restrict rows; in a request, the key is refused (400).
 
-**The password is write-only.** It is declared `writeOnly` in the user's description: no grant reads it, so projecting it — directly or through `purchase.user` — is 403 (`[password]`), **with security on or off**, and it never comes back in a response. It is accepted when writing a user and **stored as its digest**, the form the login compares, so a user created through the API can log in: the `beforeInsert`/`beforeUpdate` hooks of `UserApiController` turn it, after the policy's check. With security on, it must come encrypted with the session's RSA public key (the `publicKey` of the login response; `RestAuthClient.encryptPassword` on the client): one that does not decrypt is refused with 400, never stored as it came. Without security there is no key, and the password comes as typed.
+**The password is write-only.** It is declared `writeOnly` in the user's description: no grant reads it, so projecting it — directly or through `purchase.user` — is 403 (`[password]`), **with security on or off**, and it never comes back in a response. It is accepted when writing a user and **stored as a SCRAM-SHA-256 verifier** with a fresh salt (`PasswordVerifiers.fromPassword`), the form the login checks, so a user created through the API can log in: the `beforeInsert`/`beforeUpdate` hooks of `UserApiController` turn it, after the policy's check. With security on, it must come encrypted with the session's RSA public key (the `publicKey` of the login response; `RestAuthClient.encryptPassword` on the client): one that does not decrypt is refused with 400, never stored as it came. Without security there is no key, and the password comes as typed.
 
 **The price of a purchase item is the server's.** On insert, alone or inside a purchase, the item repository (`PurchaseItemRepositoryImpl`) reads the product's current price itself, right before each `INSERT`, inside the caller's transaction — on every path: through the API, and in process (the remote view's checkout, the desktop). A CUSTOMER that sends a price is refused (403, `[price]`: the field is not in their create grant). An item without a product, or of one that does not exist, is refused with 400, and so is a quantity below 1. Through the API, an update that writes the price or the product also gets the product's current price (`ItemPrices`, in `PurchaseItemApiController`'s `beforeUpdate`, after the policy's check).
 
@@ -422,8 +422,9 @@ The startup order (`JavalinApplication`, then `BusinessContext`):
 2. `SqlDataSourceSupport` builds the pool.
 3. `DBCreate` creates what is missing and runs the migrations.
 4. `StoreRepositoryBootstrap.initialize(…)` registers the `DSLContext`, the `TransactionService`, and the repositories.
-5. The remote transaction coordinator is registered, and its periodic sweep started (`startReaper`).
-6. `StoreRepositoryBootstrap.initializeSecurity(…)`, if there is a JWT secret: registers the authentication service, and starts its periodic cleanup of expired sessions and nonces (`AuthenticationServiceImpl.startCleanup`).
+5. The remote transaction coordinator is registered, and its periodic sweep started (`startReaper`); then the periodic cleanup of the remote view sessions whose client went away (`RemoteRootPresenter.REGISTRY.startCleanup`).
+6. The mesh to the other instances, if `cluster.peers` names them (`ClusterMesh`; the backend does not start with peers and no JWT secret). It connects once the server is up.
+7. If there is a JWT secret: the key that signs the remote view's session ids is derived from it (`RemoteSigningKey`, given to `RemoteAppSecurity.useKey`), and `StoreRepositoryBootstrap.initializeSecurity(…)` registers the authentication service — with the session-end notices going through the mesh or, without it, on PostgreSQL, through `LISTEN`/`NOTIFY` (`PostgresSessionEvents`) — and starts its periodic cleanup of expired sessions, nonces and old failed sign-ins (`AuthenticationServiceImpl.startCleanup`).
 
 ---
 
@@ -449,7 +450,7 @@ cd fontes
 1. **Domain** (`:store-domain`, package `domain.<entity>`): the entity (`KeyedEntity`, nullable fields), the `XxxCriteria` with the filter fields and the `OrderBy`, the `XxxCodec`, and the `XxxRepository` interface with `ownFieldsProjection()`, `fetchById`, and the `BEAN` holder.
 2. **Schema** (`:store-scripts`): the table, the sequence, and the ordering indexes in `DBCreate`; the migration for existing databases; the seed data in `DBReset`, if applicable. Regenerate the jOOQ classes.
 3. **Server** (`:store-persistence`): the `XxxRepositoryImpl` with the `QUERY` mapping, the conditions, and the ordering; registration in `StoreRepositoryBootstrap`.
-4. **REST** (`:persistence-rest`): the entity's **data policy** in the `security` package — an `EntityDescriptor` (fields by property reference, criteria fields, orderings, default shape) and a `DataPolicy` with a grant per role, plus a `RowScope` if a role reaches only some rows; the `XxxApiController`, which configures a `RepositoryRpc` with `rpc.policy` (and `beforeInsert`/`beforeUpdate` only for transformations, such as a digest), and its call in `RepositoryApiRoutes.create()`; the entity in `RepositoryApiDocs`. Its criteria gets `anyOf`/`withAnyOf`, the codec refuses the key, and the repository translates the groups (`CriterionTranslator.anyOf`).
+4. **REST** (`:persistence-rest`): the entity's **data policy** in the `security` package — an `EntityDescriptor` (fields by property reference, criteria fields, orderings, default shape) and a `DataPolicy` with a grant per role, plus a `RowScope` if a role reaches only some rows; the `XxxApiController`, which configures a `RepositoryRpc` with `rpc.policy` (and `beforeInsert`/`beforeUpdate` only for transformations, such as the password's verifier), and its call in `RepositoryApiRoutes.create()`; the entity in `RepositoryApiDocs`. Its criteria gets `anyOf`/`withAnyOf`, the codec refuses the key, and the repository translates the groups (`CriterionTranslator.anyOf`).
 5. **Client** (`:store-persistence-client`): the `HttpXxxRepository` and its registration in `RestRepositoryBootstrap`.
 6. **Presentation**: resource calls (`XxxQuery`, `XxxCreate`, …) in the `calls/` package next to the presenter that uses them, reaching the repository through a private property, `private val xxxRepo: XxxRepository get() = XxxRepository.BEAN.get()`. Always ask for the data of whoever is logged in.
 7. **Tests**: an `AbstractXxxRepositoryTest` with the local and REST subclasses, and a REST test with security enabled that covers what the policy refuses.

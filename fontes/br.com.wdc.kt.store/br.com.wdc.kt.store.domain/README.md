@@ -13,6 +13,6 @@ Each entity has its own package — `product`, `user`, `purchase`, `purchaseitem
 | `XxxRepository` | The contract, implemented on the server (jOOQ) and on the client (HTTP) |
 | `XxxCodec` | JSON reading and writing — the same on client and server |
 
-Also here: `StoreTransactions` (the application's transaction service), security (`SecurityContext`, `Role`, `AuthenticationService`) and configuration.
+Also here: `StoreTransactions` (the application's transaction service), security (`SecurityContext`, `Role`, `AuthenticationService`, `SessionListener`, the SCRAM-SHA-256 computation `Scram`/`ScramVerifier` shared by server and clients, `CryptoProvider`) and configuration.
 
 See the [persistence architecture](../../../docs/architecture-persistence.md).

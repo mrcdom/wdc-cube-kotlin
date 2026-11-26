@@ -163,6 +163,10 @@ graph TB
 |--------|-----------------|
 | `:framework-cube` | MVP engine — transactional navigation, presenter lifecycle, Places, Intent |
 | `:framework-commons` | Shared utilities — logging, JSON, HTTP, crypto, schedulers |
+| `:framework-domain` | Data access contracts — repositories, criteria, projections, the transaction service, resource calls, the domain exceptions |
+| `:framework-persistence` | Transactions over JDBC — the transaction service (also across coroutines) and the coordinator of remote transactions |
+| `:framework-jooq` | Criteria and projections translated to SQL by jOOQ (`JsonQuery`) |
+| `:framework-rest` | REST APIs over Javalin — the request pipeline, repository RPC, data policies, CORS, OpenAPI |
 | `:store-presentation` | Presenters and their scopes — pure presentation logic (no UI) |
 | `:store-design` | The design tokens (colors, spacing, radii, type), the same for every view technology; generated from `tokens.json` |
 | `:store-i18n` | The UI texts in every language (en-US, pt-BR), for every view technology; generated from `messages.<language>.json` |
@@ -174,12 +178,17 @@ graph TB
 | `:view-compose-android` | Android entry point |
 | `:view-compose-web` | wasmJs (WebAssembly) entry point |
 | `:view-compose-ios` | iOS entry point (via Xcode) |
+| `:view-native-web` | Native web views — React + MUI in Kotlin/JS (kotlin-wrappers), presenters in the browser |
+| `:view-native-ios` | Native iOS views — UIKit built in code |
+| `:view-native-android` | Native Android views — Android Views built in code |
 | `:persistence-rest` | The WDC Store's REST API (repository RPC per entity, authentication, data policies) over `:framework-rest` |
 | `:framework-cube-remote-backend` | The remote Cube backend: sessions, one view per scope, the protocol, signed history; its Javalin routes are `:framework-cube-remote-backend-javalin` (clients: the Kotlin and TypeScript bridges) |
 | `:framework-cube-remote-bridge` | The client side of the remote backend in Kotlin/JS, with no UI technology (the Kotlin counterpart of `wdc-cube-remote-bridge`); its React bindings are `:framework-cube-remote-bridge-react` |
 | `:view-remote-react-kotlin` | The remote view's client written in Kotlin (React + MUI through kotlin-wrappers), served at `/remote-kotlin/` |
 | `:view-remote-host` | The WDC Store as a remote application over `:framework-cube-remote-backend` (the vid of each scope, its own routes, the React bundle) |
+| `:view-remote-stress` | Load test of the remote view: virtual clients that speak the protocol to a running backend |
 | `:backend` | Javalin server — REST API, WebSocket, H2 or PostgreSQL |
+| `:store-tests` | Integration tests — the repositories (local and REST), the presenters' workflows, the API's security |
 | `:store-scripts` | Database creation (`DBCreate`), migrations, jOOQ schema generation and design tokens and UI texts generation |
 
 ---
@@ -200,7 +209,7 @@ graph TB
     subgraph "Platforms"
         JVM["Desktop (JVM)<br/>OkHttp, JCE"]
         AND["Android<br/>OkHttp, JCE"]
-        WASM["Web (wasmJs)<br/>XMLHttpRequest, pure-Kotlin crypto"]
+        WASM["Web (wasmJs)<br/>fetch, pure-Kotlin crypto"]
         IOSN["iOS (Native)<br/>NSURLSession, pure-Kotlin crypto"]
     end
 
@@ -271,7 +280,7 @@ graph LR
         REACT["React + MUI<br/>(pure rendering)"]
     end
     subgraph "Server"
-        SKEL["Skeleton"] --> PRES["Presenter"]
+        SKEL["Remote host"] --> PRES["Presenter"]
         PRES --> SCOPE["Scope"]
     end
     REACT <-->|WebSocket| SKEL
@@ -319,7 +328,7 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
             app.startSession(subject) // the user and the session's tokens, kept between runs
             HomeKeys(app).flip()
         } else {
-            scope.errorMessage = "Username or password not recognized!"
+            scope.errorMessage = Message(MessageKeys.ErrorUserOrPasswordNotRecognized) // a key; the view translates it
         }
     }
 
@@ -340,7 +349,7 @@ class LoginScope : Scope() {
     var userName: String? by field(null)
     var password: String? by field(null, sent = false) // never sent to a remote view
     var errorCode: Int by field(0)
-    var errorMessage: String? by field(null)
+    var errorMessage: Message? by field(null) // a key and its arguments; the view translates it
     var loading: Boolean by field(false)
 
     /** Signs in with the user name and password the view put in this scope. */
@@ -440,6 +449,8 @@ HTTP server based on **Javalin** (Java 21) with:
 - **Database** — embedded H2 (or PostgreSQL) with versioned migrations
 - **JWT** — authentication with access token + refresh token, sessions persisted in the database
 - **Data policies** — per role, the rows and fields of each entity the REST API reads and writes ([security architecture](security-architecture.md))
+- **Observability** — `/health/live`, `/health/ready`, and `/metrics` in Prometheus format behind `management.token` ([ADR 0019](adr/0019-metrics-and-health.md))
+- **Several instances** — the instances' mesh (`cluster.peers`) or PostgreSQL `LISTEN`/`NOTIFY` spread session ends; login nonces and failures live in the database ([running several instances](running-several-instances.md))
 
 ---
 
@@ -484,7 +495,7 @@ graph TB
 Errors are handled at **two levels**:
 
 1. **In the Presenter** — expected errors (failed login, database offline) are handled with friendly messages in the presenter's scope
-2. **In the action's guard** — every action bound with `action { … }` / `actionOf { … }` catches what its body did not handle and hands it to `RootPresenter.alertUnexpectedError()`, which sets the root view's `scope.errorMessage` (`"Unexpected error: <cause>"`) and logs the stack trace; then it republishes the address (`app.updateHistory()`). The view's `safeCall` keeps a last `catch` for failures of the view's own code
+2. **In the action's guard** — every action bound with `action { … }` / `actionOf { … }` catches what its body did not handle and hands it to `RootPresenter.alertUnexpectedError()`, which sets the root scope's `errorMessage` to `Message(MessageKeys.ErrorUnexpectedWithCause, "cause" to …)` (`error.unexpected` when the cause has no message) — the view shows it in the user's language — and logs the stack trace; then it republishes the address (`app.updateHistory()`). The view's `safeCall` keeps a last `catch` for failures of the view's own code
 
 ```kotlin
 // Level 1: Specific handling in the Presenter (the body of scope.onBuy = action(1) { onBuy() })
@@ -493,9 +504,9 @@ private suspend fun onBuy() {
         val purchaseId = cart.commit(app.subject!!)
         ReceiptKeys(app).apply { this.purchaseId = purchaseId }.flip()
     } catch (caught: InvalidCartItemException) {
-        scope.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
+        scope.errorMessage = Message(MessageKeys.ErrorItemQuantityBelowOne)
     } catch (caught: OfflineException) {
-        scope.errorMessage = "The database is currently offline. Please wait a moment and try again."
+        scope.errorMessage = Message(MessageKeys.ErrorDatabaseOfflineRetry)
     }
 }
 
@@ -548,8 +559,8 @@ sequenceDiagram
     Rs->>Op: OpenKeys(app, intent).flip() when there is none
     Op->>Keys: LoginKeys(app, intent).flip() (deepest step)
 
-    Main->>Compose: Renders (app.view as? RootView)
-    Compose->>App: rootView.Render()
+    Main->>Compose: StoreApp(app)
+    Compose->>App: RenderSlot(app.scope) → RootView
 ```
 
 ---
@@ -585,7 +596,7 @@ sequenceDiagram
     LS-->>LP: Subject(id, nickName)
 
     LP->>LP: scope.loading = false
-    LP->>LP: app.subject = subject
+    LP->>LP: app.startSession(subject)
 
     LP->>Keys: HomeKeys(app).flip()
     Keys->>Nav: navigate().step(RESTRICTED).step(HOME).execute()
@@ -612,9 +623,11 @@ sequenceDiagram
 |-----------|----------|
 | [architecture-cube.md](architecture-cube.md) | Cube framework — transactional navigation mechanism, presenter lifecycle, interruption and migration, commit/rollback, guarantees |
 | [architecture-cube-compose.md](architecture-cube-compose.md) | Cube + Compose integration — views as functions of the scope, useScope, the paint cycle, safeCall, RenderSlot, the view catalog, per-platform initialization |
-| [architecture-react.md](architecture-react.md) | Remote view modality — React + WebSocket, Skeletons, scope synchronization, security |
+| [architecture-react.md](architecture-react.md) | Remote view modality — React + WebSocket, the remote host, scope synchronization, security |
 | [architecture-persistence.md](architecture-persistence.md) | Persistence layer — repositories, criteria, projection, transactions (local and remote), REST API |
 | [security-architecture.md](security-architecture.md) | Security — trust boundaries, authentication, data policies of the REST API, limitations |
+| [running-several-instances.md](running-several-instances.md) | Several backend instances — what each keeps in memory, the mesh, affinity, the Docker compose setup |
+| [adr/](adr/README.md) | Architecture decision records — why things are the way they are |
 
 ---
 
@@ -633,4 +646,4 @@ sequenceDiagram
 | **safeCall**         | Serialized asynchronous dispatch (limitedParallelism=1) of the scope's actions from the view |
 | **CubeNavigation**   | Atomic navigation transaction with commit, rollback and support for interruptions |
 | **CubeApplication**  | Global container of active presenters and entry point for navigation |
-| **Skeleton**         | Server-client bridge in the React modality — serializes each view's scope for WebSocket |
+| **Remote host**      | The application on the server that runs the presenters for a browser (`:view-remote-host` over `:framework-cube-remote-backend`) and writes each view's scope over the WebSocket |

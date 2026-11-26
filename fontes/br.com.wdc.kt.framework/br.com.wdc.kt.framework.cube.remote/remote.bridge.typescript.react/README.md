@@ -4,7 +4,7 @@ React bindings for the TypeScript client of the **remote Cube MVP** protocol, [`
 
 It knows nothing about any application: which views exist, how they look and what they say belong to the React shell that consumes it (in this repository, the WDC Store client, [`remote.react.typescript`](../../../br.com.wdc.kt.store/br.com.wdc.kt.store.view.remote/remote.views/remote.react.typescript/)). The Kotlin/JS counterpart is [`framework-cube-remote-bridge-react`](../remote.bridge.kotlin.react/).
 
-The package name is `wdc-cube-remote-bridge-react`, on npm from 0.5.0:
+The package name is `wdc-cube-remote-bridge-react`, to be published on npm with 0.5.0 (not published yet):
 
 ```bash
 npm install wdc-cube-remote-bridge-react wdc-cube-remote-bridge react history universal-cookie
@@ -99,6 +99,7 @@ The default export, `bridge`:
 | `submit(vsid, eventId)` | Sends an event; shows the activity indicator if it takes long |
 | `submitSilent(vsid, eventId)` | Sends an event without the activity indicator |
 | `cipher(text)` | Encrypts a sensitive value with the key of the current socket (ECDH handshake, AES-GCM, Base64, a new random IV per value); waits for the handshake if it has not completed |
+| `setOutdatedMessage(text)` | The text shown in the browser's alert when the host refuses the protocol version (English by default) |
 | `connect()` | Reconnects now, without waiting for the backoff |
 | `onStart()` / `onStop()` | Opens the session and listens to the history / stops listening |
 | `getScope<T>(vsid)` / `getBaseUrl()` | The current scope of a view / the WebSocket base URL |

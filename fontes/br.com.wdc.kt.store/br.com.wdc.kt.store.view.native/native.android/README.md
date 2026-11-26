@@ -114,6 +114,23 @@ cd br.com.wdc.kt.store/br.com.wdc.kt.store.view.native/native.android
 ./deploy.sh emulator --emulator-name Pixel_10
 ```
 
+The backend URL is baked into the APK as `BuildConfig.BASE_URL` at build time (`-PbaseUrl=<url>`; default
+`http://10.0.2.2:8080`, the host as seen from the emulator). `deploy.sh` (`emulator` or `device`) takes:
+
+- `--backend-url <url>` — passed to the build as `-PbaseUrl` (default `http://10.0.2.2:8080` on the emulator,
+  `http://<host-ip>:8080` on a device); it has no effect with `--skip-build`, since the APK is not rebuilt;
+- `--emulator-name <name>` — the AVD (default: interactive selection);
+- `--cold-boot` — boots the emulator without its snapshot;
+- `--netspeed <speed>` / `--netdelay <delay>` — the emulator's network speed and latency;
+- also `--release`, `--skip-build`, `--clean`, `--fresh` (see `./deploy.sh --help`).
+
+## Texts and session
+
+Views take `messages` from the application (`AndroidNativeRootPresenter.messages`, in the language of
+`Locale.getDefault()`, US English when there is no catalog for it; `AbstractViewAndroid.messages`) and translate the
+`Message`s presenters put in scopes (`translate(message)`). The saved session is encrypted with AES-GCM under a key
+kept in the Android Keystore (`AndroidPersistentSessionStorage`).
+
 ## File Structure
 
 ```
@@ -122,8 +139,8 @@ src/main/kotlin/br/com/wdc/store/nativeui/android/
 ├── AndroidNativeRootPresenter.kt # The application: view catalog, live views, viewOf
 ├── AndroidScheduledExecutor.kt
 ├── theme/
-│   ├── Colors.kt          # Material Design palette
-│   ├── Dimens.kt          # Default dimensions
+│   ├── Colors.kt          # Palette from the design tokens (TokenColors.argbInt(StoreTokens.Color…))
+│   ├── Dimens.kt          # The token scale (StoreTokens), local sizes and the 480dp breakpoint
 │   ├── Icons.kt           # Icons
 │   └── Styles.kt          # Style helpers (cards, buttons)
 ├── toolkit/

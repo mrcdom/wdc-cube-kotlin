@@ -159,6 +159,17 @@ cd br.com.wdc.kt.store/br.com.wdc.kt.store.view.native/native.ios
 ./deploy.sh simulator --ipad
 ```
 
+`--backend-url <url>` (default `http://localhost:8080`) reaches the app as the `BACKEND_URL` environment variable,
+which `app/AppDelegate.swift` reads: `deploy.sh` launches the app with `SIMCTL_CHILD_BACKEND_URL`, since the simulator
+passes the app only the variables prefixed with `SIMCTL_CHILD_`. An app opened from its icon gets no variable and uses
+the default. `deploy.sh` shows the simulator in Simulator.app or, on Xcode 27 (which replaced it), in DeviceHub.
+
+## Texts and session
+
+Views take `messages` from the application (`IosNativeRootPresenter.messages`, in the first of
+`NSLocale.preferredLanguages`, US English when there is no catalog for it) and translate the `Message`s presenters put
+in scopes. The saved session lives on the Keychain (`IosPersistentSessionStorage`).
+
 The Xcode project (`StoreNativeApp.xcodeproj`) is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen) from `project.yml`.
 
 ## File Structure
@@ -168,7 +179,8 @@ src/iosMain/kotlin/br/com/wdc/store/nativeui/ios/
 ├── AppBootstrap.kt        # Entry point: platform setup; mounts the root scope's view
 ├── IosNativeRootPresenter.kt # The application: view catalog, live views, viewOf
 ├── theme/
-│   ├── Colors.kt          # Material Design palette adapted to UIColor
+│   ├── Colors.kt          # Palette from the design tokens, as UIColor
+│   ├── Dimensions.kt      # Int.pt: token dimensions (StoreTokens spacing, radius, font size) as UIKit points
 │   ├── Icons.kt           # SVG path icons → UIBezierPath
 │   ├── Styles.kt          # Style helpers (StoreStyles)
 │   └── UIKitConstants.kt  # UIKit constants (object UIK: alignments, content modes)
