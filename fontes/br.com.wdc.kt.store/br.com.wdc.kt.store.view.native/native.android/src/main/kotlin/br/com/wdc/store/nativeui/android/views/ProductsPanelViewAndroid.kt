@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.i18n.commonItemCountOne
+import br.com.wdc.store.i18n.commonItemCountOther
+import br.com.wdc.store.i18n.productsEmpty
+import br.com.wdc.store.i18n.productsTitle
 import br.com.wdc.store.design.StoreTokens
 import android.graphics.Typeface
 import android.view.Gravity
@@ -43,7 +47,7 @@ class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsP
                     setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingXs * density).toInt())
                 }) {
                     textView {
-                        text = "Products"
+                        text = messages.productsTitle()
                         textSize = 17f
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(StoreColors.OnSurface)
@@ -101,7 +105,7 @@ class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsP
 
             // Empty label (centered)
             emptyLabel = textView {
-                text = "No products available"
+                text = messages.productsEmpty()
                 textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                 setTextColor(StoreColors.OnSurfaceVariant)
                 gravity = Gravity.CENTER
@@ -128,7 +132,7 @@ class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsP
             productsSlot.sync(emptyList())
             if (lastCount != 0) {
                 lastCount = 0
-                headerBadge.text = "0 items"
+                headerBadge.text = messages.commonItemCountOther(0)
             }
         } else {
             emptyLabel.visibility = View.GONE
@@ -147,7 +151,7 @@ class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsP
             val count = products.size
             if (count != lastCount) {
                 lastCount = count
-                headerBadge.text = "$count ${if (count == 1) "item" else "items"}"
+                headerBadge.text = if (count == 1) messages.commonItemCountOne(count) else messages.commonItemCountOther(count)
             }
         }
     }

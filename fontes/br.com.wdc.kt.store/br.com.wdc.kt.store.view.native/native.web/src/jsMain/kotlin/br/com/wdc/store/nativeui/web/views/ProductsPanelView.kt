@@ -1,5 +1,7 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.nativeui.web.util.messages
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
@@ -52,7 +54,7 @@ val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
             Typography {
                 variant = TypographyVariant.h6
                 sx { fontWeight = FontWeight.bold }
-                +"Products"
+                +messages.productsTitle()
             }
 
             if (products != null) {
@@ -67,7 +69,7 @@ val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
                         sx {
                             color = StoreColors.OnPrimaryContainer.unsafeCast<Color>()
                         }
-                        +"${products.size} ${if (products.size == 1) "item" else "items"}"
+                        +(if (products.size == 1) messages.commonItemCountOne(products.size) else messages.commonItemCountOther(products.size))
                     }
                 }
             }
@@ -89,7 +91,7 @@ val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
                 Typography {
                     variant = TypographyVariant.body2
                     sx { marginTop = StoreTokens.Spacing.Md.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                    +"Loading products..."
+                    +messages.productsLoading()
                 }
             }
         } else if (products.isEmpty()) {
@@ -102,7 +104,7 @@ val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
                 Typography {
                     variant = TypographyVariant.body1
                     sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                    +"No products available"
+                    +messages.productsEmpty()
                 }
             }
         } else {

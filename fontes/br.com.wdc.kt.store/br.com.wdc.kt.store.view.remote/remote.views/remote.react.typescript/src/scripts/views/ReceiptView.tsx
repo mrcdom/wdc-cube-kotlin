@@ -14,6 +14,7 @@ import * as NumberUtils from '@root/utils/NumberUtils'
 import * as DateUtils from '@root/utils/DateUtils'
 import { Colors, toPx } from '@root/theme'
 import { StoreTokens } from '@root/tokens'
+import { messages } from '@root/i18n'
 
 // :: Actions
 
@@ -67,7 +68,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
                     variant="subtitle1"
                     sx={{ fontWeight: StoreTokens.fontWeight.medium, color: Colors.SuccessColor }}
                   >
-                    Purchase completed successfully!
+                    {messages.text('receipt.purchaseCompleted')}
                   </Typography>
                 </Stack>
               </Paper>
@@ -81,7 +82,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
                   variant="h5"
                   sx={{ fontWeight: StoreTokens.fontWeight.medium, fontSize: StoreTokens.fontSize.display }}
                 >
-                  Receipt
+                  {messages.text('receipt.title')}
                 </Typography>
               </Stack>
               {receipt.date && (
@@ -94,13 +95,13 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
             {/* Items header */}
             <Stack direction="row" sx={{ justifyContent: 'space-between', px: 0.5 }}>
               <Typography variant="caption" sx={{ flex: '1 1 0', color: Colors.OnSurfaceVariant }}>
-                Item
+                {messages.text('receipt.columnItem')}
               </Typography>
               <Typography variant="caption" sx={{ width: 50, textAlign: 'center', color: Colors.OnSurfaceVariant }}>
-                Qty
+                {messages.text('receipt.columnQty')}
               </Typography>
               <Typography variant="caption" sx={{ width: 100, textAlign: 'right', color: Colors.OnSurfaceVariant }}>
-                Amount
+                {messages.text('receipt.columnAmount')}
               </Typography>
             </Stack>
 
@@ -117,7 +118,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
                       {item.description}
                     </Typography>
                     <Typography variant="body2" sx={{ width: 50, textAlign: 'center', color: Colors.OnSurfaceVariant }}>
-                      {item.quantity}x
+                      {messages.text('receipt.quantityTimes', { quantity: item.quantity })}
                     </Typography>
                     <Typography
                       variant="body2"
@@ -139,7 +140,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
             <Divider />
             <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
               <Typography variant="subtitle1" sx={{ color: Colors.OnSurfaceVariant }}>
-                Total:
+                {messages.text('common.total')}
               </Typography>
               <Box sx={{ bgcolor: Colors.PriceBackground, borderRadius: '10px', px: 1.75, py: 0.75 }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: 22, color: Colors.PriceColor }}>
@@ -161,7 +162,7 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
                 }}
                 startIcon={<ArrowBackIcon />}
               >
-                Continue Shopping
+                {messages.text('common.continueShopping')}
               </Button>
             </Stack>
           </Stack>

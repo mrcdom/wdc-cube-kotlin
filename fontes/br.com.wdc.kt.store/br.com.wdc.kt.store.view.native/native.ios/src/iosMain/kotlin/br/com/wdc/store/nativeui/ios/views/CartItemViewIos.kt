@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.i18n.*
 import br.com.wdc.store.design.StoreTokens.FontSize
 import br.com.wdc.store.design.StoreTokens.Radius
 import br.com.wdc.store.design.StoreTokens.Spacing
@@ -109,7 +110,10 @@ class CartItemViewIos(app: IosNativeRootPresenter, scope: CartItemScope) :
         if (price != lastPrice || quantity != lastQuantity) {
             lastPrice = price
             lastQuantity = quantity
-            priceLabel.text = "\$${ViewUtils.formatPrice(price)} × $quantity"
+            priceLabel.text = messages.cartItemPriceTimesQuantity(
+                price = "\$${ViewUtils.formatPrice(price)}",
+                quantity = quantity,
+            )
             qtyLabel.text = quantity.toString()
         }
     }

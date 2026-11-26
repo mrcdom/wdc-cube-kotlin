@@ -22,11 +22,15 @@ import br.com.wdc.store.view.compose.bridge.useScope
 import br.com.wdc.store.view.compose.bridge.safeCall
 import br.com.wdc.store.view.compose.bridge.RenderSlot
 import br.com.wdc.store.view.compose.components.StoreLogoHeader
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.compose.i18n.LocalMessages
+import br.com.wdc.store.view.compose.i18n.text
 
 private val COMPACT_BREAKPOINT = 518.dp
 
 @Composable
 fun HomeView(scope: HomeScope) {
+    val messages = LocalMessages.current
     useScope(scope)
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -44,14 +48,14 @@ fun HomeView(scope: HomeScope) {
 
         // Error message
         val errorMessage = scope.errorMessage
-        if (!errorMessage.isNullOrBlank()) {
+        if (errorMessage != null) {
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = StoreTokens.Spacing.Lg.dp, vertical = StoreTokens.Spacing.Sm.dp),
                 shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                 color = MaterialTheme.colorScheme.errorContainer
             ) {
                 Text(
-                    text = errorMessage,
+                    text = messages.text(errorMessage),
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier.padding(StoreTokens.Spacing.Md.dp)
                 )
@@ -72,7 +76,7 @@ fun HomeView(scope: HomeScope) {
                 if (isCompact) {
                     // Tabs for mobile
                     var selectedTab by remember { mutableIntStateOf(0) }
-                    val tabTitles = listOf("Products" to Icons.Filled.ShoppingBag, "Purchases" to Icons.Filled.Inventory2)
+                    val tabTitles = listOf(messages.homeTabProducts() to Icons.Filled.ShoppingBag, messages.homeTabPurchases() to Icons.Filled.Inventory2)
 
                     Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                         PrimaryTabRow(
@@ -162,6 +166,7 @@ private fun HeaderBar(
     onExit: () -> Unit,
     compact: Boolean = false
 ) {
+    val messages = LocalMessages.current
     Surface(
         color = MaterialTheme.colorScheme.primary,
         shadowElevation = 2.dp,
@@ -191,7 +196,7 @@ private fun HeaderBar(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Sign out",
+                            contentDescription = messages.homeSignOut(),
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -207,7 +212,7 @@ private fun HeaderBar(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        "Hello, $nickName",
+                        messages.homeGreeting(nickName),
                         color = Color.White.copy(alpha = 0.85f),
                         style = MaterialTheme.typography.bodySmall,
                         lineHeight = 16.sp
@@ -237,7 +242,7 @@ private fun HeaderBar(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Text("Cart", fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
+                                Text(messages.homeCart(), fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
                             }
                         }
                     }
@@ -268,7 +273,7 @@ private fun HeaderBar(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Sign out",
+                            contentDescription = messages.homeSignOut(),
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(18.dp)
                         )
@@ -285,7 +290,7 @@ private fun HeaderBar(
                         color = Color.White.copy(alpha = 0.15f)
                     ) {
                         Text(
-                            "Hello, $nickName",
+                            messages.homeGreeting(nickName),
                             color = Color.White,
                             modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Lg.dp, vertical = 6.dp),
                             fontSize = StoreTokens.FontSize.Body.sp,
@@ -322,7 +327,7 @@ private fun HeaderBar(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Text("Cart", fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
+                                Text(messages.homeCart(), fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 15.sp)
                             }
                         }
                     }

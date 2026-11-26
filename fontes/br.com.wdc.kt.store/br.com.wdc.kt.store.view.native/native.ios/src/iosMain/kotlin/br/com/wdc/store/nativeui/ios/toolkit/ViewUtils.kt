@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.toolkit
 
+import br.com.wdc.store.i18n.Messages
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLSession
 import platform.Foundation.dataTaskWithURL
@@ -31,9 +32,9 @@ object ViewUtils {
     }
 
     /**
-     * Formats epoch millis as MM/dd/yyyy (US).
+     * Formats epoch millis as the civil date in UTC, in the format of [messages]' language.
      */
-    fun formatDate(epochMs: Long): String {
+    fun formatDate(epochMs: Long, messages: Messages): String {
         val totalSeconds = epochMs / 1000
         val days = (totalSeconds / 86400).toInt()
         var y = 1970
@@ -55,7 +56,7 @@ object ViewUtils {
             m++
         }
         val d = remaining + 1
-        return "${(m + 1).toString().padStart(2, '0')}/${d.toString().padStart(2, '0')}/$y"
+        return messages.date(year = y, month = m + 1, day = d)
     }
 
     private fun isLeapYear(year: Int): Boolean =

@@ -1,5 +1,7 @@
 package br.com.wdc.store.nativeui.ios.toolkit
 
+import br.com.wdc.store.presentation.i18n.Message
+import br.com.wdc.store.i18n.Messages
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.Scope
 import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
@@ -50,6 +52,12 @@ abstract class AbstractViewIos<S : Scope>(
         private val gcRoots = mutableSetOf<Any>()
         private val LOG = Log.getLogger("AbstractViewIos")
     }
+
+    /** The UI texts, in the app's language. */
+    protected val messages: Messages get() = app.messages
+
+    /** The text of a message of the presentation, in the app's language. */
+    protected fun textOf(message: Message): String = messages.text(message.key, message.args)
 
     private val myGcRetained = mutableListOf<Any>()
     private val myListSlots = mutableListOf<Releasable>()

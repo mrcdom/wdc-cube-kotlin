@@ -1,5 +1,11 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.i18n.commonAppName
+import br.com.wdc.store.i18n.homeCart
+import br.com.wdc.store.i18n.homeGreeting
+import br.com.wdc.store.i18n.homeSignOut
+import br.com.wdc.store.i18n.homeTabProducts
+import br.com.wdc.store.i18n.homeTabPurchases
 import br.com.wdc.store.design.StoreTokens
 import android.graphics.Color
 import android.graphics.Typeface
@@ -107,7 +113,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                             }
                         }) {
                             textView {
-                                text = "WDC Store"
+                                text = messages.commonAppName()
                                 textSize = StoreTokens.FontSize.Title.toFloat()
                                 setTypeface(null, Typeface.BOLD)
                                 setTextColor(Color.WHITE)
@@ -134,6 +140,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                                 marginStart = (Dimens.spacingMd * density).toInt()
                             }
                             setOnClickListener { safeAction("exit") { scope.onExit() } }
+                            contentDescription = messages.homeSignOut()
                         }) {
                             imageView {
                                 setImageDrawable(StoreIcons.logout(ctx, 16, Color.WHITE))
@@ -175,7 +182,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                                 height = ViewGroup.LayoutParams.WRAP_CONTENT
                             }
                         }) {
-                            cartButton = button("Cart") {
+                            cartButton = button(messages.homeCart()) {
                                 textSize = 13f
                                 setTextColor(Color.WHITE)
                                 isAllCaps = false
@@ -253,7 +260,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                         }
                     }) {
                         textView {
-                            text = "WDC Store"
+                            text = messages.commonAppName()
                             textSize = 18f
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(Color.WHITE)
@@ -281,6 +288,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                             marginStart = (Dimens.spacingLg * density).toInt()
                         }
                         setOnClickListener { safeAction("exit") { scope.onExit() } }
+                        contentDescription = messages.homeSignOut()
                     }) {
                         imageView {
                             setImageDrawable(StoreIcons.logout(ctx, 18, Color.WHITE))
@@ -331,7 +339,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
                     }) {
-                        wideCartButton = button("Cart") {
+                        wideCartButton = button(messages.homeCart()) {
                             textSize = StoreTokens.FontSize.Body.toFloat()
                             setTextColor(Color.WHITE)
                             isAllCaps = false
@@ -399,7 +407,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                                     marginEnd = (Dimens.spacingXl * density).toInt()
                                 }
                             }) {
-                                productsTab = button("PRODUCTS") {
+                                productsTab = button(messages.homeTabProducts().uppercase()) {
                                     textSize = StoreTokens.FontSize.Body.toFloat()
                                     setTypeface(null, Typeface.BOLD)
                                     setTextColor(StoreColors.Primary)
@@ -431,7 +439,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                                     height = ViewGroup.LayoutParams.MATCH_PARENT
                                 }
                             }) {
-                                purchasesTab = button("PURCHASES") {
+                                purchasesTab = button(messages.homeTabPurchases().uppercase()) {
                                     textSize = StoreTokens.FontSize.Body.toFloat()
                                     setTextColor(StoreColors.OnSurfaceVariant)
                                     setBackgroundColor(Color.TRANSPARENT)
@@ -641,7 +649,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
         val nick = scope.nickName
         if (nick != lastNick) {
             lastNick = nick
-            val greeting = if (!nick.isNullOrBlank()) "Hello, $nick" else ""
+            val greeting = if (!nick.isNullOrBlank()) messages.homeGreeting(nick) else ""
             nicknameLabel.text = greeting
             wideNicknameLabel.text = greeting
         }
@@ -697,8 +705,8 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
 
         // Error
         val errorMessage = scope.errorMessage
-        if (!errorMessage.isNullOrBlank()) {
-            errorLabel.text = errorMessage
+        if (errorMessage != null) {
+            errorLabel.text = translate(errorMessage)
             errorLabel.visibility = View.VISIBLE
         } else {
             errorLabel.visibility = View.GONE

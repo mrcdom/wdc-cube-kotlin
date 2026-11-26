@@ -13,6 +13,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import bridge, { BasePanelClass } from 'wdc-cube-remote-bridge-react'
 import { Colors, toPx } from '@root/theme'
 import { StoreTokens } from '@root/tokens'
+import { messages } from '@root/i18n'
 
 // :: Actions
 
@@ -53,7 +54,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
               </Avatar>
               <Box sx={{ position: 'relative' }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
-                  WDC Store
+                  {messages.text('common.appName')}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -62,7 +63,11 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
                   remote.react
                 </Typography>
               </Box>
-              <IconButton onClick={this.emitExit} sx={{ width: 28, height: 28, ml: 2, bgcolor: Colors.WhiteOverlay10 }}>
+              <IconButton
+                onClick={this.emitExit}
+                aria-label={messages.text('home.signOut')}
+                sx={{ width: 28, height: 28, ml: 2, bgcolor: Colors.WhiteOverlay10 }}
+              >
                 <LogoutIcon sx={{ fontSize: 16, color: '#fff', opacity: 0.7 }} />
               </IconButton>
             </Box>
@@ -73,7 +78,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
             {/* Bottom row: greeting + cart */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
               <Typography variant="body2" sx={{ color: Colors.WhiteOverlay85 }}>
-                Hello, {nickName}
+                {messages.text('home.greeting', { name: nickName })}
               </Typography>
               <Badge badgeContent={cartItemCount} color="error" invisible={cartItemCount <= 0}>
                 <Button
@@ -89,7 +94,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
                   }}
                 >
                   <ShoppingCartIcon sx={{ mr: 0.75, fontSize: 16 }} />
-                  Cart
+                  {messages.text('home.cart')}
                 </Button>
               </Badge>
             </Box>
@@ -117,7 +122,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
 
           <Box sx={{ position: 'relative' }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#fff' }}>
-              WDC Store
+              {messages.text('common.appName')}
             </Typography>
             <Typography
               variant="caption"
@@ -130,6 +135,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
           {/* Logout icon */}
           <IconButton
             onClick={this.emitExit}
+            aria-label={messages.text('home.signOut')}
             sx={{ width: 32, height: 32, ml: '10px', bgcolor: Colors.WhiteOverlay10 }}
           >
             <LogoutIcon sx={{ fontSize: 18, color: '#fff', opacity: 0.7 }} />
@@ -149,7 +155,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
             }}
           >
             <Typography variant="body2" sx={{ color: '#fff' }}>
-              Hello, {nickName}
+              {messages.text('home.greeting', { name: nickName })}
             </Typography>
           </Box>
 
@@ -168,7 +174,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
               }}
             >
               <ShoppingCartIcon sx={{ mr: 0.75, fontSize: 18 }} />
-              Cart
+              {messages.text('home.cart')}
             </Button>
           </Badge>
         </Toolbar>

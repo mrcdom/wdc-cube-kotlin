@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.react.kotlin.util
 
+import br.com.wdc.store.i18n.commonDateUnavailable
 import kotlin.js.Date
 
 /**
@@ -14,13 +15,14 @@ fun formatPrice(value: Double?): String {
     return value.asDynamic().toLocaleString("en-US", js("({minimumFractionDigits: 2})")) as String
 }
 
-/** A date sent as epoch milliseconds, as MM/DD/YYYY: the calendar date in UTC, as the other views show it. */
+/**
+ * A date sent as epoch milliseconds, in the page's language (MM/DD/YYYY in en-US, DD/MM/YYYY in pt-BR): the calendar
+ * date in UTC, as the other views show it.
+ */
 fun formatDate(epochMs: Double?): String {
-    if (epochMs == null) return "Date unavailable"
+    if (epochMs == null) return messages.commonDateUnavailable()
     val date = Date(epochMs)
-    val month = (date.getUTCMonth() + 1).toString().padStart(2, '0')
-    val day = date.getUTCDate().toString().padStart(2, '0')
-    return "$month/$day/${date.getUTCFullYear()}"
+    return messages.date(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate())
 }
 
 /** A product description (HTML) as plain text: line breaks and bullets kept. */

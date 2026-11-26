@@ -30,9 +30,13 @@ import br.com.wdc.store.view.compose.theme.PriceColor
 import br.com.wdc.store.view.compose.util.formatPrice
 import br.com.wdc.store.view.compose.util.productImageUrl
 import br.com.wdc.store.view.compose.util.stripHtml
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.compose.i18n.LocalMessages
+import br.com.wdc.store.view.compose.i18n.text
 
 @Composable
 fun ProductView(scope: ProductScope) {
+    val messages = LocalMessages.current
     useScope(scope)
 
     val product = scope.product
@@ -51,14 +55,14 @@ fun ProductView(scope: ProductScope) {
                 verticalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Md.dp)
             ) {
                     val errorMessage = scope.errorMessage
-                    if (!errorMessage.isNullOrBlank()) {
+                    if (errorMessage != null) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                             color = MaterialTheme.colorScheme.errorContainer
                         ) {
                             Text(
-                                errorMessage,
+                                messages.text(errorMessage),
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.padding(StoreTokens.Spacing.Md.dp)
                             )
@@ -126,7 +130,7 @@ fun ProductView(scope: ProductScope) {
                                 horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Md.dp)
                             ) {
                                 Text(
-                                    "Qty:",
+                                    messages.productQuantity(),
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -144,7 +148,7 @@ fun ProductView(scope: ProductScope) {
                                             modifier = Modifier.size(36.dp),
                                             enabled = quantity > 1
                                         ) {
-                                            Icon(Icons.Default.Remove, contentDescription = "Diminuir", modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Default.Remove, contentDescription = messages.commonDecrease(), modifier = Modifier.size(18.dp))
                                         }
 
                                         Text(
@@ -158,7 +162,7 @@ fun ProductView(scope: ProductScope) {
                                             onClick = { quantity++ },
                                             modifier = Modifier.size(36.dp)
                                         ) {
-                                            Icon(Icons.Default.Add, contentDescription = "Aumentar", modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Default.Add, contentDescription = messages.commonIncrease(), modifier = Modifier.size(18.dp))
                                         }
                                     }
                                 }
@@ -202,7 +206,7 @@ fun ProductView(scope: ProductScope) {
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text("Back", fontWeight = FontWeight.Medium)
+                            Text(messages.productBack(), fontWeight = FontWeight.Medium)
                         }
                         }
                         Button(
@@ -215,7 +219,7 @@ fun ProductView(scope: ProductScope) {
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.Default.AddShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text("Add to Cart", fontWeight = FontWeight.SemiBold)
+                                Text(messages.productAddToCart(), fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -225,7 +229,7 @@ fun ProductView(scope: ProductScope) {
                 CircularProgressIndicator(strokeWidth = 3.dp)
                 Spacer(Modifier.height(StoreTokens.Spacing.Md.dp))
                 Text(
-                    "Loading product...",
+                    messages.productLoading(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

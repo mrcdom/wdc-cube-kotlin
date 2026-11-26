@@ -2,10 +2,11 @@ import React from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
+import { messages, translate, type ScopeMessage } from '@root/i18n'
 
 export type RootScope = {
   contentViewId?: string
-  errorMessage?: string
+  errorMessage?: ScopeMessage
 }
 
 class RootViewClass extends BaseViewClass<ViewProps, RootScope> {
@@ -17,7 +18,7 @@ class RootViewClass extends BaseViewClass<ViewProps, RootScope> {
     if (scope.errorMessage) {
       return (
         <Box sx={{ m: 2 }}>
-          <Alert severity="error">{scope.errorMessage}</Alert>
+          <Alert severity="error">{translate(scope.errorMessage)}</Alert>
         </Box>
       )
     }
@@ -28,7 +29,7 @@ class RootViewClass extends BaseViewClass<ViewProps, RootScope> {
 
     return (
       <Box className={className} sx={{ m: 2 }}>
-        <Alert severity="error">Missing content for the home page</Alert>
+        <Alert severity="error">{messages.text('browser.missingHomeContent')}</Alert>
       </Box>
     )
   }

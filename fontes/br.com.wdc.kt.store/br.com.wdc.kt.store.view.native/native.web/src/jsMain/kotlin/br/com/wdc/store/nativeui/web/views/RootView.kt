@@ -1,5 +1,7 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.nativeui.web.util.messages
+import br.com.wdc.store.nativeui.web.util.show
 import br.com.wdc.store.presentation.presenter.RootScope
 import br.com.wdc.store.nativeui.web.bridge.RenderSlot
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
@@ -26,7 +28,7 @@ val RootView = FC<ScopeProps<RootScope>> { props ->
 
         RenderSlot { this.scope = scope.content }
 
-        val errorMessage = scope.errorMessage
+        val errorMessage = scope.errorMessage?.let(messages::show)
         if (!errorMessage.isNullOrBlank()) {
             Snackbar {
                 open = true

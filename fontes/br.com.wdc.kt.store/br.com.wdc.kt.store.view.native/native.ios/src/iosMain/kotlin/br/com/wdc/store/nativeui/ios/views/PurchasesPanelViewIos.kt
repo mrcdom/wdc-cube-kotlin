@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.i18n.*
 import br.com.wdc.store.design.StoreTokens.FontSize
 import br.com.wdc.store.design.StoreTokens.Radius
 import br.com.wdc.store.design.StoreTokens.Spacing
@@ -60,7 +61,7 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
             ))
         }) {
             label {
-                text = "Purchases"
+                text = messages.purchasesTitle()
                 font = UIFont.boldSystemFontOfSize(17.0)
                 textColor = StoreColors.OnSurface
                 NSLayoutConstraint.activateConstraints(listOf(
@@ -163,7 +164,7 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
         }
 
         emptyLabel = label {
-            text = "No purchases yet"
+            text = messages.purchasesEmpty()
             font = UIFont.systemFontOfSize(FontSize.BodyLarge.pt)
             textColor = StoreColors.OnSurfaceVariant
             textAlignment = UIK.TextAlignCenter
@@ -223,10 +224,13 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
             lastPage = page
             lastTotalCount = totalCount
             paginationContainer.hidden = totalPages <= 1
-            pageLabel.text = "${page + 1} / $totalPages"
+            pageLabel.text = messages.purchasesPageOf(
+                page = page + 1,
+                pages = totalPages,
+            )
             prevButton.enabled = page > 0
             nextButton.enabled = page < totalPages - 1
-            headerBadge.text = "$totalCount ${if (totalCount == 1) "item" else "items"}"
+            headerBadge.text = if (totalCount == 1) messages.commonItemCountOne(count = totalCount) else messages.commonItemCountOther(count = totalCount)
         }
     }
 
@@ -325,7 +329,10 @@ private class PurchaseCardView(app: IosNativeRootPresenter, scope: PurchasesPane
             lastItems = null
         }
 
-        val dateStr = ViewUtils.formatDate(p.date)
+        val dateStr = ViewUtils.formatDate(
+            epochMs = p.date,
+            messages = messages,
+        )
         if (dateStr != lastDate) {
             lastDate = dateStr
             dateLabel.text = dateStr

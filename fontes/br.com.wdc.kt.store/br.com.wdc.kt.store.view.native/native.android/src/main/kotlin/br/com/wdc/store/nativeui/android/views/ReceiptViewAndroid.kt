@@ -1,5 +1,13 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.i18n.commonContinueShopping
+import br.com.wdc.store.i18n.commonTotal
+import br.com.wdc.store.i18n.receiptColumnAmount
+import br.com.wdc.store.i18n.receiptColumnItem
+import br.com.wdc.store.i18n.receiptColumnQty
+import br.com.wdc.store.i18n.receiptPurchaseCompleted
+import br.com.wdc.store.i18n.receiptQuantityTimes
+import br.com.wdc.store.i18n.receiptTitle
 import br.com.wdc.store.design.StoreTokens
 import android.graphics.Typeface
 import android.view.Gravity
@@ -43,7 +51,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                         visibility = View.GONE
                     }) {
                         textView {
-                            text = "✅ Purchase completed successfully!"
+                            text = "✅ " + messages.receiptPurchaseCompleted()
                             textSize = 15f
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(StoreColors.SuccessColor)
@@ -64,7 +72,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                             }
                         }
                         textView {
-                            text = "Receipt"
+                            text = messages.receiptTitle()
                             textSize = StoreTokens.FontSize.Headline.toFloat()
                             setTextColor(StoreColors.OnSurface)
                             (layoutParams as LinearLayout.LayoutParams).apply {
@@ -95,7 +103,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                         gravity = Gravity.CENTER_VERTICAL
                     }) {
                         textView {
-                            text = "Item"
+                            text = messages.receiptColumnItem()
                             textSize = StoreTokens.FontSize.Caption.toFloat()
                             setTextColor(StoreColors.OnSurfaceVariant)
                             (layoutParams as LinearLayout.LayoutParams).apply {
@@ -104,14 +112,14 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                             }
                         }
                         textView {
-                            text = "Qty"
+                            text = messages.receiptColumnQty()
                             textSize = StoreTokens.FontSize.Caption.toFloat()
                             setTextColor(StoreColors.OnSurfaceVariant)
                             gravity = Gravity.CENTER
                             (layoutParams as LinearLayout.LayoutParams).width = (50 * density).toInt()
                         }
                         textView {
-                            text = "Amount"
+                            text = messages.receiptColumnAmount()
                             textSize = StoreTokens.FontSize.Caption.toFloat()
                             setTextColor(StoreColors.OnSurfaceVariant)
                             gravity = Gravity.END
@@ -133,7 +141,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                         gravity = Gravity.CENTER_VERTICAL
                     }) {
                         textView {
-                            text = "Total:"
+                            text = messages.commonTotal()
                             textSize = 15f
                             setTextColor(StoreColors.OnSurfaceVariant)
                             (layoutParams as LinearLayout.LayoutParams).apply {
@@ -159,7 +167,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                     // Back button (right-aligned)
                     hStack {
                         flexSpacer()
-                        button("Continue Shopping") {
+                        button(messages.commonContinueShopping()) {
                             textSize = 15f
                             setTextColor(android.graphics.Color.WHITE)
                             background = StoreStyles.roundedBackground(StoreColors.Primary, Dimens.radiusMd * density)
@@ -193,7 +201,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
 
         if (receipt != null) {
             val date = receipt.date
-            dateLabel.text = if (date != null) ViewUtils.formatDate(date) else ""
+            dateLabel.text = if (date != null) ViewUtils.formatDate(messages, date) else ""
 
             // Rebuild items rows
             itemsStack.removeAllViews()
@@ -229,7 +237,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
 
         // Quantity
         val qtyTv = TextView(ctx).apply {
-            text = "${item.quantity}x"
+            text = messages.receiptQuantityTimes(item.quantity)
             textSize = StoreTokens.FontSize.Body.toFloat()
             setTextColor(StoreColors.OnSurfaceVariant)
             gravity = Gravity.CENTER

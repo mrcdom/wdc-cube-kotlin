@@ -38,8 +38,8 @@ class RootViewIos(app: IosNativeRootPresenter, scope: RootScope) : AbstractViewI
 
         // Show error toast if any
         val errorMessage = scope.errorMessage
-        if (!errorMessage.isNullOrBlank()) {
-            showErrorToast(errorMessage)
+        if (errorMessage != null) {
+            showErrorToast(textOf(errorMessage))
             scope.errorMessage = null
         }
     }

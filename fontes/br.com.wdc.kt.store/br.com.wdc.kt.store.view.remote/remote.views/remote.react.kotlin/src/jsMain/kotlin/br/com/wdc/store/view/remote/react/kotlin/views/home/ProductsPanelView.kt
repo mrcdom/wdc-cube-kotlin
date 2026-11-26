@@ -1,5 +1,7 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.store.design.StoreTokens
@@ -52,7 +54,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
             Typography {
                 variant = TypographyVariant.h6
                 sx { fontWeight = FontWeight.bold }
-                +"Products"
+                +messages.productsTitle()
             }
             if (products != null) {
                 Box {
@@ -64,7 +66,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                     Typography {
                         variant = TypographyVariant.caption
                         sx { color = StoreColors.OnPrimaryContainer.unsafeCast<Color>() }
-                        +"${products.size} ${if (products.size == 1) "item" else "items"}"
+                        +(if (products.size == 1) messages.commonItemCountOne(products.size) else messages.commonItemCountOther(products.size))
                     }
                 }
             }
@@ -85,7 +87,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                 Typography {
                     variant = TypographyVariant.body2
                     sx { marginTop = StoreTokens.Spacing.Md.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                    +"Loading products..."
+                    +messages.productsLoading()
                 }
             }
 
@@ -94,7 +96,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                 Typography {
                     variant = TypographyVariant.body1
                     sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                    +"No products available"
+                    +messages.productsEmpty()
                 }
             }
 

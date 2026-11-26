@@ -1,5 +1,8 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
+import br.com.wdc.store.view.remote.react.kotlin.util.message
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
 import br.com.wdc.framework.cube.remote.bridge.react.useView
@@ -64,7 +67,7 @@ val HomeView = FC<RemoteViewProps> { props ->
             this.isCompact = isCompact
         }
 
-        val errorMessage = scope.string("errorMessage")
+        val errorMessage = scope.message("errorMessage")
         if (!errorMessage.isNullOrEmpty()) {
             Alert {
                 key = Key("error")
@@ -108,13 +111,13 @@ val HomeView = FC<RemoteViewProps> { props ->
                     onChange = { _, value -> selectedTab = value as Int }
                     sx { marginBottom = StoreTokens.Spacing.Xs.px; minHeight = 36.px }
                     Tab {
-                        label = ReactNode("Products")
+                        label = ReactNode(messages.homeTabProducts())
                         icon = ShoppingBag.create()
                         iconPosition = IconPosition.start
                         sx { minHeight = 36.px; paddingTop = StoreTokens.Spacing.Xs.px; paddingBottom = StoreTokens.Spacing.Xs.px; fontSize = 13.px }
                     }
                     Tab {
-                        label = ReactNode("Purchases")
+                        label = ReactNode(messages.homeTabPurchases())
                         icon = Inventory2.create()
                         iconPosition = IconPosition.start
                         sx { minHeight = 36.px; paddingTop = StoreTokens.Spacing.Xs.px; paddingBottom = StoreTokens.Spacing.Xs.px; fontSize = 13.px }

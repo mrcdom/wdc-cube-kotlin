@@ -1,5 +1,8 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.nativeui.web.util.messages
+import br.com.wdc.store.nativeui.web.util.show
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.RenderSlot
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
@@ -72,14 +75,14 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                 Typography {
                     variant = TypographyVariant.h5
                     asDynamic().style = StoreStyles.titleH5
-                    +"Shopping Cart"
+                    +messages.cartTitle()
                 }
             }
 
             Divider {}
 
             // Error message
-            val errorMessage = scope.errorMessage
+            val errorMessage = scope.errorMessage?.let(messages::show)
             if (!errorMessage.isNullOrBlank()) {
                 Alert {
                     severity = "error"
@@ -104,12 +107,12 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                     Typography {
                         variant = TypographyVariant.h6
                         sx { marginTop = StoreTokens.Spacing.Lg.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                        +"Your cart is empty"
+                        +messages.cartEmpty()
                     }
                     Typography {
                         variant = TypographyVariant.body2
                         sx { marginTop = StoreTokens.Spacing.Sm.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>(); opacity = number(0.7) }
-                        +"Add products to start shopping"
+                        +messages.cartEmptyHint()
                     }
                 }
             } else {
@@ -144,7 +147,7 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                     Typography {
                         variant = TypographyVariant.subtitle1
                         sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                        +"Total: "
+                        +"${messages.commonTotal()} "
                     }
 
                     val total = scope.total
@@ -178,7 +181,7 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                     onClick = onOpenProducts
                     sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                     ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
-                    +"Continue Shopping"
+                    +messages.commonContinueShopping()
                 }
 
                 if (rows.isNotEmpty()) {
@@ -193,7 +196,7 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                             fontSize = StoreTokens.FontSize.BodyLarge.px
                             backgroundColor = StoreColors.PriceColor.unsafeCast<BackgroundColor>()
                         }
-                        +"Buy"
+                        +messages.cartBuy()
                     }
                 }
             }
@@ -297,7 +300,7 @@ val CartItemView = FC<ScopeProps<CartItemScope>> { props ->
                     color = ButtonColor.error
                     onClick = remove
                     asDynamic().style = StoreStyles.smallAction
-                    +"Remove"
+                    +messages.cartRemove()
                 }
             }
         }

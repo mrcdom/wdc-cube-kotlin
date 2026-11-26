@@ -1,5 +1,8 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.nativeui.web.util.messages
+import br.com.wdc.store.nativeui.web.util.show
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
@@ -110,7 +113,7 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
                         Typography {
                             variant = TypographyVariant.h5
                             sx { fontWeight = FontWeight.bold }
-                            +"WDC Store"
+                            +messages.commonAppName()
                         }
                         Typography {
                             variant = TypographyVariant.caption
@@ -129,13 +132,13 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
                     Typography {
                         variant = TypographyVariant.body2
                         sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>(); textAlign = TextAlign.center }
-                        +"Sign in to continue"
+                        +messages.loginSubtitle()
                     }
 
                     // Username
                     TextField {
                         fullWidth = true
-                        label = ReactNode("Username")
+                        label = ReactNode(messages.loginUsername())
                         inputRef = userNameRef
                         defaultValue = scope.userName ?: ""
                         disabled = loading
@@ -145,7 +148,7 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
                     // Password: a real password field, so screen readers don't read it and password managers fill it
                     TextField {
                         fullWidth = true
-                        label = ReactNode("Password")
+                        label = ReactNode(messages.loginPassword())
                         inputRef = passwordRef
                         defaultValue = scope.password ?: ""
                         asDynamic().type = "password"
@@ -155,7 +158,7 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
                     }
 
                     // Error message
-                    val errorMessage = scope.errorMessage
+                    val errorMessage = scope.errorMessage?.let(messages::show)
                     if (!errorMessage.isNullOrBlank()) {
                         Alert {
                             severity = "error"
@@ -185,7 +188,7 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
                                 sx { color = NamedColor.white.unsafeCast<Color>() }
                             }
                         } else {
-                            +"Sign in"
+                            +messages.loginSignIn()
                         }
                     }
                 }

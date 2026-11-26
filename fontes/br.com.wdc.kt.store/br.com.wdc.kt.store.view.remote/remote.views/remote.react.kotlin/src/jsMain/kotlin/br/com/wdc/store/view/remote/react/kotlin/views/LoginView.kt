@@ -1,5 +1,8 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
+import br.com.wdc.store.view.remote.react.kotlin.util.message
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
@@ -116,7 +119,7 @@ val LoginView = FC<RemoteViewProps> { props ->
                             Typography {
                                 variant = TypographyVariant.h5
                                 sx { fontWeight = FontWeight.bold }
-                                +"WDC Store"
+                                +messages.commonAppName()
                             }
                             Typography {
                                 variant = TypographyVariant.caption
@@ -138,13 +141,13 @@ val LoginView = FC<RemoteViewProps> { props ->
                                 color = StoreColors.OnSurfaceVariant.unsafeCast<Color>()
                                 textAlign = TextAlign.center
                             }
-                            +"Sign in to continue"
+                            +messages.loginSubtitle()
                         }
 
                         // Username
                         TextField {
                             fullWidth = true
-                            label = ReactNode("Username")
+                            label = ReactNode(messages.loginUsername())
                             name = "login-usr"
                             inputRef = userNameRef
                             defaultValue = scope.string("userName") ?: ""
@@ -156,7 +159,7 @@ val LoginView = FC<RemoteViewProps> { props ->
                         // Password: a real password field, so screen readers don't read it and password managers fill it
                         TextField {
                             fullWidth = true
-                            label = ReactNode("Password")
+                            label = ReactNode(messages.loginPassword())
                             name = "login-pwd"
                             inputRef = passwordRef
                             defaultValue = ""
@@ -167,7 +170,7 @@ val LoginView = FC<RemoteViewProps> { props ->
                         }
 
                         // Error message
-                        val errorMessage = scope.string("errorMessage")
+                        val errorMessage = scope.message("errorMessage")
                         if (!errorMessage.isNullOrBlank()) {
                             Alert {
                                 severity = "error"
@@ -197,7 +200,7 @@ val LoginView = FC<RemoteViewProps> { props ->
                                     sx { color = NamedColor.white }
                                 }
                             } else {
-                                +"Sign in"
+                                +messages.loginSignIn()
                             }
                         }
                     }

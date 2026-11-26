@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.i18n.*
 import br.com.wdc.store.design.StoreTokens.FontSize
 import br.com.wdc.store.design.StoreTokens.Radius
 import br.com.wdc.store.design.StoreTokens.Spacing
@@ -109,7 +110,7 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                         // Quantity selector
                         hStack(spacing = Spacing.Xs.pt, configure = { alignment = UIK.StackAlignCenter }) {
                             label {
-                                text = "Qty:"
+                                text = messages.productQuantity()
                                 font = UIFont.systemFontOfSize(FontSize.Body.pt)
                                 textColor = StoreColors.OnSurfaceVariant
                             }
@@ -166,7 +167,7 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                 // Action buttons row
                 hStack(spacing = Spacing.Md.pt, configure = { alignment = UIK.StackAlignCenter }) {
                     flexSpacer()
-                    backButton = button("Back") {
+                    backButton = button(messages.productBack()) {
                         setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
                         titleLabel?.font = UIFont.systemFontOfSize(15.0)
                         setImage(StoreIcons.arrowBack(18.0, StoreColors.Primary), forState = UIControlStateNormal)
@@ -180,7 +181,7 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                             widthAnchor.constraintEqualToConstant(110.0)
                         ))
                     }
-                    addToCartButton = button("Add") {
+                    addToCartButton = button(messages.productAddToCart()) {
                         setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                         backgroundColor = StoreColors.Primary
                         layer.cornerRadius = Radius.Md.pt
@@ -228,8 +229,8 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
 
         // Error
         val errorMessage = scope.errorMessage
-        if (!errorMessage.isNullOrBlank()) {
-            errorLabel.text = errorMessage
+        if (errorMessage != null) {
+            errorLabel.text = textOf(errorMessage)
             errorLabel.hidden = false
         } else {
             errorLabel.hidden = true

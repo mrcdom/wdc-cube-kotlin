@@ -1,5 +1,7 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
 import br.com.wdc.store.view.remote.react.kotlin.views.useBridge
@@ -68,6 +70,7 @@ val HeaderPanel = FC<HeaderPanelProps> { props ->
                     brand(titleVariant = TypographyVariant.h6, captionSize = 9)
                     IconButton {
                         onClick = { onExit() }
+                        ariaLabel = messages.homeSignOut()
                         sx {
                             width = 28.px
                             height = 28.px
@@ -91,7 +94,7 @@ val HeaderPanel = FC<HeaderPanelProps> { props ->
                     Typography {
                         variant = TypographyVariant.body2
                         sx { color = StoreColors.WhiteOverlay85.unsafeCast<Color>() }
-                        +"Hello, ${props.nickName}"
+                        +messages.homeGreeting(props.nickName)
                     }
                     cartButton(props.cartItemCount, compact = true, onOpenCart)
                 }
@@ -115,6 +118,7 @@ val HeaderPanel = FC<HeaderPanelProps> { props ->
                 brand(titleVariant = TypographyVariant.h6, captionSize = 10)
                 IconButton {
                     onClick = { onExit() }
+                    ariaLabel = messages.homeSignOut()
                     sx {
                         width = 32.px
                         height = 32.px
@@ -137,7 +141,7 @@ val HeaderPanel = FC<HeaderPanelProps> { props ->
                     Typography {
                         variant = TypographyVariant.body2
                         sx { color = white }
-                        +"Hello, ${props.nickName}"
+                        +messages.homeGreeting(props.nickName)
                     }
                 }
                 cartButton(props.cartItemCount, compact = false, onOpenCart)
@@ -153,7 +157,7 @@ private fun ChildrenBuilder.brand(titleVariant: TypographyVariant, captionSize: 
         Typography {
             variant = titleVariant
             sx { fontWeight = FontWeight.bold; color = NamedColor.white }
-            +"WDC Store"
+            +messages.commonAppName()
         }
         Typography {
             variant = TypographyVariant.caption
@@ -191,7 +195,7 @@ private fun ChildrenBuilder.cartButton(count: Int, compact: Boolean, onOpenCart:
                 }
             }
             ShoppingCart { sx { marginRight = 6.px; fontSize = (if (compact) 16 else 18).px } }
-            +"Cart"
+            +messages.homeCart()
         }
     }
 }

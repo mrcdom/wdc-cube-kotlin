@@ -1,5 +1,8 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.nativeui.web.util.messages
+import br.com.wdc.store.nativeui.web.util.show
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.RenderSlot
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
@@ -115,7 +118,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                             Typography {
                                 variant = TypographyVariant.h6
                                 sx { fontWeight = FontWeight.bold; color = NamedColor.white.unsafeCast<Color>() }
-                                +"WDC Store"
+                                +messages.commonAppName()
                             }
                             Typography {
                                 variant = TypographyVariant.caption
@@ -134,6 +137,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                         // Logout icon (subtle, near brand)
                         IconButton {
                             onClick = onExit
+                            ariaLabel = messages.homeSignOut()
                             sx {
                                 width = 28.px
                                 height = 28.px
@@ -159,7 +163,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                         Typography {
                             variant = TypographyVariant.body2
                             sx { color = StoreColors.WhiteOverlay85.unsafeCast<Color>() }
-                            +"Hello, ${scope.nickName ?: ""}"
+                            +messages.homeGreeting(scope.nickName ?: "")
                         }
 
                         Badge {
@@ -178,7 +182,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                                     fontSize = 13.px
                                 }
                                 ShoppingCart { sx { marginRight = 6.px; fontSize = 16.px } }
-                                +"Cart"
+                                +messages.homeCart()
                             }
                         }
                     }
@@ -210,7 +214,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                         Typography {
                             variant = TypographyVariant.h6
                             sx { fontWeight = FontWeight.bold }
-                            +"WDC Store"
+                            +messages.commonAppName()
                         }
                         Typography {
                             variant = TypographyVariant.caption
@@ -229,6 +233,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                     // Logout icon (subtle, near brand)
                     IconButton {
                         onClick = onExit
+                        ariaLabel = messages.homeSignOut()
                         sx {
                             width = 32.px
                             height = 32.px
@@ -252,7 +257,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                         Typography {
                             variant = TypographyVariant.body2
                             sx { color = NamedColor.white.unsafeCast<Color>() }
-                            +"Hello, ${scope.nickName ?: ""}"
+                            +messages.homeGreeting(scope.nickName ?: "")
                         }
                     }
 
@@ -273,7 +278,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                                 padding = Padding(5.px, StoreTokens.Spacing.Md.px)
                             }
                             ShoppingCart { sx { marginRight = 6.px; fontSize = 16.px } }
-                            +"Cart"
+                            +messages.homeCart()
                         }
                     }
                 }
@@ -281,7 +286,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
         }
 
         // Error message
-        val errorMessage = scope.errorMessage
+        val errorMessage = scope.errorMessage?.let(messages::show)
         if (!errorMessage.isNullOrBlank()) {
             Alert {
                 severity = "error"
@@ -330,7 +335,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                     }
 
                     Tab {
-                        label = ReactNode("Products")
+                        label = ReactNode(messages.homeTabProducts())
                         asDynamic().icon = ShoppingBag.create()
                         iconPosition = mui.material.IconPosition.start
                         sx {
@@ -341,7 +346,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                         }
                     }
                     Tab {
-                        label = ReactNode("Purchases")
+                        label = ReactNode(messages.homeTabPurchases())
                         asDynamic().icon = Inventory2.create()
                         iconPosition = mui.material.IconPosition.start
                         sx {

@@ -8,6 +8,7 @@ import LinearProgress from '@mui/material/LinearProgress'
 import Link from '@mui/material/Link'
 import Typography from '@mui/material/Typography'
 import bridge, { BaseViewClass, type ViewProps, BROWSER_VID, type BrowserScope } from 'wdc-cube-remote-bridge-react'
+import { messages } from '@root/i18n'
 
 // :: Actions
 
@@ -104,11 +105,11 @@ function AppAlert(props: AppAlertProps) {
       detailMessage = props.args[1]
       break
     case -2:
-      msgNode = 'The URI ' + props.args[0] + ' is not reachable'
+      msgNode = messages.text('browser.uriNotReachable', { uri: props.args[0] })
       detailMessage = props.args[1]
       break
     default:
-      msgNode = props.args.length > 0 ? props.args[0] : 'An unexpected error occurred'
+      msgNode = props.args.length > 0 ? props.args[0] : messages.text('browser.unexpectedError')
   }
 
   return (
@@ -117,11 +118,11 @@ function AppAlert(props: AppAlertProps) {
       sx={{ m: 2 }}
       action={
         <Button color="inherit" size="small" onClick={props.onDismiss}>
-          Ok
+          {messages.text('common.ok')}
         </Button>
       }
     >
-      <AlertTitle>Warning!</AlertTitle>
+      <AlertTitle>{messages.text('browser.warning')}</AlertTitle>
       {msgNode}
       {detailMessage && (
         <Typography variant="body2" sx={{ mt: 1 }}>
@@ -151,7 +152,9 @@ function ConnectionAlert(props: ConnectionAlertProps) {
 
     timeElm = (
       <Typography component="span" variant="body2">
-        {minutes > 0 ? `Connecting in ${minutes}m ${seconds}s...` : `Connecting in ${seconds}s...`}
+        {minutes > 0
+          ? messages.text('browser.connectingInMinutes', { minutes, seconds })
+          : messages.text('browser.connectingInSeconds', { seconds })}
       </Typography>
     )
     retryElm = (
@@ -162,13 +165,13 @@ function ConnectionAlert(props: ConnectionAlertProps) {
         onClick={props.onReconnectNow}
         sx={{ cursor: 'pointer', ml: 1 }}
       >
-        Try now
+        {messages.text('browser.tryNow')}
       </Link>
     )
   } else {
     timeElm = (
       <Typography component="span" variant="body2">
-        Connecting now...
+        {messages.text('browser.connectingNow')}
       </Typography>
     )
   }
@@ -186,7 +189,7 @@ function ConnectionAlert(props: ConnectionAlertProps) {
         }}
       >
         <Typography component="span" variant="body2" sx={{ fontWeight: 'bold' }}>
-          Not connected.
+          {messages.text('browser.notConnected')}
         </Typography>{' '}
         {timeElm} {retryElm}.
       </Alert>

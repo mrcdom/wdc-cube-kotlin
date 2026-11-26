@@ -1,5 +1,12 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.i18n.cartBuy
+import br.com.wdc.store.i18n.cartEmpty
+import br.com.wdc.store.i18n.cartEmptyHint
+import br.com.wdc.store.i18n.cartTitle
+import br.com.wdc.store.i18n.commonContinueShopping
+import br.com.wdc.store.i18n.commonTotal
+import br.com.wdc.store.presentation.i18n.Message
 import br.com.wdc.store.design.StoreTokens
 import android.graphics.Color
 import android.graphics.Typeface
@@ -30,7 +37,7 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
 
     private var lastRows: List<CartItemScope>? = null
     private var lastTotal: Double = -1.0
-    private var lastError: String? = null
+    private var lastError: Message? = null
 
     override fun createView(): View {
         val ctx = RootViewAndroid.appContext
@@ -43,7 +50,7 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
             vStack {
                 // Title
                 textView {
-                    text = "Shopping Cart"
+                    text = messages.cartTitle()
                     textSize = StoreTokens.FontSize.Headline.toFloat()
                     setTextColor(StoreColors.OnSurface)
                     setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingMd * density).toInt())
@@ -98,7 +105,7 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                                 (layoutParams as LinearLayout.LayoutParams).topMargin = (Dimens.spacingLg * density).toInt()
                             }) {
                                 textView {
-                                    text = "Total:"
+                                    text = messages.commonTotal()
                                     textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                                     setTextColor(StoreColors.OnSurfaceVariant)
                                     (layoutParams as LinearLayout.LayoutParams).apply {
@@ -130,7 +137,7 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                                 }
                             }) {
                                 // Continue shopping
-                                button("Continue Shopping") {
+                                button(messages.commonContinueShopping()) {
                                     textSize = StoreTokens.FontSize.Body.toFloat()
                                     setTextColor(StoreColors.Primary)
                                     background = StoreStyles.borderPill(StoreColors.Primary, Dimens.radiusMd * density)
@@ -149,7 +156,7 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                                     setOnClickListener { safeAction("back") { scope.onOpenProducts() } }
                                 }
                                 // Buy button
-                                button("Buy") {
+                                button(messages.cartBuy()) {
                                     textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                                     setTypeface(null, Typeface.BOLD)
                                     setTextColor(Color.WHITE)
@@ -188,7 +195,7 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                         }
                     }
                     textView {
-                        text = "Your cart is empty"
+                        text = messages.cartEmpty()
                         textSize = 18f
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(StoreColors.OnSurface)
@@ -196,13 +203,13 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                         (layoutParams as LinearLayout.LayoutParams).topMargin = (Dimens.spacingLg * density).toInt()
                     }
                     textView {
-                        text = "Add products to start shopping"
+                        text = messages.cartEmptyHint()
                         textSize = StoreTokens.FontSize.Body.toFloat()
                         setTextColor(StoreColors.OnSurfaceVariant)
                         gravity = Gravity.CENTER
                         (layoutParams as LinearLayout.LayoutParams).topMargin = (Dimens.spacingSm * density).toInt()
                     }
-                    backButtonEmpty = button("Continue Shopping") {
+                    backButtonEmpty = button(messages.commonContinueShopping()) {
                         textSize = StoreTokens.FontSize.Body.toFloat()
                         setTextColor(StoreColors.Primary)
                         background = StoreStyles.borderPill(StoreColors.Primary, Dimens.radiusMd * density)
@@ -253,8 +260,8 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
         val errorMessage = scope.errorMessage
         if (errorMessage != lastError) {
             lastError = errorMessage
-            if (!errorMessage.isNullOrBlank()) {
-                errorLabel.text = errorMessage
+            if (errorMessage != null) {
+                errorLabel.text = translate(errorMessage)
                 errorLabel.visibility = View.VISIBLE
             } else {
                 errorLabel.visibility = View.GONE

@@ -1,5 +1,7 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.store.design.StoreTokens
@@ -114,7 +116,7 @@ val PurchasesPanelView = FC<RemoteViewProps> { props ->
             Typography {
                 variant = TypographyVariant.h6
                 sx { fontWeight = FontWeight.bold }
-                +"Purchases"
+                +messages.purchasesTitle()
             }
             if (totalCount > 0) {
                 Box {
@@ -126,7 +128,7 @@ val PurchasesPanelView = FC<RemoteViewProps> { props ->
                     Typography {
                         variant = TypographyVariant.caption
                         sx { color = StoreColors.OnPrimaryContainer.unsafeCast<Color>() }
-                        +"$totalCount ${if (totalCount == 1) "item" else "items"}"
+                        +(if (totalCount == 1) messages.commonItemCountOne(totalCount) else messages.commonItemCountOther(totalCount))
                     }
                 }
             }
@@ -153,7 +155,7 @@ val PurchasesPanelView = FC<RemoteViewProps> { props ->
                         Typography {
                             variant = TypographyVariant.body1
                             sx { marginTop = StoreTokens.Spacing.Sm.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                            +"No purchases yet"
+                            +messages.purchasesEmpty()
                         }
                     }
                 }
@@ -236,7 +238,7 @@ val PurchasesPanelView = FC<RemoteViewProps> { props ->
                 Typography {
                     variant = TypographyVariant.body2
                     sx { fontWeight = FontWeight.bold }
-                    +"${page + 1} / $totalPages"
+                    +messages.purchasesPageOf(page + 1, totalPages)
                 }
                 IconButton {
                     disabled = page >= totalPages - 1

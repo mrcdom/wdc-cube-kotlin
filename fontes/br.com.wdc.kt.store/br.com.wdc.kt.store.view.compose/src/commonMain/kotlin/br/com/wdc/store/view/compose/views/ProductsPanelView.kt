@@ -28,9 +28,12 @@ import br.com.wdc.store.view.compose.components.AsyncImage
 import br.com.wdc.store.view.compose.theme.PriceColor
 import br.com.wdc.store.view.compose.util.formatPrice
 import br.com.wdc.store.view.compose.util.productImageUrl
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.compose.i18n.LocalMessages
 
 @Composable
 fun ProductsPanelView(scope: ProductsPanelScope) {
+    val messages = LocalMessages.current
     useScope(scope)
 
     val products = scope.products
@@ -45,7 +48,7 @@ fun ProductsPanelView(scope: ProductsPanelScope) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Products",
+                messages.productsTitle(),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -56,7 +59,7 @@ fun ProductsPanelView(scope: ProductsPanelScope) {
                     color = MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Text(
-                        "${products.size} ${if (products.size == 1) "item" else "items"}",
+                        if (products.size == 1) messages.commonItemCountOne(products.size) else messages.commonItemCountOther(products.size),
                         modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Md.dp, vertical = StoreTokens.Spacing.Xs.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -79,7 +82,7 @@ fun ProductsPanelView(scope: ProductsPanelScope) {
                     )
                     Spacer(Modifier.height(StoreTokens.Spacing.Md.dp))
                     Text(
-                        "Loading products...",
+                        messages.productsLoading(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -88,7 +91,7 @@ fun ProductsPanelView(scope: ProductsPanelScope) {
         } else if (products.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    "No products available",
+                    messages.productsEmpty(),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

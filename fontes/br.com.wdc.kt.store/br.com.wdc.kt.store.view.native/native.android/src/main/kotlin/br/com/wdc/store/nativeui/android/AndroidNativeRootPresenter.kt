@@ -3,6 +3,7 @@ package br.com.wdc.store.nativeui.android
 import br.com.wdc.framework.commons.storage.AndroidPersistentSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.Scope
+import br.com.wdc.store.i18n.Messages
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.ViewUpdateScheduler
 import br.com.wdc.store.nativeui.android.views.*
@@ -17,6 +18,7 @@ import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelSco
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
 import java.util.IdentityHashMap
+import java.util.Locale
 import kotlin.reflect.KClass
 
 /**
@@ -31,6 +33,9 @@ class AndroidNativeRootPresenter(
     override fun updateHistory() { /* No browser history on Android */ }
 
     override fun createSessionStorage(): SessionStorage = persistentStorage
+
+    /** The UI texts in the device's language (pt-BR or, for any other, en-US), read once when the app starts. */
+    val messages: Messages = Messages.of(Locale.getDefault().toLanguageTag())
 
     /** Which view draws each scope class: the presenters', the panels' and the rows'. */
     private val catalog: Map<KClass<out Scope>, (Scope) -> AbstractViewAndroid<*>> = mapOf(

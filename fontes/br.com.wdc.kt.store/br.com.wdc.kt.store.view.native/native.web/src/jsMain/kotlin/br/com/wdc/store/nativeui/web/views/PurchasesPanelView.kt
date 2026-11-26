@@ -1,5 +1,7 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.nativeui.web.util.messages
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
@@ -91,7 +93,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
             Typography {
                 variant = TypographyVariant.h6
                 sx { fontWeight = FontWeight.bold }
-                +"Purchases"
+                +messages.purchasesTitle()
             }
 
             if (scope.totalCount > 0) {
@@ -106,7 +108,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
                         sx {
                             color = StoreColors.OnPrimaryContainer.unsafeCast<Color>()
                         }
-                        +"${scope.totalCount} ${if (scope.totalCount == 1) "item" else "items"}"
+                        +(if (scope.totalCount == 1) messages.commonItemCountOne(scope.totalCount) else messages.commonItemCountOther(scope.totalCount))
                     }
                 }
             }
@@ -134,7 +136,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
                         Typography {
                             variant = TypographyVariant.body1
                             sx { marginTop = StoreTokens.Spacing.Sm.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                            +"No purchases yet"
+                            +messages.purchasesEmpty()
                         }
                     }
                 }
@@ -226,7 +228,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
                 Typography {
                     variant = TypographyVariant.body2
                     sx { fontWeight = FontWeight.bold }
-                    +"${scope.page + 1} / $totalPages"
+                    +messages.purchasesPageOf(scope.page + 1, totalPages)
                 }
 
                 IconButton {

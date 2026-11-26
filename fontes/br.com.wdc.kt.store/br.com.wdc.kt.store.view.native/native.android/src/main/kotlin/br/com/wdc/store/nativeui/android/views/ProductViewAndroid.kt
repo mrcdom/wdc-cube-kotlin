@@ -1,5 +1,8 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.i18n.productAddToCart
+import br.com.wdc.store.i18n.productBack
+import br.com.wdc.store.i18n.productQuantity
 import br.com.wdc.store.design.StoreTokens
 import android.graphics.Typeface
 import android.view.Gravity
@@ -101,7 +104,7 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                                 gravity = Gravity.CENTER_VERTICAL
                             }) {
                                 textView {
-                                    text = "Qty:"
+                                    text = messages.productQuantity()
                                     textSize = StoreTokens.FontSize.Body.toFloat()
                                     setTypeface(null, Typeface.BOLD)
                                     setTextColor(StoreColors.OnSurface)
@@ -172,7 +175,7 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                         (layoutParams as LinearLayout.LayoutParams).topMargin = (Dimens.spacingSm * density).toInt()
                     }) {
                         // Back button (outline)
-                        backButton = button("Back") {
+                        backButton = button(messages.productBack()) {
                             textSize = 15f
                             setTextColor(StoreColors.Primary)
                             background = StoreStyles.borderPill(StoreColors.Primary, Dimens.radiusMd * density)
@@ -192,7 +195,7 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                         }
 
                         // Add to Cart button (primary)
-                        addButton = button("Add to Cart") {
+                        addButton = button(messages.productAddToCart()) {
                             textSize = 15f
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(android.graphics.Color.WHITE)

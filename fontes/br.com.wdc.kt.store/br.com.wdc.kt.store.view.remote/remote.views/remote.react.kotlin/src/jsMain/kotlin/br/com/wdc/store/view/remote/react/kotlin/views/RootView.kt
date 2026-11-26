@@ -1,5 +1,8 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
+import br.com.wdc.store.view.remote.react.kotlin.util.message
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
@@ -14,7 +17,7 @@ import web.cssom.px
 val RootView = FC<RemoteViewProps> { props ->
     val scope = useBridge().useView(props.vsid)
 
-    val errorMessage = scope.string("errorMessage")
+    val errorMessage = scope.message("errorMessage")
     val contentViewId = scope.viewId("content")
     when {
         !errorMessage.isNullOrEmpty() -> Box {
@@ -31,7 +34,7 @@ val RootView = FC<RemoteViewProps> { props ->
             sx { margin = StoreTokens.Spacing.Lg.px }
             Alert {
                 severity = "error"
-                +"Missing content for the home page"
+                +messages.browserMissingHomeContent()
             }
         }
     }
