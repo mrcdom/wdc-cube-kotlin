@@ -19,6 +19,15 @@ allprojects {
     }
 }
 
+// Kotlin/Native links run inside the Gradle daemon, and each takes a large part of its heap. With the configuration
+// cache, the tasks of one project run in parallel: four framework links of one module at once ran the daemon (4 GB)
+// out of memory. One link at a time, as without the cache.
+abstract class NativeLinkSlot : org.gradle.api.services.BuildService<org.gradle.api.services.BuildServiceParameters.None>
+
+val nativeLinkSlot = gradle.sharedServices.registerIfAbsent("kotlinNativeLink", NativeLinkSlot::class) {
+    maxParallelUsages.set(1)
+}
+
 // KMP modules handle their own plugin configuration
 val kmpModules = setOf("framework-commons", "framework-cube", "framework-cube-remote-bridge", "framework-cube-remote-bridge-react", "framework-domain", "store-domain", "store-presentation", "store-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android", "view-remote-react-kotlin")
 
@@ -39,6 +48,10 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+    }
+
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinNativeLink>().configureEach {
+        usesService(nativeLinkSlot)
     }
 
     // `./gradlew test` also runs the common tests of the multiplatform modules, on the JVM. (With the old Android

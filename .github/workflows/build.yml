@@ -99,21 +99,25 @@ jobs:
           done
           (cd "$GITHUB_WORKSPACE/fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e" && npx -y prettier@3.8.2 --check .)
 
+      - name: Lint (the client)
+        run: npm run lint
+
       - name: Bundle
         run: npm run build
 
       # the TypeScript bridge runs the shared conformance fixtures of the remote protocol (vitest, jsdom)
-      - name: Bridge conformance tests
+      - name: Bridge lint and conformance tests
         working-directory: fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.typescript
         run: |
           npm ci
+          npm run lint
           npm test
 
       # the two npm packages as they would be published: packed, installed into another project, type-checked, imported
       - name: npm packages (packed and installed elsewhere)
         working-directory: fontes/br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote
         run: |
-          (cd remote.bridge.typescript.react && npm ci)
+          (cd remote.bridge.typescript.react && npm ci && npm run lint)
           node scripts/verify-npm.mjs
 
   starter:

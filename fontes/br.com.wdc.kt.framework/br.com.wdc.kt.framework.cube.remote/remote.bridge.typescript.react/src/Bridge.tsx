@@ -27,7 +27,7 @@ const bridge = new (class {
   }
 
   getScope<T>(vsid: string) {
-    var binding = coordinator().viewMap.get(vsid)
+    const binding = coordinator().viewMap.get(vsid)
     return binding ? (binding.getScope() as T) : ({} as T)
   }
 

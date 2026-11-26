@@ -21,6 +21,8 @@ class BrowserViewClass extends BaseViewClass<ViewProps, BrowserScope> {
   override render({ className }: ViewProps) {
     const { scope } = this
 
+    // render() runs as the body of the view's function component (BaseViewClass.FC): hooks are allowed here
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     React.useEffect(() => {
       bridge.onStart()
       return () => {
@@ -94,7 +96,7 @@ type AppAlertProps = {
 }
 
 function AppAlert(props: AppAlertProps) {
-  let msgNode: React.ReactNode | null = null
+  let msgNode: React.ReactNode
   let detailMessage: string | null = null
   switch (props.code) {
     case -1:

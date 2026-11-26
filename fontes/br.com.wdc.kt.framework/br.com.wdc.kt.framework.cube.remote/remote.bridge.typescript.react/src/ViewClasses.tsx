@@ -23,6 +23,8 @@ export abstract class BaseViewClass<P extends ViewProps, S> {
     return View
 
     function View(props: P) {
+      // one instance for the component's whole life, made from its first props
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       const memo = React.useMemo(() => new ctor(props), ZERO_DEPS)
 
       const { scope, binding } = bridge.bindView<S>(props.vsid)
@@ -50,6 +52,8 @@ export abstract class BasePanelClass<P> {
     return Panel
 
     function Panel(props: P) {
+      // one instance for the component's whole life, made from its first props
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       const memo = React.useMemo(() => new ctor(props), ZERO_DEPS)
 
       if (memo.initialized) {

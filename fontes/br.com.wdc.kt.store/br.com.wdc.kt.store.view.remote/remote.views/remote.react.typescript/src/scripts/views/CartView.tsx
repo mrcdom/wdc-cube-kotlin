@@ -37,7 +37,7 @@ export type CartScope = {
 }
 
 class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
-  override render({ className }: ViewProps) {
+  override render() {
     const { scope } = this
     const rowsViewIds = scope.rowsViewIds ?? []
 
@@ -166,7 +166,7 @@ export type CartItemScope = {
 }
 
 class CartItemViewClass extends BaseViewClass<ViewProps, CartItemScope> {
-  override render(_props: ViewProps) {
+  override render() {
     const { scope } = this
 
     return (

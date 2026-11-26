@@ -41,7 +41,7 @@ export type ReceiptScope = {
 }
 
 class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
-  override render({ className }: ViewProps) {
+  override render() {
     const { scope } = this
     const receipt = scope.receipt
 
