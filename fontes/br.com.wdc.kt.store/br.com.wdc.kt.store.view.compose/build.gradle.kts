@@ -11,11 +11,14 @@ kotlin {
     jvm()
     android {
         namespace = "br.com.wdc.store.view.compose"
-        compileSdk = 36
+        compileSdk = 37
         minSdk = 26
     }
     wasmJs {
         browser()
+        // Compose 1.12 checks that a Wasm test compilation that sees Compose UI is bundled with an executable, so that
+        // Skiko loads (CMP-4906); the app itself is in :view-compose-web
+        binaries.executable()
     }
     iosArm64()
     iosSimulatorArm64()

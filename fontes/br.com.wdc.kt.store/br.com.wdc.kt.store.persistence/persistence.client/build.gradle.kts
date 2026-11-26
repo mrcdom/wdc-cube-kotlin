@@ -11,7 +11,7 @@ kotlin {
     jvm()
     android {
         namespace = "br.com.wdc.store.persistence.client"
-        compileSdk = 36
+        compileSdk = 37
         minSdk = 26
     }
     js {
