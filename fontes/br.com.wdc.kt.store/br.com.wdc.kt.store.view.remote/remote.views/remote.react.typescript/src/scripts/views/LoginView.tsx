@@ -13,6 +13,7 @@ import LocalMallIcon from '@mui/icons-material/LocalMall'
 import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 import { Colors, toPx } from '@root/theme'
 import { StoreTokens } from '@root/tokens'
+import { messages, translate, type ScopeMessage } from '@root/i18n'
 
 // :: Actions
 
@@ -24,7 +25,7 @@ export type LoginScope = {
   userName?: string
   password?: string
   loading?: boolean
-  errorMessage?: string
+  errorMessage?: ScopeMessage
 }
 
 class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
@@ -68,7 +69,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
 
                 <Box sx={{ position: 'relative' }}>
                   <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                    WDC Store
+                    {messages.text('common.appName')}
                   </Typography>
                   <Typography
                     variant="caption"
@@ -86,13 +87,13 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
                 </Box>
 
                 <Typography variant="body2" sx={{ color: Colors.OnSurfaceVariant, textAlign: 'center' }}>
-                  Sign in to continue
+                  {messages.text('login.subtitle')}
                 </Typography>
 
                 {/* Username */}
                 <TextField
                   inputRef={this.usrInputRef}
-                  label="Username"
+                  label={messages.text('login.username')}
                   type="text"
                   name="login-usr"
                   autoComplete="username"
@@ -104,7 +105,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
                 {/* Password: a real password field, so screen readers don't read it and password managers fill it */}
                 <TextField
                   inputRef={this.pwdInputRef}
-                  label="Password"
+                  label={messages.text('login.password')}
                   type="password"
                   name="login-pwd"
                   autoComplete="current-password"
@@ -117,7 +118,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
                 {/* Error message */}
                 {!!scope.errorMessage && (
                   <Alert severity="error" sx={{ width: '100%', borderRadius: toPx(StoreTokens.radius.sm) }}>
-                    {scope.errorMessage}
+                    {translate(scope.errorMessage)}
                   </Alert>
                 )}
 
@@ -136,7 +137,11 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
                     textTransform: 'none',
                   }}
                 >
-                  {scope.loading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Sign in'}
+                  {scope.loading ? (
+                    <CircularProgress size={24} sx={{ color: '#fff' }} />
+                  ) : (
+                    messages.text('login.signIn')
+                  )}
                 </Button>
               </Stack>
             </form>

@@ -17,6 +17,7 @@ import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-re
 import * as NumberUtils from '@root/utils/NumberUtils'
 import { Colors, toPx } from '@root/theme'
 import { StoreTokens } from '@root/tokens'
+import { messages, translate, type ScopeMessage } from '@root/i18n'
 
 // :: Actions
 
@@ -34,7 +35,7 @@ export type CartScope = {
   rowsViewIds?: string[]
   /** computed on the server */
   total?: number
-  errorMessage?: string
+  errorMessage?: ScopeMessage
 }
 
 class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
@@ -52,7 +53,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
               variant="h5"
               sx={{ fontWeight: StoreTokens.fontWeight.medium, fontSize: StoreTokens.fontSize.display }}
             >
-              Shopping Cart
+              {messages.text('cart.title')}
             </Typography>
           </Stack>
 
@@ -61,7 +62,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
           {/* Error message */}
           {scope.errorMessage && (
             <Alert severity="error" sx={{ mt: 1.5, borderRadius: toPx(StoreTokens.radius.sm) }}>
-              {scope.errorMessage}
+              {translate(scope.errorMessage)}
             </Alert>
           )}
 
@@ -79,10 +80,10 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
             >
               <ShoppingCartIcon sx={{ fontSize: 48, color: Colors.OnSurfaceVariant }} />
               <Typography variant="h6" sx={{ mt: 2, color: Colors.OnSurfaceVariant }}>
-                Your cart is empty
+                {messages.text('cart.empty')}
               </Typography>
               <Typography variant="body2" sx={{ mt: 1, color: Colors.OnSurfaceVariant, opacity: 0.7 }}>
-                Add products to start shopping
+                {messages.text('cart.emptyHint')}
               </Typography>
             </Box>
           ) : (
@@ -102,7 +103,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
               <Divider sx={{ mt: 1, mb: 1 }} />
               <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
                 <Typography variant="subtitle1" sx={{ color: Colors.OnSurfaceVariant }}>
-                  Total:
+                  {messages.text('common.total')}
                 </Typography>
                 <Box sx={{ bgcolor: Colors.PriceBackground, borderRadius: '10px', px: 1.75, py: 0.75 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: 22, color: Colors.PriceColor }}>
@@ -121,7 +122,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
               sx={{ borderRadius: toPx(StoreTokens.radius.md), height: 48, textTransform: 'none' }}
               startIcon={<ArrowBackIcon />}
             >
-              Continue Shopping
+              {messages.text('common.continueShopping')}
             </Button>
             {rowsViewIds.length > 0 && (
               <Button
@@ -136,7 +137,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
                   bgcolor: Colors.PriceColor,
                 }}
               >
-                Buy
+                {messages.text('cart.buy')}
               </Button>
             )}
           </Stack>
@@ -228,7 +229,7 @@ class CartItemViewClass extends BaseViewClass<ViewProps, CartItemScope> {
               onClick={this.emitRemove}
               sx={{ fontWeight: 'normal', fontSize: StoreTokens.fontSize.caption, textTransform: 'none' }}
             >
-              Remove
+              {messages.text('cart.remove')}
             </Button>
           </Stack>
         </CardContent>

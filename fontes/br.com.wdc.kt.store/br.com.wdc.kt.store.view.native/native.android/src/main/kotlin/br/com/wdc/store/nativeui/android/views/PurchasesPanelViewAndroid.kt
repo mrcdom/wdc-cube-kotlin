@@ -1,5 +1,10 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.i18n.commonItemCountOne
+import br.com.wdc.store.i18n.commonItemCountOther
+import br.com.wdc.store.i18n.purchasesEmpty
+import br.com.wdc.store.i18n.purchasesPageOf
+import br.com.wdc.store.i18n.purchasesTitle
 import br.com.wdc.store.design.StoreTokens
 import android.graphics.Paint
 import android.graphics.Typeface
@@ -96,7 +101,7 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
                     setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingXs * density).toInt())
                 }) {
                     textView {
-                        text = "Purchases"
+                        text = messages.purchasesTitle()
                         textSize = StoreTokens.FontSize.Title.toFloat()
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(StoreColors.OnSurface)
@@ -194,7 +199,7 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
 
             // Empty label
             emptyLabel = textView {
-                text = "No purchases yet"
+                text = messages.purchasesEmpty()
                 textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                 setTextColor(StoreColors.OnSurfaceVariant)
                 gravity = Gravity.CENTER
@@ -273,7 +278,7 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
 
         if (totalCount != lastTotalCount) {
             lastTotalCount = totalCount
-            headerBadge.text = "$totalCount ${if (totalCount == 1) "item" else "items"}"
+            headerBadge.text = if (totalCount == 1) messages.commonItemCountOne(totalCount) else messages.commonItemCountOther(totalCount)
         }
 
         if (page != lastPage || totalCount != lastTotalCount) {
@@ -281,7 +286,10 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
             val totalPages = if (pageSize > 0) ((totalCount + pageSize - 1) / pageSize) else 1
             if (totalPages > 1) {
                 paginationContainer.visibility = View.VISIBLE
-                pageLabel.text = "${page + 1} / $totalPages"
+                pageLabel.text = messages.purchasesPageOf(
+                    page = page + 1,
+                    pages = totalPages,
+                )
                 prevButton.isEnabled = page > 0
                 prevButton.alpha = if (page > 0) 1f else 0.4f
                 nextButton.isEnabled = page < totalPages - 1
@@ -382,7 +390,7 @@ private class PurchaseCardView(app: AndroidNativeRootPresenter, scope: Purchases
         if (p.id == lastPurchaseId) return
         lastPurchaseId = p.id
 
-        dateLabel.text = ViewUtils.formatDate(p.date)
+        dateLabel.text = ViewUtils.formatDate(messages, p.date)
         totalLabel.text = "\$${ViewUtils.formatPrice(p.total)}"
         itemsLabel.text = p.items.joinToString(", ")
     }

@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.web.util
 
+import br.com.wdc.store.i18n.Messages
 import kotlinx.browser.window
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
@@ -33,10 +34,13 @@ fun stripHtml(html: String): String {
 }
 
 /**
- * The purchase date as MM/DD/YYYY, in UTC — the same calendar date the iOS and Android views show. Uses the real
- * calendar: it was approximated with 365-day years and 30-day months, and the dates came out shifted.
+ * The purchase date in the language's format (MM/DD/YYYY in en-US, DD/MM/YYYY in pt-BR), in UTC — the same calendar
+ * date the iOS and Android views show. Uses the real calendar: it was approximated with 365-day years and 30-day
+ * months, and the dates came out shifted.
  */
-fun formatDate(epochMs: Long): String {
+fun formatDate(epochMs: Long, messages: Messages = pageMessages()): String {
     val date = Instant.fromEpochMilliseconds(epochMs).toLocalDateTime(TimeZone.UTC).date
-    return "${date.month.number.toString().padStart(2, '0')}/${date.day.toString().padStart(2, '0')}/${date.year}"
+    return messages.date(date.year, date.month.number, date.day)
 }
+
+private fun pageMessages(): Messages = messages

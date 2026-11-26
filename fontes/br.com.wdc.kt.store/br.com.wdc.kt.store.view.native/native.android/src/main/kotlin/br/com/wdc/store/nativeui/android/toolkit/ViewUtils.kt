@@ -4,6 +4,7 @@ import android.widget.ImageView
 import coil.load
 import coil.request.CachePolicy
 import android.graphics.drawable.ColorDrawable
+import br.com.wdc.store.i18n.Messages
 import br.com.wdc.store.nativeui.android.theme.StoreColors
 import br.com.wdc.store.nativeui.android.views.RootViewAndroid
 
@@ -25,7 +26,8 @@ object ViewUtils {
         return "$sign$whole.${(abs % 100).toString().padStart(2, '0')}"
     }
 
-    fun formatDate(epochMs: Long): String {
+    /** The civil date in UTC of [epochMs], in the language of [messages]. */
+    fun formatDate(messages: Messages, epochMs: Long): String {
         val totalSeconds = epochMs / 1000
         val days = (totalSeconds / 86400).toInt()
         var y = 1970
@@ -47,7 +49,7 @@ object ViewUtils {
             m++
         }
         val d = remaining + 1
-        return "${(m + 1).toString().padStart(2, '0')}/${d.toString().padStart(2, '0')}/$y"
+        return messages.date(year = y, month = m + 1, day = d)
     }
 
     private fun isLeapYear(year: Int): Boolean =

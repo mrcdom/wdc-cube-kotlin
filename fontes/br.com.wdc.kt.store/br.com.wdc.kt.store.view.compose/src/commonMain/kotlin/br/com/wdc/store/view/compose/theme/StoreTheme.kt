@@ -2,8 +2,12 @@ package br.com.wdc.store.view.compose.theme
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import br.com.wdc.store.design.StoreTokens
+import br.com.wdc.store.view.compose.i18n.LocalMessages
+import br.com.wdc.store.view.compose.i18n.platformMessages
 
 // Main palette - elegant petrol-blue tones, from the design tokens (StoreTokens.Color)
 val Primary = Color(StoreTokens.Color.Primary)
@@ -58,11 +62,15 @@ private val StoreColorScheme = lightColorScheme(
     outlineVariant = OutlineVariant,
 )
 
+/** The root of every Compose app: the Store's colors and the UI texts in the platform's language ([LocalMessages]). */
 @Composable
 fun StoreTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = StoreColorScheme,
-        typography = Typography(),
-        content = content
-    )
+    val messages = remember { platformMessages() }
+    CompositionLocalProvider(LocalMessages provides messages) {
+        MaterialTheme(
+            colorScheme = StoreColorScheme,
+            typography = Typography(),
+            content = content
+        )
+    }
 }

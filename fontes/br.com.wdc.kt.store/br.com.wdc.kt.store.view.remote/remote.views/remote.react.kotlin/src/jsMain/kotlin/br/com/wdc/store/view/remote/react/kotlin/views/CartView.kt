@@ -1,5 +1,8 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
+import br.com.wdc.store.view.remote.react.kotlin.util.message
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
 import br.com.wdc.framework.cube.remote.bridge.react.useView
@@ -71,13 +74,13 @@ val CartView = FC<RemoteViewProps> { props ->
                 Typography {
                     variant = TypographyVariant.h5
                     sx { fontWeight = integer(StoreTokens.FontWeight.Medium).unsafeCast<FontWeight>(); fontSize = StoreTokens.FontSize.Display.px }
-                    +"Shopping Cart"
+                    +messages.cartTitle()
                 }
             }
 
             Divider()
 
-            val errorMessage = scope.string("errorMessage")
+            val errorMessage = scope.message("errorMessage")
             if (!errorMessage.isNullOrEmpty()) {
                 Alert {
                     severity = "error"
@@ -100,12 +103,12 @@ val CartView = FC<RemoteViewProps> { props ->
                     Typography {
                         variant = TypographyVariant.h6
                         sx { marginTop = StoreTokens.Spacing.Lg.px; color = muted }
-                        +"Your cart is empty"
+                        +messages.cartEmpty()
                     }
                     Typography {
                         variant = TypographyVariant.body2
                         sx { marginTop = StoreTokens.Spacing.Sm.px; color = muted; opacity = number(0.7) }
-                        +"Add products to start shopping"
+                        +messages.cartEmptyHint()
                     }
                 }
             } else {
@@ -132,7 +135,7 @@ val CartView = FC<RemoteViewProps> { props ->
                     Typography {
                         variant = TypographyVariant.subtitle1
                         sx { color = muted }
-                        +"Total:"
+                        +messages.commonTotal()
                     }
                     Box {
                         sx {
@@ -163,7 +166,7 @@ val CartView = FC<RemoteViewProps> { props ->
                     startIcon = ArrowBack.create()
                     onClick = { bridge.submit(props.vsid, ON_OPEN_PRODUCTS) }
                     sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
-                    +"Continue Shopping"
+                    +messages.commonContinueShopping()
                 }
                 if (rows.isNotEmpty()) {
                     Button {
@@ -177,7 +180,7 @@ val CartView = FC<RemoteViewProps> { props ->
                             fontSize = StoreTokens.FontSize.BodyLarge.px
                             backgroundColor = StoreColors.PriceColor.unsafeCast<BackgroundColor>()
                         }
-                        +"Buy"
+                        +messages.cartBuy()
                     }
                 }
             }
@@ -270,7 +273,7 @@ val CartItemView = FC<RemoteViewProps> { props ->
                     color = ButtonColor.error
                     onClick = { bridge.submit(props.vsid, ON_REMOVE) }
                     sx { fontWeight = FontWeight.normal; fontSize = StoreTokens.FontSize.Caption.px; textTransform = None.none }
-                    +"Remove"
+                    +messages.cartRemove()
                 }
             }
         }

@@ -15,12 +15,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.sp
 import br.com.wdc.store.design.StoreTokens
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.compose.i18n.LocalMessages
 
 /**
  * Large logo for the login screen.
  */
 @Composable
 fun StoreLogoLarge() {
+    val messages = LocalMessages.current
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             modifier = Modifier.size(72.dp),
@@ -30,7 +33,7 @@ fun StoreLogoLarge() {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.Default.LocalMall,
-                    contentDescription = "WDC Store",
+                    contentDescription = messages.commonAppName(),
                     modifier = Modifier.size(40.dp),
                     tint = Color.White
                 )
@@ -39,7 +42,7 @@ fun StoreLogoLarge() {
         Spacer(Modifier.height(StoreTokens.Spacing.Md.dp))
         Box {
             Text(
-                "WDC Store",
+                messages.commonAppName(),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -61,6 +64,7 @@ fun StoreLogoLarge() {
  */
 @Composable
 fun StoreLogoHeader(size: Dp = 36.dp, compact: Boolean = false) {
+    val messages = LocalMessages.current
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp)
@@ -73,7 +77,7 @@ fun StoreLogoHeader(size: Dp = 36.dp, compact: Boolean = false) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.Default.LocalMall,
-                    contentDescription = "WDC Store",
+                    contentDescription = messages.commonAppName(),
                     modifier = Modifier.size(size * 0.6f),
                     tint = Color.White
                 )
@@ -81,7 +85,7 @@ fun StoreLogoHeader(size: Dp = 36.dp, compact: Boolean = false) {
         }
         Box {
             Text(
-                "WDC Store",
+                messages.commonAppName(),
                 fontSize = if (compact) StoreTokens.FontSize.BodyLarge.sp else StoreTokens.FontSize.Title.sp,
                 lineHeight = if (compact) 18.sp else 22.sp,
                 fontWeight = FontWeight.Bold,

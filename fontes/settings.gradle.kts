@@ -37,6 +37,7 @@ include(":framework-cube-remote-bridge-react")
 
 // Store modules
 include(":store-design")
+include(":store-i18n")
 include(":store-domain")
 include(":store-persistence")
 include(":persistence-rest")
@@ -69,6 +70,7 @@ project(":framework-cube-remote-backend-javalin").projectDir  = file("br.com.wdc
 project(":framework-cube-remote-bridge").projectDir        = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.kotlin")
 project(":framework-cube-remote-bridge-react").projectDir  = file("br.com.wdc.kt.framework/br.com.wdc.kt.framework.cube.remote/remote.bridge.kotlin.react")
 project(":store-design").projectDir        = file("br.com.wdc.kt.store/br.com.wdc.kt.store.design")
+project(":store-i18n").projectDir          = file("br.com.wdc.kt.store/br.com.wdc.kt.store.i18n")
 project(":store-domain").projectDir        = file("br.com.wdc.kt.store/br.com.wdc.kt.store.domain")
 project(":store-persistence").projectDir   = file("br.com.wdc.kt.store/br.com.wdc.kt.store.persistence/persistence.impl")
 project(":persistence-rest").projectDir       = file("br.com.wdc.kt.store/br.com.wdc.kt.store.persistence/persistence.rest")

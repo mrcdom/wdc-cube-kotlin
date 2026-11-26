@@ -1,5 +1,7 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.nativeui.web.util.messages
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
@@ -76,7 +78,7 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                             Typography {
                                 variant = TypographyVariant.subtitle1
                                 asDynamic().style = StoreStyles.successText
-                                +"Purchase completed successfully!"
+                                +messages.receiptPurchaseCompleted()
                             }
                         }
                     }
@@ -97,7 +99,7 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                             Typography {
                                 variant = TypographyVariant.h5
                                 asDynamic().style = StoreStyles.titleH5
-                                +"Receipt"
+                                +messages.receiptTitle()
                             }
                         }
 
@@ -126,17 +128,17 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                         Typography {
                             variant = TypographyVariant.caption
                             sx { flex = Flex(number(1.0), number(1.0), 0.px); color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                            +"Item"
+                            +messages.receiptColumnItem()
                         }
                         Typography {
                             variant = TypographyVariant.caption
                             sx { width = 50.px; textAlign = TextAlign.center; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                            +"Qty"
+                            +messages.receiptColumnQty()
                         }
                         Typography {
                             variant = TypographyVariant.caption
                             sx { width = 100.px; textAlign = TextAlign.end; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                            +"Amount"
+                            +messages.receiptColumnAmount()
                         }
                     }
 
@@ -168,7 +170,7 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                                     Typography {
                                         variant = TypographyVariant.body2
                                         sx { width = 50.px; textAlign = TextAlign.center; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                                        +"${item.quantity}x"
+                                        +messages.receiptQuantityTimes(item.quantity)
                                     }
                                     Typography {
                                         variant = TypographyVariant.body2
@@ -195,7 +197,7 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                         Typography {
                             variant = TypographyVariant.subtitle1
                             sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                            +"Total: "
+                            +"${messages.commonTotal()} "
                         }
 
                         receipt.total?.let { total ->
@@ -230,7 +232,7 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                         asDynamic().style = StoreStyles.fontMedium
                         sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                         ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
-                        +"Continue Shopping"
+                        +messages.commonContinueShopping()
                     }
                 }
             }

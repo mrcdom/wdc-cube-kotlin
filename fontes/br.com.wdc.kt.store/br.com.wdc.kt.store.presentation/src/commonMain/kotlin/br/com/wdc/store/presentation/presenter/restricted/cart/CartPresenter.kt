@@ -5,10 +5,12 @@ import br.com.wdc.framework.commons.function.Registration
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.framework.cube.FormParam
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.store.domain.exception.InvalidCartItemException
 import br.com.wdc.store.domain.exception.OfflineException
+import br.com.wdc.store.i18n.MessageKeys
+import br.com.wdc.store.presentation.i18n.Message
 import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptKeys
@@ -165,37 +167,37 @@ class CartPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private fun alertThereIsItemWhichValueIsLessThanOne() {
         scope.errorCode = 1
-        scope.errorMessage = "Some products have a quantity of less than one item. Unable to purchase."
+        scope.errorMessage = Message(MessageKeys.ErrorItemQuantityBelowOne)
         clearErrorAfterDelay()
     }
 
     private fun alertProductNotFound() {
         scope.errorCode = 2
-        scope.errorMessage = "Product not found in the database."
+        scope.errorMessage = Message(MessageKeys.ErrorProductNotInDatabase)
         clearErrorAfterDelay()
     }
 
     private fun alertPurchaseOfEmptyCart() {
         scope.errorCode = 3
-        scope.errorMessage = "There must be at least one item in the cart to complete a purchase."
+        scope.errorMessage = Message(MessageKeys.ErrorEmptyCartPurchase)
         clearErrorAfterDelay()
     }
 
     private fun alertDatabaseOffline() {
         scope.errorCode = 4
-        scope.errorMessage = "The database is currently offline. Please wait a moment and try again."
+        scope.errorMessage = Message(MessageKeys.ErrorDatabaseOfflineRetry)
         clearErrorAfterDelay()
     }
 
     private fun errorMalformedProductId() {
         scope.errorCode = 5
-        scope.errorMessage = "Malformed product code."
+        scope.errorMessage = Message(MessageKeys.ErrorMalformedProductCode)
         clearErrorAfterDelay()
     }
 
     private fun errorMalformedQuantity() {
         scope.errorCode = 6
-        scope.errorMessage = "Malformed quantity value."
+        scope.errorMessage = Message(MessageKeys.ErrorMalformedQuantity)
         clearErrorAfterDelay()
     }
 }

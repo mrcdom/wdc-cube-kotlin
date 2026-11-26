@@ -3,12 +3,14 @@ package br.com.wdc.store.presentation.presenter.restricted.products
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
+import br.com.wdc.framework.cube.FormParam
 import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.store.domain.exception.OfflineException
+import br.com.wdc.store.i18n.MessageKeys
+import br.com.wdc.store.presentation.i18n.Message
 import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeKeys
-import br.com.wdc.framework.cube.FormParam
 import br.com.wdc.store.presentation.presenter.restricted.products.calls.ProductQuery
 
 class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
@@ -91,7 +93,7 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
             CartKeys(app).flip()
         } catch (caught: OfflineException) {
             alertDatabaseNotAvailable()
-            LOG.error(scope.errorMessage!!, caught)
+            LOG.error(scope.errorMessage.toString(), caught)
         }
     }
 
@@ -99,16 +101,16 @@ class ProductPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter
 
     private fun alertDatabaseNotAvailable() {
         scope.errorCode = 1
-        scope.errorMessage = "The cart is not available. Please wait a moment and try again."
+        scope.errorMessage = Message(MessageKeys.ErrorCartNotAvailable)
     }
 
     private fun alertCartItemWidthLessThanOneItem() {
         scope.errorCode = 2
-        scope.errorMessage = "The quantity of items in the cart must be at least 1 (one)."
+        scope.errorMessage = Message(MessageKeys.ErrorQuantityAtLeastOne)
     }
 
     private fun errorInvalidQuantity() {
         scope.errorCode = 3
-        scope.errorMessage = "Invalid quantity format."
+        scope.errorMessage = Message(MessageKeys.ErrorInvalidQuantityFormat)
     }
 }

@@ -21,6 +21,7 @@ kotlin {
         getByName("jsMain") {
             dependencies {
                 implementation(project(":store-design"))
+                implementation(project(":store-i18n"))
                 implementation(project(":framework-cube-remote-bridge-react"))
                 implementation(libs.kotlinx.coroutines.core)
 

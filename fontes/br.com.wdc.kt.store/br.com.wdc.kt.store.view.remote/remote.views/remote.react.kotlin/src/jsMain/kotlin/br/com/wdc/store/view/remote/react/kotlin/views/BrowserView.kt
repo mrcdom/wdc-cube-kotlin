@@ -1,5 +1,7 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
 import br.com.wdc.framework.cube.remote.bridge.react.useView
@@ -107,10 +109,10 @@ private val AppAlert = FC<AppAlertProps> { props ->
             detail = args.getOrNull(1)
         }
         -2 -> {
-            message = "The URI ${args.getOrNull(0)} is not reachable"
+            message = messages.browserUriNotReachable(args.getOrNull(0))
             detail = args.getOrNull(1)
         }
-        else -> message = args.getOrNull(0) ?: "An unexpected error occurred"
+        else -> message = args.getOrNull(0) ?: messages.browserUnexpectedError()
     }
 
     Alert {
@@ -120,9 +122,9 @@ private val AppAlert = FC<AppAlertProps> { props ->
             color = ButtonColor.inherit
             size = Size.small
             onClick = { props.onDismiss() }
-            +"Ok"
+            +messages.commonOk()
         }
-        AlertTitle { +"Warning!" }
+        AlertTitle { +messages.browserWarning() }
         +message
         if (!detail.isNullOrEmpty()) {
             Typography {
@@ -160,7 +162,7 @@ private val ConnectionAlert = FC<ConnectionAlertProps> { props ->
                 component = span
                 variant = TypographyVariant.body2
                 sx { fontWeight = FontWeight.bold }
-                +"Not connected."
+                +messages.browserNotConnected()
             }
             +" "
             if (props.delay > 0) {
@@ -173,7 +175,7 @@ private val ConnectionAlert = FC<ConnectionAlertProps> { props ->
                 Typography {
                     component = span
                     variant = TypographyVariant.body2
-                    +(if (minutes > 0) "Connecting in ${minutes}m ${seconds}s..." else "Connecting in ${seconds}s...")
+                    +(if (minutes > 0) messages.browserConnectingInMinutes(minutes, seconds) else messages.browserConnectingInSeconds(seconds))
                 }
                 +" "
                 Link {
@@ -182,13 +184,13 @@ private val ConnectionAlert = FC<ConnectionAlertProps> { props ->
                     underline = LinkUnderline.always
                     onClick = { props.onReconnectNow() }
                     sx { cursor = Cursor.pointer; marginLeft = StoreTokens.Spacing.Sm.px }
-                    +"Try now"
+                    +messages.browserTryNow()
                 }
             } else {
                 Typography {
                     component = span
                     variant = TypographyVariant.body2
-                    +"Connecting now..."
+                    +messages.browserConnectingNow()
                 }
             }
             +"."

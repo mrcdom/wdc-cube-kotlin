@@ -32,6 +32,7 @@ kotlin {
             dependencies {
                 implementation(project(":store-design"))
                 implementation(project(":store-presentation"))
+                implementation(project(":store-i18n"))
                 implementation(project(":store-persistence-client"))
 
                 implementation(kotlinWrappers.react)

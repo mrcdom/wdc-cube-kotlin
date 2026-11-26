@@ -24,6 +24,7 @@ kotlin {
             implementation(project(":store-presentation"))
             implementation(project(":store-persistence-client"))
             implementation(project(":store-design"))
+            implementation(project(":store-i18n"))
         }
     }
 }

@@ -64,8 +64,8 @@ class RootViewAndroid(app: AndroidNativeRootPresenter, scope: RootScope) : Abstr
         contentSlot.sync(scope.content?.let(::viewOf))
 
         val errorMessage = scope.errorMessage
-        if (!errorMessage.isNullOrBlank()) {
-            showErrorToast(errorMessage)
+        if (errorMessage != null) {
+            showErrorToast(translate(errorMessage)!!)
             scope.errorMessage = null
         }
     }

@@ -27,3 +27,13 @@ tasks.register<JavaExec>("generateDesignTokens") {
     mainClass.set("br.com.wdc.store.scripts.codegen.GenerateDesignTokens")
     args(projectDir.parentFile.absolutePath)
 }
+
+// Writes the UI texts of messages.<language>.json (in :store-i18n) as Kotlin and TypeScript.
+// The result is versioned: run it after changing a catalog and commit what changes (MessagesCatalogTest checks).
+tasks.register<JavaExec>("generateMessages") {
+    group = "codegen"
+    description = "Generates the UI texts (Kotlin, TypeScript) from :store-i18n's messages.<language>.json"
+    classpath = project.the<SourceSetContainer>()["main"].runtimeClasspath
+    mainClass.set("br.com.wdc.store.scripts.codegen.GenerateMessages")
+    args(projectDir.parentFile.absolutePath)
+}

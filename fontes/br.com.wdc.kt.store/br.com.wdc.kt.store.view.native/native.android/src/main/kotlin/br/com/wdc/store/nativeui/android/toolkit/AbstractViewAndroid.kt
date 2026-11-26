@@ -6,7 +6,9 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import br.com.wdc.framework.commons.log.Log as AppLog
 import br.com.wdc.framework.cube.Scope
+import br.com.wdc.store.i18n.Messages
 import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
+import br.com.wdc.store.presentation.i18n.Message
 import kotlinx.coroutines.launch
 
 /**
@@ -52,6 +54,12 @@ abstract class AbstractViewAndroid<S : Scope>(
     private val myListSlots = mutableListOf<ListSlot<*, *>>()
 
     val instanceId: String get() = viewId
+
+    /** The UI texts in the device's language. */
+    protected val messages: Messages get() = app.messages
+
+    /** A presenter's [message] in the device's language; `null` when there is none. */
+    protected fun translate(message: Message?): String? = message?.let { messages.text(it.key, it.args) }
 
     /** The scope changed: draw it again. */
     fun update() {

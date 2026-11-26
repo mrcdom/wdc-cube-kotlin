@@ -1,5 +1,8 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
+import br.com.wdc.store.view.remote.react.kotlin.util.message
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
@@ -60,7 +63,7 @@ val ProductView = FC<RemoteViewProps> { props ->
             Typography {
                 variant = TypographyVariant.body2
                 sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                +"Loading product..."
+                +messages.productLoading()
             }
         }
         return@FC
@@ -81,7 +84,7 @@ val ProductView = FC<RemoteViewProps> { props ->
                 direction = responsive(StackDirection.column)
                 spacing = responsive(2)
 
-                val errorMessage = scope.string("errorMessage")
+                val errorMessage = scope.message("errorMessage")
                 if (!errorMessage.isNullOrEmpty()) {
                     Alert {
                         severity = "error"
@@ -155,7 +158,7 @@ val ProductView = FC<RemoteViewProps> { props ->
                             Typography {
                                 variant = TypographyVariant.body1
                                 sx { fontWeight = FontWeight.bold }
-                                +"Qty:"
+                                +messages.productQuantity()
                             }
                             Paper {
                                 elevation = 0
@@ -213,7 +216,7 @@ val ProductView = FC<RemoteViewProps> { props ->
                         startIcon = ArrowBack.create()
                         onClick = { bridge.submit(props.vsid, ON_OPEN_PRODUCTS) }
                         sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
-                        +"Back"
+                        +messages.productBack()
                     }
                     Button {
                         variant = ButtonVariant.contained
@@ -223,7 +226,7 @@ val ProductView = FC<RemoteViewProps> { props ->
                             bridge.submit(props.vsid, ON_ADD_TO_CART)
                         }
                         sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
-                        +"Add to Cart"
+                        +messages.productAddToCart()
                     }
                 }
             }

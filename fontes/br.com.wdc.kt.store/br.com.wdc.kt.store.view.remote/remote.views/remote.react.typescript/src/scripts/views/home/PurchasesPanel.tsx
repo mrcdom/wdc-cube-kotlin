@@ -16,6 +16,7 @@ import * as NumberUtils from '@root/utils/NumberUtils'
 import * as DateUtils from '@root/utils/DateUtils'
 import { Colors, toPx } from '@root/theme'
 import { StoreTokens } from '@root/tokens'
+import { messages } from '@root/i18n'
 
 const ITEM_HEIGHT_PX = 76
 
@@ -87,14 +88,16 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelScope> 
         {/* Section header */}
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-            Purchases
+            {messages.text('purchases.title')}
           </Typography>
           {scope.totalCount > 0 && (
             <Box
               sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: toPx(StoreTokens.radius.sm), px: 2, py: 0.75 }}
             >
               <Typography variant="caption" sx={{ color: Colors.OnPrimaryContainer }}>
-                {scope.totalCount} {scope.totalCount === 1 ? 'item' : 'items'}
+                {messages.text(scope.totalCount === 1 ? 'common.itemCountOne' : 'common.itemCountOther', {
+                  count: scope.totalCount,
+                })}
               </Typography>
             </Box>
           )}
@@ -111,7 +114,7 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelScope> 
               >
                 <Inventory2Icon sx={{ fontSize: 48, color: Colors.OnSurfaceVariant }} />
                 <Typography variant="body1" sx={{ mt: 1, color: Colors.OnSurfaceVariant }}>
-                  No purchases yet
+                  {messages.text('purchases.empty')}
                 </Typography>
               </Box>
             )
@@ -131,7 +134,7 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelScope> 
               <ChevronLeftIcon />
             </IconButton>
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-              {scope.page + 1} / {this.totalPages}
+              {messages.text('purchases.pageOf', { page: scope.page + 1, pages: this.totalPages })}
             </Typography>
             <IconButton disabled={scope.page >= this.totalPages - 1} onClick={this.emitNextPage}>
               <ChevronRightIcon />

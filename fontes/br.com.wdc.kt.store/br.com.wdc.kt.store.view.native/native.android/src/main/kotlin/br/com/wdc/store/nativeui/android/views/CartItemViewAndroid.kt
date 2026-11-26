@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.i18n.cartItemPriceTimesQuantity
 import br.com.wdc.store.design.StoreTokens
 import android.graphics.Color
 import android.graphics.Typeface
@@ -139,7 +140,10 @@ class CartItemViewAndroid(app: AndroidNativeRootPresenter, scope: CartItemScope)
         if (scope.price != lastPrice || scope.quantity != lastQuantity) {
             lastPrice = scope.price
             lastQuantity = scope.quantity
-            priceLabel.text = "\$${ViewUtils.formatPrice(scope.price)} × ${scope.quantity}"
+            priceLabel.text = messages.cartItemPriceTimesQuantity(
+                price = "\$${ViewUtils.formatPrice(scope.price)}",
+                quantity = scope.quantity,
+            )
             qtyLabel.text = scope.quantity.toString()
         }
     }

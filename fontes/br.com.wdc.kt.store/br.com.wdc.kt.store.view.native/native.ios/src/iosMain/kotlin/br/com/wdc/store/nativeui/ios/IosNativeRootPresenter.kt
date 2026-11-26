@@ -3,6 +3,7 @@ package br.com.wdc.store.nativeui.ios
 import br.com.wdc.framework.commons.storage.IosPersistentSessionStorage
 import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.Scope
+import br.com.wdc.store.i18n.Messages
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.ViewUpdateScheduler
 import br.com.wdc.store.nativeui.ios.views.*
@@ -17,6 +18,8 @@ import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelSco
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
 import kotlin.reflect.KClass
+import platform.Foundation.NSLocale
+import platform.Foundation.preferredLanguages
 
 /**
  * The iOS application, and the UIKit rendering technology's binding between scopes and views: which view draws each
@@ -26,6 +29,9 @@ import kotlin.reflect.KClass
 class IosNativeRootPresenter : RootPresenter() {
 
     override fun createSessionStorage(): SessionStorage = IosPersistentSessionStorage()
+
+    /** The UI texts, in the device's preferred language (en-US when the catalog does not have it). */
+    val messages: Messages = Messages.of(NSLocale.preferredLanguages.firstOrNull() as? String)
 
     /** Which view draws each scope class: the presenters', the panels' and the rows'. */
     private val catalog: Map<KClass<out Scope>, (Scope) -> AbstractViewIos<*>> = mapOf(

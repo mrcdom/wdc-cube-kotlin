@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.i18n.*
 import br.com.wdc.store.design.StoreTokens.FontSize
 import br.com.wdc.store.design.StoreTokens.Radius
 import br.com.wdc.store.design.StoreTokens.Spacing
@@ -56,7 +57,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                     hidden = true
                 }) {
                     val successLabel = label {
-                        text = "✅ Purchase completed successfully!"
+                        text = "✅ " + messages.receiptPurchaseCompleted()
                         font = UIFont.boldSystemFontOfSize(15.0)
                         textColor = StoreColors.SuccessColor
                         textAlignment = UIK.TextAlignCenter
@@ -75,7 +76,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                         ))
                     }
                     label {
-                        text = "Receipt"
+                        text = messages.receiptTitle()
                         font = UIFont.systemFontOfSize(FontSize.Headline.pt, UIFontWeightMedium)
                         textColor = StoreColors.OnSurface
                     }
@@ -99,20 +100,20 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                 // Column headers
                 hStack(spacing = 0.0) {
                     label {
-                        text = "Item"
+                        text = messages.receiptColumnItem()
                         font = UIFont.systemFontOfSize(FontSize.Caption.pt)
                         textColor = StoreColors.OnSurfaceVariant
                         setContentHuggingPriority(249.0f, UIK.AxisHorizontal)
                     }
                     label {
-                        text = "Qty"
+                        text = messages.receiptColumnQty()
                         font = UIFont.systemFontOfSize(FontSize.Caption.pt)
                         textColor = StoreColors.OnSurfaceVariant
                         textAlignment = UIK.TextAlignCenter
                         widthAnchor.constraintEqualToConstant(50.0).active = true
                     }
                     label {
-                        text = "Amount"
+                        text = messages.receiptColumnAmount()
                         font = UIFont.systemFontOfSize(FontSize.Caption.pt)
                         textColor = StoreColors.OnSurfaceVariant
                         textAlignment = UIK.TextAlignRight
@@ -132,7 +133,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                 // Total in badge
                 hStack(spacing = Spacing.Sm.pt, configure = { alignment = UIK.StackAlignCenter }) {
                     label {
-                        text = "Total:"
+                        text = messages.commonTotal()
                         font = UIFont.systemFontOfSize(15.0)
                         textColor = StoreColors.OnSurfaceVariant
                     }
@@ -152,7 +153,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                 // Back button
                 hStack(spacing = 0.0) {
                     flexSpacer()
-                    backButton = button("Continue Shopping") {
+                    backButton = button(messages.commonContinueShopping()) {
                         setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                         backgroundColor = StoreColors.Primary
                         layer.cornerRadius = Radius.Md.pt
@@ -189,7 +190,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
         if (receipt != null) {
             // Date in badge format
             val date = receipt.date
-            dateLabel.text = if (date != null) "  ${ViewUtils.formatDate(date)}  " else ""
+            dateLabel.text = if (date != null) "  ${ViewUtils.formatDate(epochMs = date, messages = messages)}  " else ""
 
             // Items
             itemsStack.arrangedSubviews.forEach { (it as? UIView)?.removeFromSuperview() }
@@ -217,7 +218,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
         }
 
         val qtyLabel = label {
-            text = "${item.quantity}x"
+            text = messages.receiptQuantityTimes(quantity = item.quantity)
             font = UIFont.systemFontOfSize(FontSize.Body.pt)
             textColor = StoreColors.OnSurfaceVariant
             textAlignment = UIK.TextAlignCenter

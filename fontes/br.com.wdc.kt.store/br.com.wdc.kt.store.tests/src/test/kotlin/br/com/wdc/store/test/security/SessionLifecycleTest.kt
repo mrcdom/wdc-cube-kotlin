@@ -6,6 +6,8 @@ import br.com.wdc.framework.domain.exception.UnauthenticatedException
 import br.com.wdc.store.domain.product.ProductCriteria
 import br.com.wdc.store.domain.security.AuthenticationService
 import br.com.wdc.store.domain.security.SessionListener
+import br.com.wdc.store.i18n.MessageKeys
+import br.com.wdc.store.presentation.i18n.Message
 import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.store.presentation.presenter.restricted.home.HomePresenter
@@ -15,11 +17,6 @@ import br.com.wdc.store.test.mock.viewimpl.RestrictedViewMock
 import br.com.wdc.store.test.util.RestTestEnvironment
 import br.com.wdc.store.test.util.TestEnvironment
 import br.com.wdc.store.test.util.TestEnvironmentExtension
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.extension.RegisterExtension
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -27,6 +24,11 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.extension.RegisterExtension
 
 /** Counts what a client hears about its session. */
 private class HeardSession : SessionListener {
@@ -197,7 +199,7 @@ class AppSessionLifecycleTest {
         assertNull(storage.getString(RootPresenter.SUBJECT_KEY))
         assertNull(storage.getString(RootPresenter.AUTH_STATE_KEY))
         assertEquals("the saved cart", storage.getString(HomePresenter.CART_KEY))
-        assertEquals("Your session has expired. Please sign in again.", login.scope.errorMessage)
+        assertEquals(Message(MessageKeys.ErrorSessionExpired), login.scope.errorMessage)
         assertNull(app.scope.errorMessage, "no unexpected-error alert")
     }
 

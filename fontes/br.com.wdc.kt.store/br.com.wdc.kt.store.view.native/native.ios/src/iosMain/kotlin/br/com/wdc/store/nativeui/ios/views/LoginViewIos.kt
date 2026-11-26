@@ -1,5 +1,7 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.presentation.i18n.Message
+import br.com.wdc.store.i18n.*
 import br.com.wdc.store.design.StoreTokens.FontSize
 import br.com.wdc.store.design.StoreTokens.Radius
 import br.com.wdc.store.design.StoreTokens.Spacing
@@ -41,7 +43,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
 
     // Change guards
     private var lastLoading: Boolean? = null
-    private var lastError: String? = ""
+    private var lastError: Message? = Message("")
 
     private val actions = LoginActions(this).also { retainForGC(it) }
 
@@ -138,7 +140,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
 
                         // Title
                         label {
-                            text = "WDC Store"
+                            text = messages.commonAppName()
                             font = UIFont.boldSystemFontOfSize(FontSize.Display.pt)
                             textColor = StoreColors.OnSurface
                             textAlignment = UIK.TextAlignCenter
@@ -146,7 +148,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
 
                         // Subtitle
                         label {
-                            text = "Sign in to continue"
+                            text = messages.loginSubtitle()
                             font = UIFont.systemFontOfSize(FontSize.Body.pt)
                             textColor = StoreColors.OnSurfaceVariant
                             textAlignment = UIK.TextAlignCenter
@@ -154,7 +156,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
                         }
 
                         // Username field
-                        userField = textField("Username") {
+                        userField = textField(messages.loginUsername()) {
                             autocorrectionType = UIK.AutocorrectionNo
                             autocapitalizationType = UIK.AutocapNone
                             // what the field is, so the system's password AutoFill can fill it
@@ -165,7 +167,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
                         }
 
                         // Password field
-                        passwordField = textField("Password") {
+                        passwordField = textField(messages.loginPassword()) {
                             secureTextEntry = true
                             autocorrectionType = UIK.AutocorrectionNo
                             autocapitalizationType = UIK.AutocapNone
@@ -185,7 +187,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
                         }
 
                         // Login button
-                        loginButton = button("Sign in") {
+                        loginButton = button(messages.loginSignIn()) {
                             setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                             backgroundColor = StoreColors.Primary
                             layer.cornerRadius = Radius.Md.pt
@@ -241,8 +243,8 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
         // Guard: error message
         if (error != lastError) {
             lastError = error
-            if (!error.isNullOrBlank()) {
-                errorLabel.text = error
+            if (error != null) {
+                errorLabel.text = textOf(error)
                 errorLabel.hidden = false
             } else {
                 errorLabel.hidden = true

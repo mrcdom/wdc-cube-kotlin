@@ -26,9 +26,13 @@ import br.com.wdc.store.view.compose.bridge.safeCall
 import br.com.wdc.store.view.compose.bridge.RenderSlot
 import br.com.wdc.store.view.compose.theme.PriceColor
 import br.com.wdc.store.view.compose.util.formatPrice
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.compose.i18n.LocalMessages
+import br.com.wdc.store.view.compose.i18n.text
 
 @Composable
 fun CartView(scope: CartScope) {
+    val messages = LocalMessages.current
     useScope(scope)
 
     Box(
@@ -51,7 +55,7 @@ fun CartView(scope: CartScope) {
                     )
                     Spacer(Modifier.width(StoreTokens.Spacing.Md.dp))
                     Text(
-                        "Shopping Cart",
+                        messages.cartTitle(),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -60,14 +64,14 @@ fun CartView(scope: CartScope) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 val errorMessage = scope.errorMessage
-                if (!errorMessage.isNullOrBlank()) {
+                if (errorMessage != null) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                         color = MaterialTheme.colorScheme.errorContainer
                     ) {
                         Text(
-                            errorMessage,
+                            messages.text(errorMessage),
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             modifier = Modifier.padding(StoreTokens.Spacing.Md.dp)
                         )
@@ -84,13 +88,13 @@ fun CartView(scope: CartScope) {
                             Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(StoreTokens.Spacing.Lg.dp))
                             Text(
-                                "Your cart is empty",
+                                messages.cartEmpty(),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
                             Text(
-                                "Add products to start shopping",
+                                messages.cartEmptyHint(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
@@ -119,7 +123,7 @@ fun CartView(scope: CartScope) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Total: ",
+                            messages.commonTotal() + " ",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -152,7 +156,7 @@ fun CartView(scope: CartScope) {
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text("Continue Shopping", fontWeight = FontWeight.Medium)
+                            Text(messages.commonContinueShopping(), fontWeight = FontWeight.Medium)
                         }
                     }
                     if (scope.rows.isNotEmpty()) {
@@ -165,7 +169,7 @@ fun CartView(scope: CartScope) {
                             )
                         ) {
                             Text(
-                                "Buy",
+                                messages.cartBuy(),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = StoreTokens.FontSize.BodyLarge.sp,
                                 color = Color.White
@@ -181,6 +185,7 @@ fun CartView(scope: CartScope) {
 /** One row of the cart, a view of its own: it recomposes when its product's quantity changes, not the whole cart. */
 @Composable
 fun CartItemView(scope: CartItemScope) {
+    val messages = LocalMessages.current
     useScope(scope)
 
     Card(
@@ -228,7 +233,7 @@ fun CartItemView(scope: CartItemScope) {
                         },
                         modifier = Modifier.size(32.dp)
                     ) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Remove, contentDescription = messages.commonDecrease(), modifier = Modifier.size(16.dp))
                     }
 
                     Text(
@@ -242,7 +247,7 @@ fun CartItemView(scope: CartItemScope) {
                         onClick = { safeCall { scope.onModifyQuantity(scope.quantity + 1) } },
                         modifier = Modifier.size(32.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Add, contentDescription = messages.commonIncrease(), modifier = Modifier.size(16.dp))
                     }
                 }
             }
@@ -256,7 +261,7 @@ fun CartItemView(scope: CartItemScope) {
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Remove", fontSize = StoreTokens.FontSize.Caption.sp)
+                Text(messages.cartRemove(), fontSize = StoreTokens.FontSize.Caption.sp)
             }
         }
     }

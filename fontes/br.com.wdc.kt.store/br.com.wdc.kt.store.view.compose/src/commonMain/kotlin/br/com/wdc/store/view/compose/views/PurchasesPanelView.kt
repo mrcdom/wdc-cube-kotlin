@@ -23,12 +23,15 @@ import br.com.wdc.store.view.compose.bridge.safeCall
 import br.com.wdc.store.view.compose.theme.PriceColor
 import br.com.wdc.store.view.compose.util.formatDate
 import br.com.wdc.store.view.compose.util.formatPrice
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.compose.i18n.LocalMessages
 
 // Estimated height of each purchase card
 private val ITEM_HEIGHT_DP = 76.dp
 
 @Composable
 fun PurchasesPanelView(scope: PurchasesPanelScope) {
+    val messages = LocalMessages.current
     useScope(scope)
 
     val density = LocalDensity.current
@@ -53,7 +56,7 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Purchases",
+                messages.purchasesTitle(),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -64,7 +67,7 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Text(
-                        "${scope.totalCount} ${if (scope.totalCount == 1) "item" else "items"}",
+                        if (scope.totalCount == 1) messages.commonItemCountOne(scope.totalCount) else messages.commonItemCountOther(scope.totalCount),
                         modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Md.dp, vertical = StoreTokens.Spacing.Xs.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -98,7 +101,7 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
                             )
                             Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
                             Text(
-                                "No purchases yet",
+                                messages.purchasesEmpty(),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -128,7 +131,7 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        formatDate(purchase.date),
+                                        formatDate(epochMs = purchase.date, messages = messages),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -178,7 +181,7 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
 
                 Spacer(Modifier.width(StoreTokens.Spacing.Lg.dp))
                 Text(
-                    "${scope.page + 1} / $totalPages",
+                    messages.purchasesPageOf(page = scope.page + 1, pages = totalPages),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )

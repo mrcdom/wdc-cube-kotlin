@@ -1,5 +1,7 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.store.design.StoreTokens
@@ -80,7 +82,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                             Typography {
                                 variant = TypographyVariant.subtitle1
                                 sx { fontWeight = medium; color = StoreColors.SuccessColor.unsafeCast<Color>() }
-                                +"Purchase completed successfully!"
+                                +messages.receiptPurchaseCompleted()
                             }
                         }
                     }
@@ -98,7 +100,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                         Typography {
                             variant = TypographyVariant.h5
                             sx { fontWeight = medium; fontSize = StoreTokens.FontSize.Display.px }
-                            +"Receipt"
+                            +messages.receiptTitle()
                         }
                     }
                     receipt.double("date")?.let { date ->
@@ -119,17 +121,17 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                     Typography {
                         variant = TypographyVariant.caption
                         sx { flex = Flex(number(1.0), number(1.0), 0.px); color = muted }
-                        +"Item"
+                        +messages.receiptColumnItem()
                     }
                     Typography {
                         variant = TypographyVariant.caption
                         sx { width = 50.px; textAlign = TextAlign.center; color = muted }
-                        +"Qty"
+                        +messages.receiptColumnQty()
                     }
                     Typography {
                         variant = TypographyVariant.caption
                         sx { width = 100.px; textAlign = TextAlign.right; color = muted }
-                        +"Amount"
+                        +messages.receiptColumnAmount()
                     }
                 }
 
@@ -157,7 +159,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                                 Typography {
                                     variant = TypographyVariant.body2
                                     sx { width = 50.px; textAlign = TextAlign.center; color = muted }
-                                    +"${item.int("quantity") ?: 0}x"
+                                    +messages.receiptQuantityTimes(item.int("quantity") ?: 0)
                                 }
                                 Typography {
                                     variant = TypographyVariant.body2
@@ -183,7 +185,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                     Typography {
                         variant = TypographyVariant.subtitle1
                         sx { color = muted }
-                        +"Total:"
+                        +messages.commonTotal()
                     }
                     Box {
                         sx {
@@ -207,7 +209,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                         startIcon = ArrowBack.create()
                         onClick = { bridge.submit(props.vsid, ON_OPEN_PRODUCTS) }
                         sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none; fontWeight = medium }
-                        +"Continue Shopping"
+                        +messages.commonContinueShopping()
                     }
                 }
             }

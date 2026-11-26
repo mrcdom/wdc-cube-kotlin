@@ -3,6 +3,7 @@ package br.com.wdc.store.presentation.presenter.restricted.cart
 import br.com.wdc.framework.cube.Action
 import br.com.wdc.framework.cube.ActionOf
 import br.com.wdc.framework.cube.Scope
+import br.com.wdc.store.presentation.i18n.Message
 
 class CartScope : Scope() {
 
@@ -17,7 +18,7 @@ class CartScope : Scope() {
     /** The cart's total, computed here, not by the views. */
     var total: Double by field(0.0)
     var errorCode: Int by field(0)
-    var errorMessage: String? by field(null)
+    var errorMessage: Message? by field(null)
 
     var onBuy: Action = Action.NOOP
     var onOpenProducts: Action = Action.NOOP

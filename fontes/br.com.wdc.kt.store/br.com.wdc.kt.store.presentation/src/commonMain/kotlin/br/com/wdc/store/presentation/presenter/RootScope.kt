@@ -1,6 +1,7 @@
 package br.com.wdc.store.presentation.presenter
 
 import br.com.wdc.framework.cube.Scope
+import br.com.wdc.store.presentation.i18n.Message
 
 class RootScope : Scope() {
 
@@ -11,5 +12,5 @@ class RootScope : Scope() {
 
     /** The scope of the first level (login or home). */
     var content: Scope? by field(null)
-    var errorMessage: String? by field(null)
+    var errorMessage: Message? by field(null)
 }

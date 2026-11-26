@@ -1,5 +1,11 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.i18n.commonAppName
+import br.com.wdc.store.i18n.loginPassword
+import br.com.wdc.store.i18n.loginSignIn
+import br.com.wdc.store.i18n.loginSubtitle
+import br.com.wdc.store.i18n.loginUsername
+import br.com.wdc.store.presentation.i18n.Message
 import br.com.wdc.store.design.StoreTokens
 import android.graphics.Typeface
 import android.text.InputType
@@ -23,7 +29,7 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
     private lateinit var loadingIndicator: ProgressBar
 
     private var lastLoading: Boolean? = null
-    private var lastError: String? = ""
+    private var lastError: Message? = null
 
     override fun createView(): View {
         val ctx = RootViewAndroid.appContext
@@ -93,7 +99,7 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
                         }
                     }) {
                         textView {
-                            text = "WDC Store"
+                            text = messages.commonAppName()
                             textSize = StoreTokens.FontSize.Display.toFloat()
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(StoreColors.OnSurface)
@@ -114,20 +120,20 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
 
                     // Subtitle
                     textView {
-                        text = "Sign in to continue"
+                        text = messages.loginSubtitle()
                         textSize = StoreTokens.FontSize.Body.toFloat()
                         setTextColor(StoreColors.OnSurfaceVariant)
                         gravity = Gravity.CENTER
                     }
 
                     // Username field
-                    userField = editText("Username") {
+                    userField = editText(messages.loginUsername()) {
                         inputType = InputType.TYPE_CLASS_TEXT
                         (layoutParams as LinearLayout.LayoutParams).height = (48 * density).toInt()
                     }
 
                     // Password field
-                    passwordField = editText("Password") {
+                    passwordField = editText(messages.loginPassword()) {
                         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                         imeOptions = EditorInfo.IME_ACTION_GO
                         (layoutParams as LinearLayout.LayoutParams).height = (48 * density).toInt()
@@ -148,7 +154,7 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
                     }
 
                     // Login button
-                    loginButton = button("Sign in") {
+                    loginButton = button(messages.loginSignIn()) {
                         StoreStyles.actionButton(this)
                         (layoutParams as LinearLayout.LayoutParams).height = (48 * density).toInt()
                         setOnClickListener { performLogin() }
@@ -195,8 +201,8 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
 
         if (error != lastError) {
             lastError = error
-            if (!error.isNullOrBlank()) {
-                errorLabel.text = error
+            if (error != null) {
+                errorLabel.text = translate(error)
                 errorLabel.visibility = View.VISIBLE
             } else {
                 errorLabel.visibility = View.GONE

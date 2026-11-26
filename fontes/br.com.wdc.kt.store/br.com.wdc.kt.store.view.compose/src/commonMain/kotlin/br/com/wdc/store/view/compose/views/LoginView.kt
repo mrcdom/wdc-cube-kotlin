@@ -24,9 +24,13 @@ import br.com.wdc.store.view.compose.bridge.safeCall
 import br.com.wdc.store.view.compose.components.StoreLogoLarge
 import br.com.wdc.store.view.compose.theme.Primary
 import br.com.wdc.store.view.compose.theme.PrimaryContainer
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.compose.i18n.LocalMessages
+import br.com.wdc.store.view.compose.i18n.text
 
 @Composable
 fun LoginView(scope: LoginScope) {
+    val messages = LocalMessages.current
     useScope(scope)
 
     val loading = scope.loading
@@ -59,7 +63,7 @@ fun LoginView(scope: LoginScope) {
                 StoreLogoLarge()
 
                 Text(
-                    "Sign in to continue",
+                    messages.loginSubtitle(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -73,7 +77,7 @@ fun LoginView(scope: LoginScope) {
                         userName = it
                         scope.userName = it
                     },
-                    label = { Text("Username") },
+                    label = { Text(messages.loginUsername()) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
@@ -87,7 +91,7 @@ fun LoginView(scope: LoginScope) {
                         password = it
                         scope.password = it
                     },
-                    label = { Text("Password") },
+                    label = { Text(messages.loginPassword()) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
@@ -98,14 +102,14 @@ fun LoginView(scope: LoginScope) {
                 )
 
                 val errorMessage = scope.errorMessage
-                if (!errorMessage.isNullOrBlank()) {
+                if (errorMessage != null) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                         color = MaterialTheme.colorScheme.errorContainer
                     ) {
                         Text(
-                            text = errorMessage,
+                            text = messages.text(errorMessage),
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(StoreTokens.Spacing.Md.dp)
@@ -132,7 +136,7 @@ fun LoginView(scope: LoginScope) {
                         )
                     } else {
                         Text(
-                            "Sign in",
+                            messages.loginSignIn(),
                             fontSize = StoreTokens.FontSize.BodyLarge.sp,
                             fontWeight = FontWeight.SemiBold
                         )

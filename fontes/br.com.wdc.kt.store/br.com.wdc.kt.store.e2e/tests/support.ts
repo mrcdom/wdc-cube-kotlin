@@ -38,7 +38,10 @@ function parse(payload: string | Buffer) {
  * Signs in from the login screen: the user name and the password fields, in that order, then "Sign in". The fields
  * must say what they are, so password managers fill them and screen readers don't read the password.
  */
-export async function signIn(page: Page) {
+export async function signIn(
+  page: Page,
+  texts: { signIn: string; greeting: string } = { signIn: 'Sign in', greeting: USER.greeting },
+) {
   const fields = page.locator('input')
   await expect(fields.nth(1)).toBeVisible({ timeout: 20_000 })
   await expect(fields.nth(0)).toHaveAttribute('autocomplete', 'username')
@@ -47,6 +50,6 @@ export async function signIn(page: Page) {
 
   await fields.nth(0).fill(USER.name)
   await fields.nth(1).fill(USER.password)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByText(USER.greeting)).toBeVisible({ timeout: 20_000 })
+  await page.getByRole('button', { name: texts.signIn }).click()
+  await expect(page.getByText(texts.greeting)).toBeVisible({ timeout: 20_000 })
 }

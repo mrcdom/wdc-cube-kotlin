@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.i18n.*
 import br.com.wdc.store.design.StoreTokens.FontSize
 import br.com.wdc.store.design.StoreTokens.Radius
 import br.com.wdc.store.design.StoreTokens.Spacing
@@ -52,7 +53,7 @@ class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScop
             ))
         }) {
             headerTitle = label {
-                text = "Products"
+                text = messages.productsTitle()
                 font = UIFont.boldSystemFontOfSize(17.0)
                 textColor = StoreColors.OnSurface
                 NSLayoutConstraint.activateConstraints(listOf(
@@ -115,7 +116,7 @@ class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScop
         }
 
         emptyLabel = label {
-            text = "No products available"
+            text = messages.productsEmpty()
             font = UIFont.systemFontOfSize(FontSize.BodyLarge.pt)
             textColor = StoreColors.OnSurfaceVariant
             textAlignment = UIK.TextAlignCenter
@@ -141,7 +142,7 @@ class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScop
             productsSlot.sync(emptyList())
             if (lastCount != 0) {
                 lastCount = 0
-                headerBadge.text = "0 items"
+                headerBadge.text = messages.commonItemCountOther(count = 0)
             }
         } else {
             emptyLabel.hidden = true
@@ -150,7 +151,7 @@ class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScop
             val count = products.size
             if (count != lastCount) {
                 lastCount = count
-                headerBadge.text = "$count ${if (count == 1) "item" else "items"}"
+                headerBadge.text = if (count == 1) messages.commonItemCountOne(count = count) else messages.commonItemCountOther(count = count)
             }
         }
     }

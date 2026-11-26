@@ -1,5 +1,7 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.presentation.i18n.Message
+import br.com.wdc.store.i18n.*
 import br.com.wdc.store.design.StoreTokens.FontSize
 import br.com.wdc.store.design.StoreTokens.Radius
 import br.com.wdc.store.design.StoreTokens.Spacing
@@ -42,7 +44,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
     // Guards
     private var lastRows: List<CartItemScope>? = null
     private var lastTotal: Double = -1.0
-    private var lastError: String? = null
+    private var lastError: Message? = null
 
     private lateinit var titleLabel: UILabel
 
@@ -52,7 +54,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
 
         // Title header
         titleLabel = label {
-            text = "Shopping Cart"
+            text = messages.cartTitle()
             font = UIFont.systemFontOfSize(FontSize.Headline.pt, UIFontWeightMedium)
             textColor = StoreColors.OnSurface
             NSLayoutConstraint.activateConstraints(listOf(
@@ -74,7 +76,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
         })
 
         // Back button (visible in empty state, aligned right below empty message)
-        backButton = button("Continue Shopping") {
+        backButton = button(messages.commonContinueShopping()) {
             setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
             titleLabel?.font = UIFont.systemFontOfSize(FontSize.Body.pt)
             setImage(StoreIcons.arrowBack(18.0, StoreColors.Primary), forState = UIControlStateNormal)
@@ -148,7 +150,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                         ))
                     }) {
                         label {
-                            text = "Total:"
+                            text = messages.commonTotal()
                             font = UIFont.systemFontOfSize(FontSize.BodyLarge.pt)
                             textColor = StoreColors.OnSurfaceVariant
                             NSLayoutConstraint.activateConstraints(listOf(
@@ -188,7 +190,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                             heightAnchor.constraintEqualToConstant(48.0)
                         ))
                     }) {
-                        buyButton = button("Buy") {
+                        buyButton = button(messages.cartBuy()) {
                             setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                             backgroundColor = StoreColors.PriceColor
                             layer.cornerRadius = Radius.Md.pt
@@ -201,7 +203,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                                 heightAnchor.constraintEqualToConstant(48.0)
                             ))
                         }
-                        button("Continue Shopping") {
+                        button(messages.commonContinueShopping()) {
                             setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
                             titleLabel?.font = UIFont.systemFontOfSize(FontSize.Body.pt)
                             setImage(StoreIcons.arrowBack(18.0, StoreColors.Primary), forState = UIControlStateNormal)
@@ -241,7 +243,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                 ))
             }
             label {
-                text = "Your cart is empty"
+                text = messages.cartEmpty()
                 font = UIFont.boldSystemFontOfSize(18.0)
                 textColor = StoreColors.OnSurface
                 textAlignment = UIK.TextAlignCenter
@@ -251,7 +253,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                 ))
             }
             val subtitle = label {
-                text = "Add products to start shopping"
+                text = messages.cartEmptyHint()
                 font = UIFont.systemFontOfSize(FontSize.Body.pt)
                 textColor = StoreColors.OnSurfaceVariant
                 textAlignment = UIK.TextAlignCenter
@@ -309,8 +311,8 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
         val errorMessage = scope.errorMessage
         if (errorMessage != lastError) {
             lastError = errorMessage
-            if (!errorMessage.isNullOrBlank()) {
-                errorLabel.text = errorMessage
+            if (errorMessage != null) {
+                errorLabel.text = textOf(errorMessage)
                 errorLabel.hidden = false
             } else {
                 errorLabel.hidden = true

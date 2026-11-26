@@ -1,5 +1,7 @@
 package br.com.wdc.store.test
 
+import br.com.wdc.store.i18n.MessageKeys
+import br.com.wdc.store.presentation.i18n.Message
 import br.com.wdc.store.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeKeys
@@ -36,9 +38,9 @@ class StoreWorkflowTest : BasePresentationTest() {
         gotoRestricted()
         val log = br.com.wdc.framework.commons.log.Log.getLogger("StoreWorkflowTest")
         app.alertUnexpectedError(log, "Unexpected error", IllegalStateException("connection refused"))
-        assertEquals("Unexpected error: connection refused", app.getRootView()!!.scope.errorMessage)
+        assertEquals(Message(MessageKeys.ErrorUnexpectedWithCause, "cause" to "connection refused"), app.getRootView()!!.scope.errorMessage)
         app.alertUnexpectedError(log, "Unexpected error", IllegalStateException())
-        assertEquals("Unexpected error", app.getRootView()!!.scope.errorMessage)
+        assertEquals(Message(MessageKeys.ErrorUnexpected), app.getRootView()!!.scope.errorMessage)
     }
 
     @Test
@@ -79,7 +81,7 @@ class StoreWorkflowTest : BasePresentationTest() {
         restrictedView.getPurchasesPanelScope().onOpenReceipt(9_999_999L)
         val home = RestrictedViewMock.cast(app.getRootView()!!.contentView)
         assertEquals(5, home.scope.errorCode, "receipt not found")
-        assertEquals("Receipt code not found.", home.scope.errorMessage)
+        assertEquals(Message(MessageKeys.ErrorReceiptCodeNotFound), home.scope.errorMessage)
     }
 
     @Test
@@ -90,7 +92,7 @@ class StoreWorkflowTest : BasePresentationTest() {
         val cartView = CartViewMock.cast(home.contentView)
         cartView.scope.onBuy()
         assertEquals(3, cartView.scope.errorCode)
-        assertEquals("There must be at least one item in the cart to complete a purchase.", cartView.scope.errorMessage)
+        assertEquals(Message(MessageKeys.ErrorEmptyCartPurchase), cartView.scope.errorMessage)
     }
 
     @Test
@@ -203,7 +205,7 @@ class StoreWorkflowTest : BasePresentationTest() {
         homeView = RestrictedViewMock.cast(rootView.contentView)
         cartView = CartViewMock.cast(homeView.contentView)
         assertTrue(cartView.scope.errorCode == 1, "Invalid quantity indication")
-        assertEquals("Some products have a quantity of less than one item. Unable to purchase.", cartView.scope.errorMessage)
+        assertEquals(Message(MessageKeys.ErrorItemQuantityBelowOne), cartView.scope.errorMessage)
         cartView.scope.errorCode = 0
 
         updatesBefore = cartView.updates

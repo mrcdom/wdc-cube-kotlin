@@ -1,5 +1,8 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.nativeui.web.util.messages
+import br.com.wdc.store.nativeui.web.util.show
 import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
@@ -80,7 +83,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                     spacing = responsive(2)
 
                     // Error message
-                    val errorMessage = scope.errorMessage
+                    val errorMessage = scope.errorMessage?.let(messages::show)
                     if (!errorMessage.isNullOrBlank()) {
                         Alert {
                             severity = "error"
@@ -155,7 +158,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                                 Typography {
                                     variant = TypographyVariant.body1
                                     sx { fontWeight = FontWeight.bold }
-                                    +"Qty:"
+                                    +messages.productQuantity()
                                 }
 
                                 Paper {
@@ -218,7 +221,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                             onClick = onOpenProducts
                             sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                             ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
-                            +"Back"
+                            +messages.productBack()
                         }
 
                         Button {
@@ -226,7 +229,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                             onClick = onAddToCart
                             sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                             AddShoppingCart { sx { marginRight = 6.px; fontSize = 18.px } }
-                            +"Add to Cart"
+                            +messages.productAddToCart()
                         }
                     }
                 }
@@ -242,7 +245,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                 Typography {
                     variant = TypographyVariant.body2
                     sx { color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
-                    +"Loading product..."
+                    +messages.productLoading()
                 }
             }
         }

@@ -17,6 +17,7 @@ import * as NumberUtils from '@root/utils/NumberUtils'
 import * as EndpointUtils from '@root/utils/EndpointUtils'
 import { Colors, toPx } from '@root/theme'
 import { StoreTokens } from '@root/tokens'
+import { messages, translate, type ScopeMessage } from '@root/i18n'
 
 // :: Actions
 
@@ -44,7 +45,7 @@ const DefaultProduct: Product = {
 export type ProductScope = {
   product: Product
   quantity: number
-  errorMessage?: string
+  errorMessage?: ScopeMessage
 }
 
 function stripHtml(html: string): string {
@@ -72,7 +73,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
         <Stack direction="column" spacing={2} sx={{ alignItems: 'center', p: 6 }}>
           <CircularProgress />
           <Typography variant="body2" sx={{ color: Colors.OnSurfaceVariant }}>
-            Loading product...
+            {messages.text('product.loading')}
           </Typography>
         </Stack>
       )
@@ -87,7 +88,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
             {/* Error message */}
             {scope.errorMessage && (
               <Alert severity="error" sx={{ borderRadius: toPx(StoreTokens.radius.sm) }}>
-                {scope.errorMessage}
+                {translate(scope.errorMessage)}
               </Alert>
             )}
 
@@ -141,7 +142,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
                 {/* Quantity selector */}
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                   <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                    Qty:
+                    {messages.text('product.quantity')}
                   </Typography>
                   <Paper
                     elevation={0}
@@ -193,7 +194,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
                 sx={{ borderRadius: toPx(StoreTokens.radius.md), height: 48, textTransform: 'none' }}
                 startIcon={<ArrowBackIcon />}
               >
-                Back
+                {messages.text('product.back')}
               </Button>
               <Button
                 variant="contained"
@@ -201,7 +202,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
                 sx={{ borderRadius: toPx(StoreTokens.radius.md), height: 48, textTransform: 'none' }}
                 startIcon={<AddShoppingCartIcon />}
               >
-                Add to Cart
+                {messages.text('product.addToCart')}
               </Button>
             </Stack>
           </Stack>

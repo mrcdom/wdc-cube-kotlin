@@ -26,9 +26,12 @@ import br.com.wdc.store.view.compose.theme.SuccessColor
 import br.com.wdc.store.view.compose.theme.SuccessContainer
 import br.com.wdc.store.view.compose.util.formatDate
 import br.com.wdc.store.view.compose.util.formatPrice
+import br.com.wdc.store.i18n.*
+import br.com.wdc.store.view.compose.i18n.LocalMessages
 
 @Composable
 fun ReceiptView(scope: ReceiptScope) {
+    val messages = LocalMessages.current
     useScope(scope)
 
     val receipt = scope.receipt
@@ -55,7 +58,7 @@ fun ReceiptView(scope: ReceiptScope) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(32.dp), tint = SuccessColor)
                             Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
                             Text(
-                                "Purchase completed successfully!",
+                                messages.receiptPurchaseCompleted(),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = SuccessColor,
@@ -75,7 +78,7 @@ fun ReceiptView(scope: ReceiptScope) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Sm.dp)) {
                             Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(28.dp))
                             Text(
-                                "Receipt",
+                                messages.receiptTitle(),
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -86,7 +89,7 @@ fun ReceiptView(scope: ReceiptScope) {
                                 color = MaterialTheme.colorScheme.surfaceVariant
                             ) {
                                 Text(
-                                    formatDate(it),
+                                    formatDate(epochMs = it, messages = messages),
                                     modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Md.dp, vertical = 6.dp),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -105,20 +108,20 @@ fun ReceiptView(scope: ReceiptScope) {
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                "Item",
+                                messages.receiptColumnItem(),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
-                                "Qty",
+                                messages.receiptColumnQty(),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.width(50.dp)
                             )
                             Text(
-                                "Amount",
+                                messages.receiptColumnAmount(),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.End,
@@ -144,7 +147,7 @@ fun ReceiptView(scope: ReceiptScope) {
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
-                                        "${item.quantity}x",
+                                        messages.receiptQuantityTimes(item.quantity),
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.width(50.dp),
                                         style = MaterialTheme.typography.bodyMedium,
@@ -174,7 +177,7 @@ fun ReceiptView(scope: ReceiptScope) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Total: ",
+                            messages.commonTotal() + " ",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -210,7 +213,7 @@ fun ReceiptView(scope: ReceiptScope) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(
-                                "Continue Shopping",
+                                messages.commonContinueShopping(),
                                 fontWeight = FontWeight.SemiBold
                             )
                         }

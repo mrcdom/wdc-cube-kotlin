@@ -1,7 +1,8 @@
 package br.com.wdc.store.presentation.presenter.open.login
 
-import br.com.wdc.framework.cube.Scope
 import br.com.wdc.framework.cube.Action
+import br.com.wdc.framework.cube.Scope
+import br.com.wdc.store.presentation.i18n.Message
 
 class LoginScope : Scope() {
 
@@ -13,7 +14,7 @@ class LoginScope : Scope() {
     var userName: String? by field(null)
     var password: String? by field(null, sent = false)
     var errorCode: Int by field(0)
-    var errorMessage: String? by field(null)
+    var errorMessage: Message? by field(null)
     var loading: Boolean by field(false)
 
     /**

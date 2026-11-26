@@ -13,6 +13,7 @@ import * as NumberUtils from '@root/utils/NumberUtils'
 import * as EndpointUtils from '@root/utils/EndpointUtils'
 import { Colors, toPx } from '@root/theme'
 import { StoreTokens } from '@root/tokens'
+import { messages } from '@root/i18n'
 
 // :: Actions
 
@@ -43,14 +44,16 @@ class ProductPanelClass extends BaseViewClass<ViewProps, ProductsPanelScope> {
         {/* Section header */}
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-            Products
+            {messages.text('products.title')}
           </Typography>
           {products && (
             <Box
               sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: toPx(StoreTokens.radius.sm), px: 2, py: 0.75 }}
             >
               <Typography variant="caption" sx={{ color: Colors.OnPrimaryContainer }}>
-                {products.length} {products.length === 1 ? 'item' : 'items'}
+                {messages.text(products.length === 1 ? 'common.itemCountOne' : 'common.itemCountOther', {
+                  count: products.length,
+                })}
               </Typography>
             </Box>
           )}
@@ -63,13 +66,13 @@ class ProductPanelClass extends BaseViewClass<ViewProps, ProductsPanelScope> {
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 6 }}>
             <CircularProgress />
             <Typography variant="body2" sx={{ mt: 1.5, color: Colors.OnSurfaceVariant }}>
-              Loading products...
+              {messages.text('products.loading')}
             </Typography>
           </Box>
         ) : products.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
             <Typography variant="body1" sx={{ color: Colors.OnSurfaceVariant }}>
-              No products available
+              {messages.text('products.empty')}
             </Typography>
           </Box>
         ) : (

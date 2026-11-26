@@ -10,6 +10,7 @@ import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-re
 import { COMPACT_BREAKPOINT, toPx } from '@root/theme'
 import { StoreTokens } from '@root/tokens'
 import HeaderPanel from './home/HeaderPanel'
+import { messages, translate, type ScopeMessage } from '@root/i18n'
 
 // :: View
 
@@ -19,7 +20,7 @@ export type HomeScope = {
   productsPanelViewId?: string
   purchasesPanelViewId?: string
   contentViewId?: string
-  errorMessage: string
+  errorMessage?: ScopeMessage
 }
 
 class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
@@ -53,7 +54,7 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
         {/* Error */}
         {scope.errorMessage && (
           <Alert severity="error" sx={{ mx: 2, mt: 1 }}>
-            {scope.errorMessage}
+            {translate(scope.errorMessage)}
           </Alert>
         )}
 
@@ -67,13 +68,13 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
           <Box sx={{ flex: '1 1 0', p: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <Tabs value={this.selectedTab} onChange={this.onTabChange} sx={{ mb: 0.5, minHeight: 36 }}>
               <Tab
-                label="Products"
+                label={messages.text('home.tabProducts')}
                 icon={<ShoppingBagIcon />}
                 iconPosition="start"
                 sx={{ minHeight: 36, py: 0.5, fontSize: 13 }}
               />
               <Tab
-                label="Purchases"
+                label={messages.text('home.tabPurchases')}
                 icon={<Inventory2Icon />}
                 iconPosition="start"
                 sx={{ minHeight: 36, py: 0.5, fontSize: 13 }}

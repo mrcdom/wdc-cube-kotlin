@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.i18n.*
 import br.com.wdc.store.design.StoreTokens.FontSize
 import br.com.wdc.store.design.StoreTokens.Radius
 import br.com.wdc.store.design.StoreTokens.Spacing
@@ -126,7 +127,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                         size(logoIv, width = 20.0, height = 20.0)
                     }
                     val compactBrandLabel = label {
-                        text = "WDC Store"
+                        text = messages.commonAppName()
                         font = UIFont.boldSystemFontOfSize(FontSize.Title.pt)
                         textColor = UIColor.whiteColor
                         NSLayoutConstraint.activateConstraints(listOf(
@@ -150,6 +151,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                         layer.cornerRadius = 14.0
                         setImage(StoreIcons.logout(16.0, UIColor.whiteColor), forState = UIControlStateNormal)
                         alpha = 0.7
+                        accessibilityLabel = messages.homeSignOut()
                         addTarget(actions, action = sel_registerName("onExitTapped"), forControlEvents = UIControlEventTouchUpInside)
                         NSLayoutConstraint.activateConstraints(listOf(
                             leadingAnchor.constraintEqualToAnchor(compactBrandLabel.trailingAnchor, Spacing.Lg.pt),
@@ -176,7 +178,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                             centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                         ))
                     }
-                    cartButton = button("Cart") {
+                    cartButton = button(messages.homeCart()) {
                         setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                         titleLabel?.font = UIFont.systemFontOfSize(13.0)
                         backgroundColor = StoreColors.WhiteOverlay20
@@ -237,7 +239,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                     size(logoIv, width = 22.0, height = 22.0)
                 }
                 val wideBrandLabel = label {
-                    text = "WDC Store"
+                    text = messages.commonAppName()
                     font = UIFont.boldSystemFontOfSize(18.0)
                     textColor = UIColor.whiteColor
                     NSLayoutConstraint.activateConstraints(listOf(
@@ -262,6 +264,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                     layer.cornerRadius = 16.0
                     setImage(StoreIcons.logout(18.0, UIColor.whiteColor), forState = UIControlStateNormal)
                     alpha = 0.7
+                    accessibilityLabel = messages.homeSignOut()
                     addTarget(actions, action = sel_registerName("onExitTapped"), forControlEvents = UIControlEventTouchUpInside)
                     NSLayoutConstraint.activateConstraints(listOf(
                         leadingAnchor.constraintEqualToAnchor(wideBrandLabel.trailingAnchor, Spacing.Lg.pt),
@@ -271,7 +274,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                     ))
                 }
 
-                wideCartButton = button("Cart") {
+                wideCartButton = button(messages.homeCart()) {
                     setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                     titleLabel?.font = UIFont.systemFontOfSize(FontSize.Body.pt)
                     backgroundColor = StoreColors.WhiteOverlay20
@@ -333,7 +336,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                 heightAnchor.constraintEqualToConstant(48.0)
             ))
         }) {
-            productsTab = button("PRODUCTS") {
+            productsTab = button(messages.homeTabProducts().uppercase()) {
                 setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
                 titleLabel?.font = UIFont.boldSystemFontOfSize(FontSize.Body.pt)
                 setImage(StoreIcons.shoppingBag(22.0, StoreColors.Primary), forState = UIControlStateNormal)
@@ -344,7 +347,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                     centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                 ))
             }
-            purchasesTab = button("PURCHASES") {
+            purchasesTab = button(messages.homeTabPurchases().uppercase()) {
                 setTitleColor(StoreColors.OnSurfaceVariant, forState = UIControlStateNormal)
                 titleLabel?.font = UIFont.systemFontOfSize(FontSize.Body.pt)
                 setImage(StoreIcons.inventory(22.0, StoreColors.OnSurfaceVariant), forState = UIControlStateNormal)
@@ -600,7 +603,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
         val nick = scope.nickName
         if (nick != lastNick) {
             lastNick = nick
-            val greeting = if (!nick.isNullOrBlank()) "Hello, $nick" else ""
+            val greeting = if (!nick.isNullOrBlank()) messages.homeGreeting(name = nick) else ""
             nicknameLabel.text = greeting
             wideNicknameLabel.text = greeting
         }
@@ -666,8 +669,8 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
 
         // Error
         val errorMessage = scope.errorMessage
-        if (!errorMessage.isNullOrBlank()) {
-            errorLabel.text = errorMessage
+        if (errorMessage != null) {
+            errorLabel.text = textOf(errorMessage)
             errorLabel.hidden = false
         } else {
             errorLabel.hidden = true

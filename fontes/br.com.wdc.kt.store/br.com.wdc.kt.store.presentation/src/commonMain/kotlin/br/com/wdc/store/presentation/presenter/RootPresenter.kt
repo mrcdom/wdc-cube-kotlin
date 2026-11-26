@@ -3,27 +3,29 @@ package br.com.wdc.store.presentation.presenter
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.serialization.JsonInputFactory
 import br.com.wdc.framework.commons.serialization.JsonOutputFactory
+import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.CubeApplication
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.commons.storage.SessionStorage
 import br.com.wdc.framework.cube.CubeTreePlace
-import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.framework.cube.PresenterBase
+import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.framework.domain.exception.UnauthenticatedException
 import br.com.wdc.store.domain.security.AuthenticationService
 import br.com.wdc.store.domain.security.SessionListener
+import br.com.wdc.store.i18n.MessageKeys
+import br.com.wdc.store.presentation.i18n.Message
 import br.com.wdc.store.presentation.presenter.open.OpenKeys
 import br.com.wdc.store.presentation.presenter.open.login.LoginKeys
+import br.com.wdc.store.presentation.presenter.open.login.structs.Subject
 import br.com.wdc.store.presentation.presenter.restricted.RestrictedKeys
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartKeys
+import br.com.wdc.store.presentation.presenter.restricted.cart.CartManager
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductKeys
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptKeys
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import br.com.wdc.store.presentation.presenter.open.login.structs.Subject
-import br.com.wdc.store.presentation.presenter.restricted.cart.CartManager
 
 /**
  * The root presenter of the WDC Store: the root of its place tree ([RootKeys.PLACE] is [CubeTreePlace.ROOT]). It owns
@@ -80,11 +82,16 @@ abstract class RootPresenter : CubeApplication(PLACES), PresenterBase {
             logger.info("{}: the session was lost", message)
             return
         }
-        scope.errorMessage = errorText(message, e)
-        logger.error(scope.errorMessage!!, e)
+        scope.errorMessage = unexpectedError(e)
+        logger.error(errorText(message, e), e)
     }
 
-    /** The text the user sees for an unexpected error: what failed, and the cause's message when there is one. */
+    /** What the user sees for an unexpected error, in their language: that it happened, and the cause's message. */
+    protected fun unexpectedError(e: Throwable): Message =
+        if (e.message.isNullOrBlank()) Message(MessageKeys.ErrorUnexpected)
+        else Message(MessageKeys.ErrorUnexpectedWithCause, "cause" to e.message)
+
+    /** The diagnostic text of an unexpected error, for the log: what failed, and the cause's message when there is one. */
     protected fun errorText(message: String, e: Throwable): String =
         if (e.message.isNullOrBlank()) message else "$message: ${e.message}"
 
