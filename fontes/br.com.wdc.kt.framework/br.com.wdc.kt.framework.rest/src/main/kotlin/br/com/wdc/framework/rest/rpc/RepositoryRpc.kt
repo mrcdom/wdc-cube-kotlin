@@ -391,10 +391,10 @@ class RepositoryRpc<E : Any, C : Any, K : Any>(
             while (input.hasNext()) {
                 when (val name = input.nextName()) {
                     "projection" -> projection = codec.readEntity(input)
-                    "offset" -> request.offset = CriterionCodec.readSliceNumber(input, "offset") ?: 0
-                    "limit" -> request.limit = CriterionCodec.readSliceNumber(input, "limit") ?: 0
-                    "page" -> request.page = CriterionCodec.readSliceNumber(input, "page") ?: 0
-                    "pageSize" -> request.pageSize = CriterionCodec.readSliceNumber(input, "pageSize") ?: 0
+                    "offset" -> request.offset = CriterionCodec.readSliceNumber(input, "offset")
+                    "limit" -> request.limit = CriterionCodec.readSliceNumber(input, "limit")
+                    "page" -> request.page = CriterionCodec.readSliceNumber(input, "page")
+                    "pageSize" -> request.pageSize = CriterionCodec.readSliceNumber(input, "pageSize")
                     CriterionCodec.ANY_OF -> throw CriterionCodec.anyOfDoesNotTravel()
                     else -> if (!codec.readCriteriaField(input, name, request.criteria)) input.skipValue()
                 }

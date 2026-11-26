@@ -84,20 +84,21 @@ class RestProductEndpointsTest {
     }
 
     @Test
-    fun sliceNumbersSentAsText_areRefused_notConverted() {
-        // a value of the wrong type is refused, not interpreted (as in the C# version)
+    fun sliceNumbersOfTheWrongType_areRefused_notConverted() {
+        // a value of the wrong type, the JSON null included, is refused, not interpreted (as in the C# version)
         for ((operation, body) in listOf(
             "fetch" to """{"limit":"10"}""",
             "fetch" to """{"offset":"0","limit":2}""",
             "fetch" to """{"limit":2.5}""",
             "fetch-page" to """{"page":"0","pageSize":2}""",
             "fetch-page" to """{"page":0,"pageSize":true}""",
+            "fetch" to """{"limit":null}""",
+            "count" to """{"offset":null}""",
+            "fetch-page" to """{"page":null,"pageSize":2}""",
         )) {
             val e = assertThrows(BusinessException::class.java, { post(operation, body) }, body)
             assertTrue(e.message!!.startsWith("HTTP 400") && "must be an integer" in e.message!!, e.message)
         }
-        // the JSON null still means "not given"
-        assertEquals(post("count", "{}"), post("count", """{"limit":null,"offset":null}"""))
     }
 
     @Test
