@@ -42,7 +42,7 @@ dependencies {
     implementation(project(":framework-cube"))
     implementation(libs.okhttp)
     implementation(libs.gson)
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.android.material:material:1.14.0")
+    implementation("androidx.appcompat:appcompat:1.8.0")
     implementation("io.coil-kt:coil:2.7.0")
 }
