@@ -6,21 +6,25 @@
   <title>WDC Store</title>
   <meta name="description" content="The WDC Store: one shopping app, the same presenters, several user interfaces. Pick one to try.">
   <style>
+{{design-tokens}}
+  </style>
+  <style>
+    /* the app's roles come from the design tokens (tokens.css); the rest of the palette, and the dark mode, are this page's */
     :root {
-      --primary: #1B5E7B;
-      --on-primary: #FFFFFF;
-      --primary-container: #D0E8F2;
-      --background: #F5F7FA;
-      --surface: #FFFFFF;
-      --on-surface: #1A1C1E;
+      --primary: var(--store-color-primary);
+      --on-primary: var(--store-color-on-primary);
+      --primary-container: var(--store-color-primary-container);
+      --background: var(--store-color-background);
+      --surface: var(--store-color-surface);
+      --on-surface: var(--store-color-on-surface);
       --muted: #5C6670;
       --border: #DDE3E8;
       --tag: #EEF2F5;
       --warning-bg: #FFF4E0;
       --warning-border: #F0C36D;
       --code-bg: #F0F3F6;
-      --header-bg: #1B5E7B;
-      --header-fg: #FFFFFF;
+      --header-bg: var(--store-color-primary);
+      --header-fg: var(--store-color-on-primary);
     }
     @media (prefers-color-scheme: dark) {
       :root {

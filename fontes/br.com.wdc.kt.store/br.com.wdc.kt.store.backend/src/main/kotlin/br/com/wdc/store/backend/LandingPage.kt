@@ -17,8 +17,12 @@ internal class LandingPage(
         val CLIENTS = listOf("remote-react", "remote-kotlin", "native", "compose")
 
         private val TEMPLATE: String by lazy {
-            LandingPage::class.java.getResource("/landing/index.html")?.readText()
+            val page = LandingPage::class.java.getResource("/landing/index.html")?.readText()
                 ?: error("landing/index.html is missing from the backend's resources")
+            // the design tokens' CSS variables, generated from tokens.json
+            val tokens = LandingPage::class.java.getResource("/landing/tokens.css")?.readText()
+                ?: error("landing/tokens.css is missing from the backend's resources")
+            page.replace("{{design-tokens}}", tokens.trimEnd())
         }
 
         private const val SECURITY_WARNING = """<p class="warning"><strong>Security is off</strong> (no
