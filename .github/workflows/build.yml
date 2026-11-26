@@ -89,7 +89,7 @@ jobs:
       - run: npm ci
 
       - name: Type check (the client and, through its aliases, both bridge packages)
-        run: npx -y -p typescript@5.7.3 tsc --noEmit -p tsconfig.json
+        run: npx -y -p typescript@7.0.2 tsc --noEmit -p tsconfig.json
 
       - name: Formatting
         run: |

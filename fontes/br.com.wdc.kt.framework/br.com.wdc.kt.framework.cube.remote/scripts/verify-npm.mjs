@@ -37,7 +37,7 @@ try {
       'react-dom@19',
       'history@5',
       'universal-cookie@7',
-    ].concat(['typescript@5.7.3', '@types/react@19']),
+    ].concat(['typescript@7.0.2', '@types/react@19']),
     consumer,
   )
   writeFileSync(

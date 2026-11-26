@@ -38,10 +38,10 @@ const base64Decode = (str: string) => {
 
   for (let i = 0, j = 0; i < unpadded.length; i += 4) {
     const chunk =
-      (lookup.get(unpadded[i]) << 18) |
-      (lookup.get(unpadded[i + 1]) << 12) |
-      ((i + 2 < unpadded.length ? lookup.get(unpadded[i + 2]) : 0) << 6) |
-      (i + 3 < unpadded.length ? lookup.get(unpadded[i + 3]) : 0)
+      ((lookup.get(unpadded[i]) ?? 0) << 18) |
+      ((lookup.get(unpadded[i + 1]) ?? 0) << 12) |
+      ((i + 2 < unpadded.length ? (lookup.get(unpadded[i + 2]) ?? 0) : 0) << 6) |
+      (i + 3 < unpadded.length ? (lookup.get(unpadded[i + 3]) ?? 0) : 0)
 
     binData[j++] = (chunk >> 16) & 255
     if (i + 2 < unpadded.length) binData[j++] = (chunk >> 8) & 255
@@ -92,10 +92,10 @@ const base64UrlDecode = (str: string) => {
 
   for (let i = 0, j = 0; i < padded.length; i += 4) {
     const chunk =
-      (lookup.get(padded[i]) << 18) |
-      (lookup.get(padded[i + 1]) << 12) |
-      ((padded[i + 2] !== '=' ? lookup.get(padded[i + 2]) : 0) << 6) |
-      (padded[i + 3] !== '=' ? lookup.get(padded[i + 3]) : 0)
+      ((lookup.get(padded[i]) ?? 0) << 18) |
+      ((lookup.get(padded[i + 1]) ?? 0) << 12) |
+      ((padded[i + 2] !== '=' ? (lookup.get(padded[i + 2]) ?? 0) : 0) << 6) |
+      (padded[i + 3] !== '=' ? (lookup.get(padded[i + 3]) ?? 0) : 0)
 
     binData[j++] = (chunk >> 16) & 255
     if (padded[i + 2] !== '=') binData[j++] = (chunk >> 8) & 255

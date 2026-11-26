@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "react"],
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "ignorePatterns": ["lib/", "dist/", "node_modules/", ".parcel-cache/", "coverage/"],
+  "rules": {
+    "prefer-const": "error",
+    "no-var": "error",
+    "no-prototype-builtins": "error",
+    "preserve-caught-error": "error",
+    "no-unused-expressions": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-this-alias": "error",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn"
+  }
+}

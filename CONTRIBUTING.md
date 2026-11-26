@@ -20,7 +20,7 @@ cd fontes
 ```
 
 - **Browser tests** of the web clients against a real backend: see [the e2e README](fontes/br.com.wdc.kt.store/br.com.wdc.kt.store.e2e/README.md).
-- **The TypeScript client:** `npm ci`, then `npx -y -p typescript@5.7.3 tsc --noEmit -p tsconfig.json` `npm run format:check` and `npm run lint` in its folder; the two bridges also have `npm run lint`.
+- **The TypeScript client:** `npm ci`, then `npx -y -p typescript@7.0.2 tsc --noEmit -p tsconfig.json`, `npm run format:check` and `npm run lint` in its folder; the two bridges also have `npm run lint` (Oxlint).
 - **The starter:** `./gradlew build` in [starter/](starter/README.md).
 
 `./gradlew test` does not compile the targets outside the JVM; before calling a change done, run `./gradlew build`.

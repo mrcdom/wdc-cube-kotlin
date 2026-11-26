@@ -29,19 +29,15 @@
     "clean:build": "rm -rf .parcel-cache && find ../../remote.host/src/main/resources/META-INF/resources -maxdepth 1 -type f -delete && parcel build --public-url ./",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint ."
+    "lint": "oxlint --deny-warnings"
   },
   "devDependencies": {
-    "@eslint/js": "10.0.1",
     "@types/react": "^19.0.3",
     "@types/react-dom": "^19.0.2",
-    "eslint": "10.14.0",
-    "eslint-plugin-react-hooks": "7.1.1",
-    "globals": "17.14.0",
+    "oxlint": "1.93.0",
     "parcel": "^2.13.3",
     "prettier": "^3.8.2",
-    "process": "^0.11.10",
-    "typescript-eslint": "8.72.2"
+    "process": "^0.11.10"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
