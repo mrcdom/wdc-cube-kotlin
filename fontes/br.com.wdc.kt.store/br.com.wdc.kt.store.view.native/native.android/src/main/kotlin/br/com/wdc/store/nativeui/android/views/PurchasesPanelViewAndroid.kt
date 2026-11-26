@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.design.StoreTokens
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
@@ -32,13 +33,13 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
     private var lastStackHeight = -1
 
     companion object {
-        private const val CARD_PADDING_DP = 12
-        private const val CARD_VSTACK_SPACING_DP = 4
-        private const val CARD_DATE_SP = 12f
+        private const val CARD_PADDING_DP = Dimens.spacingMd
+        private const val CARD_VSTACK_SPACING_DP = Dimens.spacingXs
+        private val CARD_DATE_SP = StoreTokens.FontSize.Caption.toFloat()
         private const val CARD_ITEMS_SP = 13f
-        private const val CARD_PRICE_SP = 14f
+        private val CARD_PRICE_SP = StoreTokens.FontSize.Body.toFloat()
         private const val CARD_PRICE_PADDING_V_DP = 6
-        private const val LIST_SPACING_DP = 12
+        private const val LIST_SPACING_DP = Dimens.spacingMd
 
         /**
          * Computes the card height in pixels deterministically based on device font metrics.
@@ -92,11 +93,11 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
                 // Section header
                 hStack(configure = {
                     gravity = Gravity.CENTER_VERTICAL
-                    setPadding((16 * density).toInt(), (12 * density).toInt(), (16 * density).toInt(), (4 * density).toInt())
+                    setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingXs * density).toInt())
                 }) {
                     textView {
                         text = "Purchases"
-                        textSize = 20f
+                        textSize = StoreTokens.FontSize.Title.toFloat()
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(StoreColors.OnSurface)
                         (layoutParams as LinearLayout.LayoutParams).apply {
@@ -105,11 +106,11 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
                         }
                     }
                     headerBadge = textView {
-                        textSize = 12f
+                        textSize = StoreTokens.FontSize.Caption.toFloat()
                         setTextColor(StoreColors.OnPrimaryContainer)
                         gravity = Gravity.CENTER
-                        background = StoreStyles.roundedBackground(StoreColors.SecondaryContainer, 8 * density)
-                        val padH = (16 * density).toInt()
+                        background = StoreStyles.roundedBackground(StoreColors.SecondaryContainer, Dimens.radiusSm * density)
+                        val padH = (Dimens.spacingLg * density).toInt()
                         val padV = (6 * density).toInt()
                         setPadding(padH, padV, padH, padV)
                         (layoutParams as LinearLayout.LayoutParams).apply {
@@ -125,16 +126,16 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
                     setBackgroundColor(StoreColors.SurfaceVariant)
                     (layoutParams as LinearLayout.LayoutParams).apply {
                         height = (1 * density).toInt().coerceAtLeast(1)
-                        topMargin = (8 * density).toInt()
-                        bottomMargin = (12 * density).toInt()
-                        marginStart = (16 * density).toInt()
-                        marginEnd = (16 * density).toInt()
+                        topMargin = (Dimens.spacingSm * density).toInt()
+                        bottomMargin = (Dimens.spacingMd * density).toInt()
+                        marginStart = (Dimens.spacingLg * density).toInt()
+                        marginEnd = (Dimens.spacingLg * density).toInt()
                     }
                 })
 
                 // Items stack (no scroll - pagination handles overflow)
-                stackView = vStack(spacing = (12 * density).toInt(), configure = {
-                    setPadding((12 * density).toInt(), (0 * density).toInt(), (12 * density).toInt(), (8 * density).toInt())
+                stackView = vStack(spacing = (Dimens.spacingMd * density).toInt(), configure = {
+                    setPadding((Dimens.spacingMd * density).toInt(), (0 * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingSm * density).toInt())
                     (layoutParams as LinearLayout.LayoutParams).apply {
                         width = ViewGroup.LayoutParams.MATCH_PARENT
                         height = 0
@@ -145,17 +146,17 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
                 // Pagination bar
                 paginationContainer = hStack(configure = {
                     gravity = Gravity.CENTER
-                    setPadding((16 * density).toInt(), (8 * density).toInt(), (16 * density).toInt(), (8 * density).toInt())
+                    setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingSm * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingSm * density).toInt())
                     visibility = View.INVISIBLE
                 }) {
                     prevButton = button("◀") {
-                        textSize = 16f
+                        textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                         setBackgroundColor(android.graphics.Color.TRANSPARENT)
                         setTextColor(StoreColors.Primary)
                         minWidth = 0
                         minimumWidth = 0
-                        val padH = (12 * density).toInt()
-                        val padV = (4 * density).toInt()
+                        val padH = (Dimens.spacingMd * density).toInt()
+                        val padV = (Dimens.spacingXs * density).toInt()
                         setPadding(padH, padV, padH, padV)
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -164,23 +165,23 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
                         setOnClickListener { safeAction("prevPage") { scope.onPageChange(scope.page - 1) } }
                     }
                     pageLabel = textView {
-                        textSize = 14f
+                        textSize = StoreTokens.FontSize.Body.toFloat()
                         setTextColor(StoreColors.OnSurfaceVariant)
                         gravity = Gravity.CENTER
-                        val padH = (8 * density).toInt()
+                        val padH = (Dimens.spacingSm * density).toInt()
                         setPadding(padH, 0, padH, 0)
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
                     }
                     nextButton = button("▶") {
-                        textSize = 16f
+                        textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                         setBackgroundColor(android.graphics.Color.TRANSPARENT)
                         setTextColor(StoreColors.Primary)
                         minWidth = 0
                         minimumWidth = 0
-                        val padH = (12 * density).toInt()
-                        val padV = (4 * density).toInt()
+                        val padH = (Dimens.spacingMd * density).toInt()
+                        val padV = (Dimens.spacingXs * density).toInt()
                         setPadding(padH, padV, padH, padV)
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -194,7 +195,7 @@ class PurchasesPanelViewAndroid(app: AndroidNativeRootPresenter, scope: Purchase
             // Empty label
             emptyLabel = textView {
                 text = "No purchases yet"
-                textSize = 16f
+                textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                 setTextColor(StoreColors.OnSurfaceVariant)
                 gravity = Gravity.CENTER
                 visibility = View.GONE
@@ -315,7 +316,7 @@ private class PurchaseCardView(app: AndroidNativeRootPresenter, scope: Purchases
 
         return AndroidDom.build(ctx) {
             val card = parent()
-            val cornerPx = 8f * density
+            val cornerPx = Dimens.radiusSm * density
             val normalBg = StoreStyles.roundedBackground(StoreColors.Background, cornerPx)
             val pressedBg = StoreStyles.roundedBackground(StoreColors.SurfaceVariant, cornerPx)
             val statesBg = android.graphics.drawable.StateListDrawable().apply {
@@ -329,21 +330,21 @@ private class PurchaseCardView(app: AndroidNativeRootPresenter, scope: Purchases
 
             hStack(configure = {
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
+                setPadding((Dimens.spacingMd * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingMd * density).toInt())
                 (layoutParams as FrameLayout.LayoutParams).apply {
                     width = ViewGroup.LayoutParams.MATCH_PARENT
                     height = ViewGroup.LayoutParams.WRAP_CONTENT
                 }
             }) {
                 // Left side: date + items
-                vStack(spacing = (4 * density).toInt(), configure = {
+                vStack(spacing = (Dimens.spacingXs * density).toInt(), configure = {
                     (layoutParams as LinearLayout.LayoutParams).apply {
                         width = 0
                         weight = 1f
                     }
                 }) {
                     dateLabel = textView {
-                        textSize = 12f
+                        textSize = StoreTokens.FontSize.Caption.toFloat()
                         setTextColor(StoreColors.OnSurfaceVariant)
                         maxLines = 1
                         ellipsize = android.text.TextUtils.TruncateAt.END
@@ -361,11 +362,11 @@ private class PurchaseCardView(app: AndroidNativeRootPresenter, scope: Purchases
                     setPadding((10 * density).toInt(), (6 * density).toInt(), (10 * density).toInt(), (6 * density).toInt())
                     (layoutParams as LinearLayout.LayoutParams).apply {
                         width = ViewGroup.LayoutParams.WRAP_CONTENT
-                        marginStart = (12 * density).toInt()
+                        marginStart = (Dimens.spacingMd * density).toInt()
                     }
                 }) {
                     totalLabel = textView {
-                        textSize = 14f
+                        textSize = StoreTokens.FontSize.Body.toFloat()
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(StoreColors.PriceColor)
                         (layoutParams as FrameLayout.LayoutParams).width = ViewGroup.LayoutParams.WRAP_CONTENT

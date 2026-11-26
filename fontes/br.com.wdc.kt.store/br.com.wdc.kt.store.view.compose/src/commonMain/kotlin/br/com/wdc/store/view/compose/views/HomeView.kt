@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.presentation.presenter.restricted.home.HomeScope
 import br.com.wdc.store.view.compose.bridge.useScope
 import br.com.wdc.store.view.compose.bridge.safeCall
@@ -45,14 +46,14 @@ fun HomeView(scope: HomeScope) {
         val errorMessage = scope.errorMessage
         if (!errorMessage.isNullOrBlank()) {
             Surface(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = StoreTokens.Spacing.Lg.dp, vertical = StoreTokens.Spacing.Sm.dp),
+                shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                 color = MaterialTheme.colorScheme.errorContainer
             ) {
                 Text(
                     text = errorMessage,
                     color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(12.dp)
+                    modifier = Modifier.padding(StoreTokens.Spacing.Md.dp)
                 )
             }
         }
@@ -66,7 +67,7 @@ fun HomeView(scope: HomeScope) {
                 modifier = Modifier.fillMaxSize().weight(1f)
             ) {
                 val isCompact = maxWidth < COMPACT_BREAKPOINT
-                val padding = if (isCompact) 8.dp else 16.dp
+                val padding = if (isCompact) StoreTokens.Spacing.Sm.dp else StoreTokens.Spacing.Lg.dp
 
                 if (isCompact) {
                     // Tabs for mobile
@@ -99,11 +100,11 @@ fun HomeView(scope: HomeScope) {
                             }
                         }
 
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
 
                         Card(
                             modifier = Modifier.fillMaxSize(),
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
@@ -121,13 +122,13 @@ fun HomeView(scope: HomeScope) {
                     // Side-by-side for desktop
                     Row(
                         modifier = Modifier.fillMaxSize().padding(padding),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Lg.dp)
                     ) {
                         val productsPanel = scope.productsPanel
                         if (productsPanel != null) {
                             Card(
                                 modifier = Modifier.weight(3f).fillMaxHeight(),
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                             ) {
@@ -139,7 +140,7 @@ fun HomeView(scope: HomeScope) {
                         if (purchasesPanel != null) {
                             Card(
                                 modifier = Modifier.weight(2f).fillMaxHeight(),
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                             ) {
@@ -169,13 +170,13 @@ private fun HeaderBar(
         if (compact) {
             // Compact header: two rows
             Column(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Md.dp, vertical = StoreTokens.Spacing.Sm.dp)
             ) {
                 // Top row: logo + exit
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Sm.dp)
                 ) {
                     StoreLogoHeader(size = 32.dp, compact = true)
 
@@ -183,7 +184,7 @@ private fun HeaderBar(
                         onClick = onExit,
                         modifier = Modifier
                             .size(28.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                            .clip(RoundedCornerShape(StoreTokens.Radius.Sm.dp)),
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = Color.White.copy(alpha = 0.1f)
                         )
@@ -197,7 +198,7 @@ private fun HeaderBar(
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
 
                 // Bottom row: greeting + cart
                 Row(
@@ -232,7 +233,7 @@ private fun HeaderBar(
                                 containerColor = Color.White.copy(alpha = 0.2f),
                                 contentColor = Color.White
                             ),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            contentPadding = PaddingValues(horizontal = StoreTokens.Spacing.Md.dp, vertical = 6.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -245,14 +246,14 @@ private fun HeaderBar(
         } else {
             // Desktop header: single row
             Row(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Xl.dp, vertical = StoreTokens.Spacing.Sm.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Logo + Exit
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Sm.dp)
                 ) {
                     StoreLogoHeader(size = 36.dp, compact = false)
 
@@ -260,7 +261,7 @@ private fun HeaderBar(
                         onClick = onExit,
                         modifier = Modifier
                             .size(32.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                            .clip(RoundedCornerShape(StoreTokens.Radius.Sm.dp)),
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = Color.White.copy(alpha = 0.1f)
                         )
@@ -276,18 +277,18 @@ private fun HeaderBar(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Lg.dp)
                 ) {
                     // User greeting
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(StoreTokens.Radius.Xl.dp),
                         color = Color.White.copy(alpha = 0.15f)
                     ) {
                         Text(
                             "Hello, $nickName",
                             color = Color.White,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                            fontSize = 14.sp,
+                            modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Lg.dp, vertical = 6.dp),
+                            fontSize = StoreTokens.FontSize.Body.sp,
                             lineHeight = 16.sp
                         )
                     }
@@ -317,7 +318,7 @@ private fun HeaderBar(
                                 containerColor = Color.White.copy(alpha = 0.2f),
                                 contentColor = Color.White
                             ),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                            contentPadding = PaddingValues(horizontal = StoreTokens.Spacing.Md.dp, vertical = StoreTokens.Spacing.Sm.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))

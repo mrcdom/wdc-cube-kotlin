@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.toolkit.*
 import br.com.wdc.store.nativeui.ios.theme.*
 import br.com.wdc.store.presentation.presenter.open.login.LoginScope
@@ -90,7 +94,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
                 // White card
                 view(configure = {
                     backgroundColor = UIColor.whiteColor
-                    layer.cornerRadius = 12.0
+                    layer.cornerRadius = Radius.Md.pt
                     layer.shadowColor = UIColor.blackColor.CGColor
                     layer.shadowOpacity = 0.12f
                     layer.shadowOffset = CGSizeMake(0.0, 2.0)
@@ -101,23 +105,23 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
                     NSLayoutConstraint.activateConstraints(listOf(
                         centerXAnchor.constraintEqualToAnchor(content.centerXAnchor),
                         centerYAnchor.constraintEqualToAnchor(content.centerYAnchor),
-                        topAnchor.constraintGreaterThanOrEqualToAnchor(content.topAnchor, 24.0),
-                        bottomAnchor.constraintLessThanOrEqualToAnchor(content.bottomAnchor, -24.0),
-                        leadingAnchor.constraintGreaterThanOrEqualToAnchor(content.leadingAnchor, 24.0),
-                        trailingAnchor.constraintLessThanOrEqualToAnchor(content.trailingAnchor, -24.0),
+                        topAnchor.constraintGreaterThanOrEqualToAnchor(content.topAnchor, Spacing.Xl.pt),
+                        bottomAnchor.constraintLessThanOrEqualToAnchor(content.bottomAnchor, -Spacing.Xl.pt),
+                        leadingAnchor.constraintGreaterThanOrEqualToAnchor(content.leadingAnchor, Spacing.Xl.pt),
+                        trailingAnchor.constraintLessThanOrEqualToAnchor(content.trailingAnchor, -Spacing.Xl.pt),
                         widthAnchor.constraintLessThanOrEqualToConstant(560.0),
                         preferredWidth
                     ))
                 }) {
                     val stack = vStack(spacing = 20.0, configure = {
                         layoutMarginsRelativeArrangement = true
-                        layoutMargins = UIEdgeInsetsMake(32.0, 24.0, 32.0, 24.0)
+                        layoutMargins = UIEdgeInsetsMake(Spacing.Xxl.pt, Spacing.Xl.pt, Spacing.Xxl.pt, Spacing.Xl.pt)
                     }) {
                         // Logo: centered rounded square with LocalMall SVG icon
                         view {
                             val logo = view(configure = {
                                 backgroundColor = StoreColors.Primary
-                                layer.cornerRadius = 18.0
+                                layer.cornerRadius = Radius.Lg.pt
                                 clipsToBounds = true
                             }) {
                                 val iconIv = imageView {
@@ -135,7 +139,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
                         // Title
                         label {
                             text = "WDC Store"
-                            font = UIFont.boldSystemFontOfSize(28.0)
+                            font = UIFont.boldSystemFontOfSize(FontSize.Display.pt)
                             textColor = StoreColors.OnSurface
                             textAlignment = UIK.TextAlignCenter
                         }
@@ -143,7 +147,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
                         // Subtitle
                         label {
                             text = "Sign in to continue"
-                            font = UIFont.systemFontOfSize(14.0)
+                            font = UIFont.systemFontOfSize(FontSize.Body.pt)
                             textColor = StoreColors.OnSurfaceVariant
                             textAlignment = UIK.TextAlignCenter
                             numberOfLines = 0
@@ -174,7 +178,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
                         // Error label (hidden)
                         errorLabel = label {
                             textColor = StoreColors.Error
-                            font = UIFont.systemFontOfSize(14.0)
+                            font = UIFont.systemFontOfSize(FontSize.Body.pt)
                             numberOfLines = 0
                             textAlignment = UIK.TextAlignCenter
                             hidden = true
@@ -184,8 +188,8 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
                         loginButton = button("Sign in") {
                             setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                             backgroundColor = StoreColors.Primary
-                            layer.cornerRadius = 12.0
-                            titleLabel?.font = UIFont.boldSystemFontOfSize(16.0)
+                            layer.cornerRadius = Radius.Md.pt
+                            titleLabel?.font = UIFont.boldSystemFontOfSize(FontSize.BodyLarge.pt)
                             heightAnchor.constraintEqualToConstant(48.0).active = true
                             addTarget(actions, action = sel_registerName("onLoginTapped"), forControlEvents = UIControlEventTouchUpInside)
                         }
@@ -268,7 +272,7 @@ class LoginViewIos(app: IosNativeRootPresenter, scope: LoginScope) : AbstractVie
             field.convertRect(field.bounds, toView = scroll),
             loginButton.convertRect(loginButton.bounds, toView = scroll)
         )
-        scroll.scrollRectToVisible(CGRectInset(area, 0.0, -16.0), animated = true)
+        scroll.scrollRectToVisible(CGRectInset(area, 0.0, -Spacing.Lg.pt), animated = true)
     }
 
     internal fun performLogin() {

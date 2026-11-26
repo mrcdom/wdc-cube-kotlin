@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartScope
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartItemScope
 import br.com.wdc.store.view.compose.bridge.useScope
@@ -31,7 +32,7 @@ fun CartView(scope: CartScope) {
     useScope(scope)
 
     Box(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(StoreTokens.Spacing.Lg.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         Column(
@@ -48,7 +49,7 @@ fun CartView(scope: CartScope) {
                         contentDescription = null,
                         modifier = Modifier.size(28.dp)
                     )
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(StoreTokens.Spacing.Md.dp))
                     Text(
                         "Shopping Cart",
                         style = MaterialTheme.typography.headlineMedium,
@@ -62,13 +63,13 @@ fun CartView(scope: CartScope) {
                 if (!errorMessage.isNullOrBlank()) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                         color = MaterialTheme.colorScheme.errorContainer
                     ) {
                         Text(
                             errorMessage,
                             color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.padding(12.dp)
+                            modifier = Modifier.padding(StoreTokens.Spacing.Md.dp)
                         )
                     }
                 }
@@ -81,13 +82,13 @@ fun CartView(scope: CartScope) {
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(16.dp))
+                            Spacer(Modifier.height(StoreTokens.Spacing.Lg.dp))
                             Text(
                                 "Your cart is empty",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
                             Text(
                                 "Add products to start shopping",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -99,7 +100,7 @@ fun CartView(scope: CartScope) {
                     // Cart items
                     Column(
                         modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Sm.dp)
                     ) {
                         for (row in scope.rows) {
                             // Keyed by the row's scope: a row keeps its view while its product stays in the cart
@@ -109,7 +110,7 @@ fun CartView(scope: CartScope) {
 
                     // Total section
                     HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
+                        modifier = Modifier.padding(vertical = StoreTokens.Spacing.Xs.dp),
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
                     Row(
@@ -137,16 +138,16 @@ fun CartView(scope: CartScope) {
                     }
                 }
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(StoreTokens.Spacing.Xs.dp))
 
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
+                    horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Md.dp, Alignment.End)
                 ) {
                     OutlinedButton(
                         onClick = { safeCall { scope.onOpenProducts() } },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                         modifier = Modifier.height(48.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -157,7 +158,7 @@ fun CartView(scope: CartScope) {
                     if (scope.rows.isNotEmpty()) {
                         Button(
                             onClick = { safeCall { scope.onBuy() } },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                             modifier = Modifier.height(48.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = PriceColor
@@ -166,7 +167,7 @@ fun CartView(scope: CartScope) {
                             Text(
                                 "Buy",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
+                                fontSize = StoreTokens.FontSize.BodyLarge.sp,
                                 color = Color.White
                             )
                         }
@@ -184,14 +185,14 @@ fun CartItemView(scope: CartItemScope) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier.padding(StoreTokens.Spacing.Lg.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Product info
@@ -203,7 +204,7 @@ fun CartItemView(scope: CartItemScope) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(StoreTokens.Spacing.Xs.dp))
                 Text(
                     "\$${formatPrice(scope.price)}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -219,7 +220,7 @@ fun CartItemView(scope: CartItemScope) {
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Xs.dp, vertical = 2.dp)
                 ) {
                     FilledTonalIconButton(
                         onClick = {
@@ -246,7 +247,7 @@ fun CartItemView(scope: CartItemScope) {
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(StoreTokens.Spacing.Md.dp))
 
             // Remove button
             TextButton(
@@ -255,7 +256,7 @@ fun CartItemView(scope: CartItemScope) {
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Remove", fontSize = 12.sp)
+                Text("Remove", fontSize = StoreTokens.FontSize.Caption.sp)
             }
         }
     }

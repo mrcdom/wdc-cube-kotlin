@@ -1,5 +1,7 @@
 package br.com.wdc.store.nativeui.ios.toolkit
 
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
@@ -28,10 +30,10 @@ class FlowLayoutView : UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0)) {
     var minChildWidth: Double = 160.0
 
     /** Horizontal spacing between children in points. */
-    var horizontalSpacing: Double = 12.0
+    var horizontalSpacing: Double = Spacing.Md.pt
 
     /** Vertical spacing between rows in points. */
-    var verticalSpacing: Double = 12.0
+    var verticalSpacing: Double = Spacing.Md.pt
 
     private var layoutConstraints = mutableListOf<NSLayoutConstraint>()
     private var lastLayoutWidth: Double = -1.0

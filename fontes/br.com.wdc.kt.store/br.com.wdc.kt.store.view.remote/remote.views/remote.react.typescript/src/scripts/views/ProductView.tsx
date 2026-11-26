@@ -15,7 +15,8 @@ import RemoveIcon from '@mui/icons-material/Remove'
 import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as EndpointUtils from '@root/utils/EndpointUtils'
-import { Colors } from '@root/theme'
+import { Colors, toPx } from '@root/theme'
+import { StoreTokens } from '@root/tokens'
 
 // :: Actions
 
@@ -85,7 +86,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
           <Stack direction="column" spacing={2}>
             {/* Error message */}
             {scope.errorMessage && (
-              <Alert severity="error" sx={{ borderRadius: '8px' }}>
+              <Alert severity="error" sx={{ borderRadius: toPx(StoreTokens.radius.sm) }}>
                 {scope.errorMessage}
               </Alert>
             )}
@@ -99,7 +100,10 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
 
             {/* Description */}
             {cleanDesc && (
-              <Paper elevation={0} sx={{ p: 2, borderRadius: '8px', bgcolor: Colors.SurfaceVariant50 }}>
+              <Paper
+                elevation={0}
+                sx={{ p: 2, borderRadius: toPx(StoreTokens.radius.sm), bgcolor: Colors.SurfaceVariant50 }}
+              >
                 <Typography
                   variant="body1"
                   sx={{ color: Colors.OnSurfaceVariant, lineHeight: '24px', whiteSpace: 'pre-wrap' }}
@@ -117,12 +121,19 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
                 <Box
                   sx={{
                     bgcolor: Colors.PriceBackground,
-                    borderRadius: '12px',
+                    borderRadius: toPx(StoreTokens.radius.md),
                     py: 1.5,
                     textAlign: 'center',
                   }}
                 >
-                  <Typography variant="body1" sx={{ color: Colors.PriceColor, fontWeight: 500, fontSize: 16 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: Colors.PriceColor,
+                      fontWeight: StoreTokens.fontWeight.medium,
+                      fontSize: StoreTokens.fontSize.bodyLarge,
+                    }}
+                  >
                     ${NumberUtils.format(product.price)}
                   </Typography>
                 </Box>
@@ -135,7 +146,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
                   <Paper
                     elevation={0}
                     sx={{
-                      borderRadius: '12px',
+                      borderRadius: toPx(StoreTokens.radius.md),
                       bgcolor: Colors.SurfaceVariant,
                       display: 'flex',
                       alignItems: 'center',
@@ -160,7 +171,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
                 sx={{
                   width: 120,
                   height: 120,
-                  borderRadius: '12px',
+                  borderRadius: toPx(StoreTokens.radius.md),
                   overflow: 'hidden',
                   bgcolor: Colors.SurfaceVariant,
                 }}
@@ -179,7 +190,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
               <Button
                 variant="outlined"
                 onClick={this.emitGoHome}
-                sx={{ borderRadius: '12px', height: 48, textTransform: 'none' }}
+                sx={{ borderRadius: toPx(StoreTokens.radius.md), height: 48, textTransform: 'none' }}
                 startIcon={<ArrowBackIcon />}
               >
                 Back
@@ -187,7 +198,7 @@ class ProductViewClass extends BaseViewClass<ViewProps, ProductScope> {
               <Button
                 variant="contained"
                 onClick={this.emitAddToCart}
-                sx={{ borderRadius: '12px', height: 48, textTransform: 'none' }}
+                sx={{ borderRadius: toPx(StoreTokens.radius.md), height: 48, textTransform: 'none' }}
                 startIcon={<AddShoppingCartIcon />}
               >
                 Add to Cart

@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.android.AndroidNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.RootScope
 import android.content.Context
@@ -13,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import br.com.wdc.store.nativeui.android.theme.Dimens
 import br.com.wdc.store.nativeui.android.theme.StoreColors
 import br.com.wdc.store.nativeui.android.toolkit.AbstractViewAndroid
 import br.com.wdc.store.nativeui.android.toolkit.AndroidDom
@@ -74,15 +76,15 @@ class RootViewAndroid(app: AndroidNativeRootPresenter, scope: RootScope) : Abstr
 
         val toast = TextView(root.context).apply {
             text = message
-            textSize = 14f
+            textSize = StoreTokens.FontSize.Body.toFloat()
             setTextColor(android.graphics.Color.WHITE)
             gravity = Gravity.CENTER
             val padH = (20 * density).toInt()
-            val padV = (12 * density).toInt()
+            val padV = (Dimens.spacingMd * density).toInt()
             setPadding(padH, padV, padH, padV)
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(StoreColors.ToastBackground)
-                cornerRadius = 8 * density
+                cornerRadius = Dimens.radiusSm * density
             }
         }
 
@@ -92,8 +94,8 @@ class RootViewAndroid(app: AndroidNativeRootPresenter, scope: RootScope) : Abstr
         ).apply {
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             bottomMargin = (48 * density).toInt()
-            marginStart = (24 * density).toInt()
-            marginEnd = (24 * density).toInt()
+            marginStart = (Dimens.spacingXl * density).toInt()
+            marginEnd = (Dimens.spacingXl * density).toInt()
         }
 
         root.addView(toast, lp)

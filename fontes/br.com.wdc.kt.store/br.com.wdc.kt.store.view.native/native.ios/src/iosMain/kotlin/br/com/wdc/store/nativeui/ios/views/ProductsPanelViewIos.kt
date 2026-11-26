@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.FlowLayoutView
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
@@ -41,9 +45,9 @@ class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScop
         // Section header
         val headerContainer = view(configure = {
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(root.topAnchor, 12.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                topAnchor.constraintEqualToAnchor(root.topAnchor, Spacing.Md.pt),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, Spacing.Lg.pt),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt),
                 heightAnchor.constraintEqualToConstant(28.0)
             ))
         }) {
@@ -59,7 +63,7 @@ class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScop
             // Chip background
             view(configure = {
                 backgroundColor = StoreColors.SecondaryContainer
-                layer.cornerRadius = 8.0
+                layer.cornerRadius = Radius.Sm.pt
                 clipsToBounds = true
                 NSLayoutConstraint.activateConstraints(listOf(
                     trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
@@ -68,12 +72,12 @@ class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScop
                 ))
             }) {
                 headerBadge = label {
-                    font = UIFont.systemFontOfSize(12.0)
+                    font = UIFont.systemFontOfSize(FontSize.Caption.pt)
                     textColor = StoreColors.OnPrimaryContainer
                     textAlignment = UIK.TextAlignCenter
                     NSLayoutConstraint.activateConstraints(listOf(
-                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Lg.pt),
                         centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                     ))
                 }
@@ -84,9 +88,9 @@ class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScop
         view(configure = {
             backgroundColor = StoreColors.SurfaceVariant
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(headerContainer.bottomAnchor, 8.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                topAnchor.constraintEqualToAnchor(headerContainer.bottomAnchor, Spacing.Sm.pt),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, Spacing.Lg.pt),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt),
                 heightAnchor.constraintEqualToConstant(1.0)
             ))
         })
@@ -100,19 +104,19 @@ class ProductsPanelViewIos(app: IosNativeRootPresenter, scope: ProductsPanelScop
                 bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
             ))
         }) {
-            stackView = flowLayout(minChildWidth = 160.0, horizontalSpacing = 12.0, verticalSpacing = 12.0) {}
+            stackView = flowLayout(minChildWidth = 160.0, horizontalSpacing = Spacing.Md.pt, verticalSpacing = Spacing.Md.pt) {}
             NSLayoutConstraint.activateConstraints(listOf(
-                stackView.topAnchor.constraintEqualToAnchor(parent().topAnchor, 8.0),
-                stackView.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 12.0),
-                stackView.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -12.0),
-                stackView.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -8.0),
+                stackView.topAnchor.constraintEqualToAnchor(parent().topAnchor, Spacing.Sm.pt),
+                stackView.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Md.pt),
+                stackView.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Md.pt),
+                stackView.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -Spacing.Sm.pt),
                 stackView.widthAnchor.constraintEqualToAnchor(parent().widthAnchor, constant = -24.0)
             ))
         }
 
         emptyLabel = label {
             text = "No products available"
-            font = UIFont.systemFontOfSize(16.0)
+            font = UIFont.systemFontOfSize(FontSize.BodyLarge.pt)
             textColor = StoreColors.OnSurfaceVariant
             textAlignment = UIK.TextAlignCenter
             hidden = true
@@ -179,7 +183,7 @@ private class ProductCardView(app: IosNativeRootPresenter, scope: ProductsPanelS
     override fun createView(): UIView = UIKitDom.build {
         val card = parent()
         card.backgroundColor = UIColor.whiteColor
-        card.layer.cornerRadius = 8.0
+        card.layer.cornerRadius = Radius.Sm.pt
         card.clipsToBounds = true
         card.userInteractionEnabled = true
 
@@ -194,7 +198,7 @@ private class ProductCardView(app: IosNativeRootPresenter, scope: ProductsPanelS
             // Content area below image
             vStack(spacing = 6.0, configure = {
                 layoutMarginsRelativeArrangement = true
-                layoutMargins = UIEdgeInsetsMake(12.0, 12.0, 12.0, 12.0)
+                layoutMargins = UIEdgeInsetsMake(Spacing.Md.pt, Spacing.Md.pt, Spacing.Md.pt, Spacing.Md.pt)
             }) {
                 nameLabel = label {
                     font = UIFont.boldSystemFontOfSize(15.0)
@@ -204,19 +208,19 @@ private class ProductCardView(app: IosNativeRootPresenter, scope: ProductsPanelS
                 // Price badge
                 view(configure = {
                     backgroundColor = StoreColors.PriceBackground
-                    layer.cornerRadius = 8.0
+                    layer.cornerRadius = Radius.Sm.pt
                     NSLayoutConstraint.activateConstraints(listOf(
                         heightAnchor.constraintEqualToConstant(28.0)
                     ))
                 }) {
                     priceLabel = label {
-                        font = UIFont.boldSystemFontOfSize(14.0)
+                        font = UIFont.boldSystemFontOfSize(FontSize.Body.pt)
                         textColor = StoreColors.PriceColor
                         NSLayoutConstraint.activateConstraints(listOf(
                             centerXAnchor.constraintEqualToAnchor(parent().centerXAnchor),
                             centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
-                            leadingAnchor.constraintGreaterThanOrEqualToAnchor(parent().leadingAnchor, 12.0),
-                            trailingAnchor.constraintLessThanOrEqualToAnchor(parent().trailingAnchor, -12.0)
+                            leadingAnchor.constraintGreaterThanOrEqualToAnchor(parent().leadingAnchor, Spacing.Md.pt),
+                            trailingAnchor.constraintLessThanOrEqualToAnchor(parent().trailingAnchor, -Spacing.Md.pt)
                         ))
                     }
                 }

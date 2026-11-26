@@ -1,5 +1,10 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.StoreColors
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.IosNativeRootPresenter
 import br.com.wdc.store.presentation.presenter.RootScope
 import br.com.wdc.store.nativeui.ios.toolkit.*
@@ -42,25 +47,25 @@ class RootViewIos(app: IosNativeRootPresenter, scope: RootScope) : AbstractViewI
     private fun showErrorToast(message: String) {
         val wrapper = UIKitDom.build {
             val w = parent()
-            w.backgroundColor = UIColor(red = 0.2, green = 0.2, blue = 0.2, alpha = 0.9)
-            w.layer.cornerRadius = 8.0
+            w.backgroundColor = StoreColors.ToastBackground
+            w.layer.cornerRadius = Radius.Sm.pt
             w.clipsToBounds = true
 
             val toast = label {
                 text = message
                 textColor = UIColor.whiteColor
                 textAlignment = UIK.TextAlignCenter
-                font = UIFont.systemFontOfSize(14.0)
+                font = UIFont.systemFontOfSize(FontSize.Body.pt)
                 numberOfLines = 0
             }
-            pin(toast, insets = 12.0)
+            pin(toast, insets = Spacing.Md.pt)
         }
         rootView.addSubview(wrapper)
 
         NSLayoutConstraint.activateConstraints(listOf(
             wrapper.bottomAnchor.constraintEqualToAnchor(rootView.bottomAnchor, -48.0),
-            wrapper.leadingAnchor.constraintGreaterThanOrEqualToAnchor(rootView.leadingAnchor, 24.0),
-            wrapper.trailingAnchor.constraintLessThanOrEqualToAnchor(rootView.trailingAnchor, -24.0),
+            wrapper.leadingAnchor.constraintGreaterThanOrEqualToAnchor(rootView.leadingAnchor, Spacing.Xl.pt),
+            wrapper.trailingAnchor.constraintLessThanOrEqualToAnchor(rootView.trailingAnchor, -Spacing.Xl.pt),
             wrapper.centerXAnchor.constraintEqualToAnchor(rootView.centerXAnchor)
         ))
 

@@ -11,7 +11,8 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import LocalMallIcon from '@mui/icons-material/LocalMall'
 import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
-import { Colors } from '@root/theme'
+import { Colors, toPx } from '@root/theme'
+import { StoreTokens } from '@root/tokens'
 
 // :: Actions
 
@@ -46,7 +47,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
         <Card
           sx={{
             width: 400,
-            borderRadius: '12px',
+            borderRadius: toPx(StoreTokens.radius.md),
             boxShadow: '0px 2px 8px rgba(0,0,0,0.12)',
           }}
         >
@@ -59,7 +60,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
                     width: 72,
                     height: 72,
                     bgcolor: Colors.Primary,
-                    borderRadius: '18px',
+                    borderRadius: toPx(StoreTokens.radius.lg),
                   }}
                 >
                   <LocalMallIcon sx={{ fontSize: 40 }} />
@@ -115,7 +116,7 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
 
                 {/* Error message */}
                 {!!scope.errorMessage && (
-                  <Alert severity="error" sx={{ width: '100%', borderRadius: '8px' }}>
+                  <Alert severity="error" sx={{ width: '100%', borderRadius: toPx(StoreTokens.radius.sm) }}>
                     {scope.errorMessage}
                   </Alert>
                 )}
@@ -129,9 +130,9 @@ class LoginViewClass extends BaseViewClass<ViewProps, LoginScope> {
                   disabled={!!scope.loading}
                   sx={{
                     height: 48,
-                    borderRadius: '12px',
+                    borderRadius: toPx(StoreTokens.radius.md),
                     fontWeight: 'bold',
-                    fontSize: 16,
+                    fontSize: StoreTokens.fontSize.bodyLarge,
                     textTransform: 'none',
                   }}
                 >

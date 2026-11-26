@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
@@ -83,12 +84,12 @@ val LoginView = FC<RemoteViewProps> { props ->
         Card {
             sx {
                 width = 400.px
-                borderRadius = 12.px
+                borderRadius = StoreTokens.Radius.Md.px
                 boxShadow = "0px 2px 8px rgba(0,0,0,0.12)".unsafeCast<BoxShadow>()
             }
 
             CardContent {
-                sx { padding = 24.px }
+                sx { padding = StoreTokens.Spacing.Xl.px }
 
                 form {
                     asDynamic().autoComplete = "off"
@@ -105,7 +106,7 @@ val LoginView = FC<RemoteViewProps> { props ->
                                 width = 72.px
                                 height = 72.px
                                 backgroundColor = StoreColors.Primary.unsafeCast<BackgroundColor>()
-                                borderRadius = 18.px
+                                borderRadius = StoreTokens.Radius.Lg.px
                             }
                             LocalMall { sx { fontSize = 40.px } }
                         }
@@ -170,7 +171,7 @@ val LoginView = FC<RemoteViewProps> { props ->
                         if (!errorMessage.isNullOrBlank()) {
                             Alert {
                                 severity = "error"
-                                sx { width = 100.pct; borderRadius = 8.px }
+                                sx { width = 100.pct; borderRadius = StoreTokens.Radius.Sm.px }
                                 +errorMessage
                             }
                         }
@@ -184,9 +185,9 @@ val LoginView = FC<RemoteViewProps> { props ->
                             onClick = { emitOnEnter() }
                             sx {
                                 height = 48.px
-                                borderRadius = 12.px
+                                borderRadius = StoreTokens.Radius.Md.px
                                 fontWeight = FontWeight.bold
-                                fontSize = 16.px
+                                fontSize = StoreTokens.FontSize.BodyLarge.px
                                 textTransform = None.none
                             }
 

@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
 import br.com.wdc.store.nativeui.web.bridge.useScope
@@ -75,7 +76,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
     }
 
     Box {
-        sx { padding = 12.px; display = Display.flex; flexDirection = FlexDirection.column; height = 100.pct }
+        sx { padding = StoreTokens.Spacing.Md.px; display = Display.flex; flexDirection = FlexDirection.column; height = 100.pct }
 
         // Section header
         Stack {
@@ -83,7 +84,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
             sx {
                 justifyContent = JustifyContent.spaceBetween
                 alignItems = AlignItems.center
-                marginBottom = 12.px
+                marginBottom = StoreTokens.Spacing.Md.px
             }
 
             Typography {
@@ -96,8 +97,8 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
                 Box {
                     sx {
                         backgroundColor = StoreColors.SecondaryContainer.unsafeCast<BackgroundColor>()
-                        borderRadius = 8.px
-                        padding = Padding(6.px, 16.px)
+                        borderRadius = StoreTokens.Radius.Sm.px
+                        padding = Padding(6.px, StoreTokens.Spacing.Lg.px)
                     }
                     Typography {
                         variant = TypographyVariant.caption
@@ -110,7 +111,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
             }
         }
 
-        Divider { sx { marginBottom = 12.px } }
+        Divider { sx { marginBottom = StoreTokens.Spacing.Md.px } }
 
         // Purchase list
         div {
@@ -131,7 +132,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
                         Inventory2 { sx { fontSize = 48.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() } }
                         Typography {
                             variant = TypographyVariant.body1
-                            sx { marginTop = 8.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                            sx { marginTop = StoreTokens.Spacing.Sm.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
                             +"No purchases yet"
                         }
                     }
@@ -146,7 +147,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
                             key = "${purchase.id}"
                             elevation = 0
                             sx {
-                                borderRadius = 8.px
+                                borderRadius = StoreTokens.Radius.Sm.px
                                 backgroundColor = StoreColors.SurfaceVariant50.unsafeCast<BackgroundColor>()
                             }
 
@@ -189,7 +190,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
                                                 backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
                                                 color = StoreColors.PriceColor.unsafeCast<Color>()
                                                 fontWeight = FontWeight.bold
-                                                borderRadius = 8.px
+                                                borderRadius = StoreTokens.Radius.Sm.px
                                             }
                                             size = mui.material.Size.small
                                         }
@@ -211,7 +212,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
                 sx {
                     justifyContent = JustifyContent.center
                     alignItems = AlignItems.center
-                    marginTop = 8.px
+                    marginTop = StoreTokens.Spacing.Sm.px
                 }
                 spacing = responsive(2)
 

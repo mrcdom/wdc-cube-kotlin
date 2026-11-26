@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.view.compose.bridge.useScope
 import br.com.wdc.store.view.compose.bridge.safeCall
 import br.com.wdc.store.view.compose.bridge.RenderSlot
@@ -25,7 +26,7 @@ fun RootView(scope: RootScope) {
             Snackbar(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(16.dp),
+                    .padding(StoreTokens.Spacing.Lg.dp),
                 action = {
                     TextButton(onClick = { safeCall { scope.errorMessage = null } }) {
                         Text("OK")

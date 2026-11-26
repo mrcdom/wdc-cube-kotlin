@@ -12,7 +12,8 @@ import ReceiptIcon from '@mui/icons-material/Receipt'
 import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as DateUtils from '@root/utils/DateUtils'
-import { Colors } from '@root/theme'
+import { Colors, toPx } from '@root/theme'
+import { StoreTokens } from '@root/tokens'
 
 // :: Actions
 
@@ -53,11 +54,19 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
             {scope.notifySuccess && (
               <Paper
                 elevation={0}
-                sx={{ p: 2.5, borderRadius: '12px', bgcolor: Colors.SuccessContainer, textAlign: 'center' }}
+                sx={{
+                  p: 2.5,
+                  borderRadius: toPx(StoreTokens.radius.md),
+                  bgcolor: Colors.SuccessContainer,
+                  textAlign: 'center',
+                }}
               >
                 <Stack direction="column" spacing={1} sx={{ alignItems: 'center' }}>
                   <CheckCircleIcon sx={{ fontSize: 32, color: Colors.SuccessColor }} />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 500, color: Colors.SuccessColor }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ fontWeight: StoreTokens.fontWeight.medium, color: Colors.SuccessColor }}
+                  >
                     Purchase completed successfully!
                   </Typography>
                 </Stack>
@@ -68,7 +77,10 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
             <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <ReceiptIcon sx={{ fontSize: 28 }} />
-                <Typography variant="h5" sx={{ fontWeight: 500, fontSize: 28 }}>
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: StoreTokens.fontWeight.medium, fontSize: StoreTokens.fontSize.display }}
+                >
                   Receipt
                 </Typography>
               </Stack>
@@ -98,10 +110,10 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
                 <Paper
                   key={item.id ?? idx}
                   elevation={0}
-                  sx={{ p: 1.5, borderRadius: '8px', bgcolor: Colors.SurfaceVariant40 }}
+                  sx={{ p: 1.5, borderRadius: toPx(StoreTokens.radius.sm), bgcolor: Colors.SurfaceVariant40 }}
                 >
                   <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" sx={{ flex: '1 1 0', fontWeight: 500 }}>
+                    <Typography variant="body2" sx={{ flex: '1 1 0', fontWeight: StoreTokens.fontWeight.medium }}>
                       {item.description}
                     </Typography>
                     <Typography variant="body2" sx={{ width: 50, textAlign: 'center', color: Colors.OnSurfaceVariant }}>
@@ -109,7 +121,12 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
                     </Typography>
                     <Typography
                       variant="body2"
-                      sx={{ width: 100, textAlign: 'right', color: Colors.PriceColor, fontWeight: 500 }}
+                      sx={{
+                        width: 100,
+                        textAlign: 'right',
+                        color: Colors.PriceColor,
+                        fontWeight: StoreTokens.fontWeight.medium,
+                      }}
                     >
                       ${NumberUtils.format(item.value)}
                     </Typography>
@@ -136,7 +153,12 @@ class ReceiptViewClass extends BaseViewClass<ViewProps, ReceiptScope> {
               <Button
                 variant="contained"
                 onClick={this.emitOpenProducts}
-                sx={{ borderRadius: '12px', height: 48, textTransform: 'none', fontWeight: 500 }}
+                sx={{
+                  borderRadius: toPx(StoreTokens.radius.md),
+                  height: 48,
+                  textTransform: 'none',
+                  fontWeight: StoreTokens.fontWeight.medium,
+                }}
                 startIcon={<ArrowBackIcon />}
               >
                 Continue Shopping

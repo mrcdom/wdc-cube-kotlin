@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.design.StoreTokens
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
@@ -34,8 +35,8 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
             root.setBackgroundColor(StoreColors.Background)
 
             scrollView {
-                vStack(spacing = (16 * density).toInt(), configure = {
-                    setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt())
+                vStack(spacing = (Dimens.spacingLg * density).toInt(), configure = {
+                    setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt())
                 }) {
                     // Title
                     nameLabel = textView {
@@ -52,12 +53,12 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
 
                     // Description card
                     frame(configure = {
-                        background = StoreStyles.roundedBackground(StoreColors.Surface, 8 * density)
-                        StoreStyles.applyCardStyle(this, 8f)
-                        setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt())
+                        background = StoreStyles.roundedBackground(StoreColors.Surface, Dimens.radiusSm * density)
+                        StoreStyles.applyCardStyle(this, Dimens.radiusSm.toFloat())
+                        setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt())
                     }) {
                         descriptionLabel = textView {
-                            textSize = 14f
+                            textSize = StoreTokens.FontSize.Body.toFloat()
                             setTextColor(StoreColors.OnSurfaceVariant)
                             (layoutParams as FrameLayout.LayoutParams).width = ViewGroup.LayoutParams.MATCH_PARENT
                         }
@@ -68,7 +69,7 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                         gravity = Gravity.TOP
                     }) {
                         // Left side: price + quantity
-                        vStack(spacing = (12 * density).toInt(), configure = {
+                        vStack(spacing = (Dimens.spacingMd * density).toInt(), configure = {
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = 0
                                 weight = 1f
@@ -76,7 +77,7 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                         }) {
                             // Price badge (wide)
                             frame(configure = {
-                                background = StoreStyles.roundedBackground(StoreColors.PriceBackground, 8 * density)
+                                background = StoreStyles.roundedBackground(StoreColors.PriceBackground, Dimens.radiusSm * density)
                                 (layoutParams as LinearLayout.LayoutParams).apply {
                                     width = ViewGroup.LayoutParams.MATCH_PARENT
                                     height = (40 * density).toInt()
@@ -101,12 +102,12 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                             }) {
                                 textView {
                                     text = "Qty:"
-                                    textSize = 14f
+                                    textSize = StoreTokens.FontSize.Body.toFloat()
                                     setTypeface(null, Typeface.BOLD)
                                     setTextColor(StoreColors.OnSurface)
                                     (layoutParams as LinearLayout.LayoutParams).apply {
                                         width = ViewGroup.LayoutParams.WRAP_CONTENT
-                                        marginEnd = (12 * density).toInt()
+                                        marginEnd = (Dimens.spacingMd * density).toInt()
                                     }
                                 }
                                 // Minus button
@@ -160,7 +161,7 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = (160 * density).toInt()
                                 height = (160 * density).toInt()
-                                marginStart = (16 * density).toInt()
+                                marginStart = (Dimens.spacingLg * density).toInt()
                             }
                         }
                     }
@@ -168,15 +169,15 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                     // Buttons row
                     hStack(configure = {
                         gravity = Gravity.CENTER_VERTICAL
-                        (layoutParams as LinearLayout.LayoutParams).topMargin = (8 * density).toInt()
+                        (layoutParams as LinearLayout.LayoutParams).topMargin = (Dimens.spacingSm * density).toInt()
                     }) {
                         // Back button (outline)
                         backButton = button("Back") {
                             textSize = 15f
                             setTextColor(StoreColors.Primary)
-                            background = StoreStyles.borderPill(StoreColors.Primary, 12 * density)
+                            background = StoreStyles.borderPill(StoreColors.Primary, Dimens.radiusMd * density)
                             val padH = (20 * density).toInt()
-                            val padV = (12 * density).toInt()
+                            val padV = (Dimens.spacingMd * density).toInt()
                             setPadding(padH, padV, padH, padV)
                             setCompoundDrawablesRelativeWithIntrinsicBounds(
                                 StoreIcons.arrowBack(ctx, 18, StoreColors.Primary), null, null, null
@@ -185,7 +186,7 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 height = (48 * density).toInt()
-                                marginEnd = (12 * density).toInt()
+                                marginEnd = (Dimens.spacingMd * density).toInt()
                             }
                             setOnClickListener { safeAction("back") { scope.onOpenProducts() } }
                         }
@@ -195,14 +196,14 @@ class ProductViewAndroid(app: AndroidNativeRootPresenter, scope: ProductScope) :
                             textSize = 15f
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(android.graphics.Color.WHITE)
-                            background = StoreStyles.roundedBackground(StoreColors.Primary, 12 * density)
+                            background = StoreStyles.roundedBackground(StoreColors.Primary, Dimens.radiusMd * density)
                             val padH = (20 * density).toInt()
-                            val padV = (12 * density).toInt()
+                            val padV = (Dimens.spacingMd * density).toInt()
                             setPadding(padH, padV, padH, padV)
                             setCompoundDrawablesRelativeWithIntrinsicBounds(
                                 StoreIcons.addShoppingCart(ctx, 20, android.graphics.Color.WHITE), null, null, null
                             )
-                            compoundDrawablePadding = (8 * density).toInt()
+                            compoundDrawablePadding = (Dimens.spacingSm * density).toInt()
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = 0
                                 weight = 1f

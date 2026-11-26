@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
 import br.com.wdc.store.nativeui.web.bridge.useScope
@@ -49,7 +50,7 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
         sx {
             display = Display.flex
             justifyContent = JustifyContent.center
-            padding = Padding(16.px, 10.px, 16.px, 16.px)
+            padding = Padding(StoreTokens.Spacing.Lg.px, 10.px, StoreTokens.Spacing.Lg.px, StoreTokens.Spacing.Lg.px)
         }
 
         Box {
@@ -64,7 +65,7 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
             Stack {
                 direction = responsive(StackDirection.row)
                 spacing = responsive(1)
-                sx { alignItems = AlignItems.center; marginBottom = 12.px }
+                sx { alignItems = AlignItems.center; marginBottom = StoreTokens.Spacing.Md.px }
 
                 ShoppingCart { sx { fontSize = 28.px } }
                 Typography {
@@ -81,7 +82,7 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
             if (!errorMessage.isNullOrBlank()) {
                 Alert {
                     severity = "error"
-                    sx { marginTop = 12.px; borderRadius = 8.px }
+                    sx { marginTop = StoreTokens.Spacing.Md.px; borderRadius = StoreTokens.Radius.Sm.px }
                     +errorMessage
                 }
             }
@@ -101,12 +102,12 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                     ShoppingCart { sx { fontSize = 48.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() } }
                     Typography {
                         variant = TypographyVariant.h6
-                        sx { marginTop = 16.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                        sx { marginTop = StoreTokens.Spacing.Lg.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
                         +"Your cart is empty"
                     }
                     Typography {
                         variant = TypographyVariant.body2
-                        sx { marginTop = 8.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>(); opacity = number(0.7) }
+                        sx { marginTop = StoreTokens.Spacing.Sm.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>(); opacity = number(0.7) }
                         +"Add products to start shopping"
                     }
                 }
@@ -114,7 +115,7 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                 // Cart items
                 Box {
                     sx {
-                        marginTop = 12.px
+                        marginTop = StoreTokens.Spacing.Md.px
                         marginRight = (-6).px
                     }
 
@@ -132,7 +133,7 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                 }
 
                 // Total section
-                Divider { sx { marginTop = 8.px; marginBottom = 8.px } }
+                Divider { sx { marginTop = StoreTokens.Spacing.Sm.px; marginBottom = StoreTokens.Spacing.Sm.px } }
 
                 Stack {
                     direction = responsive(StackDirection.row)
@@ -169,12 +170,12 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
             Stack {
                 direction = responsive(StackDirection.row)
                 spacing = responsive(2)
-                sx { justifyContent = JustifyContent.flexEnd; marginTop = 16.px }
+                sx { justifyContent = JustifyContent.flexEnd; marginTop = StoreTokens.Spacing.Lg.px }
 
                 Button {
                     variant = ButtonVariant.outlined
                     onClick = onOpenProducts
-                    sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                    sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                     ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
                     +"Continue Shopping"
                 }
@@ -184,11 +185,11 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                         variant = ButtonVariant.contained
                         onClick = onBuy
                         sx {
-                            borderRadius = 12.px
+                            borderRadius = StoreTokens.Radius.Md.px
                             height = 48.px
                             textTransform = None.none
                             fontWeight = FontWeight.bold
-                            fontSize = 16.px
+                            fontSize = StoreTokens.FontSize.BodyLarge.px
                             backgroundColor = StoreColors.PriceColor.unsafeCast<BackgroundColor>()
                         }
                         +"Buy"
@@ -217,13 +218,13 @@ val CartItemView = FC<ScopeProps<CartItemScope>> { props ->
 
     Card {
         sx {
-            borderRadius = 8.px
+            borderRadius = StoreTokens.Radius.Sm.px
             backgroundColor = StoreColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
         }
         elevation = 0
 
         CardContent {
-            sx { padding = 16.px }
+            sx { padding = StoreTokens.Spacing.Lg.px }
 
             Stack {
                 direction = responsive(StackDirection.row)
@@ -255,8 +256,8 @@ val CartItemView = FC<ScopeProps<CartItemScope>> { props ->
                         backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
                         display = Display.flex
                         alignItems = AlignItems.center
-                        paddingLeft = 4.px
-                        paddingRight = 4.px
+                        paddingLeft = StoreTokens.Spacing.Xs.px
+                        paddingRight = StoreTokens.Spacing.Xs.px
                     }
                     elevation = 0
 

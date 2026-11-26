@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
 import br.com.wdc.store.nativeui.web.bridge.useScope
@@ -74,12 +75,12 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
         Card {
             sx {
                 width = 400.px
-                borderRadius = 12.px
+                borderRadius = StoreTokens.Radius.Md.px
                 boxShadow = "0px 2px 8px rgba(0,0,0,0.12)".unsafeCast<BoxShadow>()
             }
 
             CardContent {
-                sx { padding = 24.px }
+                sx { padding = StoreTokens.Spacing.Xl.px }
 
                 // Use a form with autocomplete off to prevent all password managers
                 form {
@@ -97,7 +98,7 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
                             width = 72.px
                             height = 72.px
                             backgroundColor = StoreColors.Primary.unsafeCast<BackgroundColor>()
-                            borderRadius = 18.px
+                            borderRadius = StoreTokens.Radius.Lg.px
                         }
                         LocalMall { sx { fontSize = 40.px } }
                     }
@@ -158,7 +159,7 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
                     if (!errorMessage.isNullOrBlank()) {
                         Alert {
                             severity = "error"
-                            sx { width = 100.pct; borderRadius = 8.px }
+                            sx { width = 100.pct; borderRadius = StoreTokens.Radius.Sm.px }
                             +errorMessage
                         }
                     }
@@ -172,9 +173,9 @@ val LoginView = FC<ScopeProps<LoginScope>> { props ->
                         onClick = onEnterClick
                         sx {
                             height = 48.px
-                            borderRadius = 12.px
+                            borderRadius = StoreTokens.Radius.Md.px
                             fontWeight = FontWeight.bold
-                            fontSize = 16.px
+                            fontSize = StoreTokens.FontSize.BodyLarge.px
                             textTransform = None.none
                         }
 

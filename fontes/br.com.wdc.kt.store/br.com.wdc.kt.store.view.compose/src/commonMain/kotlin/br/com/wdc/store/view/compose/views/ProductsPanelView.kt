@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.presentation.presenter.restricted.home.ProductsPanelScope
 import br.com.wdc.store.presentation.presenter.restricted.products.structs.ProductInfo
 import br.com.wdc.store.view.compose.bridge.useScope
@@ -35,11 +36,11 @@ fun ProductsPanelView(scope: ProductsPanelScope) {
     val products = scope.products
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(12.dp)
+        modifier = Modifier.fillMaxSize().padding(StoreTokens.Spacing.Md.dp)
     ) {
         // Section header
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = StoreTokens.Spacing.Md.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -51,12 +52,12 @@ fun ProductsPanelView(scope: ProductsPanelScope) {
             )
             if (products != null) {
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                     color = MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Text(
                         "${products.size} ${if (products.size == 1) "item" else "items"}",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Md.dp, vertical = StoreTokens.Spacing.Xs.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -65,7 +66,7 @@ fun ProductsPanelView(scope: ProductsPanelScope) {
         }
 
         HorizontalDivider(
-            modifier = Modifier.padding(bottom = 12.dp),
+            modifier = Modifier.padding(bottom = StoreTokens.Spacing.Md.dp),
             color = MaterialTheme.colorScheme.outlineVariant
         )
 
@@ -76,7 +77,7 @@ fun ProductsPanelView(scope: ProductsPanelScope) {
                         color = MaterialTheme.colorScheme.primary,
                         strokeWidth = 3.dp
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(StoreTokens.Spacing.Md.dp))
                     Text(
                         "Loading products...",
                         style = MaterialTheme.typography.bodyMedium,
@@ -95,7 +96,7 @@ fun ProductsPanelView(scope: ProductsPanelScope) {
         } else {
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 val minItemWidth = 160.dp
-                val spacing = 12.dp
+                val spacing = StoreTokens.Spacing.Md.dp
                 val availableWidth = maxWidth
                 val columns = calculateColumns(availableWidth, minItemWidth, spacing)
                 val itemWidth = (availableWidth - spacing * (columns - 1)) / columns
@@ -140,7 +141,7 @@ private fun calculateColumns(availableWidth: Dp, minChildWidth: Dp, spacing: Dp)
 private fun ProductCard(product: ProductInfo, modifier: Modifier, onClick: () -> Unit) {
     Card(
         modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
@@ -152,7 +153,7 @@ private fun ProductCard(product: ProductInfo, modifier: Modifier, onClick: () ->
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp)
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                    .clip(RoundedCornerShape(topStart = StoreTokens.Radius.Sm.dp, topEnd = StoreTokens.Radius.Sm.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentScale = ContentScale.Crop,
                 placeholder = {
@@ -174,7 +175,7 @@ private fun ProductCard(product: ProductInfo, modifier: Modifier, onClick: () ->
             )
 
             // Content: name + price
-            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(modifier = Modifier.padding(StoreTokens.Spacing.Md.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     product.name ?: "",
                     style = MaterialTheme.typography.titleSmall,
@@ -185,12 +186,12 @@ private fun ProductCard(product: ProductInfo, modifier: Modifier, onClick: () ->
 
                 // Price badge
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                     color = PriceColor.copy(alpha = 0.1f)
                 ) {
                     Text(
                         "\$${formatPrice(product.price)}",
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = StoreTokens.Spacing.Xs.dp),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = PriceColor

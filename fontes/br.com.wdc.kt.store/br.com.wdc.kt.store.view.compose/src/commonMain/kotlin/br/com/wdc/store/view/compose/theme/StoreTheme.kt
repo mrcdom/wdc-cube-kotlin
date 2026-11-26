@@ -3,41 +3,37 @@ package br.com.wdc.store.view.compose.theme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import br.com.wdc.store.design.StoreTokens
 
-// Main palette - elegant petrol-blue tones
-val Primary = Color(0xFF1B5E7B)
-val OnPrimary = Color(0xFFFFFFFF)
-val PrimaryContainer = Color(0xFFD0E8F2)
-val OnPrimaryContainer = Color(0xFF001F2A)
+// Main palette - elegant petrol-blue tones, from the design tokens (StoreTokens.Color)
+val Primary = Color(StoreTokens.Color.Primary)
+val OnPrimary = Color(StoreTokens.Color.OnPrimary)
+val PrimaryContainer = Color(StoreTokens.Color.PrimaryContainer)
+val OnPrimaryContainer = Color(StoreTokens.Color.OnPrimaryContainer)
 
-val Secondary = Color(0xFF4A6572)
-val OnSecondary = Color(0xFFFFFFFF)
-val SecondaryContainer = Color(0xFFCDE5F0)
-val OnSecondaryContainer = Color(0xFF051F2C)
+val Secondary = Color(StoreTokens.Color.Secondary)
+val OnSecondary = Color(StoreTokens.Color.OnSecondary)
+val SecondaryContainer = Color(StoreTokens.Color.SecondaryContainer)
+val OnSecondaryContainer = Color(StoreTokens.Color.OnSecondaryContainer)
 
-val Tertiary = Color(0xFF5C6BC0)
-val OnTertiary = Color(0xFFFFFFFF)
-val TertiaryContainer = Color(0xFFDDE0FF)
-val OnTertiaryContainer = Color(0xFF151A60)
+val Background = Color(StoreTokens.Color.Background)
+val OnBackground = Color(StoreTokens.Color.OnSurface)
+val Surface = Color(StoreTokens.Color.Surface)
+val OnSurface = Color(StoreTokens.Color.OnSurface)
+val SurfaceVariant = Color(StoreTokens.Color.SurfaceVariant)
+val OnSurfaceVariant = Color(StoreTokens.Color.OnSurfaceVariant)
 
-val Background = Color(0xFFF5F7FA)
-val OnBackground = Color(0xFF1A1C1E)
-val Surface = Color(0xFFFFFFFF)
-val OnSurface = Color(0xFF1A1C1E)
-val SurfaceVariant = Color(0xFFE7EBF0)
-val OnSurfaceVariant = Color(0xFF42474E)
+val Error = Color(StoreTokens.Color.Error)
+val OnError = Color(StoreTokens.Color.OnError)
+val ErrorContainer = Color(StoreTokens.Color.ErrorContainer)
+val OnErrorContainer = Color(StoreTokens.Color.OnErrorContainer)
 
-val Error = Color(0xFFBA1A1A)
-val OnError = Color(0xFFFFFFFF)
-val ErrorContainer = Color(0xFFFFDAD6)
-val OnErrorContainer = Color(0xFF410002)
+val Outline = Color(StoreTokens.Color.Outline)
+val OutlineVariant = Color(StoreTokens.Color.OutlineVariant)
 
-val Outline = Color(0xFF72787E)
-val OutlineVariant = Color(0xFFC2C7CE)
-
-val PriceColor = Color(0xFF2E7D32)
-val SuccessColor = Color(0xFF2E7D32)
-val SuccessContainer = Color(0xFFB9F6CA)
+val PriceColor = Color(StoreTokens.Color.Price)
+val SuccessColor = Color(StoreTokens.Color.Success)
+val SuccessContainer = Color(StoreTokens.Color.SuccessContainer)
 
 private val StoreColorScheme = lightColorScheme(
     primary = Primary,
@@ -48,10 +44,6 @@ private val StoreColorScheme = lightColorScheme(
     onSecondary = OnSecondary,
     secondaryContainer = SecondaryContainer,
     onSecondaryContainer = OnSecondaryContainer,
-    tertiary = Tertiary,
-    onTertiary = OnTertiary,
-    tertiaryContainer = TertiaryContainer,
-    onTertiaryContainer = OnTertiaryContainer,
     background = Background,
     onBackground = OnBackground,
     surface = Surface,

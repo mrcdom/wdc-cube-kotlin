@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.store.nativeui.ios.toolkit.ViewUtils
@@ -44,11 +48,11 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                 bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
             ))
         }) {
-            contentStack = vStack(spacing = 16.0) {
+            contentStack = vStack(spacing = Spacing.Lg.pt) {
                 // Success banner (hidden by default)
                 successBanner = view(configure = {
                     backgroundColor = StoreColors.SuccessContainer
-                    layer.cornerRadius = 12.0
+                    layer.cornerRadius = Radius.Md.pt
                     hidden = true
                 }) {
                     val successLabel = label {
@@ -57,11 +61,11 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                         textColor = StoreColors.SuccessColor
                         textAlignment = UIK.TextAlignCenter
                     }
-                    pin(successLabel, insets = 16.0)
+                    pin(successLabel, insets = Spacing.Lg.pt)
                 }
 
                 // Header row: title + date badge
-                hStack(spacing = 8.0, configure = { alignment = UIK.StackAlignCenter }) {
+                hStack(spacing = Spacing.Sm.pt, configure = { alignment = UIK.StackAlignCenter }) {
                     imageView {
                         image = StoreIcons.receipt(22.0, StoreColors.OnSurface)
                         contentMode = UIK.ContentModeScaleAspectFit
@@ -72,7 +76,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                     }
                     label {
                         text = "Receipt"
-                        font = UIFont.systemFontOfSize(24.0, UIFontWeightMedium)
+                        font = UIFont.systemFontOfSize(FontSize.Headline.pt, UIFontWeightMedium)
                         textColor = StoreColors.OnSurface
                     }
                     flexSpacer()
@@ -81,7 +85,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                         textColor = StoreColors.OnSurfaceVariant
                         backgroundColor = StoreColors.SurfaceVariant
                         textAlignment = UIK.TextAlignCenter
-                        layer.cornerRadius = 8.0
+                        layer.cornerRadius = Radius.Sm.pt
                         clipsToBounds = true
                     }
                 }
@@ -96,20 +100,20 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                 hStack(spacing = 0.0) {
                     label {
                         text = "Item"
-                        font = UIFont.systemFontOfSize(12.0)
+                        font = UIFont.systemFontOfSize(FontSize.Caption.pt)
                         textColor = StoreColors.OnSurfaceVariant
                         setContentHuggingPriority(249.0f, UIK.AxisHorizontal)
                     }
                     label {
                         text = "Qty"
-                        font = UIFont.systemFontOfSize(12.0)
+                        font = UIFont.systemFontOfSize(FontSize.Caption.pt)
                         textColor = StoreColors.OnSurfaceVariant
                         textAlignment = UIK.TextAlignCenter
                         widthAnchor.constraintEqualToConstant(50.0).active = true
                     }
                     label {
                         text = "Amount"
-                        font = UIFont.systemFontOfSize(12.0)
+                        font = UIFont.systemFontOfSize(FontSize.Caption.pt)
                         textColor = StoreColors.OnSurfaceVariant
                         textAlignment = UIK.TextAlignRight
                         widthAnchor.constraintEqualToConstant(90.0).active = true
@@ -117,7 +121,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                 }
 
                 // Items list
-                itemsStack = vStack(spacing = 8.0) {}
+                itemsStack = vStack(spacing = Spacing.Sm.pt) {}
 
                 // Separator before total
                 view(configure = {
@@ -126,7 +130,7 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                 })
 
                 // Total in badge
-                hStack(spacing = 8.0, configure = { alignment = UIK.StackAlignCenter }) {
+                hStack(spacing = Spacing.Sm.pt, configure = { alignment = UIK.StackAlignCenter }) {
                     label {
                         text = "Total:"
                         font = UIFont.systemFontOfSize(15.0)
@@ -137,11 +141,11 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                         layer.cornerRadius = 10.0
                     }) {
                         totalLabel = label {
-                            font = UIFont.boldSystemFontOfSize(20.0)
+                            font = UIFont.boldSystemFontOfSize(FontSize.Title.pt)
                             textColor = StoreColors.PriceColor
                             textAlignment = UIK.TextAlignCenter
                         }
-                        pin(totalLabel, insets = 8.0)
+                        pin(totalLabel, insets = Spacing.Sm.pt)
                     }
                 }
 
@@ -151,11 +155,11 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                     backButton = button("Continue Shopping") {
                         setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                         backgroundColor = StoreColors.Primary
-                        layer.cornerRadius = 12.0
+                        layer.cornerRadius = Radius.Md.pt
                         titleLabel?.font = UIFont.systemFontOfSize(15.0, UIFontWeightMedium)
                         setImage(StoreIcons.arrowBack(18.0, UIColor.whiteColor), forState = UIControlStateNormal)
-                        imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
-                        contentEdgeInsets = UIEdgeInsetsMake(8.0, 20.0, 8.0, 20.0)
+                        imageEdgeInsets = UIEdgeInsetsMake(0.0, -Spacing.Xs.pt, 0.0, Spacing.Xs.pt)
+                        contentEdgeInsets = UIEdgeInsetsMake(Spacing.Sm.pt, 20.0, Spacing.Sm.pt, 20.0)
                         addTarget(actions, action = sel_registerName("onBack"), forControlEvents = UIControlEventTouchUpInside)
                         NSLayoutConstraint.activateConstraints(listOf(
                             heightAnchor.constraintEqualToConstant(48.0)
@@ -164,10 +168,10 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
                 }
             }
             NSLayoutConstraint.activateConstraints(listOf(
-                contentStack.topAnchor.constraintEqualToAnchor(parent().topAnchor, 16.0),
-                contentStack.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                contentStack.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
-                contentStack.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -16.0),
+                contentStack.topAnchor.constraintEqualToAnchor(parent().topAnchor, Spacing.Lg.pt),
+                contentStack.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
+                contentStack.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Lg.pt),
+                contentStack.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -Spacing.Lg.pt),
                 contentStack.widthAnchor.constraintEqualToAnchor(parent().widthAnchor, constant = -32.0)
             ))
         }
@@ -203,18 +207,18 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
     private fun createReceiptItemRow(item: ReceiptItem): UIView = UIKitDom.build {
         val row = parent()
         row.backgroundColor = StoreColors.SurfaceVariant40
-        row.layer.cornerRadius = 8.0
+        row.layer.cornerRadius = Radius.Sm.pt
 
         val descLabel = label {
             text = item.description ?: ""
-            font = UIFont.systemFontOfSize(14.0, UIFontWeightMedium)
+            font = UIFont.systemFontOfSize(FontSize.Body.pt, UIFontWeightMedium)
             textColor = StoreColors.OnSurface
             setContentHuggingPriority(249.0f, UIK.AxisHorizontal)
         }
 
         val qtyLabel = label {
             text = "${item.quantity}x"
-            font = UIFont.systemFontOfSize(14.0)
+            font = UIFont.systemFontOfSize(FontSize.Body.pt)
             textColor = StoreColors.OnSurfaceVariant
             textAlignment = UIK.TextAlignCenter
             widthAnchor.constraintEqualToConstant(50.0).active = true
@@ -222,19 +226,19 @@ class ReceiptViewIos(app: IosNativeRootPresenter, scope: ReceiptScope) : Abstrac
 
         val valueLabel = label {
             text = "\$${ViewUtils.formatPrice(item.value)}"
-            font = UIFont.systemFontOfSize(14.0, UIFontWeightMedium)
+            font = UIFont.systemFontOfSize(FontSize.Body.pt, UIFontWeightMedium)
             textColor = StoreColors.PriceColor
             textAlignment = UIK.TextAlignRight
             widthAnchor.constraintEqualToConstant(90.0).active = true
         }
 
         NSLayoutConstraint.activateConstraints(listOf(
-            descLabel.leadingAnchor.constraintEqualToAnchor(row.leadingAnchor, 12.0),
+            descLabel.leadingAnchor.constraintEqualToAnchor(row.leadingAnchor, Spacing.Md.pt),
             descLabel.centerYAnchor.constraintEqualToAnchor(row.centerYAnchor),
-            descLabel.trailingAnchor.constraintEqualToAnchor(qtyLabel.leadingAnchor, -4.0),
+            descLabel.trailingAnchor.constraintEqualToAnchor(qtyLabel.leadingAnchor, -Spacing.Xs.pt),
             qtyLabel.centerYAnchor.constraintEqualToAnchor(row.centerYAnchor),
-            qtyLabel.trailingAnchor.constraintEqualToAnchor(valueLabel.leadingAnchor, -4.0),
-            valueLabel.trailingAnchor.constraintEqualToAnchor(row.trailingAnchor, -12.0),
+            qtyLabel.trailingAnchor.constraintEqualToAnchor(valueLabel.leadingAnchor, -Spacing.Xs.pt),
+            valueLabel.trailingAnchor.constraintEqualToAnchor(row.trailingAnchor, -Spacing.Md.pt),
             valueLabel.centerYAnchor.constraintEqualToAnchor(row.centerYAnchor),
             row.heightAnchor.constraintEqualToConstant(40.0)
         ))

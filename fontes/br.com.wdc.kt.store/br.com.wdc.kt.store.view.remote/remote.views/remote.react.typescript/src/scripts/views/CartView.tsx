@@ -15,7 +15,8 @@ import RemoveIcon from '@mui/icons-material/Remove'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
-import { Colors } from '@root/theme'
+import { Colors, toPx } from '@root/theme'
+import { StoreTokens } from '@root/tokens'
 
 // :: Actions
 
@@ -47,7 +48,10 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
           {/* Title */}
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1.5 }}>
             <ShoppingCartIcon sx={{ fontSize: 28 }} />
-            <Typography variant="h5" sx={{ fontWeight: 500, fontSize: 28 }}>
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: StoreTokens.fontWeight.medium, fontSize: StoreTokens.fontSize.display }}
+            >
               Shopping Cart
             </Typography>
           </Stack>
@@ -56,7 +60,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
 
           {/* Error message */}
           {scope.errorMessage && (
-            <Alert severity="error" sx={{ mt: 1.5, borderRadius: '8px' }}>
+            <Alert severity="error" sx={{ mt: 1.5, borderRadius: toPx(StoreTokens.radius.sm) }}>
               {scope.errorMessage}
             </Alert>
           )}
@@ -114,7 +118,7 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
             <Button
               variant="outlined"
               onClick={this.emitClickVoltar}
-              sx={{ borderRadius: '12px', height: 48, textTransform: 'none' }}
+              sx={{ borderRadius: toPx(StoreTokens.radius.md), height: 48, textTransform: 'none' }}
               startIcon={<ArrowBackIcon />}
             >
               Continue Shopping
@@ -124,11 +128,11 @@ class CartViewClass extends BaseViewClass<ViewProps, CartScope> {
                 variant="contained"
                 onClick={this.emitClickFinalizar}
                 sx={{
-                  borderRadius: '12px',
+                  borderRadius: toPx(StoreTokens.radius.md),
                   height: 48,
                   textTransform: 'none',
                   fontWeight: 'bold',
-                  fontSize: 16,
+                  fontSize: StoreTokens.fontSize.bodyLarge,
                   bgcolor: Colors.PriceColor,
                 }}
               >
@@ -170,15 +174,19 @@ class CartItemViewClass extends BaseViewClass<ViewProps, CartItemScope> {
     const { scope } = this
 
     return (
-      <Card elevation={0} sx={{ borderRadius: '8px', bgcolor: Colors.SurfaceVariant40 }}>
+      <Card elevation={0} sx={{ borderRadius: toPx(StoreTokens.radius.sm), bgcolor: Colors.SurfaceVariant40 }}>
         <CardContent sx={{ p: 2 }}>
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
             {/* Product info */}
             <Box sx={{ flex: '1 1 0' }}>
-              <Typography variant="body2" noWrap sx={{ fontWeight: 500, fontSize: 14 }}>
+              <Typography
+                variant="body2"
+                noWrap
+                sx={{ fontWeight: StoreTokens.fontWeight.medium, fontSize: StoreTokens.fontSize.body }}
+              >
                 {scope.name}
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500, color: Colors.PriceColor }}>
+              <Typography variant="body2" sx={{ fontWeight: StoreTokens.fontWeight.medium, color: Colors.PriceColor }}>
                 ${NumberUtils.format(scope.price)}
               </Typography>
             </Box>
@@ -218,7 +226,7 @@ class CartItemViewClass extends BaseViewClass<ViewProps, CartItemScope> {
               variant="text"
               color="error"
               onClick={this.emitRemove}
-              sx={{ fontWeight: 'normal', fontSize: 12, textTransform: 'none' }}
+              sx={{ fontWeight: 'normal', fontSize: StoreTokens.fontSize.caption, textTransform: 'none' }}
             >
               Remove
             </Button>

@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.design.StoreTokens
 import android.graphics.Color
 import android.graphics.Typeface
 import android.view.Gravity
@@ -33,9 +34,9 @@ class CartItemViewAndroid(app: AndroidNativeRootPresenter, scope: CartItemScope)
 
         return AndroidDom.build(ctx) {
             val card = parent()
-            card.background = StoreStyles.roundedBackground(StoreColors.SurfaceVariant40, 8 * density)
+            card.background = StoreStyles.roundedBackground(StoreColors.SurfaceVariant40, Dimens.radiusSm * density)
 
-            hStack(spacing = (12 * density).toInt(), configure = {
+            hStack(spacing = (Dimens.spacingMd * density).toInt(), configure = {
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding((10 * density).toInt(), (10 * density).toInt(), (10 * density).toInt(), (10 * density).toInt())
                 (layoutParams as FrameLayout.LayoutParams).apply {
@@ -61,7 +62,7 @@ class CartItemViewAndroid(app: AndroidNativeRootPresenter, scope: CartItemScope)
                     }
                 }) {
                     nameLabel = textView {
-                        textSize = 14f
+                        textSize = StoreTokens.FontSize.Body.toFloat()
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(StoreColors.OnSurface)
                         maxLines = 1
@@ -73,13 +74,13 @@ class CartItemViewAndroid(app: AndroidNativeRootPresenter, scope: CartItemScope)
                 }
 
                 // Quantity controls
-                hStack(spacing = (4 * density).toInt(), configure = {
+                hStack(spacing = (Dimens.spacingXs * density).toInt(), configure = {
                     gravity = Gravity.CENTER_VERTICAL
                     (layoutParams as LinearLayout.LayoutParams).width = ViewGroup.LayoutParams.WRAP_CONTENT
                 }) {
                     button("−") {
-                        textSize = 14f
-                        background = StoreStyles.roundedBackground(StoreColors.SecondaryContainer, 4 * density)
+                        textSize = StoreTokens.FontSize.Body.toFloat()
+                        background = StoreStyles.roundedBackground(StoreColors.SecondaryContainer, Dimens.radiusXs * density)
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             width = (28 * density).toInt()
                             height = (28 * density).toInt()
@@ -91,14 +92,14 @@ class CartItemViewAndroid(app: AndroidNativeRootPresenter, scope: CartItemScope)
                         }
                     }
                     qtyLabel = textView {
-                        textSize = 14f
+                        textSize = StoreTokens.FontSize.Body.toFloat()
                         setTypeface(null, Typeface.BOLD)
                         gravity = Gravity.CENTER
                         (layoutParams as LinearLayout.LayoutParams).width = (30 * density).toInt()
                     }
                     button("+") {
-                        textSize = 14f
-                        background = StoreStyles.roundedBackground(StoreColors.SecondaryContainer, 4 * density)
+                        textSize = StoreTokens.FontSize.Body.toFloat()
+                        background = StoreStyles.roundedBackground(StoreColors.SecondaryContainer, Dimens.radiusXs * density)
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             width = (28 * density).toInt()
                             height = (28 * density).toInt()
@@ -111,7 +112,7 @@ class CartItemViewAndroid(app: AndroidNativeRootPresenter, scope: CartItemScope)
                     }
                     // Remove button
                     button("✕") {
-                        textSize = 14f
+                        textSize = StoreTokens.FontSize.Body.toFloat()
                         setTextColor(StoreColors.Error)
                         setBackgroundColor(Color.TRANSPARENT)
                         (layoutParams as LinearLayout.LayoutParams).apply {

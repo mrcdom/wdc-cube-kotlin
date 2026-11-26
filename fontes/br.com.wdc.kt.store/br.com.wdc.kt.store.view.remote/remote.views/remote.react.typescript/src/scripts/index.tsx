@@ -5,6 +5,9 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 
 import bridge from 'wdc-cube-remote-bridge-react'
 
+import { Colors, FontFamily } from './theme'
+import { StoreTokens } from './tokens'
+
 import BrowserView from './views/BrowserView'
 import RootView from './views/RootView'
 import LoginView from './views/LoginView'
@@ -30,23 +33,23 @@ bridge.registerComponents(
 
 const theme = createTheme({
   palette: {
-    primary: { main: '#1B5E7B', contrastText: '#FFFFFF' },
-    secondary: { main: '#4A6572', contrastText: '#FFFFFF' },
-    error: { main: '#BA1A1A' },
-    background: { default: '#F5F7FA', paper: '#FFFFFF' },
+    primary: { main: Colors.Primary, contrastText: Colors.OnPrimary },
+    secondary: { main: Colors.Secondary, contrastText: Colors.OnSecondary },
+    error: { main: Colors.Error },
+    background: { default: Colors.Background, paper: Colors.Surface },
   },
   typography: {
-    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+    fontFamily: FontFamily,
   },
   components: {
     MuiButton: {
       styleOverrides: {
-        root: { textTransform: 'none', borderRadius: 12 },
+        root: { textTransform: 'none', borderRadius: StoreTokens.radius.md },
       },
     },
     MuiCard: {
       styleOverrides: {
-        root: { borderRadius: 8 },
+        root: { borderRadius: StoreTokens.radius.sm },
       },
     },
   },

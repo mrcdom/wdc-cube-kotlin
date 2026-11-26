@@ -25,5 +25,6 @@ A record is not edited once accepted, except to fix a mistake or a link. A decis
 | [0017](0017-mesh-between-instances.md) | The backend instances tell each other over a WebSocket mesh | Accepted |
 | [0018](0018-failed-sign-ins-in-the-database.md) | Failed sign-ins are counted in the database; the per-address limit stays per instance | Accepted |
 | [0019](0019-metrics-and-health.md) | Metrics with Micrometer in Prometheus format, behind a token; live and ready health checks | Accepted |
+| [0020](0020-design-tokens.md) | One set of design tokens, generated for every view technology | Accepted |
 
 New record: copy the shape of an existing one, take the next number, and add it to this table.

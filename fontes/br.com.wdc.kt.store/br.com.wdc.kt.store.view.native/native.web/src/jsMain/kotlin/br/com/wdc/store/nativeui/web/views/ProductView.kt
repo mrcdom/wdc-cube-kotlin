@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
 import br.com.wdc.store.nativeui.web.bridge.useScope
@@ -67,7 +68,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
         sx {
             display = Display.flex
             justifyContent = JustifyContent.center
-            padding = Padding(16.px, 10.px, 16.px, 16.px)
+            padding = Padding(StoreTokens.Spacing.Lg.px, 10.px, StoreTokens.Spacing.Lg.px, StoreTokens.Spacing.Lg.px)
         }
 
         if (product != null) {
@@ -83,7 +84,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                     if (!errorMessage.isNullOrBlank()) {
                         Alert {
                             severity = "error"
-                            sx { borderRadius = 8.px }
+                            sx { borderRadius = StoreTokens.Radius.Sm.px }
                             +errorMessage
                         }
                     }
@@ -104,8 +105,8 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                         if (cleanDesc.isNotBlank()) {
                             Paper {
                                 sx {
-                                    padding = 16.px
-                                    borderRadius = 8.px
+                                    padding = StoreTokens.Spacing.Lg.px
+                                    borderRadius = StoreTokens.Radius.Sm.px
                                     backgroundColor = StoreColors.SurfaceVariant50.unsafeCast<BackgroundColor>()
                                 }
                                 elevation = 0
@@ -141,7 +142,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                                     backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
                                     color = StoreColors.PriceColor.unsafeCast<Color>()
                                     height = 40.px
-                                    borderRadius = 12.px
+                                    borderRadius = StoreTokens.Radius.Md.px
                                 }
                             }
 
@@ -159,12 +160,12 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
 
                                 Paper {
                                     sx {
-                                        borderRadius = 12.px
+                                        borderRadius = StoreTokens.Radius.Md.px
                                         backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
                                         display = Display.flex
                                         alignItems = AlignItems.center
-                                        paddingLeft = 4.px
-                                        paddingRight = 4.px
+                                        paddingLeft = StoreTokens.Spacing.Xs.px
+                                        paddingRight = StoreTokens.Spacing.Xs.px
                                     }
                                     elevation = 0
 
@@ -194,7 +195,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                             sx {
                                 width = 120.px
                                 height = 120.px
-                                borderRadius = 12.px
+                                borderRadius = StoreTokens.Radius.Md.px
                                 overflow = Overflow.hidden
                                 backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
                             }
@@ -215,7 +216,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                         Button {
                             variant = ButtonVariant.outlined
                             onClick = onOpenProducts
-                            sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                            sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                             ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
                             +"Back"
                         }
@@ -223,7 +224,7 @@ val ProductView = FC<ScopeProps<ProductScope>> { props ->
                         Button {
                             variant = ButtonVariant.contained
                             onClick = onAddToCart
-                            sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                            sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                             AddShoppingCart { sx { marginRight = 6.px; fontSize = 18.px } }
                             +"Add to Cart"
                         }

@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
@@ -62,7 +63,7 @@ val HomeView = FC<RemoteViewProps> { props ->
             Alert {
                 key = "error"
                 severity = "error"
-                sx { marginLeft = 16.px; marginRight = 16.px; marginTop = 8.px }
+                sx { marginLeft = StoreTokens.Spacing.Lg.px; marginRight = StoreTokens.Spacing.Lg.px; marginTop = StoreTokens.Spacing.Sm.px }
                 +errorMessage
             }
         }
@@ -91,7 +92,7 @@ val HomeView = FC<RemoteViewProps> { props ->
                 key = "compact"
                 sx {
                     flex = Flex(number(1.0), number(1.0), 0.px)
-                    padding = 8.px
+                    padding = StoreTokens.Spacing.Sm.px
                     overflow = Overflow.hidden
                     display = Display.flex
                     flexDirection = FlexDirection.column
@@ -99,24 +100,24 @@ val HomeView = FC<RemoteViewProps> { props ->
                 Tabs {
                     value = selectedTab
                     onChange = { _, value -> selectedTab = value as Int }
-                    sx { marginBottom = 4.px; minHeight = 36.px }
+                    sx { marginBottom = StoreTokens.Spacing.Xs.px; minHeight = 36.px }
                     Tab {
                         label = ReactNode("Products")
                         icon = ShoppingBag.create()
                         iconPosition = IconPosition.start
-                        sx { minHeight = 36.px; paddingTop = 4.px; paddingBottom = 4.px; fontSize = 13.px }
+                        sx { minHeight = 36.px; paddingTop = StoreTokens.Spacing.Xs.px; paddingBottom = StoreTokens.Spacing.Xs.px; fontSize = 13.px }
                     }
                     Tab {
                         label = ReactNode("Purchases")
                         icon = Inventory2.create()
                         iconPosition = IconPosition.start
-                        sx { minHeight = 36.px; paddingTop = 4.px; paddingBottom = 4.px; fontSize = 13.px }
+                        sx { minHeight = 36.px; paddingTop = StoreTokens.Spacing.Xs.px; paddingBottom = StoreTokens.Spacing.Xs.px; fontSize = 13.px }
                     }
                 }
                 Card {
                     elevation = 0
                     sx {
-                        borderRadius = 8.px
+                        borderRadius = StoreTokens.Radius.Sm.px
                         flex = Flex(number(1.0), number(1.0), 0.px)
                         overflow = if (selectedTab == 0) Auto.auto else Overflow.hidden
                     }
@@ -131,8 +132,8 @@ val HomeView = FC<RemoteViewProps> { props ->
                     display = Display.flex
                     flexDirection = FlexDirection.row
                     flex = Flex(number(1.0), number(1.0), 0.px)
-                    padding = 16.px
-                    gap = 16.px
+                    padding = StoreTokens.Spacing.Lg.px
+                    gap = StoreTokens.Spacing.Lg.px
                     overflow = Overflow.hidden
                     maxWidth = 1200.px
                     marginLeft = Auto.auto
@@ -143,7 +144,7 @@ val HomeView = FC<RemoteViewProps> { props ->
                     elevation = 0
                     sx {
                         flex = Flex(number(3.0), number(1.0), 0.px)
-                        borderRadius = 8.px
+                        borderRadius = StoreTokens.Radius.Sm.px
                         overflowY = Auto.auto
                         overflowX = Overflow.hidden
                     }
@@ -153,7 +154,7 @@ val HomeView = FC<RemoteViewProps> { props ->
                     elevation = 0
                     sx {
                         flex = Flex(number(2.0), number(1.0), 0.px)
-                        borderRadius = 8.px
+                        borderRadius = StoreTokens.Radius.Sm.px
                         overflow = Overflow.hidden
                     }
                     remoteView(purchasesPanel)

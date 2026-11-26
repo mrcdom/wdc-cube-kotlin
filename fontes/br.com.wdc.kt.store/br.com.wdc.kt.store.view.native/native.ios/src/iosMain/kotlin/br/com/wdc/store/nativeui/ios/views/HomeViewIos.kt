@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.store.nativeui.ios.theme.StoreColors
@@ -98,15 +102,15 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
             }) {
                 val topRow = view(configure = {
                     NSLayoutConstraint.activateConstraints(listOf(
-                        topAnchor.constraintEqualToAnchor(parent().topAnchor, 8.0),
-                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 12.0),
-                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -12.0),
+                        topAnchor.constraintEqualToAnchor(parent().topAnchor, Spacing.Sm.pt),
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Md.pt),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Md.pt),
                         heightAnchor.constraintEqualToConstant(32.0)
                     ))
                 }) {
                     val logoAvatar = view(configure = {
                         backgroundColor = StoreColors.WhiteOverlay20
-                        layer.cornerRadius = 8.0
+                        layer.cornerRadius = Radius.Sm.pt
                         NSLayoutConstraint.activateConstraints(listOf(
                             leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
                             centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
@@ -123,10 +127,10 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                     }
                     val compactBrandLabel = label {
                         text = "WDC Store"
-                        font = UIFont.boldSystemFontOfSize(20.0)
+                        font = UIFont.boldSystemFontOfSize(FontSize.Title.pt)
                         textColor = UIColor.whiteColor
                         NSLayoutConstraint.activateConstraints(listOf(
-                            leadingAnchor.constraintEqualToAnchor(logoAvatar.trailingAnchor, 8.0),
+                            leadingAnchor.constraintEqualToAnchor(logoAvatar.trailingAnchor, Spacing.Sm.pt),
                             centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                         ))
                     }
@@ -148,7 +152,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                         alpha = 0.7
                         addTarget(actions, action = sel_registerName("onExitTapped"), forControlEvents = UIControlEventTouchUpInside)
                         NSLayoutConstraint.activateConstraints(listOf(
-                            leadingAnchor.constraintEqualToAnchor(compactBrandLabel.trailingAnchor, 16.0),
+                            leadingAnchor.constraintEqualToAnchor(compactBrandLabel.trailingAnchor, Spacing.Lg.pt),
                             centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
                             widthAnchor.constraintEqualToConstant(28.0),
                             heightAnchor.constraintEqualToConstant(28.0)
@@ -157,15 +161,15 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                 }
                 val bottomRow = view(configure = {
                     NSLayoutConstraint.activateConstraints(listOf(
-                        topAnchor.constraintEqualToAnchor(topRow.bottomAnchor, 8.0),
-                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 12.0),
-                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -12.0),
+                        topAnchor.constraintEqualToAnchor(topRow.bottomAnchor, Spacing.Sm.pt),
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Md.pt),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Md.pt),
                         heightAnchor.constraintEqualToConstant(32.0),
-                        bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -8.0)
+                        bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -Spacing.Sm.pt)
                     ))
                 }) {
                     nicknameLabel = label {
-                        font = UIFont.systemFontOfSize(14.0)
+                        font = UIFont.systemFontOfSize(FontSize.Body.pt)
                         textColor = StoreColors.WhiteOverlay85
                         NSLayoutConstraint.activateConstraints(listOf(
                             leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
@@ -177,9 +181,9 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                         titleLabel?.font = UIFont.systemFontOfSize(13.0)
                         backgroundColor = StoreColors.WhiteOverlay20
                         layer.cornerRadius = 10.0
-                        contentEdgeInsets = UIEdgeInsetsMake(4.0, 12.0, 4.0, 12.0)
+                        contentEdgeInsets = UIEdgeInsetsMake(Spacing.Xs.pt, Spacing.Md.pt, Spacing.Xs.pt, Spacing.Md.pt)
                         setImage(StoreIcons.shoppingCart(16.0, UIColor.whiteColor), forState = UIControlStateNormal)
-                        imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
+                        imageEdgeInsets = UIEdgeInsetsMake(0.0, -Spacing.Xs.pt, 0.0, Spacing.Xs.pt)
                         addTarget(actions, action = sel_registerName("onCartTapped"), forControlEvents = UIControlEventTouchUpInside)
                         NSLayoutConstraint.activateConstraints(listOf(
                             trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
@@ -219,7 +223,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                     backgroundColor = StoreColors.WhiteOverlay20
                     layer.cornerRadius = 10.0
                     NSLayoutConstraint.activateConstraints(listOf(
-                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 24.0),
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Xl.pt),
                         centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
                         widthAnchor.constraintEqualToConstant(36.0),
                         heightAnchor.constraintEqualToConstant(36.0)
@@ -237,7 +241,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                     font = UIFont.boldSystemFontOfSize(18.0)
                     textColor = UIColor.whiteColor
                     NSLayoutConstraint.activateConstraints(listOf(
-                        leadingAnchor.constraintEqualToAnchor(wideLogo.trailingAnchor, 12.0),
+                        leadingAnchor.constraintEqualToAnchor(wideLogo.trailingAnchor, Spacing.Md.pt),
                         centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                     ))
                 }
@@ -260,7 +264,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
                     alpha = 0.7
                     addTarget(actions, action = sel_registerName("onExitTapped"), forControlEvents = UIControlEventTouchUpInside)
                     NSLayoutConstraint.activateConstraints(listOf(
-                        leadingAnchor.constraintEqualToAnchor(wideBrandLabel.trailingAnchor, 16.0),
+                        leadingAnchor.constraintEqualToAnchor(wideBrandLabel.trailingAnchor, Spacing.Lg.pt),
                         centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
                         widthAnchor.constraintEqualToConstant(32.0),
                         heightAnchor.constraintEqualToConstant(32.0)
@@ -269,15 +273,15 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
 
                 wideCartButton = button("Cart") {
                     setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
-                    titleLabel?.font = UIFont.systemFontOfSize(14.0)
+                    titleLabel?.font = UIFont.systemFontOfSize(FontSize.Body.pt)
                     backgroundColor = StoreColors.WhiteOverlay20
-                    layer.cornerRadius = 12.0
+                    layer.cornerRadius = Radius.Md.pt
                     contentEdgeInsets = UIEdgeInsetsMake(6.0, 14.0, 6.0, 14.0)
                     setImage(StoreIcons.shoppingCart(18.0, UIColor.whiteColor), forState = UIControlStateNormal)
-                    imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
+                    imageEdgeInsets = UIEdgeInsetsMake(0.0, -Spacing.Xs.pt, 0.0, Spacing.Xs.pt)
                     addTarget(actions, action = sel_registerName("onCartTapped"), forControlEvents = UIControlEventTouchUpInside)
                     NSLayoutConstraint.activateConstraints(listOf(
-                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -24.0),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Xl.pt),
                         centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                     ))
                 }
@@ -299,20 +303,20 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
 
                 val greetingPill = view(configure = {
                     backgroundColor = StoreColors.WhiteOverlay15
-                    layer.cornerRadius = 20.0
+                    layer.cornerRadius = Radius.Xl.pt
                     NSLayoutConstraint.activateConstraints(listOf(
-                        trailingAnchor.constraintEqualToAnchor(wideCartButton.leadingAnchor, -16.0),
+                        trailingAnchor.constraintEqualToAnchor(wideCartButton.leadingAnchor, -Spacing.Lg.pt),
                         centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                     ))
                 }) {
                     wideNicknameLabel = label {
-                        font = UIFont.systemFontOfSize(14.0)
+                        font = UIFont.systemFontOfSize(FontSize.Body.pt)
                         textColor = UIColor.whiteColor
                         NSLayoutConstraint.activateConstraints(listOf(
-                            topAnchor.constraintEqualToAnchor(parent().topAnchor, 8.0),
-                            bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -8.0),
-                            leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                            trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0)
+                            topAnchor.constraintEqualToAnchor(parent().topAnchor, Spacing.Sm.pt),
+                            bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -Spacing.Sm.pt),
+                            leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
+                            trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Lg.pt)
                         ))
                     }
                 }
@@ -331,23 +335,23 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
         }) {
             productsTab = button("PRODUCTS") {
                 setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
-                titleLabel?.font = UIFont.boldSystemFontOfSize(14.0)
+                titleLabel?.font = UIFont.boldSystemFontOfSize(FontSize.Body.pt)
                 setImage(StoreIcons.shoppingBag(22.0, StoreColors.Primary), forState = UIControlStateNormal)
                 imageEdgeInsets = UIEdgeInsetsMake(0.0, -6.0, 0.0, 6.0)
                 addTarget(actions, action = sel_registerName("onProductsTab"), forControlEvents = UIControlEventTouchUpInside)
                 NSLayoutConstraint.activateConstraints(listOf(
-                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
+                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
                     centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                 ))
             }
             purchasesTab = button("PURCHASES") {
                 setTitleColor(StoreColors.OnSurfaceVariant, forState = UIControlStateNormal)
-                titleLabel?.font = UIFont.systemFontOfSize(14.0)
+                titleLabel?.font = UIFont.systemFontOfSize(FontSize.Body.pt)
                 setImage(StoreIcons.inventory(22.0, StoreColors.OnSurfaceVariant), forState = UIControlStateNormal)
                 imageEdgeInsets = UIEdgeInsetsMake(0.0, -6.0, 0.0, 6.0)
                 addTarget(actions, action = sel_registerName("onPurchasesTab"), forControlEvents = UIControlEventTouchUpInside)
                 NSLayoutConstraint.activateConstraints(listOf(
-                    leadingAnchor.constraintEqualToAnchor(productsTab.trailingAnchor, 24.0),
+                    leadingAnchor.constraintEqualToAnchor(productsTab.trailingAnchor, Spacing.Xl.pt),
                     centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                 ))
             }
@@ -378,12 +382,12 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
             backgroundColor = StoreColors.Background
             hidden = true
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(headerBar.bottomAnchor, 16.0),
+                topAnchor.constraintEqualToAnchor(headerBar.bottomAnchor, Spacing.Lg.pt),
                 centerXAnchor.constraintEqualToAnchor(root.centerXAnchor),
-                bottomAnchor.constraintEqualToAnchor(root.bottomAnchor, -16.0),
+                bottomAnchor.constraintEqualToAnchor(root.bottomAnchor, -Spacing.Lg.pt),
                 widthAnchor.constraintLessThanOrEqualToConstant(MAX_CONTENT_WIDTH),
-                leadingAnchor.constraintGreaterThanOrEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintLessThanOrEqualToAnchor(root.trailingAnchor, -16.0)
+                leadingAnchor.constraintGreaterThanOrEqualToAnchor(root.leadingAnchor, Spacing.Lg.pt),
+                trailingAnchor.constraintLessThanOrEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt)
             ))
             // Prefer stretching to fill available width (lower priority than max)
             val fillWidth = widthAnchor.constraintEqualToAnchor(root.widthAnchor, constant = -32.0)
@@ -392,7 +396,7 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
         }) {
             wideProductsPanel = view(configure = {
                 backgroundColor = UIColor.whiteColor
-                layer.cornerRadius = 8.0
+                layer.cornerRadius = Radius.Sm.pt
                 clipsToBounds = true
                 NSLayoutConstraint.activateConstraints(listOf(
                     topAnchor.constraintEqualToAnchor(parent().topAnchor),
@@ -403,13 +407,13 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
             })
             widePurchasesPanel = view(configure = {
                 backgroundColor = UIColor.whiteColor
-                layer.cornerRadius = 8.0
+                layer.cornerRadius = Radius.Sm.pt
                 clipsToBounds = true
                 NSLayoutConstraint.activateConstraints(listOf(
                     topAnchor.constraintEqualToAnchor(parent().topAnchor),
                     trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
                     bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor),
-                    leadingAnchor.constraintEqualToAnchor(wideProductsPanel.trailingAnchor, 16.0)
+                    leadingAnchor.constraintEqualToAnchor(wideProductsPanel.trailingAnchor, Spacing.Lg.pt)
                 ))
             })
         }
@@ -435,14 +439,14 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
         // Error label
         errorLabel = label {
             textColor = StoreColors.Error
-            font = UIFont.systemFontOfSize(14.0)
+            font = UIFont.systemFontOfSize(FontSize.Body.pt)
             numberOfLines = 0
             textAlignment = UIK.TextAlignCenter
             hidden = true
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(headerBar.bottomAnchor, 8.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0)
+                topAnchor.constraintEqualToAnchor(headerBar.bottomAnchor, Spacing.Sm.pt),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, Spacing.Lg.pt),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt)
             ))
         }
 
@@ -673,12 +677,12 @@ class HomeViewIos(app: IosNativeRootPresenter, scope: HomeScope) : AbstractViewI
     private fun updateTabAppearance() {
         val prodColor = if (selectedTab == 0) StoreColors.Primary else StoreColors.OnSurfaceVariant
         productsTab.setTitleColor(prodColor, forState = UIControlStateNormal)
-        productsTab.titleLabel?.font = if (selectedTab == 0) UIFont.boldSystemFontOfSize(14.0) else UIFont.systemFontOfSize(14.0)
+        productsTab.titleLabel?.font = if (selectedTab == 0) UIFont.boldSystemFontOfSize(FontSize.Body.pt) else UIFont.systemFontOfSize(FontSize.Body.pt)
         productsTab.setImage(StoreIcons.shoppingBag(22.0, prodColor), forState = UIControlStateNormal)
 
         val purchColor = if (selectedTab == 1) StoreColors.Primary else StoreColors.OnSurfaceVariant
         purchasesTab.setTitleColor(purchColor, forState = UIControlStateNormal)
-        purchasesTab.titleLabel?.font = if (selectedTab == 1) UIFont.boldSystemFontOfSize(14.0) else UIFont.systemFontOfSize(14.0)
+        purchasesTab.titleLabel?.font = if (selectedTab == 1) UIFont.boldSystemFontOfSize(FontSize.Body.pt) else UIFont.systemFontOfSize(FontSize.Body.pt)
         purchasesTab.setImage(StoreIcons.inventory(22.0, purchColor), forState = UIControlStateNormal)
     }
 

@@ -11,7 +11,8 @@ import Typography from '@mui/material/Typography'
 import bridge, { BaseViewClass, BasePanelClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as EndpointUtils from '@root/utils/EndpointUtils'
-import { Colors } from '@root/theme'
+import { Colors, toPx } from '@root/theme'
+import { StoreTokens } from '@root/tokens'
 
 // :: Actions
 
@@ -45,7 +46,9 @@ class ProductPanelClass extends BaseViewClass<ViewProps, ProductsPanelScope> {
             Products
           </Typography>
           {products && (
-            <Box sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: '8px', px: 2, py: 0.75 }}>
+            <Box
+              sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: toPx(StoreTokens.radius.sm), px: 2, py: 0.75 }}
+            >
               <Typography variant="caption" sx={{ color: Colors.OnPrimaryContainer }}>
                 {products.length} {products.length === 1 ? 'item' : 'items'}
               </Typography>
@@ -108,7 +111,7 @@ class CardProdutoClass extends BasePanelClass<CardProdutoProps> {
       <Card
         elevation={0}
         sx={{
-          borderRadius: '8px',
+          borderRadius: toPx(StoreTokens.radius.sm),
           '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.12)' },
         }}
       >
@@ -137,7 +140,7 @@ class CardProdutoClass extends BasePanelClass<CardProdutoProps> {
                 bgcolor: Colors.PriceBackground,
                 color: Colors.PriceColor,
                 fontWeight: 'bold',
-                borderRadius: '8px',
+                borderRadius: toPx(StoreTokens.radius.sm),
               }}
             />
           </CardContent>

@@ -1,55 +1,72 @@
 package br.com.wdc.store.view.remote.react.kotlin.theme
 
+import br.com.wdc.store.design.StoreTokens
+import br.com.wdc.store.design.TokenColors
 import mui.material.styles.ThemeOptions
 import mui.material.styles.createTheme
 
-/** The Store's palette, the same as the other views'. */
+/** The Store's palette, the same as the other views', read from the design tokens (`:store-design`). */
 object StoreColors {
-    const val Primary = "#1B5E7B"
-    const val OnPrimary = "#FFFFFF"
-    const val PrimaryContainer = "#D0E8F2"
-    const val OnPrimaryContainer = "#001F2A"
+    val Primary = TokenColors.css(StoreTokens.Color.Primary)
+    val OnPrimary = TokenColors.css(StoreTokens.Color.OnPrimary)
+    val PrimaryContainer = TokenColors.css(StoreTokens.Color.PrimaryContainer)
+    val OnPrimaryContainer = TokenColors.css(StoreTokens.Color.OnPrimaryContainer)
 
-    const val Secondary = "#4A6572"
-    const val OnSecondary = "#FFFFFF"
-    const val SecondaryContainer = "#CDE5F0"
+    val Secondary = TokenColors.css(StoreTokens.Color.Secondary)
+    val OnSecondary = TokenColors.css(StoreTokens.Color.OnSecondary)
+    val SecondaryContainer = TokenColors.css(StoreTokens.Color.SecondaryContainer)
 
-    const val Background = "#F5F7FA"
-    const val Surface = "#FFFFFF"
-    const val SurfaceVariant = "#E7EBF0"
-    const val OnSurfaceVariant = "#42474E"
+    val Background = TokenColors.css(StoreTokens.Color.Background)
+    val Surface = TokenColors.css(StoreTokens.Color.Surface)
+    val SurfaceVariant = TokenColors.css(StoreTokens.Color.SurfaceVariant)
+    val OnSurfaceVariant = TokenColors.css(StoreTokens.Color.OnSurfaceVariant)
 
-    const val Error = "#BA1A1A"
+    val Error = TokenColors.css(StoreTokens.Color.Error)
 
-    const val PriceColor = "#2E7D32"
-    const val SuccessColor = "#2E7D32"
-    const val SuccessContainer = "#B9F6CA"
+    val PriceColor = TokenColors.css(StoreTokens.Color.Price)
+    val SuccessColor = TokenColors.css(StoreTokens.Color.Success)
+    val SuccessContainer = TokenColors.css(StoreTokens.Color.SuccessContainer)
 
-    // Derived colors with alpha
-    const val SurfaceVariant40 = "${SurfaceVariant}66"
-    const val SurfaceVariant50 = "${SurfaceVariant}80"
-    const val PriceBackground = "${PriceColor}1A"
+    // Colors with alpha
+    val SurfaceVariant40 = TokenColors.css(StoreTokens.Color.SurfaceVariant40)
+    val SurfaceVariant50 = TokenColors.css(StoreTokens.Color.SurfaceVariant50)
+    val PriceBackground = TokenColors.css(StoreTokens.Color.PriceBackground)
 
     // White overlays, for the header's dark background
-    const val WhiteOverlay10 = "rgba(255,255,255,0.10)"
-    const val WhiteOverlay15 = "rgba(255,255,255,0.15)"
-    const val WhiteOverlay20 = "rgba(255,255,255,0.2)"
-    const val WhiteOverlay85 = "rgba(255,255,255,0.85)"
+    val WhiteOverlay10 = TokenColors.css(StoreTokens.Color.WhiteOverlay10)
+    val WhiteOverlay15 = TokenColors.css(StoreTokens.Color.WhiteOverlay15)
+    val WhiteOverlay20 = TokenColors.css(StoreTokens.Color.WhiteOverlay20)
+    val WhiteOverlay85 = TokenColors.css(StoreTokens.Color.WhiteOverlay85)
 }
 
 /** Below this width the home shows its panels in tabs. */
 const val COMPACT_BREAKPOINT = 480
 
+/** A plain JavaScript object with the given properties (`js("...")` only takes constant text). */
+internal fun jsObject(vararg properties: Pair<String, Any?>): dynamic {
+    val result: dynamic = js("({})")
+    for ((name, value) in properties) result[name] = value
+    return result
+}
+
 val StoreTheme = run {
     val options: dynamic = js("({})")
-    options.palette = js(
-        "({primary:{main:'#1B5E7B',contrastText:'#FFFFFF'},secondary:{main:'#4A6572',contrastText:'#FFFFFF'}," +
-            "error:{main:'#BA1A1A'},background:{'default':'#F5F7FA',paper:'#FFFFFF'}})"
+    options.palette = jsObject(
+        "primary" to jsObject("main" to StoreColors.Primary, "contrastText" to StoreColors.OnPrimary),
+        "secondary" to jsObject("main" to StoreColors.Secondary, "contrastText" to StoreColors.OnSecondary),
+        "error" to jsObject("main" to StoreColors.Error),
+        "background" to jsObject("default" to StoreColors.Background, "paper" to StoreColors.Surface),
     )
-    options.typography = js("({fontFamily:\"'Roboto','Helvetica','Arial',sans-serif\"})")
-    options.components = js(
-        "({MuiButton:{styleOverrides:{root:{textTransform:'none',borderRadius:12}}}," +
-            "MuiCard:{styleOverrides:{root:{borderRadius:8}}}})"
+    options.typography = jsObject("fontFamily" to TokenColors.cssFamily(StoreTokens.FontFamily.Base))
+    options.components = jsObject(
+        "MuiButton" to jsObject(
+            "styleOverrides" to jsObject(
+                "root" to jsObject("textTransform" to "none", "borderRadius" to StoreTokens.Radius.Md),
+            ),
+        ),
+        "MuiCard" to jsObject(
+            "styleOverrides" to jsObject("root" to jsObject("borderRadius" to StoreTokens.Radius.Sm)),
+        ),
     )
     createTheme(options.unsafeCast<ThemeOptions>())
 }

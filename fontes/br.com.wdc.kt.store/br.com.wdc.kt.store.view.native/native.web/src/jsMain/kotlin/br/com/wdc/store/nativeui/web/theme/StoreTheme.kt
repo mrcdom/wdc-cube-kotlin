@@ -1,74 +1,101 @@
 package br.com.wdc.store.nativeui.web.theme
 
+import br.com.wdc.store.design.StoreTokens
+import br.com.wdc.store.design.TokenColors
 import mui.material.styles.ThemeOptions
 import mui.material.styles.createTheme
 
-// Color palette matching compose.web StoreTheme
+/** The Store's palette, read from the design tokens (`:store-design`) as CSS colors. */
 object StoreColors {
-    const val Primary = "#1B5E7B"
-    const val OnPrimary = "#FFFFFF"
-    const val PrimaryContainer = "#D0E8F2"
-    const val OnPrimaryContainer = "#001F2A"
+    val Primary = TokenColors.css(StoreTokens.Color.Primary)
+    val OnPrimary = TokenColors.css(StoreTokens.Color.OnPrimary)
+    val PrimaryContainer = TokenColors.css(StoreTokens.Color.PrimaryContainer)
+    val OnPrimaryContainer = TokenColors.css(StoreTokens.Color.OnPrimaryContainer)
 
-    const val Secondary = "#4A6572"
-    const val OnSecondary = "#FFFFFF"
-    const val SecondaryContainer = "#CDE5F0"
+    val Secondary = TokenColors.css(StoreTokens.Color.Secondary)
+    val OnSecondary = TokenColors.css(StoreTokens.Color.OnSecondary)
+    val SecondaryContainer = TokenColors.css(StoreTokens.Color.SecondaryContainer)
 
-    const val Background = "#F5F7FA"
-    const val Surface = "#FFFFFF"
-    const val OnSurface = "#1A1C1E"
-    const val SurfaceVariant = "#E7EBF0"
-    const val OnSurfaceVariant = "#42474E"
+    val Background = TokenColors.css(StoreTokens.Color.Background)
+    val Surface = TokenColors.css(StoreTokens.Color.Surface)
+    val OnSurface = TokenColors.css(StoreTokens.Color.OnSurface)
+    val SurfaceVariant = TokenColors.css(StoreTokens.Color.SurfaceVariant)
+    val OnSurfaceVariant = TokenColors.css(StoreTokens.Color.OnSurfaceVariant)
 
-    const val Error = "#BA1A1A"
-    const val ErrorContainer = "#FFDAD6"
-    const val OnErrorContainer = "#410002"
+    val Error = TokenColors.css(StoreTokens.Color.Error)
+    val ErrorContainer = TokenColors.css(StoreTokens.Color.ErrorContainer)
+    val OnErrorContainer = TokenColors.css(StoreTokens.Color.OnErrorContainer)
 
-    const val Outline = "#72787E"
-    const val OutlineVariant = "#C2C7CE"
+    val Outline = TokenColors.css(StoreTokens.Color.Outline)
+    val OutlineVariant = TokenColors.css(StoreTokens.Color.OutlineVariant)
 
-    const val PriceColor = "#2E7D32"
-    const val SuccessColor = "#2E7D32"
-    const val SuccessContainer = "#B9F6CA"
+    val PriceColor = TokenColors.css(StoreTokens.Color.Price)
+    val SuccessColor = TokenColors.css(StoreTokens.Color.Success)
+    val SuccessContainer = TokenColors.css(StoreTokens.Color.SuccessContainer)
 
-    // Derived colors with alpha (hex suffixes)
-    const val SurfaceVariant40 = "${SurfaceVariant}66"   // 40% opacity
-    const val SurfaceVariant50 = "${SurfaceVariant}80"   // 50% opacity
-    const val PriceBackground = "${PriceColor}1A"        // 10% opacity
+    // Colors with alpha
+    val SurfaceVariant40 = TokenColors.css(StoreTokens.Color.SurfaceVariant40)
+    val SurfaceVariant50 = TokenColors.css(StoreTokens.Color.SurfaceVariant50)
+    val PriceBackground = TokenColors.css(StoreTokens.Color.PriceBackground)
 
     // Semi-transparent white overlays (for dark backgrounds)
-    const val WhiteOverlay10 = "rgba(255,255,255,0.10)"
-    const val WhiteOverlay15 = "rgba(255,255,255,0.15)"
-    const val WhiteOverlay20 = "rgba(255,255,255,0.2)"
-    const val WhiteOverlay50 = "rgba(255,255,255,0.5)"
-    const val WhiteOverlay85 = "rgba(255,255,255,0.85)"
+    val WhiteOverlay10 = TokenColors.css(StoreTokens.Color.WhiteOverlay10)
+    val WhiteOverlay15 = TokenColors.css(StoreTokens.Color.WhiteOverlay15)
+    val WhiteOverlay20 = TokenColors.css(StoreTokens.Color.WhiteOverlay20)
+    val WhiteOverlay50 = TokenColors.css(StoreTokens.Color.WhiteOverlay50)
+    val WhiteOverlay85 = TokenColors.css(StoreTokens.Color.WhiteOverlay85)
+}
+
+/** A plain JavaScript object with the given properties (`js("...")` only takes constant text). */
+internal fun jsObject(vararg properties: Pair<String, Any?>): dynamic {
+    val result: dynamic = js("({})")
+    for ((name, value) in properties) result[name] = value
+    return result
 }
 
 /**
  * Reusable inline style objects for MUI Typography overrides via asDynamic().style.
- * These use js("(...)") because it is the only reliable way to override MUI font-weight.
+ * Plain style objects, because that is the only reliable way to override MUI font-weight.
  */
 object StoreStyles {
     // Font weight overrides for Typography (via asDynamic().style)
-    val fontMedium = js("({fontWeight: '500'})")
-    val fontNormal = js("({fontWeight: 'normal'})")
+    val fontMedium = jsObject("fontWeight" to "${StoreTokens.FontWeight.Medium}")
+    val fontNormal = jsObject("fontWeight" to "normal")
 
-    // Title styles (h5 with fontWeight 500, fontSize 28px) — used in CartView, ReceiptView
-    val titleH5 = js("({fontWeight: '500', fontSize: '28px'})")
+    // Title styles (h5, medium weight, display size) — used in CartView, ReceiptView
+    val titleH5 = jsObject(
+        "fontWeight" to "${StoreTokens.FontWeight.Medium}",
+        "fontSize" to "${StoreTokens.FontSize.Display}px",
+    )
 
-    // Subtitle styles (body2 with fontWeight 500, fontSize 14px)
-    val subtitleBody2 = js("({fontWeight: '500', fontSize: '14px'})")
+    // Subtitle styles (body2, medium weight, body size)
+    val subtitleBody2 = jsObject(
+        "fontWeight" to "${StoreTokens.FontWeight.Medium}",
+        "fontSize" to "${StoreTokens.FontSize.Body}px",
+    )
 
-    // Success text (fontWeight 500 + SuccessColor)
-    val successText = js("({fontWeight: '500', color: '${StoreColors.SuccessColor}'})")
+    // Success text (medium weight + SuccessColor)
+    val successText = jsObject(
+        "fontWeight" to "${StoreTokens.FontWeight.Medium}",
+        "color" to StoreColors.SuccessColor,
+    )
 
-    // Small action button text (normal weight, 12px, no uppercase)
-    val smallAction = js("({fontWeight: 'normal', fontSize: '12px', textTransform: 'none'})")
+    // Small action button text (normal weight, caption size, no uppercase)
+    val smallAction = jsObject(
+        "fontWeight" to "normal",
+        "fontSize" to "${StoreTokens.FontSize.Caption}px",
+        "textTransform" to "none",
+    )
 }
 
 val StoreTheme = run {
     val opts = js("({})").unsafeCast<ThemeOptions>()
-    opts.asDynamic().palette = js("({primary:{main:'${StoreColors.Primary}',contrastText:'${StoreColors.OnPrimary}'},secondary:{main:'${StoreColors.Secondary}',contrastText:'${StoreColors.OnSecondary}'},error:{main:'${StoreColors.Error}'},background:{'default':'${StoreColors.Background}',paper:'${StoreColors.Surface}'}})")
-    opts.asDynamic().typography = js("({fontFamily:\"'Roboto','Helvetica','Arial',sans-serif\"})")
+    opts.asDynamic().palette = jsObject(
+        "primary" to jsObject("main" to StoreColors.Primary, "contrastText" to StoreColors.OnPrimary),
+        "secondary" to jsObject("main" to StoreColors.Secondary, "contrastText" to StoreColors.OnSecondary),
+        "error" to jsObject("main" to StoreColors.Error),
+        "background" to jsObject("default" to StoreColors.Background, "paper" to StoreColors.Surface),
+    )
+    opts.asDynamic().typography = jsObject("fontFamily" to TokenColors.cssFamily(StoreTokens.FontFamily.Base))
     createTheme(opts)
 }

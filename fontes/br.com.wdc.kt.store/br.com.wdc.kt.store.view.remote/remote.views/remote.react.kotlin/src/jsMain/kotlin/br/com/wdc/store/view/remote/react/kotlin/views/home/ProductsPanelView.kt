@@ -1,8 +1,10 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
+import br.com.wdc.store.view.remote.react.kotlin.theme.jsObject
 import br.com.wdc.store.view.remote.react.kotlin.util.formatPrice
 import br.com.wdc.store.view.remote.react.kotlin.util.productImagePath
 import br.com.wdc.store.view.remote.react.kotlin.views.useBridge
@@ -36,7 +38,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
     val products = if (scope.has("products")) scope.objects("products") else null
 
     Box {
-        sx { padding = Padding(12.px, 6.px, 12.px, 12.px) }
+        sx { padding = Padding(StoreTokens.Spacing.Md.px, 6.px, StoreTokens.Spacing.Md.px, StoreTokens.Spacing.Md.px) }
 
         // Section header
         Stack {
@@ -44,7 +46,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
             sx {
                 justifyContent = JustifyContent.spaceBetween
                 alignItems = AlignItems.center
-                marginBottom = 12.px
+                marginBottom = StoreTokens.Spacing.Md.px
             }
             Typography {
                 variant = TypographyVariant.h6
@@ -55,8 +57,8 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                 Box {
                     sx {
                         backgroundColor = StoreColors.SecondaryContainer.unsafeCast<BackgroundColor>()
-                        borderRadius = 8.px
-                        padding = Padding(6.px, 16.px)
+                        borderRadius = StoreTokens.Radius.Sm.px
+                        padding = Padding(6.px, StoreTokens.Spacing.Lg.px)
                     }
                     Typography {
                         variant = TypographyVariant.caption
@@ -67,7 +69,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
             }
         }
 
-        Divider { sx { marginBottom = 12.px } }
+        Divider { sx { marginBottom = StoreTokens.Spacing.Md.px } }
 
         when {
             products == null -> Box {
@@ -81,7 +83,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                 CircularProgress()
                 Typography {
                     variant = TypographyVariant.body2
-                    sx { marginTop = 12.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
+                    sx { marginTop = StoreTokens.Spacing.Md.px; color = StoreColors.OnSurfaceVariant.unsafeCast<Color>() }
                     +"Loading products..."
                 }
             }
@@ -99,7 +101,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                 sx {
                     display = Display.grid
                     gridTemplateColumns = "repeat(auto-fill, minmax(160px, 1fr))".unsafeCast<GridTemplateColumns>()
-                    gap = 12.px
+                    gap = StoreTokens.Spacing.Md.px
                 }
                 for (product in products) {
                     val id = product["id"]
@@ -108,7 +110,7 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                         key = "$id"
                         elevation = 0
                         sx {
-                            borderRadius = 8.px
+                            borderRadius = StoreTokens.Radius.Sm.px
                             asDynamic()["&:hover"] = js("({boxShadow: '0 2px 8px rgba(0,0,0,0.12)'})")
                         }
                         CardActionArea {
@@ -119,8 +121,11 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                             img {
                                 src = productImagePath(id)
                                 alt = name
-                                style = js(
-                                    "({width: '100%', height: '140px', objectFit: 'contain', backgroundColor: '#E7EBF0'})"
+                                style = jsObject(
+                                    "width" to "100%",
+                                    "height" to "140px",
+                                    "objectFit" to "contain",
+                                    "backgroundColor" to StoreColors.SurfaceVariant,
                                 ).unsafeCast<react.CSSProperties>()
                             }
                             CardContent {
@@ -133,11 +138,11 @@ val ProductsPanelView = FC<RemoteViewProps> { props ->
                                     label = ReactNode("\$${formatPrice(product.double("price"))}")
                                     size = Size.small
                                     sx {
-                                        marginTop = 12.px
+                                        marginTop = StoreTokens.Spacing.Md.px
                                         backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
                                         color = StoreColors.PriceColor.unsafeCast<Color>()
                                         fontWeight = FontWeight.bold
-                                        borderRadius = 8.px
+                                        borderRadius = StoreTokens.Radius.Sm.px
                                     }
                                 }
                             }
