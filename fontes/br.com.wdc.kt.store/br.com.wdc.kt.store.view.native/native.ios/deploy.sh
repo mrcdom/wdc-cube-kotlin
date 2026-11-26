@@ -294,7 +294,9 @@ print('Unknown')
 
     # Launch
     info "Launching app..."
-    xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID"
+    # the simulator passes the app only the variables prefixed with SIMCTL_CHILD_ (launched from its icon, the app
+    # uses its default address)
+    SIMCTL_CHILD_BACKEND_URL="$BACKEND_URL" xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID"
 
     ok "App deployed and launched on simulator"
 }
