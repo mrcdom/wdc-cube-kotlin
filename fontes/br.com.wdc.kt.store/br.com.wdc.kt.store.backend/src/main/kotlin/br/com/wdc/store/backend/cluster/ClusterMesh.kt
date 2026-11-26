@@ -216,10 +216,11 @@ class ClusterMesh(
             if (!proven(message["proof"], "client", connection.challenge, node)) return refuse(ctx, "wrong proof from $node")
             val theirs = message["challenge"] as? String ?: return refuse(ctx, "no challenge from $node")
             connection.peer = node
+            // while it could not reach this instance, it published nothing here: drop what may be stale before
+            // answering, so that once the other end is ready, this one has already done it
+            missedHandlers.forEach { runHandler("missed") { it() } }
             ctx.send(GSON.toJson(mapOf("proof" to prove("server", theirs, nodeId))))
             LOG.info("Peer {} connected", node)
-            // while it could not reach this instance, it published nothing here
-            missedHandlers.forEach { runHandler("missed") { it() } }
             return
         }
 
