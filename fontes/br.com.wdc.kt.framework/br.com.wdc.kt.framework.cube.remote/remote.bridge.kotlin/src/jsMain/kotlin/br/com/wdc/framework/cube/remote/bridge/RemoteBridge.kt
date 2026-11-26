@@ -173,11 +173,17 @@ class RemoteBridge {
         channel.submit(form, vsid, eventId, silent)
     }
 
+    /**
+     * What the user is told when the host does not speak this client's version: [OUTDATED_MESSAGE] (English) unless
+     * the application gives it in the user's language.
+     */
+    var outdatedMessage: String = OUTDATED_MESSAGE
+
     /** The host does not speak this client's version: stop, and tell the user through the browser's alert. */
     internal fun markOutdated() {
         outdated = true
         val alert: dynamic = js("({ id: -1 })")
-        alert.args = arrayOf(OUTDATED_MESSAGE)
+        alert.args = arrayOf(outdatedMessage)
         viewMap[BROWSER_VSID]?.set("alertMessage", alert)
     }
 

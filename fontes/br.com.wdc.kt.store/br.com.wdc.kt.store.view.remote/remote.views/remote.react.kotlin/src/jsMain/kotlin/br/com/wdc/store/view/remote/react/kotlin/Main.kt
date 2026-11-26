@@ -3,7 +3,9 @@ package br.com.wdc.store.view.remote.react.kotlin
 import br.com.wdc.framework.cube.remote.bridge.RemoteBridge
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViews
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewsContext
+import br.com.wdc.store.i18n.browserOutdated
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreTheme
+import br.com.wdc.store.view.remote.react.kotlin.util.messages
 import br.com.wdc.store.view.remote.react.kotlin.views.registerStoreViews
 import mui.material.CssBaseline
 import mui.material.styles.ThemeProvider
@@ -19,7 +21,8 @@ import web.dom.document
  * them, starting from the browser view, and sends back what the user typed and did.
  */
 fun main() {
-    val bridge = RemoteBridge()
+    // the bridge's own alert (a page older than the host) in the user's language too
+    val bridge = RemoteBridge().apply { outdatedMessage = messages.browserOutdated() }
     val views = RemoteViews(bridge).registerStoreViews()
 
     val container = document.getElementById(ElementId("root")) ?: return

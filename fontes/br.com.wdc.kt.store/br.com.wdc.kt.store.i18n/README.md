@@ -33,8 +33,8 @@ The generated files are committed. `MessagesCatalogTest` (in `:store-scripts`) f
 
 The presentation does not know the user's language. A presenter reports a `Message` (a key and its arguments: `br.com.wdc.store.presentation.i18n.Message`), and each view translates it with its own `Messages`. The language is the platform's: the browser's (`navigator.language`) on the web, including the remote clients, the device's on iOS and Android, and Compose's `Locale.current`. On the remote views the message travels as `{"key": …, "args": {…}}` and is translated in the browser.
 
-Not in the catalog:
-- **Texts from the framework.** The remote clients' shell alerts for an unexpected error or a request that could not be read, and the bridges' outdated-protocol alert, are written in the published framework, so they stay in English.
-- **Causes of unexpected errors.** An exception's message comes from the code or the server, so it is shown as it is, inside `error.unexpectedWithCause`.
+On the remote views, an unexpected error on the host reaches the browser's alert as a message too: code `-3` (`RemoteRootPresenter.ALERT_MESSAGE`), with `args` = the key, then each argument's name and value. The bridges' own alert, for a page older than the host, takes its text from the application (`RemoteBridge.outdatedMessage`, `bridge.setOutdatedMessage`), from `browser.outdated`.
 
-The decision is in [ADR 0021](../../../docs/adr/0021-ui-texts-in-one-catalog.md).
+Not in the catalog: **the causes of unexpected errors.** An exception's message comes from the code or the server, so it is shown as it is, inside `error.unexpectedWithCause`.
+
+The decisions are in [ADR 0021](../../../docs/adr/0021-ui-texts-in-one-catalog.md) and [ADR 0022](../../../docs/adr/0022-remote-alerts-in-the-users-language.md).

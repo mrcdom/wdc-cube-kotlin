@@ -7,6 +7,7 @@ import bridge from 'wdc-cube-remote-bridge-react'
 
 import { Colors, FontFamily } from './theme'
 import { StoreTokens } from './tokens'
+import { messages } from './i18n'
 
 import BrowserView from './views/BrowserView'
 import RootView from './views/RootView'
@@ -17,6 +18,9 @@ import ReceiptView from './views/ReceiptView'
 import ProductView from './views/ProductView'
 import ProductsPanel from './views/home/ProductsPanel'
 import PurchasesPanel from './views/home/PurchasesPanel'
+
+// the bridge's own alert (a page older than the host) in the user's language too
+bridge.setOutdatedMessage(messages.text('browser.outdated'))
 
 bridge.registerComponents(
   BrowserView,

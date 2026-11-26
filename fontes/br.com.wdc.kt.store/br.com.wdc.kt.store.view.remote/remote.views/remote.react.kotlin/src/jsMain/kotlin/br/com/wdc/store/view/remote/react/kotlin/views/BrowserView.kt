@@ -108,6 +108,11 @@ private val AppAlert = FC<AppAlertProps> { props ->
             message = args.getOrNull(0) ?: ""
             detail = args.getOrNull(1)
         }
+        -3 -> {
+            // a message of the catalog: the key, then each argument's name and value
+            val named = args.drop(1).chunked(2).filter { it.size == 2 }.associate { (name, value) -> name to value }
+            message = messages.text(args.getOrNull(0) ?: "browser.unexpectedError", named)
+        }
         -2 -> {
             message = messages.browserUriNotReachable(args.getOrNull(0))
             detail = args.getOrNull(1)
