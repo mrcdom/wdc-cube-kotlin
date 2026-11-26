@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.store.nativeui.ios.toolkit.ViewUtils
@@ -49,9 +53,9 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
         // Section header
         val headerContainer = view(configure = {
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(root.topAnchor, 12.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                topAnchor.constraintEqualToAnchor(root.topAnchor, Spacing.Md.pt),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, Spacing.Lg.pt),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt),
                 heightAnchor.constraintEqualToConstant(28.0)
             ))
         }) {
@@ -67,7 +71,7 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
             // Chip background
             view(configure = {
                 backgroundColor = StoreColors.SecondaryContainer
-                layer.cornerRadius = 8.0
+                layer.cornerRadius = Radius.Sm.pt
                 clipsToBounds = true
                 NSLayoutConstraint.activateConstraints(listOf(
                     trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
@@ -76,12 +80,12 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
                 ))
             }) {
                 headerBadge = label {
-                    font = UIFont.systemFontOfSize(12.0)
+                    font = UIFont.systemFontOfSize(FontSize.Caption.pt)
                     textColor = StoreColors.OnPrimaryContainer
                     textAlignment = UIK.TextAlignCenter
                     NSLayoutConstraint.activateConstraints(listOf(
-                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Lg.pt),
                         centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
                     ))
                 }
@@ -92,9 +96,9 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
         val headerSeparator = view(configure = {
             backgroundColor = StoreColors.SurfaceVariant
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(headerContainer.bottomAnchor, 8.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                topAnchor.constraintEqualToAnchor(headerContainer.bottomAnchor, Spacing.Sm.pt),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, Spacing.Lg.pt),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt),
                 heightAnchor.constraintEqualToConstant(1.0)
             ))
         })
@@ -112,12 +116,12 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
             prevButton = button("◀") {
                 setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
                 setTitleColor(StoreColors.OnSurfaceVariant, forState = UIControlStateDisabled)
-                titleLabel?.font = UIFont.systemFontOfSize(16.0)
+                titleLabel?.font = UIFont.systemFontOfSize(FontSize.BodyLarge.pt)
                 addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onPrev")))
             }
 
             pageLabel = label {
-                font = UIFont.systemFontOfSize(14.0)
+                font = UIFont.systemFontOfSize(FontSize.Body.pt)
                 textColor = StoreColors.OnSurfaceVariant
                 textAlignment = UIK.TextAlignCenter
             }
@@ -126,15 +130,15 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
             nextButton = button("▶") {
                 setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
                 setTitleColor(StoreColors.OnSurfaceVariant, forState = UIControlStateDisabled)
-                titleLabel?.font = UIFont.systemFontOfSize(16.0)
+                titleLabel?.font = UIFont.systemFontOfSize(FontSize.BodyLarge.pt)
                 addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onNext")))
             }
 
             // Layout: prev - 12pt - pageLabel - 12pt - next, centered
             NSLayoutConstraint.activateConstraints(listOf(
-                prevButton.trailingAnchor.constraintEqualToAnchor(pageLabel.leadingAnchor, -12.0),
+                prevButton.trailingAnchor.constraintEqualToAnchor(pageLabel.leadingAnchor, -Spacing.Md.pt),
                 prevButton.centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
-                nextButton.leadingAnchor.constraintEqualToAnchor(pageLabel.trailingAnchor, 12.0),
+                nextButton.leadingAnchor.constraintEqualToAnchor(pageLabel.trailingAnchor, Spacing.Md.pt),
                 nextButton.centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor)
             ))
         }
@@ -142,7 +146,7 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
         scrollView = scrollView(configure = {
             showsVerticalScrollIndicator = true
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(headerSeparator.bottomAnchor, 8.0),
+                topAnchor.constraintEqualToAnchor(headerSeparator.bottomAnchor, Spacing.Sm.pt),
                 leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
                 trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
                 bottomAnchor.constraintEqualToAnchor(paginationContainer.topAnchor)
@@ -150,17 +154,17 @@ class PurchasesPanelViewIos(app: IosNativeRootPresenter, scope: PurchasesPanelSc
         }) {
             stackView = vStack(spacing = 10.0) {}
             NSLayoutConstraint.activateConstraints(listOf(
-                stackView.topAnchor.constraintEqualToAnchor(parent().topAnchor, 8.0),
-                stackView.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                stackView.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
-                stackView.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -8.0),
+                stackView.topAnchor.constraintEqualToAnchor(parent().topAnchor, Spacing.Sm.pt),
+                stackView.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
+                stackView.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Lg.pt),
+                stackView.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -Spacing.Sm.pt),
                 stackView.widthAnchor.constraintEqualToAnchor(parent().widthAnchor, constant = -32.0)
             ))
         }
 
         emptyLabel = label {
             text = "No purchases yet"
-            font = UIFont.systemFontOfSize(16.0)
+            font = UIFont.systemFontOfSize(FontSize.BodyLarge.pt)
             textColor = StoreColors.OnSurfaceVariant
             textAlignment = UIK.TextAlignCenter
             hidden = true
@@ -283,15 +287,15 @@ private class PurchaseCardView(app: IosNativeRootPresenter, scope: PurchasesPane
     override fun createView(): UIView = UIKitDom.build {
         val card = parent()
         card.backgroundColor = StoreColors.SurfaceVariant50
-        card.layer.cornerRadius = 8.0
+        card.layer.cornerRadius = Radius.Sm.pt
         card.userInteractionEnabled = true
 
-        vStack(spacing = 4.0, configure = {
+        vStack(spacing = Spacing.Xs.pt, configure = {
             layoutMarginsRelativeArrangement = true
-            layoutMargins = UIEdgeInsetsMake(12.0, 12.0, 12.0, 12.0)
+            layoutMargins = UIEdgeInsetsMake(Spacing.Md.pt, Spacing.Md.pt, Spacing.Md.pt, Spacing.Md.pt)
         }) {
             dateLabel = label {
-                font = UIFont.systemFontOfSize(12.0)
+                font = UIFont.systemFontOfSize(FontSize.Caption.pt)
                 textColor = StoreColors.OnSurfaceVariant
             }
             totalLabel = label {

@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.RenderSlot
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
@@ -81,7 +82,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
             if (isCompact) {
                 // Compact header: two rows
                 Box {
-                    sx { padding = Padding(10.px, 12.px) }
+                    sx { padding = Padding(10.px, StoreTokens.Spacing.Md.px) }
 
                     // Top row: logo + "WDC Store" + logout icon (all left)
                     Box {
@@ -97,8 +98,8 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                                 width = 32.px
                                 height = 32.px
                                 backgroundColor = StoreColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
-                                borderRadius = 8.px
-                                marginRight = 8.px
+                                borderRadius = StoreTokens.Radius.Sm.px
+                                marginRight = StoreTokens.Spacing.Sm.px
                             }
                             LocalMall { sx { fontSize = 20.px; color = NamedColor.white.unsafeCast<Color>() } }
                         }
@@ -131,7 +132,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                             sx {
                                 width = 28.px
                                 height = 28.px
-                                marginLeft = 16.px
+                                marginLeft = StoreTokens.Spacing.Lg.px
                                 backgroundColor = StoreColors.WhiteOverlay10.unsafeCast<BackgroundColor>()
                             }
                             Logout { sx { fontSize = 16.px; color = NamedColor.white.unsafeCast<Color>(); opacity = number(0.7) } }
@@ -168,7 +169,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                                     backgroundColor = StoreColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
                                     borderRadius = 10.px
                                     textTransform = None.none
-                                    padding = Padding(4.px, 12.px)
+                                    padding = Padding(StoreTokens.Spacing.Xs.px, StoreTokens.Spacing.Md.px)
                                     fontSize = 13.px
                                 }
                                 ShoppingCart { sx { marginRight = 6.px; fontSize = 16.px } }
@@ -181,7 +182,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                 // Desktop header: single row
                 Toolbar {
                     sx {
-                        padding = Padding(12.px, 24.px)
+                        padding = Padding(StoreTokens.Spacing.Md.px, StoreTokens.Spacing.Xl.px)
                         minHeight = important(Auto.auto)
                     }
 
@@ -239,9 +240,9 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                     Box {
                         sx {
                             backgroundColor = StoreColors.WhiteOverlay15.unsafeCast<BackgroundColor>()
-                            borderRadius = 20.px
-                            padding = Padding(4.px, 12.px)
-                            marginRight = 16.px
+                            borderRadius = StoreTokens.Radius.Xl.px
+                            padding = Padding(StoreTokens.Spacing.Xs.px, StoreTokens.Spacing.Md.px)
+                            marginRight = StoreTokens.Spacing.Lg.px
                         }
                         Typography {
                             variant = TypographyVariant.body2
@@ -264,7 +265,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                                 backgroundColor = StoreColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
                                 borderRadius = 10.px
                                 textTransform = None.none
-                                padding = Padding(5.px, 12.px)
+                                padding = Padding(5.px, StoreTokens.Spacing.Md.px)
                             }
                             ShoppingCart { sx { marginRight = 6.px; fontSize = 16.px } }
                             +"Cart"
@@ -279,7 +280,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
         if (!errorMessage.isNullOrBlank()) {
             Alert {
                 severity = "error"
-                sx { margin = Margin(8.px, 16.px) }
+                sx { margin = Margin(StoreTokens.Spacing.Sm.px, StoreTokens.Spacing.Lg.px) }
                 +errorMessage
             }
         }
@@ -309,7 +310,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
             Box {
                 sx {
                     flex = Flex(number(1.0), number(1.0), 0.px)
-                    padding = 8.px
+                    padding = StoreTokens.Spacing.Sm.px
                     overflow = Overflow.hidden
                     display = Display.flex
                     flexDirection = FlexDirection.column
@@ -319,7 +320,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                     value = selectedTab
                     onChange = onTabChange
                     sx {
-                        marginBottom = 4.px
+                        marginBottom = StoreTokens.Spacing.Xs.px
                         minHeight = 36.px
                     }
 
@@ -329,8 +330,8 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                         iconPosition = mui.material.IconPosition.start
                         sx {
                             minHeight = 36.px
-                            paddingTop = 4.px
-                            paddingBottom = 4.px
+                            paddingTop = StoreTokens.Spacing.Xs.px
+                            paddingBottom = StoreTokens.Spacing.Xs.px
                             fontSize = 13.px
                         }
                     }
@@ -340,8 +341,8 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                         iconPosition = mui.material.IconPosition.start
                         sx {
                             minHeight = 36.px
-                            paddingTop = 4.px
-                            paddingBottom = 4.px
+                            paddingTop = StoreTokens.Spacing.Xs.px
+                            paddingBottom = StoreTokens.Spacing.Xs.px
                             fontSize = 13.px
                         }
                     }
@@ -349,7 +350,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
 
                 Card {
                     sx {
-                        borderRadius = 8.px
+                        borderRadius = StoreTokens.Radius.Sm.px
                         flex = Flex(number(1.0), number(1.0), 0.px)
                         if (selectedTab == 0) {
                             overflowY = Overflow.scroll
@@ -377,8 +378,8 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                     display = Display.flex
                     flexDirection = FlexDirection.row
                     flex = Flex(number(1.0), number(1.0), 0.px)
-                    padding = 16.px
-                    gap = 16.px
+                    padding = StoreTokens.Spacing.Lg.px
+                    gap = StoreTokens.Spacing.Lg.px
                     overflow = Overflow.hidden
                     maxWidth = 1200.px
                     marginLeft = Auto.auto
@@ -390,7 +391,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                 Card {
                     sx {
                         flex = Flex(number(3.0), number(1.0), 0.px)
-                        borderRadius = 8.px
+                        borderRadius = StoreTokens.Radius.Sm.px
                         overflowY = Overflow.scroll
                         overflowX = Overflow.hidden
                     }
@@ -403,7 +404,7 @@ val HomeView = FC<ScopeProps<HomeScope>> { props ->
                 Card {
                     sx {
                         flex = Flex(number(2.0), number(1.0), 0.px)
-                        borderRadius = 8.px
+                        borderRadius = StoreTokens.Radius.Sm.px
                         overflow = Overflow.hidden
                     }
                     elevation = 0

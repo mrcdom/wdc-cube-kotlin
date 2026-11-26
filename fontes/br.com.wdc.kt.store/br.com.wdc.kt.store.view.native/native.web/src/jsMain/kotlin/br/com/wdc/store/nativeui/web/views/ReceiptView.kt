@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.web.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
 import br.com.wdc.store.nativeui.web.bridge.useScope
@@ -42,7 +43,7 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
         sx {
             display = Display.flex
             justifyContent = JustifyContent.center
-            padding = Padding(16.px, 10.px, 16.px, 16.px)
+            padding = Padding(StoreTokens.Spacing.Lg.px, 10.px, StoreTokens.Spacing.Lg.px, StoreTokens.Spacing.Lg.px)
         }
 
         Box {
@@ -57,7 +58,7 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                     Paper {
                         sx {
                             padding = 20.px
-                            borderRadius = 12.px
+                            borderRadius = StoreTokens.Radius.Md.px
                             backgroundColor = StoreColors.SuccessContainer.unsafeCast<BackgroundColor>()
                             textAlign = TextAlign.center
                         }
@@ -117,8 +118,8 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                         direction = responsive(StackDirection.row)
                         sx {
                             justifyContent = JustifyContent.spaceBetween
-                            paddingLeft = 4.px
-                            paddingRight = 4.px
+                            paddingLeft = StoreTokens.Spacing.Xs.px
+                            paddingRight = StoreTokens.Spacing.Xs.px
                         }
 
                         Typography {
@@ -147,8 +148,8 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                             Paper {
                                 key = "${item.id}"
                                 sx {
-                                    padding = 12.px
-                                    borderRadius = 8.px
+                                    padding = StoreTokens.Spacing.Md.px
+                                    borderRadius = StoreTokens.Radius.Sm.px
                                     backgroundColor = StoreColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
                                 }
                                 elevation = 0
@@ -226,7 +227,7 @@ val ReceiptView = FC<ScopeProps<ReceiptScope>> { props ->
                         variant = ButtonVariant.contained
                         onClick = onOpenProducts
                         asDynamic().style = StoreStyles.fontMedium
-                        sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                        sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                         ArrowBack { sx { marginRight = 6.px; fontSize = 18.px } }
                         +"Continue Shopping"
                     }

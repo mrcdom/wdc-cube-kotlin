@@ -11,7 +11,8 @@ import LocalMallIcon from '@mui/icons-material/LocalMall'
 import LogoutIcon from '@mui/icons-material/Logout'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import bridge, { BasePanelClass } from 'wdc-cube-remote-bridge-react'
-import { Colors } from '@root/theme'
+import { Colors, toPx } from '@root/theme'
+import { StoreTokens } from '@root/tokens'
 
 // :: Actions
 
@@ -44,7 +45,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
                   width: 32,
                   height: 32,
                   bgcolor: Colors.WhiteOverlay20,
-                  borderRadius: '8px',
+                  borderRadius: toPx(StoreTokens.radius.sm),
                   mr: 1,
                 }}
               >
@@ -141,9 +142,9 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
           <Box
             sx={{
               bgcolor: Colors.WhiteOverlay15,
-              borderRadius: '20px',
-              px: '12px',
-              py: '4px',
+              borderRadius: toPx(StoreTokens.radius.xl),
+              px: toPx(StoreTokens.spacing.md),
+              py: toPx(StoreTokens.spacing.xs),
               mr: 2,
             }}
           >
@@ -163,7 +164,7 @@ class HeaderPanelClass extends BasePanelClass<HeaderPanelProps> {
                 borderRadius: '10px',
                 textTransform: 'none',
                 py: '5px',
-                px: '12px',
+                px: toPx(StoreTokens.spacing.md),
               }}
             >
               <ShoppingCartIcon sx={{ mr: 0.75, fontSize: 18 }} />

@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.presentation.presenter.restricted.home.PurchasesPanelScope
 import br.com.wdc.store.view.compose.bridge.useScope
 import br.com.wdc.store.view.compose.bridge.safeCall
@@ -43,11 +44,11 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(12.dp)
+        modifier = Modifier.fillMaxSize().padding(StoreTokens.Spacing.Md.dp)
     ) {
         // Section header
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = StoreTokens.Spacing.Md.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -59,12 +60,12 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
             )
             if (scope.totalCount > 0) {
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Text(
                         "${scope.totalCount} ${if (scope.totalCount == 1) "item" else "items"}",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Md.dp, vertical = StoreTokens.Spacing.Xs.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
@@ -73,7 +74,7 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
         }
 
         HorizontalDivider(
-            modifier = Modifier.padding(bottom = 12.dp),
+            modifier = Modifier.padding(bottom = StoreTokens.Spacing.Md.dp),
             color = MaterialTheme.colorScheme.outlineVariant
         )
 
@@ -95,7 +96,7 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
                             Text(
                                 "No purchases yet",
                                 style = MaterialTheme.typography.bodyLarge,
@@ -107,14 +108,14 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Sm.dp)
                 ) {
                     items(purchases, key = { it.id }) { purchase ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { safeCall { scope.onOpenReceipt(purchase.id) } },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -140,14 +141,14 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 }
-                                Spacer(Modifier.width(12.dp))
+                                Spacer(Modifier.width(StoreTokens.Spacing.Md.dp))
                                 Surface(
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                                     color = PriceColor.copy(alpha = 0.1f)
                                 ) {
                                     Text(
                                         "\$${formatPrice(purchase.total)}",
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = StoreTokens.Spacing.Xs.dp),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = PriceColor
@@ -163,7 +164,7 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
         // Pagination
         if (scope.totalCount > scope.pageSize && scope.pageSize > 0) {
             val totalPages = (scope.totalCount + scope.pageSize - 1) / scope.pageSize
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -175,13 +176,13 @@ fun PurchasesPanelView(scope: PurchasesPanelScope) {
                     modifier = Modifier.size(36.dp)
                 ) { Text("‹", fontWeight = FontWeight.Bold) }
 
-                Spacer(Modifier.width(16.dp))
+                Spacer(Modifier.width(StoreTokens.Spacing.Lg.dp))
                 Text(
                     "${scope.page + 1} / $totalPages",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
-                Spacer(Modifier.width(16.dp))
+                Spacer(Modifier.width(StoreTokens.Spacing.Lg.dp))
 
                 FilledTonalIconButton(
                     onClick = { safeCall { scope.onPageChange(scope.page + 1) } },

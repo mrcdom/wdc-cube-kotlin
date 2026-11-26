@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":store-presentation"))
     implementation(project(":store-persistence-client"))
     implementation(project(":store-domain"))
+    implementation(project(":store-design"))
     implementation(project(":framework-commons"))
     implementation(project(":framework-cube"))
     implementation(libs.okhttp)

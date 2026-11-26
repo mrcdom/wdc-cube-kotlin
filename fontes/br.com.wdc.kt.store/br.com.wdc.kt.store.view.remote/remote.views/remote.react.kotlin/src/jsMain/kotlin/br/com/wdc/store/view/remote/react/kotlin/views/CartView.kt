@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
@@ -50,7 +51,7 @@ val CartView = FC<RemoteViewProps> { props ->
         sx {
             display = Display.flex
             justifyContent = JustifyContent.center
-            padding = Padding(16.px, 10.px, 16.px, 16.px)
+            padding = Padding(StoreTokens.Spacing.Lg.px, 10.px, StoreTokens.Spacing.Lg.px, StoreTokens.Spacing.Lg.px)
         }
         Box {
             sx {
@@ -64,11 +65,11 @@ val CartView = FC<RemoteViewProps> { props ->
             Stack {
                 direction = responsive(StackDirection.row)
                 spacing = responsive(1)
-                sx { alignItems = AlignItems.center; marginBottom = 12.px }
+                sx { alignItems = AlignItems.center; marginBottom = StoreTokens.Spacing.Md.px }
                 ShoppingCart { sx { fontSize = 28.px } }
                 Typography {
                     variant = TypographyVariant.h5
-                    sx { fontWeight = integer(500).unsafeCast<FontWeight>(); fontSize = 28.px }
+                    sx { fontWeight = integer(StoreTokens.FontWeight.Medium).unsafeCast<FontWeight>(); fontSize = StoreTokens.FontSize.Display.px }
                     +"Shopping Cart"
                 }
             }
@@ -79,7 +80,7 @@ val CartView = FC<RemoteViewProps> { props ->
             if (!errorMessage.isNullOrEmpty()) {
                 Alert {
                     severity = "error"
-                    sx { marginTop = 12.px; borderRadius = 8.px }
+                    sx { marginTop = StoreTokens.Spacing.Md.px; borderRadius = StoreTokens.Radius.Sm.px }
                     +errorMessage
                 }
             }
@@ -97,18 +98,18 @@ val CartView = FC<RemoteViewProps> { props ->
                     ShoppingCart { sx { fontSize = 48.px; color = muted } }
                     Typography {
                         variant = TypographyVariant.h6
-                        sx { marginTop = 16.px; color = muted }
+                        sx { marginTop = StoreTokens.Spacing.Lg.px; color = muted }
                         +"Your cart is empty"
                     }
                     Typography {
                         variant = TypographyVariant.body2
-                        sx { marginTop = 8.px; color = muted; opacity = number(0.7) }
+                        sx { marginTop = StoreTokens.Spacing.Sm.px; color = muted; opacity = number(0.7) }
                         +"Add products to start shopping"
                     }
                 }
             } else {
                 Box {
-                    sx { marginTop = 12.px; marginRight = (-6).px }
+                    sx { marginTop = StoreTokens.Spacing.Md.px; marginRight = (-6).px }
                     Stack {
                         direction = responsive(StackDirection.column)
                         spacing = responsive(1)
@@ -122,7 +123,7 @@ val CartView = FC<RemoteViewProps> { props ->
                 }
 
                 // Total
-                Divider { sx { marginTop = 8.px; marginBottom = 8.px } }
+                Divider { sx { marginTop = StoreTokens.Spacing.Sm.px; marginBottom = StoreTokens.Spacing.Sm.px } }
                 Stack {
                     direction = responsive(StackDirection.row)
                     spacing = responsive(1)
@@ -155,12 +156,12 @@ val CartView = FC<RemoteViewProps> { props ->
             Stack {
                 direction = responsive(StackDirection.row)
                 spacing = responsive(2)
-                sx { justifyContent = JustifyContent.flexEnd; marginTop = 16.px }
+                sx { justifyContent = JustifyContent.flexEnd; marginTop = StoreTokens.Spacing.Lg.px }
                 Button {
                     variant = ButtonVariant.outlined
                     startIcon = ArrowBack.create()
                     onClick = { bridge.submit(props.vsid, ON_OPEN_PRODUCTS) }
-                    sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                    sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                     +"Continue Shopping"
                 }
                 if (rows.isNotEmpty()) {
@@ -168,11 +169,11 @@ val CartView = FC<RemoteViewProps> { props ->
                         variant = ButtonVariant.contained
                         onClick = { bridge.submit(props.vsid, ON_BUY) }
                         sx {
-                            borderRadius = 12.px
+                            borderRadius = StoreTokens.Radius.Md.px
                             height = 48.px
                             textTransform = None.none
                             fontWeight = FontWeight.bold
-                            fontSize = 16.px
+                            fontSize = StoreTokens.FontSize.BodyLarge.px
                             backgroundColor = StoreColors.PriceColor.unsafeCast<BackgroundColor>()
                         }
                         +"Buy"
@@ -197,11 +198,11 @@ val CartItemView = FC<RemoteViewProps> { props ->
     Card {
         elevation = 0
         sx {
-            borderRadius = 8.px
+            borderRadius = StoreTokens.Radius.Sm.px
             backgroundColor = StoreColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
         }
         CardContent {
-            sx { padding = 16.px }
+            sx { padding = StoreTokens.Spacing.Lg.px }
             Stack {
                 direction = responsive(StackDirection.row)
                 spacing = responsive(2)
@@ -212,13 +213,13 @@ val CartItemView = FC<RemoteViewProps> { props ->
                     Typography {
                         variant = TypographyVariant.body2
                         noWrap = true
-                        sx { fontWeight = integer(500).unsafeCast<FontWeight>(); fontSize = 14.px }
+                        sx { fontWeight = integer(StoreTokens.FontWeight.Medium).unsafeCast<FontWeight>(); fontSize = StoreTokens.FontSize.Body.px }
                         +(scope.string("name") ?: "")
                     }
                     Typography {
                         variant = TypographyVariant.body2
                         sx {
-                            fontWeight = integer(500).unsafeCast<FontWeight>()
+                            fontWeight = integer(StoreTokens.FontWeight.Medium).unsafeCast<FontWeight>()
                             color = StoreColors.PriceColor.unsafeCast<Color>()
                         }
                         +"\$${formatPrice(scope.double("price"))}"
@@ -233,8 +234,8 @@ val CartItemView = FC<RemoteViewProps> { props ->
                         backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
                         display = Display.flex
                         alignItems = AlignItems.center
-                        paddingLeft = 4.px
-                        paddingRight = 4.px
+                        paddingLeft = StoreTokens.Spacing.Xs.px
+                        paddingRight = StoreTokens.Spacing.Xs.px
                     }
                     IconButton {
                         size = Size.small
@@ -267,7 +268,7 @@ val CartItemView = FC<RemoteViewProps> { props ->
                     variant = ButtonVariant.text
                     color = ButtonColor.error
                     onClick = { bridge.submit(props.vsid, ON_REMOVE) }
-                    sx { fontWeight = FontWeight.normal; fontSize = 12.px; textTransform = None.none }
+                    sx { fontWeight = FontWeight.normal; fontSize = StoreTokens.FontSize.Caption.px; textTransform = None.none }
                     +"Remove"
                 }
             }

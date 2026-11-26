@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.design.StoreTokens
 import android.graphics.Color
 import android.graphics.Typeface
 import android.view.Gravity
@@ -43,9 +44,9 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                 // Title
                 textView {
                     text = "Shopping Cart"
-                    textSize = 24f
+                    textSize = StoreTokens.FontSize.Headline.toFloat()
                     setTextColor(StoreColors.OnSurface)
-                    setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (12 * density).toInt())
+                    setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingMd * density).toInt())
                 }
 
                 // Separator
@@ -53,18 +54,18 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                     setBackgroundColor(StoreColors.SurfaceVariant)
                     (layoutParams as LinearLayout.LayoutParams).apply {
                         height = 1
-                        marginStart = (16 * density).toInt()
-                        marginEnd = (16 * density).toInt()
+                        marginStart = (Dimens.spacingLg * density).toInt()
+                        marginEnd = (Dimens.spacingLg * density).toInt()
                     }
                 })
 
                 // Error label
                 errorLabel = textView {
                     setTextColor(StoreColors.Error)
-                    textSize = 14f
+                    textSize = StoreTokens.FontSize.Body.toFloat()
                     gravity = Gravity.CENTER
                     visibility = View.GONE
-                    setPadding((16 * density).toInt(), (8 * density).toInt(), (16 * density).toInt(), 0)
+                    setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingSm * density).toInt(), (Dimens.spacingLg * density).toInt(), 0)
                 }
 
                 // Scroll area (items + footer)
@@ -78,12 +79,12 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                     vStack {
                         // Items stack
                         stackView = vStack(spacing = (10 * density).toInt(), configure = {
-                            setPadding((16 * density).toInt(), (8 * density).toInt(), (16 * density).toInt(), (8 * density).toInt())
+                            setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingSm * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingSm * density).toInt())
                         }) {}
 
                         // Footer: separator + total + buttons
                         footerContainer = vStack(configure = {
-                            setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (8 * density).toInt())
+                            setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingSm * density).toInt())
                         }) {
                             // Separator
                             frame(configure = {
@@ -94,21 +95,21 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                             // Total row
                             hStack(configure = {
                                 gravity = Gravity.CENTER_VERTICAL
-                                (layoutParams as LinearLayout.LayoutParams).topMargin = (16 * density).toInt()
+                                (layoutParams as LinearLayout.LayoutParams).topMargin = (Dimens.spacingLg * density).toInt()
                             }) {
                                 textView {
                                     text = "Total:"
-                                    textSize = 16f
+                                    textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                                     setTextColor(StoreColors.OnSurfaceVariant)
                                     (layoutParams as LinearLayout.LayoutParams).apply {
                                         width = ViewGroup.LayoutParams.WRAP_CONTENT
-                                        marginEnd = (12 * density).toInt()
+                                        marginEnd = (Dimens.spacingMd * density).toInt()
                                     }
                                 }
                                 flexSpacer()
                                 frame(configure = {
                                     background = StoreStyles.roundedBackground(StoreColors.PriceBackground, 10 * density)
-                                    setPadding((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (8 * density).toInt())
+                                    setPadding((Dimens.spacingMd * density).toInt(), (Dimens.spacingSm * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingSm * density).toInt())
                                     (layoutParams as LinearLayout.LayoutParams).width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 }) {
                                     totalLabel = textView {
@@ -124,17 +125,17 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                             hStack(configure = {
                                 gravity = Gravity.CENTER_HORIZONTAL or Gravity.CENTER_VERTICAL
                                 (layoutParams as LinearLayout.LayoutParams).apply {
-                                    topMargin = (16 * density).toInt()
+                                    topMargin = (Dimens.spacingLg * density).toInt()
                                     height = (48 * density).toInt()
                                 }
                             }) {
                                 // Continue shopping
                                 button("Continue Shopping") {
-                                    textSize = 14f
+                                    textSize = StoreTokens.FontSize.Body.toFloat()
                                     setTextColor(StoreColors.Primary)
-                                    background = StoreStyles.borderPill(StoreColors.Primary, 12 * density)
+                                    background = StoreStyles.borderPill(StoreColors.Primary, Dimens.radiusMd * density)
                                     val padH = (20 * density).toInt()
-                                    val padV = (8 * density).toInt()
+                                    val padV = (Dimens.spacingSm * density).toInt()
                                     setPadding(padH, padV, padH, padV)
                                     setCompoundDrawablesRelativeWithIntrinsicBounds(
                                         StoreIcons.arrowBack(ctx, 16, StoreColors.Primary), null, null, null
@@ -143,18 +144,18 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                                     (layoutParams as LinearLayout.LayoutParams).apply {
                                         width = ViewGroup.LayoutParams.WRAP_CONTENT
                                         height = (48 * density).toInt()
-                                        marginEnd = (16 * density).toInt()
+                                        marginEnd = (Dimens.spacingLg * density).toInt()
                                     }
                                     setOnClickListener { safeAction("back") { scope.onOpenProducts() } }
                                 }
                                 // Buy button
                                 button("Buy") {
-                                    textSize = 16f
+                                    textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                                     setTypeface(null, Typeface.BOLD)
                                     setTextColor(Color.WHITE)
-                                    background = StoreStyles.roundedBackground(StoreColors.PriceColor, 12 * density)
-                                    val padH = (32 * density).toInt()
-                                    val padV = (8 * density).toInt()
+                                    background = StoreStyles.roundedBackground(StoreColors.PriceColor, Dimens.radiusMd * density)
+                                    val padH = (Dimens.spacingXxl * density).toInt()
+                                    val padV = (Dimens.spacingSm * density).toInt()
                                     setPadding(padH, padV, padH, padV)
                                     (layoutParams as LinearLayout.LayoutParams).apply {
                                         width = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -176,7 +177,7 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                         height = 0
                         weight = 1f
                     }
-                    setPadding(0, (48 * density).toInt(), 0, (24 * density).toInt())
+                    setPadding(0, (48 * density).toInt(), 0, (Dimens.spacingXl * density).toInt())
                 }) {
                     imageView {
                         setImageDrawable(StoreIcons.shoppingCart(ctx, 48, StoreColors.OnSurfaceVariant))
@@ -192,21 +193,21 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                         setTypeface(null, Typeface.BOLD)
                         setTextColor(StoreColors.OnSurface)
                         gravity = Gravity.CENTER
-                        (layoutParams as LinearLayout.LayoutParams).topMargin = (16 * density).toInt()
+                        (layoutParams as LinearLayout.LayoutParams).topMargin = (Dimens.spacingLg * density).toInt()
                     }
                     textView {
                         text = "Add products to start shopping"
-                        textSize = 14f
+                        textSize = StoreTokens.FontSize.Body.toFloat()
                         setTextColor(StoreColors.OnSurfaceVariant)
                         gravity = Gravity.CENTER
-                        (layoutParams as LinearLayout.LayoutParams).topMargin = (8 * density).toInt()
+                        (layoutParams as LinearLayout.LayoutParams).topMargin = (Dimens.spacingSm * density).toInt()
                     }
                     backButtonEmpty = button("Continue Shopping") {
-                        textSize = 14f
+                        textSize = StoreTokens.FontSize.Body.toFloat()
                         setTextColor(StoreColors.Primary)
-                        background = StoreStyles.borderPill(StoreColors.Primary, 12 * density)
+                        background = StoreStyles.borderPill(StoreColors.Primary, Dimens.radiusMd * density)
                         val padH = (20 * density).toInt()
-                        val padV = (8 * density).toInt()
+                        val padV = (Dimens.spacingSm * density).toInt()
                         setPadding(padH, padV, padH, padV)
                         setCompoundDrawablesRelativeWithIntrinsicBounds(
                             StoreIcons.arrowBack(ctx, 16, StoreColors.Primary), null, null, null
@@ -215,7 +216,7 @@ class CartViewAndroid(app: AndroidNativeRootPresenter, scope: CartScope) : Abstr
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = (48 * density).toInt()
-                            topMargin = (32 * density).toInt()
+                            topMargin = (Dimens.spacingXxl * density).toInt()
                             gravity = Gravity.CENTER_HORIZONTAL
                         }
                         setOnClickListener { safeAction("back") { scope.onOpenProducts() } }

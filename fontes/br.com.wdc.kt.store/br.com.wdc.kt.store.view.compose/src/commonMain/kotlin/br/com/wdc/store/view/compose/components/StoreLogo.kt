@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.sp
+import br.com.wdc.store.design.StoreTokens
 
 /**
  * Large logo for the login screen.
@@ -23,7 +24,7 @@ fun StoreLogoLarge() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             modifier = Modifier.size(72.dp),
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(StoreTokens.Radius.Lg.dp),
             color = MaterialTheme.colorScheme.primary
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -35,7 +36,7 @@ fun StoreLogoLarge() {
                 )
             }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(StoreTokens.Spacing.Md.dp))
         Box {
             Text(
                 "WDC Store",
@@ -81,7 +82,7 @@ fun StoreLogoHeader(size: Dp = 36.dp, compact: Boolean = false) {
         Box {
             Text(
                 "WDC Store",
-                fontSize = if (compact) 16.sp else 20.sp,
+                fontSize = if (compact) StoreTokens.FontSize.BodyLarge.sp else StoreTokens.FontSize.Title.sp,
                 lineHeight = if (compact) 18.sp else 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White

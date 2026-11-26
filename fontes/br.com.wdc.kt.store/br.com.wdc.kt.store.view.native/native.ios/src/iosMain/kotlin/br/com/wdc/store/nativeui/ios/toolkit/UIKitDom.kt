@@ -1,5 +1,8 @@
 package br.com.wdc.store.nativeui.ios.toolkit
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.theme.UIK
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.CoreGraphics.CGRectMake
@@ -86,8 +89,8 @@ class UIKitDom private constructor(private val parent: UIView) {
 
     fun flowLayout(
         minChildWidth: Double = 160.0,
-        horizontalSpacing: Double = 12.0,
-        verticalSpacing: Double = 12.0,
+        horizontalSpacing: Double = Spacing.Md.pt,
+        verticalSpacing: Double = Spacing.Md.pt,
         configure: (FlowLayoutView.() -> Unit)? = null,
         builder: UIKitDom.() -> Unit
     ): FlowLayoutView {
@@ -126,7 +129,7 @@ class UIKitDom private constructor(private val parent: UIView) {
             translatesAutoresizingMaskIntoConstraints = false
             this.placeholder = placeholder
             borderStyle = UIK.BorderStyleRoundedRect
-            font = UIFont.systemFontOfSize(16.0)
+            font = UIFont.systemFontOfSize(FontSize.BodyLarge.pt)
         }
         addToParent(tf)
         tf.configure()

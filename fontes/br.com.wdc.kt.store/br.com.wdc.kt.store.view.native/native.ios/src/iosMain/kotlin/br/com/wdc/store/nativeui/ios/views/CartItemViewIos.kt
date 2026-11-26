@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.theme.StoreColors
 import br.com.wdc.store.nativeui.ios.theme.UIK
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
@@ -38,9 +42,9 @@ class CartItemViewIos(app: IosNativeRootPresenter, scope: CartItemScope) :
     override fun createView(): UIView = UIKitDom.build {
         val card = parent()
         card.backgroundColor = StoreColors.SurfaceVariant40
-        card.layer.cornerRadius = 8.0
+        card.layer.cornerRadius = Radius.Sm.pt
 
-        hStack(spacing = 12.0, configure = {
+        hStack(spacing = Spacing.Md.pt, configure = {
             alignment = UIK.StackAlignCenter
             layoutMarginsRelativeArrangement = true
             layoutMargins = UIEdgeInsetsMake(10.0, 10.0, 10.0, 10.0)
@@ -52,7 +56,7 @@ class CartItemViewIos(app: IosNativeRootPresenter, scope: CartItemScope) :
             }
             vStack(spacing = 2.0) {
                 nameLabel = label {
-                    font = UIFont.boldSystemFontOfSize(14.0)
+                    font = UIFont.boldSystemFontOfSize(FontSize.Body.pt)
                     textColor = StoreColors.OnSurface
                 }
                 priceLabel = label {
@@ -60,20 +64,20 @@ class CartItemViewIos(app: IosNativeRootPresenter, scope: CartItemScope) :
                     textColor = StoreColors.PriceColor
                 }
             }
-            hStack(spacing = 4.0, configure = { alignment = UIK.StackAlignCenter }) {
+            hStack(spacing = Spacing.Xs.pt, configure = { alignment = UIK.StackAlignCenter }) {
                 button("−") {
                     backgroundColor = StoreColors.SecondaryContainer
-                    layer.cornerRadius = 4.0
+                    layer.cornerRadius = Radius.Xs.pt
                     addGestureRecognizer(UITapGestureRecognizer(target = itemActions, action = sel_registerName("onMinus")))
                 }.also { size(it, width = 28.0, height = 28.0) }
                 qtyLabel = label {
-                    font = UIFont.boldSystemFontOfSize(14.0)
+                    font = UIFont.boldSystemFontOfSize(FontSize.Body.pt)
                     textAlignment = UIK.TextAlignCenter
                     widthAnchor.constraintEqualToConstant(30.0).active = true
                 }
                 button("+") {
                     backgroundColor = StoreColors.SecondaryContainer
-                    layer.cornerRadius = 4.0
+                    layer.cornerRadius = Radius.Xs.pt
                     addGestureRecognizer(UITapGestureRecognizer(target = itemActions, action = sel_registerName("onPlus")))
                 }.also { size(it, width = 28.0, height = 28.0) }
                 button("✕") {

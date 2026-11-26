@@ -1,19 +1,22 @@
 package br.com.wdc.store.nativeui.android.theme
 
+import br.com.wdc.store.design.StoreTokens
+
 object Dimens {
     // Spacing
-    const val spacingXs = 4
-    const val spacingSm = 8
-    const val spacingMd = 12
-    const val spacingLg = 16
-    const val spacingXl = 24
-    const val spacingXxl = 32
+    const val spacingXs = StoreTokens.Spacing.Xs
+    const val spacingSm = StoreTokens.Spacing.Sm
+    const val spacingMd = StoreTokens.Spacing.Md
+    const val spacingLg = StoreTokens.Spacing.Lg
+    const val spacingXl = StoreTokens.Spacing.Xl
+    const val spacingXxl = StoreTokens.Spacing.Xxl
 
     // Border radius
-    const val radiusSm = 8
-    const val radiusMd = 12
-    const val radiusLg = 18
-    const val radiusXl = 20
+    const val radiusXs = StoreTokens.Radius.Xs
+    const val radiusSm = StoreTokens.Radius.Sm
+    const val radiusMd = StoreTokens.Radius.Md
+    const val radiusLg = StoreTokens.Radius.Lg
+    const val radiusXl = StoreTokens.Radius.Xl
 
     // Component sizes
     const val buttonHeight = 48

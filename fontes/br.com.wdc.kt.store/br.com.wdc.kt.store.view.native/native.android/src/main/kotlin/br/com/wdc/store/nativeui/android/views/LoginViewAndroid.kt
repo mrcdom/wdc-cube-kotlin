@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.design.StoreTokens
 import android.graphics.Typeface
 import android.text.InputType
 import android.view.Gravity
@@ -36,20 +37,20 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
             val card = frame(configure = {
                 val bg = android.graphics.drawable.GradientDrawable().apply {
                     setColor(StoreColors.Surface)
-                    cornerRadius = 12 * density
+                    cornerRadius = Dimens.radiusMd * density
                 }
                 background = bg
                 elevation = 8 * density
                 (layoutParams as FrameLayout.LayoutParams).apply {
                     gravity = Gravity.CENTER
                     width = ViewGroup.LayoutParams.MATCH_PARENT
-                    marginStart = (24 * density).toInt()
-                    marginEnd = (24 * density).toInt()
+                    marginStart = (Dimens.spacingXl * density).toInt()
+                    marginEnd = (Dimens.spacingXl * density).toInt()
                 }
             }) {
                 vStack(spacing = (20 * density).toInt(), configure = {
-                    val pad = (32 * density).toInt()
-                    val padH = (24 * density).toInt()
+                    val pad = (Dimens.spacingXxl * density).toInt()
+                    val padH = (Dimens.spacingXl * density).toInt()
                     setPadding(padH, pad, padH, pad)
                 }) {
                     // Logo
@@ -63,7 +64,7 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
                         frame(configure = {
                             val bg = android.graphics.drawable.GradientDrawable().apply {
                                 setColor(StoreColors.Primary)
-                                cornerRadius = 18 * density
+                                cornerRadius = Dimens.logoCornerRadius * density
                             }
                             background = bg
                             (layoutParams as FrameLayout.LayoutParams).apply {
@@ -93,7 +94,7 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
                     }) {
                         textView {
                             text = "WDC Store"
-                            textSize = 28f
+                            textSize = StoreTokens.FontSize.Display.toFloat()
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(StoreColors.OnSurface)
                             gravity = Gravity.CENTER
@@ -106,7 +107,7 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
                             (layoutParams as FrameLayout.LayoutParams).apply {
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 gravity = Gravity.BOTTOM or Gravity.END
-                                topMargin = (32 * density).toInt()
+                                topMargin = (Dimens.spacingXxl * density).toInt()
                             }
                         }
                     }
@@ -114,7 +115,7 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
                     // Subtitle
                     textView {
                         text = "Sign in to continue"
-                        textSize = 14f
+                        textSize = StoreTokens.FontSize.Body.toFloat()
                         setTextColor(StoreColors.OnSurfaceVariant)
                         gravity = Gravity.CENTER
                     }
@@ -141,7 +142,7 @@ class LoginViewAndroid(app: AndroidNativeRootPresenter, scope: LoginScope) : Abs
                     // Error label
                     errorLabel = textView {
                         setTextColor(StoreColors.Error)
-                        textSize = 14f
+                        textSize = StoreTokens.FontSize.Body.toFloat()
                         gravity = Gravity.CENTER
                         visibility = View.GONE
                     }

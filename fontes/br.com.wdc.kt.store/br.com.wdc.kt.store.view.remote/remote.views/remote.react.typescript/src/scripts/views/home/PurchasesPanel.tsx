@@ -14,7 +14,8 @@ import Inventory2Icon from '@mui/icons-material/Inventory2'
 import bridge, { BaseViewClass, BasePanelClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
 import * as NumberUtils from '@root/utils/NumberUtils'
 import * as DateUtils from '@root/utils/DateUtils'
-import { Colors } from '@root/theme'
+import { Colors, toPx } from '@root/theme'
+import { StoreTokens } from '@root/tokens'
 
 const ITEM_HEIGHT_PX = 76
 
@@ -89,7 +90,9 @@ class PurchasesPanelClass extends BaseViewClass<ViewProps, PurchasesPanelScope> 
             Purchases
           </Typography>
           {scope.totalCount > 0 && (
-            <Box sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: '8px', px: 2, py: 0.75 }}>
+            <Box
+              sx={{ bgcolor: Colors.SecondaryContainer, borderRadius: toPx(StoreTokens.radius.sm), px: 2, py: 0.75 }}
+            >
               <Typography variant="caption" sx={{ color: Colors.OnPrimaryContainer }}>
                 {scope.totalCount} {scope.totalCount === 1 ? 'item' : 'items'}
               </Typography>
@@ -176,7 +179,11 @@ class PurchaseItemRowClass extends BasePanelClass<PurchaseItemRowProps> {
     this.purchase = purchase
 
     return (
-      <Card data-purchase-item elevation={0} sx={{ borderRadius: '8px', bgcolor: Colors.SurfaceVariant50 }}>
+      <Card
+        data-purchase-item
+        elevation={0}
+        sx={{ borderRadius: toPx(StoreTokens.radius.sm), bgcolor: Colors.SurfaceVariant50 }}
+      >
         <CardActionArea onClick={this.emitOpenReceipt}>
           <CardContent sx={{ p: '14px !important' }}>
             <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
@@ -195,7 +202,7 @@ class PurchaseItemRowClass extends BasePanelClass<PurchaseItemRowProps> {
                   bgcolor: Colors.PriceBackground,
                   color: Colors.PriceColor,
                   fontWeight: 'bold',
-                  borderRadius: '8px',
+                  borderRadius: toPx(StoreTokens.radius.sm),
                   ml: 1,
                 }}
               />

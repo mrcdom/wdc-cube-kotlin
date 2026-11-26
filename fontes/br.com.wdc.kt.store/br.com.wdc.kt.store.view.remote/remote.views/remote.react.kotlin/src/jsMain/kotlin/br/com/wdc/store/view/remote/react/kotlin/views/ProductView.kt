@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
@@ -72,7 +73,7 @@ val ProductView = FC<RemoteViewProps> { props ->
         sx {
             display = Display.flex
             justifyContent = JustifyContent.center
-            padding = Padding(16.px, 10.px, 16.px, 16.px)
+            padding = Padding(StoreTokens.Spacing.Lg.px, 10.px, StoreTokens.Spacing.Lg.px, StoreTokens.Spacing.Lg.px)
         }
         Box {
             sx { maxWidth = 600.px; width = 100.pct }
@@ -84,7 +85,7 @@ val ProductView = FC<RemoteViewProps> { props ->
                 if (!errorMessage.isNullOrEmpty()) {
                     Alert {
                         severity = "error"
-                        sx { borderRadius = 8.px }
+                        sx { borderRadius = StoreTokens.Radius.Sm.px }
                         +errorMessage
                     }
                 }
@@ -101,8 +102,8 @@ val ProductView = FC<RemoteViewProps> { props ->
                     Paper {
                         elevation = 0
                         sx {
-                            padding = 16.px
-                            borderRadius = 8.px
+                            padding = StoreTokens.Spacing.Lg.px
+                            borderRadius = StoreTokens.Radius.Sm.px
                             backgroundColor = StoreColors.SurfaceVariant50.unsafeCast<BackgroundColor>()
                         }
                         Typography {
@@ -131,17 +132,17 @@ val ProductView = FC<RemoteViewProps> { props ->
                         Box {
                             sx {
                                 backgroundColor = StoreColors.PriceBackground.unsafeCast<BackgroundColor>()
-                                borderRadius = 12.px
-                                paddingTop = 12.px
-                                paddingBottom = 12.px
+                                borderRadius = StoreTokens.Radius.Md.px
+                                paddingTop = StoreTokens.Spacing.Md.px
+                                paddingBottom = StoreTokens.Spacing.Md.px
                                 textAlign = TextAlign.center
                             }
                             Typography {
                                 variant = TypographyVariant.body1
                                 sx {
                                     color = StoreColors.PriceColor.unsafeCast<Color>()
-                                    fontWeight = integer(500).unsafeCast<FontWeight>()
-                                    fontSize = 16.px
+                                    fontWeight = integer(StoreTokens.FontWeight.Medium).unsafeCast<FontWeight>()
+                                    fontSize = StoreTokens.FontSize.BodyLarge.px
                                 }
                                 +"\$${formatPrice(product.double("price"))}"
                             }
@@ -159,12 +160,12 @@ val ProductView = FC<RemoteViewProps> { props ->
                             Paper {
                                 elevation = 0
                                 sx {
-                                    borderRadius = 12.px
+                                    borderRadius = StoreTokens.Radius.Md.px
                                     backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
                                     display = Display.flex
                                     alignItems = AlignItems.center
-                                    paddingLeft = 4.px
-                                    paddingRight = 4.px
+                                    paddingLeft = StoreTokens.Spacing.Xs.px
+                                    paddingRight = StoreTokens.Spacing.Xs.px
                                 }
                                 IconButton {
                                     size = Size.small
@@ -190,7 +191,7 @@ val ProductView = FC<RemoteViewProps> { props ->
                         sx {
                             width = 120.px
                             height = 120.px
-                            borderRadius = 12.px
+                            borderRadius = StoreTokens.Radius.Md.px
                             overflow = Overflow.hidden
                             backgroundColor = StoreColors.SurfaceVariant.unsafeCast<BackgroundColor>()
                         }
@@ -211,7 +212,7 @@ val ProductView = FC<RemoteViewProps> { props ->
                         variant = ButtonVariant.outlined
                         startIcon = ArrowBack.create()
                         onClick = { bridge.submit(props.vsid, ON_OPEN_PRODUCTS) }
-                        sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                        sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                         +"Back"
                     }
                     Button {
@@ -221,7 +222,7 @@ val ProductView = FC<RemoteViewProps> { props ->
                             bridge.setFormField(props.vsid, "p.quantity", quantity)
                             bridge.submit(props.vsid, ON_ADD_TO_CART)
                         }
-                        sx { borderRadius = 12.px; height = 48.px; textTransform = None.none }
+                        sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none }
                         +"Add to Cart"
                     }
                 }

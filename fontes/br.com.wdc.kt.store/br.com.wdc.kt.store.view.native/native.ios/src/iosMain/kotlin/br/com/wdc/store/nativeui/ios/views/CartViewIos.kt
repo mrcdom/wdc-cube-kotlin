@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.store.nativeui.ios.toolkit.ViewUtils
@@ -49,12 +53,12 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
         // Title header
         titleLabel = label {
             text = "Shopping Cart"
-            font = UIFont.systemFontOfSize(24.0, UIFontWeightMedium)
+            font = UIFont.systemFontOfSize(FontSize.Headline.pt, UIFontWeightMedium)
             textColor = StoreColors.OnSurface
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(root.topAnchor, 16.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0)
+                topAnchor.constraintEqualToAnchor(root.topAnchor, Spacing.Lg.pt),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, Spacing.Lg.pt),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt)
             ))
         }
 
@@ -62,9 +66,9 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
         val separator = view(configure = {
             backgroundColor = StoreColors.SurfaceVariant
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(titleLabel.bottomAnchor, 12.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                topAnchor.constraintEqualToAnchor(titleLabel.bottomAnchor, Spacing.Md.pt),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, Spacing.Lg.pt),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt),
                 heightAnchor.constraintEqualToConstant(1.0)
             ))
         })
@@ -72,16 +76,16 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
         // Back button (visible in empty state, aligned right below empty message)
         backButton = button("Continue Shopping") {
             setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
-            titleLabel?.font = UIFont.systemFontOfSize(14.0)
+            titleLabel?.font = UIFont.systemFontOfSize(FontSize.Body.pt)
             setImage(StoreIcons.arrowBack(18.0, StoreColors.Primary), forState = UIControlStateNormal)
-            imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
-            contentEdgeInsets = UIEdgeInsetsMake(8.0, 20.0, 8.0, 20.0)
+            imageEdgeInsets = UIEdgeInsetsMake(0.0, -Spacing.Xs.pt, 0.0, Spacing.Xs.pt)
+            contentEdgeInsets = UIEdgeInsetsMake(Spacing.Sm.pt, 20.0, Spacing.Sm.pt, 20.0)
             layer.borderWidth = 1.0
             layer.borderColor = StoreColors.Primary.CGColor
-            layer.cornerRadius = 12.0
+            layer.cornerRadius = Radius.Md.pt
             addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onBack")))
             NSLayoutConstraint.activateConstraints(listOf(
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt),
                 heightAnchor.constraintEqualToConstant(48.0)
             ))
         }
@@ -90,7 +94,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
         scrollView = scrollView(configure = {
             delaysContentTouches = false
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(separator.bottomAnchor, 8.0),
+                topAnchor.constraintEqualToAnchor(separator.bottomAnchor, Spacing.Sm.pt),
                 leadingAnchor.constraintEqualToAnchor(root.leadingAnchor),
                 trailingAnchor.constraintEqualToAnchor(root.trailingAnchor),
                 bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
@@ -108,19 +112,19 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                 // Items stack
                 stackView = vStack(spacing = 10.0, configure = {
                     NSLayoutConstraint.activateConstraints(listOf(
-                        topAnchor.constraintEqualToAnchor(parent().topAnchor, 8.0),
-                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0)
+                        topAnchor.constraintEqualToAnchor(parent().topAnchor, Spacing.Sm.pt),
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Lg.pt)
                     ))
                 }) {}
 
                 // Footer (separator + total + buy button)
                 footerContainer = view(configure = {
                     NSLayoutConstraint.activateConstraints(listOf(
-                        topAnchor.constraintEqualToAnchor(stackView.bottomAnchor, 16.0),
-                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
-                        bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -8.0)
+                        topAnchor.constraintEqualToAnchor(stackView.bottomAnchor, Spacing.Lg.pt),
+                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
+                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Lg.pt),
+                        bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -Spacing.Sm.pt)
                     ))
                 }) {
                     // Separator line
@@ -137,7 +141,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                     // Total (right-aligned)
                     val totalRow = view(configure = {
                         NSLayoutConstraint.activateConstraints(listOf(
-                            topAnchor.constraintEqualToAnchor(footerSep.bottomAnchor, 16.0),
+                            topAnchor.constraintEqualToAnchor(footerSep.bottomAnchor, Spacing.Lg.pt),
                             leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
                             trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
                             heightAnchor.constraintEqualToConstant(36.0)
@@ -145,7 +149,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                     }) {
                         label {
                             text = "Total:"
-                            font = UIFont.systemFontOfSize(16.0)
+                            font = UIFont.systemFontOfSize(FontSize.BodyLarge.pt)
                             textColor = StoreColors.OnSurfaceVariant
                             NSLayoutConstraint.activateConstraints(listOf(
                                 centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
@@ -167,8 +171,8 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                                 textAlignment = UIK.TextAlignCenter
                                 NSLayoutConstraint.activateConstraints(listOf(
                                     centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
-                                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 12.0),
-                                    trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -12.0)
+                                    leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Md.pt),
+                                    trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Md.pt)
                                 ))
                             }
                         }
@@ -177,7 +181,7 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                     // Buttons row: both right-aligned (matching web)
                     val buttonsRow = view(configure = {
                         NSLayoutConstraint.activateConstraints(listOf(
-                            topAnchor.constraintEqualToAnchor(totalRow.bottomAnchor, 16.0),
+                            topAnchor.constraintEqualToAnchor(totalRow.bottomAnchor, Spacing.Lg.pt),
                             leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor),
                             trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
                             bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor),
@@ -187,9 +191,9 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                         buyButton = button("Buy") {
                             setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                             backgroundColor = StoreColors.PriceColor
-                            layer.cornerRadius = 12.0
-                            titleLabel?.font = UIFont.boldSystemFontOfSize(16.0)
-                            contentEdgeInsets = UIEdgeInsetsMake(8.0, 32.0, 8.0, 32.0)
+                            layer.cornerRadius = Radius.Md.pt
+                            titleLabel?.font = UIFont.boldSystemFontOfSize(FontSize.BodyLarge.pt)
+                            contentEdgeInsets = UIEdgeInsetsMake(Spacing.Sm.pt, Spacing.Xxl.pt, Spacing.Sm.pt, Spacing.Xxl.pt)
                             addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onBuy")))
                             NSLayoutConstraint.activateConstraints(listOf(
                                 trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor),
@@ -199,16 +203,16 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                         }
                         button("Continue Shopping") {
                             setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
-                            titleLabel?.font = UIFont.systemFontOfSize(14.0)
+                            titleLabel?.font = UIFont.systemFontOfSize(FontSize.Body.pt)
                             setImage(StoreIcons.arrowBack(18.0, StoreColors.Primary), forState = UIControlStateNormal)
-                            imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
-                            contentEdgeInsets = UIEdgeInsetsMake(8.0, 20.0, 8.0, 20.0)
+                            imageEdgeInsets = UIEdgeInsetsMake(0.0, -Spacing.Xs.pt, 0.0, Spacing.Xs.pt)
+                            contentEdgeInsets = UIEdgeInsetsMake(Spacing.Sm.pt, 20.0, Spacing.Sm.pt, 20.0)
                             layer.borderWidth = 1.0
                             layer.borderColor = StoreColors.Primary.CGColor
-                            layer.cornerRadius = 12.0
+                            layer.cornerRadius = Radius.Md.pt
                             addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onBack")))
                             NSLayoutConstraint.activateConstraints(listOf(
-                                trailingAnchor.constraintEqualToAnchor(buyButton.leadingAnchor, -16.0),
+                                trailingAnchor.constraintEqualToAnchor(buyButton.leadingAnchor, -Spacing.Lg.pt),
                                 centerYAnchor.constraintEqualToAnchor(parent().centerYAnchor),
                                 heightAnchor.constraintEqualToConstant(48.0)
                             ))
@@ -242,13 +246,13 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
                 textColor = StoreColors.OnSurface
                 textAlignment = UIK.TextAlignCenter
                 NSLayoutConstraint.activateConstraints(listOf(
-                    topAnchor.constraintEqualToAnchor(iconIv.bottomAnchor, 16.0),
+                    topAnchor.constraintEqualToAnchor(iconIv.bottomAnchor, Spacing.Lg.pt),
                     centerXAnchor.constraintEqualToAnchor(parent().centerXAnchor)
                 ))
             }
             val subtitle = label {
                 text = "Add products to start shopping"
-                font = UIFont.systemFontOfSize(14.0)
+                font = UIFont.systemFontOfSize(FontSize.Body.pt)
                 textColor = StoreColors.OnSurfaceVariant
                 textAlignment = UIK.TextAlignCenter
                 NSLayoutConstraint.activateConstraints(listOf(
@@ -261,20 +265,20 @@ class CartViewIos(app: IosNativeRootPresenter, scope: CartScope) : AbstractViewI
 
         // Link backButton below emptyContainer
         NSLayoutConstraint.activateConstraints(listOf(
-            backButton.topAnchor.constraintEqualToAnchor(emptyContainer.bottomAnchor, 32.0)
+            backButton.topAnchor.constraintEqualToAnchor(emptyContainer.bottomAnchor, Spacing.Xxl.pt)
         ))
 
         // Error
         errorLabel = label {
-            font = UIFont.systemFontOfSize(14.0)
+            font = UIFont.systemFontOfSize(FontSize.Body.pt)
             textColor = StoreColors.Error
             numberOfLines = 0
             textAlignment = UIK.TextAlignCenter
             hidden = true
             NSLayoutConstraint.activateConstraints(listOf(
-                topAnchor.constraintEqualToAnchor(separator.bottomAnchor, 8.0),
-                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, 16.0),
-                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -16.0)
+                topAnchor.constraintEqualToAnchor(separator.bottomAnchor, Spacing.Sm.pt),
+                leadingAnchor.constraintEqualToAnchor(root.leadingAnchor, Spacing.Lg.pt),
+                trailingAnchor.constraintEqualToAnchor(root.trailingAnchor, -Spacing.Lg.pt)
             ))
         }
     }

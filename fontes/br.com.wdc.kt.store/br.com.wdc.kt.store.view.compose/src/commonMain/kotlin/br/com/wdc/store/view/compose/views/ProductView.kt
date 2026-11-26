@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductScope
 import br.com.wdc.store.view.compose.bridge.useScope
 import br.com.wdc.store.view.compose.bridge.safeCall
@@ -38,7 +39,7 @@ fun ProductView(scope: ProductScope) {
     var quantity by remember { mutableIntStateOf(1) }
 
     Box(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(StoreTokens.Spacing.Lg.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         if (product != null) {
@@ -47,19 +48,19 @@ fun ProductView(scope: ProductScope) {
                 modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth()
                     .verticalScrollbar(scrollState)
                     .verticalScroll(scrollState),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Md.dp)
             ) {
                     val errorMessage = scope.errorMessage
                     if (!errorMessage.isNullOrBlank()) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                             color = MaterialTheme.colorScheme.errorContainer
                         ) {
                             Text(
                                 errorMessage,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.padding(12.dp)
+                                modifier = Modifier.padding(StoreTokens.Spacing.Md.dp)
                             )
                         }
                     }
@@ -80,13 +81,13 @@ fun ProductView(scope: ProductScope) {
                         if (cleanDesc.isNotBlank()) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                             ) {
                                 Text(
                                     cleanDesc,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(16.dp),
+                                    modifier = Modifier.padding(StoreTokens.Spacing.Lg.dp),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     lineHeight = 24.sp
                                 )
@@ -103,16 +104,16 @@ fun ProductView(scope: ProductScope) {
                         // Left: price + quantity
                         Column(
                             modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            verticalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Lg.dp)
                         ) {
                             // Price
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                                 color = PriceColor.copy(alpha = 0.1f)
                             ) {
                                 Text(
                                     "\$${formatPrice(product.price)}",
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Lg.dp, vertical = StoreTokens.Spacing.Sm.dp),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = PriceColor
@@ -122,7 +123,7 @@ fun ProductView(scope: ProductScope) {
                             // Quantity selector
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Md.dp)
                             ) {
                                 Text(
                                     "Qty:",
@@ -131,12 +132,12 @@ fun ProductView(scope: ProductScope) {
                                 )
 
                                 Surface(
-                                    shape = RoundedCornerShape(12.dp),
+                                    shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                                     color = MaterialTheme.colorScheme.surfaceVariant
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 4.dp)
+                                        modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Xs.dp)
                                     ) {
                                         FilledTonalIconButton(
                                             onClick = { if (quantity > 1) quantity-- },
@@ -170,14 +171,14 @@ fun ProductView(scope: ProductScope) {
                             contentDescription = product.name,
                             modifier = Modifier
                                 .size(120.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(StoreTokens.Radius.Md.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentScale = ContentScale.Fit,
                             placeholder = {
                                 Box(
                                     modifier = Modifier
                                         .size(120.dp)
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .clip(RoundedCornerShape(StoreTokens.Radius.Md.dp))
                                         .background(MaterialTheme.colorScheme.surfaceVariant),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -187,16 +188,16 @@ fun ProductView(scope: ProductScope) {
                         )
                     }
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
 
                     // Action buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
+                        horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Md.dp, Alignment.End)
                     ) {
                         OutlinedButton(
                             onClick = { safeCall { scope.onOpenProducts() } },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                             modifier = Modifier.height(48.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -206,7 +207,7 @@ fun ProductView(scope: ProductScope) {
                         }
                         Button(
                             onClick = { safeCall { scope.onAddToCart(quantity) } },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                             modifier = Modifier.height(48.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
@@ -222,7 +223,7 @@ fun ProductView(scope: ProductScope) {
             } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator(strokeWidth = 3.dp)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(StoreTokens.Spacing.Md.dp))
                 Text(
                     "Loading product...",
                     style = MaterialTheme.typography.bodyMedium,

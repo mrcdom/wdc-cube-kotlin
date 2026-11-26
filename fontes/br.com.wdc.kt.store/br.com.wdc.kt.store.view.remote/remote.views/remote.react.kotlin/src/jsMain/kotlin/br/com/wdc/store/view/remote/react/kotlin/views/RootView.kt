@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
@@ -17,7 +18,7 @@ val RootView = FC<RemoteViewProps> { props ->
     val contentViewId = scope.viewId("content")
     when {
         !errorMessage.isNullOrEmpty() -> Box {
-            sx { margin = 16.px }
+            sx { margin = StoreTokens.Spacing.Lg.px }
             Alert {
                 severity = "error"
                 +errorMessage
@@ -27,7 +28,7 @@ val RootView = FC<RemoteViewProps> { props ->
         contentViewId != null -> remoteView(contentViewId)
 
         else -> Box {
-            sx { margin = 16.px }
+            sx { margin = StoreTokens.Spacing.Lg.px }
             Alert {
                 severity = "error"
                 +"Missing content for the home page"

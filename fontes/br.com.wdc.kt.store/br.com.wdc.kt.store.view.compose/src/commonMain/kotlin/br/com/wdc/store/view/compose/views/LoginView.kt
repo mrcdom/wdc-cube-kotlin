@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.presentation.presenter.open.login.LoginScope
 import br.com.wdc.store.view.compose.bridge.useScope
 import br.com.wdc.store.view.compose.bridge.safeCall
@@ -45,13 +46,13 @@ fun LoginView(scope: LoginScope) {
         Card(
             modifier = Modifier
                 .width(400.dp),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(StoreTokens.Spacing.Xl.dp),
+                verticalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Lg.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Logo
@@ -64,7 +65,7 @@ fun LoginView(scope: LoginScope) {
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(StoreTokens.Spacing.Xs.dp))
 
                 OutlinedTextField(
                     value = userName,
@@ -75,7 +76,7 @@ fun LoginView(scope: LoginScope) {
                     label = { Text("Username") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                     enabled = !loading,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                 )
@@ -89,7 +90,7 @@ fun LoginView(scope: LoginScope) {
                     label = { Text("Password") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                     enabled = !loading,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -100,24 +101,24 @@ fun LoginView(scope: LoginScope) {
                 if (!errorMessage.isNullOrBlank()) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                         color = MaterialTheme.colorScheme.errorContainer
                     ) {
                         Text(
                             text = errorMessage,
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(12.dp)
+                            modifier = Modifier.padding(StoreTokens.Spacing.Md.dp)
                         )
                     }
                 }
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(StoreTokens.Spacing.Xs.dp))
 
                 Button(
                     onClick = { safeCall { scope.onEnter() } },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                     enabled = !loading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
@@ -132,7 +133,7 @@ fun LoginView(scope: LoginScope) {
                     } else {
                         Text(
                             "Sign in",
-                            fontSize = 16.sp,
+                            fontSize = StoreTokens.FontSize.BodyLarge.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     }

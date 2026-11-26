@@ -30,6 +30,7 @@ kotlin {
     sourceSets {
         getByName("jsMain") {
             dependencies {
+                implementation(project(":store-design"))
                 implementation(project(":store-presentation"))
                 implementation(project(":store-persistence-client"))
 

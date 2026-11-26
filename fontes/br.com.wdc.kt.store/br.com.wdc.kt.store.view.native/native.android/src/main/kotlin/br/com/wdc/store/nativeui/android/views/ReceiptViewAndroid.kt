@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.design.StoreTokens
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
@@ -31,14 +32,14 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
             root.setBackgroundColor(StoreColors.Background)
 
             scrollView {
-                vStack(spacing = (16 * density).toInt(), configure = {
-                    setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt())
+                vStack(spacing = (Dimens.spacingLg * density).toInt(), configure = {
+                    setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt())
                 }) {
                     // Success banner
                     successBanner = hStack(configure = {
-                        background = StoreStyles.roundedBackground(StoreColors.SuccessContainer, 12 * density)
+                        background = StoreStyles.roundedBackground(StoreColors.SuccessContainer, Dimens.radiusMd * density)
                         gravity = Gravity.CENTER
-                        setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt())
+                        setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt())
                         visibility = View.GONE
                     }) {
                         textView {
@@ -59,12 +60,12 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = (22 * density).toInt()
                                 height = (22 * density).toInt()
-                                marginEnd = (8 * density).toInt()
+                                marginEnd = (Dimens.spacingSm * density).toInt()
                             }
                         }
                         textView {
                             text = "Receipt"
-                            textSize = 24f
+                            textSize = StoreTokens.FontSize.Headline.toFloat()
                             setTextColor(StoreColors.OnSurface)
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 weight = 1f
@@ -75,9 +76,9 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                             textSize = 13f
                             setTextColor(StoreColors.OnSurfaceVariant)
                             gravity = Gravity.CENTER
-                            background = StoreStyles.roundedBackground(StoreColors.SurfaceVariant, 8 * density)
-                            val padH = (8 * density).toInt()
-                            val padV = (4 * density).toInt()
+                            background = StoreStyles.roundedBackground(StoreColors.SurfaceVariant, Dimens.radiusSm * density)
+                            val padH = (Dimens.spacingSm * density).toInt()
+                            val padV = (Dimens.spacingXs * density).toInt()
                             setPadding(padH, padV, padH, padV)
                             (layoutParams as LinearLayout.LayoutParams).width = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
@@ -95,7 +96,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                     }) {
                         textView {
                             text = "Item"
-                            textSize = 12f
+                            textSize = StoreTokens.FontSize.Caption.toFloat()
                             setTextColor(StoreColors.OnSurfaceVariant)
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 weight = 1f
@@ -104,14 +105,14 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                         }
                         textView {
                             text = "Qty"
-                            textSize = 12f
+                            textSize = StoreTokens.FontSize.Caption.toFloat()
                             setTextColor(StoreColors.OnSurfaceVariant)
                             gravity = Gravity.CENTER
                             (layoutParams as LinearLayout.LayoutParams).width = (50 * density).toInt()
                         }
                         textView {
                             text = "Amount"
-                            textSize = 12f
+                            textSize = StoreTokens.FontSize.Caption.toFloat()
                             setTextColor(StoreColors.OnSurfaceVariant)
                             gravity = Gravity.END
                             (layoutParams as LinearLayout.LayoutParams).width = (90 * density).toInt()
@@ -119,7 +120,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                     }
 
                     // Items list
-                    itemsStack = vStack(spacing = (8 * density).toInt()) {}
+                    itemsStack = vStack(spacing = (Dimens.spacingSm * density).toInt()) {}
 
                     // Separator before total
                     frame(configure = {
@@ -137,16 +138,16 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                             setTextColor(StoreColors.OnSurfaceVariant)
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
-                                marginEnd = (8 * density).toInt()
+                                marginEnd = (Dimens.spacingSm * density).toInt()
                             }
                         }
                         frame(configure = {
                             background = StoreStyles.roundedBackground(StoreColors.PriceBackground, 10 * density)
-                            setPadding((8 * density).toInt(), (8 * density).toInt(), (8 * density).toInt(), (8 * density).toInt())
+                            setPadding((Dimens.spacingSm * density).toInt(), (Dimens.spacingSm * density).toInt(), (Dimens.spacingSm * density).toInt(), (Dimens.spacingSm * density).toInt())
                             (layoutParams as LinearLayout.LayoutParams).width = ViewGroup.LayoutParams.WRAP_CONTENT
                         }) {
                             totalLabel = textView {
-                                textSize = 20f
+                                textSize = StoreTokens.FontSize.Title.toFloat()
                                 setTypeface(null, Typeface.BOLD)
                                 setTextColor(StoreColors.PriceColor)
                                 gravity = Gravity.CENTER
@@ -161,14 +162,14 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
                         button("Continue Shopping") {
                             textSize = 15f
                             setTextColor(android.graphics.Color.WHITE)
-                            background = StoreStyles.roundedBackground(StoreColors.Primary, 12 * density)
+                            background = StoreStyles.roundedBackground(StoreColors.Primary, Dimens.radiusMd * density)
                             val padH = (20 * density).toInt()
-                            val padV = (8 * density).toInt()
+                            val padV = (Dimens.spacingSm * density).toInt()
                             setPadding(padH, padV, padH, padV)
                             setCompoundDrawablesRelativeWithIntrinsicBounds(
                                 StoreIcons.arrowBack(ctx, 18, android.graphics.Color.WHITE), null, null, null
                             )
-                            compoundDrawablePadding = (4 * density).toInt()
+                            compoundDrawablePadding = (Dimens.spacingXs * density).toInt()
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 height = (48 * density).toInt()
@@ -212,15 +213,15 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
         val row = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            background = StoreStyles.roundedBackground(StoreColors.SurfaceVariant40, 8 * density)
-            setPadding((12 * density).toInt(), (10 * density).toInt(), (12 * density).toInt(), (10 * density).toInt())
+            background = StoreStyles.roundedBackground(StoreColors.SurfaceVariant40, Dimens.radiusSm * density)
+            setPadding((Dimens.spacingMd * density).toInt(), (10 * density).toInt(), (Dimens.spacingMd * density).toInt(), (10 * density).toInt())
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
 
         // Description
         val descTv = TextView(ctx).apply {
             text = item.description ?: ""
-            textSize = 14f
+            textSize = StoreTokens.FontSize.Body.toFloat()
             setTextColor(StoreColors.OnSurface)
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
@@ -229,7 +230,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
         // Quantity
         val qtyTv = TextView(ctx).apply {
             text = "${item.quantity}x"
-            textSize = 14f
+            textSize = StoreTokens.FontSize.Body.toFloat()
             setTextColor(StoreColors.OnSurfaceVariant)
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams((50 * density).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -239,7 +240,7 @@ class ReceiptViewAndroid(app: AndroidNativeRootPresenter, scope: ReceiptScope) :
         // Value
         val valueTv = TextView(ctx).apply {
             text = "\$${ViewUtils.formatPrice(item.value)}"
-            textSize = 14f
+            textSize = StoreTokens.FontSize.Body.toFloat()
             setTypeface(null, Typeface.BOLD)
             setTextColor(StoreColors.PriceColor)
             gravity = Gravity.END

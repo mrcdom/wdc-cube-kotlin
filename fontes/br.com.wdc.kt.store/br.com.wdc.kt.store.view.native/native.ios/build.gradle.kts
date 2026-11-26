@@ -23,6 +23,7 @@ kotlin {
         iosMain.dependencies {
             implementation(project(":store-presentation"))
             implementation(project(":store-persistence-client"))
+            implementation(project(":store-design"))
         }
     }
 }

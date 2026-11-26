@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
@@ -113,7 +114,7 @@ private val AppAlert = FC<AppAlertProps> { props ->
 
     Alert {
         severity = "warning"
-        sx { margin = 16.px }
+        sx { margin = StoreTokens.Spacing.Lg.px }
         action = Button.create {
             color = ButtonColor.inherit
             size = Size.small
@@ -125,7 +126,7 @@ private val AppAlert = FC<AppAlertProps> { props ->
         if (!detail.isNullOrEmpty()) {
             Typography {
                 variant = TypographyVariant.body2
-                sx { marginTop = 8.px }
+                sx { marginTop = StoreTokens.Spacing.Sm.px }
                 +detail
             }
         }
@@ -147,11 +148,11 @@ private val ConnectionAlert = FC<ConnectionAlertProps> { props ->
             asDynamic().icon = false
             sx {
                 display = Display.inlineFlex
-                borderRadius = "0 0 4px 4px".unsafeCast<BorderRadius>()
+                borderRadius = "0 0 ${StoreTokens.Radius.Xs}px ${StoreTokens.Radius.Xs}px".unsafeCast<BorderRadius>()
                 paddingTop = 0.px
                 paddingBottom = 0.px
-                paddingLeft = 12.px
-                paddingRight = 12.px
+                paddingLeft = StoreTokens.Spacing.Md.px
+                paddingRight = StoreTokens.Spacing.Md.px
             }
 
             Typography {
@@ -179,7 +180,7 @@ private val ConnectionAlert = FC<ConnectionAlertProps> { props ->
                     variant = TypographyVariant.body2
                     underline = LinkUnderline.always
                     onClick = { props.onReconnectNow() }
-                    sx { cursor = Cursor.pointer; marginLeft = 8.px }
+                    sx { cursor = Cursor.pointer; marginLeft = StoreTokens.Spacing.Sm.px }
                     +"Try now"
                 }
             } else {

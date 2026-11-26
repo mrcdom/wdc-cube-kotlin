@@ -8,7 +8,7 @@ import android.widget.TextView
 
 object StoreStyles {
 
-    fun applyCardStyle(view: View, cornerRadius: Float = 8f, shadow: Boolean = false) {
+    fun applyCardStyle(view: View, cornerRadius: Float = Dimens.radiusSm.toFloat(), shadow: Boolean = false) {
         val bg = GradientDrawable().apply {
             setColor(StoreColors.Surface)
             this.cornerRadius = cornerRadius * view.resources.displayMetrics.density

@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.ios.views
 
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.StoreTokens.Spacing
+import br.com.wdc.store.nativeui.ios.theme.pt
 import br.com.wdc.store.nativeui.ios.toolkit.AbstractViewIos
 import br.com.wdc.store.nativeui.ios.toolkit.UIKitDom
 import br.com.wdc.store.nativeui.ios.toolkit.ViewUtils
@@ -52,7 +56,7 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                 bottomAnchor.constraintEqualToAnchor(root.bottomAnchor)
             ))
         }) {
-            contentStack = vStack(spacing = 16.0, configure = { alignment = UIK.StackAlignFill }) {
+            contentStack = vStack(spacing = Spacing.Lg.pt, configure = { alignment = UIK.StackAlignFill }) {
                 // Title (large, bold — h4 equivalent)
                 nameLabel = label {
                     font = UIFont.boldSystemFontOfSize(26.0)
@@ -69,59 +73,59 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                 // Description in card (SurfaceVariant50 bg, 8px radius, 16px padding)
                 view(configure = {
                     backgroundColor = StoreColors.SurfaceVariant50
-                    layer.cornerRadius = 8.0
+                    layer.cornerRadius = Radius.Sm.pt
                 }) {
                     descriptionLabel = label {
                         font = UIFont.systemFontOfSize(15.0)
                         textColor = StoreColors.OnSurfaceVariant
                         numberOfLines = 0
                     }
-                    pin(descriptionLabel, insets = 16.0)
+                    pin(descriptionLabel, insets = Spacing.Lg.pt)
                 }
 
                 // Price + Image row
-                hStack(spacing = 16.0, configure = { alignment = UIK.StackAlignCenter }) {
+                hStack(spacing = Spacing.Lg.pt, configure = { alignment = UIK.StackAlignCenter }) {
                     // Price and quantity on the left
-                    vStack(spacing = 12.0, configure = {
+                    vStack(spacing = Spacing.Md.pt, configure = {
                         alignment = UIK.StackAlignLeading
                         setContentHuggingPriority(251.0f, UIK.AxisHorizontal)
                     }) {
                         // Price badge
                         view(configure = {
                             backgroundColor = StoreColors.PriceBackground
-                            layer.cornerRadius = 12.0
+                            layer.cornerRadius = Radius.Md.pt
                             heightAnchor.constraintEqualToConstant(40.0).active = true
                         }) {
                             priceLabel = label {
-                                font = UIFont.boldSystemFontOfSize(20.0)
+                                font = UIFont.boldSystemFontOfSize(FontSize.Title.pt)
                                 textColor = StoreColors.PriceColor
                             }
                             center(priceLabel)
                             NSLayoutConstraint.activateConstraints(listOf(
-                                priceLabel.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                                priceLabel.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0)
+                                priceLabel.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
+                                priceLabel.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Lg.pt)
                             ))
                         }
                         // Quantity selector
-                        hStack(spacing = 4.0, configure = { alignment = UIK.StackAlignCenter }) {
+                        hStack(spacing = Spacing.Xs.pt, configure = { alignment = UIK.StackAlignCenter }) {
                             label {
                                 text = "Qty:"
-                                font = UIFont.systemFontOfSize(14.0)
+                                font = UIFont.systemFontOfSize(FontSize.Body.pt)
                                 textColor = StoreColors.OnSurfaceVariant
                             }
                             qtyContainer = view(configure = {
                                 backgroundColor = StoreColors.SurfaceVariant
-                                layer.cornerRadius = 12.0
+                                layer.cornerRadius = Radius.Md.pt
                                 NSLayoutConstraint.activateConstraints(listOf(
                                     heightAnchor.constraintEqualToConstant(40.0),
                                     widthAnchor.constraintEqualToConstant(120.0)
                                 ))
                             }) {
                                 minusButton = button("−") {
-                                    titleLabel?.font = UIFont.boldSystemFontOfSize(20.0)
+                                    titleLabel?.font = UIFont.boldSystemFontOfSize(FontSize.Title.pt)
                                     addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onMinus")))
                                     NSLayoutConstraint.activateConstraints(listOf(
-                                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 8.0),
+                                        leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Sm.pt),
                                         topAnchor.constraintEqualToAnchor(parent().topAnchor),
                                         bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor),
                                         widthAnchor.constraintEqualToConstant(32.0)
@@ -135,10 +139,10 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                                 }
                                 center(quantityLabel)
                                 plusButton = button("+") {
-                                    titleLabel?.font = UIFont.boldSystemFontOfSize(20.0)
+                                    titleLabel?.font = UIFont.boldSystemFontOfSize(FontSize.Title.pt)
                                     addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onPlus")))
                                     NSLayoutConstraint.activateConstraints(listOf(
-                                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -8.0),
+                                        trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Sm.pt),
                                         topAnchor.constraintEqualToAnchor(parent().topAnchor),
                                         bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor),
                                         widthAnchor.constraintEqualToConstant(32.0)
@@ -150,7 +154,7 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                     // Product image on the right
                     imageView = imageView {
                         backgroundColor = StoreColors.SurfaceVariant
-                        layer.cornerRadius = 12.0
+                        layer.cornerRadius = Radius.Md.pt
                         contentMode = UIK.ContentModeScaleAspectFill
                         NSLayoutConstraint.activateConstraints(listOf(
                             widthAnchor.constraintEqualToConstant(120.0),
@@ -160,16 +164,16 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                 }
 
                 // Action buttons row
-                hStack(spacing = 12.0, configure = { alignment = UIK.StackAlignCenter }) {
+                hStack(spacing = Spacing.Md.pt, configure = { alignment = UIK.StackAlignCenter }) {
                     flexSpacer()
                     backButton = button("Back") {
                         setTitleColor(StoreColors.Primary, forState = UIControlStateNormal)
                         titleLabel?.font = UIFont.systemFontOfSize(15.0)
                         setImage(StoreIcons.arrowBack(18.0, StoreColors.Primary), forState = UIControlStateNormal)
-                        imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
+                        imageEdgeInsets = UIEdgeInsetsMake(0.0, -Spacing.Xs.pt, 0.0, Spacing.Xs.pt)
                         layer.borderWidth = 1.0
                         layer.borderColor = StoreColors.Primary.CGColor
-                        layer.cornerRadius = 12.0
+                        layer.cornerRadius = Radius.Md.pt
                         addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onBack")))
                         NSLayoutConstraint.activateConstraints(listOf(
                             heightAnchor.constraintEqualToConstant(48.0),
@@ -179,10 +183,10 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                     addToCartButton = button("Add") {
                         setTitleColor(UIColor.whiteColor, forState = UIControlStateNormal)
                         backgroundColor = StoreColors.Primary
-                        layer.cornerRadius = 12.0
+                        layer.cornerRadius = Radius.Md.pt
                         titleLabel?.font = UIFont.boldSystemFontOfSize(15.0)
                         setImage(StoreIcons.addShoppingCart(18.0, UIColor.whiteColor), forState = UIControlStateNormal)
-                        imageEdgeInsets = UIEdgeInsetsMake(0.0, -4.0, 0.0, 4.0)
+                        imageEdgeInsets = UIEdgeInsetsMake(0.0, -Spacing.Xs.pt, 0.0, Spacing.Xs.pt)
                         addGestureRecognizer(UITapGestureRecognizer(target = actions, action = sel_registerName("onAddToCart")))
                         NSLayoutConstraint.activateConstraints(listOf(
                             heightAnchor.constraintEqualToConstant(48.0),
@@ -193,7 +197,7 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
 
                 // Error label
                 errorLabel = label {
-                    font = UIFont.systemFontOfSize(14.0)
+                    font = UIFont.systemFontOfSize(FontSize.Body.pt)
                     textColor = StoreColors.Error
                     numberOfLines = 0
                     textAlignment = UIK.TextAlignCenter
@@ -201,10 +205,10 @@ class ProductViewIos(app: IosNativeRootPresenter, scope: ProductScope) : Abstrac
                 }
             }
             NSLayoutConstraint.activateConstraints(listOf(
-                contentStack.topAnchor.constraintEqualToAnchor(parent().topAnchor, 16.0),
-                contentStack.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, 16.0),
-                contentStack.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -16.0),
-                contentStack.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -16.0),
+                contentStack.topAnchor.constraintEqualToAnchor(parent().topAnchor, Spacing.Lg.pt),
+                contentStack.leadingAnchor.constraintEqualToAnchor(parent().leadingAnchor, Spacing.Lg.pt),
+                contentStack.trailingAnchor.constraintEqualToAnchor(parent().trailingAnchor, -Spacing.Lg.pt),
+                contentStack.bottomAnchor.constraintEqualToAnchor(parent().bottomAnchor, -Spacing.Lg.pt),
                 contentStack.widthAnchor.constraintEqualToAnchor(parent().widthAnchor, constant = -32.0)
             ))
         }

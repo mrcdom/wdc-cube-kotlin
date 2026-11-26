@@ -7,7 +7,8 @@ import Tabs from '@mui/material/Tabs'
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
 import bridge, { BaseViewClass, type ViewProps } from 'wdc-cube-remote-bridge-react'
-import { COMPACT_BREAKPOINT } from '@root/theme'
+import { COMPACT_BREAKPOINT, toPx } from '@root/theme'
+import { StoreTokens } from '@root/tokens'
 import HeaderPanel from './home/HeaderPanel'
 
 // :: View
@@ -81,7 +82,7 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
             <Card
               elevation={0}
               sx={{
-                borderRadius: '8px',
+                borderRadius: toPx(StoreTokens.radius.sm),
                 flex: '1 1 0',
                 overflow: this.selectedTab === 0 ? 'auto' : 'hidden',
               }}
@@ -107,12 +108,15 @@ class HomeViewClass extends BaseViewClass<ViewProps, HomeScope> {
             }}
           >
             {/* Products panel (flex: 3) */}
-            <Card elevation={0} sx={{ flex: '3 1 0', borderRadius: '8px', overflowY: 'auto', overflowX: 'hidden' }}>
+            <Card
+              elevation={0}
+              sx={{ flex: '3 1 0', borderRadius: toPx(StoreTokens.radius.sm), overflowY: 'auto', overflowX: 'hidden' }}
+            >
               {bridge.createView(scope.productsPanelViewId)}
             </Card>
 
             {/* Purchases panel (flex: 2) */}
-            <Card elevation={0} sx={{ flex: '2 1 0', borderRadius: '8px', overflow: 'hidden' }}>
+            <Card elevation={0} sx={{ flex: '2 1 0', borderRadius: toPx(StoreTokens.radius.sm), overflow: 'hidden' }}>
               {bridge.createView(scope.purchasesPanelViewId)}
             </Card>
           </Box>

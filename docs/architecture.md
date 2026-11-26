@@ -164,6 +164,7 @@ graph TB
 | `:framework-cube` | MVP engine — transactional navigation, presenter lifecycle, Places, Intent |
 | `:framework-commons` | Shared utilities — logging, JSON, HTTP, crypto, schedulers |
 | `:store-presentation` | Presenters and their scopes — pure presentation logic (no UI) |
+| `:store-design` | The design tokens (colors, spacing, radii, type), the same for every view technology; generated from `tokens.json` |
 | `:store-domain` | Domain models, repository interfaces, security contracts |
 | `:store-persistence-client` | REST implementation of the repositories and of the transaction service (HTTP client) |
 | `:store-persistence` | jOOQ implementation of the repositories (direct database access) |
@@ -178,7 +179,7 @@ graph TB
 | `:view-remote-react-kotlin` | The remote view's client written in Kotlin (React + MUI through kotlin-wrappers), served at `/remote-kotlin/` |
 | `:view-remote-host` | The WDC Store as a remote application over `:framework-cube-remote-backend` (the vid of each scope, its own routes, the React bundle) |
 | `:backend` | Javalin server — REST API, WebSocket, H2 or PostgreSQL |
-| `:store-scripts` | Database creation (`DBCreate`), migrations and jOOQ schema generation |
+| `:store-scripts` | Database creation (`DBCreate`), migrations, jOOQ schema generation and design tokens generation |
 
 ---
 

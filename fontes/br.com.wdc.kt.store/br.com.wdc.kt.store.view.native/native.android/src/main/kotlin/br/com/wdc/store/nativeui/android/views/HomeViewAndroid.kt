@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.design.StoreTokens
 import android.graphics.Color
 import android.graphics.Typeface
 import android.view.GestureDetector
@@ -71,7 +72,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                     clipChildren = false
                     clipToPadding = false
                     (layoutParams as LinearLayout.LayoutParams).height = (Dimens.headerHeightCompact * density).toInt()
-                    setPadding((12 * density).toInt(), (10 * density).toInt(), (12 * density).toInt(), (10 * density).toInt())
+                    setPadding((Dimens.spacingMd * density).toInt(), (10 * density).toInt(), (Dimens.spacingMd * density).toInt(), (10 * density).toInt())
                 }) {
                     // Row 1: Logo + "WDC Store" + Logout icon (all on left)
                     hStack(configure = {
@@ -82,7 +83,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                     }) {
                         // Logo avatar
                         frame(configure = {
-                            val bg = StoreStyles.roundedBackground(StoreColors.WhiteOverlay20, 8 * density)
+                            val bg = StoreStyles.roundedBackground(StoreColors.WhiteOverlay20, Dimens.radiusSm * density)
                             background = bg
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = (32 * density).toInt()
@@ -100,14 +101,14 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                         }
                         frame(configure = {
                             (layoutParams as LinearLayout.LayoutParams).apply {
-                                marginStart = (8 * density).toInt()
+                                marginStart = (Dimens.spacingSm * density).toInt()
                                 width = ViewGroup.LayoutParams.WRAP_CONTENT
                                 height = ViewGroup.LayoutParams.WRAP_CONTENT
                             }
                         }) {
                             textView {
                                 text = "WDC Store"
-                                textSize = 20f
+                                textSize = StoreTokens.FontSize.Title.toFloat()
                                 setTypeface(null, Typeface.BOLD)
                                 setTextColor(Color.WHITE)
                             }
@@ -119,7 +120,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                                 (layoutParams as FrameLayout.LayoutParams).apply {
                                     width = ViewGroup.LayoutParams.WRAP_CONTENT
                                     gravity = Gravity.BOTTOM or Gravity.END
-                                    topMargin = (24 * density).toInt()
+                                    topMargin = (Dimens.spacingXl * density).toInt()
                                 }
                             }
                         }
@@ -130,7 +131,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = (28 * density).toInt()
                                 height = (28 * density).toInt()
-                                marginStart = (12 * density).toInt()
+                                marginStart = (Dimens.spacingMd * density).toInt()
                             }
                             setOnClickListener { safeAction("exit") { scope.onExit() } }
                         }) {
@@ -158,7 +159,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                         }
                     }) {
                         nicknameLabel = textView {
-                            textSize = 14f
+                            textSize = StoreTokens.FontSize.Body.toFloat()
                             setTextColor(StoreColors.WhiteOverlay85)
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 weight = 1f
@@ -182,13 +183,13 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                                 minimumHeight = 0
                                 minimumWidth = 0
                                 background = StoreStyles.roundedBackground(StoreColors.WhiteOverlay20, 10 * density)
-                                val padH = (12 * density).toInt()
-                                val padV = (4 * density).toInt()
+                                val padH = (Dimens.spacingMd * density).toInt()
+                                val padV = (Dimens.spacingXs * density).toInt()
                                 setPadding(padH, padV, padH, padV)
                                 setCompoundDrawablesRelativeWithIntrinsicBounds(
                                     StoreIcons.shoppingCart(ctx, 16, Color.WHITE), null, null, null
                                 )
-                                compoundDrawablePadding = (4 * density).toInt()
+                                compoundDrawablePadding = (Dimens.spacingXs * density).toInt()
                                 (layoutParams as FrameLayout.LayoutParams).apply {
                                     width = ViewGroup.LayoutParams.WRAP_CONTENT
                                     height = (30 * density).toInt()
@@ -224,7 +225,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                     clipToPadding = false
                     gravity = Gravity.CENTER_VERTICAL
                     (layoutParams as LinearLayout.LayoutParams).height = (64 * density).toInt()
-                    setPadding((24 * density).toInt(), (12 * density).toInt(), (24 * density).toInt(), (12 * density).toInt())
+                    setPadding((Dimens.spacingXl * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingXl * density).toInt(), (Dimens.spacingMd * density).toInt())
                 }) {
                     // Logo
                     frame(configure = {
@@ -246,7 +247,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                     }
                     frame(configure = {
                         (layoutParams as LinearLayout.LayoutParams).apply {
-                            marginStart = (12 * density).toInt()
+                            marginStart = (Dimens.spacingMd * density).toInt()
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
@@ -277,7 +278,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             width = (32 * density).toInt()
                             height = (32 * density).toInt()
-                            marginStart = (16 * density).toInt()
+                            marginStart = (Dimens.spacingLg * density).toInt()
                         }
                         setOnClickListener { safeAction("exit") { scope.onExit() } }
                     }) {
@@ -303,19 +304,19 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
 
                     // Greeting pill
                     frame(configure = {
-                        val bg = StoreStyles.roundedBackground(StoreColors.WhiteOverlay15, 20 * density)
+                        val bg = StoreStyles.roundedBackground(StoreColors.WhiteOverlay15, Dimens.radiusXl * density)
                         background = bg
-                        val padH = (16 * density).toInt()
-                        val padV = (8 * density).toInt()
+                        val padH = (Dimens.spacingLg * density).toInt()
+                        val padV = (Dimens.spacingSm * density).toInt()
                         setPadding(padH, padV, padH, padV)
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = ViewGroup.LayoutParams.WRAP_CONTENT
-                            marginEnd = (16 * density).toInt()
+                            marginEnd = (Dimens.spacingLg * density).toInt()
                         }
                     }) {
                         wideNicknameLabel = textView {
-                            textSize = 14f
+                            textSize = StoreTokens.FontSize.Body.toFloat()
                             setTextColor(Color.WHITE)
                             (layoutParams as FrameLayout.LayoutParams).width = ViewGroup.LayoutParams.WRAP_CONTENT
                         }
@@ -331,15 +332,15 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                         }
                     }) {
                         wideCartButton = button("Cart") {
-                            textSize = 14f
+                            textSize = StoreTokens.FontSize.Body.toFloat()
                             setTextColor(Color.WHITE)
                             isAllCaps = false
                             stateListAnimator = null
                             minimumHeight = 0
                             minimumWidth = 0
-                            background = StoreStyles.roundedBackground(StoreColors.WhiteOverlay20, 12 * density)
+                            background = StoreStyles.roundedBackground(StoreColors.WhiteOverlay20, Dimens.radiusMd * density)
                             val padH = (14 * density).toInt()
-                            val padV = (8 * density).toInt()
+                            val padV = (Dimens.spacingSm * density).toInt()
                             setPadding(padH, padV, padH, padV)
                             setCompoundDrawablesRelativeWithIntrinsicBounds(
                                 StoreIcons.shoppingCart(ctx, 18, Color.WHITE), null, null, null
@@ -387,7 +388,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                             setBackgroundColor(StoreColors.Background)
                             (layoutParams as LinearLayout.LayoutParams).height = (Dimens.tabsHeight * density).toInt()
                             gravity = Gravity.BOTTOM
-                            setPadding((16 * density).toInt(), 0, (16 * density).toInt(), 0)
+                            setPadding((Dimens.spacingLg * density).toInt(), 0, (Dimens.spacingLg * density).toInt(), 0)
                         }) {
                             // Products tab with underline
                             vStack(configure = {
@@ -395,11 +396,11 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                                 (layoutParams as LinearLayout.LayoutParams).apply {
                                     width = ViewGroup.LayoutParams.WRAP_CONTENT
                                     height = ViewGroup.LayoutParams.MATCH_PARENT
-                                    marginEnd = (24 * density).toInt()
+                                    marginEnd = (Dimens.spacingXl * density).toInt()
                                 }
                             }) {
                                 productsTab = button("PRODUCTS") {
-                                    textSize = 14f
+                                    textSize = StoreTokens.FontSize.Body.toFloat()
                                     setTypeface(null, Typeface.BOLD)
                                     setTextColor(StoreColors.Primary)
                                     setBackgroundColor(Color.TRANSPARENT)
@@ -431,7 +432,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                                 }
                             }) {
                                 purchasesTab = button("PURCHASES") {
-                                    textSize = 14f
+                                    textSize = StoreTokens.FontSize.Body.toFloat()
                                     setTextColor(StoreColors.OnSurfaceVariant)
                                     setBackgroundColor(Color.TRANSPARENT)
                                     setCompoundDrawablesRelativeWithIntrinsicBounds(
@@ -478,9 +479,9 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                     }
 
                     // Wide panels (side by side)
-                    widePanelsContainer = hStack(spacing = (16 * density).toInt(), configure = {
+                    widePanelsContainer = hStack(spacing = (Dimens.spacingLg * density).toInt(), configure = {
                         visibility = View.GONE
-                        setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt())
+                        setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingLg * density).toInt())
                         (layoutParams as FrameLayout.LayoutParams).apply {
                             width = ViewGroup.LayoutParams.MATCH_PARENT
                             height = ViewGroup.LayoutParams.MATCH_PARENT
@@ -489,7 +490,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
                     }) {
                         // Products panel (60%)
                         frame(configure = {
-                            StoreStyles.applyCardStyle(this, 8f)
+                            StoreStyles.applyCardStyle(this, Dimens.radiusSm.toFloat())
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = 0
                                 height = ViewGroup.LayoutParams.MATCH_PARENT
@@ -499,7 +500,7 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
 
                         // Purchases panel (40%)
                         frame(configure = {
-                            StoreStyles.applyCardStyle(this, 8f)
+                            StoreStyles.applyCardStyle(this, Dimens.radiusSm.toFloat())
                             (layoutParams as LinearLayout.LayoutParams).apply {
                                 width = 0
                                 height = ViewGroup.LayoutParams.MATCH_PARENT
@@ -524,14 +525,14 @@ class HomeViewAndroid(app: AndroidNativeRootPresenter, scope: HomeScope) : Abstr
             // Error label overlaid
             errorLabel = textView {
                 setTextColor(StoreColors.Error)
-                textSize = 14f
+                textSize = StoreTokens.FontSize.Body.toFloat()
                 gravity = Gravity.CENTER
                 visibility = View.GONE
                 (layoutParams as FrameLayout.LayoutParams).apply {
                     width = ViewGroup.LayoutParams.MATCH_PARENT
-                    topMargin = (Dimens.headerHeightCompact * density + 8 * density).toInt()
-                    marginStart = (16 * density).toInt()
-                    marginEnd = (16 * density).toInt()
+                    topMargin = (Dimens.headerHeightCompact * density + Dimens.spacingSm * density).toInt()
+                    marginStart = (Dimens.spacingLg * density).toInt()
+                    marginEnd = (Dimens.spacingLg * density).toInt()
                 }
             }
 

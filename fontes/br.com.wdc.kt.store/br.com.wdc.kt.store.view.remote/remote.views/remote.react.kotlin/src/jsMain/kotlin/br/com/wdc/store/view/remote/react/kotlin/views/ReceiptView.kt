@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
@@ -37,7 +38,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
     val receipt = scope.obj("receipt")
     val muted = StoreColors.OnSurfaceVariant.unsafeCast<Color>()
     val priceColor = StoreColors.PriceColor.unsafeCast<Color>()
-    val medium = integer(500).unsafeCast<FontWeight>()
+    val medium = integer(StoreTokens.FontWeight.Medium).unsafeCast<FontWeight>()
 
     if (receipt == null) {
         Box {
@@ -51,7 +52,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
         sx {
             display = Display.flex
             justifyContent = JustifyContent.center
-            padding = Padding(16.px, 10.px, 16.px, 16.px)
+            padding = Padding(StoreTokens.Spacing.Lg.px, 10.px, StoreTokens.Spacing.Lg.px, StoreTokens.Spacing.Lg.px)
         }
         Box {
             sx { maxWidth = 600.px; width = 100.pct }
@@ -64,7 +65,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                         elevation = 0
                         sx {
                             padding = 20.px
-                            borderRadius = 12.px
+                            borderRadius = StoreTokens.Radius.Md.px
                             backgroundColor = StoreColors.SuccessContainer.unsafeCast<BackgroundColor>()
                             textAlign = TextAlign.center
                         }
@@ -95,7 +96,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                         Receipt { sx { fontSize = 28.px } }
                         Typography {
                             variant = TypographyVariant.h5
-                            sx { fontWeight = medium; fontSize = 28.px }
+                            sx { fontWeight = medium; fontSize = StoreTokens.FontSize.Display.px }
                             +"Receipt"
                         }
                     }
@@ -113,7 +114,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                 // Column titles
                 Stack {
                     direction = responsive(StackDirection.row)
-                    sx { justifyContent = JustifyContent.spaceBetween; paddingLeft = 4.px; paddingRight = 4.px }
+                    sx { justifyContent = JustifyContent.spaceBetween; paddingLeft = StoreTokens.Spacing.Xs.px; paddingRight = StoreTokens.Spacing.Xs.px }
                     Typography {
                         variant = TypographyVariant.caption
                         sx { flex = Flex(number(1.0), number(1.0), 0.px); color = muted }
@@ -140,8 +141,8 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                             key = "$index"
                             elevation = 0
                             sx {
-                                padding = 12.px
-                                borderRadius = 8.px
+                                padding = StoreTokens.Spacing.Md.px
+                                borderRadius = StoreTokens.Radius.Sm.px
                                 backgroundColor = StoreColors.SurfaceVariant40.unsafeCast<BackgroundColor>()
                             }
                             Stack {
@@ -204,7 +205,7 @@ val ReceiptView = FC<RemoteViewProps> { props ->
                         variant = ButtonVariant.contained
                         startIcon = ArrowBack.create()
                         onClick = { bridge.submit(props.vsid, ON_OPEN_PRODUCTS) }
-                        sx { borderRadius = 12.px; height = 48.px; textTransform = None.none; fontWeight = medium }
+                        sx { borderRadius = StoreTokens.Radius.Md.px; height = 48.px; textTransform = None.none; fontWeight = medium }
                         +"Continue Shopping"
                     }
                 }

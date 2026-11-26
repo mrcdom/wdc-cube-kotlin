@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptScope
 import br.com.wdc.store.view.compose.bridge.useScope
 import br.com.wdc.store.view.compose.bridge.safeCall
@@ -33,18 +34,18 @@ fun ReceiptView(scope: ReceiptScope) {
     val receipt = scope.receipt
 
     Box(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(StoreTokens.Spacing.Lg.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         Column(
             modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Md.dp)
         ) {
                 // Success banner
                 if (scope.notifySuccess) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                         color = SuccessContainer
                     ) {
                         Column(
@@ -52,7 +53,7 @@ fun ReceiptView(scope: ReceiptScope) {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(32.dp), tint = SuccessColor)
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
                             Text(
                                 "Purchase completed successfully!",
                                 style = MaterialTheme.typography.titleMedium,
@@ -71,7 +72,7 @@ fun ReceiptView(scope: ReceiptScope) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(StoreTokens.Spacing.Sm.dp)) {
                             Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(28.dp))
                             Text(
                                 "Receipt",
@@ -81,12 +82,12 @@ fun ReceiptView(scope: ReceiptScope) {
                         }
                         receipt.date?.let {
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant
                             ) {
                                 Text(
                                     formatDate(it),
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = StoreTokens.Spacing.Md.dp, vertical = 6.dp),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -100,7 +101,7 @@ fun ReceiptView(scope: ReceiptScope) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         // Header row
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = StoreTokens.Spacing.Xs.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
@@ -128,11 +129,11 @@ fun ReceiptView(scope: ReceiptScope) {
                         receipt.items.forEach { item ->
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(StoreTokens.Radius.Sm.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                                    modifier = Modifier.padding(StoreTokens.Spacing.Md.dp).fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -164,7 +165,7 @@ fun ReceiptView(scope: ReceiptScope) {
 
                     // Total
                     HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
+                        modifier = Modifier.padding(vertical = StoreTokens.Spacing.Xs.dp),
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
                     Row(
@@ -194,7 +195,7 @@ fun ReceiptView(scope: ReceiptScope) {
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(StoreTokens.Spacing.Sm.dp))
 
                 // Action
                 Row(
@@ -203,7 +204,7 @@ fun ReceiptView(scope: ReceiptScope) {
                 ) {
                     Button(
                         onClick = { safeCall { scope.onOpenProducts() } },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(StoreTokens.Radius.Md.dp),
                         modifier = Modifier.height(48.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

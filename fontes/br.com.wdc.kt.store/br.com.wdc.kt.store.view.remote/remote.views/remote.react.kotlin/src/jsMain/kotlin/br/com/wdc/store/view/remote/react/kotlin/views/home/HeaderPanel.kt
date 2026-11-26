@@ -1,5 +1,6 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
 import br.com.wdc.store.view.remote.react.kotlin.views.useBridge
 import mui.icons.material.LocalMall
@@ -49,7 +50,7 @@ val HeaderPanel = FC<HeaderPanelProps> { props ->
 
         if (props.isCompact) {
             Box {
-                sx { padding = Padding(10.px, 12.px) }
+                sx { padding = Padding(10.px, StoreTokens.Spacing.Md.px) }
 
                 // Top row: logo, brand, sign out
                 Box {
@@ -59,8 +60,8 @@ val HeaderPanel = FC<HeaderPanelProps> { props ->
                             width = 32.px
                             height = 32.px
                             backgroundColor = StoreColors.WhiteOverlay20.unsafeCast<BackgroundColor>()
-                            borderRadius = 8.px
-                            marginRight = 8.px
+                            borderRadius = StoreTokens.Radius.Sm.px
+                            marginRight = StoreTokens.Spacing.Sm.px
                         }
                         LocalMall { sx { fontSize = 20.px; color = white } }
                     }
@@ -70,7 +71,7 @@ val HeaderPanel = FC<HeaderPanelProps> { props ->
                         sx {
                             width = 28.px
                             height = 28.px
-                            marginLeft = 16.px
+                            marginLeft = StoreTokens.Spacing.Lg.px
                             backgroundColor = StoreColors.WhiteOverlay10.unsafeCast<BackgroundColor>()
                         }
                         Logout { sx { fontSize = 16.px; color = white; opacity = number(0.7) } }
@@ -98,7 +99,7 @@ val HeaderPanel = FC<HeaderPanelProps> { props ->
         } else {
             Toolbar {
                 sx {
-                    asDynamic().padding = "12px 24px !important"
+                    asDynamic().padding = "${StoreTokens.Spacing.Md}px ${StoreTokens.Spacing.Xl}px !important"
                     asDynamic().minHeight = "auto !important"
                 }
                 Avatar {
@@ -129,9 +130,9 @@ val HeaderPanel = FC<HeaderPanelProps> { props ->
                 Box {
                     sx {
                         backgroundColor = StoreColors.WhiteOverlay15.unsafeCast<BackgroundColor>()
-                        borderRadius = 20.px
-                        padding = Padding(4.px, 12.px)
-                        marginRight = 16.px
+                        borderRadius = StoreTokens.Radius.Xl.px
+                        padding = Padding(StoreTokens.Spacing.Xs.px, StoreTokens.Spacing.Md.px)
+                        marginRight = StoreTokens.Spacing.Lg.px
                     }
                     Typography {
                         variant = TypographyVariant.body2
@@ -183,10 +184,10 @@ private fun ChildrenBuilder.cartButton(count: Int, compact: Boolean, onOpenCart:
                 borderRadius = 10.px
                 textTransform = None.none
                 if (compact) {
-                    padding = Padding(4.px, 12.px)
+                    padding = Padding(StoreTokens.Spacing.Xs.px, StoreTokens.Spacing.Md.px)
                     fontSize = 13.px
                 } else {
-                    padding = Padding(5.px, 12.px)
+                    padding = Padding(5.px, StoreTokens.Spacing.Md.px)
                 }
             }
             ShoppingCart { sx { marginRight = 6.px; fontSize = (if (compact) 16 else 18).px } }

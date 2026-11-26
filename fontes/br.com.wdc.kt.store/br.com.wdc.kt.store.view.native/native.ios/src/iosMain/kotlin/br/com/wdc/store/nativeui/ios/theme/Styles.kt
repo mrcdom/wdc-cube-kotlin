@@ -1,5 +1,9 @@
 package br.com.wdc.store.nativeui.ios.theme
 
+import br.com.wdc.store.design.StoreTokens
+import br.com.wdc.store.design.StoreTokens.FontSize
+import br.com.wdc.store.design.StoreTokens.Radius
+import br.com.wdc.store.design.TokenColors
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.*
@@ -35,7 +39,7 @@ object StoreStyles {
     /**
      * Apply card styling to a UIView (rounded corners, white bg, optional shadow).
      */
-    fun applyCardStyle(view: UIView, cornerRadius: Double = 8.0, shadow: Boolean = false) {
+    fun applyCardStyle(view: UIView, cornerRadius: Double = Radius.Sm.pt, shadow: Boolean = false) {
         view.backgroundColor = UIColor.whiteColor
         view.layer.cornerRadius = cornerRadius
         view.clipsToBounds = !shadow
@@ -56,8 +60,8 @@ object StoreStyles {
             setTitle(title, forState = UIControlStateNormal)
             setTitleColor(titleColor, forState = UIControlStateNormal)
             this.backgroundColor = backgroundColor
-            layer.cornerRadius = 12.0
-            titleLabel?.font = UIFont.boldSystemFontOfSize(16.0)
+            layer.cornerRadius = Radius.Md.pt
+            titleLabel?.font = UIFont.boldSystemFontOfSize(FontSize.BodyLarge.pt)
         }
         btn.heightAnchor.constraintEqualToConstant(48.0).active = true
         return btn
@@ -75,10 +79,11 @@ object StoreStyles {
             height = size.height
         }
 
-        // Primary = #1B5E7B (0.106, 0.369, 0.482)
-        // PrimaryContainer = #D0E8F2 (0.816, 0.910, 0.949)
-        val r1 = 0.106; val g1 = 0.369; val b1 = 0.482
-        val r2 = 0.816; val g2 = 0.910; val b2 = 0.949
+        // From Primary (top) to PrimaryContainer (bottom)
+        val top = StoreTokens.Color.Primary
+        val bottom = StoreTokens.Color.PrimaryContainer
+        val r1 = TokenColors.red(top) / 255.0; val g1 = TokenColors.green(top) / 255.0; val b1 = TokenColors.blue(top) / 255.0
+        val r2 = TokenColors.red(bottom) / 255.0; val g2 = TokenColors.green(bottom) / 255.0; val b2 = TokenColors.blue(bottom) / 255.0
 
         UIGraphicsBeginImageContextWithOptions(CGSizeMake(width, height), true, 1.0)
         val ctx = UIGraphicsGetCurrentContext() ?: run {

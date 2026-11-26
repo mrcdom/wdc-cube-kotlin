@@ -1,5 +1,6 @@
 package br.com.wdc.store.nativeui.android.views
 
+import br.com.wdc.store.design.StoreTokens
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
@@ -39,7 +40,7 @@ class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsP
                 // Section header
                 hStack(configure = {
                     gravity = Gravity.CENTER_VERTICAL
-                    setPadding((16 * density).toInt(), (12 * density).toInt(), (16 * density).toInt(), (4 * density).toInt())
+                    setPadding((Dimens.spacingLg * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingLg * density).toInt(), (Dimens.spacingXs * density).toInt())
                 }) {
                     textView {
                         text = "Products"
@@ -52,11 +53,11 @@ class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsP
                         }
                     }
                     headerBadge = textView {
-                        textSize = 12f
+                        textSize = StoreTokens.FontSize.Caption.toFloat()
                         setTextColor(StoreColors.OnPrimaryContainer)
                         gravity = Gravity.CENTER
-                        background = StoreStyles.roundedBackground(StoreColors.SecondaryContainer, 8 * density)
-                        val padH = (16 * density).toInt()
+                        background = StoreStyles.roundedBackground(StoreColors.SecondaryContainer, Dimens.radiusSm * density)
+                        val padH = (Dimens.spacingLg * density).toInt()
                         val padV = (6 * density).toInt()
                         setPadding(padH, padV, padH, padV)
                         (layoutParams as LinearLayout.LayoutParams).apply {
@@ -72,10 +73,10 @@ class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsP
                     setBackgroundColor(StoreColors.SurfaceVariant)
                     (layoutParams as LinearLayout.LayoutParams).apply {
                         height = (1 * density).toInt().coerceAtLeast(1)
-                        topMargin = (8 * density).toInt()
-                        bottomMargin = (12 * density).toInt()
-                        marginStart = (16 * density).toInt()
-                        marginEnd = (16 * density).toInt()
+                        topMargin = (Dimens.spacingSm * density).toInt()
+                        bottomMargin = (Dimens.spacingMd * density).toInt()
+                        marginStart = (Dimens.spacingLg * density).toInt()
+                        marginEnd = (Dimens.spacingLg * density).toInt()
                     }
                 })
 
@@ -89,10 +90,10 @@ class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsP
                 }) {
                     stackView = flowLayout(
                         minChildWidth = (160 * density).toInt(),
-                        horizontalSpacing = (12 * density).toInt(),
-                        verticalSpacing = (12 * density).toInt(),
+                        horizontalSpacing = (Dimens.spacingMd * density).toInt(),
+                        verticalSpacing = (Dimens.spacingMd * density).toInt(),
                         configure = {
-                            setPadding((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (8 * density).toInt())
+                            setPadding((Dimens.spacingMd * density).toInt(), (Dimens.spacingSm * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingSm * density).toInt())
                         }
                     ) {}
                 }
@@ -101,7 +102,7 @@ class ProductsPanelViewAndroid(app: AndroidNativeRootPresenter, scope: ProductsP
             // Empty label (centered)
             emptyLabel = textView {
                 text = "No products available"
-                textSize = 16f
+                textSize = StoreTokens.FontSize.BodyLarge.toFloat()
                 setTextColor(StoreColors.OnSurfaceVariant)
                 gravity = Gravity.CENTER
                 visibility = View.GONE
@@ -177,7 +178,7 @@ private class ProductCardView(app: AndroidNativeRootPresenter, scope: ProductsPa
 
         return AndroidDom.build(ctx) {
             val card = parent()
-            val cornerPx = 8f * density
+            val cornerPx = Dimens.radiusSm * density
             val normalBg = StoreStyles.roundedBackground(StoreColors.Surface, cornerPx)
             val pressedBg = StoreStyles.roundedBackground(StoreColors.SurfaceVariant, cornerPx)
             val statesBg = android.graphics.drawable.StateListDrawable().apply {
@@ -206,7 +207,7 @@ private class ProductCardView(app: AndroidNativeRootPresenter, scope: ProductsPa
 
                 // Content
                 vStack(spacing = (6 * density).toInt(), configure = {
-                    setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
+                    setPadding((Dimens.spacingMd * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingMd * density).toInt(), (Dimens.spacingMd * density).toInt())
                 }) {
                     nameLabel = textView {
                         textSize = 15f
@@ -217,15 +218,15 @@ private class ProductCardView(app: AndroidNativeRootPresenter, scope: ProductsPa
 
                     // Price badge
                     frame(configure = {
-                        background = StoreStyles.roundedBackground(StoreColors.PriceBackground, 8 * density)
+                        background = StoreStyles.roundedBackground(StoreColors.PriceBackground, Dimens.radiusSm * density)
                         (layoutParams as LinearLayout.LayoutParams).apply {
                             width = ViewGroup.LayoutParams.WRAP_CONTENT
                             height = (28 * density).toInt()
                         }
-                        setPadding((12 * density).toInt(), 0, (12 * density).toInt(), 0)
+                        setPadding((Dimens.spacingMd * density).toInt(), 0, (Dimens.spacingMd * density).toInt(), 0)
                     }) {
                         priceLabel = textView {
-                            textSize = 14f
+                            textSize = StoreTokens.FontSize.Body.toFloat()
                             setTypeface(null, Typeface.BOLD)
                             setTextColor(StoreColors.PriceColor)
                             (layoutParams as FrameLayout.LayoutParams).gravity = Gravity.CENTER
