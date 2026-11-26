@@ -6,7 +6,7 @@
 
 - **Xcode** installed (with Command Line Tools)
 - **JDK 21** — the build script finds it through `/usr/libexec/java_home -v 21`
-- **Backend running** on port 8080 (the app connects to `http://localhost:8080`)
+- **Backend running**, by default on port 8080 (the app connects to the `BACKEND_URL` of its launch environment, `http://localhost:8080` without it; `./deploy.sh --backend-url <url>` sets it when the script launches the app)
 
 ## Deploying to the Simulator
 
@@ -95,10 +95,10 @@ Then regenerate the project: `cd iosApp && xcodegen generate`.
 
 ### Backend URL on the device
 
-On the simulator, `localhost` points to the Mac. On a real device you need the **IP address of the machine** running the backend. Change the URL in `iosApp/StoreApp/ContentView.swift`:
+On the simulator, `localhost` points to the Mac. On a real device you need the **IP address of the machine** running the backend, and an app launched from its icon has no launch environment: change the default in `iosApp/StoreApp/ContentView.swift`:
 
 ```swift
-MainViewControllerKt.MainViewController(baseUrl: "http://192.168.x.x:8080")
+let baseUrl = ProcessInfo.processInfo.environment["BACKEND_URL"] ?? "http://192.168.x.x:8080"
 ```
 
 ## Building from the terminal (without the Xcode UI)
