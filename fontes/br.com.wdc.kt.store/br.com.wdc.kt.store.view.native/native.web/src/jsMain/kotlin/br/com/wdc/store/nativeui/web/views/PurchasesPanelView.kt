@@ -27,9 +27,10 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
+import react.Key
 import react.ReactNode
-import react.dom.html.ReactHTML.div
 import react.dom.events.MouseEventHandler
+import react.dom.html.ReactHTML.div
 import react.useEffect
 import react.useRef
 import web.cssom.*
@@ -144,7 +145,7 @@ val PurchasesPanelView = FC<ScopeProps<PurchasesPanelScope>> { props ->
 
                     for (purchase in purchases) {
                         Card {
-                            key = "${purchase.id}"
+                            key = Key("${purchase.id}")
                             elevation = 0
                             sx {
                                 borderRadius = StoreTokens.Radius.Sm.px

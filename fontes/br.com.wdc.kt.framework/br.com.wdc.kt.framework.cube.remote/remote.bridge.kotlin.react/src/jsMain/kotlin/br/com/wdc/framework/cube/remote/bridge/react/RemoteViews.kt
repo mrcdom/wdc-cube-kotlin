@@ -7,7 +7,9 @@ import react.FC
 import react.Props
 import react.createRequiredContext
 import react.memo
-import react.useEffectWithCleanup
+import react.Key
+import kotlinx.coroutines.awaitCancellation
+import react.useEffect
 import react.useRequired
 import react.useState
 
@@ -59,7 +61,7 @@ class RemoteViews(val bridge: RemoteBridge) {
         bridge.bindingOf(vsid)
         with(builder) {
             component {
-                key = vsid
+                key = Key(vsid)
                 this.vsid = vsid
             }
         }
@@ -88,17 +90,26 @@ fun RemoteBridge.useView(vsid: String): RemoteScope {
     val repaint = useState(0).component2()
     val binding = bindingOf(vsid)
     binding.onChange = { repaint { it + 1 } }
-    useEffectWithCleanup(vsid) {
+    // the effect's coroutine lives while the component is mounted: its cancellation is the cleanup
+    useEffect(vsid) {
         mounted(vsid)
-        onCleanup { unmounted(binding) }
+        try {
+            awaitCancellation()
+        } finally {
+            unmounted(binding)
+        }
     }
     return binding.scope
 }
 
 /** Keeps the view [vsid] while the calling component is on screen, even if nothing shows it yet. */
 fun RemoteBridge.useHold(vsid: String?) {
-    useEffectWithCleanup(vsid) {
+    useEffect(vsid) {
         if (vsid != null) hold(vsid)
-        onCleanup { if (vsid != null) release(vsid) }
+        try {
+            awaitCancellation()
+        } finally {
+            if (vsid != null) release(vsid)
+        }
     }
 }

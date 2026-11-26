@@ -1,12 +1,13 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
-import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
-import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
+import br.com.wdc.framework.cube.remote.bridge.react.useView
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.view.remote.react.kotlin.theme.COMPACT_BREAKPOINT
 import br.com.wdc.store.view.remote.react.kotlin.views.useBridge
 import kotlinx.browser.window
+import kotlinx.coroutines.awaitCancellation
 import mui.icons.material.Inventory2
 import mui.icons.material.ShoppingBag
 import mui.material.Alert
@@ -17,9 +18,10 @@ import mui.material.Tab
 import mui.material.Tabs
 import mui.system.sx
 import react.FC
+import react.Key
 import react.ReactNode
 import react.create
-import react.useEffectWithCleanup
+import react.useEffect
 import react.useState
 import web.cssom.*
 
@@ -33,10 +35,14 @@ val HomeView = FC<RemoteViewProps> { props ->
     var selectedTab by useState(0)
     var isCompact by useState(window.innerWidth < COMPACT_BREAKPOINT)
 
-    useEffectWithCleanup(Unit) {
+    useEffect(Unit) {
         val handler: (dynamic) -> Unit = { isCompact = window.innerWidth < COMPACT_BREAKPOINT }
         window.addEventListener("resize", handler)
-        onCleanup { window.removeEventListener("resize", handler) }
+        try {
+            awaitCancellation()
+        } finally {
+            window.removeEventListener("resize", handler)
+        }
     }
 
     val productsPanel = scope.viewId("productsPanel")
@@ -61,7 +67,7 @@ val HomeView = FC<RemoteViewProps> { props ->
         val errorMessage = scope.string("errorMessage")
         if (!errorMessage.isNullOrEmpty()) {
             Alert {
-                key = "error"
+                key = Key("error")
                 severity = "error"
                 sx { marginLeft = StoreTokens.Spacing.Lg.px; marginRight = StoreTokens.Spacing.Lg.px; marginTop = StoreTokens.Spacing.Sm.px }
                 +errorMessage
@@ -71,7 +77,7 @@ val HomeView = FC<RemoteViewProps> { props ->
         if (contentViewId != null) {
             // The place below the home (keyed: the error above must not remount it)
             Box {
-                key = "content"
+                key = Key("content")
                 sx {
                     flex = Flex(number(1.0), number(1.0), 0.px)
                     overflowY = Auto.auto
@@ -89,7 +95,7 @@ val HomeView = FC<RemoteViewProps> { props ->
         } else if (isCompact) {
             // Compact: the panels in tabs
             Box {
-                key = "compact"
+                key = Key("compact")
                 sx {
                     flex = Flex(number(1.0), number(1.0), 0.px)
                     padding = StoreTokens.Spacing.Sm.px
@@ -127,7 +133,7 @@ val HomeView = FC<RemoteViewProps> { props ->
         } else {
             // Wide: the panels side by side
             Box {
-                key = "wide"
+                key = Key("wide")
                 sx {
                     display = Display.flex
                     flexDirection = FlexDirection.row

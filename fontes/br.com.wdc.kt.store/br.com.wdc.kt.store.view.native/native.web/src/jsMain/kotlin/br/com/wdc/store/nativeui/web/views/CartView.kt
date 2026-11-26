@@ -1,11 +1,11 @@
 package br.com.wdc.store.nativeui.web.views
 
 import br.com.wdc.store.design.StoreTokens
+import br.com.wdc.store.nativeui.web.bridge.RenderSlot
 import br.com.wdc.store.nativeui.web.bridge.ScopeProps
 import br.com.wdc.store.nativeui.web.bridge.safeCall
-import br.com.wdc.store.nativeui.web.bridge.useScope
-import br.com.wdc.store.nativeui.web.bridge.RenderSlot
 import br.com.wdc.store.nativeui.web.bridge.scopeKey
+import br.com.wdc.store.nativeui.web.bridge.useScope
 import br.com.wdc.store.nativeui.web.theme.StoreColors
 import br.com.wdc.store.nativeui.web.theme.StoreStyles
 import br.com.wdc.store.nativeui.web.util.formatPrice
@@ -34,6 +34,7 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
+import react.Key
 import react.ReactNode
 import react.dom.events.MouseEventHandler
 import web.cssom.*
@@ -125,7 +126,7 @@ val CartView = FC<ScopeProps<CartScope>> { props ->
                         // Each row is a view of its own: it repaints only when its own scope changes
                         for (row in rows) {
                             RenderSlot {
-                                key = scopeKey(row)
+                                key = Key(scopeKey(row))
                                 this.scope = row
                             }
                         }

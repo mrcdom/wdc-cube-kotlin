@@ -23,7 +23,7 @@ val ProductsPanelView = FC<ScopeProps<ProductsPanelScope>> { props ->
 
 `useScope(scope)` installs the component as the scope's updater (`scope.setUpdater`) as it starts rendering — before
 it reads the scope, so no change is lost — and takes it back (`clearUpdater`) in the cleanup of a
-`useEffectWithCleanup` when it unmounts: the component's lifecycle is the view's, React drops what leaves the screen,
+a `useEffect` whose coroutine is cancelled when it unmounts: the component's lifecycle is the view's, React drops what leaves the screen,
 and nothing is released by hand. A scope has one updater, so one component draws a scope at a time (the Home draws
 each panel in its compact *or* its wide layout, never both).
 
@@ -88,7 +88,7 @@ fresh UI state. The cart draws each row (`CartScope.rows`) in a slot of its own,
   fresh for each scope the slot shows.
 - Text fields are uncontrolled where the value is only needed on submit (login): `useRef` + `inputRef` +
   `defaultValue`, read when the handler runs, so typing repaints nothing.
-- A listener on the window (the Home's resize) is added in `useEffectWithCleanup` and removed when the view unmounts.
+- A listener on the window (the Home's resize) is added in a `useEffect` and removed in its `finally`, when the effect's coroutine is cancelled as the view unmounts.
 
 ## How to build and run
 

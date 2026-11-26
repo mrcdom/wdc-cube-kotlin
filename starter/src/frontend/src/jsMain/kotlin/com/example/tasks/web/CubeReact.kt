@@ -3,17 +3,19 @@ package com.example.tasks.web
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.Scope
 import com.example.tasks.TasksApp
+import kotlin.reflect.KClass
 import kotlinx.browser.window
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import react.FC
+import react.Key
 import react.Props
 import react.createRequiredContext
 import react.memo
-import react.useEffectWithCleanup
+import react.useEffect
 import react.useMemo
 import react.useRequired
 import react.useState
-import kotlin.reflect.KClass
 
 // The binding between the Cube and React: how scopes become components. Nothing here is specific to the tasks; it is
 // the same in any application of this kind (the WDC Store's native web has a fuller one).
@@ -84,7 +86,7 @@ val Slot = memo(FC<SlotProps> { props ->
     val scope = props.scope ?: return@FC
     val view = useRequired(ScopeViewsContext).viewOf(scope)
     view {
-        key = keyOf(scope)
+        key = Key(keyOf(scope))
         this.scope = scope
     }
 })
@@ -109,8 +111,11 @@ fun <S : Scope> useScope(scope: S): S {
     val setPainted = useState(0).component2()
     val painter = useMemo(scope) { Painter { setPainted { it + 1 } } }
     scope.setUpdater(painter.updater)
-    useEffectWithCleanup(scope) {
-        onCleanup {
+    // the effect's coroutine lives while the component is mounted: its cancellation is the cleanup
+    useEffect(scope) {
+        try {
+            awaitCancellation()
+        } finally {
             scope.clearUpdater(painter.updater)
             PaintCycle.forget(painter.repaint)
         }

@@ -1,9 +1,9 @@
 package br.com.wdc.store.view.remote.react.kotlin.views
 
-import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
-import br.com.wdc.framework.cube.remote.bridge.react.useView
 import br.com.wdc.framework.cube.remote.bridge.react.remoteView
+import br.com.wdc.framework.cube.remote.bridge.react.useView
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
 import br.com.wdc.store.view.remote.react.kotlin.util.formatPrice
 import mui.icons.material.Add
@@ -29,6 +29,7 @@ import mui.system.responsive
 import mui.system.sx
 import react.FC
 import react.Fragment
+import react.Key
 import react.create
 import web.cssom.*
 
@@ -115,7 +116,7 @@ val CartView = FC<RemoteViewProps> { props ->
                         spacing = responsive(1)
                         for (row in rows) {
                             Fragment {
-                                key = row
+                                key = Key(row)
                                 remoteView(row)
                             }
                         }

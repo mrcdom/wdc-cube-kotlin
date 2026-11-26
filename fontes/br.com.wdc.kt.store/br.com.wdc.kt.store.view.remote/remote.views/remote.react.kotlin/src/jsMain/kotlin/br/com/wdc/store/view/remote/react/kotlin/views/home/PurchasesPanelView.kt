@@ -1,13 +1,17 @@
 package br.com.wdc.store.view.remote.react.kotlin.views.home
 
-import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.framework.cube.remote.bridge.react.RemoteViewProps
 import br.com.wdc.framework.cube.remote.bridge.react.useView
+import br.com.wdc.store.design.StoreTokens
 import br.com.wdc.store.view.remote.react.kotlin.theme.StoreColors
 import br.com.wdc.store.view.remote.react.kotlin.util.formatDate
 import br.com.wdc.store.view.remote.react.kotlin.util.formatPrice
 import br.com.wdc.store.view.remote.react.kotlin.views.useBridge
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.max
 import kotlinx.browser.window
+import kotlinx.coroutines.awaitCancellation
 import mui.icons.material.ChevronLeft
 import mui.icons.material.ChevronRight
 import mui.icons.material.Inventory2
@@ -26,15 +30,13 @@ import mui.material.styles.TypographyVariant
 import mui.system.responsive
 import mui.system.sx
 import react.FC
+import react.Key
 import react.ReactNode
 import react.dom.html.ReactHTML.div
-import react.useEffectOnceWithCleanup
+import react.useEffectOnce
 import react.useRef
 import web.cssom.*
 import web.html.HTMLDivElement
-import kotlin.math.ceil
-import kotlin.math.floor
-import kotlin.math.max
 
 // :: Events of the purchases panel
 private const val ON_OPEN_RECEIPT = 1
@@ -53,7 +55,7 @@ val PurchasesPanelView = FC<RemoteViewProps> { props ->
     val scope = bridge.useView(props.vsid)
     val listRef = useRef<HTMLDivElement>(null)
 
-    useEffectOnceWithCleanup {
+    useEffectOnce {
         val computePageSize = {
             val el = listRef.current
             val containerHeight = el?.clientHeight ?: 0
@@ -78,7 +80,9 @@ val PurchasesPanelView = FC<RemoteViewProps> { props ->
         }
         val frame = window.requestAnimationFrame { computePageSize() }
         window.addEventListener("resize", onResize)
-        onCleanup {
+        try {
+            awaitCancellation()
+        } finally {
             window.cancelAnimationFrame(frame)
             window.clearTimeout(resizeTimer)
             window.removeEventListener("resize", onResize)
@@ -160,7 +164,7 @@ val PurchasesPanelView = FC<RemoteViewProps> { props ->
                     for (purchase in purchases) {
                         val id = purchase["id"]
                         Card {
-                            key = "$id"
+                            key = Key("$id")
                             elevation = 0
                             asDynamic()["data-purchase-item"] = true
                             sx {
