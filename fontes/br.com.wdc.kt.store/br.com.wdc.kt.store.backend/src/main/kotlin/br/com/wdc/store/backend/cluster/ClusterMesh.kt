@@ -45,11 +45,23 @@ import javax.crypto.spec.SecretKeySpec
  *
  * @param key the key every instance of the mesh shares
  * @param nodeId this instance's name in the mesh, new for each process
+ * @param timing how soon a dropped connection is opened again, and how often the connections are pinged
  */
 class ClusterMesh(
     private val key: ByteArray,
     val nodeId: String = UUID.randomUUID().toString(),
+    private val timing: Timing = Timing(),
 ) : AutoCloseable {
+
+    /**
+     * A dropped connection is opened again after [firstRetry], doubling up to [maxRetry]; each connection is pinged
+     * every [ping], and taken as dropped after three pings without an answer.
+     */
+    data class Timing(
+        val firstRetry: Duration = Duration.ofSeconds(1),
+        val maxRetry: Duration = Duration.ofSeconds(30),
+        val ping: Duration = Duration.ofSeconds(20),
+    )
 
     companion object {
         /** The route the other instances connect to. */
@@ -64,7 +76,6 @@ class ClusterMesh(
         /** The other end did not prove the key, or speaks another version. */
         internal const val CLOSE_REFUSED = 4003
 
-        private const val PING_SECONDS = 20L
         private const val MAX_PENDING = 1000
         private const val LABEL = "wdc-store/cluster/v1"
 
@@ -146,7 +157,7 @@ class ClusterMesh(
             links += link
             link.start()
         }
-        pinger.scheduleWithFixedDelay({ links.forEach { it.ping() } }, PING_SECONDS, PING_SECONDS, TimeUnit.SECONDS)
+        pinger.scheduleWithFixedDelay({ links.forEach { it.ping() } }, timing.ping.toMillis(), timing.ping.toMillis(), TimeUnit.MILLISECONDS)
         LOG.info("Cluster node {}: connecting to {}", nodeId, peers.joinToString(", "))
     }
 
@@ -266,7 +277,7 @@ class ClusterMesh(
         }
 
         private fun run() {
-            var delay = 1000L
+            var delay = timing.firstRetry.toMillis()
             var failures = 0
             while (!closed && !stopped) {
                 val connection = Connection()
@@ -281,7 +292,7 @@ class ClusterMesh(
                     if (code == CLOSE_REFUSED) LOG.warn("Cluster peer {} refused this instance: is the secret the same?", uri)
                     if (connection.wasReady) {
                         LOG.info("Cluster peer {} disconnected", uri)
-                        delay = 1000L
+                        delay = timing.firstRetry.toMillis()
                         failures = 0
                     }
                 } catch (_: InterruptedException) {
@@ -296,7 +307,7 @@ class ClusterMesh(
                 } catch (_: InterruptedException) {
                     return
                 }
-                delay = minOf(delay * 2, 30_000L)
+                delay = minOf(delay * 2, timing.maxRetry.toMillis())
             }
         }
 
@@ -328,7 +339,7 @@ class ClusterMesh(
             val connection = current ?: return
             val ws = connection.socket ?: return
             if (!ready) return
-            if (System.currentTimeMillis() - connection.lastPong > 3 * PING_SECONDS * 1000) {
+            if (System.currentTimeMillis() - connection.lastPong > 3 * timing.ping.toMillis()) {
                 LOG.warn("Cluster peer {} stopped answering", uri)
                 connection.end(-1)
                 return
