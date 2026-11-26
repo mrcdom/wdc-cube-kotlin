@@ -28,6 +28,19 @@ val nativeLinkSlot = gradle.sharedServices.registerIfAbsent("kotlinNativeLink", 
     maxParallelUsages.set(1)
 }
 
+// The Kotlin/JS and Kotlin/Wasm npm installs (yarn, with one shared cache) ran one after the other before the
+// configuration cache; run together, the Wasm one was seen to finish without writing its yarn.lock on the CI. One at
+// a time, as before.
+abstract class NpmInstallSlot : org.gradle.api.services.BuildService<org.gradle.api.services.BuildServiceParameters.None>
+
+val npmInstallSlot = gradle.sharedServices.registerIfAbsent("kotlinNpmInstall", NpmInstallSlot::class) {
+    maxParallelUsages.set(1)
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask>().configureEach {
+    usesService(npmInstallSlot)
+}
+
 // KMP modules handle their own plugin configuration
 val kmpModules = setOf("framework-commons", "framework-cube", "framework-cube-remote-bridge", "framework-cube-remote-bridge-react", "framework-domain", "store-design", "store-domain", "store-presentation", "store-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android", "view-remote-react-kotlin")
 
