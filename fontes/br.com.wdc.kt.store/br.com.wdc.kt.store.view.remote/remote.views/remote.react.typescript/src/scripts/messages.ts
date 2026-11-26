@@ -11,6 +11,7 @@ export type MessageKey =
   | 'browser.connectingNow'
   | 'browser.missingHomeContent'
   | 'browser.notConnected'
+  | 'browser.outdated'
   | 'browser.tryNow'
   | 'browser.unexpectedError'
   | 'browser.uriNotReachable'
@@ -85,6 +86,7 @@ const CATALOGS: Record<Language, Record<MessageKey, string>> = {
     'browser.connectingNow': 'Connecting now...',
     'browser.missingHomeContent': 'Missing content for the home page',
     'browser.notConnected': 'Not connected.',
+    'browser.outdated': 'This page is out of date. Reload it to continue.',
     'browser.tryNow': 'Try now',
     'browser.unexpectedError': 'An unexpected error occurred',
     'browser.uriNotReachable': 'The URI {uri} is not reachable',
@@ -158,6 +160,7 @@ const CATALOGS: Record<Language, Record<MessageKey, string>> = {
     'browser.connectingNow': 'Conectando agora...',
     'browser.missingHomeContent': 'Falta o conteúdo da página inicial',
     'browser.notConnected': 'Sem conexão.',
+    'browser.outdated': 'Esta página está desatualizada. Recarregue-a para continuar.',
     'browser.tryNow': 'Tentar agora',
     'browser.unexpectedError': 'Ocorreu um erro inesperado',
     'browser.uriNotReachable': 'O endereço {uri} não está acessível',

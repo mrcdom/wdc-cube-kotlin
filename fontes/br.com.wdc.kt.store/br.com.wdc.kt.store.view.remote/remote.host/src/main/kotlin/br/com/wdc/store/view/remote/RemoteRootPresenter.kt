@@ -28,6 +28,12 @@ import kotlin.reflect.KClass
 class RemoteRootPresenter(id: String) : RootPresenter(), RemoteApplication {
 
     companion object {
+        /**
+         * The browser alert's code for a message of the catalog (`:store-i18n`): `args` = the key, then each argument's
+         * name and value. The Store's clients translate it; -1 (a text) and -2 (an address not reachable) are the shell's.
+         */
+        const val ALERT_MESSAGE = -3
+
         /** The vid of each scope the Store shows: each scope declares the one of the client component that paints it. */
         val VIDS: Map<KClass<out Scope>, String> = mapOf(
             RootScope::class to RootScope.VID,
@@ -57,11 +63,15 @@ class RemoteRootPresenter(id: String) : RootPresenter(), RemoteApplication {
 
     override fun updateHistory() = remote.updateHistory()
 
-    /** The browser's alert shows the error; the stack trace goes to the server log, never to the client. */
+    /**
+     * The browser's alert shows the error in the user's language: it goes as a message ([ALERT_MESSAGE]: the key, then
+     * each argument's name and value), and the client translates it. What failed, and the stack trace, go to the server
+     * log, never to the client.
+     */
     override fun alertUnexpectedError(logger: Log, message: String, e: Throwable) {
-        val text = errorText(message, e)
-        logger.error(text, e)
-        remote.browser.alertUnexpectedError(text)
+        logger.error(errorText(message, e), e)
+        val shown = unexpectedError(e)
+        remote.browser.alert({}, ALERT_MESSAGE, shown.key, *shown.args.flatMap { (name, value) -> listOf(name, value) }.toTypedArray())
     }
 
     override fun release() {

@@ -162,12 +162,18 @@ export class ScopeCoordinator {
     }
   }
 
+  /**
+   * What the user is told when the host does not speak this client's version: {@link OUTDATED_MESSAGE} (English)
+   * unless the application gives it in the user's language.
+   */
+  outdatedMessage: string = OUTDATED_MESSAGE
+
   /** The host does not speak this client's version: stop, and tell the user through the browser's alert. */
   markOutdated() {
     this.outdated = true
     const browser = this.viewMap.get(BROWSER_VSID)
     if (browser) {
-      browser.getScope().alertMessage = { id: -1, args: [OUTDATED_MESSAGE] }
+      browser.getScope().alertMessage = { id: -1, args: [this.outdatedMessage] }
       browser.forceUpdate()
     }
   }

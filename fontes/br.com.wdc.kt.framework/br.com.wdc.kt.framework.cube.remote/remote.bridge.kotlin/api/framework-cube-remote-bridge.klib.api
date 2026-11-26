@@ -30,6 +30,9 @@ final class br.com.wdc.framework.cube.remote.bridge/RemoteBridge { // br.com.wdc
 
     final var outdated // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.outdated|{}outdated[0]
         final fun <get-outdated>(): kotlin/Boolean // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.outdated.<get-outdated>|<get-outdated>(){}[0]
+    final var outdatedMessage // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.outdatedMessage|{}outdatedMessage[0]
+        final fun <get-outdatedMessage>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.outdatedMessage.<get-outdatedMessage>|<get-outdatedMessage>(){}[0]
+        final fun <set-outdatedMessage>(kotlin/String) // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.outdatedMessage.<set-outdatedMessage>|<set-outdatedMessage>(kotlin.String){}[0]
     final var path // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.path|{}path[0]
         final fun <get-path>(): kotlin/String // br.com.wdc.framework.cube.remote.bridge/RemoteBridge.path.<get-path>|<get-path>(){}[0]
 

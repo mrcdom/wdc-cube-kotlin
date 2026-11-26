@@ -4,6 +4,7 @@
   "browser.connectingNow": "Conectando agora...",
   "browser.missingHomeContent": "Falta o conteúdo da página inicial",
   "browser.notConnected": "Sem conexão.",
+  "browser.outdated": "Esta página está desatualizada. Recarregue-a para continuar.",
   "browser.tryNow": "Tentar agora",
   "browser.unexpectedError": "Ocorreu um erro inesperado",
   "browser.uriNotReachable": "O endereço {uri} não está acessível",

@@ -108,6 +108,13 @@ function AppAlert(props: AppAlertProps) {
       msgNode = messages.text('browser.uriNotReachable', { uri: props.args[0] })
       detailMessage = props.args[1]
       break
+    case -3: {
+      // a message of the catalog: the key, then each argument's name and value
+      const args: Record<string, string> = {}
+      for (let i = 1; i + 1 < props.args.length; i += 2) args[props.args[i]] = props.args[i + 1]
+      msgNode = messages.text(props.args[0] ?? 'browser.unexpectedError', args)
+      break
+    }
     default:
       msgNode = props.args.length > 0 ? props.args[0] : messages.text('browser.unexpectedError')
   }

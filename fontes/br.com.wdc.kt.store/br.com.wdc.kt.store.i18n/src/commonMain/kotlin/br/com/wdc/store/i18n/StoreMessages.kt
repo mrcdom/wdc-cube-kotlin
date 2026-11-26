@@ -27,6 +27,7 @@ object MessageKeys {
     const val BrowserConnectingNow = "browser.connectingNow"
     const val BrowserMissingHomeContent = "browser.missingHomeContent"
     const val BrowserNotConnected = "browser.notConnected"
+    const val BrowserOutdated = "browser.outdated"
     const val BrowserTryNow = "browser.tryNow"
     const val BrowserUnexpectedError = "browser.unexpectedError"
     const val BrowserUriNotReachable = "browser.uriNotReachable"
@@ -109,6 +110,9 @@ fun Messages.browserMissingHomeContent(): String = text(MessageKeys.BrowserMissi
 
 /** Not connected. */
 fun Messages.browserNotConnected(): String = text(MessageKeys.BrowserNotConnected)
+
+/** This page is out of date. Reload it to continue. */
+fun Messages.browserOutdated(): String = text(MessageKeys.BrowserOutdated)
 
 /** Try now */
 fun Messages.browserTryNow(): String = text(MessageKeys.BrowserTryNow)
@@ -319,6 +323,7 @@ private val EnUsCatalog: Map<String, String> = mapOf(
     "browser.connectingNow" to "Connecting now...",
     "browser.missingHomeContent" to "Missing content for the home page",
     "browser.notConnected" to "Not connected.",
+    "browser.outdated" to "This page is out of date. Reload it to continue.",
     "browser.tryNow" to "Try now",
     "browser.unexpectedError" to "An unexpected error occurred",
     "browser.uriNotReachable" to "The URI {uri} is not reachable",
@@ -393,6 +398,7 @@ private val PtBrCatalog: Map<String, String> = mapOf(
     "browser.connectingNow" to "Conectando agora...",
     "browser.missingHomeContent" to "Falta o conteúdo da página inicial",
     "browser.notConnected" to "Sem conexão.",
+    "browser.outdated" to "Esta página está desatualizada. Recarregue-a para continuar.",
     "browser.tryNow" to "Tentar agora",
     "browser.unexpectedError" to "Ocorreu um erro inesperado",
     "browser.uriNotReachable" to "O endereço {uri} não está acessível",

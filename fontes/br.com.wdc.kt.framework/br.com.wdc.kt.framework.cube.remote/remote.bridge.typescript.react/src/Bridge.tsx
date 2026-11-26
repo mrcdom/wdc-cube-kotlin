@@ -35,6 +35,11 @@ const bridge = new (class {
     coordinator().connect()
   }
 
+  /** The text of the alert shown when the host does not speak this client's version, in the user's language. */
+  setOutdatedMessage(text: string) {
+    coordinator().outdatedMessage = text
+  }
+
   submit(vsid: string, eventId: number) {
     coordinator().submit(vsid, eventId)
   }

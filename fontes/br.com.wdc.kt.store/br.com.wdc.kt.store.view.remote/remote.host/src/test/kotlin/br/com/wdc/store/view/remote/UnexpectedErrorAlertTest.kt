@@ -26,18 +26,18 @@ class UnexpectedErrorAlertTest {
     }
 
     @Test
-    fun theClientGetsOnlyWhatFailed_neverTheStackTrace() {
+    fun theClientGetsAMessageWithTheCause_neverTheStackTrace() {
         app.alertUnexpectedError(log, "Buying a product", IllegalStateException("connection refused"))
         assertEquals(
-            """{"id":"${RemoteBrowserPresenter.VSID}","alertMessage":{"id":-1,"args":["Buying a product: connection refused"]},"contentViewId":"f2d345c4a610:1"}""",
+            """{"id":"${RemoteBrowserPresenter.VSID}","alertMessage":{"id":-3,"args":["error.unexpectedWithCause","cause","connection refused"]},"contentViewId":"f2d345c4a610:1"}""",
             browserScope(),
         )
     }
 
     @Test
-    fun withoutACauseMessage_onlyWhatFailed() {
+    fun withoutACauseMessage_theUnexpectedErrorMessage() {
         app.alertUnexpectedError(log, "Buying a product", IllegalStateException())
-        assertEquals("""{"id":"${RemoteBrowserPresenter.VSID}","alertMessage":{"id":-1,"args":["Buying a product"]},"contentViewId":"f2d345c4a610:1"}""", browserScope())
+        assertEquals("""{"id":"${RemoteBrowserPresenter.VSID}","alertMessage":{"id":-3,"args":["error.unexpected"]},"contentViewId":"f2d345c4a610:1"}""", browserScope())
     }
 
     @Test

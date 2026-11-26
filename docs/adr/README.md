@@ -27,5 +27,6 @@ A record is not edited once accepted, except to fix a mistake or a link. A decis
 | [0019](0019-metrics-and-health.md) | Metrics with Micrometer in Prometheus format, behind a token; live and ready health checks | Accepted |
 | [0020](0020-design-tokens.md) | One set of design tokens, generated for every view technology | Accepted |
 | [0021](0021-ui-texts-in-one-catalog.md) | The UI texts in one catalog per language, translated by the views from keys | Accepted |
+| [0022](0022-remote-alerts-in-the-users-language.md) | The remote views' alerts in the user's language too | Accepted |
 
 New record: copy the shape of an existing one, take the next number, and add it to this table.
