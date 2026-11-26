@@ -7,9 +7,11 @@ import br.com.wdc.framework.cube.CubeIntent
 import br.com.wdc.framework.cube.ScopeSlot
 import br.com.wdc.framework.domain.exception.TooManyRequestsException
 import br.com.wdc.store.domain.exception.OfflineException
+import br.com.wdc.store.i18n.MessageKeys
+import br.com.wdc.store.presentation.i18n.Message
 import br.com.wdc.store.presentation.presenter.RootPresenter
-import br.com.wdc.store.presentation.presenter.restricted.home.HomeKeys
 import br.com.wdc.store.presentation.presenter.open.login.calls.CredentialsCheck
+import br.com.wdc.store.presentation.presenter.restricted.home.HomeKeys
 
 class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
@@ -49,31 +51,31 @@ class LoginPresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(
 
     private fun alertUserOrPasswordNotRecognize() {
         scope.errorCode = 1
-        scope.errorMessage = "Username or password not recognized!"
+        scope.errorMessage = Message(MessageKeys.ErrorUserOrPasswordNotRecognized)
     }
 
     private fun alertDatabaseIsOffline() {
         scope.errorCode = 4
-        scope.errorMessage = "The database is offline!"
+        scope.errorMessage = Message(MessageKeys.ErrorDatabaseOffline)
     }
 
     private fun alertTooManyAttempts(retryAfterSeconds: Long?) {
         scope.errorCode = 6
         scope.errorMessage = if (retryAfterSeconds != null) {
-            "Too many failed sign-ins. Try again in $retryAfterSeconds seconds."
+            Message(MessageKeys.ErrorTooManySignInsSeconds, "seconds" to retryAfterSeconds)
         } else {
-            "Too many failed sign-ins. Try again in a few minutes."
+            Message(MessageKeys.ErrorTooManySignIns)
         }
     }
 
     private fun alertSessionExpired() {
         scope.errorCode = 7
-        scope.errorMessage = "Your session has expired. Please sign in again."
+        scope.errorMessage = Message(MessageKeys.ErrorSessionExpired)
     }
 
     private fun alertConnectionError(caught: Throwable) {
         scope.errorCode = 5
-        scope.errorMessage = "Failed to communicate with the server. Check your connection."
+        scope.errorMessage = Message(MessageKeys.ErrorConnectionFailed)
     }
 
     // :: User Actions

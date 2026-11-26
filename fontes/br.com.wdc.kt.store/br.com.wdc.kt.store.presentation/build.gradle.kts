@@ -29,6 +29,8 @@ kotlin {
             dependencies {
                 api(project(":store-domain"))
                 api(project(":framework-cube"))
+                // the keys of the UI texts; the views translate them
+                api(project(":store-i18n"))
             }
         }
     }

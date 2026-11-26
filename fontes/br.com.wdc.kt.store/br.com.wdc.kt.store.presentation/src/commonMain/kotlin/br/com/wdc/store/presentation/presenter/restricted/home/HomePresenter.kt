@@ -1,25 +1,27 @@
 package br.com.wdc.store.presentation.presenter.restricted.home
 
+
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.cube.AbstractCubePresenter
 import br.com.wdc.framework.cube.CubeIntent
-import br.com.wdc.framework.cube.Scope
 import br.com.wdc.framework.cube.FormParam
+import br.com.wdc.framework.cube.Scope
 import br.com.wdc.framework.cube.ScopeSlot
-import br.com.wdc.store.presentation.presenter.RootPresenter
+import br.com.wdc.store.i18n.MessageKeys
 import br.com.wdc.store.presentation.exception.ProductNotFoundException
 import br.com.wdc.store.presentation.exception.PurchaseNotFoundException
+import br.com.wdc.store.presentation.i18n.Message
+import br.com.wdc.store.presentation.presenter.RootPresenter
 import br.com.wdc.store.presentation.presenter.open.login.LoginKeys
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartKeys
 import br.com.wdc.store.presentation.presenter.restricted.cart.CartManager
+import br.com.wdc.store.presentation.presenter.restricted.home.calls.PurchasesPageQuery
 import br.com.wdc.store.presentation.presenter.restricted.products.ProductKeys
+import br.com.wdc.store.presentation.presenter.restricted.products.calls.ProductListQuery
+import br.com.wdc.store.presentation.presenter.restricted.products.calls.ProductQuery
 import br.com.wdc.store.presentation.presenter.restricted.receipt.ReceiptKeys
-
 import kotlin.math.ceil
 import kotlin.math.max
-import br.com.wdc.store.presentation.presenter.restricted.products.calls.ProductQuery
-import br.com.wdc.store.presentation.presenter.restricted.products.calls.ProductListQuery
-import br.com.wdc.store.presentation.presenter.restricted.home.calls.PurchasesPageQuery
 
 class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(app) {
 
@@ -212,22 +214,22 @@ class HomePresenter(app: RootPresenter) : AbstractCubePresenter<RootPresenter>(a
 
     private fun alertProductNotFound() {
         scope.errorCode = 3
-        scope.errorMessage = "Product code not found."
+        scope.errorMessage = Message(MessageKeys.ErrorProductCodeNotFound)
     }
 
     private fun alertPurchaseNotFound() {
         scope.errorCode = 5
-        scope.errorMessage = "Receipt code not found."
+        scope.errorMessage = Message(MessageKeys.ErrorReceiptCodeNotFound)
     }
 
     private fun alertProductIdRequired() {
         scope.errorCode = 6
-        scope.errorMessage = "Product code is a required argument."
+        scope.errorMessage = Message(MessageKeys.ErrorProductCodeRequired)
     }
 
     private fun alertPurchaseIdRequired() {
         scope.errorCode = 7
-        scope.errorMessage = "Receipt code is a required argument."
+        scope.errorMessage = Message(MessageKeys.ErrorReceiptCodeRequired)
     }
 
     // :: Slots

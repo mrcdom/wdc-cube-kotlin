@@ -3,6 +3,7 @@ package br.com.wdc.store.presentation.presenter.restricted.home
 import br.com.wdc.framework.cube.Action
 import br.com.wdc.framework.cube.ActionOf
 import br.com.wdc.framework.cube.Scope
+import br.com.wdc.store.presentation.i18n.Message
 import br.com.wdc.store.presentation.presenter.restricted.home.structs.PurchaseInfo
 import br.com.wdc.store.presentation.presenter.restricted.products.structs.ProductInfo
 
@@ -24,7 +25,7 @@ class HomeScope : Scope() {
     var nickName: String? by field(null)
     var cartItemCount: Int by field(0)
     var errorCode: Int by field(0)
-    var errorMessage: String? by field(null)
+    var errorMessage: Message? by field(null)
 
     var onOpenCart: Action = Action.NOOP
     var onExit: Action = Action.NOOP

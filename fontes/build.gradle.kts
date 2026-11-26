@@ -42,7 +42,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstall
 }
 
 // KMP modules handle their own plugin configuration
-val kmpModules = setOf("framework-commons", "framework-cube", "framework-cube-remote-bridge", "framework-cube-remote-bridge-react", "framework-domain", "store-design", "store-domain", "store-presentation", "store-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android", "view-remote-react-kotlin")
+val kmpModules = setOf("framework-commons", "framework-cube", "framework-cube-remote-bridge", "framework-cube-remote-bridge-react", "framework-domain", "store-design", "store-i18n", "store-domain", "store-presentation", "store-persistence-client", "view-compose", "view-compose-web", "view-compose-ios", "view-compose-android", "view-compose-desktop", "view-native-web", "view-native-ios", "view-native-android", "view-remote-react-kotlin")
 
 subprojects {
     if (name !in kmpModules) {
