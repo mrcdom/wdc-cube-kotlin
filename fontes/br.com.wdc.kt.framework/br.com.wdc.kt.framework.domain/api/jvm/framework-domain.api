@@ -115,7 +115,7 @@ public final class br/com/wdc/framework/domain/criteria/CriterionCodec {
 	public final fun getSTRING_OUT ()Lkotlin/jvm/functions/Function2;
 	public final fun read (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Lbr/com/wdc/framework/domain/criteria/Criterion;Lkotlin/jvm/functions/Function1;)V
 	public final fun readOrderBy (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/util/List;)Ljava/lang/Enum;
-	public final fun readSliceNumber (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;)Ljava/lang/Integer;
+	public final fun readSliceNumber (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectInput;Ljava/lang/String;)I
 	public final fun refuseAnyOf (Lbr/com/wdc/framework/domain/criteria/Criteria;)V
 	public final fun write (Lbr/com/wdc/framework/commons/serialization/ExtensibleObjectOutput;Ljava/lang/String;Lbr/com/wdc/framework/domain/criteria/Criterion;Lkotlin/jvm/functions/Function2;)V
 }

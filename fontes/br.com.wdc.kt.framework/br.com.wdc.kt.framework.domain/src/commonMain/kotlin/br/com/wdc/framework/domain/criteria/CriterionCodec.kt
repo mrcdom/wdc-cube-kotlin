@@ -205,12 +205,11 @@ object CriterionCodec {
     }
 
     /**
-     * Reads a slice number of a request (`limit`, `offset`, `page`, `pageSize`): a JSON integer, or `null` for "not
-     * given". Anything else — text (`"10"`), a boolean, a fraction — is refused ([InvalidRequestException], 400 in the
-     * API): a value of the wrong type is refused, not interpreted, as the C# version does.
+     * Reads a slice number of a request (`limit`, `offset`, `page`, `pageSize`): a JSON integer. Anything else —
+     * `null`, text (`"10"`), a boolean, a fraction — is refused ([InvalidRequestException], 400 in the API): a value
+     * of the wrong type is refused, not interpreted, as the C# version does. A number not given is left out.
      */
-    fun readSliceNumber(input: ExtensibleObjectInput, name: String): Int? = when (input.peek()) {
-        SerializationToken.NULL -> input.nextNull()
+    fun readSliceNumber(input: ExtensibleObjectInput, name: String): Int = when (input.peek()) {
         SerializationToken.NUMBER -> try {
             input.nextInt()
         } catch (_: NumberFormatException) {

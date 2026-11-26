@@ -140,8 +140,8 @@ class ProjectionCollectionCodecTest {
                 ProjectionCollectionCodec.read(readerAtField("""{"items":{"shape":{},$slice}}"""), shapeReader, criteriaReader)
             }
         }
-        // text, a boolean or a fraction is refused, not converted (as in the C# version)
-        for (slice in listOf(""""limit":"5"""", """"offset":"0"""", """"limit":true""", """"limit":1.5""")) {
+        // null, text, a boolean or a fraction is refused, not converted (as in the C# version)
+        for (slice in listOf(""""limit":"5"""", """"offset":"0"""", """"limit":true""", """"limit":1.5""", """"limit":null""")) {
             assertFailsWith<InvalidRequestException>(slice) {
                 ProjectionCollectionCodec.read(readerAtField("""{"items":{"shape":{},$slice}}"""), shapeReader, criteriaReader)
             }
