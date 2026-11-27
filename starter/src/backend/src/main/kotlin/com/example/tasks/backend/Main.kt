@@ -3,10 +3,10 @@ package com.example.tasks.backend
 import br.com.wdc.framework.commons.log.Log
 import br.com.wdc.framework.commons.log.Slf4jLogFactory
 import br.com.wdc.framework.rest.RestApi
-import com.example.tasks.data.InMemoryTaskRepository
-import com.example.tasks.data.TaskRepository
+import com.example.tasks.persistence.TaskDatabase
 import io.javalin.Javalin
 import io.javalin.http.staticfiles.Location
+import kotlinx.coroutines.runBlocking
 
 /** The backend's API: the calls' routes. */
 fun tasksApi(): RestApi = RestApi {
@@ -24,8 +24,10 @@ fun createServer(): Javalin =
 
 fun main() {
     Log.setFactory(Slf4jLogFactory())
-    // the data the calls answer with: in memory here, a database in a real application
-    TaskRepository.BEAN.set(InMemoryTaskRepository(listOf("Read the README", "Open a task", "Add your own")))
+    // the tasks: an H2 database, in memory unless TASKS_DB_URL names another (a file keeps them between runs)
+    val dbUrl = System.getenv("TASKS_DB_URL") ?: TaskDatabase.MEMORY_URL
+    TaskDatabase.open(dbUrl)
+    runBlocking { TaskDatabase.seedIfEmpty(listOf("Read the README", "Open a task", "Add your own")) }
 
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8090
     createServer().start(port)

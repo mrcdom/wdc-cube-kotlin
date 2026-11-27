@@ -30,6 +30,8 @@ includeBuild("../fontes") {
         substitute(module("io.github.mrcdom.wdc.kt:framework-commons")).using(project(":framework-commons"))
         substitute(module("io.github.mrcdom.wdc.kt:framework-cube")).using(project(":framework-cube"))
         substitute(module("io.github.mrcdom.wdc.kt:framework-domain")).using(project(":framework-domain"))
+        substitute(module("io.github.mrcdom.wdc.kt:framework-persistence")).using(project(":framework-persistence"))
+        substitute(module("io.github.mrcdom.wdc.kt:framework-jooq")).using(project(":framework-jooq"))
         substitute(module("io.github.mrcdom.wdc.kt:framework-rest")).using(project(":framework-rest"))
     }
 }

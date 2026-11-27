@@ -8,5 +8,5 @@ class TaskQueryAction(taskId: Long) : TaskQuery(taskId) {
 
     private val taskRepo: TaskRepository get() = TaskRepository.BEAN.get()
 
-    override suspend fun run(): Task? = taskRepo.fetchById(taskId)
+    override suspend fun run(): Task? = taskRepo.fetchById(taskId)?.toTask()
 }
