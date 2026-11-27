@@ -1,8 +1,8 @@
 package com.example.tasks.backend
 
 import br.com.wdc.framework.rest.testing.RestTestServer
-import com.example.tasks.data.InMemoryTaskRepository
-import com.example.tasks.data.TaskRepository
+import com.example.tasks.persistence.TestDatabases
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,9 +10,16 @@ import kotlin.test.assertEquals
 /** The backend's side of the calls, over real HTTP: the JSON the frontend's side sends and reads. */
 class CallRoutesTest {
 
+    private lateinit var database: AutoCloseable
+
     @BeforeTest
     fun setUp() {
-        TaskRepository.BEAN.set(InMemoryTaskRepository(listOf("Write the README")))
+        database = TestDatabases.open(seed = listOf("Write the README"))
+    }
+
+    @AfterTest
+    fun tearDown() {
+        database.close()
     }
 
     @Test
